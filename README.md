@@ -20,5 +20,5 @@ You can find a complete example [here](https://github.com/dapr/python-sdk/blob/m
 You can execute this code using the local dapr runtime:
 
 ```sh
-dapr run --grpc-port=50001 python3 example.py
+dapr run --protocol grpc --grpc-port=50001 python3 example.py
 ```
