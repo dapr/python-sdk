@@ -1,6 +1,10 @@
-## Python client for dapr.
+# Dapr SDK for Python
 
-### Example code
+This is the Dapr SDK for Python, based on the auto-generated proto client.<br>
+
+For more info on Dapr and gRPC, visit [this link](https://github.com/dapr/docs/tree/master/howto/create-grpc-app).
+
+## Example code
 A client can be created as follows:
 
 ```python
@@ -15,7 +19,7 @@ client = services.DaprStub(channel)
 
 You can find a complete example [here](https://github.com/dapr/python-sdk/blob/master/example.py)
 
-### Running the code locally
+## Running the code locally
 
 You can execute this code using the local dapr runtime:
 
