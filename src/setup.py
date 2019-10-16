@@ -3,14 +3,14 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="dapr",
+    name="dapr-client",
     version="0.1.0.b1",
     author="dapr.io",
     author_email="pypidapr@microsoft.com",
     description="Dapr client sdk using gRPC.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/dapr/dapr",
+    url="https://dapr.io/",
     packages=setuptools.find_packages(),
     install_requires=[
           'protobuf',
