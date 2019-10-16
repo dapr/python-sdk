@@ -1,9 +1,13 @@
 from dapr import dapr_pb2 as messages
 from dapr import dapr_pb2_grpc as services
 import grpc
+import os
 from google.protobuf.any_pb2 import Any
 
-channel = grpc.insecure_channel('localhost:50001')
+# Get port from environment variable.
+port = os.getenv('DAPR_GRPC_PORT', '5001')
+daprUri = 'localhost:' + port
+channel = grpc.insecure_channel(daprUri)
 
 client = services.DaprStub(channel)
 data = Any(value='lala'.encode('utf-8'))
