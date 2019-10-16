@@ -1,4 +1,8 @@
-## Python client for dapr.
+# Dapr SDK for Python
+This is the Dapr SDK for Python, based on the auto-generated proto client.<br>
+
+For more info on Dapr and gRPC, visit [this link](https://github.com/dapr/docs/tree/master/howto/create-grpc-app).
+
 The repository generates following package
 - dapr
 
@@ -33,7 +37,7 @@ dapr run --protocol grpc --grpc-port=50001 python example.py
 *Note*: Depending on your OS, you may want to use python3 instead of python.
 
 
-### Generate package
+### Generating package
 Package can be generated as:
 ```sh
 cd src
