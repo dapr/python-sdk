@@ -1,1 +1,1 @@
-name = "dapr"
+name = "dapr-client"
