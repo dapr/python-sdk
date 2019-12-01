@@ -8,7 +8,7 @@ The repository generates following package
 
 ### Installing package
 ```sh
-pip install dapr
+pip install dapr-client
 ```
 *Note*: Depending on your OS, you may want to use pip3 instead of pip.
 
