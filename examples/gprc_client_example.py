@@ -1,5 +1,5 @@
-from dapr import dapr_pb2 as messages
-from dapr import dapr_pb2_grpc as services
+from dapr.clients.grpc import dapr_pb2 as messages
+from dapr.clients.grpc import dapr_pb2_grpc as services
 import grpc
 import os
 from google.protobuf.any_pb2 import Any
