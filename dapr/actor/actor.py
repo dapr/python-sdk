@@ -1,64 +1,65 @@
-from actors.runtime.actor_state_manager import ActorStateManager
 from abc import ABC, abstractmethod
-import asyncio
+from .statemanager import ActorStateManager
+
+# http://code.activestate.com/recipes/285262-create-objects-from-variable-class-names/
 
 class Actor(ABC):
-    """Represents the base class for actors.
+    """
+    Represents the base class for actors.
     The base type for actors, that provides the common functionality
     for actors that derive from Actor
     The state is preserved across actor garbage collections and fail-overs.
     """
+
+    _dispatch_mapping = {}
+
     def __init__(self, actor_service, actor_id):
         self.id = actor_id
         self.actor_service = actor_service
         self._state_manager = ActorStateManager(self)
-        self.is_dirty = false
+        self.is_dirty = False
 
-    async def on_activate_internal(self):
+    def on_activate_internal(self):
         pass
 
-    async def on_deactivate_internal(self):
+    def on_deactivate_internal(self):
         pass
 
-    async def on_pre_actor_method_internal(self, actor_method_context):
+    def on_pre_actor_method_internal(self, actor_method_context):
         pass
 
-    async def on_post_actor_method_internal(self, actor_method_context):
+    def on_post_actor_method_internal(self, actor_method_context):
         pass
 
     def on_invoke_failed(self):
-        self.is_dirty = true
+        self.is_dirty = True
 
-    async def reset_state(self):
+    def reset_state(self):
         await self._state_manager.clear_cache()
 
-    async def fire_timer(timer_name):
+    def fire_timer(self, timer_name):
         pass
 
-    async def _save_state(self):
+    def _save_state(self):
         if not self.is_dirty:
-            await self.state_manager.save_state()
+            await self._state_manager.save_state()
     
-    @abstractmethod
-    async def _on_activate():
-        ...
-
-    @abstractmethod
-    async def _on_deactivate():
-        ...
-
-    @abstractmethod
-    async def _on_pre_actor_mehtod(actor_method_context):
-        ...
-
-    @abstractmethod
-    async def _on_post_actor_method(actor_method_context):
-        ...
-
-    async def _register_reminder(reminder_name, state, due_time, period):
+    def _on_activate(self):
         pass
 
-    async def _unregister_reminder(reminder):
+    def _on_deactivate(self):
+        pass
+
+    def _on_pre_actor_mehtod(self, actor_method_context):
+        pass
+
+    def _on_post_actor_method(self, actor_method_context):
+        pass
+
+    def _register_reminder(self, reminder_name, state, due_time, period):
+        pass
+
+    def _unregister_reminder(self, reminder):
         if isinstance(reminder, str):
             # reminder is str
             pass
@@ -66,13 +67,13 @@ class Actor(ABC):
             # reminder is IActorReminder
             pass
 
-    async def _register_timer(timer_cb, state, due_time, period):
+    def _register_timer(self, timer_cb, state, due_time, period):
         pass
 
-    async def _register_timer(timer_name, timer_cb, state, due_time, period):
+    def _register_timer(self, timer_name, timer_cb, state, due_time, period):
         pass
 
-    async def _unregister_timer(timer):
+    def _unregister_timer(self, timer):
         if isinstance(timer, str):
             # timer is str
             pass

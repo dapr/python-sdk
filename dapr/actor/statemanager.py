@@ -1,39 +1,10 @@
-from enum import Enum
 import asyncio
-
-class StateChangeKind(Enum):
-    """
-    """
-
-    NONE = 0
-    ADD = 1
-    UPDATE = 2
-    REMOVE = 3
-
-
-class StateMetadata(object):
-    """
-    """
-    
-    def __init__(self, value, value_type, change_kind):
-        self.value = value
-        self.type = value_type
-        self.change_kind = change_kind
-    
-    @staticmethod
-    def create(value, change_kind):
-        return StateMetadata(value, type(value), change_kind)
-
-    @staticmethod
-    def create_for_remove():
-        return StateMetadata(None, type(object), StateChangeKind.REMOVE)
-
 
 class ActorStateManager(object):
     """
     """
 
-    _actor_change_tracker = dict()
+    _state_change_tracker = dict()
 
     def __init__(self, actor):
         self._actor = actor
@@ -72,10 +43,10 @@ class ActorStateManager(object):
     async def get_state_name(self):
         pass
 
-    async def clear_cache():
+    async def clear_cache(self):
         pass
 
-    async def save_state():
+    async def save_state(self):
         pass
 
     async def is_state_marked_for_remove(self, state_name):
