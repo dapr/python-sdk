@@ -1,9 +1,8 @@
-from abc import ABC, abstractmethod
 from .statemanager import ActorStateManager
 
 # http://code.activestate.com/recipes/285262-create-objects-from-variable-class-names/
 
-class Actor(ABC):
+class Actor(object):
     """
     Represents the base class for actors.
     The base type for actors, that provides the common functionality
