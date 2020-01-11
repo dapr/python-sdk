@@ -26,9 +26,6 @@ class DaprActor(object):
             self.init_app(app)
 
     def init_app(self, app):
-        registered_actors = self.actor_runtime.registered_actor_types
-        app.config.setdefault('actor_entities', registered_actors)
-    
         self._add_actor_config_route(app)
         self._add_actor_activation_route(app)
         self._add_actor_deactivation_route(app)
@@ -45,40 +42,42 @@ class DaprActor(object):
         return ctx.actor_entities if hasattr(ctx, 'actor_entities') else []
     
     def _add_actor_config_route(self, app):
-        registered_actors = self._get_entities_from_ctx()
-        if len(registered_actors) > 0:
-            def handler():
-                self._actor_config['entities'] = registered_actors
-                return self._actor_config
-            app.add_url_rule('/dapr/config', None, handler, methods=['GET'])
+        def actor_config_handler():
+            registered_actors = self._get_entities_from_ctx()
+            if len(registered_actors) == 0:
+                registered_actors = self.actor_runtime.get_registered_actor_types()
+                app.config.setdefault('actor_entities', registered_actors)
+            self._actor_config['entities'] = registered_actors
+            return jsonify(self._actor_config), 200
+        app.add_url_rule('/dapr/config', None, actor_config_handler, methods=['GET'])
     
     def _add_actor_activation_route(self, app):
-        def handler(actor_type_name, actor_id):
+        def actor_activation_handler(actor_type_name, actor_id):
             self.actor_runtime.activate(actor_type_name, actor_id)
             return jsonify({'message': '{}.{} actor is activated'.format(actor_type_name, actor_id)}), 200
-        app.add_url_rule('/actors/<actor_type_name>/<actor_id>', None, handler, methods=['POST'])
+        app.add_url_rule('/actors/<actor_type_name>/<actor_id>', None, actor_activation_handler, methods=['POST'])
     
     def _add_actor_deactivation_route(self, app):
-        def handler(actor_type_name, actor_id):
-            self.actor_runtime.activate(actor_type_name, actor_id)
+        def actor_deactivation_handler(actor_type_name, actor_id):
+            self.actor_runtime.deactivate(actor_type_name, actor_id)
             return jsonify({'message': '{}.{} actor is deactivated'.format(actor_type_name, actor_id)}), 200
-        app.add_url_rule('/actors/<actor_type_name>/<actor_id>', None, handler, methods=['DELETE'])
+        app.add_url_rule('/actors/<actor_type_name>/<actor_id>', None, actor_deactivation_handler, methods=['DELETE'])
     
     def _add_actor_method_route(self, app):
-        def handler(actor_type_name, actor_id, method_name):
-            self.actor_runtime.dispatch(actor_type_name, actor_id, method_name, request.json)
+        def actor_method_handler(actor_type_name, actor_id, method_name):
+            result = self.actor_runtime.dispatch(actor_type_name, actor_id, method_name, request.data)
             # TODO: serialize the result properly
-            return jsonify({'message': '{} method in {}.{} actor is called'.format(method_name, actor_type_name, actor_id)}), 200
-        app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/<method_name>', None, handler, methods=['PUT'])
+            return jsonify(result), 200
+        app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/<method_name>', None, actor_method_handler, methods=['PUT'])
 
     def _add_actor_reminder_route(self, app):
-        def handler(actor_type_name, actor_id, reminder_name):
+        def actor_reminder_handler(actor_type_name, actor_id, reminder_name):
             self.actor_runtime.fire_reminder(actor_type_name, actor_id, reminder_name, request.json)
             return jsonify({'message': '{} reminder in {}.{} actor is called'.format(reminder_name, actor_type_name, actor_id)}), 200
-        app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/remind/<reminder_name>', None, handler, methods=['PUT'])
+        app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/remind/<reminder_name>', None, actor_reminder_handler, methods=['PUT'])
 
     def _add_actor_timer_route(self, app):
-        def handler(actor_type_name, actor_id, timer_name):
+        def actor_timer_handler(actor_type_name, actor_id, timer_name):
             self.actor_runtime.fire_timer(actor_type_name, actor_id, timer_name)
             return jsonify({'message': '{} timer in {}.{} actor is called'.format(timer_name, actor_type_name, actor_id)}), 200
-        app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/timer/<timer_name>', None, handler, methods=['PUT'])
+        app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/timer/<timer_name>', None, actor_timer_handler, methods=['PUT'])
