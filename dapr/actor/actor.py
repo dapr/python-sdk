@@ -19,10 +19,10 @@ class Actor(object):
         self.is_dirty = False
 
     def on_activate_internal(self):
-        pass
+        self._on_activate()
 
     def on_deactivate_internal(self):
-        pass
+        self._on_deactivate()
 
     def on_pre_actor_method_internal(self, actor_method_context):
         pass
@@ -34,14 +34,34 @@ class Actor(object):
         self.is_dirty = True
 
     def reset_state(self):
-        await self._state_manager.clear_cache()
+        self._state_manager.clear_cache()
 
     def fire_timer(self, timer_name):
         pass
 
+    def dispatch_method(self, name, *args, **kwargs):
+
+        if name not in self._dispatch_mapping:
+            for attr, v in self.__class__.__dict__.items():
+                if attr.startswith('_') or not callable(v):
+                    continue
+
+                if attr == name or (hasattr(v, '__actormethod__') and v.__actormethod__ == name):
+                    self._dispatch_mapping[name] = v
+                    break
+
+        if name in self._dispatch_mapping:
+            return self._dispatch_mapping[name](self, *args, **kwargs)
+
+        raise AttributeError(
+            'type object {!r} has no method {!r}'.format(
+                self.__class__.__name__, name
+            )
+        )
+
     def _save_state(self):
         if not self.is_dirty:
-            await self._state_manager.save_state()
+            self._state_manager.save_state()
     
     def _on_activate(self):
         pass
@@ -49,7 +69,7 @@ class Actor(object):
     def _on_deactivate(self):
         pass
 
-    def _on_pre_actor_mehtod(self, actor_method_context):
+    def _on_pre_actor_method(self, actor_method_context):
         pass
 
     def _on_post_actor_method(self, actor_method_context):

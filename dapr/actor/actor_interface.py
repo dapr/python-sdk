@@ -1,12 +1,10 @@
 from abc import ABC
+import functools
 
-class ActorInterface(ABC):
-    pass
+class ActorInterface(ABC): ...
 
-def actormethodname(name = None):
-
-    def methodname(funcobj):
-        funcobj.__methodname__ = funcobj.__name__ if name is None else name
-        funcobj.__isabstractmethod__ = True
+def actormethod(name = None):
+    def wrapper(funcobj):
+        funcobj.__actormethod__ = name
         return funcobj
-    return methodname
+    return wrapper
