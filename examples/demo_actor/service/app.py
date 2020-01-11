@@ -1,16 +1,17 @@
 from flask import Flask, jsonify
 from flask_dapr.actor import DaprActor
-import demo_actor
+from dapr.conf import settings
+from examples.demo_actor.service.demo_actor import DemoActor
 
-app = Flask(__name__)
+app = Flask('DemoActorService')
 actor = DaprActor(app)
 
 # register DemoActor
-actor.actor_runtime.register_actor(demo_actor.DemoActor)
+actor.actor_runtime.register_actor(DemoActor)
 
 @app.route('/')
 def index():
     return jsonify({'status': 'ok'}), 200
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=settings.HTTP_APP_PORT)
