@@ -7,8 +7,8 @@ class ActorCallType(Enum):
     Actor._on_pre_actor_method and Actor._on_post_actor_method
     """
     # Specifies that the method invoked is an actor interface method for a given client request.
-    ACTOR_INTERFACE_METHOD = 0
+    actor_interface_method = 0
     # Specifies that the method invoked is a timer callback method.
-    TIMER_METHOD = 1
+    timer_method = 1
     # Specifies that the method is when a reminder fires.
-    REMINDER_METHOD = 2
+    reminder_method = 2

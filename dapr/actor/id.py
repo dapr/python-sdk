@@ -24,14 +24,18 @@ class ActorId(object):
     def __hash__(self):
         return hash(self._id)
     
+    def __str__(self):
+        # TODO: maybe it needs prefix
+        return "{}".format(self._id)
+    
     def __eq__(self, other):
         if not other:
             return False
         
-        return self.id == other.id
+        return self._id == other.id
 
     def __ne__(self, other):
         if not other:
             return False
 
-        return self.id != other.id
+        return self._id != other.id

@@ -4,11 +4,10 @@ class ActorStateManager(object):
     """
     """
 
-    _state_change_tracker = dict()
+    _state_change_tracker = {}
 
     def __init__(self, actor):
         self._actor = actor
-        self._actor_type = actor.get_type()
 
     async def add_state(self, state_name, value):
         pass

@@ -11,7 +11,7 @@ class ActorRuntime(object):
     Contains methods to register actor types.
     """
 
-    _actor_managers = dict()
+    _actor_managers = {}
     _actor_managers_lock = threading.RLock()
 
     @classmethod
@@ -29,12 +29,11 @@ class ActorRuntime(object):
             actor_service = ActorService(actor_type_info)
 
         # Create an ActorManager, override existing entry if registered again.
-        cls._actor_managers[actor_type_info.get_name()] = ActorManager(actor_service)
+        cls._actor_managers[actor_type_info.name] = ActorManager(actor_service)
     
     @classmethod
-    @property
-    def registered_actor_types(cls):
-        return [actor_type for actor_type in cls._actor_managers]
+    def get_registered_actor_types(cls):
+        return [actor_type for actor_type in cls._actor_managers.keys()]
 
     @classmethod
     def activate(cls, actor_type_name, actor_id):
@@ -71,7 +70,7 @@ class ActorRuntime(object):
     @classmethod
     def dispatch(cls, actor_type_name, actor_id, actor_method_name, request_body):
         
-        return cls.get_actor_manager(actor_type_name).dispatch(actor_id, actor_method_name, request_body)
+        return cls.get_actor_manager(actor_type_name).dispatch(ActorId(actor_id), actor_method_name, request_body)
 
     @classmethod
     def get_actor_manager(cls, actor_type_name):

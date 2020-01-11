@@ -10,7 +10,7 @@ class ActorTypeInformation(object):
         return False
     
     @property
-    def get_name(self):
+    def name(self):
         return self._implType.__name__
 
     @property

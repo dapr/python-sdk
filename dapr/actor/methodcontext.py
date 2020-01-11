@@ -21,12 +21,12 @@ class ActorMethodContext(object):
 
     @classmethod
     def create_for_actor(cls, method_name):
-        return ActorMethodContext(method_name, ActorCallType.ACTOR_INTERFACE_METHOD)
+        return ActorMethodContext(method_name, ActorCallType.actor_interface_method)
     
     @classmethod
     def create_for_timer(cls, method_name):
-        return ActorMethodContext(method_name, ActorCallType.TIMER_METHOD)
+        return ActorMethodContext(method_name, ActorCallType.timer_method)
 
     @classmethod
     def create_for_reminder(cls, method_name):
-        return ActorMethodContext(method_name, ActorCallType.REMINDER_METHOD)
+        return ActorMethodContext(method_name, ActorCallType.reminder_method)
