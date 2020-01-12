@@ -1,4 +1,5 @@
 from .statemanager import ActorStateManager
+from .actor_interface import ActorInterface
 
 # http://code.activestate.com/recipes/285262-create-objects-from-variable-class-names/
 
@@ -10,13 +11,12 @@ class Actor(object):
     The state is preserved across actor garbage collections and fail-overs.
     """
 
-    _dispatch_mapping = {}
-
     def __init__(self, actor_service, actor_id):
         self.id = actor_id
         self.actor_service = actor_service
         self._state_manager = ActorStateManager(self)
         self.is_dirty = False
+        self._dispatch_mapping = {}
 
     def on_activate_internal(self):
         self._on_activate()
@@ -40,40 +40,32 @@ class Actor(object):
         pass
 
     def dispatch_method(self, name, *args, **kwargs):
-
         if name not in self._dispatch_mapping:
-            for attr, v in self.__class__.__dict__.items():
-                if attr.startswith('_') or not callable(v):
-                    continue
+            if not issubclass(self.__class__, ActorInterface):
+                raise AttributeError('{} does not implement ActorInterface'.format(self.__class__))
 
-                if attr == name or (hasattr(v, '__actormethod__') and v.__actormethod__ == name):
-                    self._dispatch_mapping[name] = v
-                    break
+            self._dispatch_mapping = getattr(self.__class__, 'get_dispatchable_attrs')()
 
-        if name in self._dispatch_mapping:
-            return self._dispatch_mapping[name](self, *args, **kwargs)
+            if name not in self._dispatch_mapping:
+                raise AttributeError(
+                    'type object {!r} has no method {!r}'.format(
+                        self.__class__.__name__, name
+                    )
+                )
 
-        raise AttributeError(
-            'type object {!r} has no method {!r}'.format(
-                self.__class__.__name__, name
-            )
-        )
+        return getattr(self, self._dispatch_mapping[name].method_name)(*args, **kwargs)
 
     def _save_state(self):
         if not self.is_dirty:
             self._state_manager.save_state()
     
-    def _on_activate(self):
-        pass
+    def _on_activate(self): pass
 
-    def _on_deactivate(self):
-        pass
+    def _on_deactivate(self): pass
 
-    def _on_pre_actor_method(self, actor_method_context):
-        pass
+    def _on_pre_actor_method(self, actor_method_context): pass
 
-    def _on_post_actor_method(self, actor_method_context):
-        pass
+    def _on_post_actor_method(self, actor_method_context): pass
 
     def _register_reminder(self, reminder_name, state, due_time, period):
         pass

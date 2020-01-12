@@ -48,20 +48,9 @@ class ActorProxy(object):
     def create(cls, actor_interface, actor_type, actor_id):
         return cls._default_proxy_factory.create(actor_interface, actor_type, actor_id)
 
-    def _build_dispatchable_attrs(self):
-        dispatch_map = {}
-        for attr, v in self._actor_interface.__dict__.items():
-            if attr.startswith('_') or not callable(v):
-                continue
-
-            actor_method_name = getattr(v, '__actormethod__') if hasattr(v, '__actormethod__') else attr
-            dispatch_map[actor_method_name] = ActorMethodContext.create_for_actor(actor_method_name)
-
-        return dispatch_map
-
     def __getattr__(self, name):
         if name not in self._dispatchable_attr:
-            self._dispatchable_attr = self._build_dispatchable_attrs()
+            self._dispatchable_attr = self._actor_interface.get_dispatchable_attrs()
         
         attr_calltype = self._dispatchable_attr.get(name)
         if attr_calltype is None:

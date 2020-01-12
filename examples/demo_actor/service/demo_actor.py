@@ -16,10 +16,8 @@ class DemoActor(Actor, DemoActorInterface):
     def _on_deactivate(self):
         pass
 
-    @actormethod(name="GetMyData")
     def get_my_data(self) -> object:
         return self._mydata
-    
-    @actormethod(name="SetMyData")
+
     def set_my_data(self, data) -> None:
         self._mydata = data
