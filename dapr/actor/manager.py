@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 import threading
 import json
 
@@ -18,12 +22,6 @@ class ActorManager(object):
             # TODO: Add deserialization
             obj = json.load(body)
             return self._active_actors[actor_id].dispatch_method(actor_method_name, obj)
-
-    def fire_reminder(self, actor_id, reminder_name, body):
-        pass
-
-    def fire_timer(self, actor_id, timer_name):
-        pass
 
     def activate_actor(self, actor_id):
         actor = self._actor_service.create_actor(actor_id)

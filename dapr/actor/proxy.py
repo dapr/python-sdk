@@ -1,5 +1,9 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 from .methodcontext import ActorMethodContext
-from dapr.clients import DaprHttpClient
+from dapr.clients import DaprActorClient
 
 class ActorProxyFactory(object):
     """
@@ -7,8 +11,7 @@ class ActorProxyFactory(object):
     """
 
     def __init__(self):
-        # TODO: HTTP client
-        self._dapr_client = DaprHttpClient()
+        self._dapr_client = DaprActorClient.createOrGetClient()
 
     def create(self, actor_interface, actor_type, actor_id):
         actor_proxy = ActorProxy()
@@ -48,6 +51,13 @@ class ActorProxy(object):
     def create(cls, actor_interface, actor_type, actor_id):
         return cls._default_proxy_factory.create(actor_interface, actor_type, actor_id)
 
+    def invoke(self, method, data = None):
+        return self._dapr_client.invoke_actor_method(
+            self._actor_type,
+            str(self._actor_id),
+            self.method,
+            data)
+
     def __getattr__(self, name):
         if name not in self._dispatchable_attr:
             self._dispatchable_attr = self._actor_interface.get_dispatchable_attrs()
@@ -75,7 +85,7 @@ class CallableProxies(object):
     def __call__(self, *args, **kwargs):
         obj = None if len(args) == 0 else args[0]
 
-        return self._dapr_client.invoke_actor_method(
+        return self._dapr_client.invoke_method(
             self._actor_type,
             str(self._actor_id),
             self._method,

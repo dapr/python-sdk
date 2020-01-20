@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 """
 Default environment settings which will be overriden by environment variables
 """

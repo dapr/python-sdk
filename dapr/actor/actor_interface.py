@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 from abc import ABC
 from .methodcontext import ActorMethodContext
-import functools
 
 class ActorInterface(ABC):
     @classmethod

@@ -1,4 +1,7 @@
-from .statemanager import ActorStateManager
+# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 from .actor_interface import ActorInterface
 
 # http://code.activestate.com/recipes/285262-create-objects-from-variable-class-names/
@@ -14,8 +17,6 @@ class Actor(object):
     def __init__(self, actor_service, actor_id):
         self.id = actor_id
         self.actor_service = actor_service
-        self._state_manager = ActorStateManager(self)
-        self.is_dirty = False
         self._dispatch_mapping = {}
 
     def on_activate_internal(self):
@@ -28,15 +29,6 @@ class Actor(object):
         pass
 
     def on_post_actor_method_internal(self, actor_method_context):
-        pass
-
-    def on_invoke_failed(self):
-        self.is_dirty = True
-
-    def reset_state(self):
-        self._state_manager.clear_cache()
-
-    def fire_timer(self, timer_name):
         pass
 
     def dispatch_method(self, name, *args, **kwargs):
@@ -55,10 +47,6 @@ class Actor(object):
 
         return getattr(self, self._dispatch_mapping[name].method_name)(*args, **kwargs)
 
-    def _save_state(self):
-        if not self.is_dirty:
-            self._state_manager.save_state()
-    
     def _on_activate(self): pass
 
     def _on_deactivate(self): pass
@@ -66,28 +54,3 @@ class Actor(object):
     def _on_pre_actor_method(self, actor_method_context): pass
 
     def _on_post_actor_method(self, actor_method_context): pass
-
-    def _register_reminder(self, reminder_name, state, due_time, period):
-        pass
-
-    def _unregister_reminder(self, reminder):
-        if isinstance(reminder, str):
-            # reminder is str
-            pass
-        else:
-            # reminder is IActorReminder
-            pass
-
-    def _register_timer(self, timer_cb, state, due_time, period):
-        pass
-
-    def _register_timer(self, timer_name, timer_cb, state, due_time, period):
-        pass
-
-    def _unregister_timer(self, timer):
-        if isinstance(timer, str):
-            # timer is str
-            pass
-        else:
-            # timer is not str
-            pass

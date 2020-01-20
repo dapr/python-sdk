@@ -1,4 +1,9 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 import threading
+
 from .service import ActorService
 from .typeinformation import ActorTypeInformation
 from .manager import ActorManager
@@ -51,21 +56,6 @@ class ActorRuntime(object):
 
         cls.get_actor_manager(actor_type_name).deactivate_actor(ActorId(actor_id))
 
-    @classmethod
-    def fire_reminder(cls, actor_type_name, actor_id, reminder_name, request_body):
-        """
-        Fires a reminder for the Actor
-        """
-
-        cls.get_actor_manager(actor_type_name).fire_reminder(ActorId(actor_id), actor_id, reminder_name, request_body)
-
-    @classmethod
-    def fire_timer(cls, actor_type_name, actor_id, timer_name):
-        """
-        Fires a reminder for the Actor
-        """
-
-        cls.get_actor_manager(actor_type_name).fire_timer(ActorId(actor_id), actor_id, timer_name)
 
     @classmethod
     def dispatch(cls, actor_type_name, actor_id, actor_method_name, request_body):

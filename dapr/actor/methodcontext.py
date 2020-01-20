@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 from .calltype import ActorCallType
 
 class ActorMethodContext(object):
@@ -22,11 +26,3 @@ class ActorMethodContext(object):
     @classmethod
     def create_for_actor(cls, method_name):
         return ActorMethodContext(method_name, ActorCallType.actor_interface_method)
-    
-    @classmethod
-    def create_for_timer(cls, method_name):
-        return ActorMethodContext(method_name, ActorCallType.timer_method)
-
-    @classmethod
-    def create_for_reminder(cls, method_name):
-        return ActorMethodContext(method_name, ActorCallType.reminder_method)

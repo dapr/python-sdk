@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
 class ActorService(object):
     """
@@ -7,8 +10,6 @@ class ActorService(object):
     def __init__(self, actor_type_info, actor_factory = None):
         self._actor_type_info = actor_type_info
         self._actor_factory = self._default_actor_factory if actor_factory is None else actor_factory
-        # TODO: Add actor state provider
-        # self.state_provider = ActorStateProvider(xxx)
 
     @property
     def actor_type_info(self):
