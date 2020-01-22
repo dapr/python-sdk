@@ -4,6 +4,7 @@
 
 import threading
 
+from .runtime_config import ActorRuntimeConfig
 from .service import ActorService
 from .typeinformation import ActorTypeInformation
 from .manager import ActorManager
@@ -18,6 +19,10 @@ class ActorRuntime(object):
 
     _actor_managers = {}
     _actor_managers_lock = threading.RLock()
+
+    @classmethod
+    def set_actor_config(cls, config: ActorRuntimeConfig):
+        cls._actor_config = config
 
     @classmethod
     def register_actor(cls, actor, actor_service_factory = None):
