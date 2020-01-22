@@ -34,8 +34,6 @@ class DaprActor(object):
         self._add_actor_activation_route(app)
         self._add_actor_deactivation_route(app)
         self._add_actor_method_route(app)
-        self._add_actor_reminder_route(app)
-        self._add_actor_timer_route(app)
 
     def teardown(self, exception):
         # TODO: Deactivate all actors
@@ -73,15 +71,3 @@ class DaprActor(object):
             # TODO: serialize the result properly
             return jsonify(result), 200
         app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/<method_name>', None, actor_method_handler, methods=['PUT'])
-
-    def _add_actor_reminder_route(self, app):
-        def actor_reminder_handler(actor_type_name, actor_id, reminder_name):
-            self.actor_runtime.fire_reminder(actor_type_name, actor_id, reminder_name, request.json)
-            return jsonify({'message': '{} reminder in {}.{} actor is called'.format(reminder_name, actor_type_name, actor_id)}), 200
-        app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/remind/<reminder_name>', None, actor_reminder_handler, methods=['PUT'])
-
-    def _add_actor_timer_route(self, app):
-        def actor_timer_handler(actor_type_name, actor_id, timer_name):
-            self.actor_runtime.fire_timer(actor_type_name, actor_id, timer_name)
-            return jsonify({'message': '{} timer in {}.{} actor is called'.format(timer_name, actor_type_name, actor_id)}), 200
-        app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/timer/<timer_name>', None, actor_timer_handler, methods=['PUT'])

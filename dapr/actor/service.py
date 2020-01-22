@@ -4,7 +4,7 @@
 
 class ActorService(object):
     """
-    Represent a host for an actor type within the aCtor runtime
+    Represent a host for an actor type within the actor runtime
     """
 
     def __init__(self, actor_type_info, actor_factory = None):

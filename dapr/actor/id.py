@@ -13,7 +13,7 @@ class ActorId(object):
             raise TypeError(f"Argument id must be of type str, not {type(id)}")
         self._id = id
     
-    def create_random(self):
+    def create_random_id(self):
         random_id = ""
 
         with self._rand_id_lock:
