@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from .actor_interface import ActorInterface
+from dapr.actor import ActorInterface
 
 # http://code.activestate.com/recipes/285262-create-objects-from-variable-class-names/
 

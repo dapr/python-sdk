@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from .methodcontext import ActorMethodContext
+from dapr.actor import ActorMethodContext
 from dapr.clients import DaprActorClient
 
 class ActorProxyFactory(object):

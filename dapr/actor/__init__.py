@@ -2,10 +2,11 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from .actor import Actor
 from .id import ActorId
-from .runtime import ActorRuntime
-from .manager import ActorManager
 from .actor_interface import ActorInterface
-from .proxy import ActorProxy, ActorProxyFactory
-from .actor_client_base import *
+from .runtime.actor import Actor
+from .runtime.manager import ActorManager
+from .runtime.methodcontext import ActorMethodContext
+from .runtime.runtime import ActorRuntime
+from .client.proxy import ActorProxy, ActorProxyFactory
+from .communication.actor_client_base import *
