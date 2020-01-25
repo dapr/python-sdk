@@ -4,11 +4,11 @@
 
 import threading
 
+from dapr.actor.id import ActorId
 from .runtime_config import ActorRuntimeConfig
 from .service import ActorService
 from .typeinformation import ActorTypeInformation
 from .manager import ActorManager
-from .id import ActorId
 
 class ActorRuntime(object):
     """
