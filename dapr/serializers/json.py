@@ -10,7 +10,7 @@ class DefaultJSONSerializer(Serializer):
     def __init__(self):
         pass
 
-    def serialize(self, data: object) -> str:
+    def serialize(self, data: object) -> bytes:
         return json.dumps(data)
 
     def deserialize(self, data: bytes) -> object:

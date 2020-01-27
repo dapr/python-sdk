@@ -9,4 +9,4 @@ from .runtime.manager import ActorManager
 from .runtime.methodcontext import ActorMethodContext
 from .runtime.runtime import ActorRuntime
 from .client.proxy import ActorProxy, ActorProxyFactory
-from .communication.actor_client_base import *
+from .communication.client_base import *

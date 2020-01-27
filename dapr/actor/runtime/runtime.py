@@ -5,10 +5,12 @@
 import threading
 
 from dapr.actor.id import ActorId
+from .actor import Actor
 from .runtime_config import ActorRuntimeConfig
 from .service import ActorService
 from .typeinformation import ActorTypeInformation
 from .manager import ActorManager
+from dapr.serializers import Serializer
 
 class ActorRuntime(object):
     """
@@ -16,6 +18,8 @@ class ActorRuntime(object):
 
     Contains methods to register actor types.
     """
+
+    _actor_config = ActorRuntimeConfig()
 
     _actor_managers = {}
     _actor_managers_lock = threading.RLock()
@@ -25,18 +29,17 @@ class ActorRuntime(object):
         cls._actor_config = config
 
     @classmethod
-    def register_actor(cls, actor, actor_service_factory = None):
+    def register_actor(
+        cls,
+        actor: Actor,
+        message_serializer: Serializer):
         """
         Register an :class:`Actor` with the runtime.
         """
 
         actor_type_info = ActorTypeInformation(actor)
-
-        actor_service = None
-        if actor_service_factory is not None:
-            actor_service = actor_service_factory.invoke(actor_type_info)
-        else:
-            actor_service = ActorService(actor_type_info)
+    
+        actor_service = ActorService(actor_type_info, message_serializer)
 
         # Create an ActorManager, override existing entry if registered again.
         cls._actor_managers[actor_type_info.name] = ActorManager(actor_service)
@@ -46,7 +49,7 @@ class ActorRuntime(object):
         return [actor_type for actor_type in cls._actor_managers.keys()]
 
     @classmethod
-    def activate(cls, actor_type_name, actor_id):
+    def activate(cls, actor_type_name: str, actor_id: str):
         """
         Activate an actor for an actor type with given actor id.
         """
@@ -54,7 +57,7 @@ class ActorRuntime(object):
         cls.get_actor_manager(actor_type_name).activate_actor(ActorId(actor_id))
 
     @classmethod
-    def deactivate(cls, actor_type_name, actor_id):
+    def deactivate(cls, actor_type_name: str, actor_id: str):
         """
         Deactivates an actor for an actor type with given actor id
         """
@@ -63,9 +66,9 @@ class ActorRuntime(object):
 
 
     @classmethod
-    def dispatch(cls, actor_type_name, actor_id, actor_method_name, request_body):
+    def dispatch(cls, actor_type_name: str, actor_id: str, actor_method_name: str, request_stream) -> bytes:
         
-        return cls.get_actor_manager(actor_type_name).dispatch(ActorId(actor_id), actor_method_name, request_body)
+        return cls.get_actor_manager(actor_type_name).dispatch(ActorId(actor_id), actor_method_name, request_stream)
 
     @classmethod
     def get_actor_manager(cls, actor_type_name):

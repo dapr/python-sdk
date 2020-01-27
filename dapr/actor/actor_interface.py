@@ -3,7 +3,7 @@
 # Licensed under the MIT License.
 
 from abc import ABC
-from .methodcontext import ActorMethodContext
+from dapr.actor.runtime.methodcontext import ActorMethodContext
 
 class ActorInterface(ABC):
     @classmethod

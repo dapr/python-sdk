@@ -2,17 +2,26 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from dapr.actor import DaprActorClientBase, DaprActorReminder, DaprActorTimer, DaprActorStateTransaction
 from dapr.conf import settings
+from dapr.clients.base import DaprActorClientBase
 
+import io
 import requests
 import json
 
+_DEFAULT_CHUNK_SIZE=1024
+_DEFAULT_ENCODING='utf-8'
+_DEFAULT_CONTENT_TYPE='application/octet-stream'
+_DEFAULT_JSON_CONTENT_TYPE="application/json; charset={}".format(_DEFAULT_ENCODING)
+
 class DaprActorHttpClient(DaprActorClientBase):
 
-    def __init__(self, settings = None):
-        self._settings = settings
+    def __init__(
+        self,
+        timeout=10):
+
         self._session = requests.Session()
+        self._timeout = (1, timeout)
 
     def _get_base_url(self, actor_type, actor_id) -> str:
         return 'http://localhost:{}/{}/actors/{}/{}'.format(
@@ -21,143 +30,40 @@ class DaprActorHttpClient(DaprActorClientBase):
             actor_type,
             actor_id)
 
-    def invoke_method(self, actor_type, actor_id, method, data) -> object:
+    def _send_raw(self, method: str, url: str, data: bytes, headers=None) -> bytes:
+        if headers is None:
+            headers = {}
+        if getattr(headers, 'content-type') is None:
+            headers['content-type'] = _DEFAULT_CONTENT_TYPE
+
+        req = requests.Request(
+            method=method,
+            url=url,
+            data=data,
+            headers=headers)
+
+        prepped = req.prepare()
+        r = self._session.send(prepped, stream=True, timeout=self._timeout)
+
+        buf = io.BytesIO()
+        for chunk in r.iter_content(chunk_size=_DEFAULT_CHUNK_SIZE):
+            buf.write(chunk)
+
+        if r.status_code >= 200 and r.status_code < 300:
+            return buf.getvalue()
+        
+        r.raise_for_status()
+
+    def invoke_method(
+        self,
+        actor_type: str,
+        actor_id: str,
+        method: str,
+        data: bytes,
+        headers = None) -> bytes:
+
         url = '{}/method/{}'.format(
             self._get_base_url(actor_type, actor_id),
             method)
 
-        body_bytes = b'' if data is None else json.dumps(data)
-        req = requests.Request(method='POST', url=url, data=body_bytes)
-        prepped = req.prepare()
-        prepped.headers['Content-Type'] = 'application/json'
-        resp = self._session.send(prepped)
-
-        return resp.json()
-    
-    def save_state(self, actor_type, actor_id, key, data) -> None:
-        url = '{}/state/{}'.format(
-            self._get_base_url(actor_type, actor_id),
-            key)
-
-        body_bytes = b'' if data is None else json.dumps(data)
-        req = requests.Request(method='PUT', url=url, data=body_bytes)
-        prepped = req.prepare()
-        prepped.headers['Content-Type'] = 'application/json'
-        resp = self._session.send(prepped)
-    
-    def save_state_transactional(self, actor_type, actor_id, states) -> None:
-        """
-        [
-            {
-                "operation": "upsert",
-                "request": {
-                    "key": "key1",
-                    "value": "myData"
-                }
-            },
-            {
-                "operation": "delete",
-                "request": {
-                    "key": "key2"
-                }
-            }
-        ]
-        """
-        url = '{}/state'.format(self._get_base_url(actor_type, actor_id))
-
-        body_bytes = b'' if states is None else json.dumps(states)
-        req = requests.Request(method='PUT', url=url, data=body_bytes)
-        prepped = req.prepare()
-        prepped.headers['Content-Type'] = 'application/json'
-        resp = self._session.send(prepped)
-    
-    def get_state(self, actor_type, actor_id, key) -> object:
-        url = '{}/state/{}'.format(
-            self._get_base_url(actor_type, actor_id),
-            key)
-
-        req = requests.Request(method='GET', url=url)
-        prepped = req.prepare()
-        resp = self._session.send(prepped)
-
-        return resp.json()
-    
-    def delete_state(self, actor_type, actor_id, key) -> None:
-        url = '{}/state/{}'.format(
-            self._get_base_url(actor_type, actor_id),
-            key)
-
-        req = requests.Request(method='DELETE', url=url)
-        prepped = req.prepare()
-        resp = self._session.send(prepped)
-    
-    def create_reminder(self, actor_type, actor_id, name, reminder_data) -> None:
-        """
-        {
-            "data": "someData",
-            "dueTime": "1m",
-            "period": "20s"
-        }
-        """
-        url = '{}/reminders/{}'.format(
-            self._get_base_url(actor_type, actor_id),
-            name)
-
-        body_bytes = b'' if reminder_data is None else json.dumps(reminder_data)
-        req = requests.Request(method='PUT', url=url, data=body_bytes)
-        prepped = req.prepare()
-        prepped.headers['Content-Type'] = 'application/json'
-        resp = self._session.send(prepped)
-
-    def get_reminder(self, actor_type, actor_id, name) -> DaprActorReminder:
-
-        url = '{}/reminders/{}'.format(
-            self._get_base_url(actor_type, actor_id),
-            name)
-
-        req = requests.Request(method='GET', url=url)
-        prepped = req.prepare()
-        prepped.headers['Content-Type'] = 'application/json'
-        resp = self._session.send(prepped)
-
-        return resp.json()
-    
-    def delete_reminder(self, actor_type, actor_id, name) -> None:
-
-        url = '{}/reminders/{}'.format(
-            self._get_base_url(actor_type, actor_id),
-            name)
-
-        req = requests.Request(method='DELETE', url=url)
-        prepped = req.prepare()
-        prepped.headers['Content-Type'] = 'application/json'
-        resp = self._session.send(prepped)
-
-    def create_timer(self, actor_type, actor_id, name, timer_data) -> None:
-        """
-        {
-            "data": "someData",
-            "dueTime": "1m",
-            "period": "20s",
-            "callback": "Actor.myEventHandler"
-        }
-        """
-        url = '{}/timers/{}'.format(
-            self._get_base_url(actor_type, actor_id),
-            name)
-
-        body_bytes = b'' if timer_data is None else json.dumps(timer_data)
-        req = requests.Request(method='PUT', url=url, data=body_bytes)
-        prepped = req.prepare()
-        prepped.headers['Content-Type'] = 'application/json'
-        resp = self._session.send(prepped)
-    
-    def delete_timer(self, actor_type, actor_id, name) -> None:
-        url = '{}/timers/{}'.format(
-            self._get_base_url(actor_type, actor_id),
-            name)
-
-        req = requests.Request(method='DELETE', url=url)
-        prepped = req.prepare()
-        prepped.headers['Content-Type'] = 'application/json'
-        resp = self._session.send(prepped)
+        return self._send_raw(method='POST', url=url, data=data)
