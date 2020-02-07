@@ -15,17 +15,18 @@ client.PublishEvent(messages.PublishEventEnvelope(topic='sith', data=data))
 print('Published!')
 
 key = 'mykey'
+storeName = 'statestore'
 req = messages.StateRequest(key=key, value=Any(value='my state'.encode('utf-8')))
-state = messages.SaveStateEnvelope(requests=[req])
+state = messages.SaveStateEnvelope(storeName=storeName, requests=[req])
 
 client.SaveState(state)
 print('Saved!')
 
-resp = client.GetState(messages.GetStateEnvelope(key=key))
+resp = client.GetState(messages.GetStateEnvelope(storeName=storeName, key=key))
 print('Got!')
 print(resp)
 
-resp = client.DeleteState(messages.DeleteStateEnvelope(key=key))
+resp = client.DeleteState(messages.DeleteStateEnvelope(storeName=storeName, key=key))
 print('Deleted!')
 
 channel.close()
