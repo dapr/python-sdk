@@ -2,10 +2,13 @@ import re
 from datetime import timedelta
 
 # Regex to parse Go Duration datatype, e.g. 4h15m50s
-GO_DURATION_PARSER = re.compile(r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?')
+DAPR_DURATION_PARSER = re.compile(r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?')
 
 def convert_from_dapr_duration(duration: str) -> timedelta:
-    matched = GO_DURATION_PARSER.match(duration)
+    matched = DAPR_DURATION_PARSER.match(duration)
+    if matched.lastindex == 0:
+        raise ValueError(f'Invalid Dapr Duartion format: \'{duration}\'')
+
     days = 0.0
     hours = 0.0
 
@@ -24,4 +27,4 @@ def convert_to_dapr_duration(td: timedelta) -> str:
     totalMinute, secs = divmod(td.total_seconds(), 60.0)
     hours, mins = divmod(totalMinute, 60.0)
 
-    return "{:.0f}h{:.0f}m{:.0f}s".format(hours, mins, secs)
+    return f'{hours:.0f}h{mins:.0f}m{secs:.0f}s'
