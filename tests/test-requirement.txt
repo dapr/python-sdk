@@ -3,3 +3,4 @@ mypy>=0.761
 mypy-extensions>=0.4.3
 pylint>=2.4
 requests>=2.22.0
+marshmallow>=3.3.0

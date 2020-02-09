@@ -3,6 +3,7 @@
 # Licensed under the MIT License.
 
 from abc import ABC, abstractmethod
+from typing import Callable
 
 class Serializer(ABC):
     """
@@ -10,9 +11,13 @@ class Serializer(ABC):
     """
 
     @abstractmethod
-    def serialize(self, data: object):
+    def serialize(
+        self, obj: object,
+        custom_hook: Callable[[object], bytes]) -> bytes:
         pass
 
     @abstractmethod
-    def deserialize(self, data, type) -> object:
+    def deserialize(
+        self, data: bytes,
+        custom_hook: Callable[[object], bytes]) -> object:
         pass

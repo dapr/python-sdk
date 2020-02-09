@@ -7,8 +7,7 @@ from .calltype import ActorCallType
 class ActorMethodContext(object):
     """
     Contains information about the method that is invoked by actor runtime
-    """
-    
+    """    
     _call_type: ActorCallType
 
     def __init__(self, method_name: str, call_type: ActorCallType):

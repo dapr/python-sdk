@@ -12,7 +12,7 @@ from .typeinformation import ActorTypeInformation
 from .manager import ActorManager
 from dapr.serializers import Serializer
 
-class ActorRuntime(object):
+class ActorRuntime:
     """
     Register the types allows the runtime to create instances of the actor.
 
@@ -37,10 +37,8 @@ class ActorRuntime(object):
         Register an :class:`Actor` with the runtime.
         """
 
-        actor_type_info = ActorTypeInformation(actor)
-    
+        actor_type_info = ActorTypeInformation(actor)    
         actor_service = ActorService(actor_type_info, message_serializer)
-
         # Create an ActorManager, override existing entry if registered again.
         cls._actor_managers[actor_type_info.name] = ActorManager(actor_service)
     
@@ -66,12 +64,10 @@ class ActorRuntime(object):
 
 
     @classmethod
-    def dispatch(cls, actor_type_name: str, actor_id: str, actor_method_name: str, request_stream) -> bytes:
-        
+    def dispatch(cls, actor_type_name: str, actor_id: str, actor_method_name: str, request_stream) -> bytes:        
         return cls.get_actor_manager(actor_type_name).dispatch(ActorId(actor_id), actor_method_name, request_stream)
 
     @classmethod
     def get_actor_manager(cls, actor_type_name):
         with cls._actor_managers_lock:
             return cls._actor_managers.get(actor_type_name)
-

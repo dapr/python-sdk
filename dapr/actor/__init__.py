@@ -8,5 +8,5 @@ from .runtime.actor import Actor
 from .runtime.manager import ActorManager
 from .runtime.methodcontext import ActorMethodContext
 from .runtime.runtime import ActorRuntime
+from .runtime.runtime_config import ActorRuntimeConfig
 from .client.proxy import ActorProxy, ActorProxyFactory
-from .communication.client_base import *

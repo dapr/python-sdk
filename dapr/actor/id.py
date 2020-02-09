@@ -5,7 +5,7 @@
 import secrets
 import threading
 
-class ActorId(object):
+class ActorId:
     _rand_id_lock = threading.Lock()
 
     def __init__(self, id):
@@ -34,8 +34,7 @@ class ActorId(object):
     
     def __eq__(self, other):
         if not other:
-            return False
-        
+            return False        
         return self._id == other.id
 
     def __ne__(self, other):

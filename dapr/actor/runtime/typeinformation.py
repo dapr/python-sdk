@@ -7,12 +7,12 @@ class ActorTypeInformation(object):
     """
 
     def __init__(self, actor):
-        self._implType = actor
+        self._impl_type = actor
 
     @property
     def name(self):
-        return self._implType.__name__
+        return self._impl_type.__name__
 
     @property
     def implementation_type(self):
-        return self._implType
+        return self._impl_type

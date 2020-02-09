@@ -15,8 +15,7 @@ class ActorService(object):
         self,
         actor_type_info: ActorTypeInformation,
         message_serializer: Serializer,
-        actor_factory = None):
-        
+        actor_factory=None):        
         self._actor_type_info = actor_type_info
         self._message_serializer = message_serializer
         self._actor_factory = actor_factory or self._default_actor_factory
