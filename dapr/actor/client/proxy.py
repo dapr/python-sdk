@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from dapr.actor import ActorMethodContext
-from dapr.clients import DaprActorClient
+from dapr.actor.runtime import ActorMethodContext
+from dapr.clients import DaprActorHttpClient
 
 class ActorProxyFactory(object):
     """
@@ -11,7 +11,7 @@ class ActorProxyFactory(object):
     """
 
     def __init__(self):
-        self._dapr_client = DaprActorClient.createOrGetClient()
+        self._dapr_client = DaprActorHttpClient()
 
     def create(self, actor_interface, actor_type, actor_id):
         actor_proxy = ActorProxy()

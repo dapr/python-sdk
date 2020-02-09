@@ -5,11 +5,11 @@
 import threading
 
 from dapr.actor.id import ActorId
-from .actor import Actor
-from .runtime_config import ActorRuntimeConfig
-from .service import ActorService
-from .typeinformation import ActorTypeInformation
-from .manager import ActorManager
+from dapr.actor.runtime.actor import Actor
+from dapr.actor.runtime.runtime_config import ActorRuntimeConfig
+from dapr.actor.runtime.service import ActorService
+from dapr.actor.runtime.typeinformation import ActorTypeInformation
+from dapr.actor.runtime.manager import ActorManager
 from dapr.serializers import Serializer
 
 class ActorRuntime:

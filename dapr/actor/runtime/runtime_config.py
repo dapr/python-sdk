@@ -4,7 +4,6 @@
 
 import json
 from datetime import timedelta
-from .runtime import ActorRuntime
 
 class ActorRuntimeConfig(object):
     def __init__(
@@ -21,7 +20,8 @@ class ActorRuntimeConfig(object):
 
     @property
     def entities(self):
-        return ActorRuntime.get_registered_actor_types()
+        return []
+        # return ActorRuntime.get_registered_actor_types()
     
     def __repr__(self):
         return json.dumps(self.__dict__)

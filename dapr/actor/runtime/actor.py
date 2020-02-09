@@ -2,11 +2,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from dapr.actor import ActorInterface
+from dapr.actor.actor_interface import ActorInterface
 
-# http://code.activestate.com/recipes/285262-create-objects-from-variable-class-names/
-
-class Actor(object):
+class Actor:
     """
     Represents the base class for actors.
     The base type for actors, that provides the common functionality

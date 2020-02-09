@@ -11,7 +11,7 @@ from typing import Callable
 
 from dapr.serializers.base import Serializer
 from dapr.serializers.util import convert_from_dapr_duration, convert_to_dapr_duration
-from dapr.actor import ActorRuntimeConfig
+from dapr.actor.runtime.runtime_config import ActorRuntimeConfig
 
 class DefaultJSONSerializer(Serializer):
     def serialize(
@@ -44,44 +44,27 @@ class DefaultJSONSerializer(Serializer):
         else:
             raise ValueError('data must be str or bytes types')
 
-        obj = json.loads(data_str, cls=DaprJSONDecoder)
+        obj = json.loads(data_str)
 
         return custom_hook(obj) if callable(custom_hook) else obj
 
 class DaprJSONEncoder(json.JSONEncoder):
-    def default(self, o):
+    """
+    """
+    def default(self, obj):
         # See "Date Time String Format" in the ECMA-262 specification.
-        if isinstance(o, datetime.datetime):
-            r = o.isoformat()
-            if o.microsecond:
+        if isinstance(obj, datetime.datetime):
+            r = obj.isoformat()
+            if obj.microsecond:
                 r = r[:23] + r[26:]
             if r.endswith('+00:00'):
                 r = r[:-6] + 'Z'
             return r
-        elif isinstance(o, datetime.date):
-            return o.isoformat()
-        elif isinstance(o, datetime.timedelta):
-            return convert_to_dapr_duration(o)
-        elif isinstance(o, (decimal.Decimal, uuid.UUID)):
-            return str(o)
+        elif isinstance(obj, datetime.date):
+            return obj.isoformat()
+        elif isinstance(obj, datetime.timedelta):
+            return convert_to_dapr_duration(obj)
+        elif isinstance(obj, (decimal.Decimal, uuid.UUID)):
+            return str(obj)
         else:
-            return super().default(o)
-
-class DaprJSONDecoder(json.JSONDecoder):
-    def default(self, o):
-        # See "Date Time String Format" in the ECMA-262 specification.
-        if isinstance(o, datetime.datetime):
-            r = o.isoformat()
-            if o.microsecond:
-                r = r[:23] + r[26:]
-            if r.endswith('+00:00'):
-                r = r[:-6] + 'Z'
-            return r
-        elif isinstance(o, datetime.date):
-            return o.isoformat()
-        elif isinstance(o, datetime.timedelta):
-            return convert_to_dapr_duration(o)
-        elif isinstance(o, (decimal.Decimal, uuid.UUID)):
-            return str(o)
-        else:
-            return super().default(o)
+            return json.JSONEncoder.default(self, obj)
