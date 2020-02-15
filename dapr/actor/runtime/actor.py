@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+
+"""
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
+"""
 
 from dapr.actor.actor_interface import ActorInterface
 
 class Actor:
-    """
-    Represents the base class for actors.
-    The base type for actors, that provides the common functionality
-    for actors that derive from Actor
-    The state is preserved across actor garbage collections and fail-overs.
-    """
+    """A base class of Actors that provides the common functionality of actors."""
 
     def __init__(self, actor_service, actor_id):
         self.id = actor_id

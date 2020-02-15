@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+
+"""
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
+"""
 
 from enum import Enum
 
 class ActorCallType(Enum):
-    """
-    Represents the call-type associated with the method invoked by actor runtime.
-    This is provided as part of ActorMethodContext which is passed as argument to
-    Actor._on_pre_actor_method and Actor._on_post_actor_method
+    """A enumeration that represents the call-type associated with the actor method.
+    :class:`ActorMethodContext` includes :class:`ActorCallType` passing to 
+    :method:`Actor._on_pre_actor_method` and :method:`Actor._on_post_actor_method`
     """
     # Specifies that the method invoked is an actor interface method for a given client request.
     actor_interface_method = 0

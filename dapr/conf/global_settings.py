@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
 
 """
-Default environment settings which will be overriden by environment variables
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
 """
+
+# Default environment settings that environment variables overrides
 
 HTTP_APP_PORT = 3000
 GRPC_APP_PORT = 50000

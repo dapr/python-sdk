@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+
+"""
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
+"""
 
 from flask import current_app, _app_ctx_stack, jsonify, request, abort
 from dapr.actor import ActorRuntime

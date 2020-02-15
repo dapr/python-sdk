@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+
+"""
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
+"""
 
 from abc import ABC
 from dapr.actor.runtime.methodcontext import ActorMethodContext

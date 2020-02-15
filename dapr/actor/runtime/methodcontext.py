@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+
+"""
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
+"""
 
 from .calltype import ActorCallType
 
-class ActorMethodContext(object):
+class ActorMethodContext:
+    """A Actor method context that contains method information invoked
+    by :class:`ActorRuntime`.
     """
-    Contains information about the method that is invoked by actor runtime
-    """    
-    _call_type: ActorCallType
-
     def __init__(self, method_name: str, call_type: ActorCallType):
         self._method_name = method_name
         self._call_type = call_type

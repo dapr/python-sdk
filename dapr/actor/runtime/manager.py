@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
 
-import threading
+"""
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
+"""
+
 import json
+import threading
 
-from .service import ActorService
 from dapr.actor import ActorId
+from dapr.actor.runtime.service import ActorService
 
 class ActorManager(object):
     """
@@ -18,11 +21,8 @@ class ActorManager(object):
         self._active_actors = {}
         self._active_actors_lock = threading.RLock()
 
-    def dispatch(
-        self,
-        actor_id: ActorId,
-        actor_method_name: str,
-        request_stream) -> bytes:
+    def dispatch(self, actor_id: ActorId,
+            actor_method_name: str, request_stream) -> bytes:
         body_bytes = request_stream.read()
         input_obj = self._message_serializer.deserialize(body_bytes)
         rtn_obj = self._active_actors[actor_id].dispatch_method(actor_method_name, input_obj)

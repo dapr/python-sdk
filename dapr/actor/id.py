@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+
+"""
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
+"""
 
 import secrets
 import threading
@@ -29,8 +32,7 @@ class ActorId:
         return hash(self._id)
     
     def __str__(self):
-        # TODO: maybe it needs prefix
-        return "{}".format(self._id)
+        return f'{self._id}'
     
     def __eq__(self, other):
         if not other:
