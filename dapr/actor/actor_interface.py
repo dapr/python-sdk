@@ -53,7 +53,7 @@ def get_dispatchable_attrs(actor: object) -> dict:
     # Find all user actor interfaces derived from ActorInterface
     actor_interfaces = []
     for cl in actor.mro():
-        if cl.__base__ == ActorInterface:
+        if issubclass(cl, ActorInterface):
             actor_interfaces.append(cl)
     
     if len(actor_interfaces):
@@ -66,6 +66,9 @@ def get_dispatchable_attrs(actor: object) -> dict:
             if attr.startswith('_') or not callable(v):
                 continue
             actor_method_name = getattr(v, '__actormethod__') if hasattr(v, '__actormethod__') else attr
-            dispatch_map[actor_method_name] = ActorMethodContext.create_for_actor(attr)
+            dispatch_map[actor_method_name] = {
+                'method_name': attr,
+                'params': getattr(v, '__annotations__'),
+            }
 
     return dispatch_map
