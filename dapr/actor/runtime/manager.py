@@ -11,10 +11,8 @@ import threading
 from dapr.actor import ActorId
 from dapr.actor.runtime.service import ActorService
 
-class ActorManager(object):
-    """
-    Manage Actors of a specific actor type.
-    """
+class ActorManager:
+    """A Actor Manager manages actors of a specific actor type."""
 
     def __init__(self, actor_service: ActorService):
         self._actor_service = actor_service

@@ -9,6 +9,8 @@ import secrets
 import threading
 
 class ActorId:
+    """ActorId that represents the identity of an actor within :class:`ActorService`.
+    """
     _rand_id_lock = threading.Lock()
 
     def __init__(self, id):
@@ -17,6 +19,10 @@ class ActorId:
         self._id = id
     
     def create_random_id(self):
+        """Creates new object of :class:`ActorId` with the random id value
+        This is a thread-safe operation that generates new random :class:`ActorId`
+        :rtype: :class:`ActorId` object
+        """
         random_id = ""
 
         with self._rand_id_lock:

@@ -17,12 +17,17 @@ class ActorMethodContext:
 
     @property
     def method_name(self) -> str:
+        """Return method name"""
         return self._method_name
 
     @property
     def call_type(self) -> ActorCallType:
+        """Return :class:`ActorCallType` for this method"""
         return self._call_type
 
     @classmethod
     def create_for_actor(cls, method_name: str):
+        """Helper to create :class:`ActorMethodContext` object
+        for actor_interface_method type
+        """
         return ActorMethodContext(method_name, ActorCallType.actor_interface_method)

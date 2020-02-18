@@ -10,7 +10,8 @@ import json
 
 class ActorRuntimeConfig(object):
     """Actor runtime configuration that configures Actor behavior in Dapr Runtime."""
-    def __init__( self, drain_rebalanced_actors=True,
+    def __init__(
+            self, drain_rebalanced_actors=True,
             actor_idle_timeout=timedelta(hours=1),
             actor_scan_interval=timedelta(seconds=30),
             drain_ongoing_call_timeout=timedelta(minutes=1)):
