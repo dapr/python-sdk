@@ -61,7 +61,7 @@ class ActorTypeInformation:
     implementing an actor.
     """
 
-    def __init__(self, name: str, implementation_class: Actor,
+    def __init__(self, name: str, implementation_class: type,
                  actor_bases: list):
         self._name = name
         self._impl_type = implementation_class
@@ -73,7 +73,7 @@ class ActorTypeInformation:
         return self._name
 
     @property
-    def implementation_type(self) -> Actor:
+    def implementation_type(self) -> type:
         """Return Actor implementation type"""
         return self._impl_type
     
