@@ -10,6 +10,23 @@ from dapr.actor.id import ActorId
 from dapr.actor.runtime import ActorMethodContext
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 
+class DefaultActorProxyFactory:
+    """A factory class that creates :class:`ActorProxy` object to the remote
+    actor objects.
+
+    DefaultActorProxyFactory creates :class:`ActorProxy` with 
+    :class:`DaprActorHttpClient` connecting to Dapr runtime.
+    """
+
+    def __init__(self):
+        self._dapr_client = DaprActorHttpClient()
+
+    def create(self, actor_interface: ActorInterface,
+               actor_type: str, actor_id: str):
+        return ActorProxy(self._dapr_client, actor_interface,
+                          actor_type, actor_id)
+
+
 class ActorProxy:
     """A remote proxy client that is proxy to the remote :class:`Actor`
     objects.
@@ -43,7 +60,7 @@ class ActorProxy:
     
     @classmethod
     def create(cls, actor_interface: ActorInterface,
-               actor_type, actor_id) -> ActorProxy:
+               actor_type, actor_id):
         return cls._default_proxy_factory.create(
             actor_interface, actor_type, actor_id)
 
@@ -69,6 +86,7 @@ class ActorProxy:
         
         return self._callable_proxies[name]
 
+
 class CallableProxies:
     def __init__(self, dapr_client: DaprActorClientBase,
                  actor_type: str, actor_id: ActorId, method: str):
@@ -84,19 +102,3 @@ class CallableProxies:
 
         return self._dapr_client.invoke_method(
             self._actor_type, str(self._actor_id), self._method, obj)
-
-class DefaultActorProxyFactory:
-    """A factory class that creates :class:`ActorProxy` object to the remote
-    actor objects.
-
-    DefaultActorProxyFactory creates :class:`ActorProxy` with 
-    :class:`DaprActorHttpClient` connecting to Dapr runtime.
-    """
-
-    def __init__(self):
-        self._dapr_client = DaprActorHttpClient()
-
-    def create(self, actor_interface: ActorInterface,
-               actor_type: str, actor_id: str) -> ActorProxy:
-        return ActorProxy(self._dapr_client, actor_interface,
-                          actor_type, actor_id)

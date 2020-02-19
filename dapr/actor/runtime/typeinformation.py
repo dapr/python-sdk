@@ -8,7 +8,14 @@ Licensed under the MIT License.
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.actor_interface import ActorInterface
 
-def is_dapr_actor(cls): return issubclass(cls, Actor)
+def is_dapr_actor(cls: object) -> bool:
+    """Check if class inherits :class:`Actor`.
+
+    :param object cls: The Actor implementation
+    :returns: True if cls inherits :class:`Actor`. Otherwise, False
+    :rtype: bool
+    """
+    return issubclass(cls, Actor)
 
 def get_non_actor_parent_type(cls: object) -> object:
     """Get non-actor parent type by traversing parent type node
@@ -85,7 +92,14 @@ class ActorTypeInformation:
         return self.actor_bases
     
     @classmethod
-    def create(cls, actor_class: Actor):
+    def create(cls, actor_class: object):
+        """Creates :class:`ActorTypeInformation` for actor_class.
+
+        :param object actor_class: The actor implementation inherited from Actor
+        :returns: ActorTypeInformation that includes type name, actor_class type,
+                  and actor base class deriving :class:`ActorInterface`
+        :rtype: ActorTypeInformation
+        """
         if is_dapr_actor(actor_class):
             raise ValueError(f'{actor_class.__name__} is not actor')
 
