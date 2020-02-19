@@ -8,6 +8,8 @@ Licensed under the MIT License.
 from datetime import timedelta
 import json
 
+from dapr.actor.runtime.runtime import ActorRuntime
+
 class ActorRuntimeConfig(object):
     """Actor runtime configuration that configures Actor behavior in Dapr Runtime."""
     def __init__(
@@ -22,8 +24,7 @@ class ActorRuntimeConfig(object):
 
     @property
     def entities(self):
-        return []
-        # return ActorRuntime.get_registered_actor_types()
+        return ActorRuntime.get_registered_actor_types()
     
     def __repr__(self):
         return json.dumps(self.__dict__)
