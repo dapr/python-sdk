@@ -35,8 +35,8 @@ class DefaultJSONSerializer(Serializer):
         return serialized.encode('utf-8')
 
     def deserialize(
-        self, data: bytes,
-        custom_hook: Callable[[dict], object]=None) -> object:
+        self, data: bytes, data_type: type=object,
+        custom_hook: Callable[[bytes], object]=None) -> object:
 
         if not isinstance(data, (str, bytes)):
             raise ValueError('data must be str or bytes types')

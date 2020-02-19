@@ -9,18 +9,16 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 class Serializer(ABC):
-    """
-    Abstract serializer base class
-    """
+    """Serializer base class."""
 
     @abstractmethod
     def serialize(
         self, obj: object,
         custom_hook: Callable[[object], bytes]) -> bytes:
-        pass
+        ...
 
     @abstractmethod
     def deserialize(
-        self, data: bytes,
-        custom_hook: Callable[[object], bytes]) -> object:
-        pass
+        self, data: bytes, data_type: type,
+        custom_hook: Callable[[bytes], object]) -> object:
+        ...
