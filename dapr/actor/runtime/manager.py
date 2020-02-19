@@ -30,12 +30,15 @@ class ActorManager:
             self, actor_id: ActorId,
             actor_method_name: str, request_stream) -> bytes:
         method_context = ActorMethodContext.create_for_actor(actor_method_name)
-        # params = self._dispatcher.get_params(actor_method_name)
+        arg_types = self._dispatcher.get_arg_types(actor_method_name)
 
         def invoke_method(actor):
             body_bytes = request_stream.read()
-            # TODO: deserialize body_bytes to params
-            input_obj = self._message_serializer.deserialize(body_bytes)
+            # Limitation:
+            # * Support only one argument
+            # * If you use the default DaprJSONSerializer, it support only object type
+            # as a argument
+            input_obj = self._message_serializer.deserialize(body_bytes, arg_types[0])
             return self._dispatcher.dispatch(self._active_actors[actor_id], actor_method_name, input_obj)
 
         rtn_obj = self._dispatch_internal(actor_id, method_context, invoke_method)
