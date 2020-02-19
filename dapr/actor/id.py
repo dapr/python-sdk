@@ -9,8 +9,19 @@ import secrets
 import threading
 
 class ActorId:
-    """ActorId that represents the identity of an actor within :class:`ActorService`.
+    """ActorId that represents the identity of an actor within
+    :class:`ActorService`.
+
+    Example::
+
+        # create actorid with id 1
+        actor_id = ActorId('1')
+
+        # create 8-digit random hex ActorId
+        actor_random_id = ActorId.create_random_id()
+
     """
+
     _rand_id_lock = threading.Lock()
 
     def __init__(self, id):
@@ -18,14 +29,17 @@ class ActorId:
             raise TypeError(f"Argument id must be of type str, not {type(id)}")
         self._id = id
     
-    def create_random_id(self):
+    @classmethod
+    def create_random_id(cls):
         """Creates new object of :class:`ActorId` with the random id value
+
         This is a thread-safe operation that generates new random :class:`ActorId`
-        :rtype: :class:`ActorId` object
+
+        :returns: ActorId with random id
+        :rtype: :class:`ActorId`
         """
         random_id = ""
-
-        with self._rand_id_lock:
+        with cls._rand_id_lock:
             random_id = secrets.token_hex(8)
 
         return ActorId(random_id)
