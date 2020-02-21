@@ -5,8 +5,8 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from dapr.actor.runtime.actor import Actor
 from dapr.actor.actor_interface import ActorInterface
+from dapr.actor.runtime.actor import Actor
 
 def is_dapr_actor(cls: object) -> bool:
     """Check if class inherits :class:`Actor`.
