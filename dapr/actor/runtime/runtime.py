@@ -28,6 +28,7 @@ class ActorRuntime:
     @classmethod
     def set_actor_config(cls, config: ActorRuntimeConfig):
         cls._actor_config = config
+        cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
 
     @classmethod
     def register_actor(
@@ -45,6 +46,7 @@ class ActorRuntime:
         # Create an ActorManager, override existing entry if registered again.
         with cls._actor_managers_lock:
             cls._actor_managers[actor_type_info.type_name] = ActorManager(actor_service)
+            cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
     
     @classmethod
     def get_registered_actor_types(cls) -> list:

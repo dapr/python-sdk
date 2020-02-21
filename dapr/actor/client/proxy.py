@@ -22,9 +22,25 @@ class DefaultActorProxyFactory:
         self._dapr_client = DaprActorHttpClient()
 
     def create(self, actor_interface: ActorInterface,
-               actor_type: str, actor_id: str):
+               actor_type: str, actor_id: str) -> 'ActorProxy':
         return ActorProxy(self._dapr_client, actor_interface,
                           actor_type, actor_id)
+
+class CallableProxies:
+    def __init__(self, dapr_client: DaprActorClientBase,
+                 actor_type: str, actor_id: ActorId, method: str):
+        self._dapr_client = dapr_client
+        self._actor_type = actor_type
+        self._actor_id = actor_id
+        self._method = method
+    
+    def __call__(self, *args, **kwargs) -> bytes:
+        if len(args) > 1:
+            raise ValueError('does not support multiple arguments')
+        obj = None if len(args) == 0 else args[0]
+
+        return self._dapr_client.invoke_method(
+            self._actor_type, str(self._actor_id), self._method, obj)
 
 
 class ActorProxy:
@@ -60,7 +76,7 @@ class ActorProxy:
     
     @classmethod
     def create(cls, actor_interface: ActorInterface,
-               actor_type, actor_id):
+               actor_type, actor_id) -> 'ActorProxy':
         return cls._default_proxy_factory.create(
             actor_interface, actor_type, actor_id)
 
@@ -71,13 +87,13 @@ class ActorProxy:
             self.method,
             data)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> CallableProxies:
         if name not in self._dispatchable_attr:
             self._dispatchable_attr = get_dispatchable_attrs(self._actor_interface)
         
         attr_calltype = self._dispatchable_attr.get(name)
         if attr_calltype is None:
-            raise AttributeError('{} has no attribute {!r}'.format(self._actor_interface.__class__, name))
+            raise AttributeError(f'{self._actor_interface.__class__} has no attribute {name}')
 
         if name not in self._callable_proxies:
             self._callable_proxies[name] = CallableProxies(
@@ -87,18 +103,3 @@ class ActorProxy:
         return self._callable_proxies[name]
 
 
-class CallableProxies:
-    def __init__(self, dapr_client: DaprActorClientBase,
-                 actor_type: str, actor_id: ActorId, method: str):
-        self._dapr_client = dapr_client
-        self._actor_type = actor_type
-        self._actor_id = actor_id
-        self._method = method
-    
-    def __call__(self, *args, **kwargs) -> bytes:
-        if len(args) > 1:
-            raise ValueError('does not support multiple arguments')
-        obj = None if len(args) == 0 else args[0]
-
-        return self._dapr_client.invoke_method(
-            self._actor_type, str(self._actor_id), self._method, obj)
