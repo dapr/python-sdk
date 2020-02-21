@@ -101,5 +101,3 @@ class ActorProxy:
                 self._actor_id, name)
         
         return self._callable_proxies[name]
-
-
