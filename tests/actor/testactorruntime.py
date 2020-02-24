@@ -18,6 +18,7 @@ from .testactorclasses import *
 
 class ActorRuntimeTests(unittest.TestCase):
     def setUp(self):
+        ActorRuntime._actor_managers = {}
         self._serializer = DefaultJSONSerializer()
         ActorRuntime.register_actor(TestActor)
         ActorRuntime.register_actor(TestActorImpl)

@@ -33,6 +33,6 @@ class ActorMethodDispatcherTests(unittest.TestCase):
 
     def test_dispatch(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
-        actorInstance = TestActor()
+        actorInstance = TestActor(None, None)
         result = dispatcher.dispatch(actorInstance, "ActorMethod", 10)
         self.assertEqual({'name': 'actor_method'}, result)

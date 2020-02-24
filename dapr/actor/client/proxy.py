@@ -85,11 +85,9 @@ class ActorProxy:
         return factory.create(actor_interface, actor_type, actor_id)
 
     def invoke(self, method: str, data: bytes=None) -> bytes:
-        return self._dapr_client.invoke_actor_method(
-            self._actor_type,
-            str(self._actor_id),
-            self.method,
-            data)
+        return self._dapr_client.invoke_method(
+            self._actor_type, str(self._actor_id),
+            method, data)
 
     def __getattr__(self, name: str) -> CallableProxy:
         if name not in self._dispatchable_attr:

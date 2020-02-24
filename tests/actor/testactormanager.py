@@ -58,3 +58,4 @@ class ActorManagerTests(unittest.TestCase):
         test_request_stream = io.BytesIO(self._serializer.serialize(request_body))
         response = self._manager.dispatch(test_actor_id, "ActionMethod", test_request_stream)
         self.assertEqual(b'"hello dapr"', response)
+        
