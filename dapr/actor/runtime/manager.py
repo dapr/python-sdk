@@ -40,6 +40,7 @@ class ActorManager:
         arg_types = self._dispatcher.get_arg_types(actor_method_name)
 
         def invoke_method(actor):
+            # read all bytes from request body bytes stream
             body_bytes = request_stream.read()
             # Limitation:
             # * Support only one argument

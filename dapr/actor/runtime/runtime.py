@@ -72,7 +72,6 @@ class ActorRuntime:
         """
         cls._get_actor_manager(actor_type_name).deactivate_actor(ActorId(actor_id))
 
-
     @classmethod
     def dispatch(
             cls, actor_type_name: str, actor_id: str,
