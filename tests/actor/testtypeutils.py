@@ -25,7 +25,7 @@ class TypeUtilsTests(unittest.TestCase):
 
     def test_get_return_types(self):
         rtn_type = get_method_return_types(TestActor.actor_method)
-        self.assertEqual(object, rtn_type)
+        self.assertEqual(dict, rtn_type)
 
         rtn_type = get_method_return_types(TestActor.non_actor_method)
         self.assertEqual(str, rtn_type)
@@ -52,7 +52,7 @@ class TypeUtilsTests(unittest.TestCase):
         expected_dispatchable_attrs = [
             'ActorCls1Method',
             'ActorCls1Method1',
-            'ActorCls1Method1',
+            'ActorCls1Method2',
             'ActorCls2Method'
         ]
 

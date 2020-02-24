@@ -15,19 +15,19 @@ class ActorMethodDispatcher:
 
     def dispatch(self, actor: Actor, name: str, *args, **kwargs):
         self._check_name_exist(name)
-        return getattr(actor, self._dispatch_mapping[name].method_name)(*args, **kwargs)
+        return getattr(actor, self._dispatch_mapping[name]['method_name'])(*args, **kwargs)
 
     def get_arg_names(self, name: str) -> list:
         self._check_name_exist(name)
-        return self._dispatch_mapping[name].arg_names
+        return self._dispatch_mapping[name]['arg_names']
 
     def get_arg_types(self, name: str) -> list:
         self._check_name_exist(name)
-        return self._dispatch_mapping[name].arg_types
+        return self._dispatch_mapping[name]['arg_types']
 
     def get_return_type(self, name: str) -> type:
         self._check_name_exist(name)
-        return self._dispatch_mapping[name].return_types
+        return self._dispatch_mapping[name]['return_types']
     
     def _check_name_exist(self, name: str):
         if name not in self._dispatch_mapping:

@@ -12,16 +12,16 @@ from dapr.actor.actor_interface import ActorInterface, actormethod
 
 # Classes for testing
 class TestActorInterface(ActorInterface):
-    @actormethod(name="TestMethod")
-    def actor_method(self, arg):
+    @actormethod(name="ActorMethod")
+    def actor_method(self, arg: int) -> dict:
         ...
 
 class TestActor(Actor, TestActorInterface):
     def __init__(self):
         pass
 
-    def actor_method(self, arg: int) -> object:
-        pass
+    def actor_method(self, arg: int) -> dict:
+        return { 'name': 'actor_method' }
 
     def non_actor_method(self, arg0: int, arg1: str, arg2: float) -> str:
         pass
