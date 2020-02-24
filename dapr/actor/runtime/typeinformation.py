@@ -17,7 +17,7 @@ class ActorTypeInformation:
                  actor_bases: list):
         self._name = name
         self._impl_type = implementation_class
-        self.actor_bases = actor_bases
+        self._actor_bases = actor_bases
 
     @property
     def type_name(self) -> str:
@@ -34,7 +34,7 @@ class ActorTypeInformation:
         """Return the list of :class:`ActorInterface` implemented
         by :class:`Actor`.
         """
-        return self.actor_bases
+        return self._actor_bases
     
     @classmethod
     def create(cls, actor_class: type) -> 'ActorTypeInformation':
@@ -45,7 +45,7 @@ class ActorTypeInformation:
                   and actor base class deriving :class:`ActorInterface`
         :rtype: ActorTypeInformation
         """
-        if is_dapr_actor(actor_class):
+        if not is_dapr_actor(actor_class):
             raise ValueError(f'{actor_class.__name__} is not actor')
 
         actors = get_actor_interfaces(actor_class)
