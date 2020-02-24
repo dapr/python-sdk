@@ -5,9 +5,10 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from dapr.actor.actor_interface import ActorInterface, get_dispatchable_attrs
+from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
 from dapr.actor.runtime import ActorMethodContext
+from dapr.actor.runtime.typeutils import get_dispatchable_attrs
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 
 class DefaultActorProxyFactory:

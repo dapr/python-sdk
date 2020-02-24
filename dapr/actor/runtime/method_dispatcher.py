@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
-from dapr.actor.actor_interface import get_dispatchable_attrs
+from dapr.actor.runtime.typeutils import get_dispatchable_attrs
 
 class ActorMethodDispatcher:
     def __init__(self, type_info: ActorTypeInformation):
