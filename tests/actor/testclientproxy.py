@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 from dapr.actor.id import ActorId
 from dapr.actor.client.proxy import ActorProxy
 from dapr.clients import DaprActorClientBase
+from dapr.serializers import DefaultJSONSerializer
 
 from .testactorclasses import ManagerTestActorInterface
 
@@ -22,13 +23,13 @@ class FakeActoryProxyFactory:
     def create(self, actor_interface,
                actor_type, actor_id) -> ActorProxy:
         return ActorProxy(self._dapr_client, actor_interface,
-                          actor_type, actor_id)
+                          actor_type, actor_id, DefaultJSONSerializer())
 
 class ActorProxyTests(unittest.TestCase):
     def setUp(self):
         # Create mock client
         self._mock_client = MagicMock()
-        self._mock_client.invoke_method.return_value = b'expected_response'
+        self._mock_client.invoke_method.return_value = b'"expected_response"'
 
         self._fake_factory = FakeActoryProxyFactory(self._mock_client)
         self._proxy = ActorProxy.create(
@@ -39,5 +40,10 @@ class ActorProxyTests(unittest.TestCase):
     
     def test_invoke(self):
         response = self._proxy.invoke('ActionMethod', b'arg0')
-        self.assertEqual(b'expected_response', response)
+        self.assertEqual(b'"expected_response"', response)
+        self._mock_client.invoke_method.assert_called_once_with('ManagerTestActor', 'fake-id', 'ActionMethod', b'arg0')
+
+    def test_invoke_with_static_typing(self):
+        response = self._proxy.ActionMethod(b'arg0')
+        self.assertEqual('expected_response', response)
         self._mock_client.invoke_method.assert_called_once_with('ManagerTestActor', 'fake-id', 'ActionMethod', b'arg0')

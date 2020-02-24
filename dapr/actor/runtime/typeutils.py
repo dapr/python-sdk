@@ -39,6 +39,7 @@ def get_dispatchable_attrs_from_interface(actor_interface: type, dispatch_map: d
         actor_method_name = getattr(v, '__actormethod__') if hasattr(v, '__actormethod__') else attr
 
         dispatch_map[actor_method_name] = {
+            'actor_method': actor_method_name,
             'method_name': attr,
             'arg_names': get_class_method_args(v),
             'arg_types': get_method_arg_types(v),
