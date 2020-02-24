@@ -37,10 +37,10 @@ class ActorTypeInformation:
         return self.actor_bases
     
     @classmethod
-    def create(cls, actor_class: object) -> 'ActorTypeInformation':
+    def create(cls, actor_class: type) -> 'ActorTypeInformation':
         """Creates :class:`ActorTypeInformation` for actor_class.
 
-        :param object actor_class: The actor implementation inherited from Actor
+        :param type actor_class: The actor implementation inherited from Actor
         :returns: ActorTypeInformation that includes type name, actor_class type,
                   and actor base class deriving :class:`ActorInterface`
         :rtype: ActorTypeInformation

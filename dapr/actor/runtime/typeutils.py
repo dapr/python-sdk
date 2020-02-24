@@ -27,26 +27,22 @@ def get_method_arg_types(fn: type) -> list:
 
 def get_method_return_types(fn: type) -> type:
     annotations = getattr(fn, '__annotations__')
-    if not annotations['return']:
+    if len(annotations) == 0 or not annotations['return']:
         return object
     else:
         return annotations['return']
 
-def get_dispatchable_attrs(actor: object) -> dict:
+def get_dispatchable_attrs(actor_class: type) -> dict:
     """Get the list of dispatchable attributes from actor.
 
-    :param object actor: The actor object which inherits :class:`ActorInterface`
+    :param type actor_class: The actor object which inherits :class:`ActorInterface`
     :returns: The map from attribute to actor method
     :rtype: dict
     """
     # Find all user actor interfaces derived from ActorInterface
-    actor_interfaces = []
-    for cl in actor.mro():
-        if issubclass(cl, ActorInterface):
-            actor_interfaces.append(cl)
-    
-    if len(actor_interfaces):
-        raise ValueError(f'{actor.__name__} has not inherited from ActorInterface')
+    actor_interfaces = get_actor_interfaces(actor_class)
+    if len(actor_interfaces) == 0:
+        raise ValueError(f'{actor_class.__name__} has not inherited from ActorInterface')
 
     # Find all dispatchable attributes
     dispatch_map = {}
@@ -65,57 +61,26 @@ def get_dispatchable_attrs(actor: object) -> dict:
 
     return dispatch_map
 
-def is_dapr_actor(cls: object) -> bool:
+def is_dapr_actor(cls: type) -> bool:
     """Check if class inherits :class:`Actor`.
 
-    :param object cls: The Actor implementation
+    :param type cls: The Actor implementation
     :returns: True if cls inherits :class:`Actor`. Otherwise, False
     :rtype: bool
     """
-    return issubclass(cls.__class__, Actor)
+    return issubclass(cls, Actor)
 
-def get_non_actor_parent_type(cls: object) -> object:
-    """Get non-actor parent type by traversing parent type node
-
-    :param object cls: The actor object
-    :returns: The non actor parent object
-    :rtype: object
-    """
-    bases = cls.__bases__[:]
-
-    # Remove Actor and ActorInterface bases before traverse
-    found_actor_interface = False
-    for cl_i in range(len(bases)):
-        if bases[cl_i] is Actor:
-            del bases[cl_i]
-        if bases[cl_i] is ActorInterface:
-            del bases[cl_i]
-            found_actor_interface = True
-
-    # cls is non actor parent node if cls does not inherit ActorInterface
-    if not found_actor_interface: return cls
-
-    # Traverse non-ActorInterface base types except for ActorInterface
-    for cl in bases:
-        non_actor_parent = get_non_actor_parent_type(cl)
-        if non_actor_parent is not None:
-            return non_actor_parent
-
-    return None
-
-def get_actor_interfaces(cls) -> list:
+def get_actor_interfaces(cls: type) -> list:
     """Get the list of the base classes that inherit :class:`ActorInterface`.
     
-    :param object cls: The Actor object that inherit :class:`Actor` and
+    :param type cls: The Actor object that inherit :class:`Actor` and
                        :class:`ActorInterfaces`
     :returns: the list of classes that inherit :class:`ActorInterface`
     :rtype: list
     """
     actor_bases = []
-    for cl in cls.__bases__:
-        if issubclass(cl, ActorInterface):
-            if get_non_actor_parent_type(cl) is not None:
-                continue
+    for cl in cls.mro():
+        if ActorInterface in cl.__bases__:
             actor_bases.append(cl)
 
     return actor_bases
