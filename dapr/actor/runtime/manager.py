@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import io
 import json
 import threading
 
@@ -28,7 +29,13 @@ class ActorManager:
 
     def dispatch(
             self, actor_id: ActorId,
-            actor_method_name: str, request_stream) -> bytes:
+            actor_method_name: str, request_stream: io.IOBase) -> bytes:
+        if not hasattr(request_stream, 'read'):
+            raise AttributeError('cannot read request stream')
+
+        if not self._active_actors.get(actor_id.id):
+            raise ValueError(f'{actor_id} is not activated')
+
         method_context = ActorMethodContext.create_for_actor(actor_method_name)
         arg_types = self._dispatcher.get_arg_types(actor_method_name)
 
@@ -39,7 +46,7 @@ class ActorManager:
             # * If you use the default DaprJSONSerializer, it support only object type
             # as a argument
             input_obj = self._message_serializer.deserialize(body_bytes, arg_types[0])
-            return self._dispatcher.dispatch(self._active_actors[actor_id], actor_method_name, input_obj)
+            return self._dispatcher.dispatch(actor, actor_method_name, input_obj)
 
         rtn_obj = self._dispatch_internal(actor_id, method_context, invoke_method)
         return self._message_serializer.serialize(rtn_obj)
@@ -49,9 +56,9 @@ class ActorManager:
             dispatch_action: Callable[[Actor], bytes]) -> object:
         actor = None
         with self._active_actors_lock:
-            actor = self._active_actors.get(actor_id, None)
+            actor = self._active_actors.get(actor_id.id, None)
         if not actor:
-            raise ValueError(f'{actor_id} is not yet activated')
+            raise ValueError(f'{actor_id} is not activated')
 
         try:
             actor.on_pre_actor_method_internal(method_context)
@@ -72,9 +79,11 @@ class ActorManager:
         actor.on_activate_internal()
 
         with self._active_actors_lock:
-            self._active_actors[actor_id] = actor
+            self._active_actors[actor_id.id] = actor
 
     def deactivate_actor(self, actor_id: ActorId):
         with self._active_actors_lock:
-            deactivated_actor = self._active_actors.pop(actor_id, None)
+            deactivated_actor = self._active_actors.pop(actor_id.id, None)
+            if not deactivated_actor:
+                raise ValueError(f'{actor_id} is not activated')
             deactivated_actor.on_deactivate_internal()

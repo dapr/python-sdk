@@ -20,15 +20,11 @@ class DefaultJSONSerializer(Serializer):
         self, obj: object,
         custom_hook: Callable[[object], dict]=None) -> bytes:
 
-        dict_obj = None
+        dict_obj = obj
         if callable(custom_hook):
             dict_obj = custom_hook(obj)
         elif isinstance(obj, ActorRuntimeConfig):
             dict_obj = obj.__dict__
-        elif isinstance(obj, dict):
-            dict_obj = obj    
-        else:
-            raise ValueError(f'cannot serialize {type(obj)} object')
 
         serialized = json.dumps(dict_obj, cls=DaprJSONEncoder, separators=(',', ':'))
 
@@ -46,8 +42,6 @@ class DefaultJSONSerializer(Serializer):
         return custom_hook(obj) if callable(custom_hook) else obj
 
 class DaprJSONEncoder(json.JSONEncoder):
-    """
-    """
     def default(self, obj):
         # See "Date Time String Format" in the ECMA-262 specification.
         if isinstance(obj, datetime.datetime):

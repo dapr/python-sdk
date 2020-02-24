@@ -44,14 +44,14 @@ class ActorId:
         return ActorId(random_id)
     
     @property
-    def id(self):
+    def id(self) -> str:
         return self._id
     
     def __hash__(self):
         return hash(self._id)
     
     def __str__(self):
-        return f'<{self.__class__.__name__} {self._id}>'
+        return f'{self._id}'
     
     def __eq__(self, other):
         if not other:

@@ -17,8 +17,8 @@ class TestActorInterface(ActorInterface):
         ...
 
 class TestActor(Actor, TestActorInterface):
-    def __init__(self):
-        pass
+    def __init__(self, ctx, actor_id):
+        super(TestActor, self).__init__(ctx, actor_id)
 
     def actor_method(self, arg: int) -> dict:
         return { 'name': 'actor_method' }
@@ -41,7 +41,35 @@ class TestActorCls2Interface(ActorInterface):
     def actor_cls2_method(self, arg): ...
 
 class TestActorImpl(Actor, TestActorCls1Interface, TestActorCls2Interface):
+    def __init__(self, ctx, actor_id):
+        super(TestActorImpl, self).__init__(ctx, actor_id)
+
     def actor_cls1_method(self, arg): pass
     def actor_cls1_method1(self, arg): pass
     def actor_cls1_method2(self, arg): pass
     def actor_cls2_method(self, arg): pass
+
+# Test Actors for ActorManager test
+class ManagerTestActorInterface(ActorInterface):
+    @actormethod(name="ActionMethod")
+    def action(self, data: object) -> str:
+        ...
+
+class ManagerTestActor(Actor, ManagerTestActorInterface):
+    def __init__(self, ctx, actor_id):
+        super(ManagerTestActor, self).__init__(ctx, actor_id)
+        self.activated = False
+        self.deactivated = False
+        self.id = actor_id
+    
+    def action(self, data: object) -> str:
+        self.action_data = data
+        return data['message']
+
+    def _on_activate(self):
+        self.activated = True
+        self.deactivated = False
+
+    def _on_deactivate(self):
+        self.activated = False
+        self.deactivated = True

@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import io
 import threading
 
 from dapr.actor.id import ActorId
@@ -75,7 +76,7 @@ class ActorRuntime:
     @classmethod
     def dispatch(
             cls, actor_type_name: str, actor_id: str,
-            actor_method_name: str, request_stream) -> bytes:
+            actor_method_name: str, request_stream: io.IOBase) -> bytes:
         return cls._get_actor_manager(actor_type_name).dispatch(
             ActorId(actor_id), actor_method_name, request_stream)
 

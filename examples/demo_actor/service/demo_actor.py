@@ -6,8 +6,8 @@ from dapr.actor import Actor
 from examples.demo_actor.demo_actor_interface import DemoActorInterface, actormethod
 
 class DemoActor(Actor, DemoActorInterface):
-    def __init__(self, actor_service, actor_id):
-        super(DemoActor, self).__init__(actor_service, actor_id)
+    def __init__(self, ctx, actor_id):
+        super(DemoActor, self).__init__(ctx, actor_id)
 
         # Set default data
         self._mydata = {
