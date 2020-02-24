@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime.methodcontext import ActorMethodContext
-from dapr.actor.runtime.service import ActorService
+from dapr.actor.runtime.runtime_context import ActorRuntimeContext
 
 class Actor:
     """A base class of Actors that provides the common functionality of actors.
@@ -15,8 +15,8 @@ class Actor:
     Example::
 
         class DaprActor(Actor, ActorInterface):
-            def __init__(self, actor_service, actor_id):
-                super(DemoActor, self).__init__(actor_service, actor_id)
+            def __init__(self, ctx, actor_id):
+                super(DaprActor, self).__init__(ctx, actor_id)
             
             def _on_activate(self):
                 ...
@@ -28,9 +28,9 @@ class Actor:
 
     """
 
-    def __init__(self, actor_service: ActorService, actor_id: str):
+    def __init__(self, ctx: ActorRuntimeContext, actor_id: str):
         self.id = actor_id
-        self.actor_service = actor_service
+        self._runtime_ctx = ctx
         self._dispatch_mapping = {}
 
     def on_activate_internal(self):

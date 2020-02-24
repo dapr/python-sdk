@@ -13,18 +13,18 @@ from typing import Callable
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.methodcontext import ActorMethodContext
-from dapr.actor.runtime.service import ActorService
+from dapr.actor.runtime.runtime_context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.serializers import Serializer
 
 class ActorManager:
     """A Actor Manager manages actors of a specific actor type."""
 
-    def __init__(self, actor_service: ActorService):
-        self._actor_service = actor_service
+    def __init__(self, ctx: ActorRuntimeContext):
+        self._runtime_ctx = ctx
         self._active_actors = {}
         self._active_actors_lock = threading.RLock()
-        self._dispatcher = ActorMethodDispatcher(actor_service.actor_type_info)
+        self._dispatcher = ActorMethodDispatcher(ctx.actor_type_info)
 
     def dispatch(
             self, actor_id: ActorId,
@@ -65,10 +65,10 @@ class ActorManager:
 
     @property
     def _message_serializer(self) -> Serializer:
-        return self._actor_service.message_serializer
+        return self._runtime_ctx.message_serializer
 
     def activate_actor(self, actor_id: ActorId):
-        actor = self._actor_service.create_actor(actor_id)
+        actor = self._runtime_ctx.create_actor(actor_id)
         actor.on_activate_internal()
 
         with self._active_actors_lock:

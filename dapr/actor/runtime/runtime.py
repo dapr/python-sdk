@@ -10,7 +10,7 @@ import threading
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.runtime_config import ActorRuntimeConfig
-from dapr.actor.runtime.service import ActorService
+from dapr.actor.runtime.runtime_context import ActorRuntimeContext
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
 from dapr.serializers import Serializer, DefaultJSONSerializer
@@ -40,12 +40,12 @@ class ActorRuntime:
         :param Serializer message_serializer: Serializer that serializes message
             between actors.
         """
-        actor_type_info = ActorTypeInformation.create(actor)    
-        actor_service = ActorService(actor_type_info, message_serializer)
+        type_info = ActorTypeInformation.create(actor)    
+        ctx = ActorRuntimeContext(type_info, message_serializer)
 
         # Create an ActorManager, override existing entry if registered again.
         with cls._actor_managers_lock:
-            cls._actor_managers[actor_type_info.type_name] = ActorManager(actor_service)
+            cls._actor_managers[type_info.type_name] = ActorManager(ctx)
             cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
     
     @classmethod

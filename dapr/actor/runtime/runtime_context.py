@@ -8,8 +8,8 @@ Licensed under the MIT License.
 from dapr.actor.id import ActorId
 from dapr.serializers import Serializer
 
-class ActorService:
-    """A Actor Service that hosts an actor within the actor runtime"""
+class ActorRuntimeContext:
+    """A context of ActorRuntime"""
 
     def __init__(
             self, actor_type_info: 'ActorTypeInformation',
@@ -37,6 +37,6 @@ class ActorService:
         return self._actor_factory(self, actor_id)
     
     def _default_actor_factory(
-            self, actor_service: 'ActorService', actor_id: ActorId) -> 'Actor':
+            self, ctx: 'ActorRuntimeContext', actor_id: ActorId) -> 'Actor':
         # Create the actor object for actor_type_info and actor_id
-        return self.actor_type_info.implementation_type(actor_service, actor_id)
+        return self.actor_type_info.implementation_type(ctx, actor_id)

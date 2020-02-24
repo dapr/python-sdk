@@ -9,8 +9,7 @@ import secrets
 import threading
 
 class ActorId:
-    """ActorId that represents the identity of an actor within
-    :class:`ActorService`.
+    """ActorId that represents the identity of an actor.
 
     Example::
 
@@ -52,7 +51,7 @@ class ActorId:
         return hash(self._id)
     
     def __str__(self):
-        return f'<ActorId {self._id}>'
+        return f'<{self.__class__.__name__} {self._id}>'
     
     def __eq__(self, other):
         if not other:
