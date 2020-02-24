@@ -8,10 +8,10 @@ Licensed under the MIT License.
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
 from dapr.actor.runtime import ActorMethodContext
-from dapr.actor.runtime.typeutils import get_dispatchable_attrs
+from dapr.actor.runtime.typeutils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 
-class DefaultActorProxyFactory:
+class ActorProxyFactory:
     """A factory class that creates :class:`ActorProxy` object to the remote
     actor objects.
 
@@ -20,6 +20,7 @@ class DefaultActorProxyFactory:
     """
 
     def __init__(self):
+        # TODO: support serializer for state store later
         self._dapr_client = DaprActorHttpClient()
 
     def create(self, actor_interface: ActorInterface,
@@ -27,7 +28,7 @@ class DefaultActorProxyFactory:
         return ActorProxy(self._dapr_client, actor_interface,
                           actor_type, actor_id)
 
-class CallableProxies:
+class CallableProxy:
     def __init__(self, dapr_client: DaprActorClientBase,
                  actor_type: str, actor_id: ActorId, method: str):
         self._dapr_client = dapr_client
@@ -52,12 +53,12 @@ class ActorProxy:
     communication.
     """
 
-    _default_proxy_factory = DefaultActorProxyFactory()
+    _default_proxy_factory = ActorProxyFactory()
 
     def __init__(
             self, client: DaprActorClientBase,
             actor_interface: ActorInterface,
-            actor_type: str, actor_id: str):
+            actor_type: str, actor_id: ActorId):
         self._dapr_client = client
         self._actor_id = actor_id
         self._actor_type = actor_type
@@ -76,10 +77,12 @@ class ActorProxy:
         return self._actor_type
     
     @classmethod
-    def create(cls, actor_interface: ActorInterface,
-               actor_type, actor_id) -> 'ActorProxy':
-        return cls._default_proxy_factory.create(
-            actor_interface, actor_type, actor_id)
+    def create(
+        cls, actor_interface: ActorInterface,
+        actor_type: str, actor_id: ActorId,
+        actor_proxy_factory=None) -> 'ActorProxy':
+        factory = cls._default_proxy_factory if not actor_proxy_factory else actor_proxy_factory
+        return factory.create(actor_interface, actor_type, actor_id)
 
     def invoke(self, method: str, data: bytes=None) -> bytes:
         return self._dapr_client.invoke_actor_method(
@@ -88,16 +91,16 @@ class ActorProxy:
             self.method,
             data)
 
-    def __getattr__(self, name: str) -> CallableProxies:
+    def __getattr__(self, name: str) -> CallableProxy:
         if name not in self._dispatchable_attr:
-            self._dispatchable_attr = get_dispatchable_attrs(self._actor_interface)
+            get_dispatchable_attrs_from_interface(self._actor_interface, self._dispatchable_attr)
         
         attr_calltype = self._dispatchable_attr.get(name)
         if attr_calltype is None:
             raise AttributeError(f'{self._actor_interface.__class__} has no attribute {name}')
 
         if name not in self._callable_proxies:
-            self._callable_proxies[name] = CallableProxies(
+            self._callable_proxies[name] = CallableProxy(
                 self._dapr_client, self._actor_type,
                 self._actor_id, name)
         

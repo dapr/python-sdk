@@ -32,6 +32,19 @@ def get_method_return_types(fn: type) -> type:
     else:
         return annotations['return']
 
+def get_dispatchable_attrs_from_interface(actor_interface: type, dispatch_map: dict) -> None:
+    for attr, v in actor_interface.__dict__.items():
+        if attr.startswith('_') or not callable(v):
+            continue
+        actor_method_name = getattr(v, '__actormethod__') if hasattr(v, '__actormethod__') else attr
+
+        dispatch_map[actor_method_name] = {
+            'method_name': attr,
+            'arg_names': get_class_method_args(v),
+            'arg_types': get_method_arg_types(v),
+            'return_types': get_method_return_types(v)
+        }
+
 def get_dispatchable_attrs(actor_class: type) -> dict:
     """Get the list of dispatchable attributes from actor.
 
@@ -47,17 +60,7 @@ def get_dispatchable_attrs(actor_class: type) -> dict:
     # Find all dispatchable attributes
     dispatch_map = {}
     for user_actor_cls in actor_interfaces:
-        for attr, v in user_actor_cls.__dict__.items():
-            if attr.startswith('_') or not callable(v):
-                continue
-            actor_method_name = getattr(v, '__actormethod__') if hasattr(v, '__actormethod__') else attr
-
-            dispatch_map[actor_method_name] = {
-                'method_name': attr,
-                'arg_names': get_class_method_args(v),
-                'arg_types': get_method_arg_types(v),
-                'return_types': get_method_return_types(v)
-            }
+        get_dispatchable_attrs_from_interface(user_actor_cls, dispatch_map)
 
     return dispatch_map
 
