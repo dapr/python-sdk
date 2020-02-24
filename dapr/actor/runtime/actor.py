@@ -14,15 +14,23 @@ class Actor:
 
     Example::
 
-        class DaprActor(Actor, ActorInterface):
-            def __init__(self, ctx, actor_id):
-                super(DaprActor, self).__init__(ctx, actor_id)
-            
-            def _on_activate(self):
+        class DaprActorInterface(ActorInterface):
+            @actor_method(name="method")
+            def method_invoke(self, arg: str) -> str:
                 ...
 
+        class DaprActor(Actor, DaprActorInterface):
+            def __init__(self, ctx, actor_id):
+                super(DaprActor, self).__init__(ctx, actor_id)
+
+            def method_invoke(self, arg: str) -> str:
+                return arg
+            
+            def _on_activate(self):
+                pass
+
             def _on_deactivate(self):
-                ...
+                pass
 
     TODO: Support Timer, Reminder, State Management
 
