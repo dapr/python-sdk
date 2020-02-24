@@ -15,10 +15,12 @@ class ActorInterface(ABC):
     
     Example::
 
-        class DaprActor(ActorInterface):
+        class DaprActorInterface(ActorInterface):
+            @actormethod('DoActorMethod1')
             def do_actor_method1(self, param):
                 ...
 
+            @actormethod('DoActorMethod2')
             def do_actor_method2(self, param):
                 ...
     """
@@ -31,7 +33,7 @@ def actormethod(name: str=None):
 
     Example::
 
-        class DaprActor(ActorInterface):
+        class DaprActorInterface(ActorInterface):
             @actormethod(name='DoActorCall')
             def do_actor_call(self, param):
                 ...

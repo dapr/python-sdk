@@ -27,11 +27,6 @@ class ActorRuntime:
     _actor_managers_lock = threading.RLock()
 
     @classmethod
-    def set_actor_config(cls, config: ActorRuntimeConfig):
-        cls._actor_config = config
-        cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
-
-    @classmethod
     def register_actor(
             cls, actor: Actor,
             message_serializer: Serializer=DefaultJSONSerializer()) -> None:
@@ -78,6 +73,19 @@ class ActorRuntime:
             actor_method_name: str, request_stream: io.IOBase) -> bytes:
         return cls._get_actor_manager(actor_type_name).dispatch(
             ActorId(actor_id), actor_method_name, request_stream)
+
+    @classmethod
+    def set_actor_config(cls, config: ActorRuntimeConfig) -> None:
+        """Set actor runtime config
+
+        :param ActorRuntimeConfig config: The config to set up actor runtime
+        """
+        cls._actor_config = config
+        cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
+    
+    @classmethod
+    def get_actor_config(cls) -> ActorRuntimeConfig:
+        return cls._actor_config
 
     @classmethod
     def _get_actor_manager(cls, actor_type_name: str):
