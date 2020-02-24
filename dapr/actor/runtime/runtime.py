@@ -10,8 +10,8 @@ import threading
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
-from dapr.actor.runtime.runtime_config import ActorRuntimeConfig
-from dapr.actor.runtime.runtime_context import ActorRuntimeContext
+from dapr.actor.runtime.config import ActorRuntimeConfig
+from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
 from dapr.serializers import Serializer, DefaultJSONSerializer

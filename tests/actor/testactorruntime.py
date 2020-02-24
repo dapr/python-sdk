@@ -11,7 +11,7 @@ import unittest
 from datetime import timedelta
 
 from dapr.actor.runtime.runtime import ActorRuntime
-from dapr.actor.runtime.runtime_config import ActorRuntimeConfig
+from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.serializers import DefaultJSONSerializer
 
 from .testactorclasses import *

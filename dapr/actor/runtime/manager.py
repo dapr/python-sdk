@@ -14,7 +14,7 @@ from typing import Callable
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.methodcontext import ActorMethodContext
-from dapr.actor.runtime.runtime_context import ActorRuntimeContext
+from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.serializers import Serializer
 

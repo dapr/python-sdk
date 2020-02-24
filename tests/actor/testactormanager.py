@@ -11,7 +11,7 @@ import unittest
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
-from dapr.actor.runtime.runtime_context import ActorRuntimeContext
+from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.serializers import DefaultJSONSerializer
 
 from .testactorclasses import ManagerTestActor
@@ -58,4 +58,3 @@ class ActorManagerTests(unittest.TestCase):
         test_request_stream = io.BytesIO(self._serializer.serialize(request_body))
         response = self._manager.dispatch(test_actor_id, "ActionMethod", test_request_stream)
         self.assertEqual(b'"hello dapr"', response)
-        

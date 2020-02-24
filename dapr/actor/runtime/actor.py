@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime.methodcontext import ActorMethodContext
-from dapr.actor.runtime.runtime_context import ActorRuntimeContext
+from dapr.actor.runtime.context import ActorRuntimeContext
 
 class Actor:
     """A base class of Actors that provides the common functionality of actors.
