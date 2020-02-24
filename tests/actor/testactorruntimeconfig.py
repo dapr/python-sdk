@@ -11,9 +11,6 @@ from datetime import timedelta
 from dapr.actor.runtime.runtime_config import ActorRuntimeConfig
 
 class ActorRuntimeConfigTests(unittest.TestCase):
-    def setUp(self):
-        pass
-
     def test_default_config(self):
         config = ActorRuntimeConfig()
 
