@@ -22,8 +22,8 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='dapr/dapr.proto',
   package='dapr',
   syntax='proto3',
-  serialized_options=_b('\n\007io.daprB\nDaprProtos'),
-  serialized_pb=_b('\n\x0f\x64\x61pr/dapr.proto\x12\x04\x64\x61pr\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1egoogle/protobuf/duration.proto\"\xb9\x01\n\x1dInvokeServiceResponseEnvelope\x12\"\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x43\n\x08metadata\x18\x02 \x03(\x0b\x32\x31.dapr.InvokeServiceResponseEnvelope.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"U\n\x13\x44\x65leteStateEnvelope\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\x12#\n\x07options\x18\x03 \x01(\x0b\x32\x12.dapr.StateOptions\"9\n\x11SaveStateEnvelope\x12$\n\x08requests\x18\x01 \x03(\x0b\x32\x12.dapr.StateRequest\"4\n\x10GetStateEnvelope\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x13\n\x0b\x63onsistency\x18\x02 \x01(\t\"L\n\x18GetStateResponseEnvelope\x12\"\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\"\xb7\x01\n\x15InvokeBindingEnvelope\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12;\n\x08metadata\x18\x03 \x03(\x0b\x32).dapr.InvokeBindingEnvelope.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc5\x01\n\x15InvokeServiceEnvelope\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06method\x18\x02 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x12;\n\x08metadata\x18\x04 \x03(\x0b\x32).dapr.InvokeServiceEnvelope.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"I\n\x14PublishEventEnvelope\x12\r\n\x05topic\x18\x01 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\"\xca\x01\n\x05State\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12+\n\x08metadata\x18\x04 \x03(\x0b\x32\x19.dapr.State.MetadataEntry\x12#\n\x07options\x18\x05 \x01(\x0b\x32\x12.dapr.StateOptions\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"`\n\x0cStateOptions\x12\x13\n\x0b\x63oncurrency\x18\x01 \x01(\t\x12\x13\n\x0b\x63onsistency\x18\x02 \x01(\t\x12&\n\x0bretryPolicy\x18\x03 \x01(\x0b\x32\x11.dapr.RetryPolicy\"^\n\x0bRetryPolicy\x12\x11\n\tthreshold\x18\x01 \x01(\x05\x12\x0f\n\x07pattern\x18\x02 \x01(\t\x12+\n\x08interval\x18\x03 \x01(\x0b\x32\x19.google.protobuf.Duration\"\xdf\x01\n\x0cStateRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\x32\n\x08metadata\x18\x04 \x03(\x0b\x32 .dapr.StateRequest.MetadataEntry\x12*\n\x07options\x18\x05 \x01(\x0b\x32\x19.dapr.StateRequestOptions\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"l\n\x13StateRequestOptions\x12\x13\n\x0b\x63oncurrency\x18\x01 \x01(\t\x12\x13\n\x0b\x63onsistency\x18\x02 \x01(\t\x12+\n\x0bretryPolicy\x18\x03 \x01(\x0b\x32\x16.dapr.StateRetryPolicy\"c\n\x10StateRetryPolicy\x12\x11\n\tthreshold\x18\x01 \x01(\x05\x12\x0f\n\x07pattern\x18\x02 \x01(\t\x12+\n\x08interval\x18\x03 \x01(\x0b\x32\x19.google.protobuf.Duration2\xb3\x03\n\x04\x44\x61pr\x12\x44\n\x0cPublishEvent\x12\x1a.dapr.PublishEventEnvelope\x1a\x16.google.protobuf.Empty\"\x00\x12S\n\rInvokeService\x12\x1b.dapr.InvokeServiceEnvelope\x1a#.dapr.InvokeServiceResponseEnvelope\"\x00\x12\x46\n\rInvokeBinding\x12\x1b.dapr.InvokeBindingEnvelope\x1a\x16.google.protobuf.Empty\"\x00\x12\x44\n\x08GetState\x12\x16.dapr.GetStateEnvelope\x1a\x1e.dapr.GetStateResponseEnvelope\"\x00\x12>\n\tSaveState\x12\x17.dapr.SaveStateEnvelope\x1a\x16.google.protobuf.Empty\"\x00\x12\x42\n\x0b\x44\x65leteState\x12\x19.dapr.DeleteStateEnvelope\x1a\x16.google.protobuf.Empty\"\x00\x42\x15\n\x07io.daprB\nDaprProtosb\x06proto3')
+  serialized_options=_b('\n\007io.daprB\nDaprProtos\252\002\020Dapr.Client.Grpc'),
+  serialized_pb=_b('\n\x0f\x64\x61pr/dapr.proto\x12\x04\x64\x61pr\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1egoogle/protobuf/duration.proto\"\xb9\x01\n\x1dInvokeServiceResponseEnvelope\x12\"\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x43\n\x08metadata\x18\x02 \x03(\x0b\x32\x31.dapr.InvokeServiceResponseEnvelope.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"h\n\x13\x44\x65leteStateEnvelope\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12#\n\x07options\x18\x04 \x01(\x0b\x32\x12.dapr.StateOptions\"L\n\x11SaveStateEnvelope\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12$\n\x08requests\x18\x02 \x03(\x0b\x32\x12.dapr.StateRequest\"G\n\x10GetStateEnvelope\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\x13\n\x0b\x63onsistency\x18\x03 \x01(\t\"L\n\x18GetStateResponseEnvelope\x12\"\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\"\xb7\x01\n\x15InvokeBindingEnvelope\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12;\n\x08metadata\x18\x03 \x03(\x0b\x32).dapr.InvokeBindingEnvelope.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc5\x01\n\x15InvokeServiceEnvelope\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06method\x18\x02 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x12;\n\x08metadata\x18\x04 \x03(\x0b\x32).dapr.InvokeServiceEnvelope.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"I\n\x14PublishEventEnvelope\x12\r\n\x05topic\x18\x01 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\"\xca\x01\n\x05State\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12+\n\x08metadata\x18\x04 \x03(\x0b\x32\x19.dapr.State.MetadataEntry\x12#\n\x07options\x18\x05 \x01(\x0b\x32\x12.dapr.StateOptions\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"`\n\x0cStateOptions\x12\x13\n\x0b\x63oncurrency\x18\x01 \x01(\t\x12\x13\n\x0b\x63onsistency\x18\x02 \x01(\t\x12&\n\x0bretryPolicy\x18\x03 \x01(\x0b\x32\x11.dapr.RetryPolicy\"^\n\x0bRetryPolicy\x12\x11\n\tthreshold\x18\x01 \x01(\x05\x12\x0f\n\x07pattern\x18\x02 \x01(\t\x12+\n\x08interval\x18\x03 \x01(\x0b\x32\x19.google.protobuf.Duration\"\xdf\x01\n\x0cStateRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\x32\n\x08metadata\x18\x04 \x03(\x0b\x32 .dapr.StateRequest.MetadataEntry\x12*\n\x07options\x18\x05 \x01(\x0b\x32\x19.dapr.StateRequestOptions\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"l\n\x13StateRequestOptions\x12\x13\n\x0b\x63oncurrency\x18\x01 \x01(\t\x12\x13\n\x0b\x63onsistency\x18\x02 \x01(\t\x12+\n\x0bretryPolicy\x18\x03 \x01(\x0b\x32\x16.dapr.StateRetryPolicy\"c\n\x10StateRetryPolicy\x12\x11\n\tthreshold\x18\x01 \x01(\x05\x12\x0f\n\x07pattern\x18\x02 \x01(\t\x12+\n\x08interval\x18\x03 \x01(\x0b\x32\x19.google.protobuf.Duration2\xb3\x03\n\x04\x44\x61pr\x12\x44\n\x0cPublishEvent\x12\x1a.dapr.PublishEventEnvelope\x1a\x16.google.protobuf.Empty\"\x00\x12S\n\rInvokeService\x12\x1b.dapr.InvokeServiceEnvelope\x1a#.dapr.InvokeServiceResponseEnvelope\"\x00\x12\x46\n\rInvokeBinding\x12\x1b.dapr.InvokeBindingEnvelope\x1a\x16.google.protobuf.Empty\"\x00\x12\x44\n\x08GetState\x12\x16.dapr.GetStateEnvelope\x1a\x1e.dapr.GetStateResponseEnvelope\"\x00\x12>\n\tSaveState\x12\x17.dapr.SaveStateEnvelope\x1a\x16.google.protobuf.Empty\"\x00\x12\x42\n\x0b\x44\x65leteState\x12\x19.dapr.DeleteStateEnvelope\x1a\x16.google.protobuf.Empty\"\x00\x42(\n\x07io.daprB\nDaprProtos\xaa\x02\x10\x44\x61pr.Client.Grpcb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,google_dot_protobuf_dot_duration__pb2.DESCRIPTOR,])
 
@@ -113,22 +113,29 @@ _DELETESTATEENVELOPE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='dapr.DeleteStateEnvelope.key', index=0,
+      name='storeName', full_name='dapr.DeleteStateEnvelope.storeName', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='etag', full_name='dapr.DeleteStateEnvelope.etag', index=1,
+      name='key', full_name='dapr.DeleteStateEnvelope.key', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='options', full_name='dapr.DeleteStateEnvelope.options', index=2,
-      number=3, type=11, cpp_type=10, label=1,
+      name='etag', full_name='dapr.DeleteStateEnvelope.etag', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='options', full_name='dapr.DeleteStateEnvelope.options', index=3,
+      number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -146,7 +153,7 @@ _DELETESTATEENVELOPE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=301,
-  serialized_end=386,
+  serialized_end=405,
 )
 
 
@@ -158,8 +165,15 @@ _SAVESTATEENVELOPE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='requests', full_name='dapr.SaveStateEnvelope.requests', index=0,
-      number=1, type=11, cpp_type=10, label=3,
+      name='storeName', full_name='dapr.SaveStateEnvelope.storeName', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='requests', full_name='dapr.SaveStateEnvelope.requests', index=1,
+      number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -176,8 +190,8 @@ _SAVESTATEENVELOPE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=388,
-  serialized_end=445,
+  serialized_start=407,
+  serialized_end=483,
 )
 
 
@@ -189,15 +203,22 @@ _GETSTATEENVELOPE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='dapr.GetStateEnvelope.key', index=0,
+      name='storeName', full_name='dapr.GetStateEnvelope.storeName', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='consistency', full_name='dapr.GetStateEnvelope.consistency', index=1,
+      name='key', full_name='dapr.GetStateEnvelope.key', index=1,
       number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='consistency', full_name='dapr.GetStateEnvelope.consistency', index=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -214,8 +235,8 @@ _GETSTATEENVELOPE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=447,
-  serialized_end=499,
+  serialized_start=485,
+  serialized_end=556,
 )
 
 
@@ -252,8 +273,8 @@ _GETSTATERESPONSEENVELOPE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=501,
-  serialized_end=577,
+  serialized_start=558,
+  serialized_end=634,
 )
 
 
@@ -334,8 +355,8 @@ _INVOKEBINDINGENVELOPE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=580,
-  serialized_end=763,
+  serialized_start=637,
+  serialized_end=820,
 )
 
 
@@ -423,8 +444,8 @@ _INVOKESERVICEENVELOPE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=766,
-  serialized_end=963,
+  serialized_start=823,
+  serialized_end=1020,
 )
 
 
@@ -461,8 +482,8 @@ _PUBLISHEVENTENVELOPE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=965,
-  serialized_end=1038,
+  serialized_start=1022,
+  serialized_end=1095,
 )
 
 
@@ -557,8 +578,8 @@ _STATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1041,
-  serialized_end=1243,
+  serialized_start=1098,
+  serialized_end=1300,
 )
 
 
@@ -602,8 +623,8 @@ _STATEOPTIONS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1245,
-  serialized_end=1341,
+  serialized_start=1302,
+  serialized_end=1398,
 )
 
 
@@ -647,8 +668,8 @@ _RETRYPOLICY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1343,
-  serialized_end=1437,
+  serialized_start=1400,
+  serialized_end=1494,
 )
 
 
@@ -743,8 +764,8 @@ _STATEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1440,
-  serialized_end=1663,
+  serialized_start=1497,
+  serialized_end=1720,
 )
 
 
@@ -788,8 +809,8 @@ _STATEREQUESTOPTIONS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1665,
-  serialized_end=1773,
+  serialized_start=1722,
+  serialized_end=1830,
 )
 
 
@@ -833,8 +854,8 @@ _STATERETRYPOLICY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1775,
-  serialized_end=1874,
+  serialized_start=1832,
+  serialized_end=1931,
 )
 
 _INVOKESERVICERESPONSEENVELOPE_METADATAENTRY.containing_type = _INVOKESERVICERESPONSEENVELOPE
@@ -1030,8 +1051,8 @@ _DAPR = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=1877,
-  serialized_end=2312,
+  serialized_start=1934,
+  serialized_end=2369,
   methods=[
   _descriptor.MethodDescriptor(
     name='PublishEvent',
