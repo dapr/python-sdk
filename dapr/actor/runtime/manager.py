@@ -40,16 +40,22 @@ class ActorManager:
         arg_types = self._dispatcher.get_arg_types(actor_method_name)
 
         def invoke_method(actor):
-            # read all bytes from request body bytes stream
-            body_bytes = request_stream.read()
-            # Limitation:
-            # * Support only one argument
-            # * If you use the default DaprJSONSerializer, it support only object type
-            # as a argument
-            input_obj = self._message_serializer.deserialize(body_bytes, arg_types[0])
-            return self._dispatcher.dispatch(actor, actor_method_name, input_obj)
+            input_obj = None
+            if len(arg_types) > 0:
+                # read all bytes from request body bytes stream
+                body_bytes = request_stream.read()
+                # Limitation:
+                # * Support only one argument
+                # * If you use the default DaprJSONSerializer, it support only object type
+                # as a argument
+                input_obj = self._message_serializer.deserialize(body_bytes, arg_types[0])
+                rtnval = self._dispatcher.dispatch(actor, actor_method_name, input_obj)
+            else:
+                rtnval = self._dispatcher.dispatch(actor, actor_method_name)
+            return rtnval
 
         rtn_obj = self._dispatch_internal(actor_id, method_context, invoke_method)
+        print(rtn_obj)
         return self._message_serializer.serialize(rtn_obj)
 
     def _dispatch_internal(

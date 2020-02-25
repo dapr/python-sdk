@@ -43,7 +43,7 @@ class DaprActorHttpClient(DaprActorClientBase):
             actor_id)
 
     def _send_bytes(self, method: str, url: str, data: bytes, headers: dict={}) -> bytes:
-        if not getattr(headers, 'content-type'):
+        if not headers.get('content-type'):
             headers['content-type'] = _DEFAULT_CONTENT_TYPE
 
         req = requests.Request(

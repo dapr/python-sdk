@@ -7,27 +7,15 @@ Licensed under the MIT License.
 
 from flask import current_app, _app_ctx_stack, jsonify, request, abort
 from dapr.actor import ActorRuntime
+from dapr.serializers import DefaultJSONSerializer
 
 class DaprActor(object):
 
     actor_runtime = ActorRuntime
 
-    def __init__(
-        self,
-        app=None,
-        actor_idle_timeout="1h",
-        actor_scan_interval="30s",
-        drain_ongoing_call_timeout="60s",
-        drain_rebalanced_actors=True
-    ):
+    def __init__(self, app=None):
         self.app = app
-
-        self._actor_config = {
-            'actorIdleTimeout': actor_idle_timeout,
-            'actorScanInterval': actor_scan_interval,
-            'drainOngoingCallTimeout': drain_ongoing_call_timeout,
-            'drainRebalancedActors': drain_rebalanced_actors
-        }
+        self._dapr_serializer = DefaultJSONSerializer()
 
         if app is not None:
             self.init_app(app)
@@ -42,18 +30,10 @@ class DaprActor(object):
         # TODO: Deactivate all actors
         pass
 
-    def _get_entities_from_ctx(self):
-        ctx = _app_ctx_stack.top
-        return ctx.actor_entities if hasattr(ctx, 'actor_entities') else []
-    
     def _add_actor_config_route(self, app):
         def actor_config_handler():
-            registered_actors = self._get_entities_from_ctx()
-            if len(registered_actors) == 0:
-                registered_actors = self.actor_runtime.get_registered_actor_types()
-                app.config.setdefault('actor_entities', registered_actors)
-            self._actor_config['entities'] = registered_actors
-            return jsonify(self._actor_config), 200
+            serialized = self._dapr_serializer.serialize(ActorRuntime.get_actor_config())
+            return serialized, 200
         app.add_url_rule('/dapr/config', None, actor_config_handler, methods=['GET'])
     
     def _add_actor_activation_route(self, app):
@@ -70,7 +50,7 @@ class DaprActor(object):
     
     def _add_actor_method_route(self, app):
         def actor_method_handler(actor_type_name, actor_id, method_name):
-            result = self.actor_runtime.dispatch(actor_type_name, actor_id, method_name, request.data)
+            result = self.actor_runtime.dispatch(actor_type_name, actor_id, method_name, request.stream)
             # TODO: serialize the result properly
-            return jsonify(result), 200
+            return result, 200
         app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/<method_name>', None, actor_method_handler, methods=['PUT'])
