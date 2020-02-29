@@ -5,8 +5,8 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import secrets
 import threading
+import uuid
 
 class ActorId:
     """ActorId that represents the identity of an actor.
@@ -20,8 +20,6 @@ class ActorId:
         actor_random_id = ActorId.create_random_id()
 
     """
-
-    _rand_id_lock = threading.Lock()
 
     def __init__(self, id: str):
         if not isinstance(id, str):
@@ -37,10 +35,7 @@ class ActorId:
         :returns: ActorId with random id
         :rtype: :class:`ActorId`
         """
-        random_id = ""
-        with cls._rand_id_lock:
-            random_id = secrets.token_hex(8)
-
+        random_id = uuid.uuid1().hex
         return ActorId(random_id)
     
     @property

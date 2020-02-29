@@ -16,7 +16,7 @@ class ActorIdTests(unittest.TestCase):
     
     def test_create_random_id(self):
         actor_id_random = ActorId.create_random_id()
-        self.assertEqual(len('6e1434c301a63d74'), len(actor_id_random.id))
+        self.assertEqual(len('f56d5aec5b3b11ea9121acde48001122'), len(actor_id_random.id))
     
     def test_get_hash(self):
         actor_test_id = ActorId('testId')
