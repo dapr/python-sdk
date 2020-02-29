@@ -14,14 +14,14 @@ class DemoActor(Actor, DemoActorInterface):
             "data": "default"
         }
     
-    def _on_activate(self):
-        pass
+    async def _on_activate(self):
+        print (f'Activate {self.__class__.__name__} actor!', flush=True)
 
-    def _on_deactivate(self):
-        pass
+    async def _on_deactivate(self):
+        print (f'Deactivate {self.__class__.__name__} actor!', flush=True)
 
-    def get_my_data(self) -> object:
+    async def get_my_data(self) -> object:
         return self._mydata
 
-    def set_my_data(self, data) -> None:
+    async def set_my_data(self, data) -> None:
         self._mydata = data

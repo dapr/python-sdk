@@ -5,6 +5,8 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import asyncio
+
 from flask import current_app, _app_ctx_stack, jsonify, request, abort
 from dapr.actor import ActorRuntime
 from dapr.serializers import DefaultJSONSerializer
@@ -38,19 +40,18 @@ class DaprActor(object):
     
     def _add_actor_activation_route(self, app):
         def actor_activation_handler(actor_type_name, actor_id):
-            self.actor_runtime.activate(actor_type_name, actor_id)
+            asyncio.run(self.actor_runtime.activate(actor_type_name, actor_id))
             return jsonify({'message': '{}.{} actor is activated'.format(actor_type_name, actor_id)}), 200
         app.add_url_rule('/actors/<actor_type_name>/<actor_id>', None, actor_activation_handler, methods=['POST'])
     
     def _add_actor_deactivation_route(self, app):
         def actor_deactivation_handler(actor_type_name, actor_id):
-            self.actor_runtime.deactivate(actor_type_name, actor_id)
+            asyncio.run(self.actor_runtime.deactivate(actor_type_name, actor_id))
             return jsonify({'message': '{}.{} actor is deactivated'.format(actor_type_name, actor_id)}), 200
         app.add_url_rule('/actors/<actor_type_name>/<actor_id>', None, actor_deactivation_handler, methods=['DELETE'])
     
     def _add_actor_method_route(self, app):
         def actor_method_handler(actor_type_name, actor_id, method_name):
-            result = self.actor_runtime.dispatch(actor_type_name, actor_id, method_name, request.stream)
-            # TODO: serialize the result properly
+            result = asyncio.run(self.actor_runtime.dispatch(actor_type_name, actor_id, method_name, request.stream))
             return result, 200
         app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/<method_name>', None, actor_method_handler, methods=['PUT'])

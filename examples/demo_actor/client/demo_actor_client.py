@@ -2,10 +2,14 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+import asyncio
+
 from dapr.actor import ActorProxy, ActorId
 from examples.demo_actor.demo_actor_interface import DemoActorInterface
 
-proxy = ActorProxy.create(DemoActorInterface, 'DemoActor', ActorId('1'))
-my_data = proxy.GetMyData()
+async def client_main():
+    proxy = ActorProxy.create(DemoActorInterface, 'DemoActor', ActorId('1'))
+    my_data = await proxy.GetMyData()
+    print(my_data, flush=True)
 
-print(my_data)
+asyncio.run(client_main())

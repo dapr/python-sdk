@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 import aiohttp
+import asyncio
 import io
 
 from dapr.conf import settings
@@ -17,9 +18,8 @@ _DEFAULT_JSON_CONTENT_TYPE=f'application/json; charset={_DEFAULT_ENCODING}'
 class DaprActorHttpClient(DaprActorClientBase):
     """A Dapr Actor http client implementing :class:`DaprActorClientBase`"""
 
-    def __init__(self, timeout=10):
-        self._session = aiohttp.ClientSession()
-        self._timeout = (1, timeout)
+    def __init__(self, timeout=60):
+        self._timeout = aiohttp.ClientTimeout(total=timeout)
 
     async def invoke_method(self, actor_type: str, actor_id: str,
             method: str, data: bytes) -> bytes:
@@ -45,8 +45,10 @@ class DaprActorHttpClient(DaprActorClientBase):
         if not headers.get('content-type'):
             headers['content-type'] = _DEFAULT_CONTENT_TYPE
 
-        # TODO: add timeout
-        r = await self._session.request(method=method, url=url, data=data, headers=headers)
+        r = None
+        async with aiohttp.ClientSession(timeout=self._timeout) as session:
+            r = await session.request(method=method, url=url, data=data, headers=headers)
+
         if r.status >= 200 and r.status < 300:
             return await r.read()
 
