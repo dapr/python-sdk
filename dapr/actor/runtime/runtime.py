@@ -25,10 +25,10 @@ class ActorRuntime:
     _actor_config = ActorRuntimeConfig()
 
     _actor_managers = {}
-    _actor_managers_lock = threading.RLock()
+    _actor_managers_lock = asyncio.Lock()
 
     @classmethod
-    def register_actor(
+    async def register_actor(
             cls, actor: Actor,
             message_serializer: Serializer=DefaultJSONSerializer()) -> None:
         """Register an :class:`Actor` with the runtime.
@@ -41,7 +41,7 @@ class ActorRuntime:
         ctx = ActorRuntimeContext(type_info, message_serializer)
 
         # Create an ActorManager, override existing entry if registered again.
-        with cls._actor_managers_lock:
+        async with cls._actor_managers_lock:
             cls._actor_managers[type_info.type_name] = ActorManager(ctx)
             cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
     
@@ -57,7 +57,8 @@ class ActorRuntime:
         :param str actor_type_name: the name of actor type
         :param str actor_id: the actor id
         """
-        await cls._get_actor_manager(actor_type_name).activate_actor(ActorId(actor_id))
+        manager = await cls._get_actor_manager(actor_type_name)
+        await manager.activate_actor(ActorId(actor_id))
 
     @classmethod
     async def deactivate(cls, actor_type_name: str, actor_id: str) -> None:
@@ -66,14 +67,15 @@ class ActorRuntime:
         :param str actor_type_name: the name of actor type
         :param str actor_id: the actor id
         """
-        await cls._get_actor_manager(actor_type_name).deactivate_actor(ActorId(actor_id))
+        manager = await cls._get_actor_manager(actor_type_name)
+        await manager.deactivate_actor(ActorId(actor_id))
 
     @classmethod
     async def dispatch(
             cls, actor_type_name: str, actor_id: str,
             actor_method_name: str, request_stream: asyncio.StreamReader) -> bytes:
-        return await cls._get_actor_manager(actor_type_name).dispatch(
-            ActorId(actor_id), actor_method_name, request_stream)
+        manager = await cls._get_actor_manager(actor_type_name)
+        return await manager.dispatch(ActorId(actor_id), actor_method_name, request_stream)
 
     @classmethod
     def set_actor_config(cls, config: ActorRuntimeConfig) -> None:
@@ -89,6 +91,6 @@ class ActorRuntime:
         return cls._actor_config
 
     @classmethod
-    def _get_actor_manager(cls, actor_type_name: str):
-        with cls._actor_managers_lock:
+    async def _get_actor_manager(cls, actor_type_name: str):
+        async with cls._actor_managers_lock:
             return cls._actor_managers.get(actor_type_name)

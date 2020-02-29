@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+import asyncio
+
 from flask import Flask, jsonify
 from flask_dapr.actor import DaprActor
 from dapr.conf import settings
@@ -11,7 +13,7 @@ app = Flask('DemoActorService')
 actor = DaprActor(app)
 
 # register DemoActor
-actor.actor_runtime.register_actor(DemoActor)
+asyncio.run(actor.actor_runtime.register_actor(DemoActor))
 
 @app.route('/')
 def index():

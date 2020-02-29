@@ -25,7 +25,7 @@ class ActorManager:
     def __init__(self, ctx: ActorRuntimeContext):
         self._runtime_ctx = ctx
         self._active_actors = {}
-        self._active_actors_lock = threading.RLock()
+        self._active_actors_lock = asyncio.Lock()
         self._dispatcher = ActorMethodDispatcher(ctx.actor_type_info)
 
     async def dispatch(
@@ -62,7 +62,7 @@ class ActorManager:
             self, actor_id: ActorId, method_context: ActorMethodContext,
             dispatch_action: Callable[[Actor], bytes]) -> object:
         actor = None
-        with self._active_actors_lock:
+        async with self._active_actors_lock:
             actor = self._active_actors.get(actor_id.id, None)
         if not actor:
             raise ValueError(f'{actor_id} is not activated')
@@ -86,11 +86,11 @@ class ActorManager:
         actor = self._runtime_ctx.create_actor(actor_id)
         await actor._on_activate_internal()
 
-        with self._active_actors_lock:
+        async with self._active_actors_lock:
             self._active_actors[actor_id.id] = actor
 
     async def deactivate_actor(self, actor_id: ActorId):
-        with self._active_actors_lock:
+        async with self._active_actors_lock:
             deactivated_actor = self._active_actors.pop(actor_id.id, None)
             if not deactivated_actor:
                 raise ValueError(f'{actor_id} is not activated')

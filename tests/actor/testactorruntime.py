@@ -18,11 +18,11 @@ from dapr.serializers import DefaultJSONSerializer
 from .testactorclasses import *
 
 class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         ActorRuntime._actor_managers = {}
         self._serializer = DefaultJSONSerializer()
-        ActorRuntime.register_actor(TestActor)
-        ActorRuntime.register_actor(TestActorImpl)
+        await ActorRuntime.register_actor(TestActor)
+        await ActorRuntime.register_actor(TestActorImpl)
 
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()
@@ -52,17 +52,17 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(timedelta(minutes=1), config.drainOngoingCallTimeout)
         self.assertEqual(2, len(config.entities))
 
-    def test_entities_update(self):
+    async def test_entities_update(self):
         config = ActorRuntime.get_actor_config()
         with self.assertRaises(ValueError):
             config.entities.index('ManagerTestActor')
 
-        ActorRuntime.register_actor(ManagerTestActor)
+        await ActorRuntime.register_actor(ManagerTestActor)
         config = ActorRuntime.get_actor_config()
         self.assertTrue(config.entities.index('ManagerTestActor') >= 0)
 
     async def test_dispatch(self):
-        ActorRuntime.register_actor(ManagerTestActor)
+        await ActorRuntime.register_actor(ManagerTestActor)
         await ActorRuntime.activate('ManagerTestActor', 'test-id')
         
         request_body = {
