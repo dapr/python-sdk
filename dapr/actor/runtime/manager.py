@@ -84,7 +84,7 @@ class ActorManager:
 
     def activate_actor(self, actor_id: ActorId):
         actor = self._runtime_ctx.create_actor(actor_id)
-        actor.on_activate_internal()
+        actor._on_activate_internal()
 
         with self._active_actors_lock:
             self._active_actors[actor_id.id] = actor
@@ -94,4 +94,4 @@ class ActorManager:
             deactivated_actor = self._active_actors.pop(actor_id.id, None)
             if not deactivated_actor:
                 raise ValueError(f'{actor_id} is not activated')
-            deactivated_actor.on_deactivate_internal()
+            deactivated_actor._on_deactivate_internal()

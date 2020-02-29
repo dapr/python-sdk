@@ -41,13 +41,13 @@ class Actor:
         self._runtime_ctx = ctx
         self._dispatch_mapping = {}
 
-    def on_activate_internal(self):
+    def _on_activate_internal(self):
         # TODO: Reset state
         self._on_activate()
 
         # TODO: Save state modification
 
-    def on_deactivate_internal(self):
+    def _on_deactivate_internal(self):
         # TODO: Reset state
         self._on_deactivate()
 
