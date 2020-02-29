@@ -68,11 +68,11 @@ class ActorManager:
             raise ValueError(f'{actor_id} is not activated')
 
         try:
-            actor.on_pre_actor_method_internal(method_context)
+            actor._on_pre_actor_method_internal(method_context)
             retval = dispatch_action(actor)
-            actor.on_post_actor_method_internal(method_context)
+            actor._on_post_actor_method_internal(method_context)
         except Exception as e:
-            actor.on_invoke_failed(e)
+            actor._on_invoke_failed(e)
             # TODO: Must handle error properly
             raise e
 

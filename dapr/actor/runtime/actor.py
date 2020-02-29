@@ -68,14 +68,14 @@ class Actor:
         """
         pass
 
-    def on_pre_actor_method_internal(self, method_context: ActorMethodContext):
+    def _on_pre_actor_method_internal(self, method_context: ActorMethodContext):
         self._on_pre_actor_method(method_context)
 
-    def on_post_actor_method_internal(self, method_context: ActorMethodContext):
+    def _on_post_actor_method_internal(self, method_context: ActorMethodContext):
         self._on_post_actor_method(method_context)
         # TODO: Save state modification
 
-    def on_invoke_failed(self, exception=None):
+    def _on_invoke_failed(self, exception=None):
         # TODO: reset the state in state manager
         # (Exception has been thrown by user code)
         pass
