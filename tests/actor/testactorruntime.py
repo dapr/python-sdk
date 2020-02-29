@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import asyncio
 import io
 import unittest
 
@@ -16,7 +17,7 @@ from dapr.serializers import DefaultJSONSerializer
 
 from .testactorclasses import *
 
-class ActorRuntimeTests(unittest.TestCase):
+class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         ActorRuntime._actor_managers = {}
         self._serializer = DefaultJSONSerializer()
@@ -60,21 +61,21 @@ class ActorRuntimeTests(unittest.TestCase):
         config = ActorRuntime.get_actor_config()
         self.assertTrue(config.entities.index('ManagerTestActor') >= 0)
 
-    def test_dispatch(self):
+    async def test_dispatch(self):
         ActorRuntime.register_actor(ManagerTestActor)
-        ActorRuntime.activate('ManagerTestActor', 'test-id')
+        await ActorRuntime.activate('ManagerTestActor', 'test-id')
         
         request_body = {
             "message": "hello dapr",
         }
 
         test_request_stream = io.BytesIO(self._serializer.serialize(request_body))
-        response = ActorRuntime.dispatch('ManagerTestActor', 'test-id', "ActionMethod", test_request_stream)
+        response = await ActorRuntime.dispatch('ManagerTestActor', 'test-id', "ActionMethod", test_request_stream)
 
         self.assertEqual(b'"hello dapr"', response)
 
-        ActorRuntime.deactivate('ManagerTestActor', 'test-id')
+        await ActorRuntime.deactivate('ManagerTestActor', 'test-id')
 
         # Ensure test-id is deactivated
         with self.assertRaises(ValueError):
-            ActorRuntime.deactivate('ManagerTestActor', 'test-id')
+            await ActorRuntime.deactivate('ManagerTestActor', 'test-id')

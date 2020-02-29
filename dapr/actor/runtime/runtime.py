@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import asyncio
 import io
 import threading
 
@@ -50,28 +51,28 @@ class ActorRuntime:
         return [actor_type for actor_type in cls._actor_managers.keys()]
 
     @classmethod
-    def activate(cls, actor_type_name: str, actor_id: str) -> None:
+    async def activate(cls, actor_type_name: str, actor_id: str) -> None:
         """Activate an actor for an actor type with given actor id.
         
         :param str actor_type_name: the name of actor type
         :param str actor_id: the actor id
         """
-        cls._get_actor_manager(actor_type_name).activate_actor(ActorId(actor_id))
+        await cls._get_actor_manager(actor_type_name).activate_actor(ActorId(actor_id))
 
     @classmethod
-    def deactivate(cls, actor_type_name: str, actor_id: str) -> None:
+    async def deactivate(cls, actor_type_name: str, actor_id: str) -> None:
         """Deactivates an actor for an actor type with given actor id.
         
         :param str actor_type_name: the name of actor type
         :param str actor_id: the actor id
         """
-        cls._get_actor_manager(actor_type_name).deactivate_actor(ActorId(actor_id))
+        await cls._get_actor_manager(actor_type_name).deactivate_actor(ActorId(actor_id))
 
     @classmethod
-    def dispatch(
+    async def dispatch(
             cls, actor_type_name: str, actor_id: str,
-            actor_method_name: str, request_stream: io.IOBase) -> bytes:
-        return cls._get_actor_manager(actor_type_name).dispatch(
+            actor_method_name: str, request_stream: asyncio.StreamReader) -> bytes:
+        return await cls._get_actor_manager(actor_type_name).dispatch(
             ActorId(actor_id), actor_method_name, request_stream)
 
     @classmethod

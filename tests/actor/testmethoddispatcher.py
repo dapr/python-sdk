@@ -12,7 +12,7 @@ from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 
 from .testactorclasses import TestActor
 
-class ActorMethodDispatcherTests(unittest.TestCase):
+class ActorMethodDispatcherTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self._testActorTypeInfo = ActorTypeInformation.create(TestActor)
 
@@ -31,8 +31,8 @@ class ActorMethodDispatcherTests(unittest.TestCase):
         arg_names = dispatcher.get_return_type("ActorMethod")
         self.assertEqual(dict, arg_names)
 
-    def test_dispatch(self):
+    async def test_dispatch(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
         actorInstance = TestActor(None, None)
-        result = dispatcher.dispatch(actorInstance, "ActorMethod", 10)
+        result = await dispatcher.dispatch(actorInstance, "ActorMethod", 10)
         self.assertEqual({'name': 'actor_method'}, result)

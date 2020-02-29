@@ -5,13 +5,14 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import asyncio
+
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
 from dapr.actor.runtime import ActorMethodContext
 from dapr.actor.runtime.typeutils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
-
             
 class ActorProxyFactory:
     """A factory class that creates :class:`ActorProxy` object to the remote
@@ -42,7 +43,7 @@ class CallableProxy:
         self._attr_calltype = attr_calltype
         self._message_serializer = message_serializer
     
-    def __call__(self, *args, **kwargs) -> object:
+    async def __call__(self, *args, **kwargs):
         if len(args) > 1:
             raise ValueError('does not support multiple arguments')
 
@@ -53,7 +54,7 @@ class CallableProxy:
             else:
                 bytes_data = self._message_serializer.serialize(args[0])
 
-        rtnval = self._dapr_client.invoke_method(
+        rtnval = await self._dapr_client.invoke_method(
             self._actor_type, str(self._actor_id), self._attr_calltype['actor_method'], bytes_data)
 
         return self._message_serializer.deserialize(rtnval, self._attr_calltype['return_types'])
@@ -101,13 +102,13 @@ class ActorProxy:
         factory = cls._default_proxy_factory if not actor_proxy_factory else actor_proxy_factory
         return factory.create(actor_interface, actor_type, actor_id)
 
-    def invoke(self, method: str, *args, **kwargs) -> bytes:
+    async def invoke(self, method: str, *args, **kwargs) -> bytes:
         if len(args) > 1:
             raise ValueError('does not support multiple arguments')
         if not isinstance(args[0], bytes):
             raise ValueError('support only byte array')
 
-        return self._dapr_client.invoke_method(
+        return await self._dapr_client.invoke_method(
             self._actor_type, str(self._actor_id),
             method, args[0])
 

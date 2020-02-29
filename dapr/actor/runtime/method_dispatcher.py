@@ -4,7 +4,9 @@
 Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
+import asyncio
 
+from typing import Any
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.typeutils import get_dispatchable_attrs
@@ -13,9 +15,9 @@ class ActorMethodDispatcher:
     def __init__(self, type_info: ActorTypeInformation):
         self._dispatch_mapping = get_dispatchable_attrs(type_info.implementation_type)
 
-    def dispatch(self, actor: Actor, name: str, *args, **kwargs):
+    async def dispatch(self, actor: Actor, name: str, *args, **kwargs) -> Any:
         self._check_name_exist(name)
-        return getattr(actor, self._dispatch_mapping[name]['method_name'])(*args, **kwargs)
+        return await getattr(actor, self._dispatch_mapping[name]['method_name'])(*args, **kwargs)
 
     def get_arg_names(self, name: str) -> list:
         self._check_name_exist(name)

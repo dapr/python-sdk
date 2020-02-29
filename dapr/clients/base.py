@@ -14,7 +14,7 @@ class DaprActorClientBase(ABC):
     """
     
     @abstractmethod
-    def invoke_method(
+    async def invoke_method(
         self,
         actor_type: str,
         actor_id: str,

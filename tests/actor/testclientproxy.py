@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 from dapr.actor.id import ActorId
 from dapr.actor.client.proxy import ActorProxy
@@ -25,10 +25,10 @@ class FakeActoryProxyFactory:
         return ActorProxy(self._dapr_client, actor_interface,
                           actor_type, actor_id, DefaultJSONSerializer())
 
-class ActorProxyTests(unittest.TestCase):
+class ActorProxyTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         # Create mock client
-        self._mock_client = MagicMock()
+        self._mock_client = AsyncMock()
         self._mock_client.invoke_method.return_value = b'"expected_response"'
 
         self._fake_factory = FakeActoryProxyFactory(self._mock_client)
@@ -38,12 +38,12 @@ class ActorProxyTests(unittest.TestCase):
             ActorId('fake-id'),
             self._fake_factory)
     
-    def test_invoke(self):
-        response = self._proxy.invoke('ActionMethod', b'arg0')
+    async def test_invoke(self):
+        response = await self._proxy.invoke('ActionMethod', b'arg0')
         self.assertEqual(b'"expected_response"', response)
         self._mock_client.invoke_method.assert_called_once_with('ManagerTestActor', 'fake-id', 'ActionMethod', b'arg0')
 
-    def test_invoke_with_static_typing(self):
-        response = self._proxy.ActionMethod(b'arg0')
+    async def test_invoke_with_static_typing(self):
+        response = await self._proxy.ActionMethod(b'arg0')
         self.assertEqual('expected_response', response)
         self._mock_client.invoke_method.assert_called_once_with('ManagerTestActor', 'fake-id', 'ActionMethod', b'arg0')

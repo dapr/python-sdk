@@ -17,11 +17,11 @@ class ActorInterface(ABC):
 
         class DaprActorInterface(ActorInterface):
             @actormethod('DoActorMethod1')
-            def do_actor_method1(self, param):
+            async def do_actor_method1(self, param):
                 ...
 
             @actormethod('DoActorMethod2')
-            def do_actor_method2(self, param):
+            async def do_actor_method2(self, param):
                 ...
     """
     ...
@@ -35,7 +35,7 @@ def actormethod(name: str=None):
 
         class DaprActorInterface(ActorInterface):
             @actormethod(name='DoActorCall')
-            def do_actor_call(self, param):
+            async def do_actor_call(self, param):
                 ...
 
     """

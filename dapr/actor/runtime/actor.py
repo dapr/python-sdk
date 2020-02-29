@@ -5,6 +5,8 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import asyncio
+
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime.methodcontext import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
@@ -16,20 +18,20 @@ class Actor:
 
         class DaprActorInterface(ActorInterface):
             @actor_method(name="method")
-            def method_invoke(self, arg: str) -> str:
+            async def method_invoke(self, arg: str) -> str:
                 ...
 
         class DaprActor(Actor, DaprActorInterface):
             def __init__(self, ctx, actor_id):
                 super(DaprActor, self).__init__(ctx, actor_id)
 
-            def method_invoke(self, arg: str) -> str:
+            async def method_invoke(self, arg: str) -> str:
                 return arg
             
-            def _on_activate(self):
+            async def _on_activate(self):
                 pass
 
-            def _on_deactivate(self):
+            async def _on_deactivate(self):
                 pass
 
     TODO: Support Timer, Reminder, State Management
@@ -41,17 +43,17 @@ class Actor:
         self._runtime_ctx = ctx
         self._dispatch_mapping = {}
 
-    def _on_activate_internal(self):
+    async def _on_activate_internal(self):
         # TODO: Reset state
-        self._on_activate()
+        await self._on_activate()
 
         # TODO: Save state modification
 
-    def _on_deactivate_internal(self):
+    async def _on_deactivate_internal(self):
         # TODO: Reset state
-        self._on_deactivate()
+        await self._on_deactivate()
 
-    def _on_activate(self):
+    async def _on_activate(self):
         """Override this method to initialize the members.
         
         This method is called right after the actor is activated and before
@@ -59,7 +61,7 @@ class Actor:
         """
         pass
 
-    def _on_deactivate(self):
+    async def _on_deactivate(self):
         """Override this method to release any resources.
         
         This method is called when actor is deactivated (garbage collected
@@ -68,19 +70,19 @@ class Actor:
         """
         pass
 
-    def _on_pre_actor_method_internal(self, method_context: ActorMethodContext):
-        self._on_pre_actor_method(method_context)
+    async def _on_pre_actor_method_internal(self, method_context: ActorMethodContext):
+        await self._on_pre_actor_method(method_context)
 
-    def _on_post_actor_method_internal(self, method_context: ActorMethodContext):
-        self._on_post_actor_method(method_context)
+    async def _on_post_actor_method_internal(self, method_context: ActorMethodContext):
+        await self._on_post_actor_method(method_context)
         # TODO: Save state modification
 
-    def _on_invoke_failed(self, exception=None):
+    async def _on_invoke_failed(self, exception=None):
         # TODO: reset the state in state manager
         # (Exception has been thrown by user code)
         pass
 
-    def _on_pre_actor_method(self, method_context: ActorMethodContext):
+    async def _on_pre_actor_method(self, method_context: ActorMethodContext):
         """Override this method for performing any action prior to
         an actor method is invoked.
         
@@ -96,7 +98,7 @@ class Actor:
         """
         pass
 
-    def _on_post_actor_method(self, method_context: ActorMethodContext):
+    async def _on_post_actor_method(self, method_context: ActorMethodContext):
         """Override this method for performing any action after
         an actor method has finished execution.
         
