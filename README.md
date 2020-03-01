@@ -1,4 +1,6 @@
-> Note: WIP - Dapr Actor SDK
+> **Note: Dapr core team supports only auto-generated proto client officially**
+> 
+> WIP - Porting from [dotnet-sdk](https://github.com/dapr/dotnet-sdk) actor to python. Now, Dapr core team does not have the official plan to support this, but we welcome any contribution. Please see [this](./dapr/README.md) for more detail.
 
 # Dapr SDK for Python
 This is the Dapr SDK for Python, based on the auto-generated proto client.<br>
