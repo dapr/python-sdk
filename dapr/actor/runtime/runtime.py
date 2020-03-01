@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import asyncio
-import io
 import threading
 
 from dapr.actor.id import ActorId
@@ -30,21 +29,21 @@ class ActorRuntime:
     @classmethod
     async def register_actor(
             cls, actor: Actor,
-            message_serializer: Serializer=DefaultJSONSerializer()) -> None:
+            message_serializer: Serializer = DefaultJSONSerializer()) -> None:
         """Register an :class:`Actor` with the runtime.
 
         :param Actor actor: Actor implementation
         :param Serializer message_serializer: Serializer that serializes message
             between actors.
         """
-        type_info = ActorTypeInformation.create(actor)    
+        type_info = ActorTypeInformation.create(actor)
         ctx = ActorRuntimeContext(type_info, message_serializer)
 
         # Create an ActorManager, override existing entry if registered again.
         async with cls._actor_managers_lock:
             cls._actor_managers[type_info.type_name] = ActorManager(ctx)
             cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
-    
+
     @classmethod
     def get_registered_actor_types(cls) -> list:
         """Get registered actor types."""
@@ -53,7 +52,7 @@ class ActorRuntime:
     @classmethod
     async def activate(cls, actor_type_name: str, actor_id: str) -> None:
         """Activate an actor for an actor type with given actor id.
-        
+
         :param str actor_type_name: the name of actor type
         :param str actor_id: the actor id
         """
@@ -63,7 +62,7 @@ class ActorRuntime:
     @classmethod
     async def deactivate(cls, actor_type_name: str, actor_id: str) -> None:
         """Deactivates an actor for an actor type with given actor id.
-        
+
         :param str actor_type_name: the name of actor type
         :param str actor_id: the actor id
         """
@@ -85,7 +84,7 @@ class ActorRuntime:
         """
         cls._actor_config = config
         cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
-    
+
     @classmethod
     def get_actor_config(cls) -> ActorRuntimeConfig:
         return cls._actor_config

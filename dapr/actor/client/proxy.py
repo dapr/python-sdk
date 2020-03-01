@@ -5,20 +5,17 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import asyncio
-
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
-from dapr.actor.runtime import ActorMethodContext
 from dapr.actor.runtime.typeutils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
-            
+
 class ActorProxyFactory:
     """A factory class that creates :class:`ActorProxy` object to the remote
     actor objects.
 
-    DefaultActorProxyFactory creates :class:`ActorProxy` with 
+    DefaultActorProxyFactory creates :class:`ActorProxy` with
     :class:`DaprActorHttpClient` connecting to Dapr runtime.
     """
 
@@ -42,7 +39,7 @@ class CallableProxy:
         self._actor_id = actor_id
         self._attr_calltype = attr_calltype
         self._message_serializer = message_serializer
-    
+
     async def __call__(self, *args, **kwargs):
         if len(args) > 1:
             raise ValueError('does not support multiple arguments')
@@ -88,17 +85,17 @@ class ActorProxy:
     def actor_id(self) -> ActorId:
         """Return ActorId"""
         return self._actor_id
-    
+
     @property
     def actor_type(self) -> str:
         """Return actor type"""
         return self._actor_type
-    
+
     @classmethod
     def create(
-        cls, actor_interface: ActorInterface,
-        actor_type: str, actor_id: ActorId,
-        actor_proxy_factory=None) -> 'ActorProxy':
+            cls, actor_interface: ActorInterface,
+            actor_type: str, actor_id: ActorId,
+            actor_proxy_factory=None) -> 'ActorProxy':
         factory = cls._default_proxy_factory if not actor_proxy_factory else actor_proxy_factory
         return factory.create(actor_interface, actor_type, actor_id)
 
@@ -115,7 +112,7 @@ class ActorProxy:
     def __getattr__(self, name: str) -> CallableProxy:
         if name not in self._dispatchable_attr:
             get_dispatchable_attrs_from_interface(self._actor_interface, self._dispatchable_attr)
-        
+
         attr_calltype = self._dispatchable_attr.get(name)
         if attr_calltype is None:
             raise AttributeError(f'{self._actor_interface.__class__} has no attribute {name}')
@@ -125,5 +122,5 @@ class ActorProxy:
                 self._dapr_client, self._actor_type,
                 self._actor_id, attr_calltype,
                 self._message_serializer)
-        
+
         return self._callable_proxies[name]

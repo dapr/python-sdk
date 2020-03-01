@@ -22,7 +22,7 @@ class ActorRuntimeContext:
     def actor_type_info(self) -> 'ActorTypeInformation':
         """Return :class:`ActorTypeInformation`"""
         return self._actor_type_info
-    
+
     @property
     def message_serializer(self) -> Serializer:
         """Return message serializer which is used for Actor method invocation."""
@@ -30,12 +30,12 @@ class ActorRuntimeContext:
 
     def create_actor(self, actor_id: ActorId) -> 'Actor':
         """Create the object of :class:`Actor` for :class:`ActorId`
-        
+
         :param actor_id: ActorId object representing :class:`ActorId`
         :rtype: :class:`Actor` object
         """
         return self._actor_factory(self, actor_id)
-    
+
     def _default_actor_factory(
             self, ctx: 'ActorRuntimeContext', actor_id: ActorId) -> 'Actor':
         # Create the actor object for actor_type_info and actor_id

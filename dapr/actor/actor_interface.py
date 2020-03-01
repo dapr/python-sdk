@@ -12,7 +12,7 @@ class ActorInterface(ABC):
     """A base class that Dapr Actor inherits.
 
     Actor requires to inherit ActorInterface as a base class.
-    
+
     Example::
 
         class DaprActorInterface(ActorInterface):
@@ -26,9 +26,9 @@ class ActorInterface(ABC):
     """
     ...
 
-def actormethod(name: str=None):
+def actormethod(name: str = None):
     """Decorate actor method to define the method invoked by the remote actor.
-    
+
     This allows users to call the decorated name via the proxy client.
 
     Example::

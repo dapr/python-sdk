@@ -31,7 +31,7 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
         seconds=seconds)
 
 def convert_to_dapr_duration(td: timedelta) -> str:
-    totalMinute, secs = divmod(td.total_seconds(), 60.0)
-    hours, mins = divmod(totalMinute, 60.0)
+    total_minutes, secs = divmod(td.total_seconds(), 60.0)
+    hours, mins = divmod(total_minutes, 60.0)
 
     return f'{hours:.0f}h{mins:.0f}m{secs:.0f}s'

@@ -17,8 +17,8 @@ from dapr.actor.runtime.config import ActorRuntimeConfig
 
 class DefaultJSONSerializer(Serializer):
     def serialize(
-        self, obj: object,
-        custom_hook: Callable[[object], dict]=None) -> bytes:
+            self, obj: object,
+            custom_hook: Callable[[object], dict] = None) -> bytes:
 
         dict_obj = obj
         if callable(custom_hook):
@@ -31,8 +31,8 @@ class DefaultJSONSerializer(Serializer):
         return serialized.encode('utf-8')
 
     def deserialize(
-        self, data: bytes, data_type: type=object,
-        custom_hook: Callable[[bytes], object]=None) -> object:
+            self, data: bytes, data_type: type = object,
+            custom_hook: Callable[[bytes], object] = None) -> object:
 
         if not isinstance(data, (str, bytes)):
             raise ValueError('data must be str or bytes types')
@@ -65,16 +65,15 @@ class DaprJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, *args, **kwargs)
         self.parse_string = DaprJSONDecoder.custom_scanstring
-        self.scan_once = json.scanner.py_make_scanner(self) 
+        self.scan_once = json.scanner.py_make_scanner(self)
 
     @classmethod
     def custom_scanstring(cls, s, end, strict=True):
         (s, end) = json.decoder.scanstring(s, end, strict)
         if cls.datetime_regex.match(s):
             return (datetime.datetime.fromisoformat(s), end)
-        
+
         duration = DAPR_DURATION_PARSER.match(s)
         if duration.lastindex is not None:
             return (convert_from_dapr_duration(s), end)
-        else:
-            return (s, end)
+        return (s, end)

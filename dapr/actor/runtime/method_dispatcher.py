@@ -4,7 +4,6 @@
 Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
-import asyncio
 
 from typing import Any
 from dapr.actor.runtime.actor import Actor
@@ -30,7 +29,7 @@ class ActorMethodDispatcher:
     def get_return_type(self, name: str) -> type:
         self._check_name_exist(name)
         return self._dispatch_mapping[name]['return_types']
-    
+
     def _check_name_exist(self, name: str):
         if name not in self._dispatch_mapping:
             raise AttributeError(

@@ -5,8 +5,9 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from dapr.conf import global_settings
 import os
+
+from dapr.conf import global_settings
 
 class Settings:
     def __init__(self):

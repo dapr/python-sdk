@@ -5,9 +5,6 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import asyncio
-
-from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime.methodcontext import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
 
@@ -27,7 +24,7 @@ class Actor:
 
             async def method_invoke(self, arg: str) -> str:
                 return arg
-            
+
             async def _on_activate(self):
                 pass
 
@@ -55,7 +52,7 @@ class Actor:
 
     async def _on_activate(self):
         """Override this method to initialize the members.
-        
+
         This method is called right after the actor is activated and before
         any method call or reminders are dispatched on it.
         """
@@ -63,7 +60,7 @@ class Actor:
 
     async def _on_deactivate(self):
         """Override this method to release any resources.
-        
+
         This method is called when actor is deactivated (garbage collected
         by Actor Runtime). Actor operations like state changes should not
         be called from this method.
@@ -85,7 +82,7 @@ class Actor:
     async def _on_pre_actor_method(self, method_context: ActorMethodContext):
         """Override this method for performing any action prior to
         an actor method is invoked.
-        
+
         This method is invoked by actor runtime just before invoking
         an actor method.
 
@@ -93,7 +90,7 @@ class Actor:
             - Invoking an actor interface method when a client request comes.
             - Invoking a method when a reminder fires.
             - Invoking a timer callback when timer fires.
-        
+
         :param ActorMethodContext method_context: The method information
         """
         pass
@@ -101,7 +98,7 @@ class Actor:
     async def _on_post_actor_method(self, method_context: ActorMethodContext):
         """Override this method for performing any action after
         an actor method has finished execution.
-        
+
         This method is invoked by actor runtime an actor method has finished
         execution.
 
@@ -109,7 +106,7 @@ class Actor:
             - Invoking an actor interface method when a client request comes.
             - Invoking a method when a reminder fires.
             - Invoking a timer callback when timer fires.
-        
+
         :param ActorMethodContext method_context: The method information
         """
         pass

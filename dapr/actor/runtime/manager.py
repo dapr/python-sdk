@@ -7,10 +7,8 @@ Licensed under the MIT License.
 
 import asyncio
 import io
-import json
-import threading
 
-from typing import Callable
+from typing import Awaitable, Callable
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
@@ -60,7 +58,7 @@ class ActorManager:
 
     async def _dispatch_internal(
             self, actor_id: ActorId, method_context: ActorMethodContext,
-            dispatch_action: Callable[[Actor], bytes]) -> object:
+            dispatch_action: Callable[[Actor], Awaitable[bytes]]) -> object:
         actor = None
         async with self._active_actors_lock:
             actor = self._active_actors.get(actor_id.id, None)
