@@ -46,6 +46,10 @@ class FakeActorCls2Interface(ActorInterface):
     async def action(self, data: object) -> str:
         ...
 
+    @actormethod(name="ActionMethodWithoutArg")
+    async def action_no_arg(self) -> str:
+        ...
+
 class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Interface):
     def __init__(self, ctx, actor_id):
         super(FakeMultiInterfacesActor, self).__init__(ctx, actor_id)
@@ -60,7 +64,11 @@ class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Inter
 
     async def action(self, data: object) -> str:
         self.action_data = data
-        return data['message']
+        return self.action_data['message']
+
+    async def action_no_arg(self) -> str:
+        self.action_data = {'message':'no_arg'}
+        return self.action_data['message']
     
     async def _on_activate(self):
         self.activated = True

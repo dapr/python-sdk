@@ -41,7 +41,21 @@ class ActorProxyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(b'"expected_response"', response)
         self._fake_client.invoke_method.assert_called_once_with(FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')
 
+    async def test_invoke_no_arg(self):
+        response = await self._proxy.invoke('ActionMethodWithoutArg')
+        self.assertEqual(b'"expected_response"', response)
+        self._fake_client.invoke_method.assert_called_once_with(FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethodWithoutArg', None)
+
     async def test_invoke_with_static_typing(self):
         response = await self._proxy.ActionMethod(b'arg0')
         self.assertEqual('expected_response', response)
         self._fake_client.invoke_method.assert_called_once_with(FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')
+    
+    async def test_invoke_with_static_typing_no_arg(self):
+        response = await self._proxy.ActionMethodWithoutArg()
+        self.assertEqual('expected_response', response)
+        self._fake_client.invoke_method.assert_called_once_with(FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethodWithoutArg', None)
+
+    async def test_raise_exception_non_existing_method(self):
+        with self.assertRaises(AttributeError):
+            await self._proxy.non_existing()
