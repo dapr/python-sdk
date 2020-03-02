@@ -9,9 +9,9 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 To run this example, the following code can be utilized:
 
 ```bash
-# Start Receiver (expose gRPC server receiver on port 50051)
+# 1. Start Receiver (expose gRPC server receiver on port 50051)
 dapr run --app-id invoke-receiver --protocol grpc --app-port 50051 python invoke-receiver.py
 
-# Start Caller
+# 2. Start Caller
 dapr run --app-id invoke-caller --protocol grpc python invoke-caller.py
 ```

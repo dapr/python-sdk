@@ -8,6 +8,8 @@ import dapr_pb2_grpc as dapr_services
 import daprclient_pb2 as daprclient_messages
 import daprclient_pb2_grpc as daprclient_services
 
+import proto.response_pb2 as response_messages
+
 from google.protobuf.any_pb2 import Any
 
 # Start a gRPC client
@@ -19,8 +21,15 @@ print(f"Started gRPC client on DAPR_GRPC_PORT: {port}")
 # Our server methods
 class DaprClientServicer(daprclient_services.DaprClientServicer):
     def OnInvoke(self, request, context):
-        # Return response to caller
-        response = Any(value='INVOKE_RECEIVED'.encode('utf-8'))
+        response = ""
+
+        if request.method == 'my_method':
+            a = Any()
+            a.Pack(response_messages.CustomResponse(isSuccess=True, code=200, message="Hello World - Success!"))
+            response = a
+        else:
+            response = Any(value='METHOD_NOT_SUPPORTED'.encode('utf-8'))
+
         return response
 
 # Create a gRPC server
