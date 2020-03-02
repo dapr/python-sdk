@@ -28,10 +28,7 @@ class ActorManager:
 
     async def dispatch(
             self, actor_id: ActorId,
-            actor_method_name: str, request_stream: io.IOBase) -> bytes:
-        if not hasattr(request_stream, 'read'):
-            raise AttributeError('cannot read request stream')
-
+            actor_method_name: str, request_body: bytes) -> bytes:
         if not self._active_actors.get(actor_id.id):
             raise ValueError(f'{actor_id} is not activated')
 
@@ -39,15 +36,12 @@ class ActorManager:
         arg_types = self._dispatcher.get_arg_types(actor_method_name)
 
         async def invoke_method(actor):
-            input_obj = None
             if len(arg_types) > 0:
-                # read all bytes from request body bytes stream
-                body_bytes = request_stream.read()
                 # Limitation:
                 # * Support only one argument
                 # * If you use the default DaprJSONSerializer, it support only object type
                 # as a argument
-                input_obj = self._message_serializer.deserialize(body_bytes, arg_types[0])
+                input_obj = self._message_serializer.deserialize(request_body, arg_types[0])
                 rtnval = await self._dispatcher.dispatch(actor, actor_method_name, input_obj)
             else:
                 rtnval = await self._dispatcher.dispatch(actor, actor_method_name)

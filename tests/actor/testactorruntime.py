@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import asyncio
-import io
 import unittest
 
 from datetime import timedelta
@@ -74,8 +73,8 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
             "message": "hello dapr",
         }
 
-        test_request_stream = io.BytesIO(self._serializer.serialize(request_body))
-        response = await ActorRuntime.dispatch(FakeMultiInterfacesActor.__name__, 'test-id', "ActionMethod", test_request_stream)
+        test_request_body = self._serializer.serialize(request_body)
+        response = await ActorRuntime.dispatch(FakeMultiInterfacesActor.__name__, 'test-id', "ActionMethod", test_request_body)
 
         self.assertEqual(b'"hello dapr"', response)
 

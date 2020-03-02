@@ -15,9 +15,6 @@ class DaprActorClientBase(ABC):
 
     @abstractmethod
     async def invoke_method(
-            self,
-            actor_type: str,
-            actor_id: str,
-            method: str,
-            data: bytes) -> bytes:
+            self, actor_type: str, actor_id: str,
+            method: str, data: bytes) -> bytes:
         ...

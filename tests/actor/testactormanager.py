@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import asyncio
-import io
 import unittest
 
 from dapr.actor.id import ActorId
@@ -56,6 +55,6 @@ class ActorManagerTests(unittest.IsolatedAsyncioTestCase):
             "message": "hello dapr",
         }
 
-        test_request_stream = io.BytesIO(self._serializer.serialize(request_body))
-        response = await self._manager.dispatch(test_actor_id, "ActionMethod", test_request_stream)
+        test_request_body = self._serializer.serialize(request_body)
+        response = await self._manager.dispatch(test_actor_id, "ActionMethod", test_request_body)
         self.assertEqual(b'"hello dapr"', response)

@@ -11,9 +11,9 @@ import io
 from dapr.conf import settings
 from dapr.clients.base import DaprActorClientBase
 
-_DEFAULT_ENCODING='utf-8'
-_DEFAULT_CONTENT_TYPE='application/octet-stream'
-_DEFAULT_JSON_CONTENT_TYPE=f'application/json; charset={_DEFAULT_ENCODING}'
+DEFAULT_ENCODING='utf-8'
+DEFAULT_CONTENT_TYPE='application/octet-stream'
+DEFAULT_JSON_CONTENT_TYPE=f'application/json; charset={DEFAULT_ENCODING}'
 
 class DaprActorHttpClient(DaprActorClientBase):
     """A Dapr Actor http client implementing :class:`DaprActorClientBase`"""
@@ -21,14 +21,16 @@ class DaprActorHttpClient(DaprActorClientBase):
     def __init__(self, timeout=60):
         self._timeout = aiohttp.ClientTimeout(total=timeout)
 
-    async def invoke_method(self, actor_type: str, actor_id: str,
+    async def invoke_method(
+            self, actor_type: str, actor_id: str,
             method: str, data: bytes) -> bytes:
         """Invoke method defined in :class:`Actor` remotely.
 
-        :param actor_type: str to represent Actor type.
-        :param actor_id: str to represent id of Actor type.
-        :param method: str to invoke method defined in :class:`Actor`.
-        :param data: bytes, passed to method defined in Actor.
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str method: str to invoke method defined in :class:`Actor`.
+        :param bytes data: bytes, passed to method defined in Actor.
+        :returns: the response from actor
         :rtype: bytes
         """
         url = f'{self._get_base_url(actor_type, actor_id)}/method/{method}'
@@ -41,9 +43,11 @@ class DaprActorHttpClient(DaprActorClientBase):
             actor_type,
             actor_id)
 
-    async def _send_bytes(self, method: str, url: str, data: bytes, headers: dict={}) -> bytes:
+    async def _send_bytes(
+            self, method: str, url: str, 
+            data: bytes, headers: dict = {}) -> bytes:
         if not headers.get('content-type'):
-            headers['content-type'] = _DEFAULT_CONTENT_TYPE
+            headers['content-type'] = DEFAULT_CONTENT_TYPE
 
         r = None
         async with aiohttp.ClientSession(timeout=self._timeout) as session:

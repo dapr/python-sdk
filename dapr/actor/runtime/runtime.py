@@ -72,9 +72,18 @@ class ActorRuntime:
     @classmethod
     async def dispatch(
             cls, actor_type_name: str, actor_id: str,
-            actor_method_name: str, request_stream: asyncio.StreamReader) -> bytes:
+            actor_method_name: str, request_body: bytes) -> bytes:
+        """Dispatch actor method defined in actor_type.
+        
+        :param str actor_type_name: the name of actor type
+        :param str actor_id: Actor ID
+        :param str actor_method_name: the method name that is dispatched
+        :param bytes request_body: the body of request that is passed to actor method arguments
+        :returns: serialized response
+        :rtype: bytes
+        """
         manager = await cls._get_actor_manager(actor_type_name)
-        return await manager.dispatch(ActorId(actor_id), actor_method_name, request_stream)
+        return await manager.dispatch(ActorId(actor_id), actor_method_name, request_body)
 
     @classmethod
     def set_actor_config(cls, config: ActorRuntimeConfig) -> None:
