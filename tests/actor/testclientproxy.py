@@ -13,7 +13,7 @@ from dapr.actor.client.proxy import ActorProxy
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import DefaultJSONSerializer
 
-from .testactorclasses import ManagerTestActorInterface
+from .fakeactorclasses import FakeMultiInterfacesActor, FakeActorCls2Interface
 
 class FakeActoryProxyFactory:
     def __init__(self, fake_client):
@@ -28,22 +28,20 @@ class FakeActoryProxyFactory:
 class ActorProxyTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         # Create mock client
-        self._mock_client = AsyncMock()
-        self._mock_client.invoke_method.return_value = b'"expected_response"'
+        self._fake_client = AsyncMock()
+        self._fake_client.invoke_method.return_value = b'"expected_response"'
 
-        self._fake_factory = FakeActoryProxyFactory(self._mock_client)
+        self._fake_factory = FakeActoryProxyFactory(self._fake_client)
         self._proxy = ActorProxy.create(
-            ManagerTestActorInterface,
-            'ManagerTestActor',
-            ActorId('fake-id'),
-            self._fake_factory)
-    
+            FakeActorCls2Interface, FakeMultiInterfacesActor.__name__,
+            ActorId('fake-id'), self._fake_factory)
+
     async def test_invoke(self):
         response = await self._proxy.invoke('ActionMethod', b'arg0')
         self.assertEqual(b'"expected_response"', response)
-        self._mock_client.invoke_method.assert_called_once_with('ManagerTestActor', 'fake-id', 'ActionMethod', b'arg0')
+        self._fake_client.invoke_method.assert_called_once_with(FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')
 
     async def test_invoke_with_static_typing(self):
         response = await self._proxy.ActionMethod(b'arg0')
         self.assertEqual('expected_response', response)
-        self._mock_client.invoke_method.assert_called_once_with('ManagerTestActor', 'fake-id', 'ActionMethod', b'arg0')
+        self._fake_client.invoke_method.assert_called_once_with(FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')

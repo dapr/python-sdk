@@ -15,19 +15,20 @@ from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.serializers import DefaultJSONSerializer
 
-from .testactorclasses import *
+from .fakeactorclasses import FakeSimpleActor, FakeMultiInterfacesActor
 
 class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         ActorRuntime._actor_managers = {}
+        ActorRuntime.set_actor_config(ActorRuntimeConfig())
         self._serializer = DefaultJSONSerializer()
-        await ActorRuntime.register_actor(TestActor)
-        await ActorRuntime.register_actor(TestActorImpl)
+        await ActorRuntime.register_actor(FakeSimpleActor)
+        await ActorRuntime.register_actor(FakeMultiInterfacesActor)
 
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()
-        self.assertTrue(actor_types.index('TestActor') >= 0)
-        self.assertTrue(actor_types.index('TestActorImpl') >= 0)
+        self.assertTrue(actor_types.index('FakeSimpleActor') >= 0)
+        self.assertTrue(actor_types.index(FakeMultiInterfacesActor.__name__) >= 0)
 
     def test_actor_config(self):
         config = ActorRuntime.get_actor_config()
@@ -53,29 +54,33 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(2, len(config.entities))
 
     async def test_entities_update(self):
+        # Clean up managers
+        ActorRuntime._actor_managers = {}
+        ActorRuntime.set_actor_config(ActorRuntimeConfig())
+
         config = ActorRuntime.get_actor_config()
         with self.assertRaises(ValueError):
-            config.entities.index('ManagerTestActor')
+            config.entities.index(FakeSimpleActor.__name__)
 
-        await ActorRuntime.register_actor(ManagerTestActor)
+        await ActorRuntime.register_actor(FakeSimpleActor)
         config = ActorRuntime.get_actor_config()
-        self.assertTrue(config.entities.index('ManagerTestActor') >= 0)
+        self.assertTrue(config.entities.index(FakeSimpleActor.__name__) >= 0)
 
     async def test_dispatch(self):
-        await ActorRuntime.register_actor(ManagerTestActor)
-        await ActorRuntime.activate('ManagerTestActor', 'test-id')
+        await ActorRuntime.register_actor(FakeMultiInterfacesActor)
+        await ActorRuntime.activate(FakeMultiInterfacesActor.__name__, 'test-id')
         
         request_body = {
             "message": "hello dapr",
         }
 
         test_request_stream = io.BytesIO(self._serializer.serialize(request_body))
-        response = await ActorRuntime.dispatch('ManagerTestActor', 'test-id', "ActionMethod", test_request_stream)
+        response = await ActorRuntime.dispatch(FakeMultiInterfacesActor.__name__, 'test-id', "ActionMethod", test_request_stream)
 
         self.assertEqual(b'"hello dapr"', response)
 
-        await ActorRuntime.deactivate('ManagerTestActor', 'test-id')
+        await ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id')
 
         # Ensure test-id is deactivated
         with self.assertRaises(ValueError):
-            await ActorRuntime.deactivate('ManagerTestActor', 'test-id')
+            await ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id')

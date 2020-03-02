@@ -15,11 +15,11 @@ from dapr.actor.runtime.manager import ActorManager
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.serializers import DefaultJSONSerializer
 
-from .testactorclasses import ManagerTestActor
+from .fakeactorclasses import FakeMultiInterfacesActor
 
 class ActorManagerTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self._test_type_info = ActorTypeInformation.create(ManagerTestActor)
+        self._test_type_info = ActorTypeInformation.create(FakeMultiInterfacesActor)
         self._serializer = DefaultJSONSerializer()
         self._runtime_ctx = ActorRuntimeContext(self._test_type_info, self._serializer)
         self._manager = ActorManager(self._runtime_ctx)
