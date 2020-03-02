@@ -2,7 +2,7 @@
 
 > WIP - Porting from [dotnet-sdk](https://github.com/dapr/dotnet-sdk) to python
 > 
-> Dapr core team does not have the official plan to support the equivalent features of dotnet/java sdks, except for the auto-generated gRPC client. but we're always welcoming any contribution.
+> Dapr core team does not have the official plan to support python-sdk now, except for the auto-generated gRPC client. but we're always welcoming any contribution.
 
 ## Structures of Python SDK
 
@@ -77,8 +77,11 @@ $ dapr run --app-id demo-actor --app-port 3000 python3 app.py
 == APP == 127.0.0.1 - - [29/Feb/2020 13:52:15] "GET /dapr/config HTTP/1.1" 200 -
 ...
 == APP == Activate DemoActor actor!
-== APP == 127.0.0.1 - - [29/Feb/2020 13:52:24] "POST /actors/DemoActor/1 HTTP/1.1" 200 -
-== APP == 127.0.0.1 - - [29/Feb/2020 13:52:24] "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 -
+== APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "POST /actors/DemoActor/1 HTTP/1.1" 200 -
+== APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 -
+== APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 -
+== APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/SetMyData HTTP/1.1" 200 -
+== APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 -
 ...
 ```
 2. Run Demo client in new terminal window
@@ -89,6 +92,8 @@ $ cd examples/demo_actor/client
 # Run actor client
 $ dapr run --app-id demo-client python3 demo_actor_client.py
 ...
-== APP == {'data': 'default'}
+== APP == b'{"data":"default","ts":"2020-03-02T02:50:27.381Z"}'
+== APP == {'data': 'default', 'ts': datetime.datetime(2020, 3, 2, 2, 50, 27, 386000, tzinfo=tzutc())}
+== APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 3, 2, 2, 50, 27, 395000, tzinfo=tzutc())}
 ...
 ```
