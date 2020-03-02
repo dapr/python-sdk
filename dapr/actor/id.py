@@ -15,7 +15,7 @@ class ActorId:
         # create actorid with id 1
         actor_id = ActorId('1')
 
-        # create 8-digit random hex ActorId
+        # create random hex ActorId
         actor_random_id = ActorId.create_random_id()
 
     """
@@ -28,8 +28,6 @@ class ActorId:
     @classmethod
     def create_random_id(cls):
         """Creates new object of :class:`ActorId` with the random id value
-
-        This is a thread-safe operation that generates new random :class:`ActorId`
 
         :returns: ActorId with random id
         :rtype: :class:`ActorId`
