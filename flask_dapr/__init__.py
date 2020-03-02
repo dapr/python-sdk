@@ -5,4 +5,4 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from .actor import DaprActor
+from .actor import DaprActor, ActorRuntime

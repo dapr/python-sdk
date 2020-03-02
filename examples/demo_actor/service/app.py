@@ -9,11 +9,12 @@ from flask_dapr.actor import DaprActor
 from dapr.conf import settings
 from examples.demo_actor.service.demo_actor import DemoActor
 
-app = Flask('DemoActorService')
-actor = DaprActor(app)
+app = Flask(f'{DemoActor.__name__}Service')
 
-# register DemoActor
-asyncio.run(actor.actor_runtime.register_actor(DemoActor))
+# Enable DaprActor Flask extension
+actor = DaprActor(app)
+# Register DemoActor
+actor.register_actor(DemoActor)
 
 @app.route('/')
 def index():

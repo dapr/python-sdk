@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import asyncio
 
 from flask import current_app, _app_ctx_stack, jsonify, request, abort
-from dapr.actor import ActorRuntime
+from dapr.actor import Actor, ActorRuntime
 from dapr.serializers import DefaultJSONSerializer
 
 class DaprActor(object):
@@ -28,6 +28,9 @@ class DaprActor(object):
     def teardown(self, exception):
         # TODO: Deactivate all actors
         pass
+
+    def register_actor(self, actor: Actor) -> None:
+        asyncio.run(ActorRuntime.register_actor(actor))
 
     def _add_actor_config_route(self, app):
         def actor_config_handler():

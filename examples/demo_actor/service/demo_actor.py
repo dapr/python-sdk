@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
+import datetime
 
 from dapr.actor import Actor
 from examples.demo_actor.demo_actor_interface import DemoActorInterface, actormethod
@@ -21,6 +22,7 @@ class DemoActor(Actor, DemoActorInterface):
         print (f'Deactivate {self.__class__.__name__} actor!', flush=True)
 
     async def get_my_data(self) -> object:
+        self._mydata['ts'] = datetime.datetime.now(datetime.timezone.utc)
         return self._mydata
 
     async def set_my_data(self, data) -> None:

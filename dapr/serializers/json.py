@@ -9,6 +9,7 @@ import re
 import datetime
 import json
 
+from dateutil import parser
 from typing import Callable
 
 from dapr.serializers.base import Serializer
@@ -71,7 +72,7 @@ class DaprJSONDecoder(json.JSONDecoder):
     def custom_scanstring(cls, s, end, strict=True):
         (s, end) = json.decoder.scanstring(s, end, strict)
         if cls.datetime_regex.match(s):
-            return (datetime.datetime.fromisoformat(s), end)
+            return (parser.parse(s), end)
 
         duration = DAPR_DURATION_PARSER.match(s)
         if duration.lastindex is not None:
