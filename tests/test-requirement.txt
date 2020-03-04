@@ -1,0 +1,7 @@
+Flask>=1.1
+mypy>=0.761
+mypy-extensions>=0.4.3
+pylint>=2.4
+marshmallow>=3.3.0
+aiohttp>=3.6.2
+python-dateutil>=2.8.1

@@ -30,4 +30,3 @@ resp = client.DeleteState(messages.DeleteStateEnvelope(storeName=storeName, key=
 print('Deleted!')
 
 channel.close()
-
