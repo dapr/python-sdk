@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dapr-client",
-    version="0.2.0.b1",
+    version="0.3.0.b1",
     author="dapr.io",
     author_email="pypidapr@microsoft.com",
     description="Dapr client sdk using gRPC.",

@@ -35,6 +35,11 @@ class DaprStub(object):
         request_serializer=dapr_dot_dapr__pb2.GetStateEnvelope.SerializeToString,
         response_deserializer=dapr_dot_dapr__pb2.GetStateResponseEnvelope.FromString,
         )
+    self.GetSecret = channel.unary_unary(
+        '/dapr.Dapr/GetSecret',
+        request_serializer=dapr_dot_dapr__pb2.GetSecretEnvelope.SerializeToString,
+        response_deserializer=dapr_dot_dapr__pb2.GetSecretResponseEnvelope.FromString,
+        )
     self.SaveState = channel.unary_unary(
         '/dapr.Dapr/SaveState',
         request_serializer=dapr_dot_dapr__pb2.SaveStateEnvelope.SerializeToString,
@@ -79,6 +84,13 @@ class DaprServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def GetSecret(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def SaveState(self, request, context):
     # missing associated documentation comment in .proto file
     pass
@@ -115,6 +127,11 @@ def add_DaprServicer_to_server(servicer, server):
           servicer.GetState,
           request_deserializer=dapr_dot_dapr__pb2.GetStateEnvelope.FromString,
           response_serializer=dapr_dot_dapr__pb2.GetStateResponseEnvelope.SerializeToString,
+      ),
+      'GetSecret': grpc.unary_unary_rpc_method_handler(
+          servicer.GetSecret,
+          request_deserializer=dapr_dot_dapr__pb2.GetSecretEnvelope.FromString,
+          response_serializer=dapr_dot_dapr__pb2.GetSecretResponseEnvelope.SerializeToString,
       ),
       'SaveState': grpc.unary_unary_rpc_method_handler(
           servicer.SaveState,
