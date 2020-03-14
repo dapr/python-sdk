@@ -1,6 +1,6 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json.
 {
-	"name": "Python 3",
+	"name": "Dapr - Python SDK",
 	"context": "..",
 	"dockerFile": "Dockerfile",
 
