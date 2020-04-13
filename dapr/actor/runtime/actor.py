@@ -39,6 +39,10 @@ class Actor:
         self.id = actor_id
         self._runtime_ctx = ctx
         self._dispatch_mapping = {}
+    
+    @property
+    def runtime_ctx(self) -> ActorRuntimeContext:
+        return self._runtime_ctx
 
     async def _on_activate_internal(self):
         # TODO: Reset state
