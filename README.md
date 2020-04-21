@@ -47,3 +47,12 @@ python setup.py sdist bdist_wheel
 
 The package will be generated in src/dist directory.
 For more information on generating packages, see python documentation at https://packaging.python.org/tutorials/packaging-projects/
+
+### Generating gRPC interface and proto buf
+
+## Linux
+Run the following commands:
+```sh
+pip install -r grpcreq_requirements
+bash protobuf.sh
+```
