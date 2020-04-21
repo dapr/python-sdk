@@ -53,6 +53,6 @@ For more information on generating packages, see python documentation at https:/
 ## Linux
 Run the following commands:
 ```sh
-pip install -r grpcreq_requirements
+pip install -r grpc_requirements
 bash protobuf.sh
 ```
