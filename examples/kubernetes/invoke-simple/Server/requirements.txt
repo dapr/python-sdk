@@ -1,0 +1,4 @@
+grpcio==1.25.0
+grpcio-tools==1.25.0
+protobuf==3.10.0
+dapr-client==0.3.0b1
