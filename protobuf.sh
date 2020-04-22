@@ -5,11 +5,13 @@
 # Licensed under the MIT License.
 # ------------------------------------------------------------
 
+COMMON="common"
 DAPR="dapr"
 DAPR_CLIENT="daprclient"
 
 # Path to store output
-OUT_PATH="./src/dapr"
+OUT_PATH="./src"
+COMMON_OUT_PATH="./pkg/proto/common/v1"
 
 # Http request CLI
 HTTP_REQUEST_CLI=curl
@@ -33,7 +35,7 @@ downloadFile() {
     # URL for proto file
     PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/pkg/proto/${FILE_NAME}/v1/${FILE_NAME}.proto"
 
-    mkdir -p "$DAPR"
+    mkdir -p "${DAPR}"
 
     echo "Downloading $PROTO_URL ..."
     if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
@@ -54,9 +56,19 @@ generateGrpc() {
 
     FILE_NAME=$1
 
-    python3 -m grpc_tools.protoc -I $DAPR/ --python_out=${OUT_PATH} --grpc_python_out=${OUT_PATH} $DAPR/${FILE_NAME}.proto
+    python3 -m grpc_tools.protoc -I . --python_out=${OUT_PATH} --grpc_python_out=${OUT_PATH} $DAPR/${FILE_NAME}.proto
 
     ret_val=$FILE_NAME
+}
+
+moveFile() {
+    
+    FILE_PATH=$1
+    LOCATION=$2
+
+    mkdir -p $LOCATION
+
+    mv ${FILE_PATH}* $LOCATION
 }
 
 fail_trap() {
@@ -72,6 +84,10 @@ cleanup() {
     if [ -e "${DAPR}" ]; then
         rm -rf "${DAPR}"
     fi
+
+    if [ -e "${COMMON_OUT_PATH}/${COMMON}.proto" ]; then
+        rm -r "${COMMON_OUT_PATH}/${COMMON}.proto"
+    fi
 }
 
 generateGrpcSuccess() {
@@ -84,6 +100,10 @@ generateGrpcSuccess() {
 trap "fail_trap" EXIT
 
 checkHttpRequestCLI
+downloadFile $COMMON
+generateGrpc $COMMON
+moveFile ${DAPR}/${COMMON}.proto $COMMON_OUT_PATH
+moveFile ${OUT_PATH}/${DAPR}/${COMMON} $COMMON_OUT_PATH
 downloadFile $DAPR
 generateGrpc $DAPR
 downloadFile $DAPR_CLIENT

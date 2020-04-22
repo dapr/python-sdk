@@ -50,9 +50,15 @@ For more information on generating packages, see python documentation at https:/
 
 ### Generating gRPC interface and proto buf
 
-## Linux
+## Linux and MacOS
 Run the following commands:
 ```sh
-pip install -r grpc_requirements
-bash protobuf.sh
+pip3 install -r grpc_requirements
+/bin/bash protobuf.sh
+```
+## Windows
+Run the following commands in powershell:
+```sh
+pip3 install -r grpc_requirements
+.\protobuf.ps1
 ```
