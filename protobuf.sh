@@ -10,8 +10,7 @@ DAPR="dapr"
 DAPR_CLIENT="daprclient"
 
 # Path to store output
-OUT_PATH="./src"
-COMMON_OUT_PATH="./pkg/proto/common/v1"
+PROTO_PATH="pkg/proto"
 
 # Http request CLI
 HTTP_REQUEST_CLI=curl
@@ -31,23 +30,25 @@ checkHttpRequestCLI() {
 downloadFile() {
 
     FILE_NAME=$1
+    FILE_PATH="${PROTO_PATH}/${FILE_NAME}/v1"
 
     # URL for proto file
     PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/pkg/proto/${FILE_NAME}/v1/${FILE_NAME}.proto"
 
-    mkdir -p "${DAPR}"
+    mkdir -p "${FILE_PATH}"
 
     echo "Downloading $PROTO_URL ..."
     if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
-        cd ${DAPR}
+        cd ${FILE_PATH}
         curl -SsL "$PROTO_URL" -o "${FILE_NAME}.proto"
-        cd ..
+        cd ../../../..
     else
-        wget -q -P "$PROTO_URL" "${DAPR}/${FILE_NAME}.proto"
+        wget -q -P "$PROTO_URL" "${FILE_PATH}/${FILE_NAME}.proto"
     fi
 
-    if [ ! -e "${DAPR}/${FILE_NAME}.proto" ]; then
+    if [ ! -e "${FILE_PATH}/${FILE_NAME}.proto" ]; then
         echo "failed to download $PROTO_URL ..."
+        ret_val=$FILE_NAME
         exit 1
     fi
 }
@@ -55,20 +56,15 @@ downloadFile() {
 generateGrpc() {
 
     FILE_NAME=$1
+    FILE_PATH="${PROTO_PATH}/${FILE_NAME}/v1"
 
-    python3 -m grpc_tools.protoc -I . --python_out=${OUT_PATH} --grpc_python_out=${OUT_PATH} $DAPR/${FILE_NAME}.proto
+    python3 -m grpc_tools.protoc -I . --python_out=. --grpc_python_out=. ${FILE_PATH}/${FILE_NAME}.proto
 
-    ret_val=$FILE_NAME
-}
-
-moveFile() {
-    
-    FILE_PATH=$1
-    LOCATION=$2
-
-    mkdir -p $LOCATION
-
-    mv ${FILE_PATH}* $LOCATION
+    if [ ! -e "${FILE_PATH}/${FILE_NAME}_pb2.py" ]; then
+        echo "failed to generate proto buf $FILE_NAME"
+        ret_val=$FILE_NAME
+        exit 1
+    fi
 }
 
 fail_trap() {
@@ -81,13 +77,7 @@ fail_trap() {
 }
 
 cleanup() {
-    if [ -e "${DAPR}" ]; then
-        rm -rf "${DAPR}"
-    fi
-
-    if [ -e "${COMMON_OUT_PATH}/${COMMON}.proto" ]; then
-        rm -r "${COMMON_OUT_PATH}/${COMMON}.proto"
-    fi
+    find $PROTO_PATH -type f -name '*.proto' -delete
 }
 
 generateGrpcSuccess() {
@@ -102,8 +92,6 @@ trap "fail_trap" EXIT
 checkHttpRequestCLI
 downloadFile $COMMON
 generateGrpc $COMMON
-moveFile ${DAPR}/${COMMON}.proto $COMMON_OUT_PATH
-moveFile ${OUT_PATH}/${DAPR}/${COMMON} $COMMON_OUT_PATH
 downloadFile $DAPR
 generateGrpc $DAPR
 downloadFile $DAPR_CLIENT

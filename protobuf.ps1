@@ -13,33 +13,30 @@ $daprClient="daprclient"
 $protoFiles = @($common, $dapr, $daprClient)
 
 # Path to store output
-$outPath=".\src"
-$commonOutPath=".\pkg\proto\common\v1"
-
-# Create a directory to store proto files
-New-Item -ErrorAction Ignore -Path . -Name $dapr -ItemType "directory"
+$protoPath="pkg\proto"
 
 # Download proto files
 foreach($protoFile in $protoFiles){
     $url = "https://raw.githubusercontent.com/dapr/dapr/master/pkg/proto/${protoFile}/v1/${protoFile}.proto"
 
-    Invoke-WebRequest -Uri $url -OutFile "${dapr}\${protoFile}.proto"
+    $filePath = "${protoPath}\${protoFile}\v1"
+
+    # Create a directory to store proto files
+    New-Item -ErrorAction Ignore -ItemType "directory" -Force -Path $filePath
+
+    Invoke-WebRequest -Uri $url -OutFile "${filePath}\${protoFile}.proto"
 
     # gRPC code generation
-    Invoke-Expression "python3 -m grpc_tools.protoc -I . --python_out=${outPath} --grpc_python_out=${outPath} ${dapr}\${protoFile}.proto"
-
-    if($protoFile -eq $common){
-        New-Item -ErrorAction Ignore -ItemType "directory" -Force -Path $commonOutPath
-
-        Move-Item -Path "${outPath}\${dapr}\${protoFile}*" -Destination "$commonOutPath"
-    }
+    Invoke-Expression "python3 -m grpc_tools.protoc -I . --python_out=. --grpc_python_out=. ${filePath}\${protoFile}.proto"
 
 }
 
 # Clean up
-Write-Output "Cleaning up ..."
-Remove-Item $dapr -Recurse -Force
-Remove-Item ${commonOutPath}\${common}.proto -Force
+# Write-Output "Cleaning up ..."
+# foreach($protoFile in $protoFiles){
+#     $filePath = "${protoPath}\${protoFile}\v1"
+#     Remove-Item ${filePath}\${protoFile}.proto -Force
+# }
 
 # Success message
 Write-Output "gRPC interface and proto buf generated successfully"
