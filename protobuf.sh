@@ -10,7 +10,8 @@ DAPR="dapr"
 DAPR_CLIENT="daprclient"
 
 # Path to store output
-PROTO_PATH="pkg/proto"
+PROTO_PATH="src/dapr/proto"
+SRC="./src"
 
 # Http request CLI
 HTTP_REQUEST_CLI=curl
@@ -33,7 +34,7 @@ downloadFile() {
     FILE_PATH="${PROTO_PATH}/${FILE_NAME}/v1"
 
     # URL for proto file
-    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/pkg/proto/${FILE_NAME}/v1/${FILE_NAME}.proto"
+    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/dapr/proto/${FILE_NAME}/v1/${FILE_NAME}.proto"
 
     mkdir -p "${FILE_PATH}"
 
@@ -41,7 +42,7 @@ downloadFile() {
     if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
         cd ${FILE_PATH}
         curl -SsL "$PROTO_URL" -o "${FILE_NAME}.proto"
-        cd ../../../..
+        cd ../../../../..
     else
         wget -q -P "$PROTO_URL" "${FILE_PATH}/${FILE_NAME}.proto"
     fi
@@ -58,7 +59,7 @@ generateGrpc() {
     FILE_NAME=$1
     FILE_PATH="${PROTO_PATH}/${FILE_NAME}/v1"
 
-    python3 -m grpc_tools.protoc -I . --python_out=. --grpc_python_out=. ${FILE_PATH}/${FILE_NAME}.proto
+    python3 -m grpc_tools.protoc -I ${SRC} --python_out=${SRC} --grpc_python_out=${SRC} ${FILE_PATH}/${FILE_NAME}.proto
 
     if [ ! -e "${FILE_PATH}/${FILE_NAME}_pb2.py" ]; then
         echo "failed to generate proto buf $FILE_NAME"
@@ -81,6 +82,7 @@ cleanup() {
 }
 
 generateGrpcSuccess() {
+    export PYTHONPATH=$SRC
     echo -e "\ngRPC interface and proto buf generated successfully!"
 }
 

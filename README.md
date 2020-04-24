@@ -54,7 +54,7 @@ For more information on generating packages, see python documentation at https:/
 Run the following commands:
 ```sh
 pip3 install -r grpc_requirements
-/bin/bash protobuf.sh
+. ./protobuf.sh
 ```
 ## Windows
 Run the following commands in powershell:
