@@ -11,7 +11,7 @@ DAPR_CLIENT="daprclient"
 
 # Path to store output
 PROTO_PATH="src/dapr/proto"
-SRC="./src"
+SRC=`pwd`/src
 
 # Http request CLI
 HTTP_REQUEST_CLI=curl
