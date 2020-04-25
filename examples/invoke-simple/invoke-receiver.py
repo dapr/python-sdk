@@ -3,10 +3,10 @@ from concurrent import futures
 import time
 
 import grpc
-import dapr_pb2 as dapr_messages
-import dapr_pb2_grpc as dapr_services
-import daprclient_pb2 as daprclient_messages
-import daprclient_pb2_grpc as daprclient_services
+from dapr.proto.dapr.v1 import dapr_pb2 as dapr_messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as dapr_services
+from dapr.proto.daprclient.v1 import daprclient_pb2 as daprclient_messages
+from dapr.proto.daprclient.v1 import daprclient_pb2_grpc as daprclient_services
 
 from google.protobuf.any_pb2 import Any
 
@@ -25,8 +25,6 @@ class DaprClientServicer(daprclient_services.DaprClientServicer):
             response = Any(value='INVOKE_RECEIVED'.encode('utf-8'))
         else:
             response = Any(value='METHOD_NOT_SUPPORTED'.encode('utf-8'))
-
-        return response
 
         # Return response to caller
         return response
