@@ -29,15 +29,17 @@ class ActorRuntime:
     @classmethod
     async def register_actor(
             cls, actor: Actor,
-            message_serializer: Serializer = DefaultJSONSerializer()) -> None:
+            message_serializer: Serializer = DefaultJSONSerializer(),
+            state_serializer: Serializer = DefaultJSONSerializer()) -> None:
         """Register an :class:`Actor` with the runtime.
 
         :param Actor actor: Actor implementation
         :param Serializer message_serializer: Serializer that serializes message
             between actors.
+        :param Serializer state_serializer: Serializer that serializes state values.
         """
         type_info = ActorTypeInformation.create(actor)
-        ctx = ActorRuntimeContext(type_info, message_serializer)
+        ctx = ActorRuntimeContext(type_info, message_serializer, state_serializer)
 
         # Create an ActorManager, override existing entry if registered again.
         async with cls._actor_managers_lock:

@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 from dapr.actor.runtime.methodcontext import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.statemanager import ActorStateManager
 
 class Actor:
     """A base class of Actors that provides the common functionality of actors.
@@ -39,19 +40,30 @@ class Actor:
         self.id = actor_id
         self._runtime_ctx = ctx
         self._dispatch_mapping = {}
+
+        self._state_manager = ActorStateManager(self)
     
     @property
     def runtime_ctx(self) -> ActorRuntimeContext:
         return self._runtime_ctx
 
-    async def _on_activate_internal(self):
-        # TODO: Reset state
-        await self._on_activate()
+    async def _reset_state(self) -> None:
+        # Exception has been raised by user code, reset the state in state manager.
+        await self._state_manager.clear_cache()
+    
+    async def _save_state(self):
+        """Saves all the state changes (add/update/remove) that were made since last call
+        to the actor state provider associated with the actor.
+        """
+        await self._state_manager.save_state()
 
-        # TODO: Save state modification
+    async def _on_activate_internal(self):
+        await self._reset_state()
+        await self._on_activate()
+        await self._save_state()
 
     async def _on_deactivate_internal(self):
-        # TODO: Reset state
+        await self._reset_state()
         await self._on_deactivate()
 
     async def _on_activate(self):
@@ -71,17 +83,16 @@ class Actor:
         """
         pass
 
-    async def _on_pre_actor_method_internal(self, method_context: ActorMethodContext):
+    async def _on_pre_actor_method_internal(self, method_context: ActorMethodContext) -> None:
         await self._on_pre_actor_method(method_context)
 
-    async def _on_post_actor_method_internal(self, method_context: ActorMethodContext):
+    async def _on_post_actor_method_internal(self, method_context: ActorMethodContext) -> None:
         await self._on_post_actor_method(method_context)
-        # TODO: Save state modification
+        await self._save_state()
 
     async def _on_invoke_failed(self, exception=None):
-        # TODO: reset the state in state manager
-        # (Exception has been thrown by user code)
-        pass
+        # Exception has been thrown by user code, reset the state in state manager
+        await self._reset_state()
 
     async def _on_pre_actor_method(self, method_context: ActorMethodContext):
         """Override this method for performing any action prior to

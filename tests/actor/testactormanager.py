@@ -8,6 +8,8 @@ Licensed under the MIT License.
 import asyncio
 import unittest
 
+from unittest.mock import AsyncMock
+
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
@@ -20,7 +22,10 @@ class ActorManagerTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self._test_type_info = ActorTypeInformation.create(FakeMultiInterfacesActor)
         self._serializer = DefaultJSONSerializer()
-        self._runtime_ctx = ActorRuntimeContext(self._test_type_info, self._serializer)
+
+        self._fake_client = AsyncMock()
+        self._fake_client.invoke_method.return_value = b'"expected_response"'
+        self._runtime_ctx = ActorRuntimeContext(self._test_type_info, self._serializer, self._serializer)
         self._manager = ActorManager(self._runtime_ctx)
 
     async def test_activate_actor(self):

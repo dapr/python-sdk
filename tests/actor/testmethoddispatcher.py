@@ -6,15 +6,21 @@ Licensed under the MIT License.
 """
 
 import unittest
+from unittest.mock import AsyncMock
 
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
+from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.serializers import DefaultJSONSerializer
 
 from .fakeactorclasses import FakeSimpleActor
 
 class ActorMethodDispatcherTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self._testActorTypeInfo = ActorTypeInformation.create(FakeSimpleActor)
+        self._serializer = DefaultJSONSerializer()
+        self._fake_client = AsyncMock()
+        self._fake_runtime_ctx = ActorRuntimeContext(self._testActorTypeInfo, self._serializer, self._serializer)
 
     def test_get_arg_names(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
@@ -33,6 +39,6 @@ class ActorMethodDispatcherTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_dispatch(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
-        actorInstance = FakeSimpleActor(None, None)
+        actorInstance = FakeSimpleActor(self._fake_runtime_ctx, None)
         result = await dispatcher.dispatch(actorInstance, "ActorMethod", 10)
         self.assertEqual({'name': 'actor_method'}, result)

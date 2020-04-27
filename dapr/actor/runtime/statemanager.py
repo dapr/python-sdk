@@ -5,68 +5,47 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import asyncio
+
 from enum import Enum
 from typing import TypeVar, Generic, List, Any, Tuple, Callable
 
-from dapr.actor.runtime.actor import Actor
+from dapr.actor.runtime.statechange import StateChangeKind, ActorStateChange
 
 T = TypeVar('T')
 
-class StateChangeKind(Enum):
-    """A enumeration that represents the kind of state change for an actor state
-    when saves change is called to a set of actor states.
-    """
-    # No change in state
-    none = 0
-    # The state needs to be added
-    add = 1
-    # The state needs to be updated
-    update = 2
-    # The state needs to be removed
-    remove = 3
-
-
-class ActorStateChange(Generic[T]):
-    def __init__(self, state_name: str, value: T, change_kind: StateChangeKind):
-        self._state_name = state_name
+class StateMetadata(Generic[T]):
+    def __init__(self, value: T, change_kind: StateChangeKind):
         self._value = value
         self._change_kind = change_kind
-
-    @property
-    def state_name(self) -> str:
-        return self._state_name
     
     @property
     def value(self) -> T:
         return self._value
 
+    @value.setter
+    def value(self, new_value: T) -> None:
+        self._value = new_value
+    
     @property
     def change_kind(self) -> StateChangeKind:
         return self._change_kind
 
-
-class StateMetadata(Generic[T]):
-    def __init__(self, value: T, change_kind):
-        self._value = value
-        self._change_kind = change_kind
-    
-    @property
-    def value(self) -> T:
-        return self._value
-    
-    @property
-    def change_kind(self):
-        return self._change_kind
+    @change_kind.setter
+    def change_kind(self, new_kind: StateChangeKind) -> None:
+        self._change_kind = new_kind
 
 class ActorStateManager(Generic[T]):
-    def __init__(self, actor: Actor):
+    def __init__(self, actor: 'Actor'):
         self._actor = actor
+        if not actor.runtime_ctx:
+            raise AttributeError('runtime context was not set')
         self._type_name = actor.runtime_ctx.actor_type_info.type_name
         self._state_change_tracker = {}
 
     async def add_state(self, state_name: str, value: T) -> None:
-        if not await self.try_add_state(state_name, value):
-            raise NotImplementedError(f'The actor state name {state_name} already exist.')
+        if not (await self.try_add_state(state_name, value)):
+            raise ValueError(f'The actor state name {state_name} already exist.')
 
     async def try_add_state(self, state_name: str, value: T) -> bool:
         if state_name in self._state_change_tracker:
@@ -76,8 +55,9 @@ class ActorStateManager(Generic[T]):
                 return True
             return False
         
-        # TODO: await this.actor.ActorService.StateProvider.ContainsStateAsync(this.actorTypeName, this.actor.Id.ToString(), stateName, cancellationToken) -> return false
-        if False:
+        existed = await self._actor.runtime_ctx.state_provider.contains_state(
+            self._type_name, self._actor.id, state_name)
+        if not existed:
             return False
 
         self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
@@ -95,8 +75,8 @@ class ActorStateManager(Generic[T]):
                 return False, None
             return True, state_metadata.value
         
-        # this.actor.ActorService.StateProvider.TryLoadStateAsync<T>(this.actorTypeName, this.actor.Id.ToString(), stateName, cancellationToken)
-        has_value, val = (True, 'test')
+        has_value, val = await self._actor.runtime_ctx.state_provider.try_load_state(
+            self._type_name, self._actor.id, state_name)
         if has_value:
             self._state_change_tracker[state_name] = StateMetadata(val, StateChangeKind.none)
         return has_value, val
@@ -108,16 +88,18 @@ class ActorStateManager(Generic[T]):
 
             if state_metadata.change_kind == StateChangeKind.none or state_metadata.change_kind == StateChangeKind.remove:
                 state_metadata.change_kind = StateChangeKind.update
-        
-        # await this.actor.ActorService.StateProvider.ContainsStateAsync(this.actorTypeName, this.actor.Id.ToString(), stateName, cancellationToken)
-        if False:
-            self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
-    
-        self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
+            self._state_change_tracker[state_name] = state_metadata
+            return
 
+        existed = await self._actor.runtime_ctx.state_provider.contains_state(
+            self._type_name, self._actor.id, state_name)
+        if existed:
+            self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
+        else:
+            self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
 
     async def remove_state(self, state_name: str) -> None:
-        if not await self.try_remove_state(state_name):
+        if not (await self.try_remove_state(state_name)):
             raise KeyError(f'Actor State with name {state_name} was not found.')
 
     async def try_remove_state(self, state_name: str) -> bool:
@@ -130,8 +112,10 @@ class ActorStateManager(Generic[T]):
                 return True
             state_metadata.change_kind = StateChangeKind.remove
             return True
-        # await this.actor.ActorService.StateProvider.ContainsStateAsync(this.actorTypeName, this.actor.Id.ToString(), stateName, cancellationToken)
-        if False:
+
+        existed = await self._actor.runtime_ctx.state_provider.contains_state(
+            self._type_name, self._actor.id, state_name)
+        if existed:
             self._state_change_tracker[state_name] = StateMetadata(None, StateChangeKind.remove)
             return True
         return False
@@ -141,18 +125,20 @@ class ActorStateManager(Generic[T]):
             state_metadata = self._state_change_tracker[state_name]
             return state_metadata.change_kind != StateChangeKind.remove
         
-        # await this.actor.ActorService.StateProvider.ContainsStateAsync(this.actorTypeName, this.actor.Id.ToString(), stateName, cancellationToken)
-        contained = True
-        return contained
+        return await self._actor.runtime_ctx.state_provider.contains_state(
+            self._type_name, self._actor.id, state_name)
 
     async def get_or_add_state(self, state_name: str, value: T) -> T:
-        has_value, val = self.try_get_state(state_name)
+        has_value, val = await self.try_get_state(state_name)
         if has_value: return val
         change_kind = StateChangeKind.update if self.is_state_marked_for_remove(state_name) else StateChangeKind.add
         self._state_change_tracker[state_name] = StateMetadata(value, change_kind)
         return value
 
     async def add_or_update_state(self, state_name: str, value: T, update_value_factory: Callable[[str, T], T]) -> T:
+        if not callable(update_value_factory):
+            raise AttributeError(f'update_value_factory is not callable')
+
         if state_name in self._state_change_tracker:
             state_metadata = self._state_change_tracker[state_name]
             if state_metadata.change_kind == StateChangeKind.remove:
@@ -163,10 +149,11 @@ class ActorStateManager(Generic[T]):
             state_metadata.value = new_value
             if state_metadata.change_kind == StateChangeKind.none:
                 state_metadata.change_kind = StateChangeKind.update
+            self._state_change_tracker[state_name] = state_metadata
             return new_value
         
-        # this.actor.ActorService.StateProvider.TryLoadStateAsync<T>(this.actorTypeName, this.actor.Id.ToString(), stateName, cancellationToken);
-        has_value, val = (True, None)
+        has_value, val = await self._actor.runtime_ctx.state_provider.try_load_state(
+            self._type_name, self._actor.id, state_name)
         if has_value:
             new_value = update_value_factory(state_name, val)
             self._state_change_tracker[state_name] = StateMetadata(new_value, StateChangeKind.update)
@@ -179,22 +166,25 @@ class ActorStateManager(Generic[T]):
         # TODO: Get all state names from Dapr once implemented.
         # var namesFromStateProvider = await this.stateProvider.EnumerateStateNamesAsync(this.actor.Id, cancellationToken);
 
-        state_names = []
+        def append_names_sync():
+            state_names = []
+            for key, value in self._state_change_tracker.items():
+                if value.change_kind == StateChangeKind.add:
+                    state_names.append(key)
+                elif value.change_kind == StateChangeKind.remove:
+                    state_names.append(key)
+            return state_names
 
-        for key, value in self._state_change_tracker.items():
-            if value.change_kind == StateChangeKind.add:
-                state_names.append(key)
-            elif value.change_kind == StateChangeKind.remove:
-                state_names.append(key)
+        default_loop = asyncio.get_running_loop()
+        return await default_loop.run_in_executor(None, append_names_sync)
 
-        return state_names
+    async def clear_cache(self) -> None:
+        default_loop = asyncio.get_running_loop()
+        await default_loop.run_in_executor(None, self._state_change_tracker.clear)
 
-    def clear_cache(self) -> None:
-        self._state_change_tracker.clear()
-
-    def save_state(self) -> None:
-        if len(self._state_change_tracker) == 0:
-            return
+    async def save_state(self) -> None:
+        if len(self._state_change_tracker) == 0: return
+        
         state_changes = []
         states_to_remove = []
         for state_name, state_metadata in self._state_change_tracker.items():
@@ -209,8 +199,8 @@ class ActorStateManager(Generic[T]):
             state_metadata.change_kind = StateChangeKind.none
         
         if len(state_changes) > 0:
-            pass
-            # await this.actor.ActorService.StateProvider.SaveStateAsync(this.actorTypeName, this.actor.Id.ToString(), stateChangeList.AsReadOnly(), cancellationToken);
+            await self._actor.runtime_ctx.state_provider.save_state(
+                self._type_name, self._actor.id, state_changes)
         
         for state_name in states_to_remove:
             self._state_change_tracker.pop(state_name, None)
