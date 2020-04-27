@@ -33,7 +33,7 @@ class ActorStateChange(Generic[T]):
     @property
     def state_name(self) -> str:
         return self._state_name
-    
+
     @property
     def value(self) -> T:
         return self._value

@@ -40,9 +40,8 @@ class Actor:
         self.id = actor_id
         self._runtime_ctx = ctx
         self._dispatch_mapping = {}
-
         self._state_manager = ActorStateManager(self)
-    
+
     @property
     def runtime_ctx(self) -> ActorRuntimeContext:
         return self._runtime_ctx
@@ -50,7 +49,7 @@ class Actor:
     async def _reset_state(self) -> None:
         # Exception has been raised by user code, reset the state in state manager.
         await self._state_manager.clear_cache()
-    
+
     async def _save_state(self):
         """Saves all the state changes (add/update/remove) that were made since last call
         to the actor state provider associated with the actor.
@@ -108,7 +107,7 @@ class Actor:
 
         :param ActorMethodContext method_context: The method information
         """
-        pass
+        ...
 
     async def _on_post_actor_method(self, method_context: ActorMethodContext):
         """Override this method for performing any action after
@@ -124,4 +123,4 @@ class Actor:
 
         :param ActorMethodContext method_context: The method information
         """
-        pass
+        ...

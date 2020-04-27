@@ -9,11 +9,12 @@ import re
 import datetime
 import json
 
-from dateutil import parser
 from typing import Callable
+from dateutil import parser
 
 from dapr.serializers.base import Serializer
-from dapr.serializers.util import convert_from_dapr_duration, convert_to_dapr_duration, DAPR_DURATION_PARSER
+from dapr.serializers.util import convert_from_dapr_duration, \
+    convert_to_dapr_duration, DAPR_DURATION_PARSER
 from dapr.actor.runtime.config import ActorRuntimeConfig
 
 class DefaultJSONSerializer(Serializer):

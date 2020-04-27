@@ -10,13 +10,16 @@ from dapr.actor.runtime.stateprovider import StateProvider
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 from dapr.serializers import Serializer
 
+from typing import Callable
+
 class ActorRuntimeContext:
     """A context of ActorRuntime"""
 
     def __init__(
             self, actor_type_info: 'ActorTypeInformation',
             message_serializer: Serializer, state_serializer: Serializer,
-            actor_client: DaprActorClientBase=None, actor_factory=None):
+            actor_client: DaprActorClientBase = None,
+            actor_factory: Callable[['ActorRuntimeContext', ActorId], 'Actor'] = None):
         self._actor_type_info = actor_type_info
         self._actor_factory = actor_factory or self._default_actor_factory
         self._message_serializer = message_serializer
@@ -35,7 +38,7 @@ class ActorRuntimeContext:
     def message_serializer(self) -> Serializer:
         """Return message serializer which is used for Actor method invocation."""
         return self._message_serializer
-    
+
     @property
     def state_serializer(self) -> Serializer:
         """Return state serializer which is used for State value."""

@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 from abc import ABC
-from dapr.actor.runtime.methodcontext import ActorMethodContext
 
 class ActorInterface(ABC):
     """A base class that Dapr Actor inherits.

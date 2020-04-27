@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import asyncio
-import threading
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
@@ -76,7 +75,7 @@ class ActorRuntime:
             cls, actor_type_name: str, actor_id: str,
             actor_method_name: str, request_body: bytes) -> bytes:
         """Dispatch actor method defined in actor_type.
-        
+
         :param str actor_type_name: the name of actor type
         :param str actor_id: Actor ID
         :param str actor_method_name: the method name that is dispatched

@@ -115,6 +115,7 @@ class ActorProxy:
             raise AttributeError(f'{self._actor_interface.__class__} has no attribute {name}')
 
         if name not in self._callable_proxies:
-            self._callable_proxies[name] = CallableProxy(self, attr_calltype, self._message_serializer)
+            self._callable_proxies[name] = \
+                CallableProxy(self, attr_calltype, self._message_serializer)
 
         return self._callable_proxies[name]

@@ -18,7 +18,7 @@ class StateMetadata(Generic[T]):
     def __init__(self, value: T, change_kind: StateChangeKind):
         self._value = value
         self._change_kind = change_kind
-    
+
     @property
     def value(self) -> T:
         return self._value
@@ -26,7 +26,7 @@ class StateMetadata(Generic[T]):
     @value.setter
     def value(self, new_value: T) -> None:
         self._value = new_value
-    
+
     @property
     def change_kind(self) -> StateChangeKind:
         return self._change_kind
@@ -44,17 +44,18 @@ class ActorStateManager(Generic[T]):
         self._state_change_tracker = {}
 
     async def add_state(self, state_name: str, value: T) -> None:
-        if not (await self.try_add_state(state_name, value)):
+        if not await self.try_add_state(state_name, value):
             raise ValueError(f'The actor state name {state_name} already exist.')
 
     async def try_add_state(self, state_name: str, value: T) -> bool:
         if state_name in self._state_change_tracker:
             state_metadata = self._state_change_tracker[state_name]
             if state_metadata.change_kind == StateChangeKind.remove:
-                self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
+                self._state_change_tracker[state_name] = \
+                    StateMetadata(value, StateChangeKind.update)
                 return True
             return False
-        
+
         existed = await self._actor.runtime_ctx.state_provider.contains_state(
             self._type_name, self._actor.id, state_name)
         if not existed:
@@ -67,14 +68,13 @@ class ActorStateManager(Generic[T]):
         has_value, val = self.try_get_state(state_name)
         if has_value: return val
         raise KeyError(f'Actor State with name {state_name} was not found.')
-        
+
     async def try_get_state(self, state_name: str) -> Tuple[bool, T]:
         if state_name in self._state_change_tracker:
             state_metadata = self._state_change_tracker[state_name]
             if state_metadata.change_kind == StateChangeKind.remove:
                 return False, None
             return True, state_metadata.value
-        
         has_value, val = await self._actor.runtime_ctx.state_provider.try_load_state(
             self._type_name, self._actor.id, state_name)
         if has_value:
@@ -99,7 +99,7 @@ class ActorStateManager(Generic[T]):
             self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
 
     async def remove_state(self, state_name: str) -> None:
-        if not (await self.try_remove_state(state_name)):
+        if not await self.try_remove_state(state_name):
             raise KeyError(f'Actor State with name {state_name} was not found.')
 
     async def try_remove_state(self, state_name: str) -> bool:
@@ -124,7 +124,6 @@ class ActorStateManager(Generic[T]):
         if state_name in self._state_change_tracker:
             state_metadata = self._state_change_tracker[state_name]
             return state_metadata.change_kind != StateChangeKind.remove
-        
         return await self._actor.runtime_ctx.state_provider.contains_state(
             self._type_name, self._actor.id, state_name)
 
@@ -144,21 +143,18 @@ class ActorStateManager(Generic[T]):
             if state_metadata.change_kind == StateChangeKind.remove:
                 self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
                 return value
-            
             new_value = update_value_factory(state_name, state_metadata.value)
             state_metadata.value = new_value
             if state_metadata.change_kind == StateChangeKind.none:
                 state_metadata.change_kind = StateChangeKind.update
             self._state_change_tracker[state_name] = state_metadata
             return new_value
-        
         has_value, val = await self._actor.runtime_ctx.state_provider.try_load_state(
             self._type_name, self._actor.id, state_name)
         if has_value:
             new_value = update_value_factory(state_name, val)
             self._state_change_tracker[state_name] = StateMetadata(new_value, StateChangeKind.update)
             return new_value
-        
         self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
         return value
 
@@ -184,24 +180,20 @@ class ActorStateManager(Generic[T]):
 
     async def save_state(self) -> None:
         if len(self._state_change_tracker) == 0: return
-        
+
         state_changes = []
         states_to_remove = []
         for state_name, state_metadata in self._state_change_tracker.items():
             if state_metadata.change_kind == StateChangeKind.none:
                 continue
-
             state_changes.append(ActorStateChange(state_name, state_metadata.value, state_metadata.change_kind))
             if state_metadata.change_kind == StateChangeKind.remove:
                 states_to_remove.append(state_name)
-
             # Mark the states as unmodified so that tracking for next invocation is done correctly.
             state_metadata.change_kind = StateChangeKind.none
-        
         if len(state_changes) > 0:
             await self._actor.runtime_ctx.state_provider.save_state(
                 self._type_name, self._actor.id, state_changes)
-        
         for state_name in states_to_remove:
             self._state_change_tracker.pop(state_name, None)
 

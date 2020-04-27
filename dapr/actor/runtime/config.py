@@ -18,7 +18,6 @@ class ActorRuntimeConfig:
             actor_idle_timeout=timedelta(hours=1),
             actor_scan_interval=timedelta(seconds=30),
             drain_ongoing_call_timeout=timedelta(minutes=1)):
-    
         self.entities = []
         self.actorIdleTimeout = actor_idle_timeout
         self.actorScanInterval = actor_scan_interval
