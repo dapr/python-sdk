@@ -11,7 +11,7 @@ DAPR_CLIENT="daprclient"
 
 # Path to store output
 PROTO_PATH="src/dapr/proto"
-SRC=`pwd`/src
+SRC=src
 
 # Http request CLI
 HTTP_REQUEST_CLI=curl
@@ -82,7 +82,7 @@ cleanup() {
 }
 
 generateGrpcSuccess() {
-    export PYTHONPATH=$SRC
+    export PYTHONPATH=`pwd`/$SRC
     echo -e "\ngRPC interface and proto buf generated successfully!"
 }
 
