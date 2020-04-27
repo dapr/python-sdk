@@ -67,11 +67,15 @@ class StateProvider(Generic[T]):
 
         operations = []
         for state in state_changes:
+            base64encoded = None
+            if state.value is not None:
+                serialized = self._state_serializer.serialize(state.value)
+                base64encoded = base64.b64encode(serialized).decode('utf-8')
             operations.append({
                 "operation": MAP_CHANGE_KIND_TO_OPERATION.get(state.change_kind) or '',
                 "request": {
                     "key": state.state_name,
-                    "value": state.value,
+                    "value": base64encoded,
                 }
             })
         serialized = self._state_serializer.serialize(operations)

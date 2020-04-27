@@ -297,7 +297,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
 
         # Save the state
         async def mock_save_state(actor_type, actor_id, data):
-            self.assertEqual(b'[{"operation":"upsert","request":{"key":"state1","value":"value1"}},{"operation":"upsert","request":{"key":"state2","value":"value2"}},{"operation":"delete","request":{"key":"state4","value":null}},{"operation":"upsert","request":{"key":"state5","value":"value5"}}]', data)
+            self.assertEqual(b'[{"operation":"upsert","request":{"key":"state1","value":"InZhbHVlMSI="}},{"operation":"upsert","request":{"key":"state2","value":"InZhbHVlMiI="}},{"operation":"delete","request":{"key":"state4","value":null}},{"operation":"upsert","request":{"key":"state5","value":"InZhbHVlNSI="}}]', data)
 
         self._fake_client.save_state_transactionally = mock_save_state
         await state_manager.save_state()
