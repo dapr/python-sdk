@@ -18,3 +18,14 @@ class DaprActorClientBase(ABC):
             self, actor_type: str, actor_id: str,
             method: str, data: bytes) -> bytes:
         ...
+
+    @abstractmethod
+    async def save_state_transactionally(
+            self, actor_type: str, actor_id: str,
+            data: bytes) -> None:
+        ...
+
+    @abstractmethod
+    async def get_state(
+            self, actor_type: str, actor_id: str, name: str) -> bytes:
+        ...
