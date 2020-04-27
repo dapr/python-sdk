@@ -34,9 +34,9 @@ class DaprActor(object):
         asyncio.run(ActorRuntime.register_actor(actor))
 
     def _add_healthz(self, app):
-        def actor_config_handler():
+        def actor_health_handler():
             return '', 200
-        app.add_url_rule('/healthz', None, actor_config_handler, methods=['GET'])
+        app.add_url_rule('/healthz', None, actor_health_handler, methods=['GET'])
 
     def _add_actor_config_route(self, app):
         def actor_config_handler():
@@ -60,6 +60,13 @@ class DaprActor(object):
         def actor_method_handler(actor_type_name, actor_id, method_name):
             # Read raw bytes from request stream
             req_body = request.stream.read()
-            result = asyncio.run(ActorRuntime.dispatch(actor_type_name, actor_id, method_name, req_body))
+            try:
+                result = asyncio.run(ActorRuntime.dispatch(actor_type_name, actor_id, method_name, req_body))
+            except Exception as ex:
+                # TODO: Better error handling
+                dapr_error = {
+                    'message': str(ex)
+                }
+                return dapr_error, 500
             return result, 200
         app.add_url_rule('/actors/<actor_type_name>/<actor_id>/method/<method_name>', None, actor_method_handler, methods=['PUT'])

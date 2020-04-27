@@ -9,11 +9,6 @@ from examples.demo_actor.demo_actor_interface import DemoActorInterface, actorme
 class DemoActor(Actor, DemoActorInterface):
     def __init__(self, ctx, actor_id):
         super(DemoActor, self).__init__(ctx, actor_id)
-
-        # Set default data
-        self._mydata = {
-            "data": "default"
-        }
     
     async def _on_activate(self):
         print (f'Activate {self.__class__.__name__} actor!', flush=True)
@@ -22,8 +17,11 @@ class DemoActor(Actor, DemoActorInterface):
         print (f'Deactivate {self.__class__.__name__} actor!', flush=True)
 
     async def get_my_data(self) -> object:
-        self._mydata['ts'] = datetime.datetime.now(datetime.timezone.utc)
-        return self._mydata
+        has_value, val = await self._state_manager.try_get_state('mydata')
+        print (f'has_value: {has_value}', flush=True)
+        return val
 
     async def set_my_data(self, data) -> None:
-        self._mydata = data
+        data['ts'] = datetime.datetime.now(datetime.timezone.utc)
+        await self._state_manager.set_state('mydata', data)
+        await self._state_manager.save_state()

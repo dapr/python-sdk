@@ -65,9 +65,11 @@ class ActorStateManager(Generic[T]):
         return True
 
     async def get_state(self, state_name: str) -> T:
-        has_value, val = self.try_get_state(state_name)
-        if has_value: return val
-        raise KeyError(f'Actor State with name {state_name} was not found.')
+        has_value, val = await self.try_get_state(state_name)
+        if has_value:
+            return val
+        else:
+            raise KeyError(f'Actor State with name {state_name} was not found.')
 
     async def try_get_state(self, state_name: str) -> Tuple[bool, T]:
         if state_name in self._state_change_tracker:
