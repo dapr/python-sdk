@@ -5,14 +5,12 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 import aiohttp
-import asyncio
 import io
 
 from dapr.conf import settings
 from dapr.clients.base import DaprActorClientBase
 
 CONTENT_TYPE_HEADER='content-type'
-
 DEFAULT_ENCODING='utf-8'
 DEFAULT_JSON_CONTENT_TYPE=f'application/json; charset={DEFAULT_ENCODING}'
 
