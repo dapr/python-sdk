@@ -16,8 +16,8 @@ pip install dapr-client
 A client can be created as follows:
 
 ```python
-from dapr import dapr_pb2 as messages
-from dapr import dapr_pb2_grpc as services
+from dapr.proto.dapr.v1 import dapr_pb2 as messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as services
 import grpc
 from google.protobuf.any_pb2 import Any
 
