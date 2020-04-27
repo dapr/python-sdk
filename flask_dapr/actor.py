@@ -20,6 +20,7 @@ class DaprActor(object):
             self.init_app(app)
 
     def init_app(self, app):
+        self._add_healthz(app)
         self._add_actor_config_route(app)
         self._add_actor_activation_route(app)
         self._add_actor_deactivation_route(app)
@@ -31,6 +32,11 @@ class DaprActor(object):
 
     def register_actor(self, actor: Actor) -> None:
         asyncio.run(ActorRuntime.register_actor(actor))
+
+    def _add_healthz(self, app):
+        def actor_config_handler():
+            return '', 200
+        app.add_url_rule('/healthz', None, actor_config_handler, methods=['GET'])
 
     def _add_actor_config_route(self, app):
         def actor_config_handler():
