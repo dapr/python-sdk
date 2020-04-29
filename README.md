@@ -16,8 +16,8 @@ pip install dapr-client
 A client can be created as follows:
 
 ```python
-from dapr import dapr_pb2 as messages
-from dapr import dapr_pb2_grpc as services
+from dapr.proto.dapr.v1 import dapr_pb2 as messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as services
 import grpc
 from google.protobuf.any_pb2 import Any
 
@@ -47,3 +47,29 @@ python setup.py sdist bdist_wheel
 
 The package will be generated in src/dist directory.
 For more information on generating packages, see python documentation at https://packaging.python.org/tutorials/packaging-projects/
+
+### Generating gRPC interface and proto buf
+
+As a good practice create a python virtual environment:
+
+```sh
+python3 -m venv <env_name>
+source <env_name>/bin/activate
+```
+
+## Linux and MacOS
+Run the following commands:
+```sh
+pip3 install -r grpc_requirements
+sudo chmod +x protobuf.sh
+. ./protobuf.sh
+```
+## Windows
+Run the following commands in powershell:
+```sh
+pip3 install -r grpc_requirements
+.\protobuf.ps1
+```
+Add absolute path of `src` folder as `PYTHONPATH` environment variable.
+
+> Note: To use the newly generated proto buf stubs and gRPC interface replace `daprd` with `edge` version of `daprd` built from master branch. Refer [this](https://github.com/dapr/dapr/blob/master/docs/development/developing-dapr.md#build-the-dapr-binaries) for instructions on how to build `daprd` from master. 
