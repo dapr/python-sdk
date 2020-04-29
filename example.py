@@ -1,5 +1,5 @@
-from dapr import dapr_pb2 as messages
-from dapr import dapr_pb2_grpc as services
+from dapr.proto.dapr.v1 import dapr_pb2 as messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as services
 import grpc
 import os
 from google.protobuf.any_pb2 import Any
@@ -17,16 +17,16 @@ print('Published!')
 key = 'mykey'
 storeName = 'statestore'
 req = messages.StateRequest(key=key, value=Any(value='my state'.encode('utf-8')))
-state = messages.SaveStateEnvelope(storeName=storeName, requests=[req])
+state = messages.SaveStateEnvelope(store_name=storeName, requests=[req])
 
 client.SaveState(state)
 print('Saved!')
 
-resp = client.GetState(messages.GetStateEnvelope(storeName=storeName, key=key))
+resp = client.GetState(messages.GetStateEnvelope(store_name=storeName, key=key))
 print('Got!')
 print(resp)
 
-resp = client.DeleteState(messages.DeleteStateEnvelope(storeName=storeName, key=key))
+resp = client.DeleteState(messages.DeleteStateEnvelope(store_name=storeName, key=key))
 print('Deleted!')
 
 channel.close()
