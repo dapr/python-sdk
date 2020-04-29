@@ -12,6 +12,7 @@ from dapr.actor.runtime.typeinformation import ActorTypeInformation
 
 from .fakeactorclasses import *
 
+
 class ActorTypeInformationTests(unittest.TestCase):
     def setUp(self):
         pass

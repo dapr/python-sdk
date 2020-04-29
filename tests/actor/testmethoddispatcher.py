@@ -20,7 +20,7 @@ class ActorMethodDispatcherTests(unittest.IsolatedAsyncioTestCase):
         self._testActorTypeInfo = ActorTypeInformation.create(FakeSimpleActor)
         self._serializer = DefaultJSONSerializer()
         self._fake_client = AsyncMock()
-        self._fake_runtime_ctx = ActorRuntimeContext(self._testActorTypeInfo, self._serializer, self._serializer)
+        self._fake_runtime_ctx = ActorRuntimeContext(self._testActorTypeInfo, self._serializer, self._serializer, self._fake_client)
 
     def test_get_arg_names(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)

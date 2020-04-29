@@ -18,7 +18,7 @@ class ActorRuntimeContext:
     def __init__(
             self, actor_type_info: 'ActorTypeInformation',
             message_serializer: Serializer, state_serializer: Serializer,
-            actor_client: DaprActorClientBase = None,
+            actor_client: DaprActorClientBase,
             actor_factory: Callable[['ActorRuntimeContext', ActorId], 'Actor'] = None):
         self._actor_type_info = actor_type_info
         self._actor_factory = actor_factory or self._default_actor_factory
@@ -26,7 +26,7 @@ class ActorRuntimeContext:
         self._state_serializer = state_serializer
 
         # Create State management provider for actor.
-        self._dapr_client = actor_client or DaprActorHttpClient()
+        self._dapr_client = actor_client
         self._state_provider = StateProvider(self._dapr_client, state_serializer)
 
     @property

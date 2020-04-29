@@ -13,6 +13,7 @@ from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
+from dapr.clients import DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
 
 class ActorRuntime:
@@ -38,7 +39,9 @@ class ActorRuntime:
         :param Serializer state_serializer: Serializer that serializes state values.
         """
         type_info = ActorTypeInformation.create(actor)
-        ctx = ActorRuntimeContext(type_info, message_serializer, state_serializer)
+        # TODO: We will allow to use gRPC client later.
+        actor_client = DaprActorHttpClient()
+        ctx = ActorRuntimeContext(type_info, message_serializer, state_serializer, actor_client)
 
         # Create an ActorManager, override existing entry if registered again.
         async with cls._actor_managers_lock:

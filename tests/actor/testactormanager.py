@@ -25,7 +25,7 @@ class ActorManagerTests(unittest.IsolatedAsyncioTestCase):
 
         self._fake_client = AsyncMock()
         self._fake_client.invoke_method.return_value = b'"expected_response"'
-        self._runtime_ctx = ActorRuntimeContext(self._test_type_info, self._serializer, self._serializer)
+        self._runtime_ctx = ActorRuntimeContext(self._test_type_info, self._serializer, self._serializer, self._fake_client)
         self._manager = ActorManager(self._runtime_ctx)
 
     async def test_activate_actor(self):
