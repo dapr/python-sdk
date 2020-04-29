@@ -6,13 +6,13 @@
 
 ## Structure of Python SDK
 
-* [dapr/actor](../dapr/actor): Actor Framework
-* [dapr/clients](../dapr/clients): HTTP clients for Dapr building blocks
-* [dapr/serializers](../dapr/serializers): serializer/deserializer
-* [dapr/conf](../dapr/conf): Configuration
-* [flask_dapr](../flask_dapr): flask extension for Dapr
-* [tests](../tests/): unit-tests
-* [examples/demo_actor](../examples/demo_actor): demo actor example
+* [dapr/actor](./dapr/actor): Actor Framework
+* [dapr/clients](./dapr/clients): HTTP clients for Dapr building blocks
+* [dapr/serializers](./dapr/serializers): serializer/deserializer
+* [dapr/conf](./dapr/conf): Configuration
+* [flask_dapr](./flask_dapr): flask extension for Dapr
+* [tests](./tests/): unit-tests
+* [examples/demo_actor](./examples/demo_actor): demo actor example
 
 ## Status
 
