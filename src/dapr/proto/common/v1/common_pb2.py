@@ -20,8 +20,8 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='dapr/proto/common/v1/common.proto',
   package='dapr.proto.common.v1',
   syntax='proto3',
-  serialized_options=_b('\n\nio.dapr.v1B\nDaprProtosZ(github.com/dapr/dapr/pkg/proto/common/v1\252\002\033Dapr.Client.Autogen.Grpc.v1'),
-  serialized_pb=_b('\n!dapr/proto/common/v1/common.proto\x12\x14\x64\x61pr.proto.common.v1\x1a\x19google/protobuf/any.proto\"\xaf\x02\n\rHTTPExtension\x12\x36\n\x04verb\x18\x01 \x01(\x0e\x32(.dapr.proto.common.v1.HTTPExtension.Verb\x12I\n\x0bquerystring\x18\x02 \x03(\x0b\x32\x34.dapr.proto.common.v1.HTTPExtension.QuerystringEntry\x1a\x32\n\x10QuerystringEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"g\n\x04Verb\x12\x08\n\x04NONE\x10\x00\x12\x07\n\x03GET\x10\x01\x12\x08\n\x04HEAD\x10\x02\x12\x08\n\x04POST\x10\x03\x12\x07\n\x03PUT\x10\x04\x12\n\n\x06\x44\x45LETE\x10\x05\x12\x0b\n\x07\x43ONNECT\x10\x06\x12\x0b\n\x07OPTIONS\x10\x07\x12\t\n\x05TRACE\x10\x08\"9\n\x13\x44\x61taWithContentType\x12\x14\n\x0c\x63ontent_type\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\x0c\"\x80\x01\n\rInvokeRequest\x12\x0e\n\x06method\x18\x01 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12;\n\x0ehttp_extension\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.HTTPExtension\"4\n\x0eInvokeResponse\x12\"\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x14.google.protobuf.AnyB`\n\nio.dapr.v1B\nDaprProtosZ(github.com/dapr/dapr/pkg/proto/common/v1\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
+  serialized_options=_b('\n\nio.dapr.v1B\014CommonProtosZ(github.com/dapr/dapr/pkg/proto/common/v1\252\002\033Dapr.Client.Autogen.Grpc.v1'),
+  serialized_pb=_b('\n!dapr/proto/common/v1/common.proto\x12\x14\x64\x61pr.proto.common.v1\x1a\x19google/protobuf/any.proto\"\xaf\x02\n\rHTTPExtension\x12\x36\n\x04verb\x18\x01 \x01(\x0e\x32(.dapr.proto.common.v1.HTTPExtension.Verb\x12I\n\x0bquerystring\x18\x02 \x03(\x0b\x32\x34.dapr.proto.common.v1.HTTPExtension.QuerystringEntry\x1a\x32\n\x10QuerystringEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"g\n\x04Verb\x12\x08\n\x04NONE\x10\x00\x12\x07\n\x03GET\x10\x01\x12\x08\n\x04HEAD\x10\x02\x12\x08\n\x04POST\x10\x03\x12\x07\n\x03PUT\x10\x04\x12\n\n\x06\x44\x45LETE\x10\x05\x12\x0b\n\x07\x43ONNECT\x10\x06\x12\x0b\n\x07OPTIONS\x10\x07\x12\t\n\x05TRACE\x10\x08\"\x96\x01\n\rInvokeRequest\x12\x0e\n\x06method\x18\x01 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x14\n\x0c\x63ontent_type\x18\x03 \x01(\t\x12;\n\x0ehttp_extension\x18\x04 \x01(\x0b\x32#.dapr.proto.common.v1.HTTPExtension\"J\n\x0eInvokeResponse\x12\"\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x14\n\x0c\x63ontent_type\x18\x02 \x01(\tBb\n\nio.dapr.v1B\x0c\x43ommonProtosZ(github.com/dapr/dapr/pkg/proto/common/v1\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,])
 
@@ -154,44 +154,6 @@ _HTTPEXTENSION = _descriptor.Descriptor(
 )
 
 
-_DATAWITHCONTENTTYPE = _descriptor.Descriptor(
-  name='DataWithContentType',
-  full_name='dapr.proto.common.v1.DataWithContentType',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='content_type', full_name='dapr.proto.common.v1.DataWithContentType.content_type', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='body', full_name='dapr.proto.common.v1.DataWithContentType.body', index=1,
-      number=2, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=392,
-  serialized_end=449,
-)
-
-
 _INVOKEREQUEST = _descriptor.Descriptor(
   name='InvokeRequest',
   full_name='dapr.proto.common.v1.InvokeRequest',
@@ -214,8 +176,15 @@ _INVOKEREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='http_extension', full_name='dapr.proto.common.v1.InvokeRequest.http_extension', index=2,
-      number=3, type=11, cpp_type=10, label=1,
+      name='content_type', full_name='dapr.proto.common.v1.InvokeRequest.content_type', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='http_extension', full_name='dapr.proto.common.v1.InvokeRequest.http_extension', index=3,
+      number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -232,8 +201,8 @@ _INVOKEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=452,
-  serialized_end=580,
+  serialized_start=393,
+  serialized_end=543,
 )
 
 
@@ -251,6 +220,13 @@ _INVOKERESPONSE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='content_type', full_name='dapr.proto.common.v1.InvokeResponse.content_type', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -263,8 +239,8 @@ _INVOKERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=582,
-  serialized_end=634,
+  serialized_start=545,
+  serialized_end=619,
 )
 
 _HTTPEXTENSION_QUERYSTRINGENTRY.containing_type = _HTTPEXTENSION
@@ -275,7 +251,6 @@ _INVOKEREQUEST.fields_by_name['data'].message_type = google_dot_protobuf_dot_any
 _INVOKEREQUEST.fields_by_name['http_extension'].message_type = _HTTPEXTENSION
 _INVOKERESPONSE.fields_by_name['data'].message_type = google_dot_protobuf_dot_any__pb2._ANY
 DESCRIPTOR.message_types_by_name['HTTPExtension'] = _HTTPEXTENSION
-DESCRIPTOR.message_types_by_name['DataWithContentType'] = _DATAWITHCONTENTTYPE
 DESCRIPTOR.message_types_by_name['InvokeRequest'] = _INVOKEREQUEST
 DESCRIPTOR.message_types_by_name['InvokeResponse'] = _INVOKERESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -294,13 +269,6 @@ HTTPExtension = _reflection.GeneratedProtocolMessageType('HTTPExtension', (_mess
   })
 _sym_db.RegisterMessage(HTTPExtension)
 _sym_db.RegisterMessage(HTTPExtension.QuerystringEntry)
-
-DataWithContentType = _reflection.GeneratedProtocolMessageType('DataWithContentType', (_message.Message,), {
-  'DESCRIPTOR' : _DATAWITHCONTENTTYPE,
-  '__module__' : 'dapr.proto.common.v1.common_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.common.v1.DataWithContentType)
-  })
-_sym_db.RegisterMessage(DataWithContentType)
 
 InvokeRequest = _reflection.GeneratedProtocolMessageType('InvokeRequest', (_message.Message,), {
   'DESCRIPTOR' : _INVOKEREQUEST,
