@@ -20,20 +20,17 @@ print(f"Started gRPC client on DAPR_GRPC_PORT: {port}")
 # Our server methods
 class DaprClientServicer(daprclient_services.DaprClientServicer):
     def OnInvoke(self, request, context):
-        resp_data = Any()
+        data=None
+        content_type=""
         if request.method == 'my-method':
-            resp_data.Pack(commonv1pb.DataWithContentType(
-                content_type="text/plain; charset=UTF-8",
-                body='INVOKE_RECEIVED'.encode('utf-8')
-            ))
+            data = Any(value='INVOKE_RECEIVED'.encode('utf-8'))
+            content_type = "text/plain; charset=UTF-8"
         else:
-            resp_data.Pack(commonv1pb.DataWithContentType(
-                content_type="text/plain; charset=UTF-8",
-                body='unsupported methods'.encode('utf-8')
-            ))
+            data = Any(value='unsupported methods'.encode('utf-8'))
+            content_type = "text/plain; charset=UTF-8"
 
         # Return response to caller
-        return commonv1pb.InvokeResponse(data=resp_data)
+        return commonv1pb.InvokeResponse(data=data, content_type=content_type)
 
 # Create a gRPC server
 server = grpc.server(futures.ThreadPoolExecutor(max_workers = 10))
