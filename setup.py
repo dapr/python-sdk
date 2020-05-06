@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from .proxy import ActorProxy
+from setuptools import setup
 
-
-__all__ = ['ActorProxy']
+if __name__ == "__main__":
+    setup()

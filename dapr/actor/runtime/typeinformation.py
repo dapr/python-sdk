@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 from dapr.actor.runtime.typeutils import is_dapr_actor, get_actor_interfaces
 
+
 class ActorTypeInformation:
     """The object that contains information about the object
     implementing an actor.

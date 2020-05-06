@@ -8,6 +8,7 @@ Licensed under the MIT License.
 from abc import ABC, abstractmethod
 from typing import Callable
 
+
 class Serializer(ABC):
     """Serializer base class."""
 

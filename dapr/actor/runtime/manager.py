@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import asyncio
-import io
 
 from typing import Awaitable, Callable
 
@@ -16,6 +15,7 @@ from dapr.actor.runtime.methodcontext import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.serializers import Serializer
+
 
 class ActorManager:
     """A Actor Manager manages actors of a specific actor type."""
@@ -63,10 +63,10 @@ class ActorManager:
             await actor._on_pre_actor_method_internal(method_context)
             retval = await dispatch_action(actor)
             await actor._on_post_actor_method_internal(method_context)
-        except Exception as e:
-            await actor._on_invoke_failed(e)
+        except Exception as ex:
+            await actor._on_invoke_failed(ex)
             # TODO: Must handle error properly
-            raise e
+            raise ex
 
         return retval
 

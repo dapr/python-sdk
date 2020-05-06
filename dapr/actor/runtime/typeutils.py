@@ -8,6 +8,7 @@ Licensed under the MIT License.
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime.actor import Actor
 
+
 def get_class_method_args(func: type) -> list:
     args = func.__code__.co_varnames[:func.__code__.co_argcount]
 
@@ -15,6 +16,7 @@ def get_class_method_args(func: type) -> list:
     if args[0] == 'self' or args[0] == 'cls':
         args = args[1:]
     return list(args)
+
 
 def get_method_arg_types(func: type) -> list:
     annotations = getattr(func, '__annotations__')
@@ -25,11 +27,13 @@ def get_method_arg_types(func: type) -> list:
         arg_types.append(arg_type)
     return arg_types
 
+
 def get_method_return_types(func: type) -> type:
     annotations = getattr(func, '__annotations__')
     if len(annotations) == 0 or not annotations['return']:
         return object
     return annotations['return']
+
 
 def get_dispatchable_attrs_from_interface(actor_interface: type, dispatch_map: dict) -> None:
     for attr, v in actor_interface.__dict__.items():
@@ -44,6 +48,7 @@ def get_dispatchable_attrs_from_interface(actor_interface: type, dispatch_map: d
             'arg_types': get_method_arg_types(v),
             'return_types': get_method_return_types(v)
         }
+
 
 def get_dispatchable_attrs(actor_class: type) -> dict:
     """Get the list of dispatchable attributes from actor.
@@ -64,6 +69,7 @@ def get_dispatchable_attrs(actor_class: type) -> dict:
 
     return dispatch_map
 
+
 def is_dapr_actor(cls: type) -> bool:
     """Check if class inherits :class:`Actor`.
 
@@ -72,6 +78,7 @@ def is_dapr_actor(cls: type) -> bool:
     :rtype: bool
     """
     return issubclass(cls, Actor)
+
 
 def get_actor_interfaces(cls: type) -> list:
     """Get the list of the base classes that inherit :class:`ActorInterface`.

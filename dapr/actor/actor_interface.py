@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 
 from abc import ABC
-from dapr.actor.runtime.methodcontext import ActorMethodContext
+
 
 class ActorInterface(ABC):
     """A base class that Dapr Actor inherits.
@@ -25,6 +25,7 @@ class ActorInterface(ABC):
                 ...
     """
     ...
+
 
 def actormethod(name: str = None):
     """Decorate actor method to define the method invoked by the remote actor.

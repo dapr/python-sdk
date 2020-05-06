@@ -5,7 +5,6 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import asyncio
 import unittest
 
 from datetime import timedelta
@@ -15,6 +14,7 @@ from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.serializers import DefaultJSONSerializer
 
 from .fakeactorclasses import FakeSimpleActor, FakeMultiInterfacesActor
+
 
 class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
@@ -68,13 +68,15 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def test_dispatch(self):
         await ActorRuntime.register_actor(FakeMultiInterfacesActor)
         await ActorRuntime.activate(FakeMultiInterfacesActor.__name__, 'test-id')
-        
+
         request_body = {
             "message": "hello dapr",
         }
 
         test_request_body = self._serializer.serialize(request_body)
-        response = await ActorRuntime.dispatch(FakeMultiInterfacesActor.__name__, 'test-id', "ActionMethod", test_request_body)
+        response = await ActorRuntime.dispatch(
+            FakeMultiInterfacesActor.__name__, 'test-id',
+            "ActionMethod", test_request_body)
 
         self.assertEqual(b'"hello dapr"', response)
 

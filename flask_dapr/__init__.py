@@ -6,3 +6,5 @@ Licensed under the MIT License.
 """
 
 from .actor import DaprActor, ActorRuntime
+
+__all__ = ['DaprActor', 'ActorRuntime']

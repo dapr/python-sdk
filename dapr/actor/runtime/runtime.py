@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import asyncio
-import threading
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
@@ -14,7 +13,9 @@ from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
+from dapr.clients import DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
+
 
 class ActorRuntime:
     """Actor Runtime class that creates instances of :class:`Actor` and
@@ -29,15 +30,19 @@ class ActorRuntime:
     @classmethod
     async def register_actor(
             cls, actor: Actor,
-            message_serializer: Serializer = DefaultJSONSerializer()) -> None:
+            message_serializer: Serializer = DefaultJSONSerializer(),
+            state_serializer: Serializer = DefaultJSONSerializer()) -> None:
         """Register an :class:`Actor` with the runtime.
 
         :param Actor actor: Actor implementation
         :param Serializer message_serializer: Serializer that serializes message
             between actors.
+        :param Serializer state_serializer: Serializer that serializes state values.
         """
         type_info = ActorTypeInformation.create(actor)
-        ctx = ActorRuntimeContext(type_info, message_serializer)
+        # TODO: We will allow to use gRPC client later.
+        actor_client = DaprActorHttpClient()
+        ctx = ActorRuntimeContext(type_info, message_serializer, state_serializer, actor_client)
 
         # Create an ActorManager, override existing entry if registered again.
         async with cls._actor_managers_lock:
@@ -74,7 +79,7 @@ class ActorRuntime:
             cls, actor_type_name: str, actor_id: str,
             actor_method_name: str, request_body: bytes) -> bytes:
         """Dispatch actor method defined in actor_type.
-        
+
         :param str actor_type_name: the name of actor type
         :param str actor_id: Actor ID
         :param str actor_method_name: the method name that is dispatched

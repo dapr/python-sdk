@@ -1,49 +1,57 @@
 # Dapr SDK for Python
-This is the Dapr SDK for Python, based on the auto-generated proto client.<br>
 
-For more info on Dapr and gRPC, visit [this link](https://github.com/dapr/docs/tree/master/howto/create-grpc-app).
+> WIP - Dapr core team does not have the official plan to support python-sdk now, except for the auto-generated gRPC client. but we're always welcoming any contribution.
 
-The repository generates following package
-- dapr
+## Structure of Python SDK
 
-### Installing package
-```sh
-pip install dapr-client
+* [dapr/actor](./dapr/actor): Actor Framework
+* [dapr/clients](./dapr/clients): HTTP clients for Dapr building blocks
+* [dapr/serializers](./dapr/serializers): serializer/deserializer
+* [dapr/conf](./dapr/conf): Configuration
+* [flask_dapr](./flask_dapr): flask extension for Dapr
+* [tests](./tests/): unit-tests
+* [examples/demo_actor](./examples/demo_actor): demo actor example
+
+## Status
+
+* [x] Initial implementation of Actor Runtime/Manager/Proxy
+* [x] Actor service invocation
+* [x] RPC style actor proxy
+* [x] Flask integration for Dapr Actor Service
+* [x] Example for Actor service invocation
+* [x] Complete tox.ini setup
+* [x] Actor state management
+* [ ] Actor timer
+* [ ] Actor reminder
+* [ ] Handle Error properly
+* [ ] Package Dapr Actor SDK
+* [ ] Create gRPC and HTTP rest clients for Dapr
+* [ ] Flask extensions for Dapr State/Pubsub/Bindings
+* [ ] Package Dapr SDK
+
+## Developing
+
+### Prerequisites
+
+* [Install Dapr standalone mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-standalone)
+* [Install Python 3.8+](https://www.python.org/downloads/)
+
+### Build and test
+
+1. Clone python-sdk
+```bash
+git clone https://github.com/dapr/python-sdk.git
+cd python-sdk
 ```
-*Note*: Depending on your OS, you may want to use pip3 instead of pip.
-
-### Example code
-A client can be created as follows:
-
-```python
-from dapr import dapr_pb2 as messages
-from dapr import dapr_pb2_grpc as services
-import grpc
-from google.protobuf.any_pb2 import Any
-
-channel = grpc.insecure_channel('localhost:50001')
-client = services.DaprStub(channel)
+2. Set PYTHONPATH environment
+```bash
+export PYTHONPATH=`pwd`
+```
+3. Run unit-test
+```bash
+tox -e py38
 ```
 
-You can find a complete example [here](https://github.com/dapr/python-sdk/blob/master/example.py)
+## Examples
 
-### Running the code locally
-
-You can execute this code using the local dapr runtime:
-
-```sh
-dapr run --protocol grpc --grpc-port=50001 python example.py
-```
-*Note*: Depending on your OS, you may want to use python3 instead of python.
-
-
-### Generating package
-Package can be generated as:
-```sh
-cd src
-python setup.py sdist bdist_wheel
-```
-*Note*: Depending on your OS, you may want to use python3 instead of python.
-
-The package will be generated in src/dist directory.
-For more information on generating packages, see python documentation at https://packaging.python.org/tutorials/packaging-projects/
+* [DemoActor](./examples/demo_actor)

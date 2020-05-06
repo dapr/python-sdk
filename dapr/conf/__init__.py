@@ -9,6 +9,7 @@ import os
 
 from dapr.conf import global_settings
 
+
 class Settings:
     def __init__(self):
         for setting in dir(global_settings):
@@ -18,5 +19,6 @@ class Settings:
 
     def __getattr__(self, name):
         return getattr(self, name)
+
 
 settings = Settings()
