@@ -15,22 +15,25 @@ from dapr.serializers import DefaultJSONSerializer
 
 from .fakeactorclasses import FakeSimpleActor
 
+
 class ActorMethodDispatcherTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self._testActorTypeInfo = ActorTypeInformation.create(FakeSimpleActor)
         self._serializer = DefaultJSONSerializer()
         self._fake_client = AsyncMock()
-        self._fake_runtime_ctx = ActorRuntimeContext(self._testActorTypeInfo, self._serializer, self._serializer, self._fake_client)
+        self._fake_runtime_ctx = ActorRuntimeContext(
+            self._testActorTypeInfo, self._serializer,
+            self._serializer, self._fake_client)
 
     def test_get_arg_names(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
         arg_names = dispatcher.get_arg_names("ActorMethod")
-        self.assertEqual([ 'arg' ], arg_names)
+        self.assertEqual(['arg'], arg_names)
 
     def test_get_arg_types(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
         arg_names = dispatcher.get_arg_types("ActorMethod")
-        self.assertEqual([ int ], arg_names)
+        self.assertEqual([int], arg_names)
 
     def test_get_return_type(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)

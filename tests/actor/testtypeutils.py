@@ -7,12 +7,18 @@ Licensed under the MIT License.
 
 import unittest
 
-from datetime import timedelta
-from dapr.actor.runtime.actor import Actor
-from dapr.actor.actor_interface import ActorInterface, actormethod
-from dapr.actor.runtime.typeutils import *
+from dapr.actor.actor_interface import ActorInterface
+from dapr.actor.runtime.typeutils import (
+    get_class_method_args, get_method_arg_types,
+    get_method_return_types, is_dapr_actor,
+    get_actor_interfaces, get_dispatchable_attrs
+)
 
-from .fakeactorclasses import *
+from .fakeactorclasses import (
+    FakeSimpleActor, FakeMultiInterfacesActor,
+    FakeActorCls1Interface, FakeActorCls2Interface
+)
+
 
 class TypeUtilsTests(unittest.TestCase):
     def test_get_class_method_args(self):
@@ -21,7 +27,7 @@ class TypeUtilsTests(unittest.TestCase):
 
     def test_get_method_arg_types(self):
         arg_types = get_method_arg_types(FakeSimpleActor.non_actor_method)
-        self.assertEqual(arg_types, [ type(int(30)), type(str("102")), type(float(10.0)) ])
+        self.assertEqual(arg_types, [type(int(30)), type(str("102")), type(float(10.0))])
 
     def test_get_return_types(self):
         rtn_type = get_method_return_types(FakeSimpleActor.actor_method)
@@ -40,7 +46,7 @@ class TypeUtilsTests(unittest.TestCase):
                 pass
 
         self.assertFalse(is_dapr_actor(TestNonActorClass))
-    
+
     def test_get_actor_interface(self):
         actor_interfaces = get_actor_interfaces(FakeMultiInterfacesActor)
 
@@ -60,5 +66,5 @@ class TypeUtilsTests(unittest.TestCase):
         for method in expected_dispatchable_attrs:
             if dispatchable_attrs.get(method) is not None:
                 method_cnt = method_cnt + 1
-        
+
         self.assertEqual(len(expected_dispatchable_attrs), method_cnt)

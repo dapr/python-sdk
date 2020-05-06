@@ -6,3 +6,6 @@ Licensed under the MIT License.
 """
 
 from .proxy import ActorProxy
+
+
+__all__ = ['ActorProxy']

@@ -7,10 +7,11 @@ Licensed under the MIT License.
 
 import unittest
 
-from datetime import timedelta
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 
-from .fakeactorclasses import *
+from .fakeactorclasses import (
+    FakeSimpleActor, FakeMultiInterfacesActor, FakeActorCls1Interface, FakeActorCls2Interface
+)
 
 
 class ActorTypeInformationTests(unittest.TestCase):

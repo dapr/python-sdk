@@ -4,21 +4,22 @@
 import datetime
 
 from dapr.actor import Actor
-from examples.demo_actor.demo_actor_interface import DemoActorInterface, actormethod
+from examples.demo_actor.demo_actor_interface import DemoActorInterface
+
 
 class DemoActor(Actor, DemoActorInterface):
     def __init__(self, ctx, actor_id):
         super(DemoActor, self).__init__(ctx, actor_id)
-    
+
     async def _on_activate(self):
-        print (f'Activate {self.__class__.__name__} actor!', flush=True)
+        print(f'Activate {self.__class__.__name__} actor!', flush=True)
 
     async def _on_deactivate(self):
-        print (f'Deactivate {self.__class__.__name__} actor!', flush=True)
+        print(f'Deactivate {self.__class__.__name__} actor!', flush=True)
 
     async def get_my_data(self) -> object:
         has_value, val = await self._state_manager.try_get_state('mydata')
-        print (f'has_value: {has_value}', flush=True)
+        print(f'has_value: {has_value}', flush=True)
         return val
 
     async def set_my_data(self, data) -> None:

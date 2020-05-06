@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 from enum import Enum
 
+
 class ActorCallType(Enum):
     """A enumeration that represents the call-type associated with the actor method.
     :class:`ActorMethodContext` includes :class:`ActorCallType` passing to

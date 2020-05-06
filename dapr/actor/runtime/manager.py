@@ -16,6 +16,7 @@ from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.serializers import Serializer
 
+
 class ActorManager:
     """A Actor Manager manages actors of a specific actor type."""
 

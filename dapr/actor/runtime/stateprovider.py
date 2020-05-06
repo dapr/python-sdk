@@ -22,6 +22,7 @@ MAP_CHANGE_KIND_TO_OPERATION = {
     StateChangeKind.update: b'upsert',
 }
 
+
 class StateProvider(Generic[T]):
     def __init__(
             self,

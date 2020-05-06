@@ -13,6 +13,7 @@ from dapr.actor.runtime.typeutils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
 
+
 class ActorProxyFactory:
     """A factory class that creates :class:`ActorProxy` object to the remote
     actor objects.
@@ -30,6 +31,7 @@ class ActorProxyFactory:
                actor_type: str, actor_id: str) -> 'ActorProxy':
         return ActorProxy(self._dapr_client, actor_interface,
                           actor_type, actor_id, self._message_serializer)
+
 
 class CallableProxy:
     def __init__(

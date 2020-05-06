@@ -10,6 +10,7 @@ from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.actor.runtime.typeutils import get_dispatchable_attrs
 
+
 class ActorMethodDispatcher:
     def __init__(self, type_info: ActorTypeInformation):
         self._dispatch_mapping = get_dispatchable_attrs(type_info.implementation_type)

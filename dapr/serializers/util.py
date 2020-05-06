@@ -11,6 +11,7 @@ from datetime import timedelta
 # Regex to parse Go Duration datatype, e.g. 4h15m50s
 DAPR_DURATION_PARSER = re.compile(r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?')
 
+
 def convert_from_dapr_duration(duration: str) -> timedelta:
     matched = DAPR_DURATION_PARSER.match(duration)
     if matched.lastindex == 0:
@@ -29,6 +30,7 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
         hours=hours,
         minutes=mins,
         seconds=seconds)
+
 
 def convert_to_dapr_duration(td: timedelta) -> str:
     total_minutes, secs = divmod(td.total_seconds(), 60.0)

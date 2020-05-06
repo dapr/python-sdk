@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 from abc import ABC, abstractmethod
 
+
 class DaprActorClientBase(ABC):
     """A base class that represents Dapr Actor Client.
 

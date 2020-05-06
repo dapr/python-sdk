@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 import uuid
 
+
 class ActorId:
     """ActorId that represents the identity of an actor.
 

@@ -8,6 +8,7 @@ Licensed under the MIT License.
 from datetime import timedelta
 import json
 
+
 class ActorRuntimeConfig:
     """Actor runtime configuration that configures Actor behavior in
     Dapr Runtime.

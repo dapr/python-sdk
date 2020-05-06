@@ -5,7 +5,6 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import asyncio
 import unittest
 
 from unittest.mock import AsyncMock
@@ -18,6 +17,7 @@ from dapr.serializers import DefaultJSONSerializer
 
 from .fakeactorclasses import FakeMultiInterfacesActor
 
+
 class ActorManagerTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self._test_type_info = ActorTypeInformation.create(FakeMultiInterfacesActor)
@@ -25,7 +25,9 @@ class ActorManagerTests(unittest.IsolatedAsyncioTestCase):
 
         self._fake_client = AsyncMock()
         self._fake_client.invoke_method.return_value = b'"expected_response"'
-        self._runtime_ctx = ActorRuntimeContext(self._test_type_info, self._serializer, self._serializer, self._fake_client)
+        self._runtime_ctx = ActorRuntimeContext(
+            self._test_type_info, self._serializer,
+            self._serializer, self._fake_client)
         self._manager = ActorManager(self._runtime_ctx)
 
     async def test_activate_actor(self):

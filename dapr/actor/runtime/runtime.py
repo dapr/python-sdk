@@ -16,6 +16,7 @@ from dapr.actor.runtime.manager import ActorManager
 from dapr.clients import DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
 
+
 class ActorRuntime:
     """Actor Runtime class that creates instances of :class:`Actor` and
     activates and deactivates :class:`Actor`.

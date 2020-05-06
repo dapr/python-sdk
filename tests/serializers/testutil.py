@@ -10,6 +10,7 @@ from datetime import timedelta
 
 from dapr.serializers.util import convert_from_dapr_duration, convert_to_dapr_duration
 
+
 class UtilTests(unittest.TestCase):
     def setUp(self):
         pass
@@ -33,6 +34,7 @@ class UtilTests(unittest.TestCase):
     def test_convert_timedelta_to_dapr_duariton(self):
         duration = convert_to_dapr_duration(timedelta(hours=4, minutes=15, seconds=40))
         self.assertEqual(duration, '4h15m40s')
-        
+
+
 if __name__ == '__main__':
     unittest.main()

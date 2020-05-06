@@ -5,14 +5,15 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 import aiohttp
-import io
 
 from dapr.conf import settings
 from dapr.clients.base import DaprActorClientBase
 
-CONTENT_TYPE_HEADER='content-type'
-DEFAULT_ENCODING='utf-8'
-DEFAULT_JSON_CONTENT_TYPE=f'application/json; charset={DEFAULT_ENCODING}'
+
+CONTENT_TYPE_HEADER = 'content-type'
+DEFAULT_ENCODING = 'utf-8'
+DEFAULT_JSON_CONTENT_TYPE = f'application/json; charset={DEFAULT_ENCODING}'
+
 
 class DaprActorHttpClient(DaprActorClientBase):
     """A Dapr Actor http client implementing :class:`DaprActorClientBase`"""
@@ -74,7 +75,7 @@ class DaprActorHttpClient(DaprActorClientBase):
             actor_id)
 
     async def _send_bytes(
-            self, method: str, url: str, 
+            self, method: str, url: str,
             data: bytes, headers: dict = {}) -> bytes:
         if not headers.get(CONTENT_TYPE_HEADER):
             headers[CONTENT_TYPE_HEADER] = DEFAULT_JSON_CONTENT_TYPE

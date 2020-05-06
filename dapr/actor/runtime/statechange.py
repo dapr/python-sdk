@@ -10,6 +10,7 @@ from typing import TypeVar, Generic
 
 T = TypeVar('T')
 
+
 class StateChangeKind(Enum):
     """A enumeration that represents the kind of state change for an actor state
     when saves change is called to a set of actor states.

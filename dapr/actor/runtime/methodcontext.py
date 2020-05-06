@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 from .calltype import ActorCallType
 
+
 class ActorMethodContext:
     """A Actor method context that contains method information invoked
     by :class:`ActorRuntime`.

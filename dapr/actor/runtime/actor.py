@@ -9,6 +9,7 @@ from dapr.actor.runtime.methodcontext import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.statemanager import ActorStateManager
 
+
 class Actor:
     """A base class of Actors that provides the common functionality of actors.
 

@@ -17,6 +17,7 @@ from dapr.serializers.util import convert_from_dapr_duration, \
     convert_to_dapr_duration, DAPR_DURATION_PARSER
 from dapr.actor.runtime.config import ActorRuntimeConfig
 
+
 class DefaultJSONSerializer(Serializer):
     def serialize(
             self, obj: object,
@@ -43,6 +44,7 @@ class DefaultJSONSerializer(Serializer):
 
         return custom_hook(obj) if callable(custom_hook) else obj
 
+
 class DaprJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         # See "Date Time String Format" in the ECMA-262 specification.
@@ -59,6 +61,7 @@ class DaprJSONEncoder(json.JSONEncoder):
             return convert_to_dapr_duration(obj)
         else:
             return json.JSONEncoder.default(self, obj)
+
 
 class DaprJSONDecoder(json.JSONDecoder):
     # TODO: improve regex
