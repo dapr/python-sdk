@@ -1,8 +1,6 @@
-# Dapr SDK
+# Dapr SDK for Python
 
-> WIP - Porting from [dotnet-sdk](https://github.com/dapr/dotnet-sdk) to python
-> 
-> Dapr core team does not have the official plan to support python-sdk now, except for the auto-generated gRPC client. but we're always welcoming any contribution.
+> WIP - Dapr core team does not have the official plan to support python-sdk now, except for the auto-generated gRPC client. but we're always welcoming any contribution.
 
 ## Structure of Python SDK
 
@@ -49,7 +47,7 @@ cd python-sdk
 ```bash
 export PYTHONPATH=`pwd`
 ```
-3. Run unit-test (later, we will use tox)
+3. Run unit-test
 ```bash
 tox -e py38
 ```
