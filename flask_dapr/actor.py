@@ -89,3 +89,37 @@ class DaprActor(object):
             '/actors/<actor_type_name>/<actor_id>/method/<method_name>',
             None, actor_method_handler,
             methods=['PUT'])
+
+    def _add_timer_route(self, app):
+        def actor_timer_handler(actor_type_name, actor_id, timer_name):
+            # Read raw bytes from request stream
+            req_body = request.stream.read()
+            try:
+                result = asyncio.run(ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name))
+            except Exception as ex:
+                # TODO: Better error handling
+                dapr_error = {
+                    'message': str(ex)
+                }
+                return dapr_error, 500
+            return result, 200
+        app.add_url_rule(
+            '/actors/<actor_type_name>/<actor_id>/method/timer/<timer_name>',
+            None, actor_timer_handler, methods=['PUT'])
+
+    def _add_reminder_route(self, app):
+        def actor_reminder_handler(actor_type_name, actor_id, reminder_name):
+            # Read raw bytes from request stream
+            req_body = request.stream.read()
+            try:
+                result = asyncio.run(ActorRuntime.fire_reminder(actor_type_name, actor_id, reminder_name, req_body))
+            except Exception as ex:
+                # TODO: Better error handling
+                dapr_error = {
+                    'message': str(ex)
+                }
+                return dapr_error, 500
+            return result, 200
+        app.add_url_rule(
+            '/actors/<actor_type_name>/<actor_id>/method/remind/<reminder_name>',
+            None, actor_reminder_handler, methods=['PUT'])
