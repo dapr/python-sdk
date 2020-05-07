@@ -91,6 +91,31 @@ class ActorRuntime:
         return await manager.dispatch(ActorId(actor_id), actor_method_name, request_body)
 
     @classmethod
+    async def fire_reminder(
+            cls, actor_type_name: str, actor_id: str,
+            name: str, request_body: bytes) -> None:
+        """Fires a reminder for the Actor.
+
+        :param str actor_type_name: the name of actor type
+        :param str actor_id: Actor ID
+        :param str name: the method name that is dispatched
+        :param bytes request_body: the body of request that is passed to actor method arguments
+        """
+        manager = await cls._get_actor_manager(actor_type_name)
+        await manager.fire_reminder(ActorId(actor_id), name, request_body)
+
+    @classmethod
+    async def fire_timer(cls, actor_type_name: str, actor_id: str, name: str) -> None:
+        """Fires a timer for the Actor.
+
+        :param str actor_type_name: the name of actor type
+        :param str actor_id: Actor ID
+        :param str name: the method name that is dispatched
+        """
+        manager = await cls._get_actor_manager(actor_type_name)
+        await manager.fire_timer(ActorId(actor_id), name)
+
+    @classmethod
     def set_actor_config(cls, config: ActorRuntimeConfig) -> None:
         """Set actor runtime config
 

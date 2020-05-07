@@ -32,3 +32,17 @@ class ActorMethodContext:
         for actor_interface_method type
         """
         return ActorMethodContext(method_name, ActorCallType.actor_interface_method)
+
+    @classmethod
+    def create_for_timer(cls, method_name: str):
+        """Helper to create :class:`ActorMethodContext` object
+        for timer_method type
+        """
+        return ActorMethodContext(method_name, ActorCallType.timer_method)
+
+    @classmethod
+    def create_for_reminder(cls, method_name: str):
+        """Helper to create :class:`ActorMethodContext` object
+        for reminder_method type
+        """
+        return ActorMethodContext(method_name, ActorCallType.reminder_method)

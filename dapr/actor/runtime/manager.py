@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 import asyncio
 
+from datetime import timedelta
 from typing import Awaitable, Callable
 
 from dapr.actor.id import ActorId
@@ -14,6 +15,7 @@ from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.methodcontext import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
+from dapr.actor.runtime.reminder_data import ReminderData
 from dapr.serializers import Serializer
 
 
@@ -25,6 +27,8 @@ class ActorManager:
         self._active_actors = {}
         self._active_actors_lock = asyncio.Lock()
         self._dispatcher = ActorMethodDispatcher(ctx.actor_type_info)
+        self._timer_method_context = ActorMethodContext.create_for_timer('fire_timer')
+        self._reminder_method_context = ActorMethodContext.create_for_reminder('receive_reminder')
 
     async def dispatch(
             self, actor_id: ActorId,
@@ -64,11 +68,35 @@ class ActorManager:
             retval = await dispatch_action(actor)
             await actor._on_post_actor_method_internal(method_context)
         except Exception as ex:
-            await actor._on_invoke_failed(ex)
+            await actor._on_invoke_failed_internal(ex)
             # TODO: Must handle error properly
             raise ex
 
         return retval
+
+    async def fire_reminder(
+            self, actor_id: ActorId,
+            reminder_name: str, request_body: bytes) -> None:
+        if not self._runtime_ctx.actor_type_info.is_remindable():
+            return
+        # TODO: deserialize request_body to ReminderData
+        reminderdata = ReminderData('reminder', 'data', timedelta(10, 20), timedelta(10, 20))
+
+        async def invoke_reminder(actor: Actor) -> bytes:
+            reminder = getattr(actor, 'recieve_reminder')
+            if not reminder:
+                await reminder(reminderdata.name, reminderdata.state,
+                               reminderdata.due_time, reminderdata.period)
+            return None
+
+        await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_reminder)
+
+    async def fire_timer(self, actor_id: ActorId, timer_name: str) -> None:
+        async def invoke_timer(actor: Actor) -> bytes:
+            await actor._fire_timer_internal(timer_name)
+            return None
+
+        await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_timer)
 
     @property
     def _message_serializer(self) -> Serializer:
