@@ -39,15 +39,20 @@
 ### Build and test
 
 1. Clone python-sdk
+
 ```bash
 git clone https://github.com/dapr/python-sdk.git
 cd python-sdk
 ```
+
 2. Set PYTHONPATH environment
+
 ```bash
 export PYTHONPATH=`pwd`
 ```
+
 3. Run unit-test
+
 ```bash
 tox -e py38
 ```
