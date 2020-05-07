@@ -1,3 +1,8 @@
+
+"""
+dapr run --protocol grpc --grpc-port=50001 python example.py
+"""
+
 from dapr.proto.dapr.v1 import dapr_pb2 as messages
 from dapr.proto.dapr.v1 import dapr_pb2_grpc as services
 import grpc
@@ -5,7 +10,7 @@ import os
 from google.protobuf.any_pb2 import Any
 
 # Get port from environment variable.
-port = os.getenv('DAPR_GRPC_PORT', '5001')
+port = os.getenv('DAPR_GRPC_PORT', '50001')
 daprUri = 'localhost:' + port
 channel = grpc.insecure_channel(daprUri)
 
