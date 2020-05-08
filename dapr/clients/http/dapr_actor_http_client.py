@@ -67,6 +67,64 @@ class DaprActorHttpClient(DaprActorClientBase):
         }
         return await self._send_bytes(method='GET', url=url, data=None, headers=headers)
 
+    async def register_reminder(
+            self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
+        """Register actor reminder.
+
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str name: str to represent the name of reminder
+        :param bytes data: bytes which includes reminder request json body.
+        """
+        url = f'{self._get_base_url(actor_type, actor_id)}/reminders/{name}'
+        headers = {
+            CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
+        }
+        return await self._send_bytes(method='PUT', url=url, data=data, headers=headers)
+
+    async def unregister_reminder(
+            self, actor_type: str, actor_id: str, name: str) -> None:
+        """Unregister actor reminder.
+
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str name: str to represent the name of reminder
+        """
+        url = f'{self._get_base_url(actor_type, actor_id)}/reminders/{name}'
+        headers = {
+            CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
+        }
+        return await self._send_bytes(method='DELETE', url=url, data=None, headers=headers)
+
+    async def register_timer(
+            self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
+        """Register actor timer.
+
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str name: str to represent the name of reminder
+        :param bytes data: bytes which includes timer request json body.
+        """
+        url = f'{self._get_base_url(actor_type, actor_id)}/timers/{name}'
+        headers = {
+            CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
+        }
+        return await self._send_bytes(method='PUT', url=url, data=data, headers=headers)
+
+    async def unregister_timer(
+            self, actor_type: str, actor_id: str, name: str) -> None:
+        """Unregister actor timer.
+
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str name: str to represent the name of timer
+        """
+        url = f'{self._get_base_url(actor_type, actor_id)}/timers/{name}'
+        headers = {
+            CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
+        }
+        return await self._send_bytes(method='DELETE', url=url, data=None, headers=headers)
+
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
         return 'http://127.0.0.1:{}/{}/actors/{}/{}'.format(
             settings.DAPR_HTTP_PORT,
