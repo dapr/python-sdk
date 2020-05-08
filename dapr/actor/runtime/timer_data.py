@@ -41,3 +41,9 @@ class ActorTimerData:
     @property
     def callback(self) -> TIMER_CALLBACK:
         return self._callback
+
+    def as_dict(self) -> dict:
+        return {
+            'dueTime': self._due_time,
+            'period': self._period,
+        }
