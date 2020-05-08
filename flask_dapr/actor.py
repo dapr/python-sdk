@@ -26,6 +26,8 @@ class DaprActor(object):
         self._add_actor_activation_route(app)
         self._add_actor_deactivation_route(app)
         self._add_actor_method_route(app)
+        self._add_actor_timer_route(app)
+        self._add_actor_reminder_route(app)
 
     def teardown(self, exception):
         # TODO: Deactivate all actors
@@ -92,8 +94,6 @@ class DaprActor(object):
 
     def _add_timer_route(self, app):
         def actor_timer_handler(actor_type_name, actor_id, timer_name):
-            # Read raw bytes from request stream
-            req_body = request.stream.read()
             try:
                 result = asyncio.run(ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name))
             except Exception as ex:
@@ -112,7 +112,8 @@ class DaprActor(object):
             # Read raw bytes from request stream
             req_body = request.stream.read()
             try:
-                result = asyncio.run(ActorRuntime.fire_reminder(actor_type_name, actor_id, reminder_name, req_body))
+                result = asyncio.run(ActorRuntime.fire_reminder(
+                    actor_type_name, actor_id, reminder_name, req_body))
             except Exception as ex:
                 # TODO: Better error handling
                 dapr_error = {
