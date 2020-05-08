@@ -38,8 +38,8 @@ class ActorTypeInformation:
         return self._actor_bases
 
     def is_remindable(self) -> bool:
-        """Returns True if `:Actor:recieve_reminder` is implemented"""
-        return Remindable in self._actor_bases
+        """Returns True if `:Actor:receive_reminder` is implemented"""
+        return Remindable in self._impl_type.__bases__
 
     @classmethod
     def create(cls, actor_class: type) -> 'ActorTypeInformation':

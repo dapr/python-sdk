@@ -17,9 +17,12 @@ class ActorReminderData:
             self, name: str, state: bytes,
             due_time: timedelta, period: timedelta):
         self._name = name
-        self._state = state
         self._due_time = due_time
         self._period = period
+        if isinstance(state, str):
+            self._state = state.encode('utf-8')
+        else:
+            self._state = state
 
     @property
     def name(self) -> str:
@@ -45,13 +48,13 @@ class ActorReminderData:
             'name': self._name,
             'dueTime': self._due_time,
             'period': self._due_time,
-            'state': encoded_state,
+            'data': encoded_state.decode("utf-8"),
         }
 
     @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> 'ActorReminderData':
-        b64encoded_state = obj.get('state')
+    def from_dict(cls, name: str, obj: Dict[str, Any]) -> 'ActorReminderData':
+        b64encoded_state = obj.get('data')
         state_bytes = None
         if b64encoded_state is not None and len(b64encoded_state) > 0:
             state_bytes = base64.b64decode(b64encoded_state)
-        return cls(obj['name'], state_bytes, obj['dueTime'], obj['period'])
+        return ActorReminderData(name, state_bytes, obj['dueTime'], obj['period'])

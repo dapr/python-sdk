@@ -20,5 +20,18 @@ async def main():
     rtn_obj = await proxy.GetMyData()
     print(rtn_obj, flush=True)
 
+    print("set reminder", flush=True)
+    await proxy.SetReminder(True)
+    print("set timer", flush=True)
+    await proxy.SetTimer(True)
+
+    print("waiting for 30 seconds", flush=True)
+    await asyncio.sleep(30)
+
+    print("stop reminder", flush=True)
+    await proxy.SetReminder(False)
+    print("stop timer", flush=True)
+    await proxy.SetTimer(False)
+
 
 asyncio.run(main())

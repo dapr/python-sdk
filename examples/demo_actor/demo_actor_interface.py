@@ -13,3 +13,11 @@ class DemoActorInterface(ActorInterface):
     @actormethod(name="SetMyData")
     async def set_my_data(self, data: object) -> None:
         ...
+
+    @actormethod(name="SetReminder")
+    async def set_reminder(self, enabled: bool) -> None:
+        ...
+
+    @actormethod(name="SetTimer")
+    async def set_timer(self, enabled: bool) -> None:
+        ...

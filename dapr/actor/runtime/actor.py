@@ -40,8 +40,6 @@ class Actor:
             async def _on_deactivate(self):
                 pass
 
-    TODO: Support Timer, Reminder, State Management
-
     """
 
     def __init__(self, ctx: ActorRuntimeContext, actor_id: str):

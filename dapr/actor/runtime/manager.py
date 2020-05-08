@@ -17,6 +17,9 @@ from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.actor.runtime.reminder_data import ActorReminderData
 from dapr.serializers import Serializer
 
+TIMER_METHOD_NAME = 'fire_timer'
+REMINDER_METHOD_NAME = 'receive_reminder'
+
 
 class ActorManager:
     """A Actor Manager manages actors of a specific actor type."""
@@ -26,8 +29,8 @@ class ActorManager:
         self._active_actors = {}
         self._active_actors_lock = asyncio.Lock()
         self._dispatcher = ActorMethodDispatcher(ctx.actor_type_info)
-        self._timer_method_context = ActorMethodContext.create_for_timer('fire_timer')
-        self._reminder_method_context = ActorMethodContext.create_for_reminder('receive_reminder')
+        self._timer_method_context = ActorMethodContext.create_for_timer(TIMER_METHOD_NAME)
+        self._reminder_method_context = ActorMethodContext.create_for_reminder(REMINDER_METHOD_NAME)
 
     async def dispatch(
             self, actor_id: ActorId,
@@ -79,11 +82,11 @@ class ActorManager:
         if not self._runtime_ctx.actor_type_info.is_remindable():
             return
         request_obj = self._message_serializer.deserialize(request_body)
-        reminderdata = ActorReminderData.from_dict(request_obj)
+        reminderdata = ActorReminderData.from_dict(reminder_name, request_obj)
 
         async def invoke_reminder(actor: Actor) -> bytes:
-            reminder = getattr(actor, 'recieve_reminder')
-            if not reminder:
+            reminder = getattr(actor, REMINDER_METHOD_NAME)
+            if reminder is not None:
                 await reminder(reminderdata.name, reminderdata.state,
                                reminderdata.due_time, reminderdata.period)
             return None
