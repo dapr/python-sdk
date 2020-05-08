@@ -80,7 +80,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         headers = {
             CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
         }
-        return await self._send_bytes(method='PUT', url=url, data=data, headers=headers)
+        await self._send_bytes(method='PUT', url=url, data=data, headers=headers)
 
     async def unregister_reminder(
             self, actor_type: str, actor_id: str, name: str) -> None:
@@ -94,7 +94,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         headers = {
             CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
         }
-        return await self._send_bytes(method='DELETE', url=url, data=None, headers=headers)
+        await self._send_bytes(method='DELETE', url=url, data=None, headers=headers)
 
     async def register_timer(
             self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
@@ -109,7 +109,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         headers = {
             CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
         }
-        return await self._send_bytes(method='PUT', url=url, data=data, headers=headers)
+        await self._send_bytes(method='PUT', url=url, data=data, headers=headers)
 
     async def unregister_timer(
             self, actor_type: str, actor_id: str, name: str) -> None:
@@ -123,7 +123,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         headers = {
             CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
         }
-        return await self._send_bytes(method='DELETE', url=url, data=None, headers=headers)
+        await self._send_bytes(method='DELETE', url=url, data=None, headers=headers)
 
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
         return 'http://127.0.0.1:{}/{}/actors/{}/{}'.format(
