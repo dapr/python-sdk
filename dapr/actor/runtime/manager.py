@@ -7,7 +7,6 @@ Licensed under the MIT License.
 
 import asyncio
 
-from datetime import timedelta
 from typing import Awaitable, Callable
 
 from dapr.actor.id import ActorId
@@ -15,7 +14,7 @@ from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.methodcontext import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
-from dapr.actor.runtime.reminder_data import ReminderData
+from dapr.actor.runtime.reminder_data import ActorReminderData
 from dapr.serializers import Serializer
 
 
@@ -79,8 +78,8 @@ class ActorManager:
             reminder_name: str, request_body: bytes) -> None:
         if not self._runtime_ctx.actor_type_info.is_remindable():
             return
-        # TODO: deserialize request_body to ReminderData
-        reminderdata = ReminderData('reminder', 'data', timedelta(10, 20), timedelta(10, 20))
+        request_obj = self._message_serializer.deserialize(request_body)
+        reminderdata = ActorReminderData.from_dict(request_obj)
 
         async def invoke_reminder(actor: Actor) -> bytes:
             reminder = getattr(actor, 'recieve_reminder')

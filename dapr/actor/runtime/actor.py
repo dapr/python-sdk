@@ -69,12 +69,14 @@ class Actor:
     async def _register_reminder(
             self, name: str, state: Any,
             due_time: timedelta, period: timedelta) -> None:
-        reminder = ActorReminderData(name, state, due_time, period)  # noqa: F841
-        # TODO: call dapr actor api
+        reminder = ActorReminderData(name, state, due_time, period)
+        req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())
+        await self._runtime_ctx.dapr_client.register_reminder(
+            self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
 
     async def _unregister_reminder(self, name: str) -> None:
-        # TODO: call dapr actor api to unregister
-        raise NotImplementedError("not implemented")
+        await self._runtime_ctx.dapr_client.unregister_reminder(
+            self._runtime_ctx.actor_type_info.type_name, self.id, name)
 
     def _get_new_timer_name(self):
         return f'{self.id}_Timer_{len(self._timer) + 1}'
@@ -86,10 +88,14 @@ class Actor:
             if name is None or name == '':
                 name = self._get_new_timer_name()
             self._timers[name] = ActorTimerData(name, callback, state, due_time, period)
-        # TODO: serialize and call dapr actor api
+
+        req_body = self._runtime_ctx.message_serializer.serialize(self._timers[name].as_dict())
+        await self._runtime_ctx.dapr_client.register_timer(
+            self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
 
     async def _unregister_timer(self, name: str) -> None:
-        # TODO: call dapr actor api to unregister
+        await self._runtime_ctx.dapr_client.unregister_timer(
+            self._runtime_ctx.actor_type_info.type_name, self.id, name)
         async with self._timers_lock:
             self._timers.pop(name)
 
