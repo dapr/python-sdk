@@ -32,6 +32,48 @@ class ActorManager:
         self._timer_method_context = ActorMethodContext.create_for_timer(TIMER_METHOD_NAME)
         self._reminder_method_context = ActorMethodContext.create_for_reminder(REMINDER_METHOD_NAME)
 
+    @property
+    def _message_serializer(self) -> Serializer:
+        return self._runtime_ctx.message_serializer
+
+    async def activate_actor(self, actor_id: ActorId):
+        actor = self._runtime_ctx.create_actor(actor_id)
+        await actor._on_activate_internal()
+
+        async with self._active_actors_lock:
+            self._active_actors[actor_id.id] = actor
+
+    async def deactivate_actor(self, actor_id: ActorId):
+        async with self._active_actors_lock:
+            deactivated_actor = self._active_actors.pop(actor_id.id, None)
+            if not deactivated_actor:
+                raise ValueError(f'{actor_id} is not activated')
+        await deactivated_actor._on_deactivate_internal()
+
+    async def fire_reminder(
+            self, actor_id: ActorId,
+            reminder_name: str, request_body: bytes) -> None:
+        if not self._runtime_ctx.actor_type_info.is_remindable():
+            return
+        request_obj = self._message_serializer.deserialize(request_body)
+        reminderdata = ActorReminderData.from_dict(reminder_name, request_obj)
+
+        async def invoke_reminder(actor: Actor) -> bytes:
+            reminder = getattr(actor, REMINDER_METHOD_NAME)
+            if reminder is not None:
+                await reminder(reminderdata.name, reminderdata.state,
+                               reminderdata.due_time, reminderdata.period)
+            return None
+
+        await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_reminder)
+
+    async def fire_timer(self, actor_id: ActorId, timer_name: str) -> None:
+        async def invoke_timer(actor: Actor) -> bytes:
+            await actor._fire_timer_internal(timer_name)
+            return None
+
+        await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_timer)
+
     async def dispatch(
             self, actor_id: ActorId,
             actor_method_name: str, request_body: bytes) -> bytes:
@@ -75,45 +117,3 @@ class ActorManager:
             raise ex
 
         return retval
-
-    async def fire_reminder(
-            self, actor_id: ActorId,
-            reminder_name: str, request_body: bytes) -> None:
-        if not self._runtime_ctx.actor_type_info.is_remindable():
-            return
-        request_obj = self._message_serializer.deserialize(request_body)
-        reminderdata = ActorReminderData.from_dict(reminder_name, request_obj)
-
-        async def invoke_reminder(actor: Actor) -> bytes:
-            reminder = getattr(actor, REMINDER_METHOD_NAME)
-            if reminder is not None:
-                await reminder(reminderdata.name, reminderdata.state,
-                               reminderdata.due_time, reminderdata.period)
-            return None
-
-        await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_reminder)
-
-    async def fire_timer(self, actor_id: ActorId, timer_name: str) -> None:
-        async def invoke_timer(actor: Actor) -> bytes:
-            await actor._fire_timer_internal(timer_name)
-            return None
-
-        await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_timer)
-
-    @property
-    def _message_serializer(self) -> Serializer:
-        return self._runtime_ctx.message_serializer
-
-    async def activate_actor(self, actor_id: ActorId):
-        actor = self._runtime_ctx.create_actor(actor_id)
-        await actor._on_activate_internal()
-
-        async with self._active_actors_lock:
-            self._active_actors[actor_id.id] = actor
-
-    async def deactivate_actor(self, actor_id: ActorId):
-        async with self._active_actors_lock:
-            deactivated_actor = self._active_actors.pop(actor_id.id, None)
-            if not deactivated_actor:
-                raise ValueError(f'{actor_id} is not activated')
-        await deactivated_actor._on_deactivate_internal()
