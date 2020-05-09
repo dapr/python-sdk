@@ -19,6 +19,10 @@ class ActorReminderData:
         self._name = name
         self._due_time = due_time
         self._period = period
+
+        if not isinstance(state, (str, bytes)):
+            raise ValueError(f'only str and bytes are allowed for state: {type(state)}')
+
         if isinstance(state, str):
             self._state = state.encode('utf-8')
         else:
@@ -52,9 +56,9 @@ class ActorReminderData:
         }
 
     @classmethod
-    def from_dict(cls, name: str, obj: Dict[str, Any]) -> 'ActorReminderData':
+    def from_dict(cls, obj: Dict[str, Any]) -> 'ActorReminderData':
         b64encoded_state = obj.get('data')
         state_bytes = None
         if b64encoded_state is not None and len(b64encoded_state) > 0:
             state_bytes = base64.b64decode(b64encoded_state)
-        return ActorReminderData(name, state_bytes, obj['dueTime'], obj['period'])
+        return ActorReminderData(obj['name'], state_bytes, obj['dueTime'], obj['period'])

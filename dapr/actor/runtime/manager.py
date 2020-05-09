@@ -56,7 +56,8 @@ class ActorManager:
         if not self._runtime_ctx.actor_type_info.is_remindable():
             return
         request_obj = self._message_serializer.deserialize(request_body)
-        reminderdata = ActorReminderData.from_dict(reminder_name, request_obj)
+        request_obj['name'] = reminder_name
+        reminderdata = ActorReminderData.from_dict(request_obj)
 
         async def invoke_reminder(actor: Actor) -> bytes:
             reminder = getattr(actor, REMINDER_METHOD_NAME)
