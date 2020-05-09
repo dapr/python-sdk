@@ -32,11 +32,11 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
     def test_actor_config(self):
         config = ActorRuntime.get_actor_config()
 
-        self.assertTrue(config.drainRebalancedActors)
-        self.assertEqual(timedelta(hours=1), config.actorIdleTimeout)
-        self.assertEqual(timedelta(seconds=30), config.actorScanInterval)
-        self.assertEqual(timedelta(minutes=1), config.drainOngoingCallTimeout)
-        self.assertEqual(2, len(config.entities))
+        self.assertTrue(config._drain_rebalanced_actors)
+        self.assertEqual(timedelta(hours=1), config._actor_idle_timeout)
+        self.assertEqual(timedelta(seconds=30), config._actor_scan_interval)
+        self.assertEqual(timedelta(minutes=1), config._drain_ongoing_call_timeout)
+        self.assertEqual(2, len(config._entities))
 
         # apply new config
         new_config = ActorRuntimeConfig(
@@ -46,24 +46,24 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         ActorRuntime.set_actor_config(new_config)
         config = ActorRuntime.get_actor_config()
 
-        self.assertFalse(config.drainRebalancedActors)
-        self.assertEqual(timedelta(hours=3), config.actorIdleTimeout)
-        self.assertEqual(timedelta(seconds=10), config.actorScanInterval)
-        self.assertEqual(timedelta(minutes=1), config.drainOngoingCallTimeout)
-        self.assertEqual(2, len(config.entities))
+        self.assertFalse(config._drain_rebalanced_actors)
+        self.assertEqual(timedelta(hours=3), config._actor_idle_timeout)
+        self.assertEqual(timedelta(seconds=10), config._actor_scan_interval)
+        self.assertEqual(timedelta(minutes=1), config._drain_ongoing_call_timeout)
+        self.assertEqual(2, len(config._entities))
 
-    async def test_entities_update(self):
+    async def test__entities_update(self):
         # Clean up managers
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
 
         config = ActorRuntime.get_actor_config()
         with self.assertRaises(ValueError):
-            config.entities.index(FakeSimpleActor.__name__)
+            config._entities.index(FakeSimpleActor.__name__)
 
         await ActorRuntime.register_actor(FakeSimpleActor)
         config = ActorRuntime.get_actor_config()
-        self.assertTrue(config.entities.index(FakeSimpleActor.__name__) >= 0)
+        self.assertTrue(config._entities.index(FakeSimpleActor.__name__) >= 0)
 
     async def test_dispatch(self):
         await ActorRuntime.register_actor(FakeMultiInterfacesActor)
