@@ -54,17 +54,7 @@ class Actor:
     def runtime_ctx(self) -> ActorRuntimeContext:
         return self._runtime_ctx
 
-    async def _reset_state(self) -> None:
-        # Exception has been raised by user code, reset the state in state manager.
-        await self._state_manager.clear_cache()
-
-    async def _save_state(self):
-        """Saves all the state changes (add/update/remove) that were made since last call
-        to the actor state provider associated with the actor.
-        """
-        await self._state_manager.save_state()
-
-    async def _register_reminder(
+    async def register_reminder(
             self, name: str, state: Any,
             due_time: timedelta, period: timedelta) -> None:
         reminder = ActorReminderData(name, state, due_time, period)
@@ -72,39 +62,64 @@ class Actor:
         await self._runtime_ctx.dapr_client.register_reminder(
             self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
 
-    async def _unregister_reminder(self, name: str) -> None:
+    async def unregister_reminder(self, name: str) -> None:
         await self._runtime_ctx.dapr_client.unregister_reminder(
             self._runtime_ctx.actor_type_info.type_name, self.id, name)
 
-    def _get_new_timer_name(self):
+    def __get_new_timer_name(self):
         return f'{self.id}_Timer_{len(self._timer) + 1}'
 
-    async def _register_timer(
+    async def register_timer(
             self, name: Optional[str], callback: TIMER_CALLBACK, state: Any,
             due_time: timedelta, period: timedelta) -> None:
         async with self._timers_lock:
             if name is None or name == '':
-                name = self._get_new_timer_name()
+                name = self.__get_new_timer_name()
             self._timers[name] = ActorTimerData(name, callback, state, due_time, period)
 
         req_body = self._runtime_ctx.message_serializer.serialize(self._timers[name].as_dict())
         await self._runtime_ctx.dapr_client.register_timer(
             self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
 
-    async def _unregister_timer(self, name: str) -> None:
+    async def unregister_timer(self, name: str) -> None:
         await self._runtime_ctx.dapr_client.unregister_timer(
             self._runtime_ctx.actor_type_info.type_name, self.id, name)
         async with self._timers_lock:
             self._timers.pop(name)
 
     async def _on_activate_internal(self) -> None:
-        await self._reset_state()
+        await self._reset_state_internal()
         await self._on_activate()
-        await self._save_state()
+        await self._save_state_internal()
 
     async def _on_deactivate_internal(self) -> None:
-        await self._reset_state()
+        await self._reset_state_internal()
         await self._on_deactivate()
+
+    async def _on_pre_actor_method_internal(self, method_context: ActorMethodContext) -> None:
+        await self._on_pre_actor_method(method_context)
+
+    async def _on_post_actor_method_internal(self, method_context: ActorMethodContext) -> None:
+        await self._on_post_actor_method(method_context)
+        await self._save_state_internal()
+
+    async def _on_invoke_failed_internal(self, exception=None):
+        # Exception has been thrown by user code, reset the state in state manager
+        await self._reset_state_internal()
+
+    async def _reset_state_internal(self) -> None:
+        # Exception has been raised by user code, reset the state in state manager.
+        await self._state_manager.clear_cache()
+
+    async def _save_state_internal(self):
+        """Saves all the state changes (add/update/remove) that were made since last call
+        to the actor state provider associated with the actor.
+        """
+        await self._state_manager.save_state()
+
+    async def _fire_timer_internal(self, name: str) -> None:
+        timer = self._timers[name]
+        return await timer.callback(timer.state)
 
     async def _on_activate(self) -> None:
         """Override this method to initialize the members.
@@ -122,21 +137,6 @@ class Actor:
         be called from this method.
         """
         ...
-
-    async def _on_pre_actor_method_internal(self, method_context: ActorMethodContext) -> None:
-        await self._on_pre_actor_method(method_context)
-
-    async def _on_post_actor_method_internal(self, method_context: ActorMethodContext) -> None:
-        await self._on_post_actor_method(method_context)
-        await self._save_state()
-
-    async def _on_invoke_failed_internal(self, exception=None):
-        # Exception has been thrown by user code, reset the state in state manager
-        await self._reset_state()
-
-    async def _fire_timer_internal(self, name: str) -> None:
-        timer = self._timers[name]
-        return await timer.callback(timer.state)
 
     async def _on_pre_actor_method(self, method_context: ActorMethodContext) -> None:
         """Override this method for performing any action prior to

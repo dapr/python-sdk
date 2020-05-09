@@ -21,21 +21,21 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
     async def set_reminder(self, enabled) -> None:
         print(f'set reminder {enabled}', flush=True)
         if enabled == True:
-            await self._register_reminder(
+            await self.register_reminder(
                 'test_reminder', 'fake_state', 
                 datetime.timedelta(seconds=5), datetime.timedelta(seconds=5))
         else:
-            await self._unregister_reminder('test_reminder')
+            await self.unregister_reminder('test_reminder')
         print(f'set reminder {enabled}', flush=True)
 
     async def set_timer(self, enabled) -> None:
         print(f'set timer {enabled}', flush=True)
         if enabled == True:
-            await self._register_timer(
+            await self.register_timer(
                 'test_timer', self.timer_callback, 'fake_state', 
                 datetime.timedelta(seconds=5), datetime.timedelta(seconds=5))
         else:
-            await self._unregister_timer('test_timer')
+            await self.unregister_timer('test_timer')
     
     async def timer_callback(self, obj) -> None:
         print(f'time_callback - {obj}', flush=True)

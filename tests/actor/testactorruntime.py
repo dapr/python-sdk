@@ -52,7 +52,7 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(timedelta(minutes=1), config._drain_ongoing_call_timeout)
         self.assertEqual(2, len(config._entities))
 
-    async def test__entities_update(self):
+    async def test_entities_update(self):
         # Clean up managers
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
