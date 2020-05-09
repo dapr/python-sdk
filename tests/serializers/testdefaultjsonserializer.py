@@ -28,6 +28,14 @@ class DefaultJSONSerializerTests(unittest.TestCase):
         serialized = serializer.serialize(input_dict_obj)
         self.assertEqual(serialized, b'{"propertyDecimal":10,"propertyStr":"StrValue","propertyDateTime":"2020-01-01T01:00:00Z"}')  # noqa: E501
 
+    def test_serialize_bytes(self):
+        serializer = DefaultJSONSerializer()
+        input_dict_obj = {
+            'propertyBytes': b'bytes_property'
+        }
+        serialized = serializer.serialize(input_dict_obj)
+        self.assertEqual(serialized, b'{"propertyBytes":"Ynl0ZXNfcHJvcGVydHk="}')
+
     def test_deserialize(self):
         serializer = DefaultJSONSerializer()
         payload = b'{"propertyDecimal":10,"propertyStr":"StrValue","propertyDateTime":"2020-01-01T01:00:00Z"}'  # noqa: E501

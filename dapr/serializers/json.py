@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import base64
 import re
 import datetime
 import json
@@ -30,7 +31,7 @@ class DefaultJSONSerializer(Serializer):
         if callable(custom_hook):
             dict_obj = custom_hook(obj)
         elif isinstance(obj, ActorRuntimeConfig):
-            dict_obj = obj.__dict__
+            dict_obj = obj.as_dict()
 
         serialized = json.dumps(dict_obj, cls=DaprJSONEncoder, separators=(',', ':'))
 
@@ -62,6 +63,8 @@ class DaprJSONEncoder(json.JSONEncoder):
             return obj.isoformat()
         elif isinstance(obj, datetime.timedelta):
             return convert_to_dapr_duration(obj)
+        elif isinstance(obj, bytes):
+            return base64.b64encode(obj).decode('utf-8')
         else:
             return json.JSONEncoder.default(self, obj)
 
