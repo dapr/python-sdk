@@ -8,9 +8,9 @@ Licensed under the MIT License.
 import unittest
 from unittest.mock import AsyncMock
 
-from dapr.actor.runtime.typeinformation import ActorTypeInformation
-from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.methoddispatcher import ActorMethodDispatcher
+from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.serializers import DefaultJSONSerializer
 
 from .fakeactorclasses import FakeSimpleActor

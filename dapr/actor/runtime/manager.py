@@ -11,10 +11,10 @@ from typing import Awaitable, Callable
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
-from dapr.actor.runtime.methodcontext import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
-from dapr.actor.runtime.reminder_data import ActorReminderData
+from dapr.actor.runtime.methodcontext import ActorMethodContext
+from dapr.actor.runtime.methoddispatcher import ActorMethodDispatcher
+from dapr.actor.runtime.reminderdata import ActorReminderData
 from dapr.serializers import Serializer
 
 TIMER_METHOD_NAME = 'fire_timer'
