@@ -91,7 +91,7 @@ class ActorManagerReminderTests(unittest.IsolatedAsyncioTestCase):
             test_type_info, self._serializer,
             self._serializer, self._fake_client)
         manager = ActorManager(ctx)
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(ValueError):
             await manager.fire_reminder(ActorId('testid'), 'test_reminder', self._test_reminder_req)
 
     async def test_fire_reminder_success(self):
