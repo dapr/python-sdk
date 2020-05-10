@@ -10,6 +10,7 @@ import asyncio
 from typing import Awaitable, Callable
 
 from dapr.actor.id import ActorId
+from dapr.clients import DaprInternalError
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.methodcontext import ActorMethodContext

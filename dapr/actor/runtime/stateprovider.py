@@ -86,5 +86,4 @@ class StateProvider(Generic[T]):
         json_output.write(b']')
         data = json_output.getvalue()
         json_output.close()
-        print(data, flush=True)
         await self._state_client.save_state_transactionally(actor_type, actor_id, data)
