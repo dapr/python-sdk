@@ -19,30 +19,31 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         print(f'Deactivate {self.__class__.__name__} actor!', flush=True)
 
     async def set_reminder(self, enabled) -> None:
-        print(f'set reminder {enabled}', flush=True)
+        print(f'set reminder to {enabled}', flush=True)
         if enabled == True:
             await self.register_reminder(
-                'test_reminder', 'fake_state', 
+                'demo_reminder', b'reminder_state', 
                 datetime.timedelta(seconds=5), datetime.timedelta(seconds=5))
         else:
-            await self.unregister_reminder('test_reminder')
-        print(f'set reminder {enabled}', flush=True)
+            await self.unregister_reminder('demo_reminder')
+        print(f'set reminder is done', flush=True)
 
     async def set_timer(self, enabled) -> None:
-        print(f'set timer {enabled}', flush=True)
+        print(f'set_timer to {enabled}', flush=True)
         if enabled == True:
             await self.register_timer(
-                'test_timer', self.timer_callback, 'fake_state', 
+                'demo_timer', self.timer_callback, 'timer_state', 
                 datetime.timedelta(seconds=5), datetime.timedelta(seconds=5))
         else:
-            await self.unregister_timer('test_timer')
+            await self.unregister_timer('demo_timer')
+        print(f'set_timer is done', flush=True)
     
     async def timer_callback(self, obj) -> None:
-        print(f'time_callback - {obj}', flush=True)
+        print(f'time_callback is called - {obj}', flush=True)
 
     async def receive_reminder(self, name: str, state: bytes,
                                due_time: datetime.timedelta, period: datetime.timedelta) -> None:
-        print(f'{name} reminder - {state}', flush=True)
+        print(f'receive_reminder is called - {name} reminder - {state}', flush=True)
 
     async def get_my_data(self) -> object:
         has_value, val = await self._state_manager.try_get_state('mydata')
@@ -50,6 +51,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         return val
 
     async def set_my_data(self, data) -> None:
+        print(f'set_my_data: {data}', flush=True)
         data['ts'] = datetime.datetime.now(datetime.timezone.utc)
         await self._state_manager.set_state('mydata', data)
         await self._state_manager.save_state()
