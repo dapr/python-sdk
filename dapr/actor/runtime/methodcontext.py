@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from .calltype import ActorCallType
+from dapr.actor.runtime.calltype import ActorCallType
 
 
 class ActorMethodContext:

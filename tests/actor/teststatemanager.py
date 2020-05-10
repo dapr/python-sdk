@@ -18,7 +18,7 @@ from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import DefaultJSONSerializer
 
-from .fakeactorclasses import FakeSimpleActor
+from tests.actor.fakeactorclasses import FakeSimpleActor
 
 
 class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):

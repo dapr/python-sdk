@@ -5,6 +5,6 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from .actor import DaprActor, ActorRuntime
+from flask_dapr.actor import DaprActor
 
-__all__ = ['DaprActor', 'ActorRuntime']
+__all__ = ['DaprActor']

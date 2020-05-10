@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from .base import DaprActorClientBase
-from .http.dapr_actor_http_client import DaprActorHttpClient
+from dapr.clients.base import DaprActorClientBase
+from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 
 __all__ = ['DaprActorClientBase', 'DaprActorHttpClient']

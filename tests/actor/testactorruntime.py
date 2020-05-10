@@ -13,7 +13,10 @@ from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.serializers import DefaultJSONSerializer
 
-from .fakeactorclasses import FakeSimpleActor, FakeMultiInterfacesActor
+from tests.actor.fakeactorclasses import (
+    FakeSimpleActor,
+    FakeMultiInterfacesActor,
+)
 
 
 class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
