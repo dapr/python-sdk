@@ -55,7 +55,7 @@ class Actor:
         return self._runtime_ctx
 
     async def register_reminder(
-            self, name: str, state: Any,
+            self, name: str, state: bytes,
             due_time: timedelta, period: timedelta) -> None:
         reminder = ActorReminderData(name, state, due_time, period)
         req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())
@@ -67,7 +67,7 @@ class Actor:
             self._runtime_ctx.actor_type_info.type_name, self.id, name)
 
     def __get_new_timer_name(self):
-        return f'{self.id}_Timer_{len(self._timer) + 1}'
+        return f'{self.id}_Timer_{len(self._timers) + 1}'
 
     async def register_timer(
             self, name: Optional[str], callback: TIMER_CALLBACK, state: Any,
