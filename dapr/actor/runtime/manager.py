@@ -54,7 +54,8 @@ class ActorManager:
             self, actor_id: ActorId,
             reminder_name: str, request_body: bytes) -> None:
         if not self._runtime_ctx.actor_type_info.is_remindable():
-            return
+            raise AttributeError(
+                f'{self._runtime_ctx.actor_type_info.type_name} does not implment Remindable.')
         request_obj = self._message_serializer.deserialize(request_body)
         request_obj['name'] = reminder_name
         reminderdata = ActorReminderData.from_dict(request_obj)

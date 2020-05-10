@@ -23,7 +23,6 @@ class ActorTimerDataTests(unittest.TestCase):
 
     def test_as_dict(self):
         def test_callback(obj):
-            called = True
             self.assertEqual('called', obj)
         timer = ActorTimerData(
             'timer_name', test_callback, 'called',
