@@ -12,9 +12,6 @@ from dapr.serializers.json import DefaultJSONSerializer
 
 
 class DefaultJSONSerializerTests(unittest.TestCase):
-    def setUp(self):
-        pass
-
     def test_serialize(self):
         serializer = DefaultJSONSerializer()
         fakeDateTime = datetime.datetime(
@@ -30,6 +27,12 @@ class DefaultJSONSerializerTests(unittest.TestCase):
 
     def test_serialize_bytes(self):
         serializer = DefaultJSONSerializer()
+
+        # Serialize`bytes data
+        serialized = serializer.serialize(b'bytes_data')
+        self.assertEqual(b'"Ynl0ZXNfZGF0YQ=="', serialized)
+
+        # Serialize`bytes property
         input_dict_obj = {
             'propertyBytes': b'bytes_property'
         }

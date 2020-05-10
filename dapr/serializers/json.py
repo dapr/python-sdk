@@ -30,6 +30,8 @@ class DefaultJSONSerializer(Serializer):
         dict_obj = obj
         if callable(custom_hook):
             dict_obj = custom_hook(obj)
+        elif isinstance(obj, bytes):
+            dict_obj = base64.b64encode(obj).decode('utf-8')
         elif isinstance(obj, ActorRuntimeConfig):
             dict_obj = obj.as_dict()
 
