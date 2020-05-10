@@ -8,6 +8,8 @@ import aiohttp
 
 from dapr.conf import settings
 from dapr.clients.base import DaprActorClientBase
+from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
+from dapr.serializers import DefaultJSONSerializer
 
 
 CONTENT_TYPE_HEADER = 'content-type'
@@ -20,6 +22,7 @@ class DaprActorHttpClient(DaprActorClientBase):
 
     def __init__(self, timeout=60):
         self._timeout = aiohttp.ClientTimeout(total=timeout)
+        self._serializer = DefaultJSONSerializer()
 
     async def invoke_method(
             self, actor_type: str, actor_id: str,
@@ -127,4 +130,21 @@ class DaprActorHttpClient(DaprActorClientBase):
         if r.status >= 200 and r.status < 300:
             return await r.read()
 
-        r.raise_for_status()
+        raise (await self.convert_to_error(self, r))
+
+    async def convert_to_error(self, response) -> DaprInternalError:
+        error_info = None
+        try:
+            error_body = await response.read()
+            if (error_body is None or len(error_body) == 0) and response.status == 404:
+                return DaprInternalError("Not Found", ERROR_CODE_DOES_NOT_EXIST)
+            error_info = self._serializer.deserialize(error_body)
+        except Exception:
+            return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}')
+
+        if error_info is not None and error_info.get('message') is not None:
+            message = error_info.get('message')
+            error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
+            return DaprInternalError(message, error_code)
+
+        return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}')

@@ -9,6 +9,7 @@ import asyncio
 
 from flask import jsonify, request
 from dapr.actor import Actor, ActorRuntime
+from dapr.clients import DaprInternalError
 from dapr.serializers import DefaultJSONSerializer
 
 
@@ -80,12 +81,8 @@ class DaprActor(object):
             try:
                 result = asyncio.run(ActorRuntime.dispatch(
                     actor_type_name, actor_id, method_name, req_body))
-            except Exception as ex:
-                # TODO: Better error handling
-                dapr_error = {
-                    'message': str(ex)
-                }
-                return dapr_error, 500
+            except DaprInternalError as ex:
+                return ex.as_dict(), 500
             return result, 200
         app.add_url_rule(
             '/actors/<actor_type_name>/<actor_id>/method/<method_name>',
@@ -96,12 +93,8 @@ class DaprActor(object):
         def actor_timer_handler(actor_type_name, actor_id, timer_name):
             try:
                 asyncio.run(ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name))
-            except Exception as ex:
-                # TODO: Better error handling
-                dapr_error = {
-                    'message': str(ex)
-                }
-                return dapr_error, 500
+            except DaprInternalError as ex:
+                return ex.as_dict(), 500
             return "", 200
         app.add_url_rule(
             '/actors/<actor_type_name>/<actor_id>/method/timer/<timer_name>',
@@ -114,12 +107,8 @@ class DaprActor(object):
             try:
                 asyncio.run(ActorRuntime.fire_reminder(
                     actor_type_name, actor_id, reminder_name, req_body))
-            except Exception as ex:
-                # TODO: Better error handling
-                dapr_error = {
-                    'message': str(ex)
-                }
-                return dapr_error, 500
+            except DaprInternalError as ex:
+                return ex.as_dict(), 500
             return "", 200
         app.add_url_rule(
             '/actors/<actor_type_name>/<actor_id>/method/remind/<reminder_name>',

@@ -5,7 +5,6 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import base64
 import io
 
 from typing import Generic, List, TypeVar, Tuple

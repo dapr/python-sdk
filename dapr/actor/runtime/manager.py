@@ -113,9 +113,8 @@ class ActorManager:
             await actor._on_pre_actor_method_internal(method_context)
             retval = await dispatch_action(actor)
             await actor._on_post_actor_method_internal(method_context)
-        except Exception as ex:
+        except DaprInternalError as ex:
             await actor._on_invoke_failed_internal(ex)
-            # TODO: Must handle error properly
             raise ex
 
         return retval
