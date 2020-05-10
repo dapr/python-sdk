@@ -130,7 +130,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         if r.status >= 200 and r.status < 300:
             return await r.read()
 
-        raise (await self.convert_to_error(self, r))
+        raise (await self.convert_to_error(r))
 
     async def convert_to_error(self, response) -> DaprInternalError:
         error_info = None
