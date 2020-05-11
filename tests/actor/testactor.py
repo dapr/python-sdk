@@ -8,18 +8,23 @@ Licensed under the MIT License.
 import unittest
 
 from datetime import timedelta
+from unittest.mock import AsyncMock
 
-from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig
+from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.runtime import ActorRuntime
+from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fakeactorclasses import (
     FakeSimpleActor,
+    FakeSimpleReminderActor,
+    FakeSimpleTimerActor,
     FakeMultiInterfacesActor,
 )
 
 
-class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
+class ActorTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
@@ -88,3 +93,67 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         # Ensure test-id is deactivated
         with self.assertRaises(ValueError):
             await ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id')
+
+    async def test_register_reminder(self):
+        fake_client = AsyncMock()
+        fake_client.register_reminder.return_value = b'"ok"'
+        fake_client.unregister_reminder.return_value = b'"ok"'
+
+        test_actor_id = 'test_id'
+        test_type_info = ActorTypeInformation.create(FakeSimpleReminderActor)
+        ctx = ActorRuntimeContext(
+            test_type_info, self._serializer,
+            self._serializer, fake_client)
+        test_actor = FakeSimpleReminderActor(ctx, test_actor_id)
+
+        # register reminder
+        await test_actor.register_reminder(
+            'test_reminder', b'reminder_message',
+            timedelta(seconds=1), timedelta(seconds=1))
+        fake_client.register_reminder.assert_called_once()
+        fake_client.register_reminder.assert_called_with(
+            'FakeSimpleReminderActor', 'test_id',
+            'test_reminder',
+            b'{"name":"test_reminder","dueTime":"0h0m1s","period":"0h0m1s","data":"cmVtaW5kZXJfbWVzc2FnZQ=="}')  # noqa E501
+
+        # unregister reminder
+        await test_actor.unregister_reminder('test_reminder')
+        fake_client.unregister_reminder.assert_called_once()
+        fake_client.unregister_reminder.assert_called_with(
+            'FakeSimpleReminderActor', 'test_id', 'test_reminder')
+
+    async def test_register_timer(self):
+        fake_client = AsyncMock()
+        fake_client.register_timer.return_value = b'"ok"'
+        fake_client.unregister_timer.return_value = b'"ok"'
+
+        test_actor_id = 'test_id'
+        test_type_info = ActorTypeInformation.create(FakeSimpleTimerActor)
+        ctx = ActorRuntimeContext(
+            test_type_info, self._serializer,
+            self._serializer, fake_client)
+        test_actor = FakeSimpleTimerActor(ctx, test_actor_id)
+
+        # register timer
+        await test_actor.register_timer(
+            'test_timer', test_actor.timer_callback,
+            "timer call", timedelta(seconds=1), timedelta(seconds=1))
+        fake_client.register_timer.assert_called_once()
+        fake_client.register_timer.assert_called_with(
+            'FakeSimpleTimerActor', 'test_id', 'test_timer',
+            b'{"dueTime":"0h0m1s","period":"0h0m1s"}')
+        self.assertTrue('test_timer' in test_actor._timers)
+        self.assertEqual(1, len(test_actor._timers))
+
+        # unregister timer
+        await test_actor.unregister_timer('test_timer')
+        fake_client.unregister_timer.assert_called_once()
+        fake_client.unregister_timer.assert_called_with(
+            'FakeSimpleTimerActor', 'test_id', 'test_timer')
+        self.assertEqual(0, len(test_actor._timers))
+
+        # register timer without timer name
+        await test_actor.register_timer(
+            None, test_actor.timer_callback,
+            "timer call", timedelta(seconds=1), timedelta(seconds=1))
+        self.assertEqual("test_id_Timer_1", list(test_actor._timers)[0])

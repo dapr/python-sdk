@@ -5,7 +5,10 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+from datetime import timedelta
+
 from dapr.actor.runtime.actor import Actor
+from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.actor_interface import ActorInterface, actormethod
 
 
@@ -24,6 +27,37 @@ class FakeSimpleActor(Actor, FakeSimpleActorInterface):
         return {'name': 'actor_method'}
 
     async def non_actor_method(self, arg0: int, arg1: str, arg2: float) -> str:
+        pass
+
+
+class FakeSimpleReminderActor(Actor, FakeSimpleActorInterface, Remindable):
+    def __init__(self, ctx, actor_id):
+        super(FakeSimpleReminderActor, self).__init__(ctx, actor_id)
+
+    async def actor_method(self, arg: int) -> dict:
+        return {'name': 'actor_method'}
+
+    async def non_actor_method(self, arg0: int, arg1: str, arg2: float) -> str:
+        pass
+
+    async def receive_reminder(self, name: str, state: bytes,
+                               due_time: timedelta, period: timedelta) -> None:
+        pass
+
+
+class FakeSimpleTimerActor(Actor, FakeSimpleActorInterface):
+    def __init__(self, ctx, actor_id):
+        super(FakeSimpleTimerActor, self).__init__(ctx, actor_id)
+        self.timer_called = False
+
+    async def actor_method(self, arg: int) -> dict:
+        return {'name': 'actor_method'}
+
+    async def timer_callback(self, obj) -> None:
+        self.timer_called = True
+
+    async def receive_reminder(self, name: str, state: bytes,
+                               due_time: timedelta, period: timedelta) -> None:
         pass
 
 

@@ -18,7 +18,7 @@ from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import DefaultJSONSerializer
 
-from .fakeactorclasses import FakeSimpleActor
+from tests.actor.fakeactorclasses import FakeSimpleActor
 
 
 class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
@@ -68,7 +68,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_state_for_existing_value(self):
         # Test if the test value is None
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
 
         state_manager = ActorStateManager(self._fake_actor)
         has_value, val = await state_manager.try_get_state('state1')
@@ -77,7 +77,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_state_for_removed_value(self):
         # Test if the test value is None
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
 
         state_manager = ActorStateManager(self._fake_actor)
         removed = await state_manager.try_remove_state('state1')
@@ -119,7 +119,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_set_state_for_existing_state(self):
         # Test if the test value is None
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
 
         state_manager = ActorStateManager(self._fake_actor)
         await state_manager.set_state('state1', 'value2')
@@ -135,7 +135,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(removed)
 
     async def test_remove_state_for_existing_state(self):
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
 
         state_manager = ActorStateManager(self._fake_actor)
         removed = await state_manager.try_remove_state('state1')
@@ -172,14 +172,14 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(exist)
 
     async def test_contains_state_for_existing_state(self):
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
 
         state_manager = ActorStateManager(self._fake_actor)
         exist = await state_manager.contains_state('state1')
         self.assertTrue(exist)
 
     async def test_get_or_add_state_for_existing_state(self):
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
 
         state_manager = ActorStateManager(self._fake_actor)
         val = await state_manager.get_or_add_state('state1', 'value2')
@@ -194,7 +194,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('value2', val)
 
     async def test_get_or_add_state_for_removed_state(self):
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
 
         state_manager = ActorStateManager(self._fake_actor)
         await state_manager.remove_state('state1')
@@ -223,7 +223,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
         def test_update_value(name, value):
             return f'{name}-{value}'
 
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
 
         state_manager = ActorStateManager(self._fake_actor)
         val = await state_manager.add_or_update_state('state1', 'value1', test_update_value)
@@ -236,7 +236,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
         def test_update_value(name, value):
             return f'{name}-{value}'
 
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
         state_manager = ActorStateManager(self._fake_actor)
         await state_manager.remove_state('state1')
 
@@ -248,7 +248,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
         def test_update_value(name, value):
             return f'{name}-{value}'
 
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value1"')
+        self._fake_client.get_state.return_value = b'"value1"'
         state_manager = ActorStateManager(self._fake_actor)
         has_value, val = await state_manager.try_get_state('state1')
         self.assertTrue(has_value)
@@ -286,7 +286,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
         await state_manager.set_state('state1', 'value1')
         await state_manager.set_state('state2', 'value2')
         # set state which is StateChangeKind.none
-        self._fake_client.get_state.return_value = base64.b64encode(b'"value3"')
+        self._fake_client.get_state.return_value = b'"value3"'
         has_value, val = await state_manager.try_get_state('state3')
         self.assertTrue(has_value)
         self.assertEqual("value3", val)
@@ -294,7 +294,7 @@ class ActorStateManagerTests(unittest.IsolatedAsyncioTestCase):
         await state_manager.remove_state('state4')
         # set state which is StateChangeKind.update
         await state_manager.set_state('state5', 'value5')
-        expected = b'[{"operation":"upsert","request":{"key":"state1","value":"InZhbHVlMSI="}},{"operation":"upsert","request":{"key":"state2","value":"InZhbHVlMiI="}},{"operation":"delete","request":{"key":"state4"}},{"operation":"upsert","request":{"key":"state5","value":"InZhbHVlNSI="}}]'  # noqa: E501
+        expected = b'[{"operation":"upsert","request":{"key":"state1","value":"value1"}},{"operation":"upsert","request":{"key":"state2","value":"value2"}},{"operation":"delete","request":{"key":"state4"}},{"operation":"upsert","request":{"key":"state5","value":"value5"}}]'  # noqa: E501
 
         # Save the state
         async def mock_save_state(actor_type, actor_id, data):

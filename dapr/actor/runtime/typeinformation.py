@@ -6,6 +6,7 @@ Licensed under the MIT License.
 """
 
 from dapr.actor.runtime.typeutils import is_dapr_actor, get_actor_interfaces
+from dapr.actor.runtime.remindable import Remindable
 
 
 class ActorTypeInformation:
@@ -35,6 +36,10 @@ class ActorTypeInformation:
         by :class:`Actor`.
         """
         return self._actor_bases
+
+    def is_remindable(self) -> bool:
+        """Returns True if `:Actor:receive_reminder` is implemented"""
+        return Remindable in self._impl_type.__bases__
 
     @classmethod
     def create(cls, actor_class: type) -> 'ActorTypeInformation':

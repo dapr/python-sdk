@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from .proxy import ActorProxy
+from dapr.actor.client.proxy import ActorProxy
 
 
 __all__ = ['ActorProxy']

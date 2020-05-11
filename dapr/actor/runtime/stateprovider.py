@@ -5,7 +5,6 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import base64
 import io
 
 from typing import Generic, List, TypeVar, Tuple
@@ -37,8 +36,7 @@ class StateProvider(Generic[T]):
         raw_state_value = await self._state_client.get_state(actor_type, actor_id, state_name)
         if (not raw_state_value) or len(raw_state_value) == 0:
             return (False, None)
-        decoded = base64.decodebytes(raw_state_value)
-        result = self._state_serializer.deserialize(decoded, T)
+        result = self._state_serializer.deserialize(raw_state_value, T)
         return (True, result)
 
     async def contains_state(self, actor_type: str, actor_id: str, state_name: str) -> bool:
@@ -78,14 +76,14 @@ class StateProvider(Generic[T]):
             json_output.write(operation)
             json_output.write(b'","request":{"key":"')
             json_output.write(state.state_name.encode('utf-8'))
+            json_output.write(b'"')
             if state.value is not None:
                 serialized = self._state_serializer.serialize(state.value)
-                json_output.write(b'","value":"')
-                json_output.write(base64.b64encode(serialized))
-            json_output.write(b'"}}')
+                json_output.write(b',"value":')
+                json_output.write(serialized)
+            json_output.write(b'}}')
             first_state = False
         json_output.write(b']')
         data = json_output.getvalue()
         json_output.close()
-        print(data, flush=True)
         await self._state_client.save_state_transactionally(actor_type, actor_id, data)

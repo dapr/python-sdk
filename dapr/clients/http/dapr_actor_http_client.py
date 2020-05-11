@@ -8,6 +8,8 @@ import aiohttp
 
 from dapr.conf import settings
 from dapr.clients.base import DaprActorClientBase
+from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
+from dapr.serializers import DefaultJSONSerializer
 
 
 CONTENT_TYPE_HEADER = 'content-type'
@@ -20,6 +22,7 @@ class DaprActorHttpClient(DaprActorClientBase):
 
     def __init__(self, timeout=60):
         self._timeout = aiohttp.ClientTimeout(total=timeout)
+        self._serializer = DefaultJSONSerializer()
 
     async def invoke_method(
             self, actor_type: str, actor_id: str,
@@ -46,10 +49,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         :param bytes data: bytes, passed to method defined in Actor.
         """
         url = f'{self._get_base_url(actor_type, actor_id)}/state'
-        headers = {
-            CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
-        }
-        return await self._send_bytes(method='PUT', url=url, data=data, headers=headers)
+        await self._send_bytes(method='PUT', url=url, data=data)
 
     async def get_state(
             self, actor_type: str, actor_id: str, name: str) -> bytes:
@@ -62,10 +62,53 @@ class DaprActorHttpClient(DaprActorClientBase):
         :rtype: bytes
         """
         url = f'{self._get_base_url(actor_type, actor_id)}/state/{name}'
-        headers = {
-            CONTENT_TYPE_HEADER: DEFAULT_JSON_CONTENT_TYPE,
-        }
-        return await self._send_bytes(method='GET', url=url, data=None, headers=headers)
+        return await self._send_bytes(method='GET', url=url, data=None)
+
+    async def register_reminder(
+            self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
+        """Register actor reminder.
+
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str name: str to represent the name of reminder
+        :param bytes data: bytes which includes reminder request json body.
+        """
+        url = f'{self._get_base_url(actor_type, actor_id)}/reminders/{name}'
+        await self._send_bytes(method='PUT', url=url, data=data)
+
+    async def unregister_reminder(
+            self, actor_type: str, actor_id: str, name: str) -> None:
+        """Unregister actor reminder.
+
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str name: str to represent the name of reminder
+        """
+        url = f'{self._get_base_url(actor_type, actor_id)}/reminders/{name}'
+        await self._send_bytes(method='DELETE', url=url, data=None)
+
+    async def register_timer(
+            self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
+        """Register actor timer.
+
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str name: str to represent the name of reminder
+        :param bytes data: bytes which includes timer request json body.
+        """
+        url = f'{self._get_base_url(actor_type, actor_id)}/timers/{name}'
+        await self._send_bytes(method='PUT', url=url, data=data)
+
+    async def unregister_timer(
+            self, actor_type: str, actor_id: str, name: str) -> None:
+        """Unregister actor timer.
+
+        :param str actor_type: str to represent Actor type.
+        :param str actor_id: str to represent id of Actor type.
+        :param str name: str to represent the name of timer
+        """
+        url = f'{self._get_base_url(actor_type, actor_id)}/timers/{name}'
+        await self._send_bytes(method='DELETE', url=url, data=None)
 
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
         return 'http://127.0.0.1:{}/{}/actors/{}/{}'.format(
@@ -87,4 +130,21 @@ class DaprActorHttpClient(DaprActorClientBase):
         if r.status >= 200 and r.status < 300:
             return await r.read()
 
-        r.raise_for_status()
+        raise (await self.convert_to_error(r))
+
+    async def convert_to_error(self, response) -> DaprInternalError:
+        error_info = None
+        try:
+            error_body = await response.read()
+            if (error_body is None or len(error_body) == 0) and response.status == 404:
+                return DaprInternalError("Not Found", ERROR_CODE_DOES_NOT_EXIST)
+            error_info = self._serializer.deserialize(error_body)
+        except Exception:
+            return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}')
+
+        if error_info is not None and error_info.get('message') is not None:
+            message = error_info.get('message')
+            error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
+            return DaprInternalError(message, error_code)
+
+        return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}')

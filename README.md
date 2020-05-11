@@ -21,9 +21,9 @@
 * [x] Example for Actor service invocation
 * [x] Complete tox.ini setup
 * [x] Actor state management
-* [ ] Actor timer
-* [ ] Actor reminder
-* [ ] Handle Error properly
+* [x] Actor timer
+* [x] Actor reminder
+* [x] Handle Error properly
 * [ ] Package Dapr Actor SDK
 * [ ] Create gRPC and HTTP rest clients for Dapr
 * [ ] Flask extensions for Dapr State/Pubsub/Bindings

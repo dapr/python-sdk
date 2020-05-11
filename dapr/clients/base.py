@@ -10,8 +10,6 @@ from abc import ABC, abstractmethod
 
 class DaprActorClientBase(ABC):
     """A base class that represents Dapr Actor Client.
-
-    TODO: add actor client api iteratively
     """
 
     @abstractmethod
@@ -29,4 +27,24 @@ class DaprActorClientBase(ABC):
     @abstractmethod
     async def get_state(
             self, actor_type: str, actor_id: str, name: str) -> bytes:
+        ...
+
+    @abstractmethod
+    async def register_reminder(
+            self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
+        ...
+
+    @abstractmethod
+    async def unregister_reminder(
+            self, actor_type: str, actor_id: str, name: str) -> None:
+        ...
+
+    @abstractmethod
+    async def register_timer(
+            self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
+        ...
+
+    @abstractmethod
+    async def unregister_timer(
+            self, actor_type: str, actor_id: str, name: str) -> None:
         ...
