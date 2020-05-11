@@ -14,6 +14,8 @@ from dapr.actor import Actor, ActorRuntime
 from dapr.clients import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.serializers import DefaultJSONSerializer
 
+DEFAULT_CONTENT_TYPE = "application/json; utf-8"
+
 
 class DaprActor(object):
     def __init__(self, app=None):
@@ -142,7 +144,9 @@ class DaprActor(object):
 
 
 # wrap_response wraps dapr errors to flask response
-def wrap_response(status: int, msg: Any, error_code: Optional[str] = None):
+def wrap_response(
+        status: int, msg: Any,
+        error_code: Optional[str] = None, content_type: Optional[str] = None):
     resp = None
     if isinstance(msg, str):
         response_obj = {
@@ -155,5 +159,5 @@ def wrap_response(status: int, msg: Any, error_code: Optional[str] = None):
         resp = make_response(msg, status)
     else:
         resp = make_response(jsonify(msg), status)
-    # TODO: set response headers here if it needs.
+    resp.headers['Content-type'] = content_type or DEFAULT_CONTENT_TYPE
     return resp
