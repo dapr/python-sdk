@@ -8,6 +8,7 @@
 ## Try DemoActor example
 
 1. Run Demo Actor service in new terminal window
+
 ```bash
 $ cd python-sdk
 $ pip3 install -r ./tests/test-requirement.txt
@@ -32,7 +33,9 @@ $ dapr run --app-id demo-actor --app-port 3000 python3 app.py
 == APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 -
 ...
 ```
+
 2. Run Demo client in new terminal window
+
 ```bash
 $ cd python-sdk
 $ export PYTHONPATH=`pwd`

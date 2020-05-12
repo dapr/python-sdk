@@ -14,7 +14,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
     This shows the usage of the below actor features:
 
     1. Actor method invocation
-    2. Actor State store management
+    2. Actor state store management
     3. Actor reminder
     4. Actor timer
     """
@@ -51,8 +51,10 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         if enabled:
             # Register 'demo_reminder' reminder and call receive_reminder method
             await self.register_reminder(
-                'demo_reminder', b'reminder_state', 
-                datetime.timedelta(seconds=5), datetime.timedelta(seconds=5))
+                'demo_reminder',               # reminder name
+                b'reminder_state',             # user_state (bytes)
+                datetime.timedelta(seconds=5), # The amount of time to delay before firing the reminder
+                datetime.timedelta(seconds=5)) # The time interval between firing of reminders
         else:
             # Unregister 'demo_reminder'
             await self.unregister_reminder('demo_reminder')
@@ -67,11 +69,11 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         if enabled:
             # Register 'demo_timer' timer and call timer_callback method
             await self.register_timer(
-                'demo_timer', 
-                self.timer_callback,
-                'timer_state', 
-                datetime.timedelta(seconds=5),
-                datetime.timedelta(seconds=5))
+                'demo_timer',                   # timer name
+                self.timer_callback,            # Callback method
+                'timer_state',                  # Parameter to pass to the callback method
+                datetime.timedelta(seconds=5),  # Amount of time to delay before the callback is invoked
+                datetime.timedelta(seconds=5))  # Time interval between invocations
         else:
             # Unregister 'demo_timer'
             await self.unregister_timer('demo_timer')

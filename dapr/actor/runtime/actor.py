@@ -67,10 +67,10 @@ class Actor:
         :param str name: the name of the timer to register.
         :param Callable callback: An awaitable callable which will be called when the timer fires.
         :param Any state: An object which will pass to the callback method, or None.
-        :param datetime.timedelta due_time: the amount of time to delay before the async
+        :param datetime.timedelta due_time: the amount of time to delay before the awaitable
                                             callback is first invoked
         :param datetime.timedelta period: the time interval between invocations
-                                          of the async callback
+                                          of the awaitable callback
         """
         async with self._timers_lock:
             if name is None or name == '':

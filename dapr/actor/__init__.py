@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from dapr.actor.actor_interface import ActorInterface
+from dapr.actor.actor_interface import ActorInterface, actormethod
 from dapr.actor.client.proxy import ActorProxy, ActorProxyFactory
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
@@ -21,4 +21,5 @@ __all__ = [
     'Actor',
     'ActorRuntime',
     'Remindable',
+    'actormethod',
 ]

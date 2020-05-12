@@ -73,7 +73,7 @@ class DaprActor(object):
         return wrap_response(200, 'ok')
 
     def _config_handler(self):
-        serialized = self._dapr_serializer.serialize(ActorRuntime.get_config())
+        serialized = self._dapr_serializer.serialize(ActorRuntime.get_actor_config())
         return wrap_response(200, serialized)
 
     def _activation_handler(self, actor_type_name, actor_id):
