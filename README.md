@@ -40,17 +40,17 @@
 
 ### Build and test
 
-1. Install required packages
-
-```bash
-pip3 install -r dev-requirements.txt
-```
-
-2. Clone python-sdk
+1. Clone python-sdk
 
 ```bash
 git clone https://github.com/dapr/python-sdk.git
 cd python-sdk
+```
+
+2. Install required packages
+
+```bash
+pip3 install -r dev-requirements.txt
 ```
 
 3. Set PYTHONPATH environment
