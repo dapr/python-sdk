@@ -4,6 +4,7 @@
 
 from flask import Flask, jsonify
 from flask_dapr.actor import DaprActor
+
 from dapr.conf import settings
 from examples.demo_actor.service.demo_actor import DemoActor
 
@@ -14,7 +15,7 @@ actor = DaprActor(app)
 # Register DemoActor
 actor.register_actor(DemoActor)
 
-
+# This route is optional.
 @app.route('/')
 def index():
     return jsonify({'status': 'ok'}), 200

@@ -54,24 +54,24 @@ class Actor:
     def runtime_ctx(self) -> ActorRuntimeContext:
         return self._runtime_ctx
 
-    async def register_reminder(
-            self, name: str, state: bytes,
-            due_time: timedelta, period: timedelta) -> None:
-        reminder = ActorReminderData(name, state, due_time, period)
-        req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())
-        await self._runtime_ctx.dapr_client.register_reminder(
-            self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
-
-    async def unregister_reminder(self, name: str) -> None:
-        await self._runtime_ctx.dapr_client.unregister_reminder(
-            self._runtime_ctx.actor_type_info.type_name, self.id, name)
-
     def __get_new_timer_name(self):
         return f'{self.id}_Timer_{len(self._timers) + 1}'
 
     async def register_timer(
             self, name: Optional[str], callback: TIMER_CALLBACK, state: Any,
             due_time: timedelta, period: timedelta) -> None:
+        """Register actor timer.
+
+        All timers are stopped when the actor is deactivated as part of garbage collection.
+
+        :param str name: the name of the timer to register.
+        :param Callable callback: An awaitable callable which will be called when the timer fires.
+        :param Any state: An object which will pass to the callback method, or None.
+        :param datetime.timedelta due_time: the amount of time to delay before the async
+                                            callback is first invoked
+        :param datetime.timedelta period: the time interval between invocations
+                                          of the async callback
+        """
         async with self._timers_lock:
             if name is None or name == '':
                 name = self.__get_new_timer_name()
@@ -82,10 +82,47 @@ class Actor:
             self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
 
     async def unregister_timer(self, name: str) -> None:
+        """Unregister actor timer.
+
+        :param str name: the name of the timer to unregister.
+        """
         await self._runtime_ctx.dapr_client.unregister_timer(
             self._runtime_ctx.actor_type_info.type_name, self.id, name)
         async with self._timers_lock:
             self._timers.pop(name)
+
+    async def register_reminder(
+            self, name: str, state: bytes,
+            due_time: timedelta, period: timedelta) -> None:
+        """Register actor reminder.
+
+        Reminders are a mechanism to trigger persistent callbacks on an actor at specified times.
+        Their functionality is similar to timers. But unlike timers, reminders are triggered under
+        all circumstances until the actor explicitly unregisters them or the actor is explicitly
+        deleted. Specifically, reminders are triggered across actor deactivations and failovers
+        because the Actors runtime persists information about the actor's reminders using actor
+        state provider. Also existing reminders can be updated by calling this registration method
+        again using the same reminderName.
+
+        :param str name: the name of the reminder to register. the name must be unique per actor.
+        :param bytes state: the user state passed to the reminder invocation.
+        :param datetime.timedelta due_time: the amount of time to delay before invoking the reminder
+                                            for the first time.
+        :param datetime.timedelta period: the time interval between reminder invocations after
+                                            the first invocation.
+        """
+        reminder = ActorReminderData(name, state, due_time, period)
+        req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())
+        await self._runtime_ctx.dapr_client.register_reminder(
+            self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
+
+    async def unregister_reminder(self, name: str) -> None:
+        """Unregister actor reminder.
+
+        :param str name: the name of the reminder to unregister.
+        """
+        await self._runtime_ctx.dapr_client.unregister_reminder(
+            self._runtime_ctx.actor_type_info.type_name, self.id, name)
 
     async def _on_activate_internal(self) -> None:
         await self._reset_state_internal()

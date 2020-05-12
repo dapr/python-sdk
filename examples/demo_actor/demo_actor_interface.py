@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from dapr.actor.actor_interface import ActorInterface, actormethod
+from dapr.actor import ActorInterface, actormethod
 
 
 class DemoActorInterface(ActorInterface):
