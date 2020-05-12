@@ -1,8 +1,10 @@
 import os
 
 import grpc
-import dapr_pb2 as dapr_messages
-import dapr_pb2_grpc as dapr_services
+
+from dapr.proto.common.v1 import common_pb2 as commonv1pb
+from dapr.proto.dapr.v1 import dapr_pb2 as dapr_messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as dapr_services
 
 import proto.response_pb2 as response_messages
 
@@ -15,15 +17,23 @@ client = dapr_services.DaprStub(channel)
 print(f"Started gRPC client on DAPR_GRPC_PORT: {port}")
 
 # Invoke the Receiver
-data = Any(value='SOME_DATA'.encode('utf-8'))
-response = client.InvokeService(dapr_messages.InvokeServiceEnvelope(id="invoke-receiver", method="my_method", data=data))
+
+req = dapr_messages.InvokeServiceRequest(
+    id="invoke-receiver",
+    message=commonv1pb.InvokeRequest(
+        method='my_method',
+        data=Any(value='SOME_DATA'.encode('utf-8')),
+        content_type="text/plain; charset=UTF-8")
+)
+response = client.InvokeService(req)
 
 # Unpack the response
 res = response_messages.CustomResponse()
-response.data.type_url = "type.googleapis.com/CustomResponse"
-response.data.Unpack(res)
+if response.data.Is(response_messages.CustomResponse.DESCRIPTOR):
+    response.data.Unpack(res)
+    print("test", flush=True)
 
 # Print Result
-print(res)
+print(res, flush=True)
 
 channel.close()

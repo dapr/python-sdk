@@ -3,10 +3,11 @@ from concurrent import futures
 import time
 
 import grpc
-import dapr_pb2 as dapr_messages
-import dapr_pb2_grpc as dapr_services
-import daprclient_pb2 as daprclient_messages
-import daprclient_pb2_grpc as daprclient_services
+from dapr.proto.common.v1 import common_pb2 as commonv1pb
+from dapr.proto.dapr.v1 import dapr_pb2 as dapr_messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as dapr_services
+from dapr.proto.daprclient.v1 import daprclient_pb2 as daprclient_messages
+from dapr.proto.daprclient.v1 import daprclient_pb2_grpc as daprclient_services
 
 import proto.response_pb2 as response_messages
 
@@ -21,16 +22,19 @@ print(f"Started gRPC client on DAPR_GRPC_PORT: {port}")
 # Our server methods
 class DaprClientServicer(daprclient_services.DaprClientServicer):
     def OnInvoke(self, request, context):
-        response = ""
-
+        data=None
+        content_type=""
         if request.method == 'my_method':
-            a = Any()
-            a.Pack(response_messages.CustomResponse(isSuccess=True, code=200, message="Hello World - Success!"))
-            response = a
+            custom_response = response_messages.CustomResponse(isSuccess=True, code=200, message="Hello World - Success!")
+            data = Any()
+            data.Pack(custom_response)
         else:
-            response = Any(value='METHOD_NOT_SUPPORTED'.encode('utf-8'))
+            data = Any(value='METHOD_NOT_SUPPORTED'.encode('utf-8'))
+            content_type="text/plain"
 
-        return response
+        print(data, flush=True)
+        print(content_type, flush=True)
+        return commonv1pb.InvokeResponse(data=data, content_type=content_type)
 
 # Create a gRPC server
 server = grpc.server(futures.ThreadPoolExecutor(max_workers = 10))
