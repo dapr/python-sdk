@@ -40,20 +40,26 @@
 
 ### Build and test
 
-1. Clone python-sdk
+1. Install required packages
+
+```bash
+pip3 install -r dev-requirements.txt
+```
+
+2. Clone python-sdk
 
 ```bash
 git clone https://github.com/dapr/python-sdk.git
 cd python-sdk
 ```
 
-2. Set PYTHONPATH environment
+3. Set PYTHONPATH environment
 
 ```bash
 export PYTHONPATH=`pwd`
 ```
 
-3. Run unit-test
+4. Run unit-test
 
 ```bash
 tox -e py38
@@ -62,7 +68,7 @@ tox -e py38
 ## Examples
 
 * [DemoActor example](./examples/demo_actor)
-* Dapr Service invocation examples
+* Dapr service invocation examples
   - [invoke-simple](./examples/invoke-simple)
   - [invoke-custom-data](./examples/invoke-custom-data)
 * [Dapr Pubsub example](./examples/pubsub-simple)
