@@ -1,7 +1,5 @@
 # Dapr SDK for Python
 
-> WIP - Dapr core team does not have the official plan to support python-sdk now, except for the auto-generated gRPC client. but we're always welcoming any contribution.
-
 ## Structure of Python SDK
 
 * [dapr/actor](./dapr/actor): Actor Framework
@@ -12,7 +10,7 @@
 * [tests](./tests/): unit-tests
 * [examples/demo_actor](./examples/demo_actor): demo actor example
 
-## Status
+## Status - Phase 1
 
 * [x] Initial implementation of Actor Runtime/Manager/Proxy
 * [x] Actor service invocation
@@ -23,11 +21,15 @@
 * [x] Actor state management
 * [x] Actor timer
 * [x] Actor reminder
-* [x] Handle Error properly
-* [ ] Package Dapr Actor SDK
-* [ ] Create gRPC and HTTP rest clients for Dapr
+* [x] Enhance error handling
+* [ ] Improve documents in code
+* [ ] Generate documents using sphinx
+* [ ] Publish dapr-python package
+
+## Status - Phase 2
+
+* [ ] Create convinient layer wrapping gRPC and HTTP clients for Dapr
 * [ ] Flask extensions for Dapr State/Pubsub/Bindings
-* [ ] Package Dapr SDK
 
 ## Developing
 
@@ -59,4 +61,8 @@ tox -e py38
 
 ## Examples
 
-* [DemoActor](./examples/demo_actor)
+* [DemoActor example](./examples/demo_actor)
+* Dapr Service invocation examples
+  - [invoke-simple](./examples/invoke-simple)
+  - [invoke-custom-data](./examples/invoke-custom-data)
+* [Dapr Pubsub example](./examples/pubsub-simple)
