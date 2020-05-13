@@ -1,8 +1,9 @@
 import os
 
 import grpc
-import Proto.dapr_pb2 as dapr_messages
-import Proto.dapr_pb2_grpc as dapr_services
+from dapr.proto.common.v1 import common_pb2 as commonv1pb
+from dapr.proto.dapr.v1 import dapr_pb2 as dapr_messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as dapr_services
 
 from google.protobuf.any_pb2 import Any
 
@@ -20,10 +21,24 @@ logger.info(f"==================================================")
 # Start a gRPC client
 channel = grpc.insecure_channel(f"localhost:{DAPR_PORT_GRPC}")
 client = dapr_services.DaprStub(channel)
-logger.info(f"Started gRPC client on DAPR_GRPC_PORT: {DAPR_PORT_GRPC}")
+logger.info(f"Started Dapr Gateway client on DAPR_GRPC_PORT: {DAPR_PORT_GRPC}")
 
-data = Any(value='ACTION=1'.encode('utf-8'))
-response = client.InvokeService(dapr_messages.InvokeServiceEnvelope(id="id-demo-grpc-server", method="my_method", data=data))
-print(response.data.value)
+req = dapr_messages.InvokeServiceRequest(
+  id = "id-demo-grpc-server", # As described in the demo-grpc-client.yaml pod description
+  message = commonv1pb.InvokeRequest(
+    method = "my_method",
+    data = Any(value='CMSG_INVOKE_REQUEST'.encode('utf-8')),
+    content_type="text/plain; charset=UTF-8"
+  )
+)
+
+logger.info(f"Invoking Service")
+res = client.InvokeService(req)
+logger.info(f"Invoked Service")
+
+# Print the response
+logger.info("================== RESPONSE ==================")
+logger.info(f"Content Type: {res.content_type}")
+logger.info(f"Message: {res.data.value}")
 
 channel.close()

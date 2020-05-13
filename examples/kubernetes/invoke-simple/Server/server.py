@@ -3,10 +3,12 @@ from concurrent import futures
 import time
 
 import grpc
-import Proto.dapr_pb2 as dapr_messages
-import Proto.dapr_pb2_grpc as dapr_services
-import Proto.daprclient_pb2 as daprclient_messages
-import Proto.daprclient_pb2_grpc as daprclient_services
+
+from dapr.proto.common.v1 import common_pb2 as commonv1pb
+from dapr.proto.dapr.v1 import dapr_pb2 as dapr_messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as dapr_services
+from dapr.proto.daprclient.v1 import daprclient_pb2 as daprclient_messages
+from dapr.proto.daprclient.v1 import daprclient_pb2_grpc as daprclient_services
 
 from google.protobuf.any_pb2 import Any
 
@@ -26,31 +28,35 @@ logger.info(f"==================================================")
 # Start a gRPC client
 channel = grpc.insecure_channel(f"localhost:{DAPR_PORT_GRPC}")
 client = dapr_services.DaprStub(channel)
-logger.info(f"Started gRPC client on DAPR_GRPC_PORT: {DAPR_PORT_GRPC}")
+logger.info(f"Started Dapr Gateway client on DAPR_GRPC_PORT: {DAPR_PORT_GRPC}")
 
 # Our server methods
 class DaprClientServicer(daprclient_services.DaprClientServicer):
     def OnInvoke(self, request, context):
-        response = ""
+        data = None
+        content_type = ""
+
+        logger.info("================== REQUEST ==================")
+        logger.info(f"Content Type: {request.content_type}")
+        logger.info(f"Message: {request.data.value}")
 
         if request.method == 'my_method':
-            response = Any(value='INVOKE_RECEIVED'.encode('utf-8'))
+            data = Any(value='SMSG_INVOKE_REQUEST'.encode('utf-8'))
+            content_type = "text/plain; charset=UTF-8"
         else:
-            response = Any(value='METHOD_NOT_SUPPORTED'.encode('utf-8'))
+            data = Any(value='METHOD_NOT_SUPPORTED'.encode('utf-8'))
+            content_type = "text/plain; charset=UTF-8"
 
-        return response
-
-        # Return response to caller
-        return response
+        return commonv1pb.InvokeResponse(data=data, content_type=content_type)
 
 # Create a gRPC server
 server = grpc.server(futures.ThreadPoolExecutor(max_workers = 10))
 daprclient_services.add_DaprClientServicer_to_server(DaprClientServicer(), server)
 
 # Start the gRPC server
-print(f'Starting server. Listening on port {APP_PORT_GRPC}.')
 server.add_insecure_port(f'[::]:{APP_PORT_GRPC}')
-server.start()
+server.start() # It doesn't block
+logger.info(f"Started Server on APP_PORT_GRPC: {APP_PORT_GRPC}")
 
 # Since server.start() doesn't block, we need to do a sleep loop
 try:
