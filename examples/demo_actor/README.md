@@ -11,7 +11,7 @@
 
 ```bash
 $ cd python-sdk
-$ pip3 install -r ./tests/test-requirement.txt
+$ pip3 install -r ./dev-requirement.txt
 $ export PYTHONPATH=`pwd`
 $ cd examples/demo_actor/service
 $ dapr run --app-id demo-actor --app-port 3000 python3 app.py
