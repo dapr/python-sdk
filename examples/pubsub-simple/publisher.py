@@ -1,8 +1,8 @@
 import os
 
 import grpc
-import dapr_pb2 as dapr_messages
-import dapr_pb2_grpc as dapr_services
+from dapr.proto.dapr.v1 import dapr_pb2 as dapr_messages
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as dapr_services
 
 from google.protobuf.any_pb2 import Any
 
