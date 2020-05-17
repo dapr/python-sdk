@@ -88,7 +88,7 @@ def is_dapr_actor(cls: type) -> bool:
 
 
 def get_actor_interfaces(cls: type) -> list:
-    """Gets the list of the base classes that inherit :class:`ActorInterface`.
+    """Gets the list of the base classes that inherits :class:`ActorInterface`.
 
     Args:
         cls (type): The Actor object that inherit :class:`Actor` and
