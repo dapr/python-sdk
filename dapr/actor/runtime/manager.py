@@ -13,9 +13,9 @@ from dapr.actor.id import ActorId
 from dapr.clients import DaprInternalError
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.methodcontext import ActorMethodContext
-from dapr.actor.runtime.methoddispatcher import ActorMethodDispatcher
-from dapr.actor.runtime.reminderdata import ActorReminderData
+from dapr.actor.runtime.method_context import ActorMethodContext
+from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
+from dapr.actor.runtime.reminder_data import ActorReminderData
 from dapr.serializers import Serializer
 
 TIMER_METHOD_NAME = 'fire_timer'
@@ -59,13 +59,13 @@ class ActorManager:
                 f'{self._runtime_ctx.actor_type_info.type_name} does not implment Remindable.')
         request_obj = self._message_serializer.deserialize(request_body)
         request_obj['name'] = reminder_name
-        reminderdata = ActorReminderData.from_dict(request_obj)
+        reminder_data = ActorReminderData.from_dict(request_obj)
 
         async def invoke_reminder(actor: Actor) -> bytes:
             reminder = getattr(actor, REMINDER_METHOD_NAME)
             if reminder is not None:
-                await reminder(reminderdata.name, reminderdata.state,
-                               reminderdata.due_time, reminderdata.period)
+                await reminder(reminder_data.name, reminder_data.state,
+                               reminder_data.due_time, reminder_data.period)
             return None
 
         await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_reminder)

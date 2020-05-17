@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import unittest
 from datetime import timedelta
 
-from dapr.actor.runtime.timerdata import ActorTimerData
+from dapr.actor.runtime.timer_data import ActorTimerData
 
 
 class ActorTimerDataTests(unittest.TestCase):

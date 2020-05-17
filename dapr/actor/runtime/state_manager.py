@@ -9,7 +9,7 @@ import asyncio
 
 from typing import TypeVar, Generic, List, Tuple, Callable
 
-from dapr.actor.runtime.statechange import StateChangeKind, ActorStateChange
+from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
 
 T = TypeVar('T')
 

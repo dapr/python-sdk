@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import io
 
 from typing import Generic, List, TypeVar, Tuple
-from dapr.actor.runtime.statechange import StateChangeKind, ActorStateChange
+from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import Serializer, DefaultJSONSerializer
 

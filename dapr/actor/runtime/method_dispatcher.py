@@ -7,8 +7,8 @@ Licensed under the MIT License.
 
 from typing import Any
 from dapr.actor.runtime.actor import Actor
-from dapr.actor.runtime.typeinformation import ActorTypeInformation
-from dapr.actor.runtime.typeutils import get_dispatchable_attrs
+from dapr.actor.runtime.type_information import ActorTypeInformation
+from dapr.actor.runtime.type_utils import get_dispatchable_attrs
 
 
 class ActorMethodDispatcher:

@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 
 from dapr.actor.id import ActorId
-from dapr.actor.runtime.stateprovider import StateProvider
+from dapr.actor.runtime.state_provider import StateProvider
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import Serializer
 

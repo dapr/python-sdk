@@ -12,9 +12,9 @@ from unittest.mock import AsyncMock
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.statechange import StateChangeKind
-from dapr.actor.runtime.statemanager import ActorStateManager
-from dapr.actor.runtime.typeinformation import ActorTypeInformation
+from dapr.actor.runtime.state_change import StateChangeKind
+from dapr.actor.runtime.state_manager import ActorStateManager
+from dapr.actor.runtime.type_information import ActorTypeInformation
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import DefaultJSONSerializer
 

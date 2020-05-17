@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from dapr.actor.runtime.typeutils import is_dapr_actor, get_actor_interfaces
+from dapr.actor.runtime.type_utils import is_dapr_actor, get_actor_interfaces
 from dapr.actor.runtime.remindable import Remindable
 
 

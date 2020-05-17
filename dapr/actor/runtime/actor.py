@@ -10,11 +10,11 @@ import asyncio
 from datetime import timedelta
 from typing import Any, Optional
 
-from dapr.actor.runtime.methodcontext import ActorMethodContext
+from dapr.actor.runtime.method_context import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.statemanager import ActorStateManager
-from dapr.actor.runtime.reminderdata import ActorReminderData
-from dapr.actor.runtime.timerdata import TIMER_CALLBACK, ActorTimerData
+from dapr.actor.runtime.state_manager import ActorStateManager
+from dapr.actor.runtime.reminder_data import ActorReminderData
+from dapr.actor.runtime.timer_data import TIMER_CALLBACK, ActorTimerData
 
 
 class Actor:

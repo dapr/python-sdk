@@ -9,7 +9,7 @@ from typing import Any
 
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
-from dapr.actor.runtime.typeutils import get_dispatchable_attrs_from_interface
+from dapr.actor.runtime.type_utils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
 
@@ -35,10 +35,10 @@ class ActorProxyFactory:
 
 class CallableProxy:
     def __init__(
-            self, proxy: 'ActorProxy', attr_calltype: dict,
+            self, proxy: 'ActorProxy', attr_call_type: dict,
             message_serializer: Serializer):
         self._proxy = proxy
-        self._attr_calltype = attr_calltype
+        self._attr_call_type = attr_call_type
         self._message_serializer = message_serializer
 
     async def __call__(self, *args, **kwargs) -> Any:
@@ -52,9 +52,9 @@ class CallableProxy:
             else:
                 bytes_data = self._message_serializer.serialize(args[0])
 
-        rtnval = await self._proxy.invoke(self._attr_calltype['actor_method'], bytes_data)
+        rtnval = await self._proxy.invoke(self._attr_call_type['actor_method'], bytes_data)
 
-        return self._message_serializer.deserialize(rtnval, self._attr_calltype['return_types'])
+        return self._message_serializer.deserialize(rtnval, self._attr_call_type['return_types'])
 
 
 class ActorProxy:
@@ -112,12 +112,12 @@ class ActorProxy:
         if name not in self._dispatchable_attr:
             get_dispatchable_attrs_from_interface(self._actor_interface, self._dispatchable_attr)
 
-        attr_calltype = self._dispatchable_attr.get(name)
-        if attr_calltype is None:
+        attr_call_type = self._dispatchable_attr.get(name)
+        if attr_call_type is None:
             raise AttributeError(f'{self._actor_interface.__class__} has no attribute {name}')
 
         if name not in self._callable_proxies:
             self._callable_proxies[name] = CallableProxy(
-                self, attr_calltype, self._message_serializer)
+                self, attr_call_type, self._message_serializer)
 
         return self._callable_proxies[name]
