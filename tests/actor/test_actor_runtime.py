@@ -13,7 +13,7 @@ from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.serializers import DefaultJSONSerializer
 
-from tests.actor.fakeactorclasses import (
+from tests.actor.fake_actor_classes import (
     FakeSimpleActor,
     FakeMultiInterfacesActor,
 )

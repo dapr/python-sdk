@@ -13,7 +13,7 @@ from dapr.actor.runtime.methoddispatcher import ActorMethodDispatcher
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
 from dapr.serializers import DefaultJSONSerializer
 
-from tests.actor.fakeactorclasses import FakeSimpleActor
+from tests.actor.fake_actor_classes import FakeSimpleActor
 
 
 class ActorMethodDispatcherTests(unittest.IsolatedAsyncioTestCase):

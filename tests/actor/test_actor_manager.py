@@ -15,7 +15,7 @@ from dapr.actor.runtime.manager import ActorManager
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.serializers import DefaultJSONSerializer
 
-from tests.actor.fakeactorclasses import (
+from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeSimpleActor,
     FakeSimpleReminderActor,

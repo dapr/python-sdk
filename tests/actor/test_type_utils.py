@@ -14,7 +14,7 @@ from dapr.actor.runtime.typeutils import (
     get_actor_interfaces, get_dispatchable_attrs
 )
 
-from tests.actor.fakeactorclasses import (
+from tests.actor.fake_actor_classes import (
     FakeSimpleActor,
     FakeMultiInterfacesActor,
     FakeActorCls1Interface,

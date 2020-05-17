@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import unittest
 
 from dapr.actor.runtime.typeinformation import ActorTypeInformation
-from tests.actor.fakeactorclasses import (
+from tests.actor.fake_actor_classes import (
     FakeSimpleActor,
     FakeMultiInterfacesActor,
     FakeActorCls1Interface,

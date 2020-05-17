@@ -12,7 +12,7 @@ from dapr.actor.id import ActorId
 from dapr.actor.client.proxy import ActorProxy
 from dapr.serializers import DefaultJSONSerializer
 
-from tests.actor.fakeactorclasses import (
+from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeActorCls2Interface,
 )
