@@ -13,6 +13,15 @@ DAPR_DURATION_PARSER = re.compile(r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seco
 
 
 def convert_from_dapr_duration(duration: str) -> timedelta:
+    """Converts Dapr duration format (Go duration format) to datetime.timedelta.
+
+    Args:
+        duration (str): Dapr duration string.
+
+    Returns:
+        :obj:`datetime.delta`: the python datetime object. 
+    """
+
     matched = DAPR_DURATION_PARSER.match(duration)
     if matched.lastindex == 0:
         raise ValueError(f'Invalid Dapr Duartion format: \'{duration}\'')
@@ -33,6 +42,15 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
 
 
 def convert_to_dapr_duration(td: timedelta) -> str:
+    """Converts date.timedelta to Dapr duration format.
+
+    Args:
+        td (datetime.timedelta): python datetime object.
+
+    Returns:
+        str: dapr duration format string.
+    """
+
     total_minutes, secs = divmod(td.total_seconds(), 60.0)
     hours, mins = divmod(total_minutes, 60.0)
 

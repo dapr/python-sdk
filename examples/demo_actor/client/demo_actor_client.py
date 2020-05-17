@@ -10,7 +10,7 @@ from examples.demo_actor.demo_actor_interface import DemoActorInterface
 
 async def main():
     # Create proxy client
-    proxy = ActorProxy.create(DemoActorInterface, 'DemoActor', ActorId('1'))
+    proxy = ActorProxy.create('DemoActor', ActorId('1'), DemoActorInterface)
 
     # -----------------------------------------------
     # Actor invocation demo

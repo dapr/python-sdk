@@ -12,7 +12,8 @@ from typing import Any, Dict
 
 
 class ActorReminderData:
-    """represents Actor reminder data."""
+    """Represents Actor reminder data."""
+
     def __init__(
             self, name: str, state: bytes,
             due_time: timedelta, period: timedelta):

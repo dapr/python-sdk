@@ -28,21 +28,13 @@ class ActorId:
 
     @classmethod
     def create_random_id(cls):
-        """Creates new object of :class:`ActorId` with the random id value
-
-        :returns: ActorId with random id
-        :rtype: :class:`ActorId`
-        """
+        """Creates new object of :class:`ActorId` with the random id value."""
         random_id = uuid.uuid1().hex
         return ActorId(random_id)
 
     @property
     def id(self) -> str:
-        """Gets Actor ID
-
-        :returns: Actor ID
-        :rtype: str
-        """
+        """Gets Actor ID string."""
         return self._id
 
     def __hash__(self):

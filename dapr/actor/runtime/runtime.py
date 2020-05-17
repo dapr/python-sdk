@@ -7,6 +7,8 @@ Licensed under the MIT License.
 
 import asyncio
 
+from typing import List
+
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.config import ActorRuntimeConfig
@@ -18,7 +20,7 @@ from dapr.serializers import Serializer, DefaultJSONSerializer
 
 
 class ActorRuntime:
-    """Actor Runtime class that creates instances of :class:`Actor` and
+    """The class that creates instances of :class:`Actor` and
     activates and deactivates :class:`Actor`.
     """
 
@@ -32,12 +34,13 @@ class ActorRuntime:
             cls, actor: Actor,
             message_serializer: Serializer = DefaultJSONSerializer(),
             state_serializer: Serializer = DefaultJSONSerializer()) -> None:
-        """Register an :class:`Actor` with the runtime.
+        """Registers an :class:`Actor` with the runtime.
 
-        :param Actor actor: Actor implementation
-        :param Serializer message_serializer: Serializer that serializes message
-            between actors.
-        :param Serializer state_serializer: Serializer that serializes state values.
+        Args:
+            actor (:class:`Actor`): Actor implementation.
+            message_serializer (:class:`Serializer`): A serializer that serializes message
+                between actors.
+            state_serializer (:class:`Serializer`): Serializer that serializes state values.
         """
         type_info = ActorTypeInformation.create(actor)
         # TODO: We will allow to use gRPC client later.
@@ -50,16 +53,17 @@ class ActorRuntime:
             cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())
 
     @classmethod
-    def get_registered_actor_types(cls) -> list:
-        """Get registered actor types."""
+    def get_registered_actor_types(cls) -> List[str]:
+        """Gets registered actor types."""
         return [actor_type for actor_type in cls._actor_managers.keys()]
 
     @classmethod
     async def activate(cls, actor_type_name: str, actor_id: str) -> None:
-        """Activate an actor for an actor type with given actor id.
+        """Activates an actor for an actor type with given actor id.
 
-        :param str actor_type_name: the name of actor type
-        :param str actor_id: the actor id
+        Args:
+            actor_type_name (str): the name of actor type.
+            actor_id (str): the actor id.
         """
         manager = await cls._get_actor_manager(actor_type_name)
         await manager.activate_actor(ActorId(actor_id))
@@ -68,8 +72,9 @@ class ActorRuntime:
     async def deactivate(cls, actor_type_name: str, actor_id: str) -> None:
         """Deactivates an actor for an actor type with given actor id.
 
-        :param str actor_type_name: the name of actor type
-        :param str actor_id: the actor id
+        Args:
+            actor_type_name (str): the name of actor type.
+            actor_id (str): the actor id.
         """
         manager = await cls._get_actor_manager(actor_type_name)
         await manager.deactivate_actor(ActorId(actor_id))
@@ -78,14 +83,16 @@ class ActorRuntime:
     async def dispatch(
             cls, actor_type_name: str, actor_id: str,
             actor_method_name: str, request_body: bytes) -> bytes:
-        """Dispatch actor method defined in actor_type.
+        """Dispatches actor method defined in actor_type.
 
-        :param str actor_type_name: the name of actor type
-        :param str actor_id: Actor ID
-        :param str actor_method_name: the method name that is dispatched
-        :param bytes request_body: the body of request that is passed to actor method arguments
-        :returns: serialized response
-        :rtype: bytes
+        Args:
+            actor_type_name (str): the name of actor type.
+            actor_id (str): Actor ID.
+            actor_method_name (str): the method name that is dispatched.
+            request_body (bytes): the body of request that is passed to actor method arguments.
+
+        Returns:
+            bytes: serialized response data.
         """
         manager = await cls._get_actor_manager(actor_type_name)
         return await manager.dispatch(ActorId(actor_id), actor_method_name, request_body)
@@ -96,11 +103,13 @@ class ActorRuntime:
             name: str, request_body: bytes) -> None:
         """Fires a reminder for the Actor.
 
-        :param str actor_type_name: the name of actor type
-        :param str actor_id: Actor ID
-        :param str name: the method name that is dispatched
-        :param bytes request_body: the body of request that is passed to actor method arguments
+        Args:
+            actor_type_name (str): the name of actor type.
+            actor_id (str): Actor ID.
+            name (str): the name of reminder.
+            request_body (bytes): the body of request that is passed to reminder callback.
         """
+
         manager = await cls._get_actor_manager(actor_type_name)
         await manager.fire_reminder(ActorId(actor_id), name, request_body)
 
@@ -108,16 +117,17 @@ class ActorRuntime:
     async def fire_timer(cls, actor_type_name: str, actor_id: str, name: str) -> None:
         """Fires a timer for the Actor.
 
-        :param str actor_type_name: the name of actor type
-        :param str actor_id: Actor ID
-        :param str name: the method name that is dispatched
+        Args:
+            actor_type_name (str): the name of actor type.
+            actor_id (str): Actor ID.
+            name (str): the timer name.
         """
         manager = await cls._get_actor_manager(actor_type_name)
         await manager.fire_timer(ActorId(actor_id), name)
 
     @classmethod
     def set_actor_config(cls, config: ActorRuntimeConfig) -> None:
-        """Set actor runtime config
+        """Sets actor runtime config
 
         :param ActorRuntimeConfig config: The config to set up actor runtime
         """
@@ -126,9 +136,18 @@ class ActorRuntime:
 
     @classmethod
     def get_actor_config(cls) -> ActorRuntimeConfig:
+        """Gets :class:`ActorRuntimeConfig`."""
         return cls._actor_config
 
     @classmethod
-    async def _get_actor_manager(cls, actor_type_name: str):
+    async def _get_actor_manager(cls, actor_type_name: str) -> ActorManager:
+        """Gets :class:`ActorManager` for actor_type_name.
+
+        Args:
+            actor_type_name (str): the type name of actor.
+
+        Returns:
+            :class:`ActorManager`: an actor manager object for actor_type_name actor.
+        """
         async with cls._actor_managers_lock:
             return cls._actor_managers.get(actor_type_name)

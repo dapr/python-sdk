@@ -5,12 +5,12 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+from typing import Callable
+
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.state_provider import StateProvider
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import Serializer
-
-from typing import Callable
 
 
 class ActorRuntimeContext:
@@ -32,12 +32,12 @@ class ActorRuntimeContext:
 
     @property
     def actor_type_info(self) -> 'ActorTypeInformation':
-        """Return :class:`ActorTypeInformation`"""
+        """Return :class:`ActorTypeInformation` in this context."""
         return self._actor_type_info
 
     @property
     def message_serializer(self) -> Serializer:
-        """Return message serializer which is used for Actor method invocation."""
+        """Return message serializer which is used for Actor invocation."""
         return self._message_serializer
 
     @property
@@ -46,7 +46,7 @@ class ActorRuntimeContext:
         return self._state_serializer
 
     @property
-    def state_provider(self) -> Serializer:
+    def state_provider(self) -> StateProvider:
         """Return state provider to manage actor states."""
         return self._state_provider
 
@@ -56,14 +56,25 @@ class ActorRuntimeContext:
         return self._dapr_client
 
     def create_actor(self, actor_id: ActorId) -> 'Actor':
-        """Create the object of :class:`Actor` for :class:`ActorId`
+        """Create the object of :class:`Actor` for :class:`ActorId`.
 
-        :param actor_id: ActorId object representing :class:`ActorId`
-        :rtype: :class:`Actor` object
+        Args:
+            actor_id (:class:`ActorId`): ActorId object representing :class:`ActorId`
+
+        Returns:
+            :class:`Actor`: new actor.
         """
         return self._actor_factory(self, actor_id)
 
     def _default_actor_factory(
             self, ctx: 'ActorRuntimeContext', actor_id: ActorId) -> 'Actor':
-        # Create the actor object for actor_type_info and actor_id
+        """Creates new Actor with actor_id.
+
+        Args:
+            ctx (:class:`ActorRuntimeContext`): the actor runtime context for new actor.
+            actor_id (:class:`ActorId`): the actor id object.
+
+        Returns:
+            :class:`Actor`: new actor.
+        """
         return self.actor_type_info.implementation_type(ctx, actor_id)

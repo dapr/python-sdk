@@ -37,8 +37,10 @@ class ActorProxyTests(unittest.IsolatedAsyncioTestCase):
 
         self._fake_factory = FakeActoryProxyFactory(self._fake_client)
         self._proxy = ActorProxy.create(
-            FakeActorCls2Interface, FakeMultiInterfacesActor.__name__,
-            ActorId('fake-id'), self._fake_factory)
+            FakeMultiInterfacesActor.__name__,
+            ActorId('fake-id'),
+            FakeActorCls2Interface,
+            self._fake_factory)
 
     async def test_invoke(self):
         response = await self._proxy.invoke('ActionMethod', b'arg0')

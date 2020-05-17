@@ -51,11 +51,16 @@ def get_dispatchable_attrs_from_interface(actor_interface: type, dispatch_map: d
 
 
 def get_dispatchable_attrs(actor_class: type) -> dict:
-    """Get the list of dispatchable attributes from actor.
+    """Gets the list of dispatchable attributes from actor.
 
-    :param type actor_class: The actor object which inherits :class:`ActorInterface`
-    :returns: The map from attribute to actor method
-    :rtype: dict
+    Args:
+        actor_class (type): The actor object which inherits :class:`ActorInterface`
+
+    Returns:
+        dict: The map from attribute to actor method.
+
+    Raises:
+        ValueError: `actor_class` doesn't inherit :class:`ActorInterface`.
     """
     # Find all user actor interfaces derived from ActorInterface
     actor_interfaces = get_actor_interfaces(actor_class)
@@ -71,22 +76,26 @@ def get_dispatchable_attrs(actor_class: type) -> dict:
 
 
 def is_dapr_actor(cls: type) -> bool:
-    """Check if class inherits :class:`Actor`.
+    """Checks if class inherits :class:`Actor`.
 
-    :param type cls: The Actor implementation
-    :returns: True if cls inherits :class:`Actor`. Otherwise, False
-    :rtype: bool
+    Args:
+        cls (type): The Actor implementation.
+
+    Returns:
+        bool: True if cls inherits :class:`Actor`. Otherwise, False
     """
     return issubclass(cls, Actor)
 
 
 def get_actor_interfaces(cls: type) -> list:
-    """Get the list of the base classes that inherit :class:`ActorInterface`.
+    """Gets the list of the base classes that inherit :class:`ActorInterface`.
 
-    :param type cls: The Actor object that inherit :class:`Actor` and
-                       :class:`ActorInterfaces`
-    :returns: the list of classes that inherit :class:`ActorInterface`
-    :rtype: list
+    Args:
+        cls (type): The Actor object that inherit :class:`Actor` and
+            :class:`ActorInterfaces`.
+
+    Returns:
+        List: the list of classes that inherit :class:`ActorInterface`.
     """
     actor_bases = []
     for cl in cls.mro():

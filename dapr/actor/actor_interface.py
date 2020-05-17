@@ -39,6 +39,8 @@ def actormethod(name: str = None):
             async def do_actor_call(self, param):
                 ...
 
+    Args:
+        name (str): the name of actor method.
     """
     def wrapper(funcobj):
         funcobj.__actormethod__ = name
