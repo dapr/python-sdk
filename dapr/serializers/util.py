@@ -19,7 +19,7 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
         duration (str): Dapr duration string.
 
     Returns:
-        :obj:`datetime.delta`: the python datetime object. 
+        :obj:`datetime.delta`: the python datetime object.
     """
 
     matched = DAPR_DURATION_PARSER.match(duration)

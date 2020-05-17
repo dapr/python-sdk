@@ -16,7 +16,6 @@ from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_context import ActorMethodContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.actor.runtime.reminder_data import ActorReminderData
-from dapr.serializers import Serializer
 
 TIMER_METHOD_NAME = 'fire_timer'
 REMINDER_METHOD_NAME = 'receive_reminder'
@@ -27,17 +26,15 @@ class ActorManager:
 
     def __init__(self, ctx: ActorRuntimeContext):
         self._runtime_ctx = ctx
+        self._message_serializer = self._runtime_ctx.message_serializer
         self._active_actors = {}
         self._active_actors_lock = asyncio.Lock()
         self._dispatcher = ActorMethodDispatcher(ctx.actor_type_info)
         self._timer_method_context = ActorMethodContext.create_for_timer(TIMER_METHOD_NAME)
         self._reminder_method_context = ActorMethodContext.create_for_reminder(REMINDER_METHOD_NAME)
 
-    @property
-    def _message_serializer(self) -> Serializer:
-        return self._runtime_ctx.message_serializer
-
     async def activate_actor(self, actor_id: ActorId):
+        """Activates actor."""
         actor = self._runtime_ctx.create_actor(actor_id)
         await actor._on_activate_internal()
 

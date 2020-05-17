@@ -34,7 +34,7 @@ class ActorRuntime:
             cls, actor: Actor,
             message_serializer: Serializer = DefaultJSONSerializer(),
             state_serializer: Serializer = DefaultJSONSerializer()) -> None:
-        """Registers an :class:`Actor` with the runtime.
+        """Registers an :class:`Actor` object with the runtime.
 
         Args:
             actor (:class:`Actor`): Actor implementation.
@@ -141,7 +141,7 @@ class ActorRuntime:
 
     @classmethod
     async def _get_actor_manager(cls, actor_type_name: str) -> ActorManager:
-        """Gets :class:`ActorManager` for actor_type_name.
+        """Gets :class:`ActorManager` object for actor_type_name.
 
         Args:
             actor_type_name (str): the type name of actor.

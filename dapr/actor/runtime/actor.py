@@ -20,7 +20,11 @@ from dapr.actor.runtime.timer_data import TIMER_CALLBACK, ActorTimerData
 class Actor:
     """A base class of Actors that provides the common functionality of actors.
 
-    Example::
+    Attributes:
+        runtime_ctx: the :class:`ActorRuntimeContext` object served for
+            the actor implementation.
+
+    Examples:
 
         class DaprActorInterface(ActorInterface):
             @actor_method(name="method")
@@ -129,27 +133,49 @@ class Actor:
             self._runtime_ctx.actor_type_info.type_name, self.id, name)
 
     async def _on_activate_internal(self) -> None:
+        """Clears all state cache, calls the overridden :meth:`_on_activate`,
+        and then save the states.
+
+        This internal callback is called when actor is activated.
+        """
         await self._reset_state_internal()
         await self._on_activate()
         await self._save_state_internal()
 
     async def _on_deactivate_internal(self) -> None:
+        """Clears all state cache, calls the overridden :meth:`_on_deactivate`.
+
+        This internal callback is called when actor is deactivated.
+        """
         await self._reset_state_internal()
         await self._on_deactivate()
 
     async def _on_pre_actor_method_internal(self, method_context: ActorMethodContext) -> None:
+        """Calls the overridden :meth:`_on_pre_actor_method`.
+
+        This internal callback is called before actor method is invoked.
+        """
         await self._on_pre_actor_method(method_context)
 
     async def _on_post_actor_method_internal(self, method_context: ActorMethodContext) -> None:
+        """Calls the overridden :meth:`_on_post_actor_method` and
+        saves the states.
+
+        This internal callback is called after actor method is invoked.
+        """
         await self._on_post_actor_method(method_context)
         await self._save_state_internal()
 
     async def _on_invoke_failed_internal(self, exception=None):
-        # Exception has been thrown by user code, reset the state in state manager
+        """Clears states in the cache when actor method invocation is failed.
+        """
         await self._reset_state_internal()
 
     async def _reset_state_internal(self) -> None:
-        # Exception has been raised by user code, reset the state in state manager.
+        """Clears actor state cache.
+
+        This will be called when actor method invocation is failed and actor is activated.
+        """
         await self._state_manager.clear_cache()
 
     async def _save_state_internal(self):
@@ -159,6 +185,11 @@ class Actor:
         await self._state_manager.save_state()
 
     async def _fire_timer_internal(self, name: str) -> None:
+        """Calls timer callback.
+
+        Args:
+            name (str): the name of timer.
+        """
         timer = self._timers[name]
         return await timer.callback(timer.state)
 

@@ -15,7 +15,7 @@ from dapr.serializers import Serializer, DefaultJSONSerializer
 T = TypeVar('T')
 
 # Mapping StateChangeKind to Dapr State Operation
-MAP_CHANGE_KIND_TO_OPERATION = {
+_MAP_CHANGE_KIND_TO_OPERATION = {
     StateChangeKind.remove: b'delete',
     StateChangeKind.add: b'upsert',
     StateChangeKind.update: b'upsert',
@@ -71,7 +71,7 @@ class StateProvider(Generic[T]):
         for state in state_changes:
             if not first_state:
                 json_output.write(b',')
-            operation = MAP_CHANGE_KIND_TO_OPERATION.get(state.change_kind) or b''
+            operation = _MAP_CHANGE_KIND_TO_OPERATION.get(state.change_kind) or b''
             json_output.write(b'{"operation":"')
             json_output.write(operation)
             json_output.write(b'","request":{"key":"')
