@@ -15,6 +15,8 @@ This includes the following packages:
 
 ## Status
 
+> Note: Dapr SDK for python is currently under community development in alpha phase. We're welcoming contributions from the community.
+
 * [x] Initial implementation of Actor Runtime/Manager/Proxy
 * [x] Actor service invocation
 * [x] RPC style actor proxy
@@ -25,9 +27,7 @@ This includes the following packages:
 * [x] Actor timer
 * [x] Actor reminder
 * [x] Enhance error handling
-* [ ] Publish the first dapr package
-* [ ] Improve documents in code
-* [ ] Generate documents using sphinx
+* [ ] Auto generated documents
 * [ ] Create convinient layer wrapping gRPC and HTTP clients for Dapr
 * [ ] Flask extensions for Dapr State/Pubsub/Bindings
 
@@ -63,6 +63,12 @@ export PYTHONPATH=`pwd`
 
 ```bash
 tox -e py38
+```
+
+5. Run type check
+
+```bash
+tox -e type
 ```
 
 ## Examples
