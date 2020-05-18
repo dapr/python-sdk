@@ -43,9 +43,10 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         await self._state_manager.save_state()
 
     async def set_reminder(self, enabled) -> None:
-        """An actor method which enables and disables a reminder.
+        """Enables and disables a reminder.
 
-        :param bool enabled: the flag to enable and disable demo_reminder
+        Args:
+            enabled (bool): the flag to enable and disable demo_reminder.
         """
         print(f'set reminder to {enabled}', flush=True)
         if enabled:
@@ -61,9 +62,10 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         print(f'set reminder is done', flush=True)
 
     async def set_timer(self, enabled) -> None:
-        """An actor method which enables and disables a timer.
+        """Enables and disables a timer.
 
-        :param bool enabled: the flag to enable and disable demo_timer
+        Args:
+            enabled (bool): the flag to enable and disable demo_timer.
         """
         print(f'set_timer to {enabled}', flush=True)
         if enabled:
@@ -82,17 +84,12 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
     async def timer_callback(self, state) -> None:
         """A callback which will be called whenever timer is triggered.
 
-        :param object state: an object which is defined when timer is registered.
+        Args:
+            state (object): an object which is defined when timer is registered.
         """
         print(f'time_callback is called - {state}', flush=True)
 
     async def receive_reminder(self, name: str, state: bytes,
                                due_time: datetime.timedelta, period: datetime.timedelta) -> None:
-        """A callback which will be called when reminder is triggered.
-
-        :param str name: the name of the reminder to register. the name must be unique per actor.
-        :param bytes state: the user state passed to the reminder invocation.
-        :param datetime.timedelta due_time: the amount of time to delay before invoking the reminder for the first time.
-        :param datetime.timedelta period: the time interval between reminder invocations after the first invocation.
-        """
+        """A callback which will be called when reminder is triggered."""
         print(f'receive_reminder is called - {name} reminder - {str(state)}', flush=True)
