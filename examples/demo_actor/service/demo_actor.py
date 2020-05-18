@@ -5,7 +5,7 @@
 import datetime
 
 from dapr.actor import Actor, Remindable
-from examples.demo_actor.common import DemoActorInterface
+from ..common import DemoActorInterface
 
 
 class DemoActor(Actor, DemoActorInterface, Remindable):

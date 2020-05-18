@@ -147,7 +147,7 @@ class ActorStateManager(Generic[T]):
             self, state_name: str,
             value: T, update_value_factory: Callable[[str, T], T]) -> T:
         if not callable(update_value_factory):
-            raise AttributeError(f'update_value_factory is not callable')
+            raise AttributeError('update_value_factory is not callable')
 
         if state_name in self._state_change_tracker:
             state_metadata = self._state_change_tracker[state_name]
