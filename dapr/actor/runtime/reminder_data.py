@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import base64
 
 from datetime import timedelta
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional
 
 
 class ActorReminderData:
@@ -24,7 +24,7 @@ class ActorReminderData:
     """
 
     def __init__(
-            self, name: str, state: Union[bytes, str],
+            self, name: str, state: Optional[bytes],
             due_time: timedelta, period: timedelta):
         """Creates new :class:`ActorReminderData` instance.
 
@@ -41,13 +41,10 @@ class ActorReminderData:
         self._due_time = due_time
         self._period = period
 
-        if not isinstance(state, (str, bytes)):
-            raise ValueError(f'only str and bytes are allowed for state: {type(state)}')
+        if not isinstance(state, bytes):
+            raise ValueError(f'only bytes are allowed for state: {type(state)}')
 
-        if isinstance(state, str):
-            self._state = state.encode('utf-8')
-        else:
-            self._state = state
+        self._state = state
 
     @property
     def name(self) -> str:
@@ -82,10 +79,10 @@ class ActorReminderData:
         }
 
     @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> 'ActorReminderData':
+    def from_dict(cls, reminder_name: str, obj: Dict[str, Any]) -> 'ActorReminderData':
         """Creates :class:`ActorReminderData` object from dict object."""
         b64encoded_state = obj.get('data')
         state_bytes = None
         if b64encoded_state is not None and len(b64encoded_state) > 0:
             state_bytes = base64.b64decode(b64encoded_state)
-        return ActorReminderData(obj['name'], state_bytes, obj['dueTime'], obj['period'])
+        return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'])

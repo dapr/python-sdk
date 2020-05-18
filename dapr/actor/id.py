@@ -41,7 +41,7 @@ class ActorId:
         return hash(self._id)
 
     def __str__(self):
-        return f'{self._id}'
+        return self._id
 
     def __eq__(self, other):
         if not other:

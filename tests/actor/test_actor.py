@@ -10,6 +10,7 @@ import unittest
 from datetime import timedelta
 from unittest.mock import AsyncMock
 
+from dapr.actor.id import ActorId
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.runtime import ActorRuntime
@@ -99,7 +100,7 @@ class ActorTests(unittest.IsolatedAsyncioTestCase):
         fake_client.register_reminder.return_value = b'"ok"'
         fake_client.unregister_reminder.return_value = b'"ok"'
 
-        test_actor_id = 'test_id'
+        test_actor_id = ActorId('test_id')
         test_type_info = ActorTypeInformation.create(FakeSimpleReminderActor)
         ctx = ActorRuntimeContext(
             test_type_info, self._serializer,
@@ -127,7 +128,7 @@ class ActorTests(unittest.IsolatedAsyncioTestCase):
         fake_client.register_timer.return_value = b'"ok"'
         fake_client.unregister_timer.return_value = b'"ok"'
 
-        test_actor_id = 'test_id'
+        test_actor_id = ActorId('test_id')
         test_type_info = ActorTypeInformation.create(FakeSimpleTimerActor)
         ctx = ActorRuntimeContext(
             test_type_info, self._serializer,

@@ -5,11 +5,13 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+from typing import Any, Dict, Type
+
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime.actor import Actor
 
 
-def get_class_method_args(func: type) -> list:
+def get_class_method_args(func: Any) -> list:
     args = func.__code__.co_varnames[:func.__code__.co_argcount]
 
     # Exclude self, cls arguments
@@ -18,7 +20,7 @@ def get_class_method_args(func: type) -> list:
     return list(args)
 
 
-def get_method_arg_types(func: type) -> list:
+def get_method_arg_types(func: Any) -> list:
     annotations = getattr(func, '__annotations__')
     args = get_class_method_args(func)
     arg_types = []
@@ -28,14 +30,16 @@ def get_method_arg_types(func: type) -> list:
     return arg_types
 
 
-def get_method_return_types(func: type) -> type:
+def get_method_return_types(func: Any) -> type:
     annotations = getattr(func, '__annotations__')
     if len(annotations) == 0 or not annotations['return']:
         return object
     return annotations['return']
 
 
-def get_dispatchable_attrs_from_interface(actor_interface: type, dispatch_map: dict) -> None:
+def get_dispatchable_attrs_from_interface(
+        actor_interface: Type[ActorInterface],
+        dispatch_map: Dict[str, Any]) -> None:
     for attr, v in actor_interface.__dict__.items():
         if attr.startswith('_') or not callable(v):
             continue
@@ -50,7 +54,7 @@ def get_dispatchable_attrs_from_interface(actor_interface: type, dispatch_map: d
         }
 
 
-def get_dispatchable_attrs(actor_class: type) -> dict:
+def get_dispatchable_attrs(actor_class: Type[Actor]) -> Dict[str, Any]:
     """Gets the list of dispatchable attributes from actor.
 
     Args:
@@ -68,14 +72,14 @@ def get_dispatchable_attrs(actor_class: type) -> dict:
         raise ValueError(f'{actor_class.__name__} has not inherited from ActorInterface')
 
     # Find all dispatchable attributes
-    dispatch_map = {}
+    dispatch_map: Dict[str, Any] = {}
     for user_actor_cls in actor_interfaces:
         get_dispatchable_attrs_from_interface(user_actor_cls, dispatch_map)
 
     return dispatch_map
 
 
-def is_dapr_actor(cls: type) -> bool:
+def is_dapr_actor(cls: Type[Actor]) -> bool:
     """Checks if class inherits :class:`Actor`.
 
     Args:
@@ -87,11 +91,11 @@ def is_dapr_actor(cls: type) -> bool:
     return issubclass(cls, Actor)
 
 
-def get_actor_interfaces(cls: type) -> list:
+def get_actor_interfaces(cls: Type[Actor]) -> list:
     """Gets the list of the base classes that inherits :class:`ActorInterface`.
 
     Args:
-        cls (type): The Actor object that inherit :class:`Actor` and
+        cls (:class:`Actor`): The Actor object that inherit :class:`Actor` and
             :class:`ActorInterfaces`.
 
     Returns:

@@ -5,10 +5,13 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import List
-
-from dapr.actor.runtime.type_utils import is_dapr_actor, get_actor_interfaces
 from dapr.actor.runtime.remindable import Remindable
+from dapr.actor.runtime.type_utils import is_dapr_actor, get_actor_interfaces
+
+from typing import List, Type, TYPE_CHECKING
+if TYPE_CHECKING:
+    from dapr.actor.actor_interface import ActorInterface  # noqa: F401
+    from dapr.actor.runtime.actor import Actor  # noqa: F401
 
 
 class ActorTypeInformation:
@@ -16,7 +19,7 @@ class ActorTypeInformation:
     implementing an actor.
     """
 
-    def __init__(self, name: str, implementation_class: type,
+    def __init__(self, name: str, implementation_class: Type['Actor'],
                  actor_bases: List['ActorInterface']):
         self._name = name
         self._impl_type = implementation_class
@@ -28,7 +31,7 @@ class ActorTypeInformation:
         return self._name
 
     @property
-    def implementation_type(self) -> type:
+    def implementation_type(self) -> Type['Actor']:
         """Returns Actor implementation type."""
         return self._impl_type
 
@@ -42,11 +45,11 @@ class ActorTypeInformation:
         return Remindable in self._impl_type.__bases__
 
     @classmethod
-    def create(cls, actor_class: type) -> 'ActorTypeInformation':
+    def create(cls, actor_class: Type['Actor']) -> 'ActorTypeInformation':
         """Creates :class:`ActorTypeInformation` for actor_class.
 
         Args:
-            actor_class (type): The actor implementation inherited from Actor.
+            actor_class (:class:`Actor`): The actor implementation inherited from Actor.
 
         Returns:
             :class:`ActorTypeInformation`: includes type name, actor_class type,

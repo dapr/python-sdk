@@ -6,6 +6,8 @@ Licensed under the MIT License.
 """
 import aiohttp
 
+from typing import Dict, Optional
+
 from dapr.conf import settings
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
@@ -26,7 +28,7 @@ class DaprActorHttpClient(DaprActorClientBase):
 
     async def invoke_method(
             self, actor_type: str, actor_id: str,
-            method: str, data: bytes) -> bytes:
+            method: str, data: Optional[bytes] = None) -> bytes:
         """Invoke method defined in :class:`Actor` remotely.
 
         :param str actor_type: str to represent Actor type.
@@ -119,7 +121,7 @@ class DaprActorHttpClient(DaprActorClientBase):
 
     async def _send_bytes(
             self, method: str, url: str,
-            data: bytes, headers: dict = {}) -> bytes:
+            data: Optional[bytes], headers: Dict[str, str] = {}) -> bytes:
         if not headers.get(CONTENT_TYPE_HEADER):
             headers[CONTENT_TYPE_HEADER] = DEFAULT_JSON_CONTENT_TYPE
 
@@ -142,7 +144,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         except Exception:
             return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}')
 
-        if error_info is not None and error_info.get('message') is not None:
+        if error_info and isinstance(error_info, dict):
             message = error_info.get('message')
             error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
             return DaprInternalError(message, error_code)

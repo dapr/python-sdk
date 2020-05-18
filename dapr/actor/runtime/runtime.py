@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import asyncio
 
-from typing import List
+from typing import Dict, List, Optional, Type
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
@@ -26,12 +26,12 @@ class ActorRuntime:
 
     _actor_config = ActorRuntimeConfig()
 
-    _actor_managers = {}
+    _actor_managers: Dict[str, ActorManager] = {}
     _actor_managers_lock = asyncio.Lock()
 
     @classmethod
     async def register_actor(
-            cls, actor: Actor,
+            cls, actor: Type[Actor],
             message_serializer: Serializer = DefaultJSONSerializer(),
             state_serializer: Serializer = DefaultJSONSerializer()) -> None:
         """Registers an :class:`Actor` object with the runtime.
@@ -64,8 +64,13 @@ class ActorRuntime:
         Args:
             actor_type_name (str): the name of actor type.
             actor_id (str): the actor id.
+
+        Raises:
+            ValueError: `actor_type_name` actor type is not registered.
         """
         manager = await cls._get_actor_manager(actor_type_name)
+        if not manager:
+            raise ValueError(f'{actor_type_name} is not registered.')
         await manager.activate_actor(ActorId(actor_id))
 
     @classmethod
@@ -75,8 +80,13 @@ class ActorRuntime:
         Args:
             actor_type_name (str): the name of actor type.
             actor_id (str): the actor id.
+
+        Raises:
+            ValueError: `actor_type_name` actor type is not registered.
         """
         manager = await cls._get_actor_manager(actor_type_name)
+        if not manager:
+            raise ValueError(f'{actor_type_name} is not registered.')
         await manager.deactivate_actor(ActorId(actor_id))
 
     @classmethod
@@ -93,8 +103,13 @@ class ActorRuntime:
 
         Returns:
             bytes: serialized response data.
+
+        Raises:
+            ValueError: `actor_type_name` actor type is not registered.
         """
         manager = await cls._get_actor_manager(actor_type_name)
+        if not manager:
+            raise ValueError(f'{actor_type_name} is not registered.')
         return await manager.dispatch(ActorId(actor_id), actor_method_name, request_body)
 
     @classmethod
@@ -108,9 +123,14 @@ class ActorRuntime:
             actor_id (str): Actor ID.
             name (str): the name of reminder.
             request_body (bytes): the body of request that is passed to reminder callback.
+
+        Raises:
+            ValueError: `actor_type_name` actor type is not registered.
         """
 
         manager = await cls._get_actor_manager(actor_type_name)
+        if not manager:
+            raise ValueError(f'{actor_type_name} is not registered.')
         await manager.fire_reminder(ActorId(actor_id), name, request_body)
 
     @classmethod
@@ -121,8 +141,13 @@ class ActorRuntime:
             actor_type_name (str): the name of actor type.
             actor_id (str): Actor ID.
             name (str): the timer name.
+
+        Raises:
+            ValueError: `actor_type_name` actor type is not registered.
         """
         manager = await cls._get_actor_manager(actor_type_name)
+        if not manager:
+            raise ValueError(f'{actor_type_name} is not registered.')
         await manager.fire_timer(ActorId(actor_id), name)
 
     @classmethod
@@ -140,7 +165,7 @@ class ActorRuntime:
         return cls._actor_config
 
     @classmethod
-    async def _get_actor_manager(cls, actor_type_name: str) -> ActorManager:
+    async def _get_actor_manager(cls, actor_type_name: str) -> Optional[ActorManager]:
         """Gets :class:`ActorManager` object for actor_type_name.
 
         Args:

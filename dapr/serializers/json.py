@@ -10,7 +10,7 @@ import re
 import datetime
 import json
 
-from typing import Callable
+from typing import Callable, Optional
 from dateutil import parser
 
 from dapr.actor.runtime.config import ActorRuntimeConfig
@@ -25,7 +25,7 @@ from dapr.serializers.util import (
 class DefaultJSONSerializer(Serializer):
     def serialize(
             self, obj: object,
-            custom_hook: Callable[[object], dict] = None) -> bytes:
+            custom_hook: Optional[Callable[[object], bytes]] = None) -> bytes:
 
         dict_obj = obj
         if callable(custom_hook):
@@ -41,7 +41,7 @@ class DefaultJSONSerializer(Serializer):
 
     def deserialize(
             self, data: bytes, data_type: type = object,
-            custom_hook: Callable[[bytes], object] = None) -> object:
+            custom_hook: Optional[Callable[[bytes], object]] = None) -> object:
 
         if not isinstance(data, (str, bytes)):
             raise ValueError('data must be str or bytes types')
@@ -78,15 +78,15 @@ class DaprJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, *args, **kwargs)
         self.parse_string = DaprJSONDecoder.custom_scanstring
-        self.scan_once = json.scanner.py_make_scanner(self)
+        self.scan_once = json.scanner.py_make_scanner(self)  # type: ignore
 
     @classmethod
     def custom_scanstring(cls, s, end, strict=True):
-        (s, end) = json.decoder.scanstring(s, end, strict)
+        (s, end) = json.decoder.scanstring(s, end, strict)  # type: ignore
         if cls.datetime_regex.match(s):
             return (parser.parse(s), end)
 
         duration = DAPR_DURATION_PARSER.match(s)
-        if duration.lastindex is not None:
+        if duration is not None and duration.lastindex is not None:
             return (convert_from_dapr_duration(s), end)
         return (s, end)

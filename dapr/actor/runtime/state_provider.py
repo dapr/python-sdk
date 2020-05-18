@@ -7,12 +7,11 @@ Licensed under the MIT License.
 
 import io
 
-from typing import Generic, List, TypeVar, Tuple
+from typing import Any, List, Type, Tuple
 from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import Serializer, DefaultJSONSerializer
 
-T = TypeVar('T')
 
 # Mapping StateChangeKind to Dapr State Operation
 _MAP_CHANGE_KIND_TO_OPERATION = {
@@ -22,7 +21,7 @@ _MAP_CHANGE_KIND_TO_OPERATION = {
 }
 
 
-class StateProvider(Generic[T]):
+class StateProvider:
     def __init__(
             self,
             actor_client: DaprActorClientBase,
@@ -32,11 +31,11 @@ class StateProvider(Generic[T]):
 
     async def try_load_state(
             self, actor_type: str, actor_id: str,
-            state_name: str) -> Tuple[bool, T]:
+            state_name: str, state_type: Type[Any] = object) -> Tuple[bool, Any]:
         raw_state_value = await self._state_client.get_state(actor_type, actor_id, state_name)
         if (not raw_state_value) or len(raw_state_value) == 0:
             return (False, None)
-        result = self._state_serializer.deserialize(raw_state_value, T)
+        result = self._state_serializer.deserialize(raw_state_value, state_type)
         return (True, result)
 
     async def contains_state(self, actor_type: str, actor_id: str, state_name: str) -> bool:

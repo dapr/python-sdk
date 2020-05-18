@@ -5,12 +5,15 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Callable
-
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.state_provider import StateProvider
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import Serializer
+
+from typing import Callable, TYPE_CHECKING
+if TYPE_CHECKING:
+    from dapr.actor.runtime.actor import Actor
+    from dapr.actor.runtime.type_information import ActorTypeInformation
 
 
 class ActorRuntimeContext:
@@ -28,7 +31,7 @@ class ActorRuntimeContext:
 
         # Create State management provider for actor.
         self._dapr_client = actor_client
-        self._state_provider = StateProvider(self._dapr_client, state_serializer)
+        self._state_provider: StateProvider = StateProvider(self._dapr_client, state_serializer)
 
     @property
     def actor_type_info(self) -> 'ActorTypeInformation':

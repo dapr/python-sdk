@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 
 import asyncio
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from flask import jsonify, make_response, request
 
@@ -65,7 +65,7 @@ class DaprActor(object):
     def teardown(self, exception):
         self._app.logger.debug('actor service is shutting down.')
 
-    def register_actor(self, actor: Actor) -> None:
+    def register_actor(self, actor: Type[Actor]) -> None:
         asyncio.run(ActorRuntime.register_actor(actor))
         self._app.logger.debug(f'registered actor: {actor.__class__.__name__}')
 
@@ -152,7 +152,7 @@ def wrap_response(
         response_obj = {
             'message': msg,
         }
-        if not (status >= 200 and status < 300):
+        if not (status >= 200 and status < 300) and error_code:
             response_obj['errorCode'] = error_code
         resp = make_response(jsonify(response_obj), status)
     elif isinstance(msg, bytes):

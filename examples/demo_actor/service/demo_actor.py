@@ -5,7 +5,7 @@
 import datetime
 
 from dapr.actor import Actor, Remindable
-from examples.demo_actor.demo_actor_interface import DemoActorInterface
+from examples.demo_actor.common import DemoActorInterface
 
 
 class DemoActor(Actor, DemoActorInterface, Remindable):
@@ -95,5 +95,4 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         :param datetime.timedelta due_time: the amount of time to delay before invoking the reminder for the first time.
         :param datetime.timedelta period: the time interval between reminder invocations after the first invocation.
         """
-        print(f'receive_reminder is called - {name} reminder - {state}', flush=True)
-
+        print(f'receive_reminder is called - {name} reminder - {str(state)}', flush=True)

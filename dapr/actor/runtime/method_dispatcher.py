@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Any
+from typing import Any, Dict, List
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.type_information import ActorTypeInformation
 from dapr.actor.runtime.type_utils import get_dispatchable_attrs
@@ -19,15 +19,15 @@ class ActorMethodDispatcher:
         self._check_name_exist(name)
         return await getattr(actor, self._dispatch_mapping[name]['method_name'])(*args, **kwargs)
 
-    def get_arg_names(self, name: str) -> list:
+    def get_arg_names(self, name: str) -> List[str]:
         self._check_name_exist(name)
         return self._dispatch_mapping[name]['arg_names']
 
-    def get_arg_types(self, name: str) -> list:
+    def get_arg_types(self, name: str) -> List[Any]:
         self._check_name_exist(name)
         return self._dispatch_mapping[name]['arg_types']
 
-    def get_return_type(self, name: str) -> type:
+    def get_return_type(self, name: str) -> Dict[str, Any]:
         self._check_name_exist(name)
         return self._dispatch_mapping[name]['return_types']
 

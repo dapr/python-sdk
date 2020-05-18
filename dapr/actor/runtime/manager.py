@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import asyncio
 
-from typing import Awaitable, Callable
+from typing import Any, Callable, Coroutine, Dict, Optional
 
 from dapr.actor.id import ActorId
 from dapr.clients import DaprInternalError
@@ -27,8 +27,10 @@ class ActorManager:
     def __init__(self, ctx: ActorRuntimeContext):
         self._runtime_ctx = ctx
         self._message_serializer = self._runtime_ctx.message_serializer
-        self._active_actors = {}
+
+        self._active_actors: Dict[str, Actor] = {}
         self._active_actors_lock = asyncio.Lock()
+
         self._dispatcher = ActorMethodDispatcher(ctx.actor_type_info)
         self._timer_method_context = ActorMethodContext.create_for_timer(TIMER_METHOD_NAME)
         self._reminder_method_context = ActorMethodContext.create_for_reminder(REMINDER_METHOD_NAME)
@@ -54,11 +56,12 @@ class ActorManager:
         if not self._runtime_ctx.actor_type_info.is_remindable():
             raise ValueError(
                 f'{self._runtime_ctx.actor_type_info.type_name} does not implment Remindable.')
-        request_obj = self._message_serializer.deserialize(request_body)
-        request_obj['name'] = reminder_name
-        reminder_data = ActorReminderData.from_dict(request_obj)
+        request_obj = self._message_serializer.deserialize(request_body, object)
+        if isinstance(request_obj, dict):
+            reminder_data = ActorReminderData.from_dict(reminder_name, request_obj)
+        # ignore if request_obj is not dict
 
-        async def invoke_reminder(actor: Actor) -> bytes:
+        async def invoke_reminder(actor: Actor) -> Optional[bytes]:
             reminder = getattr(actor, REMINDER_METHOD_NAME)
             if reminder is not None:
                 await reminder(reminder_data.name, reminder_data.state,
@@ -68,7 +71,7 @@ class ActorManager:
         await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_reminder)
 
     async def fire_timer(self, actor_id: ActorId, timer_name: str) -> None:
-        async def invoke_timer(actor: Actor) -> bytes:
+        async def invoke_timer(actor: Actor) -> Optional[bytes]:
             await actor._fire_timer_internal(timer_name)
             return None
 
@@ -100,7 +103,7 @@ class ActorManager:
 
     async def _dispatch_internal(
             self, actor_id: ActorId, method_context: ActorMethodContext,
-            dispatch_action: Callable[[Actor], Awaitable[bytes]]) -> object:
+            dispatch_action: Callable[[Actor], Coroutine[Any, Any, Optional[bytes]]]) -> object:
         actor = None
         async with self._active_actors_lock:
             actor = self._active_actors.get(actor_id.id, None)

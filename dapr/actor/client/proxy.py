@@ -5,7 +5,8 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Any, Callable, Optional
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, Optional, Type
 
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
@@ -17,7 +18,15 @@ from dapr.serializers import Serializer, DefaultJSONSerializer
 ACTOR_FACTORY_CALLBACK = Callable[[ActorInterface, str, str], 'ActorProxy']
 
 
-class ActorProxyFactory:
+class ActorFactoryBase(ABC):
+    @abstractmethod
+    def create(
+            self, actor_type: str, actor_id: ActorId,
+            actor_interface: Type[ActorInterface] = None) -> 'ActorProxy':
+        ...
+
+
+class ActorProxyFactory(ActorFactoryBase):
     """A factory class that creates :class:`ActorProxy` object to the remote
     actor objects.
 
@@ -30,15 +39,17 @@ class ActorProxyFactory:
         self._dapr_client = DaprActorHttpClient()
         self._message_serializer = message_serializer
 
-    def create(self, actor_interface: ActorInterface,
-               actor_type: str, actor_id: str) -> 'ActorProxy':
-        return ActorProxy(self._dapr_client, actor_interface,
-                          actor_type, actor_id, self._message_serializer)
+    def create(
+            self, actor_type: str, actor_id: ActorId,
+            actor_interface: Type[ActorInterface] = None) -> 'ActorProxy':
+        return ActorProxy(
+            self._dapr_client, actor_type, actor_id,
+            actor_interface, self._message_serializer)
 
 
 class CallableProxy:
     def __init__(
-            self, proxy: 'ActorProxy', attr_call_type: dict,
+            self, proxy: 'ActorProxy', attr_call_type: Dict[str, Any],
             message_serializer: Serializer):
         self._proxy = proxy
         self._attr_call_type = attr_call_type
@@ -72,17 +83,18 @@ class ActorProxy:
 
     def __init__(
             self, client: DaprActorClientBase,
-            actor_interface: ActorInterface,
             actor_type: str,
             actor_id: ActorId,
+            actor_interface: Optional[Type[ActorInterface]],
             message_serializer: Serializer):
         self._dapr_client = client
         self._actor_id = actor_id
         self._actor_type = actor_type
         self._actor_interface = actor_interface
-        self._dispatchable_attr = {}
-        self._callable_proxies = {}
         self._message_serializer = message_serializer
+
+        self._dispatchable_attr: Dict[str, Dict[str, Any]] = {}
+        self._callable_proxies: Dict[str, CallableProxy] = {}
 
     @property
     def actor_id(self) -> ActorId:
@@ -98,8 +110,8 @@ class ActorProxy:
     def create(
             cls,
             actor_type: str, actor_id: ActorId,
-            actor_interface: Optional[ActorInterface] = None,
-            actor_proxy_factory: Optional[ACTOR_FACTORY_CALLBACK] = None) -> 'ActorProxy':
+            actor_interface: Type[ActorInterface] = None,
+            actor_proxy_factory: Optional[ActorFactoryBase] = None) -> 'ActorProxy':
         """Creates ActorProxy client to call actor.
 
         Args:
@@ -113,7 +125,7 @@ class ActorProxy:
             :class:`ActorProxy': new Actor Proxy client.
         """
         factory = cls._default_proxy_factory if not actor_proxy_factory else actor_proxy_factory
-        return factory.create(actor_interface, actor_type, actor_id)
+        return factory.create(actor_type, actor_id, actor_interface)
 
     async def invoke(self, method: str, raw_body: Optional[bytes] = None) -> bytes:
         """Invokes actor method.

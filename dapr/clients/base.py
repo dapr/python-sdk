@@ -6,6 +6,7 @@ Licensed under the MIT License.
 """
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 
 class DaprActorClientBase(ABC):
@@ -15,7 +16,7 @@ class DaprActorClientBase(ABC):
     @abstractmethod
     async def invoke_method(
             self, actor_type: str, actor_id: str,
-            method: str, data: bytes) -> bytes:
+            method: str, data: Optional[bytes] = None) -> bytes:
         ...
 
     @abstractmethod

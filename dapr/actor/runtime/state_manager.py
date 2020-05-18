@@ -7,9 +7,11 @@ Licensed under the MIT License.
 
 import asyncio
 
-from typing import TypeVar, Generic, List, Tuple, Callable
-
 from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
+
+from typing import Callable, Dict, Generic, List, Tuple, TypeVar, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from dapr.actor.runtime.actor import Actor
 
 T = TypeVar('T')
 
@@ -42,7 +44,8 @@ class ActorStateManager(Generic[T]):
         if not actor.runtime_ctx:
             raise AttributeError('runtime context was not set')
         self._type_name = actor.runtime_ctx.actor_type_info.type_name
-        self._state_change_tracker = {}
+
+        self._state_change_tracker: Dict[str, StateMetadata] = {}
 
     async def add_state(self, state_name: str, value: T) -> None:
         if not await self.try_add_state(state_name, value):
@@ -58,28 +61,28 @@ class ActorStateManager(Generic[T]):
             return False
 
         existed = await self._actor.runtime_ctx.state_provider.contains_state(
-            self._type_name, self._actor.id, state_name)
+            self._type_name, self._actor.id.id, state_name)
         if not existed:
             return False
 
         self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
         return True
 
-    async def get_state(self, state_name: str) -> T:
+    async def get_state(self, state_name: str) -> Optional[T]:
         has_value, val = await self.try_get_state(state_name)
         if has_value:
             return val
         else:
             raise KeyError(f'Actor State with name {state_name} was not found.')
 
-    async def try_get_state(self, state_name: str) -> Tuple[bool, T]:
+    async def try_get_state(self, state_name: str) -> Tuple[bool, Optional[T]]:
         if state_name in self._state_change_tracker:
             state_metadata = self._state_change_tracker[state_name]
             if state_metadata.change_kind == StateChangeKind.remove:
                 return False, None
             return True, state_metadata.value
         has_value, val = await self._actor.runtime_ctx.state_provider.try_load_state(
-            self._type_name, self._actor.id, state_name)
+            self._type_name, self._actor.id.id, state_name)
         if has_value:
             self._state_change_tracker[state_name] = StateMetadata(val, StateChangeKind.none)
         return has_value, val
@@ -96,7 +99,7 @@ class ActorStateManager(Generic[T]):
             return
 
         existed = await self._actor.runtime_ctx.state_provider.contains_state(
-            self._type_name, self._actor.id, state_name)
+            self._type_name, self._actor.id.id, state_name)
         if existed:
             self._state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
         else:
@@ -118,7 +121,7 @@ class ActorStateManager(Generic[T]):
             return True
 
         existed = await self._actor.runtime_ctx.state_provider.contains_state(
-            self._type_name, self._actor.id, state_name)
+            self._type_name, self._actor.id.id, state_name)
         if existed:
             self._state_change_tracker[state_name] = StateMetadata(None, StateChangeKind.remove)
             return True
@@ -129,9 +132,9 @@ class ActorStateManager(Generic[T]):
             state_metadata = self._state_change_tracker[state_name]
             return state_metadata.change_kind != StateChangeKind.remove
         return await self._actor.runtime_ctx.state_provider.contains_state(
-            self._type_name, self._actor.id, state_name)
+            self._type_name, self._actor.id.id, state_name)
 
-    async def get_or_add_state(self, state_name: str, value: T) -> T:
+    async def get_or_add_state(self, state_name: str, value: T) -> Optional[T]:
         has_value, val = await self.try_get_state(state_name)
         if has_value:
             return val
@@ -160,7 +163,7 @@ class ActorStateManager(Generic[T]):
             return new_value
 
         has_value, val = await self._actor.runtime_ctx.state_provider.try_load_state(
-            self._type_name, self._actor.id, state_name)
+            self._type_name, self._actor.id.id, state_name)
 
         if has_value:
             new_value = update_value_factory(state_name, val)
@@ -207,7 +210,7 @@ class ActorStateManager(Generic[T]):
             state_metadata.change_kind = StateChangeKind.none
         if len(state_changes) > 0:
             await self._actor.runtime_ctx.state_provider.save_state(
-                self._type_name, self._actor.id, state_changes)
+                self._type_name, self._actor.id.id, state_changes)
         for state_name in states_to_remove:
             self._state_change_tracker.pop(state_name, None)
 

@@ -8,8 +8,9 @@ Licensed under the MIT License.
 import asyncio
 
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
+from dapr.actor.id import ActorId
 from dapr.actor.runtime.method_context import ActorMethodContext
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.state_manager import ActorStateManager
@@ -46,13 +47,12 @@ class Actor:
 
     """
 
-    def __init__(self, ctx: ActorRuntimeContext, actor_id: str):
+    def __init__(self, ctx: ActorRuntimeContext, actor_id: ActorId):
         self.id = actor_id
         self._runtime_ctx = ctx
-        self._dispatch_mapping = {}
-        self._timers = {}
+        self._timers: Dict[str, ActorTimerData] = {}
         self._timers_lock = asyncio.Lock()
-        self._state_manager = ActorStateManager(self)
+        self._state_manager: ActorStateManager = ActorStateManager(self)
 
     @property
     def runtime_ctx(self) -> ActorRuntimeContext:
@@ -77,14 +77,13 @@ class Actor:
             period (datetime.timedelta): the time interval between invocations
                 of the awaitable callback.
         """
+        name = name or self.__get_new_timer_name()
         async with self._timers_lock:
-            if name is None or name == '':
-                name = self.__get_new_timer_name()
             self._timers[name] = ActorTimerData(name, callback, state, due_time, period)
 
         req_body = self._runtime_ctx.message_serializer.serialize(self._timers[name].as_dict())
         await self._runtime_ctx.dapr_client.register_timer(
-            self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
+            self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body)
 
     async def unregister_timer(self, name: str) -> None:
         """Unregisters actor timer.
@@ -93,7 +92,7 @@ class Actor:
             name (str): the name of the timer to unregister.
         """
         await self._runtime_ctx.dapr_client.unregister_timer(
-            self._runtime_ctx.actor_type_info.type_name, self.id, name)
+            self._runtime_ctx.actor_type_info.type_name, self.id.id, name)
         async with self._timers_lock:
             self._timers.pop(name)
 
@@ -121,7 +120,7 @@ class Actor:
         reminder = ActorReminderData(name, state, due_time, period)
         req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())
         await self._runtime_ctx.dapr_client.register_reminder(
-            self._runtime_ctx.actor_type_info.type_name, self.id, name, req_body)
+            self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body)
 
     async def unregister_reminder(self, name: str) -> None:
         """Unregisters actor reminder.
@@ -130,7 +129,7 @@ class Actor:
             name (str): the name of the reminder to unregister.
         """
         await self._runtime_ctx.dapr_client.unregister_reminder(
-            self._runtime_ctx.actor_type_info.type_name, self.id, name)
+            self._runtime_ctx.actor_type_info.type_name, self.id.id, name)
 
     async def _on_activate_internal(self) -> None:
         """Clears all state cache, calls the overridden :meth:`_on_activate`,
