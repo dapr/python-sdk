@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment # Create Dapr Deployment, will automatically have 2 pods (described below + daprd)
+metadata:
+  name: demo-grpc-server
+  labels: # Labels for the DEPLOYMENT, this way we can filter e.g. `kubectl delete -l key=value,key2=value2`
+    app: d-demo-grpc-server # deployment-roadwork-...
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: p-demo-grpc-server # Which pod will the deployment apply to?
+  template:
+    metadata:
+      labels: # Labels for the POD
+        app: p-demo-grpc-server # pod-roadwork-...
+      annotations:
+        dapr.io/enabled: "true" # Do we inject a sidecar to this deployment?
+        dapr.io/id: "id-demo-grpc-server" # Unique ID or Name for Dapr App (so we can communicate with it)
+        dapr.io/protocol: "grpc"
+        dapr.io/port: "50050"
+    spec:
+      containers:
+      - name: c-demo-grpc-server # Name of our container, e.g. `kubectl logs -c c-rw-...`
+        image: demo-grpc-server:latest
+        imagePullPolicy: Never # Local image! Else IfNotPresent or Always
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"

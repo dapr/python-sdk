@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: p-demo-grpc-client
+  name: demo-grpc-client
+  annotations:
+    dapr.io/enabled: "true" # Do we inject a sidecar into this pod?
+    dapr.io/id: "id-demo-grpc-client" # Unique ID or Name for Dapr APP (so we can communicate with it)
+    dapr.io/protocol: "grpc"
+spec:
+  containers:
+  - name: c-demo-grpc-client # Name of our container, e.g. `kubectl logs -c c-rw-...`
+    image: demo-grpc-client:latest
+    imagePullPolicy: Never # Local image! Else IfNotPresent or Always
+    env:
+    - name: PYTHONUNBUFFERED
+      value: "1"
+  restartPolicy: OnFailure # OnFailure since sometimes we fail to identify the GRPC channel
