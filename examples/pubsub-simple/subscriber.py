@@ -3,9 +3,9 @@ from concurrent import futures
 import time
 
 import grpc
-import dapr_pb2_grpc as dapr_services
-import daprclient_pb2 as daprclient_messages
-import daprclient_pb2_grpc as daprclient_services
+from dapr.proto.dapr.v1 import dapr_pb2_grpc as dapr_services
+from dapr.proto.daprclient.v1 import daprclient_pb2 as daprclient_messages
+from dapr.proto.daprclient.v1 import daprclient_pb2_grpc as daprclient_services
 
 from google.protobuf import empty_pb2
 
