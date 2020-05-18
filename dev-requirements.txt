@@ -1,0 +1,8 @@
+Flask>=1.1
+mypy>=0.761
+mypy-extensions>=0.4.3
+flake8>=3.7.9 
+aiohttp>=3.6.2
+python-dateutil>=2.8.1
+protobuf == 3.11.3
+grpcio == 1.26.0
