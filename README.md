@@ -77,4 +77,5 @@ tox -e type
 * Dapr service invocation examples
   - [invoke-simple](./examples/invoke-simple)
   - [invoke-custom-data](./examples/invoke-custom-data)
+  - [Kubernetes example](./examples/kubernetes)
 * [Dapr Pubsub example](./examples/pubsub-simple)
