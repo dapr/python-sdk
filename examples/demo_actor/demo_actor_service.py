@@ -6,7 +6,7 @@ from flask import Flask, jsonify
 from flask_dapr.actor import DaprActor
 
 from dapr.conf import settings
-from .demo_actor import DemoActor
+from demo_actor import DemoActor
 
 app = Flask(f'{DemoActor.__name__}Service')
 

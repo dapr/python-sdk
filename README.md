@@ -1,5 +1,11 @@
 # Dapr SDK for Python
 
+[![PyPI version](https://badge.fury.io/py/dapr.svg)](https://badge.fury.io/py/dapr)
+[![PyPI version](https://badge.fury.io/py/dapr-dev.svg)](https://badge.fury.io/py/dapr-dev)
+![dapr-python](https://github.com/dapr/python-sdk/workflows/dapr-python/badge.svg?branch=master)
+[![Gitter](https://badges.gitter.im/Dapr/community.svg)](https://gitter.im/Dapr/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 [Dapr](https://github.com/dapr/docs/tree/master/concepts#dapr-concepts) is a portable, event-driven, serverless runtime for building distributed applications across cloud and edge.
 
 Dapr SDK for Python allows you to implement the [Virtual Actor model](https://github.com/dapr/docs/tree/master/concepts/actors), based on the actor design pattern. This SDK can run locally, in a container and in any distributed systems environment.
@@ -15,7 +21,7 @@ This includes the following packages:
 
 ## Status
 
-> Note: Dapr SDK for python is currently under community development in alpha phase. We're welcoming contributions from the community.
+> Note: Dapr SDK for python is currently under community development in alpha phase.
 
 * [x] Initial implementation of Actor Runtime/Manager/Proxy
 * [x] Actor service invocation
@@ -31,12 +37,34 @@ This includes the following packages:
 * [ ] Create convinient layer wrapping gRPC and HTTP clients for Dapr
 * [ ] Flask extensions for Dapr State/Pubsub/Bindings
 
-## Developing
+## Getting started
 
 ### Prerequisites
 
 * [Install Dapr standalone mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-standalone)
 * [Install Python 3.8+](https://www.python.org/downloads/)
+
+### Install Dapr python sdk
+
+* Official package - WIP
+
+```sh
+pip install dapr
+```
+
+* Development package
+
+```sh
+pip install dapr-dev
+```
+
+> Note: Do not install both packages.
+
+### Try out examples
+
+Go to [Examples](./examples)
+
+## Developing
 
 ### Build and test
 
@@ -47,16 +75,18 @@ git clone https://github.com/dapr/python-sdk.git
 cd python-sdk
 ```
 
-2. Install required packages
+2. Set PYTHONPATH environment
 
-```bash
-pip3 install -r dev-requirements.txt
-```
-
-3. Set PYTHONPATH environment
+Make sure that you set `PYTHONPATH` environment variable to repo root path.
 
 ```bash
 export PYTHONPATH=`pwd`
+```
+
+3. Install required packages
+
+```bash
+pip3 install -r dev-requirements.txt
 ```
 
 4. Run unit-test
@@ -71,11 +101,7 @@ tox -e py38
 tox -e type
 ```
 
-## Examples
+## Code of Conduct
 
-* [DemoActor example](./examples/demo_actor)
-* Dapr service invocation examples
-  - [invoke-simple](./examples/invoke-simple)
-  - [invoke-custom-data](./examples/invoke-custom-data)
-  - [Kubernetes example](./examples/kubernetes)
-* [Dapr Pubsub example](./examples/pubsub-simple)
+This project has adopted the [Microsoft Open Source Code of conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
