@@ -13,8 +13,8 @@
 $ cd python-sdk
 $ pip3 install -r ./dev-requirement.txt
 $ export PYTHONPATH=`pwd`
-$ cd examples/demo_actor/service
-$ dapr run --app-id demo-actor --app-port 3000 python3 app.py
+$ cd examples/demo_actor
+$ dapr run --app-id demo-actor --app-port 3000 python3 demo_actor_service.py
 ...
 == APP ==  * Serving Flask app "DemoActorService" (lazy loading)
 == APP ==  * Environment: production
@@ -39,7 +39,7 @@ $ dapr run --app-id demo-actor --app-port 3000 python3 app.py
 ```bash
 $ cd python-sdk
 $ export PYTHONPATH=`pwd`
-$ cd examples/demo_actor/client
+$ cd examples/demo_actor
 # Run actor client
 $ dapr run --app-id demo-client python3 demo_actor_client.py
 ...
