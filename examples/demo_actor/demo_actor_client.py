@@ -5,7 +5,7 @@
 import asyncio
 
 from dapr.actor import ActorProxy, ActorId
-from ..common import DemoActorInterface
+from demo_actor_interface import DemoActorInterface
 
 
 async def main():
