@@ -25,7 +25,7 @@ def parse_version(ver):
 
 def is_release():
     """Returns True only if version in the code is equal to git tag."""
-    tagged_version = run(['git', 'describe', '--tags']).decode('utf-8').strip()[1:]
+    tagged_version = run(['git', 'describe', '--tags', '--always']).decode('utf-8').strip()[1:]
     return tagged_version == __version__
 
 
