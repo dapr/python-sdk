@@ -37,6 +37,7 @@ jobs:
       run: |
         tox -e py38
     - name: Build and publish
+      if: github.event_name != 'pull_request'
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
