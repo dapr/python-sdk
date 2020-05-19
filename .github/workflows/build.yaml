@@ -37,10 +37,10 @@ jobs:
       run: |
         tox -e py38
     - name: Build and publish
-      if: startswith(github.ref, 'refs/tags/v')
+      if: github.event_name != 'pull_request'
       env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        TWINE_USERNAME: ${{ secrets.PYPI_UPLOAD_USER }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
