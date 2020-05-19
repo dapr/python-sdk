@@ -11,16 +11,20 @@ import os
 from setuptools import setup
 from subprocess import check_output as run
 
+# Load version in dapr package.
 exec(open('dapr/version.py').read())
+version = __version__
 
 
-def parse_version(v):
-    versionPattern = r'\d+(=?\.(\d+(=?\.(\d+)*)*)*)*'
-    regexMatcher = re.compile(versionPattern)
-    return regexMatcher.search(v).group(0)
+def parse_version(ver):
+    """Parse version string from ver."""
+    regexVersion = r'\d+(=?\.(\d+(=?\.(\d+)*)*)*)*'
+    match = re.compile(regexVersion)
+    return match.search(ver).group(0)
 
 
 def is_release():
+    """Returns True only if version in the code is equal to git tag."""
     tagged_version = run(['git', 'describe', '--tags']).decode('utf-8').strip()[1:]
     return tagged_version == __version__
 
@@ -37,7 +41,6 @@ independent, building blocks that enable you to build portable applications with
 and framework of your choice. Each building block is independent and you can use one, some,
 or all of them in your application.
 '''.lstrip()
-version = __version__
 
 # Get build number from GITHUB_RUN_NUMBER environment variable
 build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
@@ -47,6 +50,8 @@ if not is_release():
     version = f'{parse_version(__version__)}.dev{build_number}'
     description = 'Dapr SDK for python'
     long_description = 'This is the development build.'
+
+print(f'package name: {name}, version: {version}', flush=True)
 
 
 setup(
