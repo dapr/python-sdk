@@ -58,6 +58,8 @@ pip install dapr
 pip install dapr-dev
 ```
 
+> Note: Do not install both packages.
+
 ### Try out examples
 
 Go to [Examples](./examples)
