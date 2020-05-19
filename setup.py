@@ -49,7 +49,7 @@ if not is_release():
     name += '-dev'
     version = f'{parse_version(__version__)}.dev{build_number}'
     description = 'The developmental release for Dapr Python SDK.'
-    long_description = 'This is the development release for Dapr Python SDK.'
+    long_description = 'This is the developmental release for Dapr Python SDK.'
 
 print(f'package name: {name}, version: {version}', flush=True)
 
