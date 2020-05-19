@@ -30,7 +30,7 @@ def is_release():
 
 
 name = 'dapr'
-description = 'Dapr SDK for Python'
+description = 'The official release of Dapr Python SDK'
 long_description = '''
 Dapr is a portable, serverless, event-driven runtime that makes it easy for developers to
 build resilient, stateless and stateful microservices that run on the cloud and edge and
@@ -48,8 +48,8 @@ build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 if not is_release():
     name += '-dev'
     version = f'{parse_version(__version__)}.dev{build_number}'
-    description = 'Dapr SDK for python'
-    long_description = 'This is the development build.'
+    description = 'The developmental release for Dapr Python SDK.'
+    long_description = 'This is the development release for Dapr Python SDK.'
 
 print(f'package name: {name}, version: {version}', flush=True)
 
