@@ -3,9 +3,7 @@ from concurrent import futures
 import time
 
 import grpc
-from dapr.proto.dapr.v1 import dapr_pb2_grpc as dapr_services
-from dapr.proto.daprclient.v1 import daprclient_pb2 as daprclient_messages
-from dapr.proto.daprclient.v1 import daprclient_pb2_grpc as daprclient_services
+from dapr.proto import appcallback_v1, appcallback_service_v1, common_v1
 
 from google.protobuf import empty_pb2
 
@@ -14,20 +12,13 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
 
-# Start a gRPC client
-port = os.getenv('DAPR_GRPC_PORT')
-channel = grpc.insecure_channel(f"localhost:{port}")
-client = dapr_services.DaprStub(channel)
-print(f"Started gRPC client on DAPR_GRPC_PORT: {port}")
-
-
 # Our server methods
-class DaprClientServicer(daprclient_services.DaprClientServicer):
-    def GetTopicSubscriptions(self, request, context):
+class AppCallback(appcallback_service_v1.AppCallbackServicer):
+    def ListTopicSubscriptions(self, request, context):
         # Dapr will call this method to get the list of topics the app
         # wants to subscribe to. In this example, we are telling Dapr
         # To subscribe to a topic named TOPIC_A
-        return daprclient_messages.GetTopicSubscriptionsEnvelope(topics=['TOPIC_A'])
+        return appcallback_v1.ListTopicSubscriptionsResponse(topics=['TOPIC_A'])
 
     def OnTopicEvent(self, request, context):
         logging.info("Event received!!")
@@ -36,8 +27,8 @@ class DaprClientServicer(daprclient_services.DaprClientServicer):
 
 # Create a gRPC server
 server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-daprclient_services.add_DaprClientServicer_to_server(
-    DaprClientServicer(), server)
+appcallback_service_v1.add_DaprClientServicer_to_server(
+    AppCallback(), server)
 
 # Start the gRPC server
 print('Starting server. Listening on port 50051.')
