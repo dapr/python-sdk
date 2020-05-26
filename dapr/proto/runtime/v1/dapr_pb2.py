@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='dapr.proto.runtime.v1',
   syntax='proto3',
   serialized_options=_b('\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\252\002\033Dapr.Client.Autogen.Grpc.v1'),
-  serialized_pb=_b('\n dapr/proto/runtime/v1/dapr.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequest\"|\n\x0fGetStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12H\n\x0b\x63onsistency\x18\x03 \x01(\x0e\x32\x33.dapr.proto.common.v1.StateOptions.StateConsistency\".\n\x10GetStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\"x\n\x12\x44\x65leteStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\x33\n\x07options\x18\x04 \x01(\x0b\x32\".dapr.proto.common.v1.StateOptions\"`\n\x10SaveStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x38\n\x08requests\x18\x02 \x03(\x0b\x32&.dapr.proto.common.v1.StateSaveRequest\"2\n\x13PublishEventRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\"\xb0\x01\n\x14InvokeBindingRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12K\n\x08metadata\x18\x03 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xad\x01\n\x10GetSecretRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x82\x01\n\x11GetSecretResponse\x12@\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.GetSecretResponse.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x32\xff\x04\n\x04\x44\x61pr\x12\x64\n\rInvokeService\x12+.dapr.proto.runtime.v1.InvokeServiceRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12]\n\x08GetState\x12&.dapr.proto.runtime.v1.GetStateRequest\x1a\'.dapr.proto.runtime.v1.GetStateResponse\"\x00\x12N\n\tSaveState\x12\'.dapr.proto.runtime.v1.SaveStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12R\n\x0b\x44\x65leteState\x12).dapr.proto.runtime.v1.DeleteStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12T\n\x0cPublishEvent\x12*.dapr.proto.runtime.v1.PublishEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12V\n\rInvokeBinding\x12+.dapr.proto.runtime.v1.InvokeBindingRequest\x1a\x16.google.protobuf.Empty\"\x00\x12`\n\tGetSecret\x12\'.dapr.proto.runtime.v1.GetSecretRequest\x1a(.dapr.proto.runtime.v1.GetSecretResponse\"\x00\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
+  serialized_pb=_b('\n dapr/proto/runtime/v1/dapr.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequest\"|\n\x0fGetStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12H\n\x0b\x63onsistency\x18\x03 \x01(\x0e\x32\x33.dapr.proto.common.v1.StateOptions.StateConsistency\".\n\x10GetStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\"x\n\x12\x44\x65leteStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\x33\n\x07options\x18\x04 \x01(\x0b\x32\".dapr.proto.common.v1.StateOptions\"W\n\x10SaveStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"2\n\x13PublishEventRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\"\xb0\x01\n\x14InvokeBindingRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12K\n\x08metadata\x18\x03 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xad\x01\n\x10GetSecretRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x82\x01\n\x11GetSecretResponse\x12@\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.GetSecretResponse.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x32\xff\x04\n\x04\x44\x61pr\x12\x64\n\rInvokeService\x12+.dapr.proto.runtime.v1.InvokeServiceRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12]\n\x08GetState\x12&.dapr.proto.runtime.v1.GetStateRequest\x1a\'.dapr.proto.runtime.v1.GetStateResponse\"\x00\x12N\n\tSaveState\x12\'.dapr.proto.runtime.v1.SaveStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12R\n\x0b\x44\x65leteState\x12).dapr.proto.runtime.v1.DeleteStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12T\n\x0cPublishEvent\x12*.dapr.proto.runtime.v1.PublishEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12V\n\rInvokeBinding\x12+.dapr.proto.runtime.v1.InvokeBindingRequest\x1a\x16.google.protobuf.Empty\"\x00\x12`\n\tGetSecret\x12\'.dapr.proto.runtime.v1.GetSecretRequest\x1a(.dapr.proto.runtime.v1.GetSecretResponse\"\x00\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,dapr_dot_proto_dot_common_dot_v1_dot_common__pb2.DESCRIPTOR,])
 
@@ -217,7 +217,7 @@ _SAVESTATEREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='requests', full_name='dapr.proto.runtime.v1.SaveStateRequest.requests', index=1,
+      name='states', full_name='dapr.proto.runtime.v1.SaveStateRequest.states', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -236,7 +236,7 @@ _SAVESTATEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=509,
-  serialized_end=605,
+  serialized_end=596,
 )
 
 
@@ -273,8 +273,8 @@ _PUBLISHEVENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=607,
-  serialized_end=657,
+  serialized_start=598,
+  serialized_end=648,
 )
 
 
@@ -311,8 +311,8 @@ _INVOKEBINDINGREQUEST_METADATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=789,
-  serialized_end=836,
+  serialized_start=780,
+  serialized_end=827,
 )
 
 _INVOKEBINDINGREQUEST = _descriptor.Descriptor(
@@ -355,8 +355,8 @@ _INVOKEBINDINGREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=660,
-  serialized_end=836,
+  serialized_start=651,
+  serialized_end=827,
 )
 
 
@@ -393,8 +393,8 @@ _GETSECRETREQUEST_METADATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=789,
-  serialized_end=836,
+  serialized_start=780,
+  serialized_end=827,
 )
 
 _GETSECRETREQUEST = _descriptor.Descriptor(
@@ -437,8 +437,8 @@ _GETSECRETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=839,
-  serialized_end=1012,
+  serialized_start=830,
+  serialized_end=1003,
 )
 
 
@@ -475,8 +475,8 @@ _GETSECRETRESPONSE_DATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1102,
-  serialized_end=1145,
+  serialized_start=1093,
+  serialized_end=1136,
 )
 
 _GETSECRETRESPONSE = _descriptor.Descriptor(
@@ -505,14 +505,14 @@ _GETSECRETRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1015,
-  serialized_end=1145,
+  serialized_start=1006,
+  serialized_end=1136,
 )
 
 _INVOKESERVICEREQUEST.fields_by_name['message'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._INVOKEREQUEST
 _GETSTATEREQUEST.fields_by_name['consistency'].enum_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._STATEOPTIONS_STATECONSISTENCY
 _DELETESTATEREQUEST.fields_by_name['options'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._STATEOPTIONS
-_SAVESTATEREQUEST.fields_by_name['requests'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._STATESAVEREQUEST
+_SAVESTATEREQUEST.fields_by_name['states'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._STATEITEM
 _INVOKEBINDINGREQUEST_METADATAENTRY.containing_type = _INVOKEBINDINGREQUEST
 _INVOKEBINDINGREQUEST.fields_by_name['metadata'].message_type = _INVOKEBINDINGREQUEST_METADATAENTRY
 _GETSECRETREQUEST_METADATAENTRY.containing_type = _GETSECRETREQUEST
@@ -629,8 +629,8 @@ _DAPR = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=1148,
-  serialized_end=1787,
+  serialized_start=1139,
+  serialized_end=1778,
   methods=[
   _descriptor.MethodDescriptor(
     name='InvokeService',
