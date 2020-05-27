@@ -49,13 +49,13 @@ This includes the following packages:
 * Official package - WIP
 
 ```sh
-pip install dapr
+pip3 install dapr
 ```
 
 * Development package
 
 ```sh
-pip install dapr-dev
+pip3 install dapr-dev
 ```
 
 > Note: Do not install both packages.
@@ -99,6 +99,14 @@ tox -e py38
 
 ```bash
 tox -e type
+```
+
+## Generate gRPC Protobuf client
+
+```sh
+pip3 install -r dev-requirements.txt
+
+./tools/regen_grpcclient.sh
 ```
 
 ## Code of Conduct
