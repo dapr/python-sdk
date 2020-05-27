@@ -20,8 +20,8 @@ print('Published!')
 
 key = 'mykey'
 storeName = 'statestore'
-req = common_v1.StateSaveRequest(key=key, value='my state'.encode('utf-8'))
-state = api_v1.SaveStateRequest(store_name=storeName, requests=[req])
+req = common_v1.StateItem(key=key, value='my state'.encode('utf-8'))
+state = api_v1.SaveStateRequest(store_name=storeName, states=[req])
 
 client.SaveState(state)
 print('Saved!')

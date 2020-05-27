@@ -27,8 +27,7 @@ class AppCallback(appcallback_service_v1.AppCallbackServicer):
 
 # Create a gRPC server
 server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-appcallback_service_v1.add_DaprClientServicer_to_server(
-    AppCallback(), server)
+appcallback_service_v1.add_AppCallbackServicer_to_server(AppCallback(), server)
 
 # Start the gRPC server
 print('Starting server. Listening on port 50051.')
