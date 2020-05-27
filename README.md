@@ -104,7 +104,7 @@ tox -e type
 ## Generate gRPC Protobuf client
 
 ```sh
-pip3 install -rdev-requirement.txt
+pip3 install -r dev-requirements.txt
 
 ./tools/regen_grpcclient.sh
 ```
