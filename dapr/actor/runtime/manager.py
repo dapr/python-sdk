@@ -80,9 +80,6 @@ class ActorManager:
     async def dispatch(
             self, actor_id: ActorId,
             actor_method_name: str, request_body: bytes) -> bytes:
-        if not self._active_actors.get(actor_id.id):
-            raise ValueError(f'{actor_id} is not activated')
-
         method_context = ActorMethodContext.create_for_actor(actor_method_name)
         arg_types = self._dispatcher.get_arg_types(actor_method_name)
 
@@ -104,6 +101,9 @@ class ActorManager:
     async def _dispatch_internal(
             self, actor_id: ActorId, method_context: ActorMethodContext,
             dispatch_action: Callable[[Actor], Coroutine[Any, Any, Optional[bytes]]]) -> object:
+        # Activate actor when actor is invoked.
+        if actor_id.id not in self._active_actors:
+            await self.activate_actor(actor_id)
         actor = None
         async with self._active_actors_lock:
             actor = self._active_actors.get(actor_id.id, None)
