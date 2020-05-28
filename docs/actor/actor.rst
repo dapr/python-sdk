@@ -1,6 +1,8 @@
-=================
 Actor
 =================
+Dapr's actor class
+
+
 .. automodule:: actor.runtime.actor
   :members:
 .. automodule:: actor.runtime.call_type
