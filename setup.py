@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from subprocess import check_output as run
 
 # Load version in dapr package.
