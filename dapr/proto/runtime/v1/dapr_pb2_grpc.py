@@ -44,7 +44,7 @@ class DaprStub(object):
     self.InvokeBinding = channel.unary_unary(
         '/dapr.proto.runtime.v1.Dapr/InvokeBinding',
         request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeBindingRequest.SerializeToString,
-        response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+        response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeBindingResponse.FromString,
         )
     self.GetSecret = channel.unary_unary(
         '/dapr.proto.runtime.v1.Dapr/GetSecret',
@@ -137,7 +137,7 @@ def add_DaprServicer_to_server(servicer, server):
       'InvokeBinding': grpc.unary_unary_rpc_method_handler(
           servicer.InvokeBinding,
           request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeBindingRequest.FromString,
-          response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+          response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeBindingResponse.SerializeToString,
       ),
       'GetSecret': grpc.unary_unary_rpc_method_handler(
           servicer.GetSecret,
