@@ -37,18 +37,18 @@ jobs:
       run: |
         tox -e py38
     - name: Build and publish Dapr Python SDK
-      if: github.event_name != 'pull_request'
+      #if: github.event_name != 'pull_request'
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_UPLOAD_USER }}
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python setup.py sdist bdist_wheel
-        #twine upload dist/*
+        
     - name: Build and publish Dapr Flask Extension
-      if: github.event_name != 'pull_request'
+      #if: github.event_name != 'pull_request'
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_UPLOAD_USER }}
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd flask_dapr && python setup.py sdist bdist_wheel
-        #twine upload dist/*
+        
