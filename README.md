@@ -34,7 +34,7 @@ This includes the following packages:
 * [x] Actor reminder
 * [x] Enhance error handling
 * [ ] Auto generated documents
-* [ ] Create convinient layer wrapping gRPC and HTTP clients for Dapr
+* [ ] Create convenient layer wrapping gRPC and HTTP clients for Dapr
 * [ ] Flask extensions for Dapr State/Pubsub/Bindings
 
 ## Getting started
@@ -111,6 +111,7 @@ tox -e doc
 ```
 
 The generated files will be found in `docs/_build`.
+
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of conduct](https://opensource.microsoft.com/codeofconduct/).
