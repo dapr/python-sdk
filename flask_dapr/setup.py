@@ -42,8 +42,8 @@ build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 if not is_release():
     name += '-dev'
     version = f'{__version__}.dev{build_number}'
-    description = 'The developmental release for Dapr Python SDK.'
-    long_description = 'This is the developmental release for Dapr Python SDK.'
+    description = 'The developmental release for Dapr Python SDK Flask.'
+    long_description = 'This is the developmental release for Dapr Python SDK Flask.'
 
 print(f'package name: {name}, version: {version}', flush=True)
 
