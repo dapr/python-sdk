@@ -101,6 +101,16 @@ tox -e py38
 tox -e type
 ```
 
+### Documentation
+Documentation is generated using Sphinx. Extensions used are mainly Napoleon (To process the Google Comment Style) and Autodocs (For automatically generating documentation). The `.rst` files are generated using Sphinx-Apidocs.
+
+To generate documentation:
+
+```bash
+tox -e doc
+```
+
+The generated files will be found in `docs/_build`.
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of conduct](https://opensource.microsoft.com/codeofconduct/).
