@@ -38,11 +38,6 @@ class DaprActor(object):
         )
         app.add_url_rule(
             '/actors/<actor_type_name>/<actor_id>', None,
-            self._activation_handler,
-            methods=['POST']
-        )
-        app.add_url_rule(
-            '/actors/<actor_type_name>/<actor_id>', None,
             self._deactivation_handler,
             methods=['DELETE']
         )
@@ -75,18 +70,6 @@ class DaprActor(object):
     def _config_handler(self):
         serialized = self._dapr_serializer.serialize(ActorRuntime.get_actor_config())
         return wrap_response(200, serialized)
-
-    def _activation_handler(self, actor_type_name, actor_id):
-        try:
-            asyncio.run(ActorRuntime.activate(actor_type_name, actor_id))
-        except DaprInternalError as ex:
-            return wrap_response(500, ex.as_dict())
-        except Exception as ex:
-            return wrap_response(500, repr(ex), ERROR_CODE_UNKNOWN)
-
-        msg = f'activated actor: {actor_type_name}.{actor_id}'
-        self._app.logger.debug(msg)
-        return wrap_response(200, msg)
 
     def _deactivation_handler(self, actor_type_name, actor_id):
         try:

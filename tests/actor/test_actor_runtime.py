@@ -70,7 +70,6 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_dispatch(self):
         await ActorRuntime.register_actor(FakeMultiInterfacesActor)
-        await ActorRuntime.activate(FakeMultiInterfacesActor.__name__, 'test-id')
 
         request_body = {
             "message": "hello dapr",
