@@ -5,13 +5,9 @@
 # Licensed under the MIT License.
 # ------------------------------------------------------------
 
-COMMON="common"
-DAPR="dapr"
-DAPR_CLIENT="daprclient"
-
 # Path to store output
-PROTO_PATH="src/dapr/proto"
-SRC=src
+PROTO_PATH="dapr/proto"
+SRC=.
 
 # Http request CLI
 HTTP_REQUEST_CLI=curl
@@ -29,20 +25,20 @@ checkHttpRequestCLI() {
 }
 
 downloadFile() {
-
-    FILE_NAME=$1
-    FILE_PATH="${PROTO_PATH}/${FILE_NAME}/v1"
+    PKG_NAME=$1
+    FILE_NAME=$2
+    FILE_PATH="${PROTO_PATH}/${PKG_NAME}/v1"
 
     # URL for proto file
-    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/dapr/proto/${FILE_NAME}/v1/${FILE_NAME}.proto"
+    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
 
     mkdir -p "${FILE_PATH}"
 
     echo "Downloading $PROTO_URL ..."
     if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
-        cd ${FILE_PATH}
+        pushd ${FILE_PATH}
         curl -SsL "$PROTO_URL" -o "${FILE_NAME}.proto"
-        cd ../../../../..
+        popd
     else
         wget -q -P "$PROTO_URL" "${FILE_PATH}/${FILE_NAME}.proto"
     fi
@@ -55,9 +51,9 @@ downloadFile() {
 }
 
 generateGrpc() {
-
-    FILE_NAME=$1
-    FILE_PATH="${PROTO_PATH}/${FILE_NAME}/v1"
+    PKG_NAME=$1
+    FILE_NAME=$2
+    FILE_PATH="${PROTO_PATH}/${PKG_NAME}/v1"
 
     python3 -m grpc_tools.protoc -I ${SRC} --python_out=${SRC} --grpc_python_out=${SRC} ${FILE_PATH}/${FILE_NAME}.proto
 
@@ -92,12 +88,12 @@ generateGrpcSuccess() {
 trap "fail_trap" EXIT
 
 checkHttpRequestCLI
-downloadFile $COMMON
-generateGrpc $COMMON
-downloadFile $DAPR
-generateGrpc $DAPR
-downloadFile $DAPR_CLIENT
-generateGrpc $DAPR_CLIENT
+downloadFile common common
+generateGrpc common common
+downloadFile runtime appcallback
+generateGrpc runtime appcallback
+downloadFile runtime dapr
+generateGrpc runtime dapr
 cleanup
 
 generateGrpcSuccess

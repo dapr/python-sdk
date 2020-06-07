@@ -58,22 +58,6 @@ class ActorRuntime:
         return [actor_type for actor_type in cls._actor_managers.keys()]
 
     @classmethod
-    async def activate(cls, actor_type_name: str, actor_id: str) -> None:
-        """Activates an actor for an actor type with given actor id.
-
-        Args:
-            actor_type_name (str): the name of actor type.
-            actor_id (str): the actor id.
-
-        Raises:
-            ValueError: `actor_type_name` actor type is not registered.
-        """
-        manager = await cls._get_actor_manager(actor_type_name)
-        if not manager:
-            raise ValueError(f'{actor_type_name} is not registered.')
-        await manager.activate_actor(ActorId(actor_id))
-
-    @classmethod
     async def deactivate(cls, actor_type_name: str, actor_id: str) -> None:
         """Deactivates an actor for an actor type with given actor id.
 
