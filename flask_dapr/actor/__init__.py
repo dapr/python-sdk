@@ -5,6 +5,6 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from .version import __version__
+from .actor import DaprActor
 
-__all__ = ['__version__']
+__all__ = ['DaprActor']
