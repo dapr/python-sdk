@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from subprocess import check_output as run
 
 # Load version in dapr package.
@@ -51,5 +51,5 @@ setup(
     version=version,
     description=description,
     long_description=long_description,
-    packages=find_packages(exclude=("flask-dapr",))
+    packages=find_packages(exclude=["flask-dapr","tests"])
 )
