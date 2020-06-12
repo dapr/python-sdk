@@ -51,5 +51,5 @@ setup(
     version=version,
     description=description,
     long_description=long_description,
-    packages=find_packages(exclude=["flask-dapr","tests"])
+    packages=find_packages(exclude=("flask-dapr",))
 )
