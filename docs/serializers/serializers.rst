@@ -1,26 +1,23 @@
-actor package
-=============
-
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   actor.client
-   actor.runtime
+serializers package
+===================
 
 Submodules
 ----------
 
 
-.. automodule:: actor.actor_interface
+.. automodule:: serializers.base
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-.. automodule:: actor.id
+.. automodule:: serializers.json
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+.. automodule:: serializers.util
    :members:
    :undoc-members:
    :show-inheritance:
@@ -29,7 +26,7 @@ Submodules
 Module contents
 ---------------
 
-.. automodule:: actor
+.. automodule:: serializers
    :members:
    :undoc-members:
    :show-inheritance:

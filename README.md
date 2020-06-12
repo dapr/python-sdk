@@ -34,7 +34,7 @@ This includes the following packages:
 * [x] Actor reminder
 * [x] Enhance error handling
 * [ ] Auto generated documents
-* [ ] Create convinient layer wrapping gRPC and HTTP clients for Dapr
+* [ ] Create convenient layer wrapping gRPC and HTTP clients for Dapr
 * [ ] Flask extensions for Dapr State/Pubsub/Bindings
 
 ## Getting started
@@ -100,6 +100,17 @@ tox -e py38
 ```bash
 tox -e type
 ```
+
+## Documentation
+Documentation is generated using Sphinx. Extensions used are mainly Napoleon (To process the Google Comment Style) and Autodocs (For automatically generating documentation). The `.rst` files are generated using Sphinx-Apidocs.
+
+To generate documentation:
+
+```bash
+tox -e doc
+```
+
+The generated files will be found in `docs/_build`.
 
 ## Generate gRPC Protobuf client
 

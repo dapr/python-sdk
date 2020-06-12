@@ -1,26 +1,17 @@
-actor package
-=============
-
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   actor.client
-   actor.runtime
+proto.common.v1 package
+=======================
 
 Submodules
 ----------
 
 
-.. automodule:: actor.actor_interface
+.. automodule:: proto.common.v1.common_pb2
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-.. automodule:: actor.id
+.. automodule:: proto.common.v1.common_pb2_grpc
    :members:
    :undoc-members:
    :show-inheritance:
@@ -29,7 +20,7 @@ Submodules
 Module contents
 ---------------
 
-.. automodule:: actor
+.. automodule:: proto.common.v1
    :members:
    :undoc-members:
    :show-inheritance:
