@@ -7,10 +7,13 @@
  Welcome to Dapr-Python-Sdk
 ============================
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
    
-   actor/actor
+   actor/modules
+   client/modules
+   proto/modules
+   serializers/modules
 
 
 Indices and tables
@@ -19,4 +22,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-* :ref:`Link title <actor>`
