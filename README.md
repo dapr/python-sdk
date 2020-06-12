@@ -49,13 +49,13 @@ This includes the following packages:
 * Official package - WIP
 
 ```sh
-pip install dapr
+pip3 install dapr
 ```
 
 * Development package
 
 ```sh
-pip install dapr-dev
+pip3 install dapr-dev
 ```
 
 > Note: Do not install both packages.
@@ -101,7 +101,7 @@ tox -e py38
 tox -e type
 ```
 
-### Documentation
+## Documentation
 Documentation is generated using Sphinx. Extensions used are mainly Napoleon (To process the Google Comment Style) and Autodocs (For automatically generating documentation). The `.rst` files are generated using Sphinx-Apidocs.
 
 To generate documentation:
@@ -111,6 +111,14 @@ tox -e doc
 ```
 
 The generated files will be found in `docs/_build`.
+
+## Generate gRPC Protobuf client
+
+```sh
+pip3 install -r dev-requirements.txt
+
+./tools/regen_grpcclient.sh
+```
 
 ## Code of Conduct
 

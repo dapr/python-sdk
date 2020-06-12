@@ -3,10 +3,10 @@
 dapr run --protocol grpc --grpc-port=50001 python example.py
 """
 
-from dapr.proto.dapr.v1 import dapr_pb2 as messages
-from dapr.proto.dapr.v1 import dapr_pb2_grpc as services
 import grpc
 import os
+
+from dapr.proto import api_v1, api_service_v1, common_v1
 from google.protobuf.any_pb2 import Any
 
 # Get port from environment variable.
@@ -14,24 +14,23 @@ port = os.getenv('DAPR_GRPC_PORT', '50001')
 daprUri = 'localhost:' + port
 channel = grpc.insecure_channel(daprUri)
 
-client = services.DaprStub(channel)
-data = Any(value='lala'.encode('utf-8'))
-client.PublishEvent(messages.PublishEventEnvelope(topic='sith', data=data))
+client = api_service_v1.DaprStub(channel)
+client.PublishEvent(api_v1.PublishEventRequest(topic='sith', data='lala'.encode('utf-8')))
 print('Published!')
 
 key = 'mykey'
 storeName = 'statestore'
-req = messages.StateRequest(key=key, value=Any(value='my state'.encode('utf-8')))
-state = messages.SaveStateEnvelope(store_name=storeName, requests=[req])
+req = common_v1.StateItem(key=key, value='my state'.encode('utf-8'))
+state = api_v1.SaveStateRequest(store_name=storeName, states=[req])
 
 client.SaveState(state)
 print('Saved!')
 
-resp = client.GetState(messages.GetStateEnvelope(store_name=storeName, key=key))
+resp = client.GetState(api_v1.GetStateRequest(store_name=storeName, key=key))
 print('Got!')
 print(resp)
 
-resp = client.DeleteState(messages.DeleteStateEnvelope(store_name=storeName, key=key))
+resp = client.DeleteState(api_v1.DeleteStateRequest(store_name=storeName, key=key))
 print('Deleted!')
 
 channel.close()
