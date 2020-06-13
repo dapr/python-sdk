@@ -78,6 +78,8 @@ $ docker build -t [docker registry]/demo_actor:latest .
 $ docker push [docker registry]/demo_actor:latest
 ```
 
+> For example, [docker registry] is docker hub account.
+
 2. Follow [these steps](https://github.com/dapr/docs/blob/master/howto/configure-redis/README.md) to create a Redis store.
 
 3. Once your store is created, add the keys to the `redis.yaml` file in the `deploy` directory. 
