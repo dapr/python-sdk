@@ -1,0 +1,14 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+  namespace: default
+spec:
+  type: state.redis
+  metadata:
+  - name: redisHost
+    value: EDIT_HERE_REDIS_SERVER_ADDRESS:6379
+  - name: redisPassword
+    value: EDIT_HERE_REDIS_PASSWORD
+  - name: actorStateStore
+    value: "true"
