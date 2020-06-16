@@ -11,7 +11,7 @@ from setuptools import setup
 from subprocess import check_output as run
 
 # Load version in dapr package.
-exec(open('dapr/version.py').read())
+exec(open('version.py').read())
 version = __version__
 
 
@@ -21,9 +21,11 @@ def is_release():
     return tagged_version == __version__
 
 
-name = 'dapr'
-description = 'The official release of Dapr Python SDK'
+name = 'flask_dapr'
+description = 'The official release of Dapr Python SDK Flask Extension'
 long_description = '''
+This is the Flask extension for Dapr.
+
 Dapr is a portable, serverless, event-driven runtime that makes it easy for developers to
 build resilient, stateless and stateful microservices that run on the cloud and edge and
 embraces the diversity of languages and developer frameworks.
@@ -40,8 +42,8 @@ build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 if not is_release():
     name += '-dev'
     version = f'{__version__}.dev{build_number}'
-    description = 'The developmental release for Dapr Python SDK.'
-    long_description = 'This is the developmental release for Dapr Python SDK.'
+    description = 'The developmental release for Dapr Python SDK Flask.'
+    long_description = 'This is the developmental release for Dapr Python SDK Flask.'
 
 print(f'package name: {name}, version: {version}', flush=True)
 

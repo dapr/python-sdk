@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHON_VER: 3.8
+      TWINE_USERNAME: ${{ secrets.PYPI_UPLOAD_USER }}
+      TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ env.PYTHON_VER }}
@@ -36,11 +38,14 @@ jobs:
     - name: Run unit-tests
       run: |
         tox -e py38
-    - name: Build and publish
+    - name: Build and publish Dapr Python SDK
       if: github.event_name != 'pull_request'
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_UPLOAD_USER }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish Dapr Flask Extension
+      if: github.event_name != 'pull_request'
+      run: |
+        cd flask_dapr
         python setup.py sdist bdist_wheel
         twine upload dist/*
