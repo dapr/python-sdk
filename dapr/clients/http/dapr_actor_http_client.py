@@ -9,14 +9,12 @@ import aiohttp
 from typing import Dict, Optional
 
 from dapr.conf import settings
-from dapr.clients.base import DaprActorClientBase
+from dapr.clients.base import DaprActorClientBase, DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
 from dapr.serializers import DefaultJSONSerializer
 
 
 CONTENT_TYPE_HEADER = 'content-type'
-DEFAULT_ENCODING = 'utf-8'
-DEFAULT_JSON_CONTENT_TYPE = f'application/json; charset={DEFAULT_ENCODING}'
 
 
 class DaprActorHttpClient(DaprActorClientBase):
