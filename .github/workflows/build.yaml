@@ -46,6 +46,6 @@ jobs:
     - name: Build and publish Dapr Flask Extension
       if: github.event_name != 'pull_request'
       run: |
-        cd flask_dapr
+        cd ext/flask_dapr
         python setup.py sdist bdist_wheel
         twine upload dist/*
