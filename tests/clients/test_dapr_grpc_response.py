@@ -9,36 +9,33 @@ import unittest
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 
-from dapr.clients.grpc.dapr_client import (
-    DaprResponse,
-    InvokeServiceResponse,
-)
+from dapr.clients import InvokeServiceResponse
+from dapr.clients.grpc.client_response import DaprResponse
 from dapr.proto import common_v1
 
 
-test_headers = (
-    ('key1', 'value1'),
-    ('key2', 'value2'),
-    ('key3', 'value3'),
-)
-
-test_trailers = (
-    ('key10', 'value10'),
-    ('key11', 'value11'),
-)
-
-
 class DaprResponseTests(unittest.TestCase):
+    test_headers = (
+        ('key1', 'value1'),
+        ('key2', 'value2'),
+        ('key3', 'value3'),
+    )
+
+    test_trailers = (
+        ('key10', 'value10'),
+        ('key11', 'value11'),
+    )
+
     def test_convert_metadata(self):
         # act
-        resp = DaprResponse(test_headers, test_trailers)
+        resp = DaprResponse(self.test_headers, self.test_trailers)
 
         # assert
         self.assertEqual(3, len(resp.as_headers_dict))
-        for k, v in test_headers:
+        for k, v in self.test_headers:
             self.assertEqual(resp.as_headers_dict[k], [v])
         self.assertEqual(2, len(resp.as_trailers_dict))
-        for k, v in test_trailers:
+        for k, v in self.test_trailers:
             self.assertEqual(resp.as_trailers_dict[k], [v])
 
 

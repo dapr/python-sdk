@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import unittest
 
-from dapr.clients.grpc.dapr_client import InvokeServiceRequestData
+from dapr.clients.grpc.client_request import InvokeServiceRequestData
 from dapr.proto import common_v1
 
 

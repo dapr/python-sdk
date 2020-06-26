@@ -6,7 +6,7 @@ from google.protobuf.any_pb2 import Any as GrpcAny
 from dapr.proto import api_service_v1, common_v1
 
 
-class FakeDaprServer(api_service_v1.DaprServicer):
+class FakeDaprSidecar(api_service_v1.DaprServicer):
     def __init__(self):
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         api_service_v1.add_DaprServicer_to_server(self, self._server)

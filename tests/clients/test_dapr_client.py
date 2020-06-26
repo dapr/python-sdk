@@ -7,19 +7,19 @@ Licensed under the MIT License.
 
 import unittest
 
-from dapr.clients.grpc.dapr_client import (
+from dapr.clients import (
     DaprClient,
     InvokeServiceRequestData,
 )
 from dapr.proto import common_v1
-from .fake_dapr_server import FakeDaprServer
+from .fake_dapr_server import FakeDaprSidecar
 
 
 class DaprClientTests(unittest.TestCase):
     server_port = 8080
 
     def setUp(self):
-        self._fake_dapr_server = FakeDaprServer()
+        self._fake_dapr_server = FakeDaprSidecar()
         self._fake_dapr_server.start(self.server_port)
 
     def tearDown(self):
