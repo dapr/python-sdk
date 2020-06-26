@@ -50,13 +50,13 @@ class InvokeServiceResponse(DaprResponse):
         self._content_type = content_type
 
     @property
-    def proto(self) -> GrpcAny:
+    def rawdata(self) -> GrpcAny:
         if not self.is_proto():
             raise ValueError('data is not grpc protobuf message')
         return self._proto_any
 
     @property
-    def data(self) -> bytes:
+    def bytesdata(self) -> bytes:
         if self.is_proto():
             raise ValueError('data is not bytes')
         return self._proto_any.value

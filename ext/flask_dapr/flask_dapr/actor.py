@@ -11,7 +11,7 @@ from typing import Any, Optional, Type
 from flask import jsonify, make_response, request
 
 from dapr.actor import Actor, ActorRuntime
-from dapr.clients import DaprInternalError, ERROR_CODE_UNKNOWN
+from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.serializers import DefaultJSONSerializer
 
 DEFAULT_CONTENT_TYPE = "application/json; utf-8"

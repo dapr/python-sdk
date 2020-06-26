@@ -13,4 +13,4 @@ resp = client.invoke_service(
 
 # Print the response
 print(resp.content_type)
-print(resp.data)
+print(resp.bytesdata)

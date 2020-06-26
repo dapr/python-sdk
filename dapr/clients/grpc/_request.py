@@ -10,8 +10,8 @@ from typing import Optional, Union
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 
-DEFAULT_ENCODING = 'utf-8'
-DEFAULT_JSON_CONTENT_TYPE = f'application/json; charset={DEFAULT_ENCODING}'
+from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
+
 
 class InvokeServiceRequestData:
     def __init__(
@@ -31,7 +31,7 @@ class InvokeServiceRequestData:
             raise ValueError(f'invalid data type {type(data)}')
 
     @property
-    def proto(self) -> GrpcAny:
+    def rawdata(self) -> GrpcAny:
         return self._data
 
     @property

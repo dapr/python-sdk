@@ -10,7 +10,7 @@ import re
 import datetime
 import json
 
-from typing import Callable, Optional
+from typing import Any, Callable, Optional, Type
 from dateutil import parser
 
 from dapr.actor.runtime.config import ActorRuntimeConfig
@@ -40,8 +40,8 @@ class DefaultJSONSerializer(Serializer):
         return serialized.encode('utf-8')
 
     def deserialize(
-            self, data: bytes, data_type: type = object,
-            custom_hook: Optional[Callable[[bytes], object]] = None) -> object:
+            self, data: bytes, data_type: Optional[Type] = object,
+            custom_hook: Optional[Callable[[bytes], object]] = None) -> Any:
 
         if not isinstance(data, (str, bytes)):
             raise ValueError('data must be str or bytes types')

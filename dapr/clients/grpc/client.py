@@ -51,11 +51,13 @@ class DaprClient:
         """Invoke target_id service to call method.
 
         :param str id: str to represent target App ID.
-        :param str method: str to represent method name defined in target_id
-        :param Union[bytes, Message] data: bytes or Message for data which will send to target_id
-        :param Tuple[Tuple[str, Union[bytes, str]], ...] metadata: dict to pass custom metadata to target app
+        :param str method: str to represent method name defined in id
+        :param Union[bytes, Message] data: bytes or Message for data which will send to id
+        :param Tuple[Tuple[str, Union[bytes, str]], ...] metadata: dict to pass custom metadata
+            to target app
         :param str http_verb: http method verb to call HTTP callee application
-        :param Tuple[Tuple[str, Union[bytes, str]], ...] http_querystring: dict to represent querystring for HTTP callee app
+        :param Tuple[Tuple[str, Union[bytes, str]], ...] http_querystring: dict to represent
+            http querystring
 
         :returns: the response from callee
         :rtype: `class`:InvokeServiceResponse
@@ -70,7 +72,7 @@ class DaprClient:
             id=id,
             message=common_v1.InvokeRequest(
                 method=method,
-                data=req_data.proto,
+                data=req_data.rawdata,
                 content_type=req_data.content_type,
                 http_extension=http_ext)
         )

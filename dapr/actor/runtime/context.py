@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.state_provider import StateProvider
-from dapr.clients import DaprActorClientBase
+from dapr.clients.base import DaprActorClientBase
 from dapr.serializers import Serializer
 
 from typing import Callable, TYPE_CHECKING

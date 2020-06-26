@@ -9,8 +9,7 @@ import unittest
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 
-from dapr.clients import InvokeServiceResponse
-from dapr.clients.grpc.client_response import DaprResponse
+from dapr.clients.grpc._response import DaprResponse, InvokeServiceResponse
 from dapr.proto import common_v1
 
 
@@ -64,14 +63,14 @@ class InvokeServiceResponseTests(unittest.TestCase):
         test_data = GrpcAny()
         test_data.Pack(fake_req)
         resp = InvokeServiceResponse(data=test_data)
-        self.assertIsNotNone(resp.proto)
+        self.assertIsNotNone(resp.rawdata)
 
     def test_data(self):
         test_data = GrpcAny(value=b'hello dapr')
         resp = InvokeServiceResponse(
             data=test_data,
             content_type='application/json')
-        self.assertEqual(b'hello dapr', resp.data)
+        self.assertEqual(b'hello dapr', resp.bytesdata)
         self.assertEqual('application/json', resp.content_type)
 
     def test_unpack(self):

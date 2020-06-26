@@ -7,10 +7,8 @@ Licensed under the MIT License.
 
 import unittest
 
-from dapr.clients import (
-    DaprClient,
-    InvokeServiceRequestData,
-)
+from dapr.clients.grpc.client import DaprClient
+from dapr.clients.grpc._request import InvokeServiceRequestData
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 
@@ -50,16 +48,17 @@ class DaprClientTests(unittest.TestCase):
     def test_invoke_service_bytes_data(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         resp = dapr.invoke_service(
-            'targetId',
-            'bytes',
-            InvokeServiceRequestData(b'haha', "text/plain"),
+            id='targetId',
+            method='bytes',
+            data=b'haha',
+            content_type="text/plain",
             metadata=(
                 ('key1', 'value1'),
                 ('key2', 'value2'),
             ),
         )
 
-        self.assertEqual(b'haha', resp.data)
+        self.assertEqual(b'haha', resp.bytesdata)
         self.assertEqual("text/plain", resp.content_type)
         self.assertEqual(3, len(resp.as_headers_dict))
         self.assertEqual(['value1'], resp.as_headers_dict['hkey1'])
@@ -69,9 +68,9 @@ class DaprClientTests(unittest.TestCase):
         dapr = DaprClient(f'localhost:{self.server_port}')
         req = common_v1.StateItem(key='test')
         resp = dapr.invoke_service(
-            'targetId',
-            'proto',
-            InvokeServiceRequestData(req),
+            id='targetId',
+            method='proto',
+            data=req,
             metadata=(
                 ('key1', 'value1'),
                 ('key2', 'value2'),

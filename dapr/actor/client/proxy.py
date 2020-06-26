@@ -11,7 +11,8 @@ from typing import Any, Callable, Dict, Optional, Type
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.type_utils import get_dispatchable_attrs_from_interface
-from dapr.clients import DaprActorClientBase, DaprActorHttpClient
+from dapr.clients.base import DaprActorClientBase
+from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
 
 # Actor factory Callable type hint.
@@ -36,7 +37,7 @@ class ActorProxyFactory(ActorFactoryBase):
 
     def __init__(self, message_serializer=DefaultJSONSerializer()):
         # TODO: support serializer for state store later
-        self._dapr_client = DaprActorHttpClient()
+        self._dapr_client = DaprActorHttpClient(message_serializer)
         self._message_serializer = message_serializer
 
     def create(
