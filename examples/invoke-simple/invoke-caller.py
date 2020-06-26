@@ -1,8 +1,8 @@
-from dapr.clients import DaprClient
+from dapr import Dapr
 
-with DaprClient() as client:
+with Dapr() as dapr:
     # Create a typed message with content type and body
-    resp = client.invoke_service(
+    resp = dapr.invoke_service(
         id='invoke-receiver',
         method='my-method',
         data=b'INVOKE_RECEIVED',

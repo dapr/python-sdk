@@ -19,7 +19,7 @@ from dapr.clients.grpc._request import InvokeServiceRequestData
 from dapr.clients.grpc._response import InvokeServiceResponse
 
 
-class DaprClient:
+class DaprGrpcClient:
     def __init__(self, address: Optional[str] = None):
         if not address:
             address = f"127.0.0.1:{settings.DAPR_GRPC_PORT}"
@@ -28,8 +28,8 @@ class DaprClient:
 
     def __del__(self):
         self._channel.close()
-    
-    def __enter__(self) -> 'DaprClient':
+
+    def __enter__(self) -> 'DaprGrpcClient':
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
