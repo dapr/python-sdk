@@ -7,14 +7,16 @@ Licensed under the MIT License.
 
 import grpc  # type: ignore
 
-from typing import Optional
+from typing import Optional, Union
+
+from google.protobuf.message import Message as GrpcMessage
 
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple
-from dapr.clients.grpc.client_request import InvokeServiceRequestData
-from dapr.clients.grpc.client_response import InvokeServiceResponse
+from dapr.clients.grpc._request import InvokeServiceRequestData
+from dapr.clients.grpc._response import InvokeServiceResponse
 
 
 class DaprClient:
@@ -39,34 +41,37 @@ class DaprClient:
 
     def invoke_service(
             self,
-            target_id: str,
+            id: str,
             method: str,
-            data: InvokeServiceRequestData,
+            data: Union[bytes, GrpcMessage],
+            content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
             http_querystring: Optional[MetadataTuple] = None) -> InvokeServiceResponse:
         """Invoke target_id service to call method.
 
-        :param str target_id: str to represent target App ID.
+        :param str id: str to represent target App ID.
         :param str method: str to represent method name defined in target_id
-        :param InvokeServiceRequestData data: bytes or Message for data which will send to target_id
-        :param MetadataTuple metadata: dict to pass custom metadata to target app
+        :param Union[bytes, Message] data: bytes or Message for data which will send to target_id
+        :param Tuple[Tuple[str, Union[bytes, str]], ...] metadata: dict to pass custom metadata to target app
         :param str http_verb: http method verb to call HTTP callee application
-        :param MetadataTuple http_querystring: dict to represent querystring for HTTP callee app
+        :param Tuple[Tuple[str, Union[bytes, str]], ...] http_querystring: dict to represent querystring for HTTP callee app
 
         :returns: the response from callee
-        :rtype: InvokeServiceResponse
+        :rtype: `class`:InvokeServiceResponse
         """
+        req_data = InvokeServiceRequestData(data, content_type)
+
         http_ext = None
         if http_verb:
             http_ext = self._get_http_extension(http_verb, http_querystring)
 
         req = api_v1.InvokeServiceRequest(
-            id=target_id,
+            id=id,
             message=common_v1.InvokeRequest(
                 method=method,
-                data=data.proto,
-                content_type=data.content_type,
+                data=req_data.proto,
+                content_type=req_data.content_type,
                 http_extension=http_ext)
         )
 

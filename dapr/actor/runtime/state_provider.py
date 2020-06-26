@@ -9,7 +9,7 @@ import io
 
 from typing import Any, List, Type, Tuple
 from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
-from dapr.clients import DaprActorClientBase
+from dapr.clients.base import DaprActorClientBase
 from dapr.serializers import Serializer, DefaultJSONSerializer
 
 
@@ -24,7 +24,7 @@ _MAP_CHANGE_KIND_TO_OPERATION = {
 class StateProvider:
     def __init__(
             self,
-            actor_client: DaprActorClientBase,
+            actor_client: 'DaprActorClientBase',
             state_serializer: Serializer = None):
         self._state_client = actor_client
         self._state_serializer = state_serializer or DefaultJSONSerializer()
