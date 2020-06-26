@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import grpc
+import grpc  # type: ignore
 
 from dapr.conf import settings
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
@@ -37,13 +37,13 @@ class InvokeServiceRequestData:
             self._content_type = None
         else:
             raise ValueError(f'invalid data type {type(data)}')
-    
+
     @property
     def proto(self) -> GrpcAny:
         return self._data
-    
+
     @property
-    def content_type(self) -> str:
+    def content_type(self) -> Optional[str]:
         return self._content_type
 
 
@@ -55,9 +55,9 @@ class DaprResponse:
         self._headers = headers
         self._trailers = trailers
 
-    def _from_tuple(self, metadata: MetadataTuple) -> MetadataDict:
-        d = {}
-        for k, v in metadata:
+    def _from_tuple(self, metadata: Optional[MetadataTuple]) -> MetadataDict:
+        d: MetadataDict = {}
+        for k, v in metadata:  # type: ignore
             d.setdefault(k, []).append(v)
         return d
 
@@ -79,24 +79,24 @@ class InvokeServiceResponse(DaprResponse):
             trailers: Optional[MetadataTuple] = ()):
         super(InvokeServiceResponse, self).__init__(headers, trailers)
         if not isinstance(data, GrpcMessage):
-            raise ValueError(f'data is not protobuf message.')
+            raise ValueError('data is not protobuf message.')
         self._proto_any = data
         self._content_type = content_type
 
     @property
     def proto(self) -> GrpcAny:
         if not self.is_proto():
-            raise ValueError(f'data is not grpc protobuf message')
+            raise ValueError('data is not grpc protobuf message')
         return self._proto_any
 
     @property
     def data(self) -> bytes:
         if self.is_proto():
-            raise ValueError(f'data is not bytes')
+            raise ValueError('data is not bytes')
         return self._proto_any.value
 
     @property
-    def content_type(self) -> str:
+    def content_type(self) -> Optional[str]:
         return self._content_type
 
     def is_proto(self) -> bool:
@@ -114,16 +114,17 @@ class DaprClient:
             address = f"127.0.0.1:{settings.DAPR_GRPC_PORT}"
         self._channel = grpc.insecure_channel(address)
         self._stub = api_service_v1.DaprStub(self._channel)
-    
+
     def __del__(self):
         self._channel.close()
 
     def _get_http_extension(
             self, http_verb: str,
-            http_querystring: Optional[MetadataTuple] = ()) -> common_v1.HTTPExtension:
-        verb = common_v1.HTTPExtension.Verb.Value(http_verb)
+            http_querystring: Optional[MetadataTuple] = ()
+    ) -> common_v1.HTTPExtension:  # type: ignore
+        verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
         http_ext = common_v1.HTTPExtension(verb=verb)
-        for key, val in http_querystring:
+        for key, val in http_querystring:  # type: ignore
             http_ext.querystring[key] = val
         return http_ext
 
@@ -142,8 +143,8 @@ class DaprClient:
         :param InvokeServiceRequestData data: bytes or Message for data which will send to target_id
         :param MetadataTuple metadata: dict to pass custom metadata to target app
         :param str http_verb: http method verb to call HTTP callee application
-        :param MetadataTuple http_querystring: dict to represent querystring for HTTP callee application
-    
+        :param MetadataTuple http_querystring: dict to represent querystring for HTTP callee app
+
         :returns: the response from callee
         :rtype: InvokeServiceResponse
         """

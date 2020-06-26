@@ -8,10 +8,8 @@ Licensed under the MIT License.
 import unittest
 
 from google.protobuf.any_pb2 import Any as GrpcAny
-from datetime import timedelta
+
 from dapr.clients.grpc.dapr_client import (
-    MetadataDict,
-    MetadataTuple,
     DaprResponse,
     InvokeServiceResponse,
 )
@@ -48,6 +46,7 @@ class InvokeServiceResponseTests(unittest.TestCase):
     def test_non_protobuf_message(self):
         with self.assertRaises(ValueError):
             resp = InvokeServiceResponse(data="invalid_datatype")
+            self.assertIsNone(resp, 'This should not be reached.')
 
     def test_is_proto_for_non_protobuf(self):
         test_data = GrpcAny(value=b'hello dapr')
@@ -91,7 +90,6 @@ class InvokeServiceResponseTests(unittest.TestCase):
 
         # assert
         self.assertEqual("test", resp_proto.method)
-
 
 
 if __name__ == '__main__':

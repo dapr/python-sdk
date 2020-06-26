@@ -7,12 +7,7 @@ Licensed under the MIT License.
 
 import unittest
 
-from datetime import timedelta
-from dapr.clients.grpc.dapr_client import (
-    MetadataDict,
-    MetadataTuple,
-    InvokeServiceRequestData,
-)
+from dapr.clients.grpc.dapr_client import InvokeServiceRequestData
 from dapr.proto import common_v1
 
 
@@ -41,10 +36,11 @@ class InvokeServiceRequestDataTests(unittest.TestCase):
             data.proto.type_url)
         self.assertIsNotNone(data.proto.value)
         self.assertIsNone(data.content_type)
-    
+
     def test_invalid_data(self):
         with self.assertRaises(ValueError):
             data = InvokeServiceRequestData(data="invalid_data")
+            self.assertIsNone(data, 'This should not be reached.')
 
 
 if __name__ == '__main__':
