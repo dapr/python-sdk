@@ -11,7 +11,7 @@ from setuptools import setup
 from subprocess import check_output as run
 
 # Load version in dapr package.
-exec(open('version.py').read())
+exec(open('flask_dapr/version.py').read())
 version = __version__
 
 
@@ -21,7 +21,7 @@ def is_release():
     return tagged_version == __version__
 
 
-name = 'flask_dapr'
+name = 'flask-dapr'
 description = 'The official release of Dapr Python SDK Flask Extension'
 long_description = '''
 This is the Flask extension for Dapr.
