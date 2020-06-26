@@ -69,6 +69,8 @@ class InvokeServiceResponse(DaprResponse):
         return self._proto_any.type_url != ''
 
     def unpack(self, message: GrpcMessage) -> None:
+        if not isinstance(message, GrpcMessage):
+            raise ValueError('output message is not protobuf message object')
         if not self._proto_any.Is(message.DESCRIPTOR):
             raise ValueError(f'invalid type. serialized message type: {self._proto_any.type_url}')
         self._proto_any.Unpack(message)

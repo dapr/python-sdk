@@ -28,6 +28,12 @@ class DaprClient:
 
     def __del__(self):
         self._channel.close()
+    
+    def __enter__(self) -> 'DaprClient':
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self._channel.close()
 
     def _get_http_extension(
             self, http_verb: str,
