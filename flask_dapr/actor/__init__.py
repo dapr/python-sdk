@@ -6,6 +6,5 @@ Licensed under the MIT License.
 """
 
 from .actor import DaprActor
-from .version import __version__
 
-__all__ = ['DaprActor', '__version__', ]
+__all__ = ['DaprActor']

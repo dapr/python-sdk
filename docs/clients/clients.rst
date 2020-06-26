@@ -1,5 +1,5 @@
-actor package
-=============
+clients package
+===============
 
 Subpackages
 -----------
@@ -7,20 +7,19 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   actor.client
-   actor.runtime
+   clients.http
 
 Submodules
 ----------
 
 
-.. automodule:: actor.actor_interface
+.. automodule:: clients.base
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-.. automodule:: actor.id
+.. automodule:: clients.exceptions
    :members:
    :undoc-members:
    :show-inheritance:
@@ -29,7 +28,7 @@ Submodules
 Module contents
 ---------------
 
-.. automodule:: actor
+.. automodule:: clients
    :members:
    :undoc-members:
    :show-inheritance:
