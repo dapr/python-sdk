@@ -47,5 +47,5 @@ jobs:
       if: github.event_name != 'pull_request'
       run: |
         cd ext/flask_dapr
-        python3 setup.py sdist bdist_wheel
+        python setup.py sdist bdist_wheel
         twine upload dist/*
