@@ -91,6 +91,7 @@ class Dapr:
         The example calls `callee` service with bytes data, which implements grpc appcallback:
 
             from dapr import Dapr
+
             with Dapr() as d:
                 resp = d.invoke_service(
                     id='callee',
@@ -109,7 +110,9 @@ class Dapr:
         When sending custom protocol buffer message object, it doesn't requires content_type:
 
             from dapr import Dapr
+
             req_data = dapr_example_v1.CustomRequestMessage(data='custom')
+
             with Dapr() as d:
                 resp = d.invoke_service(
                     id='callee',
@@ -127,8 +130,9 @@ class Dapr:
         The example calls `callee` service which implements http appcallback:
 
             from dapr import Dapr
+
             with Dapr() as d:
-                d.invoke_service(
+                resp = d.invoke_service(
                     id='callee',
                     method='method',
                     data=b'message',
@@ -141,6 +145,10 @@ class Dapr:
                         ('key1', 'value1')
                     ),
                 )
+
+                # resp.bytesdata includes the bytesdata array.
+                # resp.content_type specifies the content type of resp.bytesdata.
+                # Thus, resp.bytesdata can be deserialized properly.
 
         Args:
             id (str): the callee app id
