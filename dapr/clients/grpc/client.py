@@ -19,21 +19,48 @@ from dapr.clients.grpc._request import InvokeServiceRequestData
 from dapr.clients.grpc._response import InvokeServiceResponse
 
 
-class DaprGrpcClient:
+class Dapr:
+    """The convenient layer implementation of Dapr gRPC APIs.
+
+    This provides the wrappers and helpers to allows developers to use Dapr runtime gRPC API
+    easily and consistently.
+
+    Examples:
+
+        >>> import dapr
+        >>> d = dapr.Dapr()
+        >>> resp = d.invoke_service('callee', 'method', b'data')
+
+    With context manager:
+
+        >>> import dapr
+        >>> with dapr.Dapr() as d:
+        ...     resp = d.invoke_service('callee', 'method', b'data')
+    """
+
     def __init__(self, address: Optional[str] = None):
+        """Connects to Dapr Runtime and initialize gRPC client stub.
+
+        Args:
+            address (str, optional): Dapr Runtime gRPC endpoint address.
+        """
         if not address:
-            address = f"127.0.0.1:{settings.DAPR_GRPC_PORT}"
+            address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
         self._channel = grpc.insecure_channel(address)
         self._stub = api_service_v1.DaprStub(self._channel)
 
-    def __del__(self):
+    def close(self):
+        """Closes Dapr runtime gRPC channel."""
         self._channel.close()
 
-    def __enter__(self) -> 'DaprGrpcClient':
+    def __del__(self):
+        self.close()
+
+    def __enter__(self) -> 'Dapr':
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
-        self._channel.close()
+        self.close()
 
     def _get_http_extension(
             self, http_verb: str,
@@ -54,19 +81,78 @@ class DaprGrpcClient:
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
             http_querystring: Optional[MetadataTuple] = None) -> InvokeServiceResponse:
-        """Invoke target_id service to call method.
+        """Invokes the target service to call method.
 
-        :param str id: str to represent target App ID.
-        :param str method: str to represent method name defined in id
-        :param Union[bytes, Message] data: bytes or Message for data which will send to id
-        :param Tuple[Tuple[str, Union[bytes, str]], ...] metadata: dict to pass custom metadata
-            to target app
-        :param str http_verb: http method verb to call HTTP callee application
-        :param Tuple[Tuple[str, Union[bytes, str]], ...] http_querystring: dict to represent
-            http querystring
+        This can invoke the specified target service to call method with bytes array data or
+        custom protocol buffer message. If your callee application uses http appcallback,
+        http_verb and http_querystring must be specified. Otherwise, Dapr runtime will return
+        error.
 
-        :returns: the response from callee
-        :rtype: `class`:InvokeServiceResponse
+        The example calls `callee` service with bytes data, which implements grpc appcallback:
+
+            from dapr import Dapr
+            with Dapr() as d:
+                resp = d.invoke_service(
+                    id='callee',
+                    method='method',
+                    data=b'message',
+                    content_type='text/plain',
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                )
+
+                # resp.bytesdata includes the bytesdata array.
+                # resp.content_type specifies the content type of resp.bytesdata.
+                # Thus, resp.bytesdata can be deserialized properly.
+
+        When sending custom protocol buffer message object, it doesn't requires content_type:
+
+            from dapr import Dapr
+            req_data = dapr_example_v1.CustomRequestMessage(data='custom')
+            with Dapr() as d:
+                resp = d.invoke_service(
+                    id='callee',
+                    method='method',
+                    data=req_data,
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                )
+                # Create protocol buffer object
+                resp_data = dapr_example_v1.CustomResponseMessage()
+                # Deserialize to resp_data
+                resp.unpack(resp_data)
+
+        The example calls `callee` service which implements http appcallback:
+
+            from dapr import Dapr
+            with Dapr() as d:
+                d.invoke_service(
+                    id='callee',
+                    method='method',
+                    data=b'message',
+                    content_type='text/plain',
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                    http_verb='POST',
+                    http_querystring=(
+                        ('key1', 'value1')
+                    ),
+                )
+
+        Args:
+            id (str): the callee app id
+            method (str): the method name which is called
+            data (bytes or :obj:`google.protobuf.message.Message`): bytes or Message for data
+                which will send to id
+            metadata (tuple, optional): custom metadata
+            http_verb (str, optional): http method verb to call HTTP callee application
+            http_querystring (tuple, optional): the tuple to represent query string
+
+        Returns:
+            :class:`InvokeServiceResponse` object returned from callee
         """
         req_data = InvokeServiceRequestData(data, content_type)
 

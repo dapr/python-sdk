@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 from .version import __version__
 
-from dapr.clients import DaprGrpcClient as Dapr
+from dapr.clients import Dapr
 
 __all__ = [
     '__version__',

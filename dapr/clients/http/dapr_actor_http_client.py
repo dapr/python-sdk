@@ -112,7 +112,8 @@ class DaprActorHttpClient(DaprActorClientBase):
         await self._send_bytes(method='DELETE', url=url, data=None)
 
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
-        return 'http://127.0.0.1:{}/{}/actors/{}/{}'.format(
+        return 'http://{}:{}/{}/actors/{}/{}'.format(
+            settings.DAPR_RUNTIME_HOST,
             settings.DAPR_HTTP_PORT,
             settings.DAPR_API_VERSION,
             actor_type,

@@ -14,10 +14,32 @@ from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 
 
 class InvokeServiceRequestData:
+    """A request data representation for invoke_service API.
+
+    This stores the request data with the proper serialization. This seralizes
+    data to :obj:`google.protobuf.any_pb2.Any` if data is the type of protocol
+    buffer message.
+
+    Attributes:
+        rawdata (:obj:`google.protobuf.any_pb2.Any`): the serialized data for
+            invoke_service request.
+        content_type (str, optional): the content type of rawdata which is valid
+            only for bytes array data.
+    """
     def __init__(
             self,
             data: Union[bytes, GrpcMessage],
             content_type: Optional[str] = None):
+        """Inits InvokeServiceRequestData with data and content_type.
+
+        Args:
+            data (bytes or :obj:`google.protobuf.message.Message`): the data which
+                is used for invoke_service request.
+            content_type (str): the content_type of data when the data is bytes.
+
+        Raises:
+            ValueError: data is not bytes or :obj:`google.protobuf.message.Message`.
+        """
         self._data = GrpcAny()
         if isinstance(data, bytes):
             self._data.value = data

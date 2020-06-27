@@ -2,9 +2,9 @@ from dapr import Dapr
 
 import proto.response_pb2 as response_messages
 
-with Dapr() as dapr:
+with Dapr() as d:
     # Create a typed message with content type and body
-    resp = dapr.invoke_service(
+    resp = d.invoke_service(
         id='invoke-receiver',
         method='my_method',
         data=b'SOME_DATA',

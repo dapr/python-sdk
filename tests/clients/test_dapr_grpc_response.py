@@ -30,12 +30,12 @@ class DaprResponseTests(unittest.TestCase):
         resp = DaprResponse(self.test_headers, self.test_trailers)
 
         # assert
-        self.assertEqual(3, len(resp.as_headers_dict))
+        self.assertEqual(3, len(resp.headers))
         for k, v in self.test_headers:
-            self.assertEqual(resp.as_headers_dict[k], [v])
-        self.assertEqual(2, len(resp.as_trailers_dict))
+            self.assertEqual(resp.headers[k], [v])
+        self.assertEqual(2, len(resp.trailers))
         for k, v in self.test_trailers:
-            self.assertEqual(resp.as_trailers_dict[k], [v])
+            self.assertEqual(resp.trailers[k], [v])
 
 
 class InvokeServiceResponseTests(unittest.TestCase):
