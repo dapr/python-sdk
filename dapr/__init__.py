@@ -7,9 +7,11 @@ Licensed under the MIT License.
 
 from .version import __version__
 
-from dapr.clients import Dapr
+from dapr.clients import App, CallbackResponse, Dapr
 
 __all__ = [
     '__version__',
+    'App',
+    'CallbackResponse',
     'Dapr',
 ]
