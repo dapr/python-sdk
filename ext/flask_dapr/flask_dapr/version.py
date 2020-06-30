@@ -5,6 +5,4 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from flask_dapr.actor import DaprActor
-
-__all__ = ['DaprActor']
+__version__ = "0.1.0a0"
