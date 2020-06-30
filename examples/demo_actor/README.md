@@ -18,7 +18,7 @@ This document describes how to create an Actor(DemoActor) and invoke its methods
 You can install dapr SDK package using pip command:
 
 ```sh
-pip3 install dapr-dev
+pip3 install -r ./demo_actor/requirements.txt
 ```
 
 Or, you can use the current repo:
@@ -29,7 +29,7 @@ pip3 install -r ./dev-requirement.txt
 export PYTHONPATH=`pwd`
 ```
 
-## Try DemoActor example
+## Run DemoActor on the local machine
 
 1. Run Demo Actor service in new terminal window
 
@@ -66,4 +66,37 @@ $ dapr run --app-id demo-client python3 demo_actor_client.py
 == APP == {'data': 'default', 'ts': datetime.datetime(2020, 3, 2, 2, 50, 27, 386000, tzinfo=tzutc())}
 == APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 3, 2, 2, 50, 27, 395000, tzinfo=tzutc())}
 ...
+```
+
+## Run DemoActor on Kubernetes
+
+1. Build and push docker image
+
+```
+$ cd examples/demo_actor/demo_actor
+$ docker build -t [docker registry]/demo_actor:latest .
+$ docker push [docker registry]/demo_actor:latest
+```
+
+> For example, [docker registry] is docker hub account.
+
+2. Follow [these steps](https://github.com/dapr/docs/blob/master/howto/configure-redis/README.md) to create a Redis store.
+
+3. Once your store is created, add the keys to the `redis.yaml` file in the `deploy` directory. 
+    > **Note:** the `redis.yaml` file provided in this sample takes plain text secrets. In a production-grade application, follow [secret management](https://github.com/dapr/docs/blob/master/concepts/secrets/) instructions to securely manage your secrets.
+
+4. Apply the `redis.yaml` file: `kubectl apply -f ./deploy/redis.yaml` and observe that your state store was successfully configured!
+
+```bash
+component.dapr.io "statestore" configured
+```
+
+5. Update docker image location in `./deploy/demo_actor_client.yaml` and `./deploy/demo_actor_service.yaml`
+
+6. Deploy actor service and clients
+
+```
+cd deploy
+kubectl apply -f ./deploy/demo_actor_service.yml
+kubectl apply -f ./deploy/demo_actor_client.yml
 ```
