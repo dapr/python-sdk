@@ -10,7 +10,7 @@ from datetime import timedelta
 from unittest.mock import AsyncMock
 
 from dapr.actor.id import ActorId
-from dapr.actor.runtime.type_information import ActorTypeInformation
+from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.serializers import DefaultJSONSerializer

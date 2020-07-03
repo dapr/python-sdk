@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import unittest
 
 from dapr.actor.actor_interface import ActorInterface
-from dapr.actor.runtime.type_utils import (
+from dapr.actor.runtime._type_utils import (
     get_class_method_args, get_method_arg_types,
     get_method_return_types, is_dapr_actor,
     get_actor_interfaces, get_dispatchable_attrs

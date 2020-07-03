@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import unittest
 from datetime import timedelta
 
-from dapr.actor.runtime.reminder_data import ActorReminderData
+from dapr.actor.runtime._reminder_data import ActorReminderData
 
 
 class ActorReminderTests(unittest.TestCase):

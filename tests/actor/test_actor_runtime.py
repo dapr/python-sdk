@@ -43,8 +43,8 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         # apply new config
         new_config = ActorRuntimeConfig(
-            False, timedelta(hours=3),
-            timedelta(seconds=10), timedelta(minutes=1))
+            timedelta(hours=3), timedelta(seconds=10),
+            timedelta(minutes=1), False)
 
         ActorRuntime.set_actor_config(new_config)
         config = ActorRuntime.get_actor_config()

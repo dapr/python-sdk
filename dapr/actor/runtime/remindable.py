@@ -26,8 +26,5 @@ class Remindable(ABC):
                 for the first time.
             period (datetime.timedelta): the time interval between reminder invocations
                 after the first invocation.
-
-        Returns:
-            None.
         """
         ...
