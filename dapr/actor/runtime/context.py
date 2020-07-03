@@ -6,24 +6,41 @@ Licensed under the MIT License.
 """
 
 from dapr.actor.id import ActorId
-from dapr.actor.runtime.state_provider import StateProvider
+from dapr.actor.runtime._state_provider import StateProvider
 from dapr.clients import DaprActorClientBase
 from dapr.serializers import Serializer
 
 from typing import Callable, TYPE_CHECKING
 if TYPE_CHECKING:
     from dapr.actor.runtime.actor import Actor
-    from dapr.actor.runtime.type_information import ActorTypeInformation
+    from dapr.actor.runtime._type_information import ActorTypeInformation
 
 
 class ActorRuntimeContext:
-    """A context of ActorRuntime"""
+    """A context of ActorRuntime.
+
+    Args:
+        actor_type_info(:class:`ActorTypeInformation`):
+        message_serializer(:class:`Serializer`):
+        state_serializer(:class:`Serializer`):
+        state_provider(:class:`StateProvider`):
+        dapr_client(:class:`DaprActorClientBase`):
+    """
 
     def __init__(
             self, actor_type_info: 'ActorTypeInformation',
             message_serializer: Serializer, state_serializer: Serializer,
             actor_client: DaprActorClientBase,
             actor_factory: Callable[['ActorRuntimeContext', ActorId], 'Actor'] = None):
+        """Creates :class:`ActorRuntimeContext` object.
+
+        Args:
+            actor_type_info(:class:`ActorTypeInformation`):
+            message_serializer(:class:`Serializer`):
+            state_serializer(:class:`Serializer`):
+            actor_client(:class:`DaprActorClientBase`):
+            actor_factory(Callable): 
+        """
         self._actor_type_info = actor_type_info
         self._actor_factory = actor_factory or self._default_actor_factory
         self._message_serializer = message_serializer
@@ -31,7 +48,7 @@ class ActorRuntimeContext:
 
         # Create State management provider for actor.
         self._dapr_client = actor_client
-        self._state_provider: StateProvider = StateProvider(self._dapr_client, state_serializer)
+        self._provider: StateProvider = StateProvider(self._dapr_client, state_serializer)
 
     @property
     def actor_type_info(self) -> 'ActorTypeInformation':
@@ -51,7 +68,7 @@ class ActorRuntimeContext:
     @property
     def state_provider(self) -> StateProvider:
         """Return state provider to manage actor states."""
-        return self._state_provider
+        return self._provider
 
     @property
     def dapr_client(self) -> DaprActorClientBase:
