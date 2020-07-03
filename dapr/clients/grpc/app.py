@@ -11,7 +11,7 @@ from concurrent import futures
 from typing import Dict, Optional
 
 from dapr.clients.grpc._servicier import AppCallbackServicer
-from dapr.proto import appcallback_service_v1, common_v1
+from dapr.proto import appcallback_service_v1
 
 
 class App:
