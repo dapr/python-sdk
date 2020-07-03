@@ -19,12 +19,15 @@ if TYPE_CHECKING:
 class ActorRuntimeContext:
     """A context of ActorRuntime.
 
-    Args:
-        actor_type_info(:class:`ActorTypeInformation`):
-        message_serializer(:class:`Serializer`):
-        state_serializer(:class:`Serializer`):
-        state_provider(:class:`StateProvider`):
-        dapr_client(:class:`DaprActorClientBase`):
+    This defines the context of actor runtime, which carries the type information of Actor,
+    the serializers for invocation and state, and the actor clients for Dapr runtime.
+
+    Attributes:
+        actor_type_info(:class:`ActorTypeInformation`): the type information to initiate Actor object.
+        message_serializer(:class:`Serializer`): the serializer for actor invocation request and response body.
+        state_serializer(:class:`Serializer`): the seralizer for state value.
+        state_provider(:class:`StateProvider`): the provider which is the adapter used for state manager.
+        dapr_client(:class:`DaprActorClientBase`): the actor client used for dapr runtime.
     """
 
     def __init__(
@@ -35,11 +38,12 @@ class ActorRuntimeContext:
         """Creates :class:`ActorRuntimeContext` object.
 
         Args:
-            actor_type_info(:class:`ActorTypeInformation`):
-            message_serializer(:class:`Serializer`):
-            state_serializer(:class:`Serializer`):
-            actor_client(:class:`DaprActorClientBase`):
-            actor_factory(Callable): 
+            actor_type_info(:class:`ActorTypeInformation`): the type information to initiate Actor object.
+            message_serializer(:class:`Serializer`): the serializer for actor invocation request and response body.
+            state_serializer(:class:`Serializer`): the seralizer for state value.
+            state_provider(:class:`StateProvider`): the provider which is the adapter used for state manager.
+            actor_client(:class:`DaprActorClientBase`): the actor client used for dapr runtime.
+            actor_factory(Callable): the factory to create Actor object by actor_type_info.
         """
         self._actor_type_info = actor_type_info
         self._actor_factory = actor_factory or self._default_actor_factory
