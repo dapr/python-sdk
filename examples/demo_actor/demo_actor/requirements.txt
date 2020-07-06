@@ -1,0 +1,2 @@
+dapr-dev>=dapr-dev-0.6.0a0.dev67
+flask-dapr-dev>=0.1.0a0.dev67

@@ -1,0 +1,31 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demoactorapp
+  labels:
+    app: demoactor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demoactor
+  template:
+    metadata:
+      labels:
+        app: demoactor
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/id: "demoactor"
+        dapr.io/port: "3000"
+    spec:
+      containers:
+      - name: demoactor
+        image: demo_actor:latest  # EDIT HERE: Replace the image nmae with [docker registry]/demo_actor:latest
+        command: ["python"]
+        args: ["/app/demo_actor_service.py"]
+        ports:
+        - containerPort: 3000
+        imagePullPolicy: Always
