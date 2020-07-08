@@ -106,8 +106,8 @@ class ActorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _run(ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id'))
 
-    @mock.patch('FakeDaprActorClient.register_reminder', new=async_mock(return_value=b'"ok"'))
-    @mock.patch('FakeDaprActorClient.unregister_reminder', new=async_mock(return_value=b'"ok"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.register_reminder', new=async_mock(return_value=b'"ok"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_reminder', new=async_mock(return_value=b'"ok"'))
     def test_register_reminder(self):
 
         test_actor_id = ActorId('test_id')
@@ -134,8 +134,8 @@ class ActorTests(unittest.TestCase):
         test_client.unregister_reminder.mock.assert_called_with(
             'FakeSimpleReminderActor', 'test_id', 'test_reminder')
 
-    @mock.patch('FakeDaprActorClient.register_timer', new=async_mock(return_value=b'"ok"'))
-    @mock.patch('FakeDaprActorClient.unregister_timer', new=async_mock(return_value=b'"ok"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.register_timer', new=async_mock(return_value=b'"ok"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_timer', new=async_mock(return_value=b'"ok"'))
     def test_register_timer(self):
 
         test_actor_id = ActorId('test_id')
@@ -150,8 +150,8 @@ class ActorTests(unittest.TestCase):
         _run(test_actor.register_timer(
             'test_timer', test_actor.timer_callback,
             "timer call", timedelta(seconds=1), timedelta(seconds=1)))
-        test_client.mock.register_timer.assert_called_once()
-        test_client.mock.register_timer.assert_called_with(
+        test_client.register_timer.mock.assert_called_once()
+        test_client.register_timer.mock.assert_called_with(
             'FakeSimpleTimerActor', 'test_id', 'test_timer',
             b'{"dueTime":"0h0m1s","period":"0h0m1s"}')
         self.assertTrue('test_timer' in test_actor._timers)
@@ -159,8 +159,8 @@ class ActorTests(unittest.TestCase):
 
         # unregister timer
         _run(test_actor.unregister_timer('test_timer'))
-        test_client.mock.unregister_timer.assert_called_once()
-        test_client.mock.unregister_timer.assert_called_with(
+        test_client.unregister_timer.mock.assert_called_once()
+        test_client.unregister_timer.mock.assert_called_with(
             'FakeSimpleTimerActor', 'test_id', 'test_timer')
         self.assertEqual(0, len(test_actor._timers))
 
