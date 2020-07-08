@@ -57,7 +57,7 @@ class DaprGrpcClientTests(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(b'haha', resp.bytesdata)
+        self.assertEqual(b'haha', resp.content)
         self.assertEqual("text/plain", resp.content_type)
         self.assertEqual(3, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])

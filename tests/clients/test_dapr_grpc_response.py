@@ -63,14 +63,15 @@ class InvokeServiceResponseTests(unittest.TestCase):
         test_data = GrpcAny()
         test_data.Pack(fake_req)
         resp = InvokeServiceResponse(data=test_data)
-        self.assertIsNotNone(resp.rawdata)
+        self.assertIsNotNone(resp.data)
 
     def test_data(self):
         test_data = GrpcAny(value=b'hello dapr')
         resp = InvokeServiceResponse(
             data=test_data,
             content_type='application/json')
-        self.assertEqual(b'hello dapr', resp.bytesdata)
+        self.assertEqual(b'hello dapr', resp.content)
+        self.assertEqual('hello dapr', resp.text())
         self.assertEqual('application/json', resp.content_type)
 
     def test_unpack(self):

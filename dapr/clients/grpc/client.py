@@ -76,7 +76,7 @@ class Dapr:
             self,
             id: str,
             method: str,
-            data: Union[bytes, GrpcMessage],
+            data: Union[bytes, str, GrpcMessage],
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
@@ -103,9 +103,9 @@ class Dapr:
                     ),
                 )
 
-                # resp.bytesdata includes the bytesdata array.
-                # resp.content_type specifies the content type of resp.bytesdata.
-                # Thus, resp.bytesdata can be deserialized properly.
+                # resp.content includes the content in bytes.
+                # resp.content_type specifies the content type of resp.content.
+                # Thus, resp.content can be deserialized properly.
 
         When sending custom protocol buffer message object, it doesn't requires content_type:
 
@@ -146,9 +146,9 @@ class Dapr:
                     ),
                 )
 
-                # resp.bytesdata includes the bytesdata array.
-                # resp.content_type specifies the content type of resp.bytesdata.
-                # Thus, resp.bytesdata can be deserialized properly.
+                # resp.content includes the content in bytes.
+                # resp.content_type specifies the content type of resp.content.
+                # Thus, resp.content can be deserialized properly.
 
         Args:
             id (str): the callee app id
@@ -172,7 +172,7 @@ class Dapr:
             id=id,
             message=common_v1.InvokeRequest(
                 method=method,
-                data=req_data.rawdata,
+                data=req_data.data,
                 content_type=req_data.content_type,
                 http_extension=http_ext)
         )
