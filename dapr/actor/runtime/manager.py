@@ -13,9 +13,9 @@ from dapr.actor.id import ActorId
 from dapr.clients import DaprInternalError
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.method_context import ActorMethodContext
+from dapr.actor.runtime._method_context import ActorMethodContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
-from dapr.actor.runtime.reminder_data import ActorReminderData
+from dapr.actor.runtime._reminder_data import ActorReminderData
 
 TIMER_METHOD_NAME = 'fire_timer'
 REMINDER_METHOD_NAME = 'receive_reminder'

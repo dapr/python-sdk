@@ -22,12 +22,16 @@ _MAP_CHANGE_KIND_TO_OPERATION = {
 
 
 class StateProvider:
+    """The adapter class for StateManager to use Dapr Actor Client.
+
+    This provides the decorator methods to load and save states and check the existence of states.
+    """
     def __init__(
             self,
             actor_client: DaprActorClientBase,
-            state_serializer: Serializer = None):
+            state_serializer: Serializer = DefaultJSONSerializer()):
         self._state_client = actor_client
-        self._state_serializer = state_serializer or DefaultJSONSerializer()
+        self._state_serializer = state_serializer
 
     async def try_load_state(
             self, actor_type: str, actor_id: str,

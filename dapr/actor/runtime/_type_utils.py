@@ -5,13 +5,13 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Any, Dict, Type
+from typing import Any, Dict, List, Type
 
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime.actor import Actor
 
 
-def get_class_method_args(func: Any) -> list:
+def get_class_method_args(func: Any) -> List[str]:
     args = func.__code__.co_varnames[:func.__code__.co_argcount]
 
     # Exclude self, cls arguments
@@ -20,7 +20,7 @@ def get_class_method_args(func: Any) -> list:
     return list(args)
 
 
-def get_method_arg_types(func: Any) -> list:
+def get_method_arg_types(func: Any) -> List[Type]:
     annotations = getattr(func, '__annotations__')
     args = get_class_method_args(func)
     arg_types = []
@@ -30,7 +30,7 @@ def get_method_arg_types(func: Any) -> list:
     return arg_types
 
 
-def get_method_return_types(func: Any) -> type:
+def get_method_return_types(func: Any) -> Type:
     annotations = getattr(func, '__annotations__')
     if len(annotations) == 0 or not annotations['return']:
         return object
@@ -61,7 +61,7 @@ def get_dispatchable_attrs(actor_class: Type[Actor]) -> Dict[str, Any]:
         actor_class (type): The actor object which inherits :class:`ActorInterface`
 
     Returns:
-        dict: The map from attribute to actor method.
+        Dict[str, Any]: The map from attribute to actor method.
 
     Raises:
         ValueError: `actor_class` doesn't inherit :class:`ActorInterface`.
@@ -91,7 +91,7 @@ def is_dapr_actor(cls: Type[Actor]) -> bool:
     return issubclass(cls, Actor)
 
 
-def get_actor_interfaces(cls: Type[Actor]) -> list:
+def get_actor_interfaces(cls: Type[Actor]) -> List[Type[ActorInterface]]:
     """Gets the list of the base classes that inherits :class:`ActorInterface`.
 
     Args:

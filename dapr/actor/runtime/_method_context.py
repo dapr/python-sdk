@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from dapr.actor.runtime.call_type import ActorCallType
+from dapr.actor.runtime._call_type import ActorCallType
 
 
 class ActorMethodContext:
@@ -15,7 +15,7 @@ class ActorMethodContext:
 
     def __init__(self, method_name: str, call_type: ActorCallType):
         self._method_name = method_name
-        self._call_type = call_type
+        self._calltype = call_type
 
     @property
     def method_name(self) -> str:
@@ -25,7 +25,7 @@ class ActorMethodContext:
     @property
     def call_type(self) -> ActorCallType:
         """Gets :class:`ActorCallType` for this method."""
-        return self._call_type
+        return self._calltype
 
     @classmethod
     def create_for_actor(cls, method_name: str):
