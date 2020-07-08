@@ -19,7 +19,7 @@ from dapr.clients.grpc._request import InvokeServiceRequestData
 from dapr.clients.grpc._response import InvokeServiceResponse
 
 
-class Dapr:
+class DaprClient:
     """The convenient layer implementation of Dapr gRPC APIs.
 
     This provides the wrappers and helpers to allows developers to use Dapr runtime gRPC API
@@ -28,13 +28,13 @@ class Dapr:
     Examples:
 
         >>> import dapr
-        >>> d = dapr.Dapr()
+        >>> d = dapr.DaprClient()
         >>> resp = d.invoke_service('callee', 'method', b'data')
 
     With context manager:
 
         >>> import dapr
-        >>> with dapr.Dapr() as d:
+        >>> with dapr.DaprClient() as d:
         ...     resp = d.invoke_service('callee', 'method', b'data')
     """
 
@@ -56,7 +56,7 @@ class Dapr:
     def __del__(self):
         self.close()
 
-    def __enter__(self) -> 'Dapr':
+    def __enter__(self) -> 'DaprClient':
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
@@ -76,7 +76,7 @@ class Dapr:
             self,
             id: str,
             method: str,
-            data: Union[bytes, GrpcMessage],
+            data: Union[bytes, str, GrpcMessage],
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
@@ -90,9 +90,9 @@ class Dapr:
 
         The example calls `callee` service with bytes data, which implements grpc appcallback:
 
-            from dapr import Dapr
+            from dapr import DaprClient
 
-            with Dapr() as d:
+            with DaprClient() as d:
                 resp = d.invoke_service(
                     id='callee',
                     method='method',
@@ -103,17 +103,17 @@ class Dapr:
                     ),
                 )
 
-                # resp.bytesdata includes the bytesdata array.
-                # resp.content_type specifies the content type of resp.bytesdata.
-                # Thus, resp.bytesdata can be deserialized properly.
+                # resp.content includes the content in bytes.
+                # resp.content_type specifies the content type of resp.content.
+                # Thus, resp.content can be deserialized properly.
 
         When sending custom protocol buffer message object, it doesn't requires content_type:
 
-            from dapr import Dapr
+            from dapr import DaprClient
 
             req_data = dapr_example_v1.CustomRequestMessage(data='custom')
 
-            with Dapr() as d:
+            with DaprClient() as d:
                 resp = d.invoke_service(
                     id='callee',
                     method='method',
@@ -129,9 +129,9 @@ class Dapr:
 
         The example calls `callee` service which implements http appcallback:
 
-            from dapr import Dapr
+            from dapr import DaprClient
 
-            with Dapr() as d:
+            with DaprClient() as d:
                 resp = d.invoke_service(
                     id='callee',
                     method='method',
@@ -146,9 +146,9 @@ class Dapr:
                     ),
                 )
 
-                # resp.bytesdata includes the bytesdata array.
-                # resp.content_type specifies the content type of resp.bytesdata.
-                # Thus, resp.bytesdata can be deserialized properly.
+                # resp.content includes the content in bytes.
+                # resp.content_type specifies the content type of resp.content.
+                # Thus, resp.content can be deserialized properly.
 
         Args:
             id (str): the callee app id
@@ -172,7 +172,7 @@ class Dapr:
             id=id,
             message=common_v1.InvokeRequest(
                 method=method,
-                data=req_data.rawdata,
+                data=req_data.data,
                 content_type=req_data.content_type,
                 http_extension=http_ext)
         )

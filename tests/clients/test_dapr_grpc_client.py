@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import unittest
 
-from dapr.clients.grpc.client import Dapr
+from dapr.clients.grpc.client import DaprClient
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 
@@ -23,7 +23,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self._fake_dapr_server.stop()
 
     def test_http_extension(self):
-        dapr = Dapr(f'localhost:{self.server_port}')
+        dapr = DaprClient(f'localhost:{self.server_port}')
 
         # Test POST verb without querystring
         ext = dapr._get_http_extension('POST')
@@ -45,7 +45,7 @@ class DaprGrpcClientTests(unittest.TestCase):
             self.assertEqual(val, ext.querystring[key])
 
     def test_invoke_service_bytes_data(self):
-        dapr = Dapr(f'localhost:{self.server_port}')
+        dapr = DaprClient(f'localhost:{self.server_port}')
         resp = dapr.invoke_service(
             id='targetId',
             method='bytes',
@@ -57,14 +57,14 @@ class DaprGrpcClientTests(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(b'haha', resp.bytesdata)
+        self.assertEqual(b'haha', resp.content)
         self.assertEqual("text/plain", resp.content_type)
         self.assertEqual(3, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertEqual(['value1'], resp.trailers['tkey1'])
 
     def test_invoke_service_proto_data(self):
-        dapr = Dapr(f'localhost:{self.server_port}')
+        dapr = DaprClient(f'localhost:{self.server_port}')
         req = common_v1.StateItem(key='test')
         resp = dapr.invoke_service(
             id='targetId',

@@ -63,11 +63,11 @@ class InvokeServiceResponse(DaprResponse):
     and protocol buffer data.
 
     Attributes:
-        rawdata (:obj:`google.protobuf.any_pb2.Any`): the serialized protocol
+        data (:obj:`google.protobuf.any_pb2.Any`): the serialized protocol
             buffer raw message
-        bytesdata (bytes): bytes data if response data is not serialized
+        content (bytes): bytes data if response data is not serialized
             protocol buffer message
-        content_type (str): the content type of `bytesdata`
+        content_type (str): the type of `content`
     """
     def __init__(
             self,
@@ -94,7 +94,7 @@ class InvokeServiceResponse(DaprResponse):
         self._content_type = content_type
 
     @property
-    def rawdata(self) -> GrpcAny:
+    def data(self) -> GrpcAny:
         """Gets raw serialized protocol buffer message.
 
         Raises:
@@ -105,20 +105,29 @@ class InvokeServiceResponse(DaprResponse):
         return self._proto_any
 
     @property
-    def bytesdata(self) -> bytes:
+    def content(self) -> bytes:
         """Gets raw bytes data if the response data content is not serialized
         protocol buffer message.
 
         Raises:
-            ValueError: the response data is not bytes
+            ValueError: the response data is the serialized protocol buffer message
         """
         if self.is_proto():
-            raise ValueError('data is not bytes')
+            raise ValueError('data is the serialized protocol buffer message')
         return self._proto_any.value
+
+    def text(self) -> str:
+        """Gets content as str if the response data content is not serialized
+        protocol buffer message.
+
+        Raises:
+            ValueError: the response data is the serialized protocol buffer message
+        """
+        return self.content.decode('utf-8')
 
     @property
     def content_type(self) -> Optional[str]:
-        """Gets the content type of bytesdata attribute."""
+        """Gets the content type of content attribute."""
         return self._content_type
 
     def is_proto(self) -> bool:
@@ -126,7 +135,7 @@ class InvokeServiceResponse(DaprResponse):
         return self._proto_any.type_url != ''
 
     def unpack(self, message: GrpcMessage) -> None:
-        """Deserializes the serialized protocol buffer message.
+        """Unpack the serialized protocol buffer message.
 
         Args:
             message (:obj:`google.protobuf.message.Message`): the protocol buffer message object

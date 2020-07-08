@@ -21,26 +21,31 @@ class InvokeServiceRequestData:
     buffer message.
 
     Attributes:
-        rawdata (:obj:`google.protobuf.any_pb2.Any`): the serialized data for
+        data (:obj:`google.protobuf.any_pb2.Any`): the serialized data for
             invoke_service request.
-        content_type (str, optional): the content type of rawdata which is valid
+        content_type (str, optional): the content type of data which is valid
             only for bytes array data.
     """
     def __init__(
             self,
-            data: Union[bytes, GrpcMessage],
+            data: Union[bytes, str, GrpcMessage],
             content_type: Optional[str] = None):
         """Inits InvokeServiceRequestData with data and content_type.
 
         Args:
-            data (bytes or :obj:`google.protobuf.message.Message`): the data which
-                is used for invoke_service request.
+            data (bytes, str, or :obj:`google.protobuf.message.Message`): the data
+                which is used for invoke_service request.
             content_type (str): the content_type of data when the data is bytes.
+                The default content type is application/json.
 
         Raises:
             ValueError: data is not bytes or :obj:`google.protobuf.message.Message`.
         """
         self._data = GrpcAny()
+
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+
         if isinstance(data, bytes):
             self._data.value = data
             self._content_type = content_type
@@ -53,7 +58,7 @@ class InvokeServiceRequestData:
             raise ValueError(f'invalid data type {type(data)}')
 
     @property
-    def rawdata(self) -> GrpcAny:
+    def data(self) -> GrpcAny:
         return self._data
 
     @property
