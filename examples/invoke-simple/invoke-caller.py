@@ -1,8 +1,8 @@
 import json
 
-from dapr import Dapr
+from dapr import DaprClient
 
-with Dapr() as d:
+with DaprClient() as d:
     req_data = {
         'id': 1,
         'message': 'hello world'
