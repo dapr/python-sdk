@@ -11,7 +11,7 @@ This document describes how to create an Actor(DemoActor) and invoke its methods
 ## Prerequisites
 
 * [Install Dapr standalone mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-standalone)
-* [Install Python 3.8+](https://www.python.org/downloads/)
+* [Install Python 3.7+](https://www.python.org/downloads/)
 
 ## Install Dapr SDK
 
