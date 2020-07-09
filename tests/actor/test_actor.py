@@ -14,7 +14,7 @@ from dapr.actor.id import ActorId
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.runtime import ActorRuntime
-from dapr.actor.runtime.type_information import ActorTypeInformation
+from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import (
@@ -49,8 +49,7 @@ class ActorTests(unittest.IsolatedAsyncioTestCase):
 
         # apply new config
         new_config = ActorRuntimeConfig(
-            False, timedelta(hours=3),
-            timedelta(seconds=10), timedelta(minutes=1))
+            timedelta(hours=3), timedelta(seconds=10), timedelta(minutes=1), False)
 
         ActorRuntime.set_actor_config(new_config)
         config = ActorRuntime.get_actor_config()

@@ -14,8 +14,8 @@ from dapr.actor.id import ActorId
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.state_change import StateChangeKind
 from dapr.actor.runtime.state_manager import ActorStateManager
-from dapr.actor.runtime.type_information import ActorTypeInformation
-from dapr.clients.base import DaprActorClientBase
+from dapr.actor.runtime._type_information import ActorTypeInformation
+from dapr.clients import DaprActorClientBase
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import FakeSimpleActor
