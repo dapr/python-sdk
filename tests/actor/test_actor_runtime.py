@@ -6,7 +6,9 @@ Licensed under the MIT License.
 """
 
 import unittest
+import asyncio
 
+from unittest import mock
 from datetime import timedelta
 
 from dapr.actor.runtime.runtime import ActorRuntime
@@ -18,14 +20,16 @@ from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
 )
 
+def _run(coro):
+    return asyncio.get_event_loop().run_until_complete(coro)
 
-class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
-    async def asyncSetUp(self):
+class ActorRuntimeTests(unittest.TestCase):
+    def setUp(self):
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
         self._serializer = DefaultJSONSerializer()
-        await ActorRuntime.register_actor(FakeSimpleActor)
-        await ActorRuntime.register_actor(FakeMultiInterfacesActor)
+        _run(ActorRuntime.register_actor(FakeSimpleActor))
+        _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
 
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()
@@ -55,7 +59,7 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(timedelta(minutes=1), config._drain_ongoing_call_timeout)
         self.assertEqual(2, len(config._entities))
 
-    async def test_entities_update(self):
+    def test_entities_update(self):
         # Clean up managers
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
@@ -64,26 +68,26 @@ class ActorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             config._entities.index(FakeSimpleActor.__name__)
 
-        await ActorRuntime.register_actor(FakeSimpleActor)
+        _run(ActorRuntime.register_actor(FakeSimpleActor))
         config = ActorRuntime.get_actor_config()
         self.assertTrue(config._entities.index(FakeSimpleActor.__name__) >= 0)
 
-    async def test_dispatch(self):
-        await ActorRuntime.register_actor(FakeMultiInterfacesActor)
+    def test_dispatch(self):
+        _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
 
         request_body = {
             "message": "hello dapr",
         }
 
         test_request_body = self._serializer.serialize(request_body)
-        response = await ActorRuntime.dispatch(
+        response = _run(ActorRuntime.dispatch(
             FakeMultiInterfacesActor.__name__, 'test-id',
-            "ActionMethod", test_request_body)
+            "ActionMethod", test_request_body))
 
         self.assertEqual(b'"hello dapr"', response)
 
-        await ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id')
+        _run(ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id'))
 
         # Ensure test-id is deactivated
         with self.assertRaises(ValueError):
-            await ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id')
+            _run(ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id'))
