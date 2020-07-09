@@ -10,7 +10,7 @@ import asyncio
 from typing import Any, Callable, Coroutine, Dict, Optional
 
 from dapr.actor.id import ActorId
-from dapr.clients import DaprInternalError
+from dapr.clients.exceptions import DaprInternalError
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime._method_context import ActorMethodContext

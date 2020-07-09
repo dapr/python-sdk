@@ -36,7 +36,7 @@ class ActorProxyFactory(ActorFactoryBase):
 
     def __init__(self, message_serializer=DefaultJSONSerializer()):
         # TODO: support serializer for state store later
-        self._dapr_client = DaprActorHttpClient()
+        self._dapr_client = DaprActorHttpClient(message_serializer)
         self._message_serializer = message_serializer
 
     def create(

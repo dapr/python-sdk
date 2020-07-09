@@ -6,25 +6,24 @@ Licensed under the MIT License.
 """
 import aiohttp
 
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from dapr.serializers import Serializer
 
 from dapr.conf import settings
-from dapr.clients.base import DaprActorClientBase
+from dapr.clients.base import DaprActorClientBase, DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
-from dapr.serializers import DefaultJSONSerializer
 
 
 CONTENT_TYPE_HEADER = 'content-type'
-DEFAULT_ENCODING = 'utf-8'
-DEFAULT_JSON_CONTENT_TYPE = f'application/json; charset={DEFAULT_ENCODING}'
 
 
 class DaprActorHttpClient(DaprActorClientBase):
     """A Dapr Actor http client implementing :class:`DaprActorClientBase`"""
 
-    def __init__(self, timeout=60):
+    def __init__(self, message_serializer: 'Serializer', timeout: int = 60):
         self._timeout = aiohttp.ClientTimeout(total=timeout)
-        self._serializer = DefaultJSONSerializer()
+        self._serializer = message_serializer
 
     async def invoke_method(
             self, actor_type: str, actor_id: str,
@@ -122,7 +121,8 @@ class DaprActorHttpClient(DaprActorClientBase):
         await self._send_bytes(method='DELETE', url=url, data=None)
 
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
-        return 'http://127.0.0.1:{}/{}/actors/{}/{}'.format(
+        return 'http://{}:{}/{}/actors/{}/{}'.format(
+            settings.DAPR_RUNTIME_HOST,
             settings.DAPR_HTTP_PORT,
             settings.DAPR_API_VERSION,
             actor_type,

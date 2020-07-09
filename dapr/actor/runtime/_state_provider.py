@@ -9,7 +9,7 @@ import io
 
 from typing import Any, List, Type, Tuple
 from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
-from dapr.clients import DaprActorClientBase
+from dapr.clients.base import DaprActorClientBase
 from dapr.serializers import Serializer, DefaultJSONSerializer
 
 

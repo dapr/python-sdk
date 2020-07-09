@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from typing import Any, Callable, Optional, Type
 
 
 class Serializer(ABC):
@@ -20,6 +20,6 @@ class Serializer(ABC):
 
     @abstractmethod
     def deserialize(
-            self, data: bytes, data_type: type,
-            custom_hook: Optional[Callable[[bytes], object]] = None) -> object:
+            self, data: bytes, data_type: Optional[Type] = object,
+            custom_hook: Optional[Callable[[bytes], object]] = None) -> Any:
         ...
