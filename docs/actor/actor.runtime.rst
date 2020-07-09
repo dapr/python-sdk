@@ -11,7 +11,7 @@ Submodules
    :show-inheritance:
 
 
-.. automodule:: actor.runtime.call_type
+.. automodule:: actor.runtime._call_type
    :members:
    :undoc-members:
    :show-inheritance:
@@ -35,7 +35,7 @@ Submodules
    :show-inheritance:
 
 
-.. automodule:: actor.runtime.method_context
+.. automodule:: actor.runtime._method_context
    :members:
    :undoc-members:
    :show-inheritance:
@@ -53,7 +53,7 @@ Submodules
    :show-inheritance:
 
 
-.. automodule:: actor.runtime.reminder_data
+.. automodule:: actor.runtime._reminder_data
    :members:
    :undoc-members:
    :show-inheritance:
@@ -77,25 +77,13 @@ Submodules
    :show-inheritance:
 
 
-.. automodule:: actor.runtime.state_provider
+.. automodule:: actor.runtime._state_provider
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-.. automodule:: actor.runtime.timer_data
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-.. automodule:: actor.runtime.type_information
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-.. automodule:: actor.runtime.type_utils
+.. automodule:: actor.runtime._timer_data
    :members:
    :undoc-members:
    :show-inheritance:

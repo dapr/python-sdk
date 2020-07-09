@@ -13,7 +13,7 @@ from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.type_information import ActorTypeInformation
+from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
@@ -138,7 +138,8 @@ class ActorRuntime:
     def set_actor_config(cls, config: ActorRuntimeConfig) -> None:
         """Sets actor runtime config
 
-        :param ActorRuntimeConfig config: The config to set up actor runtime
+        Args:
+            config (:class:`ActorRuntimeConfig`): The config to set up actor runtime
         """
         cls._actor_config = config
         cls._actor_config.update_entities(ActorRuntime.get_registered_actor_types())

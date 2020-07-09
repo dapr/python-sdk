@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 
 from dapr.actor.runtime.remindable import Remindable
-from dapr.actor.runtime.type_utils import is_dapr_actor, get_actor_interfaces
+from dapr.actor.runtime._type_utils import is_dapr_actor, get_actor_interfaces
 
 from typing import List, Type, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ class ActorTypeInformation:
     """
 
     def __init__(self, name: str, implementation_class: Type['Actor'],
-                 actor_bases: List['ActorInterface']):
+                 actor_bases: List[Type['ActorInterface']]):
         self._name = name
         self._impl_type = implementation_class
         self._actor_bases = actor_bases
@@ -36,7 +36,7 @@ class ActorTypeInformation:
         return self._impl_type
 
     @property
-    def actor_interfaces(self) -> List['ActorInterface']:
+    def actor_interfaces(self) -> List[Type['ActorInterface']]:
         """Returns the list of :class:`ActorInterface` of this type."""
         return self._actor_bases
 

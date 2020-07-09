@@ -15,6 +15,7 @@ __all__ = [
     'App',
     'CallbackResponse',
     'DaprClient',
+    'DaprActorClientBase',
     'DaprActorHttpClient',
     'DaprInternalError',
     'ERROR_CODE_UNKNOWN',
