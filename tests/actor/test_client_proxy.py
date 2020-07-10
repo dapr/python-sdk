@@ -14,10 +14,11 @@ from dapr.actor.client.proxy import ActorProxy
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import (
-    FakeDaprActorClient,
     FakeMultiInterfacesActor,
     FakeActorCls2Interface,
 )
+
+from tests.actor.fake_client import FakeDaprActorClient
 
 from tests.actor.utils import (
     _async_mock,
@@ -48,7 +49,7 @@ class ActorProxyTests(unittest.TestCase):
             self._fake_factory)
 
     @mock.patch(
-        'tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method',
+        'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke(self):
         response = _run(self._proxy.invoke('ActionMethod', b'arg0'))
@@ -57,7 +58,7 @@ class ActorProxyTests(unittest.TestCase):
             FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')
 
     @mock.patch(
-        'tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method',
+        'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke_no_arg(self):
         response = _run(self._proxy.invoke('ActionMethodWithoutArg'))
@@ -66,7 +67,7 @@ class ActorProxyTests(unittest.TestCase):
             FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethodWithoutArg', None)
 
     @mock.patch(
-        'tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method',
+        'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke_with_static_typing(self):
         response = _run(self._proxy.ActionMethod(b'arg0'))
@@ -75,7 +76,7 @@ class ActorProxyTests(unittest.TestCase):
             FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')
 
     @mock.patch(
-        'tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method',
+        'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke_with_static_typing_no_arg(self):
         response = _run(self._proxy.ActionMethodWithoutArg())

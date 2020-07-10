@@ -18,12 +18,13 @@ from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import (
-    FakeDaprActorClient,
     FakeSimpleActor,
     FakeSimpleReminderActor,
     FakeSimpleTimerActor,
     FakeMultiInterfacesActor,
 )
+
+from tests.actor.fake_client import FakeDaprActorClient
 
 from tests.actor.utils import (
     _async_mock,
@@ -100,10 +101,10 @@ class ActorTests(unittest.TestCase):
             _run(ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id'))
 
     @mock.patch(
-        'tests.actor.fake_actor_classes.FakeDaprActorClient.register_reminder',
+        'tests.actor.fake_client.FakeDaprActorClient.register_reminder',
         new=_async_mock(return_value=b'"ok"'))
     @mock.patch(
-        'tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_reminder',
+        'tests.actor.fake_client.FakeDaprActorClient.unregister_reminder',
         new=_async_mock(return_value=b'"ok"'))
     def test_register_reminder(self):
 
@@ -132,10 +133,10 @@ class ActorTests(unittest.TestCase):
             'FakeSimpleReminderActor', 'test_id', 'test_reminder')
 
     @mock.patch(
-        'tests.actor.fake_actor_classes.FakeDaprActorClient.register_timer',
+        'tests.actor.fake_client.FakeDaprActorClient.register_timer',
         new=_async_mock(return_value=b'"ok"'))
     @mock.patch(
-        'tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_timer',
+        'tests.actor.fake_client.FakeDaprActorClient.unregister_timer',
         new=_async_mock(return_value=b'"ok"'))
     def test_register_timer(self):
 

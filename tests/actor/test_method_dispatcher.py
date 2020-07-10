@@ -12,11 +12,8 @@ from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.serializers import DefaultJSONSerializer
 
-from tests.actor.fake_actor_classes import (
-    FakeDaprActorClient,
-    FakeSimpleActor
-)
-
+from tests.actor.fake_actor_classes import FakeSimpleActor
+from tests.actor.fake_client import FakeDaprActorClient
 from tests.actor.utils import _run
 
 
