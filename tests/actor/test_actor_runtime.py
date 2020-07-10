@@ -20,8 +20,7 @@ from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
 )
 
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+from tests.actor.utils import _run
 
 class ActorRuntimeTests(unittest.TestCase):
     def setUp(self):

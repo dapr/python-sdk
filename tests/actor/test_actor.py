@@ -26,17 +26,10 @@ from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
 )
 
-def async_mock(*args, **kwargs):
-    m = mock.MagicMock(*args, **kwargs)
-
-    async def mock_coro(*args, **kwargs):
-        return m(*args, **kwargs)
-
-    mock_coro.mock = m
-    return mock_coro
-
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+from tests.actor.utils import (
+    _async_mock,
+    _run
+)
 
 class ActorTests(unittest.TestCase):
     def setUp(self):
@@ -106,8 +99,8 @@ class ActorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _run(ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id'))
 
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.register_reminder', new=async_mock(return_value=b'"ok"'))
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_reminder', new=async_mock(return_value=b'"ok"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.register_reminder', new=_async_mock(return_value=b'"ok"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_reminder', new=_async_mock(return_value=b'"ok"'))
     def test_register_reminder(self):
 
         test_actor_id = ActorId('test_id')
@@ -134,8 +127,8 @@ class ActorTests(unittest.TestCase):
         test_client.unregister_reminder.mock.assert_called_with(
             'FakeSimpleReminderActor', 'test_id', 'test_reminder')
 
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.register_timer', new=async_mock(return_value=b'"ok"'))
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_timer', new=async_mock(return_value=b'"ok"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.register_timer', new=_async_mock(return_value=b'"ok"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_timer', new=_async_mock(return_value=b'"ok"'))
     def test_register_timer(self):
 
         test_actor_id = ActorId('test_id')

@@ -20,17 +20,10 @@ from tests.actor.fake_actor_classes import (
     FakeActorCls2Interface,
 )
 
-def async_mock(*args, **kwargs):
-    m = mock.MagicMock(*args, **kwargs)
-
-    async def mock_coro(*args, **kwargs):
-        return m(*args, **kwargs)
-
-    mock_coro.mock = m
-    return mock_coro
-
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+from tests.actor.utils import (
+    _async_mock,
+    _run
+)
 
 class FakeActoryProxyFactory:
     def __init__(self, fake_client):
@@ -45,7 +38,7 @@ class FakeActoryProxyFactory:
 
 class ActorProxyTests(unittest.TestCase):
 
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method', new=async_mock(return_value=b'"expected_response"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method', new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke(self):
         _fake_client = FakeDaprActorClient
 
@@ -61,7 +54,7 @@ class ActorProxyTests(unittest.TestCase):
         _fake_client.invoke_method.mock.assert_called_once_with(
             FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')
 
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method', new=async_mock(return_value=b'"expected_response"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method', new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke_no_arg(self):
         _fake_client = FakeDaprActorClient
 
@@ -77,7 +70,7 @@ class ActorProxyTests(unittest.TestCase):
         _fake_client.invoke_method.mock.assert_called_once_with(
             FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethodWithoutArg', None)
 
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method', new=async_mock(return_value=b'"expected_response"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method', new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke_with_static_typing(self):
         _fake_client = FakeDaprActorClient
 
@@ -93,7 +86,7 @@ class ActorProxyTests(unittest.TestCase):
         _fake_client.invoke_method.mock.assert_called_once_with(
             FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')
 
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method', new=async_mock(return_value=b'"expected_response"'))
+    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method', new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke_with_static_typing_no_arg(self):
         _fake_client = FakeDaprActorClient
 
