@@ -110,18 +110,18 @@ class ActorManagerReminderTests(unittest.TestCase):
 
 
 class ActorManagerTimerTests(unittest.TestCase):
+    def setUp(self):
+        self._serializer = DefaultJSONSerializer()
+
+        self._fake_client = FakeDaprActorClient
+
     @mock.patch(
         'tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'))
     @mock.patch(
         'tests.actor.fake_actor_classes.FakeDaprActorClient.register_timer',
         new=_async_mock())
-    def setUp(self):
-        self._serializer = DefaultJSONSerializer()
-
-        self._fake_client = FakeDaprActorClient
-
-    async def test_fire_timer_success(self):
+    def test_fire_timer_success(self):
         test_actor_id = ActorId('testid')
         test_type_info = ActorTypeInformation.create(FakeSimpleTimerActor)
         ctx = ActorRuntimeContext(
