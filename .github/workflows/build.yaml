@@ -37,7 +37,7 @@ jobs:
         tox -e type
     - name: Run unit-tests
       run: |
-        tox -e py38
+        tox -e py37
     - name: Build and publish Dapr Python SDK
       if: github.event_name != 'pull_request'
       run: |
