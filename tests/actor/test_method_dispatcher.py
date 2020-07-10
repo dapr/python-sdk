@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import unittest
-import asyncio
 
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
@@ -19,6 +18,7 @@ from tests.actor.fake_actor_classes import (
 )
 
 from tests.actor.utils import _run
+
 
 class ActorMethodDispatcherTests(unittest.TestCase):
     def setUp(self):

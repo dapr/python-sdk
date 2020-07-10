@@ -7,9 +7,6 @@ Licensed under the MIT License.
 
 import unittest
 from datetime import timedelta
-import asyncio
-
-from unittest import mock
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_information import ActorTypeInformation
@@ -22,10 +19,10 @@ from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeSimpleActor,
     FakeSimpleReminderActor,
-    FakeSimpleTimerActor,
 )
 
 from tests.actor.utils import _run
+
 
 class ActorManagerTests(unittest.TestCase):
     def setUp(self):

@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import unittest
-import asyncio
 
 from unittest import mock
 from datetime import timedelta
@@ -30,6 +29,7 @@ from tests.actor.utils import (
     _async_mock,
     _run
 )
+
 
 class ActorTests(unittest.TestCase):
     def setUp(self):
@@ -99,8 +99,12 @@ class ActorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _run(ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id'))
 
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.register_reminder', new=_async_mock(return_value=b'"ok"'))
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_reminder', new=_async_mock(return_value=b'"ok"'))
+    @mock.patch(
+        'tests.actor.fake_actor_classes.FakeDaprActorClient.register_reminder',
+        new=_async_mock(return_value=b'"ok"'))
+    @mock.patch(
+        'tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_reminder',
+        new=_async_mock(return_value=b'"ok"'))
     def test_register_reminder(self):
 
         test_actor_id = ActorId('test_id')
@@ -127,8 +131,12 @@ class ActorTests(unittest.TestCase):
         test_client.unregister_reminder.mock.assert_called_with(
             'FakeSimpleReminderActor', 'test_id', 'test_reminder')
 
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.register_timer', new=_async_mock(return_value=b'"ok"'))
-    @mock.patch('tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_timer', new=_async_mock(return_value=b'"ok"'))
+    @mock.patch(
+        'tests.actor.fake_actor_classes.FakeDaprActorClient.register_timer',
+        new=_async_mock(return_value=b'"ok"'))
+    @mock.patch(
+        'tests.actor.fake_actor_classes.FakeDaprActorClient.unregister_timer',
+        new=_async_mock(return_value=b'"ok"'))
     def test_register_timer(self):
 
         test_actor_id = ActorId('test_id')

@@ -6,9 +6,7 @@ Licensed under the MIT License.
 """
 
 import unittest
-import asyncio
 
-from unittest import mock
 from datetime import timedelta
 
 from dapr.actor.runtime.runtime import ActorRuntime
@@ -21,6 +19,7 @@ from tests.actor.fake_actor_classes import (
 )
 
 from tests.actor.utils import _run
+
 
 class ActorRuntimeTests(unittest.TestCase):
     def setUp(self):
