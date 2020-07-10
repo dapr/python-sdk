@@ -92,7 +92,7 @@ pip3 install -r dev-requirements.txt
 4. Run unit-test
 
 ```bash
-tox -e py38
+tox -e py37
 ```
 
 5. Run type check
