@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 import unittest
 from datetime import timedelta
+from unittest import mock
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_information import ActorTypeInformation
@@ -19,9 +20,13 @@ from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeSimpleActor,
     FakeSimpleReminderActor,
+    FakeSimpleTimerActor,
 )
 
-from tests.actor.utils import _run
+from tests.actor.utils import (
+    _async_mock,
+    _run,
+)
 
 
 class ActorManagerTests(unittest.TestCase):
@@ -102,3 +107,37 @@ class ActorManagerReminderTests(unittest.TestCase):
         manager = ActorManager(ctx)
         _run(manager.activate_actor(test_actor_id))
         _run(manager.fire_reminder(test_actor_id, 'test_reminder', self._test_reminder_req))
+
+
+class ActorManagerTimerTests(unittest.TestCase):
+    @mock.patch(
+        'tests.actor.fake_actor_classes.FakeDaprActorClient.invoke_method',
+        new=_async_mock(return_value=b'"expected_response"'))
+    @mock.patch(
+        'tests.actor.fake_actor_classes.FakeDaprActorClient.register_timer',
+        new=_async_mock())
+    def setUp(self):
+        self._serializer = DefaultJSONSerializer()
+
+        self._fake_client = FakeDaprActorClient
+
+    async def test_fire_timer_success(self):
+        test_actor_id = ActorId('testid')
+        test_type_info = ActorTypeInformation.create(FakeSimpleTimerActor)
+        ctx = ActorRuntimeContext(
+            test_type_info, self._serializer,
+            self._serializer, self._fake_client)
+        manager = ActorManager(ctx)
+
+        _run(manager.activate_actor(test_actor_id))
+        actor = manager._active_actors.get(test_actor_id.id, None)
+
+        # Setup timer
+        _run(actor.register_timer(
+            'test_timer', actor.timer_callback,
+            "timer call", timedelta(seconds=1), timedelta(seconds=1)))
+
+        # Fire timer
+        _run(manager.fire_timer(test_actor_id, 'test_timer'))
+
+        self.assertTrue(actor.timer_called)
