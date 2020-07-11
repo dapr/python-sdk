@@ -184,11 +184,11 @@ class DaprClient:
             call.initial_metadata(), call.trailing_metadata())
 
     def invoke_binding(
-        self,
-        name: str,
-        operation: str,
-        data: Union[bytes, str],
-        metadata: Optional[MetadataTuple] = ()) -> InvokeBindingResponse:
+            self,
+            name: str,
+            operation: str,
+            data: Union[bytes, str],
+            metadata: Optional[MetadataTuple] = ()) -> InvokeBindingResponse:
         """Invokes the output bindnig with the specified operation.
 
         The data field takes any JSON serializable value and acts as the

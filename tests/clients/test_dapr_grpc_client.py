@@ -99,7 +99,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
 
         self.assertEqual(b'haha', resp.content)
-        self.assertEqual({'key1':'value1','key2':'value2'}, resp.metadata)
+        self.assertEqual({'key1': 'value1', 'key2': 'value2'}, resp.metadata)
         self.assertEqual(2, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertEqual(['value1'], resp.trailers['tkey1'])

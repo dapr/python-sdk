@@ -62,11 +62,12 @@ class InvokeBindingRequestDataTests(unittest.TestCase):
 
     def test_non_empty_metadata(self):
         # act
-        data = InvokeBindingRequestData(data='hello dapr', metadata = (('ttlInSeconds', '1000'), ))
+        data = InvokeBindingRequestData(data='hello dapr', metadata=(('ttlInSeconds', '1000'), ))
 
         # arrange
         self.assertEqual(b'hello dapr', data.data)
-        self.assertEqual({'ttlInSeconds':'1000'}, data.metadata)
+        self.assertEqual({'ttlInSeconds': '1000'}, data.metadata)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -88,19 +88,19 @@ class InvokeServiceResponseTests(unittest.TestCase):
         # assert
         self.assertEqual("test", resp_proto.method)
 
+
 class InvokeBindingResponseTests(unittest.TestCase):
     def test_bytes_message(self):
-        resp = InvokeBindingResponse(data = b'data', metadata = {})
+        resp = InvokeBindingResponse(data=b'data', metadata={})
         self.assertEqual({}, resp.metadata)
         self.assertEqual(b'data', resp.content)
         self.assertEqual('data', resp.text())
 
     def test_metadata(self):
-        resp = InvokeBindingResponse(data = b'data', metadata = {'status':'ok'})
-        self.assertEqual({'status':'ok'}, resp.metadata)
+        resp = InvokeBindingResponse(data=b'data', metadata={'status': 'ok'})
+        self.assertEqual({'status': 'ok'}, resp.metadata)
         self.assertEqual(b'data', resp.content)
         self.assertEqual('data', resp.text())
-
 
 
 if __name__ == '__main__':

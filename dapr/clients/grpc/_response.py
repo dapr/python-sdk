@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Optional, Union, Dict
+from typing import Optional, Dict
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -151,6 +151,7 @@ class InvokeServiceResponse(DaprResponse):
             raise ValueError(f'invalid type. serialized message type: {self._proto_any.type_url}')
         self._proto_any.Unpack(message)
 
+
 class InvokeBindingResponse(DaprResponse):
     """The response of invoke_binding API.
 
@@ -161,11 +162,11 @@ class InvokeBindingResponse(DaprResponse):
         metadata (Dict[str, str]): metadata sent as a reponse by the binding
     """
     def __init__(
-        self,
-        data: bytes,
-        metadata: Dict[str, str],
-        headers: Optional[MetadataTuple] = (),
-        trailers: Optional[MetadataTuple] = ()):
+            self,
+            data: bytes,
+            metadata: Dict[str, str],
+            headers: Optional[MetadataTuple] = (),
+            trailers: Optional[MetadataTuple] = ()):
         """Initializes InvokeBindingReponse from :obj:`runtime_v1.InvokeBindingResponse`.
 
         Args:

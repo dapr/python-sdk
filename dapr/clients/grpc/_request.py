@@ -66,6 +66,7 @@ class InvokeServiceRequestData:
     def content_type(self) -> Optional[str]:
         return self._content_type
 
+
 class InvokeBindingRequestData:
     """A request data representation for invoke_binding API.
 
@@ -80,33 +81,33 @@ class InvokeBindingRequestData:
             self,
             data: Union[bytes, str],
             metadata: Optional[MetadataTuple] = ()):
-            """Inits InvokeBindingRequestData with data and metadata if given.
+        """Inits InvokeBindingRequestData with data and metadata if given.
 
-            Args:
-                data (bytes, str): the data which is used for invoke_binding request.
-                metadata (MetadataTuple, optional): the metadata to be sent to the binding.
+        Args:
+            data (bytes, str): the data which is used for invoke_binding request.
+            metadata (MetadataTuple, optional): the metadata to be sent to the binding.
 
-            Raises:
-                ValueError: data is not bytes or str.
-                ValueError: metadata values are not str.
-            """
-            self._metadata = dict()
-            for item in metadata:
-                if not isinstance(item[1], str):
-                    raise (f'invalid metadata value type {type(item[1])}')
-                self._metadata[str(item[0])] = str(item[1])
-            self._data = None
-            if isinstance(data, str):
-                self._data = data.encode('utf-8')
-            elif isinstance(data, bytes):
-                self._data = data
-            else:
-                raise ValueError(f'invalid data type {type(data)}')
+        Raises:
+            ValueError: data is not bytes or str.
+            ValueError: metadata values are not str.
+        """
+        self._metadata = dict()
+        for item in metadata:   # type: ignore
+            if not isinstance(item[1], str):
+                raise ValueError(f'invalid metadata value type {type(item[1])}')
+            self._metadata[str(item[0])] = str(item[1])
+        self._data = b''
+        if isinstance(data, str):
+            self._data = data.encode('utf-8')
+        elif isinstance(data, bytes):
+            self._data = data
+        else:
+            raise ValueError(f'invalid data type {type(data)}')
 
     @property
     def data(self) -> bytes:
         return self._data
 
     @property
-    def metadata(self) -> Dict[str, str]: 
+    def metadata(self) -> Dict[str, str]:
         return self._metadata
