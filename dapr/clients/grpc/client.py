@@ -15,8 +15,8 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple
-from dapr.clients.grpc._request import InvokeServiceRequestData
-from dapr.clients.grpc._response import InvokeServiceResponse
+from dapr.clients.grpc._request import InvokeServiceRequestData, InvokeBindingRequestData
+from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse
 
 
 class DaprClient:
@@ -181,4 +181,58 @@ class DaprClient:
 
         return InvokeServiceResponse(
             response.data, response.content_type,
+            call.initial_metadata(), call.trailing_metadata())
+
+    def invoke_binding(
+        self,
+        name: str,
+        operation: str,
+        data: Union[bytes, str],
+        metadata: Optional[MetadataTuple] = ()) -> InvokeBindingResponse:
+        """Invokes the output bindnig with the specified operation.
+
+        The data field takes any JSON serializable value and acts as the
+        payload to be sent to the output binding. The metadata field is an
+        array of key/value pairs and allows you to set binding specific metadata
+        for each call. The operation field tells the Dapr binding which operation
+        it should perform.
+
+        The example calls output `binding` service with bytes data:
+
+            from dapr import DaprClient
+
+            with DaprClient() as d:
+                resp = d.invoke_binding(
+                    name = 'kafkaBinding',
+                    operation = 'create',
+                    data = b'message',
+                    metadata = (
+                        ('header1', 'value1)
+                    ),
+                )
+
+                # resp.content includes the content in bytes.
+                # resp.metadata include the metadata returned from the external system.
+
+        Args:
+            name (str): the name of the binding as defined in the components
+            operation (str): the operation to perform on the binding
+            data (bytes or str): bytes or str for data which will sent to the binding
+            metadata (tuple, optional): custom metadata to send to the binding
+
+        Returns:
+            :class:`InvokeBindingResponse` object returned from binding
+        """
+        req_data = InvokeBindingRequestData(data, metadata)
+
+        req = api_v1.InvokeBindingRequest(
+            name=name,
+            data=req_data.data,
+            metadata=req_data.metadata,
+            operation=operation
+        )
+
+        response, call = self._stub.InvokeBinding.with_call(req)
+        return InvokeBindingResponse(
+            response.data, dict(response.metadata),
             call.initial_metadata(), call.trailing_metadata())

@@ -86,6 +86,50 @@ class DaprGrpcClientTests(unittest.TestCase):
         resp.unpack(new_resp)
         self.assertEqual('test', new_resp.key)
 
+    def test_invoke_binding_bytes_data(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        resp = dapr.invoke_binding(
+            name='binding',
+            operation='create',
+            data=b'haha',
+            metadata=(
+                ('key1', 'value1'),
+                ('key2', 'value2'),
+            ),
+        )
+
+        self.assertEqual(b'haha', resp.content)
+        self.assertEqual({'key1':'value1','key2':'value2'}, resp.metadata)
+        self.assertEqual(2, len(resp.headers))
+        self.assertEqual(['value1'], resp.headers['hkey1'])
+        self.assertEqual(['value1'], resp.trailers['tkey1'])
+
+    def test_invoke_binding_no_metadata(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        resp = dapr.invoke_binding(
+            name='binding',
+            operation='create',
+            data=b'haha',
+        )
+
+        self.assertEqual(b'haha', resp.content)
+        self.assertEqual({}, resp.metadata)
+        self.assertEqual(0, len(resp.headers))
+        self.assertEqual(0, len(resp.trailers))
+
+    def test_invoke_binding_no_create(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        resp = dapr.invoke_binding(
+            name='binding',
+            operation='delete',
+            data=b'haha',
+        )
+
+        self.assertEqual(b'INVALID', resp.content)
+        self.assertEqual({}, resp.metadata)
+        self.assertEqual(0, len(resp.headers))
+        self.assertEqual(0, len(resp.trailers))
+
 
 if __name__ == '__main__':
     unittest.main()
