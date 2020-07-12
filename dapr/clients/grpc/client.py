@@ -16,7 +16,7 @@ from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple
 from dapr.clients.grpc._request import InvokeServiceRequestData
-from dapr.clients.grpc._response import InvokeServiceResponse
+from dapr.clients.grpc._response import InvokeServiceResponse, DaprResponse
 
 
 class DaprClient:
@@ -182,3 +182,58 @@ class DaprClient:
         return InvokeServiceResponse(
             response.data, response.content_type,
             call.initial_metadata(), call.trailing_metadata())
+
+    def publish_event(
+            self,
+            topic: str,
+            data: Union[bytes, str],
+            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+        """Publish to a given topic.
+
+        This publishes an event with bytes array or str data to a specified topic.
+        The str data is encoded into bytes with default charset of utf-8.
+        Custom metadata can be passed with the metadata field which will be passed
+        on a gRPC metadata.
+
+
+        The example publishes a byte array event to a topic:
+
+            from dapr import DaprClient
+
+            with DaprClient() as d:
+                resp = d.publish_event(
+                    topic='TOPIC_A'
+                    data=b'message',
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                )
+
+                # resp.headers includes the gRPC initial metadata.
+                # resp.trailers includes that gRPC trailing metadata.
+
+        Args:
+            topic (str): the topic name to publish to
+            data (bytes or str): bytes or str for data
+            metadata (tuple, optional): custom metadata
+
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
+        """
+        if not isinstance(data, bytes) and not isinstance(data, str):
+            raise ValueError(f'invalid data type {type(data)}')
+
+        req_data = data
+        if isinstance(data, str):
+            req_data = data.encode('utf-8')
+
+        req = api_v1.PublishEventRequest(
+            topic=topic,
+            data=req_data)
+
+        # response is google.protobuf.Empty
+        response, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+
+        return DaprResponse(
+            headers=call.initial_metadata(),
+            trailers=call.trailing_metadata())

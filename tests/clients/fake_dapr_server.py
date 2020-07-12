@@ -2,7 +2,7 @@ import grpc
 
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
-
+from google.protobuf import empty_pb2
 from dapr.proto import api_service_v1, common_v1
 
 
@@ -39,3 +39,17 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
 
         return common_v1.InvokeResponse(data=resp, content_type=content_type)
+
+    def PublishEvent(self, request, context):
+        headers = ()
+        trailers = ()
+        if request.topic:
+            headers = headers + (('htopic', request.topic),)
+            trailers = trailers + (('ttopic', request.topic),)
+        if request.data:
+            headers = headers + (('hdata', request.data), )
+            trailers = trailers + (('hdata', request.data), )
+
+        context.send_initial_metadata(headers)
+        context.set_trailing_metadata(trailers)
+        return empty_pb2.Empty()
