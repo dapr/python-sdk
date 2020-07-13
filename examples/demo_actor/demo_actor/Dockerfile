@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-FROM python:3.8-slim-buster
+FROM python:3.7-slim-buster
 
 WORKDIR /app
 COPY . . 

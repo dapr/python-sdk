@@ -6,7 +6,6 @@ Licensed under the MIT License.
 """
 
 import unittest
-from unittest.mock import AsyncMock
 
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
@@ -14,13 +13,15 @@ from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import FakeSimpleActor
+from tests.actor.fake_client import FakeDaprActorClient
+from tests.actor.utils import _run
 
 
-class ActorMethodDispatcherTests(unittest.IsolatedAsyncioTestCase):
+class ActorMethodDispatcherTests(unittest.TestCase):
     def setUp(self):
         self._testActorTypeInfo = ActorTypeInformation.create(FakeSimpleActor)
         self._serializer = DefaultJSONSerializer()
-        self._fake_client = AsyncMock()
+        self._fake_client = FakeDaprActorClient
         self._fake_runtime_ctx = ActorRuntimeContext(
             self._testActorTypeInfo, self._serializer,
             self._serializer, self._fake_client)
@@ -40,8 +41,8 @@ class ActorMethodDispatcherTests(unittest.IsolatedAsyncioTestCase):
         arg_names = dispatcher.get_return_type("ActorMethod")
         self.assertEqual(dict, arg_names)
 
-    async def test_dispatch(self):
+    def test_dispatch(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
         actorInstance = FakeSimpleActor(self._fake_runtime_ctx, None)
-        result = await dispatcher.dispatch(actorInstance, "ActorMethod", 10)
+        result = _run(dispatcher.dispatch(actorInstance, "ActorMethod", 10))
         self.assertEqual({'name': 'actor_method'}, result)
