@@ -130,6 +130,26 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(0, len(resp.headers))
         self.assertEqual(0, len(resp.trailers))
 
+    def test_publish_event(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        resp = dapr.publish_event(
+            topic='example',
+            data=b'haha',
+        )
+
+        self.assertEqual(2, len(resp.headers))
+        self.assertEqual(2, len(resp.trailers))
+        self.assertEqual(['haha'], resp.headers['hdata'])
+        self.assertEqual(['example'], resp.trailers['ttopic'])
+
+    def test_publish_error(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        with self.assertRaisesRegex(ValueError, "invalid type for data <class 'int'>"):
+            dapr.publish_event(
+                topic='example',
+                data=111,
+            )
+
 
 if __name__ == '__main__':
     unittest.main()
