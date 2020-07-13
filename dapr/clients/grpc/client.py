@@ -221,7 +221,7 @@ class DaprClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if not isinstance(data, bytes) and not isinstance(data, str):
-            raise ValueError(f'invalid data type {type(data)}')
+            raise ValueError(f'invalid type for data {type(data)}')
 
         req_data = data
         if isinstance(data, str):
