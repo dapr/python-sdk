@@ -1,21 +1,28 @@
-import os
-import grpc
+# ------------------------------------------------------------
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+# ------------------------------------------------------------
 
-from dapr.proto import api_v1, api_service_v1
-from google.protobuf.any_pb2 import Any
+import json
+import time
 
+from dapr import DaprClient
 
-# Start a gRPC client
-port = os.getenv('DAPR_GRPC_PORT')
-channel = grpc.insecure_channel(f"localhost:{port}")
-client = api_service_v1.DaprStub(channel)
-print(f"Started gRPC client on DAPR_GRPC_PORT: {port}")
+with DaprClient() as d:
+    id=0
+    while True:
+        id+=1
+        req_data = {
+            'id': id,
+            'message': 'hello world'
+        }
 
-data = 'ACTION=1'.encode('utf-8')
-# publishing a message to topic TOPIC_A
-client.PublishEvent(api_v1.PublishEventRequest(
-    topic='TOPIC_A', data=data))
+        # Create a typed message with content type and body
+        resp = d.publish_event(
+            'TOPIC_A',
+            data=json.dumps(req_data),
+        )
 
-print("Published!!")
-
-channel.close()
+        # Print the request
+        print(req_data, flush=True)
+        time.sleep(2)
