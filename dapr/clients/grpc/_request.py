@@ -74,7 +74,7 @@ class InvokeBindingRequestData:
     This seralizes data to bytes and metadata to a dictionary of key value pairs.
 
     Attributes:
-        data (bytes): the serialized data for invoke_binding request.
+        data (bytes, str): the data which is used for invoke_binding request.
         metadata (Dict[str, str]): the metadata sent to the binding.
     """
     def __init__(
