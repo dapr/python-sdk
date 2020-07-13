@@ -6,10 +6,12 @@ Licensed under the MIT License.
 """
 
 import unittest
+from unittest.mock import patch
 
 from dapr.clients.grpc.client import DaprClient
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
+from dapr.conf import settings
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -85,6 +87,27 @@ class DaprGrpcClientTests(unittest.TestCase):
         new_resp = common_v1.StateItem()
         resp.unpack(new_resp)
         self.assertEqual('test', new_resp.key)
+
+    @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
+    def test_dapr_api_token_insertion(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        resp = dapr.invoke_service(
+            id='targetId',
+            method='bytes',
+            data=b'haha',
+            content_type="text/plain",
+            metadata=(
+                ('key1', 'value1'),
+                ('key2', 'value2'),
+            ),
+        )
+
+        self.assertEqual(b'haha', resp.content)
+        self.assertEqual("text/plain", resp.content_type)
+        self.assertEqual(4, len(resp.headers))
+        self.assertEqual(['value1'], resp.headers['hkey1'])
+        self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
+        self.assertEqual(['value1'], resp.trailers['tkey1'])
 
 
 if __name__ == '__main__':
