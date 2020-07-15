@@ -158,7 +158,7 @@ class InvokeBindingResponse(DaprResponse):
     This inherits from DaprResponse and has the helpers to handle bytes array data.
 
     Attributes:
-        data (bytes): the data in response from the invoke_binding call
+        content (bytes): the data in response from the invoke_binding call
         metadata (Dict[str, str]): metadata sent as a reponse by the binding
     """
     def __init__(
