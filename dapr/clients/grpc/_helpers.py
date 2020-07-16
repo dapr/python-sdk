@@ -26,7 +26,7 @@ class _ClientCallDetails(
     pass
 
 
-class HeaderInterceptor(UnaryUnaryClientInterceptor):
+class DaprClientInterceptor(UnaryUnaryClientInterceptor):
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
 

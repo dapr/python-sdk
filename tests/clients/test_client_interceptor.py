@@ -7,10 +7,10 @@ Licensed under the MIT License.
 
 import unittest
 
-from dapr.clients.grpc._helpers import HeaderInterceptor, _ClientCallDetails
+from dapr.clients.grpc._helpers import DaprClientInterceptor, _ClientCallDetails
 
 
-class HeaderInterceptorTests(unittest.TestCase):
+class DaprClientInterceptorTests(unittest.TestCase):
 
     def setUp(self):
         self._fake_request = "fake request"
@@ -19,7 +19,7 @@ class HeaderInterceptorTests(unittest.TestCase):
         return call_details
 
     def test_intercept_unary_unary_single_header(self):
-        interceptor = HeaderInterceptor([('api-token', 'test-token')])
+        interceptor = DaprClientInterceptor([('api-token', 'test-token')])
         call_details = _ClientCallDetails("method1", 10, None, None, None, None)
         response = interceptor.intercept_unary_unary(
             self.fake_continuation, call_details, self._fake_request)
@@ -29,7 +29,7 @@ class HeaderInterceptorTests(unittest.TestCase):
         self.assertEqual([('api-token', 'test-token')], response.metadata)
 
     def test_intercept_unary_unary_existing_metadata(self):
-        interceptor = HeaderInterceptor([('api-token', 'test-token')])
+        interceptor = DaprClientInterceptor([('api-token', 'test-token')])
         call_details = _ClientCallDetails("method1", 10, [('header', 'value')], None, None, None)
         response = interceptor.intercept_unary_unary(
             self.fake_continuation, call_details, self._fake_request)

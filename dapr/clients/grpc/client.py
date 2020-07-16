@@ -14,7 +14,7 @@ from google.protobuf.message import Message as GrpcMessage
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
-from dapr.clients.grpc._helpers import MetadataTuple, HeaderInterceptor
+from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor
 from dapr.clients.grpc._request import InvokeServiceRequestData, InvokeBindingRequestData
 from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse, DaprResponse
 
@@ -49,7 +49,7 @@ class DaprClient:
         self._channel = grpc.insecure_channel(address)
 
         if settings.DAPR_API_TOKEN:
-            api_token_interceptor = HeaderInterceptor([
+            api_token_interceptor = DaprClientInterceptor([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
             self._channel = grpc.intercept_channel(self._channel, api_token_interceptor)
 
