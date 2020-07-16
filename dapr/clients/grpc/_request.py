@@ -5,8 +5,9 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 
+from dapr.clients.grpc._helpers import MetadataTuple
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 
@@ -64,3 +65,49 @@ class InvokeServiceRequestData:
     @property
     def content_type(self) -> Optional[str]:
         return self._content_type
+
+
+class InvokeBindingRequestData:
+    """A request data representation for invoke_binding API.
+
+    This stores the request data and metadata with the proper serialization.
+    This seralizes data to bytes and metadata to a dictionary of key value pairs.
+
+    Attributes:
+        data (bytes, str): the data which is used for invoke_binding request.
+        metadata (Dict[str, str]): the metadata sent to the binding.
+    """
+    def __init__(
+            self,
+            data: Union[bytes, str],
+            metadata: Optional[MetadataTuple] = ()):
+        """Inits InvokeBindingRequestData with data and metadata if given.
+
+        Args:
+            data (bytes, str): the data which is used for invoke_binding request.
+            metadata (MetadataTuple, optional): the metadata to be sent to the binding.
+
+        Raises:
+            ValueError: data is not bytes or str.
+            ValueError: metadata values are not str.
+        """
+        self._metadata = dict()
+        for item in metadata:   # type: ignore
+            if not isinstance(item[1], str):
+                raise ValueError(f'invalid metadata value type {type(item[1])}')
+            self._metadata[str(item[0])] = str(item[1])
+        self._data = b''
+        if isinstance(data, str):
+            self._data = data.encode('utf-8')
+        elif isinstance(data, bytes):
+            self._data = data
+        else:
+            raise ValueError(f'invalid data type {type(data)}')
+
+    @property
+    def data(self) -> bytes:
+        return self._data
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        return self._metadata
