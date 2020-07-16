@@ -42,7 +42,7 @@ This includes the following packages:
 ### Prerequisites
 
 * [Install Dapr standalone mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-standalone)
-* [Install Python 3.8+](https://www.python.org/downloads/)
+* [Install Python 3.7+](https://www.python.org/downloads/)
 
 ### Install Dapr python sdk
 
@@ -92,7 +92,7 @@ pip3 install -r dev-requirements.txt
 4. Run unit-test
 
 ```bash
-tox -e py38
+tox -e py37
 ```
 
 5. Run type check

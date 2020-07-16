@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      PYTHON_VER: 3.8
+      PYTHON_VER: 3.7
       TWINE_USERNAME: ${{ secrets.PYPI_UPLOAD_USER }}
       TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
     steps:
@@ -37,7 +37,7 @@ jobs:
         tox -e type
     - name: Run unit-tests
       run: |
-        tox -e py38
+        tox -e py37
     - name: Build and publish Dapr Python SDK
       if: github.event_name != 'pull_request'
       run: |

@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Optional
+from typing import Optional, Dict
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -121,6 +121,8 @@ class InvokeServiceResponse(DaprResponse):
         Raises:
             ValueError: the response data is the serialized protocol buffer message
         """
+        if self.is_proto():
+            raise ValueError('data is the serialized protocol buffer message')
         return self.content.decode('utf-8')
 
     @property
@@ -148,3 +150,52 @@ class InvokeServiceResponse(DaprResponse):
         if not self._proto_any.Is(message.DESCRIPTOR):
             raise ValueError(f'invalid type. serialized message type: {self._proto_any.type_url}')
         self._proto_any.Unpack(message)
+
+
+class InvokeBindingResponse(DaprResponse):
+    """The response of invoke_binding API.
+
+    This inherits from DaprResponse and has the helpers to handle bytes array data.
+
+    Attributes:
+        content (bytes): the data in response from the invoke_binding call
+        metadata (Dict[str, str]): metadata sent as a reponse by the binding
+    """
+    def __init__(
+            self,
+            data: bytes,
+            metadata: Dict[str, str],
+            headers: Optional[MetadataTuple] = (),
+            trailers: Optional[MetadataTuple] = ()):
+        """Initializes InvokeBindingReponse from :obj:`runtime_v1.InvokeBindingResponse`.
+
+        Args:
+            data (bytes): the data in response from the invoke_binding call
+            metadata (Dict[str, str]): metadata sent as a reponse by the binding
+            headers (Tuple, optional): the headers from Dapr gRPC response
+            trailers (Tuple, optional): the trailers from Dapr gRPC response
+
+        Raises:
+            ValueError: if the response data is not :class:`google.protobuf.any_pb2.Any`
+                object.
+        """
+        super(InvokeBindingResponse, self).__init__(headers, trailers)
+
+        if not isinstance(data, bytes):
+            raise ValueError(f'data type is invalid {type(data)}')
+        self._data = data
+        self._metadata = metadata
+
+    def text(self) -> str:
+        """Gets content as str."""
+        return self._data.decode('utf-8')
+
+    @property
+    def content(self) -> bytes:
+        """Gets raw bytes data."""
+        return self._data
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        """Gets the metadata in the response."""
+        return self._metadata
