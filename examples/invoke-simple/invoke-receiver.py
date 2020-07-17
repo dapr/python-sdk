@@ -1,14 +1,12 @@
-from dapr import App, CallbackResponse
+from dapr.ext.grpc import App, InvokeServiceRequest, InvokeServiceResponse
 
-app = App()
+app = App(50051)
 
 @app.method(name='my-method')
-def mymethod(metadata, data, content_type, *http_args) -> CallbackResponse:
-    print(metadata, flush=True)
-    print(data, flush=True)
+def mymethod(request: InvokeServiceRequest) -> InvokeServiceResponse:
+    print(request.metadata, flush=True)
+    print(request.text(), flush=True)
 
-    return CallbackResponse(b'INVOKE_RECEIVED', "text/plain; charset=UTF-8")
+    return InvokeServiceResponse(b'INVOKE_RECEIVED', "text/plain; charset=UTF-8")
 
-app.daprize()
-
-app.wait_until_stop()
+app.run()
