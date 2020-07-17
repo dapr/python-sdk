@@ -57,11 +57,10 @@ class DaprGrpcClientTests(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(b'haha', resp.content)
+        self.assertEqual(b'haha', resp.data)
         self.assertEqual("text/plain", resp.content_type)
         self.assertEqual(3, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
-        self.assertEqual(['value1'], resp.trailers['tkey1'])
 
     def test_invoke_service_proto_data(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
@@ -78,7 +77,6 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         self.assertEqual(3, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
-        self.assertEqual(['value1'], resp.trailers['tkey1'])
         self.assertTrue(resp.is_proto())
 
         # unpack to new protobuf object
