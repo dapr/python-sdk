@@ -15,7 +15,7 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple
-from dapr.clients.grpc._request import InvokeServiceRequestData
+from dapr.clients.grpc._request import InvokeServiceRequest
 from dapr.clients.grpc._response import InvokeServiceResponse
 
 
@@ -162,8 +162,7 @@ class DaprClient:
         Returns:
             :class:`InvokeServiceResponse` object returned from callee
         """
-        req_data = InvokeServiceRequestData(data, content_type)
-
+        req_data = InvokeServiceRequest(data, content_type)
         http_ext = None
         if http_verb:
             http_ext = self._get_http_extension(http_verb, http_querystring)
@@ -172,13 +171,15 @@ class DaprClient:
             id=id,
             message=common_v1.InvokeRequest(
                 method=method,
-                data=req_data.data,
+                data=req_data.proto,
                 content_type=req_data.content_type,
                 http_extension=http_ext)
         )
 
         response, call = self._stub.InvokeService.with_call(req, metadata=metadata)
 
-        return InvokeServiceResponse(
-            response.data, response.content_type,
-            call.initial_metadata(), call.trailing_metadata())
+        print(response, flush=True)
+        resp_data = InvokeServiceResponse(response.data, response.content_type)
+        resp_data.headers = call.initial_metadata()
+
+        return resp_data

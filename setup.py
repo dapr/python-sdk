@@ -16,9 +16,7 @@ version = __version__
 
 
 def is_release():
-    """Returns True only if version in the code is equal to git tag."""
-    tagged_version = run(['git', 'describe', '--tags', '--always']).decode('utf-8').strip()[1:]
-    return tagged_version == __version__
+    return '.dev' in __version__
 
 
 name = 'dapr'
@@ -39,7 +37,7 @@ build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 
 if not is_release():
     name += '-dev'
-    version = f'{__version__}.dev{build_number}'
+    version = f'{__version__}{build_number}'
     description = 'The developmental release for Dapr Python SDK.'
     long_description = 'This is the developmental release for Dapr Python SDK.'
 

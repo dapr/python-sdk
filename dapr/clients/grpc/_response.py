@@ -5,14 +5,13 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Optional, Union, Tuple, List
+from typing import Any, Optional, Union
 
-from dapr.proto import common_v1, appcallback_v1
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._helpers import MetadataDict, MetadataTuple
+from dapr.clients.grpc._helpers import MetadataDict, MetadataTuple, tuple_to_dict, unpack
 
 
 class DaprResponse:
@@ -23,37 +22,41 @@ class DaprResponse:
 
     Attributes:
         headers(dict): A dict to include the headers from Dapr gRPC Response.
-        trailers(dict): A dict to include the trailers from Dapr gRPC Response.
     """
 
     def __init__(
             self,
-            headers: Optional[MetadataTuple] = (),
-            trailers: Optional[MetadataTuple] = ()):
+            headers: MetadataTuple = ()):
         """Inits DapResponse with headers and trailers.
 
         Args:
-            headers (Tuple, optional): the tuple for the headers from gRPC response
-            trailers (Tuple, optional): the tuple for the trailers from gRPC response
+            headers (tuple, optional): the tuple for the headers from response
         """
-        self._headers = self._from_tuple(headers)
-        self._trailers = self._from_tuple(trailers)
-
-    def _from_tuple(self, metadata: Optional[MetadataTuple]) -> MetadataDict:
-        d: MetadataDict = {}
-        for k, v in metadata:  # type: ignore
-            d.setdefault(k, []).append(v)
-        return d
+        self.headers = headers
 
     @property
     def headers(self) -> MetadataDict:
         """Returns headers tuple as a dict."""
+        return self.get_headers(as_dict=True)
+
+    def get_headers(self, as_dict: Optional[bool] = False) -> Union[MetadataDict, MetadataTuple]:
+        """Gets headers from the response.
+        
+        Args:
+            as_dict (bool): dict type headers if as_dict is True. Otherwise, return
+                tuple headers.
+        
+        Returns:
+            dict or tuple: response headers.
+        """
+        if as_dict:
+            return tuple_to_dict(self._headers)
         return self._headers
 
-    @property
-    def trailers(self) -> MetadataDict:
-        """Returns trailers tuple as a dict."""
-        return self._trailers
+    @headers.setter
+    def headers(self, val: MetadataTuple) -> None:
+        """Set response headers."""
+        self._headers = val
 
 
 class InvokeServiceResponse(DaprResponse):
@@ -71,50 +74,75 @@ class InvokeServiceResponse(DaprResponse):
     """
     def __init__(
             self,
-            data: GrpcAny,
+            data: Any = None,
             content_type: Optional[str] = None,
-            headers: Optional[MetadataTuple] = (),
-            trailers: Optional[MetadataTuple] = ()):
+            headers: Optional[MetadataTuple] = ()):
         """Initializes InvokeServiceReponse from :obj:`common_v1.InvokeResponse`.
 
         Args:
             data (:obj:`google.protobuf.any_pb2.Any`): the response data from Dapr response
             content_type (str, optional): the content type of the bytes data
             headers (Tuple, optional): the headers from Dapr gRPC response
-            trailers (Tuple, optional): the trailers from Dapr gRPC response
 
         Raises:
             ValueError: if the response data is not :class:`google.protobuf.any_pb2.Any`
                 object.
         """
-        super(InvokeServiceResponse, self).__init__(headers, trailers)
-        if not isinstance(data, GrpcAny):
-            raise ValueError('data is not protobuf message.')
-        self._proto_any = data
+        super(InvokeServiceResponse, self).__init__(headers)
         self._content_type = content_type
+        self.headers = headers
+        self.data = data
+        if not content_type and not self.is_proto():
+            self.content_type = DEFAULT_JSON_CONTENT_TYPE
 
     @property
-    def data(self) -> GrpcAny:
+    def proto(self) -> GrpcAny:
         """Gets raw serialized protocol buffer message.
 
         Raises:
             ValueError: data is not protocol buffer message object
         """
-        if not self.is_proto():
-            raise ValueError('data is not protocol buffer message object')
-        return self._proto_any
+        return self._data
+
+    @proto.setter
+    def proto(self, val: GrpcMessage) -> None:
+        if not isinstance(val, GrpcMessage):
+            raise ValueError('invalid data type')
+        self._data = GrpcAny()
+        self._data.Pack(val)
+        self._content_type = None
+
+    def is_proto(self) -> bool:
+        """Returns True if the response data is the serialized protocol buffer message."""
+        return hasattr(self, '_data') and self._data.type_url
 
     @property
-    def content(self) -> bytes:
+    def data(self) -> bytes:
         """Gets raw bytes data if the response data content is not serialized
         protocol buffer message.
 
         Raises:
             ValueError: the response data is the serialized protocol buffer message
         """
+        print(self._data, flush=True)
         if self.is_proto():
-            raise ValueError('data is the serialized protocol buffer message')
-        return self._proto_any.value
+            raise ValueError('data is protocol buffer message object.')
+        return self._data.value
+
+    @data.setter
+    def data(self, val: Any) -> None:
+        if val is None:
+            return
+        if isinstance(val, str):
+            val = val.encode('utf-8')
+        if isinstance(val, (bytes, str)):
+            self._data = GrpcAny(value=val)
+        elif isinstance(val, GrpcAny):
+            self._data = val
+        elif isinstance(val, GrpcMessage):
+            self.proto = val
+        else:
+            raise ValueError(f'invalid data type {type(val)}')
 
     def text(self) -> str:
         """Gets content as str if the response data content is not serialized
@@ -123,16 +151,16 @@ class InvokeServiceResponse(DaprResponse):
         Raises:
             ValueError: the response data is the serialized protocol buffer message
         """
-        return self.content.decode('utf-8')
+        return self.data.decode('utf-8')
 
     @property
     def content_type(self) -> Optional[str]:
         """Gets the content type of content attribute."""
         return self._content_type
 
-    def is_proto(self) -> bool:
-        """Returns True if the response data is the serialized protocol buffer message."""
-        return self._proto_any.type_url != ''
+    @content_type.setter
+    def content_type(self, val: str) -> None:
+        self._content_type = val
 
     def unpack(self, message: GrpcMessage) -> None:
         """Unpack the serialized protocol buffer message.
@@ -145,68 +173,4 @@ class InvokeServiceResponse(DaprResponse):
             ValueError: message is not protocol buffer message object or message's type is not
                 matched with the response data type
         """
-        if not isinstance(message, GrpcMessage):
-            raise ValueError('output message is not protocol buffer message object')
-        if not self._proto_any.Is(message.DESCRIPTOR):
-            raise ValueError(f'invalid type. serialized message type: {self._proto_any.type_url}')
-        self._proto_any.Unpack(message)
-
-
-class CallbackResponse(DaprResponse):
-    def __init__(
-            self,
-            data: Union[bytes, GrpcMessage],
-            content_type: Optional[str] = None,
-            headers: Optional[MetadataTuple] = (),
-            trailers: Optional[MetadataTuple] = ()):
-        super(CallbackResponse, self).__init__(headers, trailers)
-
-        self._data = GrpcAny()
-        if isinstance(data, bytes):
-            self._data.value = data
-            self._content_type = content_type
-            if not content_type:
-                self._content_type = DEFAULT_JSON_CONTENT_TYPE
-        elif isinstance(data, GrpcMessage):
-            self._data.Pack(data)
-            self._content_type = None
-        else:
-            raise ValueError(f'invalid data type {type(data)}')
-
-    @property
-    def rawdata(self) -> GrpcAny:
-        return self._data
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self._content_type
-
-
-class BindingResponse:
-    def __init__(
-            self,
-            state_store: Optional[str]=None,
-            states: Optional[Tuple[Tuple[str, bytes], ...]]=(),
-            bindings: Optional[List[str]]=[],
-            binding_data: Optional[bytes]=None,
-            binding_concurrnecy: Optional[str]='SEQUENTIAL'):
-        self._resp = appcallback_v1.BindingEventResponse()
-
-        if state_store is not None:
-            state_items = []
-            for key, val in states:
-                if not isinstance(val, bytes):
-                    raise ValueError(f'{val} is not bytes')
-                state_items.append(common_v1.StateItem(key=key, value=val))
-            self._resp.state_store = state_store
-            self._resp.states = state_items
-
-        if len(bindings) > 0:
-            self._resp.to = bindings
-            self._resp.data = binding_data
-            self._resp.concurrency = \
-                appcallback_v1.BindingEventResponse.BindingEventConcurrency.Value(binding_concurrnecy)
-
-    @property
-    def event_response(self) -> appcallback_v1.BindingEventResponse:
-        return self._resp
+        unpack(self.proto, message)
