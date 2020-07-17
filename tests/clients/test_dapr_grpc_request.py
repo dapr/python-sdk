@@ -7,11 +7,11 @@ Licensed under the MIT License.
 
 import unittest
 
-from dapr.clients.grpc._request import InvokeServiceRequest
+from dapr.clients.grpc._request import InvokeServiceRequest, InvokeBindingRequestData
 from dapr.proto import common_v1
 
 
-class InvokeServiceRequestDataTests(unittest.TestCase):
+class InvokeServiceRequestTests(unittest.TestCase):
     def test_bytes_data(self):
         # act
         req = InvokeServiceRequest(data=b'hello dapr')
@@ -39,6 +39,32 @@ class InvokeServiceRequestDataTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             data = InvokeServiceRequest(data=123)
             self.assertIsNone(data, 'This should not be reached.')
+
+
+class InvokeBindingRequestDataTests(unittest.TestCase):
+    def test_bytes_data(self):
+        # act
+        data = InvokeBindingRequestData(data=b'hello dapr')
+
+        # arrange
+        self.assertEqual(b'hello dapr', data.data)
+        self.assertEqual({}, data.metadata)
+
+    def test_str_data(self):
+        # act
+        data = InvokeBindingRequestData(data='hello dapr')
+
+        # arrange
+        self.assertEqual(b'hello dapr', data.data)
+        self.assertEqual({}, data.metadata)
+
+    def test_non_empty_metadata(self):
+        # act
+        data = InvokeBindingRequestData(data='hello dapr', metadata=(('ttlInSeconds', '1000'), ))
+
+        # arrange
+        self.assertEqual(b'hello dapr', data.data)
+        self.assertEqual({'ttlInSeconds': '1000'}, data.metadata)
 
 
 if __name__ == '__main__':

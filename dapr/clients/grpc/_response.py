@@ -174,3 +174,52 @@ class InvokeServiceResponse(DaprResponse):
                 matched with the response data type
         """
         unpack(self.proto, message)
+
+
+class InvokeBindingResponse(DaprResponse):
+    """The response of invoke_binding API.
+
+    This inherits from DaprResponse and has the helpers to handle bytes array data.
+
+    Attributes:
+        content (bytes): the data in response from the invoke_binding call
+        metadata (Dict[str, str]): metadata sent as a reponse by the binding
+    """
+    def __init__(
+            self,
+            data: bytes,
+            metadata: Dict[str, str],
+            headers: Optional[MetadataTuple] = (),
+            trailers: Optional[MetadataTuple] = ()):
+        """Initializes InvokeBindingReponse from :obj:`runtime_v1.InvokeBindingResponse`.
+
+        Args:
+            data (bytes): the data in response from the invoke_binding call
+            metadata (Dict[str, str]): metadata sent as a reponse by the binding
+            headers (Tuple, optional): the headers from Dapr gRPC response
+            trailers (Tuple, optional): the trailers from Dapr gRPC response
+
+        Raises:
+            ValueError: if the response data is not :class:`google.protobuf.any_pb2.Any`
+                object.
+        """
+        super(InvokeBindingResponse, self).__init__(headers, trailers)
+
+        if not isinstance(data, bytes):
+            raise ValueError(f'data type is invalid {type(data)}')
+        self._data = data
+        self._metadata = metadata
+
+    def text(self) -> str:
+        """Gets content as str."""
+        return self._data.decode('utf-8')
+
+    @property
+    def content(self) -> bytes:
+        """Gets raw bytes data."""
+        return self._data
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        """Gets the metadata in the response."""
+        return self._metadata
