@@ -5,7 +5,12 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+<<<<<<< HEAD
 from typing import Optional, Dict
+=======
+from typing import Optional
+from typing import Dict
+>>>>>>> 6ce2e39... Add get_secret to convenient layer
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -199,3 +204,32 @@ class InvokeBindingResponse(DaprResponse):
     def metadata(self) -> Dict[str, str]:
         """Gets the metadata in the response."""
         return self._metadata
+class GetSecretResponse(DaprResponse):
+    """The response of get_secret API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        secret (Dict[str, str]): secret received from response
+    """
+    def __init__(
+            self,
+            secret: Dict[str, str],
+            headers: Optional[MetadataTuple] = (),
+            trailers: Optional[MetadataTuple] = ()):
+        """Initializes GetSecretReponse from :obj:`dapr_v1.GetSecretResponse`.
+
+        Args:
+            secret (Dict[Str, str]): the secret from Dapr response
+            headers (Tuple, optional): the headers from Dapr gRPC response
+            trailers (Tuple, optional): the trailers from Dapr gRPC response
+
+        """
+        super(GetSecretResponse, self).__init__(headers, trailers)
+        self._secret = secret
+
+    @property
+    def secret(self) -> Dict[str, str]:
+        """Gets secret as a dict
+        """
+        return self._secret

@@ -16,7 +16,7 @@ from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor
 from dapr.clients.grpc._request import InvokeServiceRequestData, InvokeBindingRequestData
-from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse, DaprResponse
+from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse, DaprResponse, GetSecretResponse
 
 
 class DaprClient:
@@ -280,5 +280,64 @@ class DaprClient:
         response, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
 
         return DaprResponse(
+            headers=call.initial_metadata(),
+            trailers=call.trailing_metadata())
+
+    def get_secret(
+            self,
+            store_name: str,
+            key: str,
+            metadata: Optional[MetadataTuple] = ()) -> GetSecretResponse:
+        """Get secret with a given key.
+
+        This gets a secret from secret store with a given key and secret store name.
+        Custom metadata can be passed with the metadata field which will be converted
+        to a dictionary of key value pairs.
+
+
+        The example gets a secret from secret store:
+
+            from dapr import DaprClient
+
+            with DaprClient() as d:
+                resp = d.get_secret(
+                    store_name='secretstoreA',
+                    key='keyA',
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                )
+
+                # resp.headers includes the gRPC initial metadata.
+                # resp.trailers includes that gRPC trailing metadata.
+
+        Args:
+            store_name (str): store name to get secret from
+            key (str): str for key
+            metadata (MetadataTuple, optional): custom metadata
+
+        Raises:
+            ValueError: metadata values are not str
+
+        Returns:
+            :class:`GetSecretResponse` object with the secret and metadata returned from callee
+        """
+
+        metadata_dict = dict()
+
+        for item in metadata:
+            if not isinstance(item[1], str):
+                raise ValueError(f'invalid metadata value type {type(item[1])}')
+            metadata_dict[str(item[0])] = str(item[1])
+
+        req = api_v1.GetSecretRequest(
+            store_name=store_name,
+            key=key,
+            metadata=metadata_dict)
+
+        response, call = self._stub.GetSecret.with_call(req)
+
+        return GetSecretResponse(
+            secret=response.data,
             headers=call.initial_metadata(),
             trailers=call.trailing_metadata())

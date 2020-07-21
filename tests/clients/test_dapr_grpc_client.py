@@ -173,6 +173,52 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
         self.assertEqual(['value1'], resp.trailers['tkey1'])
 
+    def test_get_secret(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        key1 = 'key_1'
+        resp = dapr.get_secret(
+            store_name='store_1',
+            key=key1,
+            metadata=(
+                ('key1', 'value1'),
+                ('key2', 'value2'),
+            ),
+        )
+
+        self.assertEqual(1, len(resp.headers))
+        self.assertEqual(1, len(resp.trailers))
+        self.assertEqual([key1], resp.headers['keyh'])
+        self.assertEqual([key1], resp.trailers['keyt'])
+        self.assertEqual({key1: "val"}, resp._secret)
+
+    def test_get_secret_metadata_absent(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        key1 = 'key_1'
+        resp = dapr.get_secret(
+            store_name='store_1',
+            key=key1,
+        )
+
+        self.assertEqual(1, len(resp.headers))
+        self.assertEqual(1, len(resp.trailers))
+        self.assertEqual([key1], resp.headers['keyh'])
+        self.assertEqual([key1], resp.trailers['keyt'])
+        self.assertEqual({key1: "val"}, resp._secret)
+
+    def test_get_secret_value_error(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        key1 = 'key_1'
+
+        with self.assertRaises(ValueError):
+            _ = dapr.get_secret(
+            store_name='store_1',
+            key=key1,
+            metadata=(
+                ('key1', 1),
+                ('key2', 'value'),
+            ),
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
