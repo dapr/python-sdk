@@ -14,10 +14,8 @@ from google.protobuf.message import Message as GrpcMessage
 
 from dapr.proto import appcallback_service_v1, common_v1, appcallback_v1
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._request import InvokeServiceRequest
+from dapr.clients.grpc._request import InvokeServiceRequest, InputBindingRequest
 from dapr.clients.grpc._response import InvokeServiceResponse
-
-from dapr.ext.grpc.request import InputBindingRequest
 
 
 InvokeMethodCallback = Callable[[InvokeServiceRequest], InvokeServiceResponse]
@@ -58,7 +56,7 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
     def OnInvoke(
             self,
             request: common_v1.InvokeRequest,
-            context) -> common_v1.InvokeResponse:
+            context: grpc.ServicerContext) -> common_v1.InvokeResponse:
         """Invokes service method with InvokeRequest.
         """
         if request.method not in self._invoke_method_map:
@@ -66,6 +64,7 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
             raise NotImplementedError(f'{request.method} method not implemented!')
 
         req = InvokeServiceRequest(request.data, request.content_type)
+        req.metadata = context.invocation_metadata()
         resp = self._invoke_method_map[request.method](req)
 
         if not resp:
@@ -89,7 +88,9 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
             data=resp_data.proto, content_type=resp_data.content_type)
 
     def ListTopicSubscriptions(
-            self, request, context) -> appcallback_v1.ListTopicSubscriptionsResponse:
+            self,
+            request: empty_pb2.Empty,
+            context: grpc.ServicerContext) -> appcallback_v1.ListTopicSubscriptionsResponse:
         """Lists all topics subscribed by this app."""
         return appcallback_v1.ListTopicSubscriptionsResponse(
             subscriptions=self._registered_topics)
@@ -97,7 +98,7 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
     def OnTopicEvent(
             self,
             request: appcallback_v1.TopicEventRequest,
-            context) -> None:
+            context: grpc.ServicerContext) -> None:
         """Subscribes events from Pubsub."""
         if request.topic not in self._subscription_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -110,13 +111,16 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
         event.SetData(request.data)
         event.SetContentType(request.data_content_type)
 
+        # TODO: add metadata from context to CE envelope
+
         self._subscription_map[request.topic](event)
 
         return empty_pb2.Empty()
-        
 
     def ListInputBindings(
-            self, request, context) -> appcallback_v1.ListInputBindingsResponse:
+            self,
+            request: empty_pb2.Empty,
+            context: grpc.ServicerContext) -> appcallback_v1.ListInputBindingsResponse:
         """Lists all input bindings subscribed by this app."""
         return appcallback_v1.ListInputBindingsResponse(
             bindings=self._registered_bindings)
@@ -124,7 +128,7 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
     def OnBindingEvent(
             self,
             request: appcallback_v1.BindingEventRequest,
-            context) -> appcallback_v1.BindingEventResponse:
+            context: grpc.ServicerContext) -> appcallback_v1.BindingEventResponse:
         """Listens events from the input bindings
         User application can save the states or send the events to the output
         bindings optionally by returning BindingEventResponse.
@@ -133,7 +137,9 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             raise NotImplementedError(f'{request.name} binding not implemented!')
 
-        self._binding_map[request.name](InputBindingRequest(request.metadata, request.data))
+        req = InputBindingRequest(request.data, request.metadata)
+        req.metadata = context.invocation_metadata()
+        self._binding_map[request.name](req)
 
         # TODO: support output bindings options
         return appcallback_v1.BindingEventResponse()

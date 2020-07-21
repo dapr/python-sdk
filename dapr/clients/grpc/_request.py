@@ -15,7 +15,26 @@ from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._helpers import MetadataDict, MetadataTuple, tuple_to_dict, unpack
 
 
-class InvokeServiceRequest:
+class DaprRequest:
+    def __init__(self, metadata: MetadataTuple):
+        self.metadata = metadata
+
+    @property
+    def metadata(self) -> MetadataDict:
+        """Returns headers tuple as a dict."""
+        return self.get_metadata(as_dict=True)
+
+    def get_metadata(self, as_dict: Optional[bool] = False) -> Union[MetadataDict, MetadataTuple]:
+        if as_dict:
+            return tuple_to_dict(self._metadata)
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, val: MetadataTuple) -> None:
+        self._metadata = val
+
+
+class InvokeServiceRequest(DaprRequest):
     """A request data representation for invoke_service API.
 
     This stores the request data with the proper serialization. This seralizes
@@ -55,6 +74,8 @@ class InvokeServiceRequest:
         Raises:
             ValueError: data is not bytes or :obj:`google.protobuf.message.Message`.
         """
+        super(InvokeServiceRequest, self).__init__(())
+
         self._content_type = content_type
         self._http_verb = None
         self._http_querystring: Dict[str, str] = {}
@@ -62,20 +83,6 @@ class InvokeServiceRequest:
         self.data = data
         if not content_type and not self.is_proto():
             self.content_type = DEFAULT_JSON_CONTENT_TYPE
-
-    @property
-    def metadata(self) -> MetadataDict:
-        """Returns headers tuple as a dict."""
-        return self.get_metadata(as_dict=True)
-
-    def get_metadata(self, as_dict: Optional[bool] = False) -> Union[MetadataDict, MetadataTuple]:
-        if as_dict:
-            return tuple_to_dict(self._metadata)
-        return self._metadata
-
-    @metadata.setter
-    def metadata(self, val: MetadataTuple) -> None:
-        self._metadata = val
 
     @property
     def http_verb(self) -> str:
@@ -144,7 +151,6 @@ class InvokeServiceRequest:
         else:
             raise ValueError(f'invalid data type {type(val)}')
 
-    @property
     def text(self) -> str:
         return self.data.decode('utf-8')
 
@@ -157,47 +163,49 @@ class InvokeServiceRequest:
         self._content_type = val
 
 
-class InvokeBindingRequestData:
+class InvokeBindingRequest(DaprRequest):
     """A request data representation for invoke_binding API.
 
     This stores the request data and metadata with the proper serialization.
     This seralizes data to bytes and metadata to a dictionary of key value pairs.
 
     Attributes:
-        data (bytes, str): the data which is used for invoke_binding request.
+        data (bytes): the data which is used for invoke_binding request.
         metadata (Dict[str, str]): the metadata sent to the binding.
     """
     def __init__(
             self,
             data: Union[bytes, str],
-            metadata: Optional[MetadataTuple] = ()):
+            binding_metadata: Dict[str, str] = {}):
         """Inits InvokeBindingRequestData with data and metadata if given.
 
         Args:
             data (bytes, str): the data which is used for invoke_binding request.
-            metadata (MetadataTuple, optional): the metadata to be sent to the binding.
+            binding_metadata (tuple, optional): the metadata to be sent to the binding.
 
         Raises:
             ValueError: data is not bytes or str.
-            ValueError: metadata values are not str.
         """
-        self._metadata = dict()
-        for item in metadata:   # type: ignore
-            if not isinstance(item[1], str):
-                raise ValueError(f'invalid metadata value type {type(item[1])}')
-            self._metadata[str(item[0])] = str(item[1])
-        self._data = b''
-        if isinstance(data, str):
-            self._data = data.encode('utf-8')
-        elif isinstance(data, bytes):
-            self._data = data
-        else:
-            raise ValueError(f'invalid data type {type(data)}')
+        super(InvokeBindingRequest, self).__init__(())
+        self.data = data
+        self._binding_metadata = binding_metadata
 
     @property
     def data(self) -> bytes:
         return self._data
 
+    @data.setter
+    def data(self, val: Union[bytes, str]) -> None:
+        if isinstance(val, str):
+            val = val.encode('utf-8')
+        if isinstance(val, bytes):
+            self._data = val
+        else:
+            raise ValueError(f'invalid data type {type(val)}')
+
+    def text(self) -> str:
+        return self.data.decode('utf-8')
+
     @property
-    def metadata(self) -> Dict[str, str]:
-        return self._metadata
+    def binding_metadata(self):
+        return self._binding_metadata

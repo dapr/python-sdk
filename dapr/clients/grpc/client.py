@@ -15,7 +15,7 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple
-from dapr.clients.grpc._request import InvokeServiceRequest, InvokeBindingRequestData
+from dapr.clients.grpc._request import InvokeServiceRequest, InvokeBindingRequest
 from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse, DaprResponse
 
 
@@ -194,7 +194,9 @@ class DaprClient:
         array of key/value pairs and allows you to set binding specific metadata
         for each call. The operation field tells the Dapr binding which operation
         it should perform.
+
         The example calls output `binding` service with bytes data:
+
             from dapr import DaprClient
             with DaprClient() as d:
                 resp = d.invoke_binding(
@@ -205,17 +207,20 @@ class DaprClient:
                         ('header1', 'value1)
                     ),
                 )
-                # resp.content includes the content in bytes.
+                # resp.data includes the response data in bytes.
                 # resp.metadata include the metadata returned from the external system.
+
         Args:
             name (str): the name of the binding as defined in the components
             operation (str): the operation to perform on the binding
             data (bytes or str): bytes or str for data which will sent to the binding
             metadata (tuple, optional): custom metadata to send to the binding
+
         Returns:
             :class:`InvokeBindingResponse` object returned from binding
         """
-        req_data = InvokeBindingRequestData(data, metadata)
+        req_data = InvokeBindingRequest(data)
+        req_data.metadata = metadata
 
         req = api_v1.InvokeBindingRequest(
             name=name,
@@ -227,7 +232,7 @@ class DaprClient:
         response, call = self._stub.InvokeBinding.with_call(req)
         return InvokeBindingResponse(
             response.data, dict(response.metadata),
-            call.initial_metadata(), call.trailing_metadata())
+            call.initial_metadata())
 
     def publish_event(
             self,
@@ -239,7 +244,9 @@ class DaprClient:
         The str data is encoded into bytes with default charset of utf-8.
         Custom metadata can be passed with the metadata field which will be passed
         on a gRPC metadata.
+
         The example publishes a byte array event to a topic:
+
             from dapr import DaprClient
             with DaprClient() as d:
                 resp = d.publish_event(
@@ -250,11 +257,12 @@ class DaprClient:
                     ),
                 )
                 # resp.headers includes the gRPC initial metadata.
-                # resp.trailers includes that gRPC trailing metadata.
+
         Args:
             topic (str): the topic name to publish to
             data (bytes or str): bytes or str for data
             metadata (tuple, optional): custom metadata
+
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
@@ -270,8 +278,6 @@ class DaprClient:
             data=req_data)
 
         # response is google.protobuf.Empty
-        response, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+        _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
 
-        return DaprResponse(
-            headers=call.initial_metadata(),
-            trailers=call.trailing_metadata())
+        return DaprResponse(call.initial_metadata())
