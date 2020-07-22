@@ -5,7 +5,8 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Optional, Dict
+from typing import Optional
+from typing import Dict
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -199,6 +200,8 @@ class InvokeBindingResponse(DaprResponse):
     def metadata(self) -> Dict[str, str]:
         """Gets the metadata in the response."""
         return self._metadata
+
+
 class GetSecretResponse(DaprResponse):
     """The response of get_secret API.
 

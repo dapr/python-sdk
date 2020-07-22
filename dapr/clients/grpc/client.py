@@ -16,7 +16,8 @@ from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor
 from dapr.clients.grpc._request import InvokeServiceRequestData, InvokeBindingRequestData
-from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse, DaprResponse, GetSecretResponse
+from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse, DaprResponse,
+from dapr.clients.grpc._response import GetSecretResponse
 
 
 class DaprClient:

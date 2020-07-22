@@ -211,13 +211,13 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             _ = dapr.get_secret(
-            store_name='store_1',
-            key=key1,
-            metadata=(
-                ('key1', 1),
-                ('key2', 'value'),
-            ),
-        )
+                    store_name='store_1',
+                    key=key1,
+                    metadata=(
+                        ('key1', 1),
+                        ('key2', 'value'),
+                    ),
+                )
 
 
 if __name__ == '__main__':
