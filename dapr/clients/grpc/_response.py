@@ -5,12 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-<<<<<<< HEAD
 from typing import Optional, Dict
-=======
-from typing import Optional
-from typing import Dict
->>>>>>> 6ce2e39... Add get_secret to convenient layer
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
