@@ -80,7 +80,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         key = request.key
 
-        headers = headers + (('keyh', key ), )
+        headers = headers + (('keyh', key), )
         trailers = trailers + (('keyt', key), )
 
         resp = {key: "val"}
