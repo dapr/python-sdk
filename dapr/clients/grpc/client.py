@@ -326,7 +326,7 @@ class DaprClient:
 
         metadata_dict = dict()
 
-        for item in metadata:
+        for item in metadata:   # type: ignore
             if not isinstance(item[1], str):
                 raise ValueError(f'invalid metadata value type {type(item[1])}')
             metadata_dict[str(item[0])] = str(item[1])
