@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import grpc  # type: ignore
 
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from google.protobuf.message import Message as GrpcMessage
 
@@ -282,3 +282,46 @@ class DaprClient:
         return DaprResponse(
             headers=call.initial_metadata(),
             trailers=call.trailing_metadata())
+
+    def get_state(
+        self,
+        store_name: str,
+        key: str
+    ):
+        try:
+            if len(store_name) == 0 or len(store_name.strip()) == 0:
+                raise ValueError("State store name cannot be empty")
+            req = api_v1.SaveStateRequest(store_name=store_name, key=key)
+            resp = self._stub.GetState(req)
+            return resp.data
+        except Exception as e:
+            return e
+
+
+    def save_state(
+            self,
+            store_name: str,
+            states: List[dict]):
+        """Saves key-value pairs to a statestore
+        The example saves states to a statestore:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.save_state(
+                    store_name='state_store'
+                    states=[{'key': 'key1', 'value': 'value1'}],
+                )
+        Args:
+            store_name (str): the state store name to save to
+            states (List[dict]): the key-value pairs to be saved
+        Returns:
+            None
+        """
+        try:
+            if len(store_name) == 0 or len(store_name.strip()) == 0:
+                raise ValueError("State store name cannot be empty")
+            state_items = [common_v1.StateItem(
+                key=state['key'], value=state['value'].encode('utf-8')) for state in states]
+            req = api_v1.SaveStateRequest(store_name=store_name, states=state_items)
+            self._stub.SaveState(req)
+        except Exception as e:
+            return e

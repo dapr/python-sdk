@@ -10,6 +10,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def __init__(self):
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         api_service_v1.add_DaprServicer_to_server(self, self._server)
+        self.store = {}
 
     def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
@@ -73,3 +74,16 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
+
+    def SaveState(self, request):
+        for states in request.states:
+            if state['key'] and state['value']:
+                self.store[state['key']] = state['value']
+        return empty_pb2.Empty()
+
+    def GetState(self, request):
+        key = request.key
+        if key not in self.store:
+            return empty_pb2.Empty()
+        else:
+            return api_v1.GetStateResponse(data=self.store[key])

@@ -173,6 +173,14 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
         self.assertEqual(['value1'], resp.trailers['tkey1'])
 
+    def test_save_state(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        DaprClient.save_state(
+            store_name="statestore",
+            states=[{'key': 'key1', 'value': 'value1'}, {'key': 'key2', 'value': 'value2'}]
+        )
+        resp = DaprClient.get_state(store_name="statestore", key="key1")
+        self.assertEqual(b'value1', resp.data)
 
 if __name__ == '__main__':
     unittest.main()
