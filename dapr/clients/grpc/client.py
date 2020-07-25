@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import grpc  # type: ignore
 
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 
 from google.protobuf.message import Message as GrpcMessage
 
@@ -288,12 +288,13 @@ class DaprClient:
             self,
             store_name: str,
             key: str,
+            secret_metadata: Optional[Dict[str, str]] = {},
             metadata: Optional[MetadataTuple] = ()) -> GetSecretResponse:
         """Get secret with a given key.
 
         This gets a secret from secret store with a given key and secret store name.
-        Custom metadata can be passed with the metadata field which will be converted
-        to a dictionary of key value pairs.
+        Metadata for request can be passed with the secret_metadata field and custom
+        metadata can be passed with metadata field.
 
 
         The example gets a secret from secret store:
@@ -304,8 +305,9 @@ class DaprClient:
                 resp = d.get_secret(
                     store_name='secretstoreA',
                     key='keyA',
+                    secret_metadata={'header1', 'value1'}
                     metadata=(
-                        ('header1', 'value1')
+                        ('headerA', 'valueB')
                     ),
                 )
 
@@ -315,28 +317,19 @@ class DaprClient:
         Args:
             store_name (str): store name to get secret from
             key (str): str for key
+            secret_metadata (Dict[str, str], Optional): metadata of request
             metadata (MetadataTuple, optional): custom metadata
-
-        Raises:
-            ValueError: metadata values are not str
 
         Returns:
             :class:`GetSecretResponse` object with the secret and metadata returned from callee
         """
 
-        metadata_dict = dict()
-
-        for item in metadata:   # type: ignore
-            if not isinstance(item[1], str):
-                raise ValueError(f'invalid metadata value type {type(item[1])}')
-            metadata_dict[str(item[0])] = str(item[1])
-
         req = api_v1.GetSecretRequest(
             store_name=store_name,
             key=key,
-            metadata=metadata_dict)
+            metadata=secret_metadata)
 
-        response, call = self._stub.GetSecret.with_call(req)
+        response, call = self._stub.GetSecret.with_call(req, metadata=metadata)
 
         return GetSecretResponse(
             secret=response.data,
