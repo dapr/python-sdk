@@ -73,3 +73,19 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
+
+    def GetSecret(self, request, context) -> api_v1.GetSecretResponse:
+        headers = ()
+        trailers = ()
+
+        key = request.key
+
+        headers = headers + (('keyh', key), )
+        trailers = trailers + (('keyt', key), )
+
+        resp = {key: "val"}
+
+        context.send_initial_metadata(headers)
+        context.set_trailing_metadata(trailers)
+
+        return api_v1.GetSecretResponse(data=resp)
