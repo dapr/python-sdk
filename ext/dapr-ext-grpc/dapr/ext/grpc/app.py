@@ -116,14 +116,14 @@ class App:
     def binding(self, name: str):
         """A decorator that is used to register input binding.
 
-        The below registers input binding which this application subscribes::
+        The below registers input binding which this application subscribes:
 
             @app.binding('input')
-            def input(request: InputBindingRequest) -> None:
+            def input(request: BindingRequest) -> None:
                 ...
 
         Args:
-            name (str): name of invoked method
+            name (str): the name of invoked method
         """
         def decorator(func):
             self._servicer.register_binding(name, func)

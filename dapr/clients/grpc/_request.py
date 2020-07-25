@@ -163,7 +163,7 @@ class InvokeServiceRequest(DaprRequest):
         self._content_type = val
 
 
-class InvokeBindingRequest(DaprRequest):
+class BindingRequest(DaprRequest):
     """A request data representation for invoke_binding API.
 
     This stores the request data and metadata with the proper serialization.
@@ -177,7 +177,7 @@ class InvokeBindingRequest(DaprRequest):
             self,
             data: Union[bytes, str],
             binding_metadata: Dict[str, str] = {}):
-        """Inits InvokeBindingRequestData with data and metadata if given.
+        """Inits BindingRequest with data and metadata if given.
 
         Args:
             data (bytes, str): the data which is used for invoke_binding request.
@@ -186,7 +186,7 @@ class InvokeBindingRequest(DaprRequest):
         Raises:
             ValueError: data is not bytes or str.
         """
-        super(InvokeBindingRequest, self).__init__(())
+        super(BindingRequest, self).__init__(())
         self.data = data
         self._binding_metadata = binding_metadata
 

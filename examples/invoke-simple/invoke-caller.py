@@ -1,6 +1,6 @@
 import json
 
-from dapr import DaprClient
+from dapr.clients import DaprClient
 
 with DaprClient() as d:
     req_data = {
@@ -17,4 +17,4 @@ with DaprClient() as d:
 
     # Print the response
     print(resp.content_type, flush=True)
-    print(resp.content, flush=True)
+    print(resp.text(), flush=True)

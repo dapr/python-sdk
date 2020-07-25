@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import grpc  # type: ignore
 
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 from google.protobuf.message import Message as GrpcMessage
 
@@ -15,8 +15,8 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple
-from dapr.clients.grpc._request import InvokeServiceRequest, InvokeBindingRequest
-from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse, DaprResponse
+from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
+from dapr.clients.grpc._response import InvokeServiceResponse, BindingResponse, DaprResponse
 
 
 class DaprClient:
@@ -187,8 +187,10 @@ class DaprClient:
             name: str,
             operation: str,
             data: Union[bytes, str],
-            metadata: Optional[MetadataTuple] = ()) -> InvokeBindingResponse:
-        """Invokes the output bindnig with the specified operation.
+            binding_metadata: Optional[Dict[str, str]] = {},
+            metadata: Optional[MetadataTuple] = ()) -> BindingResponse:
+        """Invokes the output binding with the specified operation.
+
         The data field takes any JSON serializable value and acts as the
         payload to be sent to the output binding. The metadata field is an
         array of key/value pairs and allows you to set binding specific metadata
@@ -214,23 +216,23 @@ class DaprClient:
             name (str): the name of the binding as defined in the components
             operation (str): the operation to perform on the binding
             data (bytes or str): bytes or str for data which will sent to the binding
+            binding_metadata (dict, optional): metadata for output binding
             metadata (tuple, optional): custom metadata to send to the binding
 
         Returns:
             :class:`InvokeBindingResponse` object returned from binding
         """
-        req_data = InvokeBindingRequest(data)
-        req_data.metadata = metadata
+        req_data = BindingRequest(data, binding_metadata)
 
         req = api_v1.InvokeBindingRequest(
             name=name,
             data=req_data.data,
-            metadata=req_data.metadata,
+            metadata=req_data.binding_metadata,
             operation=operation
         )
 
-        response, call = self._stub.InvokeBinding.with_call(req)
-        return InvokeBindingResponse(
+        response, call = self._stub.InvokeBinding.with_call(req, metadata=metadata)
+        return BindingResponse(
             response.data, dict(response.metadata),
             call.initial_metadata())
 

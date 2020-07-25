@@ -1,19 +1,17 @@
-from dapr import App, CallbackResponse
+from dapr.ext.grpc import App, InvokeServiceRequest
 
 import proto.response_pb2 as response_messages
 
-app = App()
+app = App(50051)
 
-@app.method(name='my_method')
-def mymethod(metadata, data, content_type, *http_args) -> CallbackResponse:
-    print(metadata, flush=True)
-    print(data, flush=True)
+@app.method('my_method')
+def mymethod(request: InvokeServiceRequest):
+    print(request.metadata, flush=True)
+    print(request.text(), flush=True)
 
     return response_messages.CustomResponse(
         isSuccess=True,
         code=200,
         message="Hello World - Success!")
 
-app.daprize()
-
-app.wait_until_stop()
+app.run()

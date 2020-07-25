@@ -6,7 +6,7 @@
 import json
 import time
 
-from dapr import DaprClient
+from dapr.clients import DaprClient
 
 with DaprClient() as d:
     id=0

@@ -175,7 +175,7 @@ class InvokeServiceResponse(DaprResponse):
         unpack(self.proto, message)
 
 
-class InvokeBindingResponse(DaprResponse):
+class BindingResponse(DaprResponse):
     """The response of invoke_binding API.
 
     This inherits from DaprResponse and has the helpers to handle bytes array data.
@@ -186,8 +186,8 @@ class InvokeBindingResponse(DaprResponse):
     """
     def __init__(
             self,
-            data: bytes,
-            binding_metadata: Dict[str, str],
+            data: Union[bytes, str],
+            binding_metadata: Optional[Dict[str, str]] = {},
             headers: Optional[MetadataTuple] = ()):
         """Initializes InvokeBindingReponse from :obj:`runtime_v1.InvokeBindingResponse`.
 
@@ -200,7 +200,7 @@ class InvokeBindingResponse(DaprResponse):
             ValueError: if the response data is not :class:`google.protobuf.any_pb2.Any`
                 object.
         """
-        super(InvokeBindingResponse, self).__init__(headers)
+        super(BindingResponse, self).__init__(headers)
         self.data = data
         self._metadata = binding_metadata
 
@@ -214,9 +214,11 @@ class InvokeBindingResponse(DaprResponse):
         return self._data
 
     @data.setter
-    def data(self, val) -> None:
-        if not isinstance(val, bytes):
+    def data(self, val: Union[bytes, str]) -> None:
+        if not isinstance(val, (bytes, str)):
             raise ValueError(f'data type is invalid {type(val)}')
+        if isinstance(val, str):
+            val = val.encode('utf-8')
         self._data = val
 
     @property

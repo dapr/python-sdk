@@ -14,13 +14,13 @@ from google.protobuf.message import Message as GrpcMessage
 
 from dapr.proto import appcallback_service_v1, common_v1, appcallback_v1
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._request import InvokeServiceRequest, InputBindingRequest
+from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
 from dapr.clients.grpc._response import InvokeServiceResponse
 
 
 InvokeMethodCallback = Callable[[InvokeServiceRequest], InvokeServiceResponse]
 SubscriberCallback = Callable[[v1.Event], None]
-BindingCallback = Callable[[InputBindingRequest], None]
+BindingCallback = Callable[[BindingRequest], None]
 
 
 class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
@@ -39,7 +39,8 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
     def register_subscribe(
             self, topic: str,
-            cb: SubscriberCallback, metadata: Optional[Dict[str, str]]) -> None:
+            cb: SubscriberCallback,
+            metadata: Optional[Dict[str, str]]) -> None:
         if topic in self._subscription_map:
             raise ValueError(f'{topic} is already registered')
         self._subscription_map[topic] = cb
@@ -76,7 +77,9 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
             resp_data.content_type = DEFAULT_JSON_CONTENT_TYPE
         elif isinstance(resp, GrpcMessage):
             resp_data.data = resp
-        elif not isinstance(resp, InvokeServiceResponse):
+        elif isinstance(resp, InvokeServiceResponse):
+            resp_data = resp
+        else:
             context.set_code(grpc.StatusCode.OUT_OF_RANGE)
             context.set_details(f'{type(resp)} is the invalid return type.')
             raise NotImplementedError(f'{request.name} binding not implemented!')
@@ -137,7 +140,7 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             raise NotImplementedError(f'{request.name} binding not implemented!')
 
-        req = InputBindingRequest(request.data, request.metadata)
+        req = BindingRequest(request.data, request.metadata)
         req.metadata = context.invocation_metadata()
         self._binding_map[request.name](req)
 
