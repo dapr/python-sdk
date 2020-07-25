@@ -225,3 +225,32 @@ class BindingResponse(DaprResponse):
     def binding_metadata(self) -> Dict[str, str]:
         """Gets the metadata in the response."""
         return self._metadata
+
+
+class GetSecretResponse(DaprResponse):
+    """The response of get_secret API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        secret (Dict[str, str]): secret received from response
+    """
+    def __init__(
+            self,
+            secret: Dict[str, str],
+            headers: Optional[MetadataTuple] = ()):
+        """Initializes GetSecretReponse from :obj:`dapr_v1.GetSecretResponse`.
+
+        Args:
+            secret (Dict[Str, str]): the secret from Dapr response
+            headers (Tuple, optional): the headers from Dapr gRPC response
+
+        """
+        super(GetSecretResponse, self).__init__(headers)
+        self._secret = secret
+
+    @property
+    def secret(self) -> Dict[str, str]:
+        """Gets secret as a dict
+        """
+        return self._secret

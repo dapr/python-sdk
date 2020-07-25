@@ -14,9 +14,14 @@ from google.protobuf.message import Message as GrpcMessage
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
-from dapr.clients.grpc._helpers import MetadataTuple
+from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor
 from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
-from dapr.clients.grpc._response import InvokeServiceResponse, BindingResponse, DaprResponse
+from dapr.clients.grpc._response import (
+    BindingResponse,
+    DaprResponse,
+    GetSecretResponse,
+    InvokeServiceResponse
+)
 
 
 class DaprClient:
@@ -47,6 +52,12 @@ class DaprClient:
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
         self._channel = grpc.insecure_channel(address)
+
+        if settings.DAPR_API_TOKEN:
+            api_token_interceptor = DaprClientInterceptor([
+                ('dapr-api-token', settings.DAPR_API_TOKEN), ])
+            self._channel = grpc.intercept_channel(self._channel, api_token_interceptor)
+
         self._stub = api_service_v1.DaprStub(self._channel)
 
     def close(self):
@@ -283,3 +294,54 @@ class DaprClient:
         _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
 
         return DaprResponse(call.initial_metadata())
+
+    def get_secret(
+            self,
+            store_name: str,
+            key: str,
+            secret_metadata: Optional[Dict[str, str]] = {},
+            metadata: Optional[MetadataTuple] = ()) -> GetSecretResponse:
+        """Get secret with a given key.
+
+        This gets a secret from secret store with a given key and secret store name.
+        Metadata for request can be passed with the secret_metadata field and custom
+        metadata can be passed with metadata field.
+
+
+        The example gets a secret from secret store:
+
+            from dapr import DaprClient
+
+            with DaprClient() as d:
+                resp = d.get_secret(
+                    store_name='secretstoreA',
+                    key='keyA',
+                    secret_metadata={'header1', 'value1'}
+                    metadata=(
+                        ('headerA', 'valueB')
+                    ),
+                )
+
+                # resp.headers includes the gRPC initial metadata.
+                # resp.trailers includes that gRPC trailing metadata.
+
+        Args:
+            store_name (str): store name to get secret from
+            key (str): str for key
+            secret_metadata (Dict[str, str], Optional): metadata of request
+            metadata (MetadataTuple, optional): custom metadata
+
+        Returns:
+            :class:`GetSecretResponse` object with the secret and metadata returned from callee
+        """
+
+        req = api_v1.GetSecretRequest(
+            store_name=store_name,
+            key=key,
+            metadata=secret_metadata)
+
+        response, call = self._stub.GetSecret.with_call(req, metadata=metadata)
+
+        return GetSecretResponse(
+            secret=response.data,
+            headers=call.initial_metadata())

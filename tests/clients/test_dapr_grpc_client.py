@@ -6,10 +6,12 @@ Licensed under the MIT License.
 """
 
 import unittest
+from unittest.mock import patch
 
 from dapr.clients.grpc.client import DaprClient
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
+from dapr.conf import settings
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -147,6 +149,59 @@ class DaprGrpcClientTests(unittest.TestCase):
                 topic='example',
                 data=111,
             )
+
+    @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
+    def test_dapr_api_token_insertion(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        resp = dapr.invoke_service(
+            id='targetId',
+            method='bytes',
+            data=b'haha',
+            content_type="text/plain",
+            metadata=(
+                ('key1', 'value1'),
+                ('key2', 'value2'),
+            ),
+        )
+
+        self.assertEqual(b'haha', resp.content)
+        self.assertEqual("text/plain", resp.content_type)
+        self.assertEqual(4, len(resp.headers))
+        self.assertEqual(['value1'], resp.headers['hkey1'])
+        self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
+        self.assertEqual(['value1'], resp.trailers['tkey1'])
+
+    def test_get_secret(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        key1 = 'key_1'
+        resp = dapr.get_secret(
+            store_name='store_1',
+            key=key1,
+            metadata=(
+                ('key1', 'value1'),
+                ('key2', 'value2'),
+            ),
+        )
+
+        self.assertEqual(1, len(resp.headers))
+        self.assertEqual(1, len(resp.trailers))
+        self.assertEqual([key1], resp.headers['keyh'])
+        self.assertEqual([key1], resp.trailers['keyt'])
+        self.assertEqual({key1: "val"}, resp._secret)
+
+    def test_get_secret_metadata_absent(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        key1 = 'key_1'
+        resp = dapr.get_secret(
+            store_name='store_1',
+            key=key1,
+        )
+
+        self.assertEqual(1, len(resp.headers))
+        self.assertEqual(1, len(resp.trailers))
+        self.assertEqual([key1], resp.headers['keyh'])
+        self.assertEqual([key1], resp.trailers['keyt'])
+        self.assertEqual({key1: "val"}, resp._secret)
 
 
 if __name__ == '__main__':
