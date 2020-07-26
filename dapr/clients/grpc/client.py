@@ -293,7 +293,8 @@ class DaprClient:
                 raise ValueError("State store name cannot be empty")
             req = api_v1.SaveStateRequest(store_name=store_name, key=key)
             resp = self._stub.GetState(req)
-            return resp.data
+            print(resp)
+            return resp
         except Exception as e:
             return e
 
@@ -321,6 +322,8 @@ class DaprClient:
             state_items = [common_v1.StateItem(
                 key=state['key'], value=state['value'].encode('utf-8')) for state in states]
             req = api_v1.SaveStateRequest(store_name=store_name, states=state_items)
-            self._stub.SaveState(req)
+            response = self._stub.SaveState(req)
+            print(response)
+            return response
         except Exception as e:
             return e
