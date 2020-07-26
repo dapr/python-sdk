@@ -297,7 +297,6 @@ class DaprClient:
         except Exception as e:
             return e
 
-
     def save_state(
             self,
             store_name: str,

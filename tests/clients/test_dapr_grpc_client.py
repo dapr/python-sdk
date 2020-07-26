@@ -175,12 +175,13 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_save_state(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
-        DaprClient.save_state(
+        dapr.save_state(
             store_name="statestore",
             states=[{'key': 'key1', 'value': 'value1'}, {'key': 'key2', 'value': 'value2'}]
         )
-        resp = DaprClient.get_state(store_name="statestore", key="key1")
+        resp = dapr.get_state(store_name="statestore", key="key1")
         self.assertEqual(b'value1', resp.data)
+
 
 if __name__ == '__main__':
     unittest.main()
