@@ -127,7 +127,6 @@ class InvokeServiceRequest(DaprRequest):
             self._data.Pack(val)
         else:
             raise ValueError('invalid data type')
-        self._content_type = None
 
     def unpack(self, message: GrpcMessage) -> None:
         """Unpack the serialized protocol buffer message.

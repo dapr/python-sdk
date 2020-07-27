@@ -160,7 +160,7 @@ class InvokeServiceResponse(DaprResponse):
         return self._content_type
 
     @content_type.setter
-    def content_type(self, val: str) -> None:
+    def content_type(self, val: Optional[str]) -> None:
         self._content_type = val
 
     def pack(self, val: Union[GrpcAny, GrpcMessage]) -> None:
@@ -171,7 +171,6 @@ class InvokeServiceResponse(DaprResponse):
             self._data.Pack(val)
         else:
             raise ValueError('invalid data type')
-        self._content_type = None
 
     def unpack(self, message: GrpcMessage) -> None:
         """Unpack the serialized protocol buffer message.
