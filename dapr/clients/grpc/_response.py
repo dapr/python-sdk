@@ -5,13 +5,20 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._helpers import MetadataDict, MetadataTuple, tuple_to_dict, unpack
+from dapr.clients.grpc._helpers import (
+    MetadataDict,
+    MetadataTuple,
+    to_bytes,
+    to_str,
+    tuple_to_dict,
+    unpack,
+)
 
 
 class DaprResponse:
@@ -32,31 +39,31 @@ class DaprResponse:
         Args:
             headers (tuple, optional): the tuple for the headers from response
         """
-        self.headers = headers
+        self.headers = headers  # type: ignore
 
     @property
     def headers(self) -> MetadataDict:
         """Returns headers tuple as a dict."""
-        return self.get_headers(as_dict=True)
+        return self.get_headers(as_dict=True)  # type: ignore
 
-    def get_headers(self, as_dict: Optional[bool] = False) -> Union[MetadataDict, MetadataTuple]:
+    @headers.setter
+    def headers(self, val: MetadataTuple) -> None:
+        """Set response headers."""
+        self._headers = val
+
+    def get_headers(self, as_dict: bool = False) -> Union[MetadataDict, MetadataTuple]:
         """Gets headers from the response.
-        
+
         Args:
             as_dict (bool): dict type headers if as_dict is True. Otherwise, return
                 tuple headers.
-        
+
         Returns:
             dict or tuple: response headers.
         """
         if as_dict:
             return tuple_to_dict(self._headers)
         return self._headers
-
-    @headers.setter
-    def headers(self, val: MetadataTuple) -> None:
-        """Set response headers."""
-        self._headers = val
 
 
 class InvokeServiceResponse(DaprResponse):
@@ -74,13 +81,14 @@ class InvokeServiceResponse(DaprResponse):
     """
     def __init__(
             self,
-            data: Any = None,
+            data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
             content_type: Optional[str] = None,
-            headers: Optional[MetadataTuple] = ()):
+            headers: MetadataTuple = ()):
         """Initializes InvokeServiceReponse from :obj:`common_v1.InvokeResponse`.
 
         Args:
-            data (:obj:`google.protobuf.any_pb2.Any`): the response data from Dapr response
+            data (str, bytes, GrpcAny, GrpcMessage, optional): the response data
+                from Dapr response
             content_type (str, optional): the content type of the bytes data
             headers (Tuple, optional): the headers from Dapr gRPC response
 
@@ -90,9 +98,12 @@ class InvokeServiceResponse(DaprResponse):
         """
         super(InvokeServiceResponse, self).__init__(headers)
         self._content_type = content_type
-        self.headers = headers
-        self.data = data
-        if not content_type and not self.is_proto():
+
+        self.set_data(data)
+
+        # Set content_type to application/json type if content_type
+        # is not given and date is bytes or str type.
+        if not self.is_proto() and not content_type:
             self.content_type = DEFAULT_JSON_CONTENT_TYPE
 
     @property
@@ -104,17 +115,9 @@ class InvokeServiceResponse(DaprResponse):
         """
         return self._data
 
-    @proto.setter
-    def proto(self, val: GrpcMessage) -> None:
-        if not isinstance(val, GrpcMessage):
-            raise ValueError('invalid data type')
-        self._data = GrpcAny()
-        self._data.Pack(val)
-        self._content_type = None
-
     def is_proto(self) -> bool:
         """Returns True if the response data is the serialized protocol buffer message."""
-        return hasattr(self, '_data') and self._data.type_url
+        return hasattr(self, '_data') and self._data.type_url != ''
 
     @property
     def data(self) -> bytes:
@@ -129,17 +132,16 @@ class InvokeServiceResponse(DaprResponse):
         return self._data.value
 
     @data.setter
-    def data(self, val: Any) -> None:
+    def data(self, val: Union[str, bytes]) -> None:
+        self.set_data(to_bytes(val))
+
+    def set_data(self, val: Union[str, bytes, GrpcAny, GrpcMessage, None]) -> None:
         if val is None:
-            return
-        if isinstance(val, str):
-            val = val.encode('utf-8')
+            self._data = GrpcAny()
         if isinstance(val, (bytes, str)):
-            self._data = GrpcAny(value=val)
-        elif isinstance(val, GrpcAny):
-            self._data = val
-        elif isinstance(val, GrpcMessage):
-            self.proto = val
+            self._data = GrpcAny(value=to_bytes(val))
+        elif isinstance(val, (GrpcAny, GrpcMessage)):
+            self.pack(val)
         else:
             raise ValueError(f'invalid data type {type(val)}')
 
@@ -150,7 +152,7 @@ class InvokeServiceResponse(DaprResponse):
         Raises:
             ValueError: the response data is the serialized protocol buffer message
         """
-        return self.data.decode('utf-8')
+        return to_str(self.data)
 
     @property
     def content_type(self) -> Optional[str]:
@@ -160,6 +162,16 @@ class InvokeServiceResponse(DaprResponse):
     @content_type.setter
     def content_type(self, val: str) -> None:
         self._content_type = val
+
+    def pack(self, val: Union[GrpcAny, GrpcMessage]) -> None:
+        if isinstance(val, GrpcAny):
+            self._data = val
+        elif isinstance(val, GrpcMessage):
+            self._data = GrpcAny()
+            self._data.Pack(val)
+        else:
+            raise ValueError('invalid data type')
+        self._content_type = None
 
     def unpack(self, message: GrpcMessage) -> None:
         """Unpack the serialized protocol buffer message.
@@ -187,8 +199,8 @@ class BindingResponse(DaprResponse):
     def __init__(
             self,
             data: Union[bytes, str],
-            binding_metadata: Optional[Dict[str, str]] = {},
-            headers: Optional[MetadataTuple] = ()):
+            binding_metadata: Dict[str, str] = {},
+            headers: MetadataTuple = ()):
         """Initializes InvokeBindingReponse from :obj:`runtime_v1.InvokeBindingResponse`.
 
         Args:
@@ -201,12 +213,12 @@ class BindingResponse(DaprResponse):
                 object.
         """
         super(BindingResponse, self).__init__(headers)
-        self.data = data
+        self.data = data  # type: ignore
         self._metadata = binding_metadata
 
     def text(self) -> str:
         """Gets content as str."""
-        return self._data.decode('utf-8')
+        return to_str(self._data)
 
     @property
     def data(self) -> bytes:
@@ -215,11 +227,7 @@ class BindingResponse(DaprResponse):
 
     @data.setter
     def data(self, val: Union[bytes, str]) -> None:
-        if not isinstance(val, (bytes, str)):
-            raise ValueError(f'data type is invalid {type(val)}')
-        if isinstance(val, str):
-            val = val.encode('utf-8')
-        self._data = val
+        self._data = to_bytes(val)
 
     @property
     def binding_metadata(self) -> Dict[str, str]:
@@ -238,7 +246,7 @@ class GetSecretResponse(DaprResponse):
     def __init__(
             self,
             secret: Dict[str, str],
-            headers: Optional[MetadataTuple] = ()):
+            headers: MetadataTuple = ()):
         """Initializes GetSecretReponse from :obj:`dapr_v1.GetSecretResponse`.
 
         Args:

@@ -32,14 +32,14 @@ class DaprClient:
 
     Examples:
 
-        >>> import dapr
-        >>> d = dapr.DaprClient()
+        >>> from dapr.clients import DaprClient
+        >>> d = DaprClient()
         >>> resp = d.invoke_service('callee', 'method', b'data')
 
     With context manager:
 
-        >>> import dapr
-        >>> with dapr.DaprClient() as d:
+        >>> from dapr.clients import DaprClient
+        >>> with DaprClient() as d:
         ...     resp = d.invoke_service('callee', 'method', b'data')
     """
 
@@ -101,7 +101,7 @@ class DaprClient:
 
         The example calls `callee` service with bytes data, which implements grpc appcallback:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
 
             with DaprClient() as d:
                 resp = d.invoke_service(
@@ -120,7 +120,7 @@ class DaprClient:
 
         When sending custom protocol buffer message object, it doesn't requires content_type:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
 
             req_data = dapr_example_v1.CustomRequestMessage(data='custom')
 
@@ -140,7 +140,7 @@ class DaprClient:
 
         The example calls `callee` service which implements http appcallback:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
 
             with DaprClient() as d:
                 resp = d.invoke_service(
@@ -190,7 +190,7 @@ class DaprClient:
         response, call = self._stub.InvokeService.with_call(req, metadata=metadata)
 
         resp_data = InvokeServiceResponse(response.data, response.content_type)
-        resp_data.headers = call.initial_metadata()
+        resp_data.headers = call.initial_metadata()  # type: ignore
         return resp_data
 
     def invoke_binding(
@@ -198,7 +198,7 @@ class DaprClient:
             name: str,
             operation: str,
             data: Union[bytes, str],
-            binding_metadata: Optional[Dict[str, str]] = {},
+            binding_metadata: Dict[str, str] = {},
             metadata: Optional[MetadataTuple] = ()) -> BindingResponse:
         """Invokes the output binding with the specified operation.
 
@@ -210,7 +210,8 @@ class DaprClient:
 
         The example calls output `binding` service with bytes data:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
+
             with DaprClient() as d:
                 resp = d.invoke_binding(
                     name = 'kafkaBinding',
@@ -260,7 +261,7 @@ class DaprClient:
 
         The example publishes a byte array event to a topic:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.publish_event(
                     topic='TOPIC_A'
@@ -310,7 +311,7 @@ class DaprClient:
 
         The example gets a secret from secret store:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
 
             with DaprClient() as d:
                 resp = d.get_secret(

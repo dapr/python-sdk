@@ -9,7 +9,7 @@ import unittest
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 
-from dapr.clients.grpc._response import DaprResponse, InvokeServiceResponse, InvokeBindingResponse
+from dapr.clients.grpc._response import DaprResponse, InvokeServiceResponse, BindingResponse
 from dapr.proto import common_v1
 
 
@@ -79,15 +79,15 @@ class InvokeServiceResponseTests(unittest.TestCase):
 
 class InvokeBindingResponseTests(unittest.TestCase):
     def test_bytes_message(self):
-        resp = InvokeBindingResponse(data=b'data', metadata={})
-        self.assertEqual({}, resp.metadata)
-        self.assertEqual(b'data', resp.content)
+        resp = BindingResponse(data=b'data', binding_metadata={})
+        self.assertEqual({}, resp.binding_metadata)
+        self.assertEqual(b'data', resp.data)
         self.assertEqual('data', resp.text())
 
     def test_metadata(self):
-        resp = InvokeBindingResponse(data=b'data', metadata={'status': 'ok'})
-        self.assertEqual({'status': 'ok'}, resp.metadata)
-        self.assertEqual(b'data', resp.content)
+        resp = BindingResponse(data=b'data', binding_metadata={'status': 'ok'})
+        self.assertEqual({'status': 'ok'}, resp.binding_metadata)
+        self.assertEqual(b'data', resp.data)
         self.assertEqual('data', resp.text())
 
 

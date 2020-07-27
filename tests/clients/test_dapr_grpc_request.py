@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import unittest
 
-from dapr.clients.grpc._request import InvokeServiceRequest, InvokeBindingRequestData
+from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
 from dapr.proto import common_v1
 
 
@@ -44,7 +44,7 @@ class InvokeServiceRequestTests(unittest.TestCase):
 class InvokeBindingRequestDataTests(unittest.TestCase):
     def test_bytes_data(self):
         # act
-        data = InvokeBindingRequestData(data=b'hello dapr')
+        data = BindingRequest(data=b'hello dapr')
 
         # arrange
         self.assertEqual(b'hello dapr', data.data)
@@ -52,7 +52,7 @@ class InvokeBindingRequestDataTests(unittest.TestCase):
 
     def test_str_data(self):
         # act
-        data = InvokeBindingRequestData(data='hello dapr')
+        data = BindingRequest(data='hello dapr')
 
         # arrange
         self.assertEqual(b'hello dapr', data.data)
@@ -60,11 +60,11 @@ class InvokeBindingRequestDataTests(unittest.TestCase):
 
     def test_non_empty_metadata(self):
         # act
-        data = InvokeBindingRequestData(data='hello dapr', metadata=(('ttlInSeconds', '1000'), ))
+        data = BindingRequest(data='hello dapr', binding_metadata={'ttlInSeconds': '1000'})
 
         # arrange
         self.assertEqual(b'hello dapr', data.data)
-        self.assertEqual({'ttlInSeconds': '1000'}, data.metadata)
+        self.assertEqual({'ttlInSeconds': '1000'}, data.binding_metadata)
 
 
 if __name__ == '__main__':

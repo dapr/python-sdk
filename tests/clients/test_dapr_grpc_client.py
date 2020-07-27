@@ -92,17 +92,16 @@ class DaprGrpcClientTests(unittest.TestCase):
             name='binding',
             operation='create',
             data=b'haha',
-            metadata=(
-                ('key1', 'value1'),
-                ('key2', 'value2'),
-            ),
+            binding_metadata={
+                'key1': 'value1',
+                'key2': 'value2',
+            },
         )
 
-        self.assertEqual(b'haha', resp.content)
-        self.assertEqual({'key1': 'value1', 'key2': 'value2'}, resp.metadata)
+        self.assertEqual(b'haha', resp.data)
+        self.assertEqual({'key1': 'value1', 'key2': 'value2'}, resp.binding_metadata)
         self.assertEqual(2, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
-        self.assertEqual(['value1'], resp.trailers['tkey1'])
 
     def test_invoke_binding_no_metadata(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
@@ -112,10 +111,9 @@ class DaprGrpcClientTests(unittest.TestCase):
             data=b'haha',
         )
 
-        self.assertEqual(b'haha', resp.content)
-        self.assertEqual({}, resp.metadata)
+        self.assertEqual(b'haha', resp.data)
+        self.assertEqual({}, resp.binding_metadata)
         self.assertEqual(0, len(resp.headers))
-        self.assertEqual(0, len(resp.trailers))
 
     def test_invoke_binding_no_create(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
@@ -125,10 +123,9 @@ class DaprGrpcClientTests(unittest.TestCase):
             data=b'haha',
         )
 
-        self.assertEqual(b'INVALID', resp.content)
-        self.assertEqual({}, resp.metadata)
+        self.assertEqual(b'INVALID', resp.data)
+        self.assertEqual({}, resp.binding_metadata)
         self.assertEqual(0, len(resp.headers))
-        self.assertEqual(0, len(resp.trailers))
 
     def test_publish_event(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
@@ -138,9 +135,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
 
         self.assertEqual(2, len(resp.headers))
-        self.assertEqual(2, len(resp.trailers))
         self.assertEqual(['haha'], resp.headers['hdata'])
-        self.assertEqual(['example'], resp.trailers['ttopic'])
 
     def test_publish_error(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
@@ -164,12 +159,11 @@ class DaprGrpcClientTests(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(b'haha', resp.content)
+        self.assertEqual(b'haha', resp.data)
         self.assertEqual("text/plain", resp.content_type)
         self.assertEqual(4, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
-        self.assertEqual(['value1'], resp.trailers['tkey1'])
 
     def test_get_secret(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
@@ -184,9 +178,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
 
         self.assertEqual(1, len(resp.headers))
-        self.assertEqual(1, len(resp.trailers))
         self.assertEqual([key1], resp.headers['keyh'])
-        self.assertEqual([key1], resp.trailers['keyt'])
         self.assertEqual({key1: "val"}, resp._secret)
 
     def test_get_secret_metadata_absent(self):
@@ -198,9 +190,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
 
         self.assertEqual(1, len(resp.headers))
-        self.assertEqual(1, len(resp.trailers))
         self.assertEqual([key1], resp.headers['keyh'])
-        self.assertEqual([key1], resp.trailers['keyt'])
         self.assertEqual({key1: "val"}, resp._secret)
 
 

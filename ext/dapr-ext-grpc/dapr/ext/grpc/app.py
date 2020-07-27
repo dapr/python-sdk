@@ -21,14 +21,14 @@ class App:
     subscribing topic, and input bindings.
 
     You can create a :class:`App` instance in your main module:
- 
+
         from dapr.ext.grpc import App
         app = App()
     """
 
     def __init__(self, app_port: Optional[int] = -1):
         """Inits App object and creates gRPC server.
-        
+
         Args:
             app_port (int, optional): application port gRPC server listens to.
         """
@@ -38,7 +38,7 @@ class App:
         if app_port == -1:
             app_port = settings.GRPC_APP_PORT
         self._server.add_insecure_port(f'[::]:{app_port}')
-    
+
     def __del__(self):
         self.stop()
 
@@ -58,26 +58,26 @@ class App:
 
             @app.method('start')
             def start(request: InvokeServiceRequest):
-                
+
                 ...
 
                 return json.dumps()
-        
+
         Return Protocol buffer response::
 
             @app.method('start')
             def start(request: InvokeServiceRequest):
-                
+
                 ...
 
                 return CustomProtoResponse(data='hello world')
 
-        
+
         Specify Response header::
 
             @app.method('start')
             def start(request: InvokeServiceRequest):
-                
+
                 ...
 
                 resp = InvokeServiceResponse('hello world', 'text/plain')
@@ -91,7 +91,7 @@ class App:
         def decorator(func):
             self._servicer.register_method(name, func)
         return decorator
-    
+
     def subscribe(self, topic: str, metadata: Optional[Dict[str, str]] = {}):
         """A decorator that is used to register the subscribing topic method.
 

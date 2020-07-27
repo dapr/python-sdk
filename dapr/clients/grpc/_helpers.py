@@ -23,13 +23,14 @@ def tuple_to_dict(tupledata: MetadataTuple) -> MetadataDict:
         tupledata (tuple): tuple storing metadata
 
     Returns:
-        A dict which is converted from tuple 
+        A dict which is converted from tuple
     """
 
     d: MetadataDict = {}
     for k, v in tupledata:  # type: ignore
         d.setdefault(k, []).append(v)
     return d
+
 
 def unpack(data: GrpcAny, message: GrpcMessage) -> None:
     """Unpack the serialized protocol buffer message.
@@ -48,6 +49,24 @@ def unpack(data: GrpcAny, message: GrpcMessage) -> None:
     if not data.Is(message.DESCRIPTOR):
         raise ValueError(f'invalid type. serialized message type: {data.type_url}')
     data.Unpack(message)
+
+
+def to_bytes(data: Union[str, bytes]) -> bytes:
+    if isinstance(data, bytes):
+        return data
+    elif isinstance(data, str):
+        return data.encode('utf-8')
+    else:
+        raise(f'invalid data type {type(data)}')
+
+
+def to_str(data: Union[str, bytes]) -> str:
+    if isinstance(data, str):
+        return data
+    elif isinstance(data, bytes):
+        return data.decode('utf-8')
+    else:
+        raise(f'invalid data type {type(data)}')
 
 
 class _ClientCallDetails(

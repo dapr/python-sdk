@@ -8,7 +8,6 @@ Licensed under the MIT License.
 import os
 
 from setuptools import setup
-from subprocess import check_output as run
 
 # Load version in dapr package.
 exec(open('flask_dapr/version.py').read())
