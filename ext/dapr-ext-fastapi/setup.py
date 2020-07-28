@@ -6,10 +6,8 @@ Licensed under the MIT License.
 """
 
 import os
-import re
 
 from setuptools import setup
-from subprocess import check_output as run
 
 # Load version in dapr package.
 exec(open('dapr/ext/grpc/version.py').read())
