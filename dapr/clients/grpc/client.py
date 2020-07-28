@@ -293,15 +293,18 @@ class DaprClient:
                 raise ValueError("State store name cannot be empty")
             req = api_v1.GetStateRequest(store_name=store_name, key=key)
             resp = self._stub.GetState(req)
-            print(resp)
             return resp
         except Exception as e:
             return e
 
     def save_state(
-            self,
-            store_name: str,
-            states: List[dict]):
+        self,
+        store_name: str,
+        key: str,
+        value: object,
+        etag: str = "",
+        state_options: common_v1.StateOptions = None
+    ):
         """Saves key-value pairs to a statestore
         The example saves states to a statestore:
             from dapr import DaprClient
@@ -319,9 +322,11 @@ class DaprClient:
         try:
             if len(store_name) == 0 or len(store_name.strip()) == 0:
                 raise ValueError("State store name cannot be empty")
-            state_items = [common_v1.StateItem(
-                key=state['key'], value='my_state'.encode('utf-8')) for state in states]
-            req = api_v1.SaveStateRequest(store_name=store_name, states=state_items)
+            state = [common_v1.StateItem(
+                key=state['key'], value=value.encode('utf-8'), etag=etag.encode('utf-8'), options=state_options)]
+            if state_options is not None:
+                state.options = state_options
+            req = api_v1.SaveStateRequest(store_name=store_name, states=state)
             response = self._stub.SaveState(req)
             return response
         except Exception as e:

@@ -1,10 +1,10 @@
 import grpc
-
+import json
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
 from dapr.proto import api_service_v1, common_v1, api_v1
-
+from google.protobuf.json_format import MessageToJson
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
     def __init__(self):
@@ -75,15 +75,17 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
-    def SaveState(self, request):
-        for states in request.states:
-            if state['key'] and state['value']:
-                self.store[state['key']] = state['value']
+    def SaveState(self, request, context):
+        headers = ()
+        trailers = ()
+        for state in request.states:
+            state = json.loads(MessageToJson(state))
+            self.store[state['key']] = state['value'].decode('utf-8')
         return empty_pb2.Empty()
 
-    def GetState(self, request):
+    def GetState(self, request, context):
         key = request.key
         if key not in self.store:
             return empty_pb2.Empty()
         else:
-            return api_v1.GetStateResponse(data=self.store[key])
+            return api_v1.GetStateResponse(data=str.encode(self.store[key]), etag="")
