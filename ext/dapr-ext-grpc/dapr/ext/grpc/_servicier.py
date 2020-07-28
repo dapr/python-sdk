@@ -7,7 +7,7 @@ Licensed under the MIT License.
 import grpc
 
 from cloudevents.sdk.event import v1
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from google.protobuf import empty_pb2
 from google.protobuf.message import Message as GrpcMessage
@@ -18,32 +18,32 @@ from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
 from dapr.clients.grpc._response import InvokeServiceResponse
 
 
-InvokeMethodCallback = Callable[[InvokeServiceRequest], InvokeServiceResponse]
+InvokeMethodCallback = Callable[[InvokeServiceRequest], Union[str, bytes, InvokeServiceResponse]]
 SubscriberCallback = Callable[[v1.Event], None]
 BindingCallback = Callable[[BindingRequest], None]
 
 
-class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
+class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
     def __init__(self):
         self._invoke_method_map: Dict[str, InvokeMethodCallback] = {}
-        self._subscription_map: Dict[str, SubscriberCallback] = {}
+        self._topic_map: Dict[str, SubscriberCallback] = {}
         self._binding_map: Dict[str, BindingCallback] = {}
 
-        self._registered_topics = []
-        self._registered_bindings = []
+        self._registered_topics: List[str] = []
+        self._registered_bindings: List[str] = []
 
     def register_method(self, method: str, cb: InvokeMethodCallback) -> None:
         if method in self._invoke_method_map:
             raise ValueError(f'{method} is already registered')
         self._invoke_method_map[method] = cb
 
-    def register_subscribe(
+    def register_topic(
             self, topic: str,
             cb: SubscriberCallback,
             metadata: Optional[Dict[str, str]]) -> None:
-        if topic in self._subscription_map:
+        if topic in self._topic_map:
             raise ValueError(f'{topic} is already registered')
-        self._subscription_map[topic] = cb
+        self._topic_map[topic] = cb
         self._registered_topics.append(
             appcallback_v1.TopicSubscription(topic=topic, metadata=metadata))
 
@@ -73,16 +73,16 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
         resp_data = InvokeServiceResponse()
         if isinstance(resp, (bytes, str)):
-            resp_data.data = resp
+            resp_data.set_data(resp)
             resp_data.content_type = DEFAULT_JSON_CONTENT_TYPE
         elif isinstance(resp, GrpcMessage):
-            resp_data.data = resp
+            resp_data.set_data(resp)
         elif isinstance(resp, InvokeServiceResponse):
             resp_data = resp
         else:
             context.set_code(grpc.StatusCode.OUT_OF_RANGE)
             context.set_details(f'{type(resp)} is the invalid return type.')
-            raise NotImplementedError(f'{request.name} binding not implemented!')
+            raise NotImplementedError(f'{request.method} method not implemented!')
 
         if len(resp_data.get_headers()) > 0:
             context.send_initial_metadata(resp_data.get_headers())
@@ -103,7 +103,7 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
             request: appcallback_v1.TopicEventRequest,
             context: grpc.ServicerContext) -> None:
         """Subscribes events from Pubsub."""
-        if request.topic not in self._subscription_map:
+        if request.topic not in self._topic_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             raise NotImplementedError(f'topic {request.topic} is not implemented!')
 
@@ -116,7 +116,7 @@ class AppCallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
         # TODO: add metadata from context to CE envelope
 
-        self._subscription_map[request.topic](event)
+        self._topic_map[request.topic](event)
 
         return empty_pb2.Empty()
 

@@ -11,7 +11,7 @@ from concurrent import futures
 from typing import Dict, Optional
 
 from dapr.conf import settings
-from dapr.ext.grpc._servicier import AppCallbackServicer
+from dapr.ext.grpc._servicier import _CallbackServicer
 from dapr.proto import appcallback_service_v1
 
 
@@ -32,7 +32,7 @@ class App:
         Args:
             app_port (int, optional): application port gRPC server listens to.
         """
-        self._servicer = AppCallbackServicer()
+        self._servicer = _CallbackServicer()
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
         if app_port == -1:
@@ -110,7 +110,7 @@ class App:
                 during initialization
         """
         def decorator(func):
-            self._servicer.register_subscribe(topic, func, metadata)
+            self._servicer.register_topic(topic, func, metadata)
         return decorator
 
     def binding(self, name: str):

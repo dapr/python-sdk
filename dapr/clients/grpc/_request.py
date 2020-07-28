@@ -154,7 +154,7 @@ class InvokeServiceRequest(DaprRequest):
     def set_data(self, val: Union[str, bytes, GrpcAny, GrpcMessage, None]) -> None:
         if val is None:
             self._data = GrpcAny()
-        if isinstance(val, (bytes, str)):
+        elif isinstance(val, (bytes, str)):
             self._data = GrpcAny(value=to_bytes(val))
         elif isinstance(val, (GrpcAny, GrpcMessage)):
             self.pack(val)
