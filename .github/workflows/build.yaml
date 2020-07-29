@@ -37,7 +37,7 @@ jobs:
         tox -e type
     - name: Run unit-tests
       run: |
-        tox -e py37
+        tox -e py
     - name: Build and publish Dapr Python SDK
       if: github.event_name != 'pull_request'
       run: |
@@ -47,5 +47,11 @@ jobs:
       if: github.event_name != 'pull_request'
       run: |
         cd ext/flask_dapr
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish dapr-ext-grpc
+      if: github.event_name != 'pull_request'
+      run: |
+        cd ext/dapr-ext-grpc
         python setup.py sdist bdist_wheel
         twine upload dist/*
