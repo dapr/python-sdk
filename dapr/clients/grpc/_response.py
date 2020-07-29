@@ -24,8 +24,7 @@ from dapr.clients.grpc._helpers import (
 class DaprResponse:
     """A base class for Dapr Response.
 
-    This is the base class for Dapr Response. User can gets the headers and trailers as
-    a dict.
+    This is the base class for Dapr Response. User can get the headers as a dict.
 
     Attributes:
         headers(dict): A dict to include the headers from Dapr gRPC Response.
@@ -37,18 +36,18 @@ class DaprResponse:
         """Inits DapResponse with headers and trailers.
 
         Args:
-            headers (tuple, optional): the tuple for the headers from response
+            headers (tuple, optional): the tuple for the headers from response.
         """
         self.headers = headers  # type: ignore
 
     @property
     def headers(self) -> MetadataDict:
-        """Returns headers tuple as a dict."""
+        """Gets headers as a dict."""
         return self.get_headers(as_dict=True)  # type: ignore
 
     @headers.setter
     def headers(self, val: MetadataTuple) -> None:
-        """Set response headers."""
+        """Sets response headers."""
         self._headers = val
 
     def get_headers(self, as_dict: bool = False) -> Union[MetadataDict, MetadataTuple]:
@@ -73,6 +72,7 @@ class InvokeServiceResponse(DaprResponse):
     and protocol buffer data.
 
     Attributes:
+        headers (tuple, optional): the tuple for the headers from response.
         data (str, bytes, GrpcAny, GrpcMessage, optional): the serialized protocol
             buffer raw message
         content (bytes, optional): bytes data if response data is not serialized
@@ -129,9 +129,11 @@ class InvokeServiceResponse(DaprResponse):
 
     @data.setter
     def data(self, val: Union[str, bytes]) -> None:
+        """Sets str or bytes type data to request data."""
         self.set_data(val)
 
     def set_data(self, val: Union[str, bytes, GrpcAny, GrpcMessage, None]) -> None:
+        """Sets data to request data."""
         if val is None:
             self._data = GrpcAny()
         elif isinstance(val, (bytes, str)):
@@ -157,9 +159,18 @@ class InvokeServiceResponse(DaprResponse):
 
     @content_type.setter
     def content_type(self, val: Optional[str]) -> None:
+        """Sets content type for bytes data."""
         self._content_type = val
 
     def pack(self, val: Union[GrpcAny, GrpcMessage]) -> None:
+        """Serializes protocol buffer message.
+        
+        Args:
+            message (:class:`GrpcMessage`, :class:`GrpcAny`): the protocol buffer message object
+
+        Raises:
+            ValueError: message is neither GrpcAny nor GrpcMessage.
+        """
         if isinstance(val, GrpcAny):
             self._data = val
         elif isinstance(val, GrpcMessage):
@@ -169,10 +180,10 @@ class InvokeServiceResponse(DaprResponse):
             raise ValueError('invalid data type')
 
     def unpack(self, message: GrpcMessage) -> None:
-        """Unpack the serialized protocol buffer message.
+        """Deserializes the serialized protocol buffer message.
 
         Args:
-            message (:obj:`google.protobuf.message.Message`): the protocol buffer message object
+            message (:class:`GrpcMessage`): the protocol buffer message object
                 to which the response data is deserialized.
 
         Raises:
@@ -222,6 +233,7 @@ class BindingResponse(DaprResponse):
 
     @data.setter
     def data(self, val: Union[bytes, str]) -> None:
+        """Sets str or bytes type data to request data."""
         self._data = to_bytes(val)
 
     @property
@@ -247,13 +259,11 @@ class GetSecretResponse(DaprResponse):
         Args:
             secret (Dict[Str, str]): the secret from Dapr response
             headers (Tuple, optional): the headers from Dapr gRPC response
-
         """
         super(GetSecretResponse, self).__init__(headers)
         self._secret = secret
 
     @property
     def secret(self) -> Dict[str, str]:
-        """Gets secret as a dict
-        """
+        """Gets secret as a dict."""
         return self._secret

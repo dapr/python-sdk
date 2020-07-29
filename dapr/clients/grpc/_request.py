@@ -22,21 +22,38 @@ from dapr.clients.grpc._helpers import (
 
 
 class DaprRequest:
+    """A base class for Dapr Request.
+
+    This is the base class for Dapr Request. User can gets the metadata.
+
+    Attributes:
+        metadata(dict): A dict to include the headers from Dapr Request.
+    """
     def __init__(self, metadata: MetadataTuple = ()):
         self.metadata = metadata  # type: ignore
 
     @property
     def metadata(self) -> MetadataDict:
-        """Returns headers tuple as a dict."""
+        """Get metadata from :class:`DaprRequest`."""
         return self.get_metadata(as_dict=True)  # type: ignore
 
     @metadata.setter
     def metadata(self, val) -> None:
+        """Sets metadata."""
         if not isinstance(val, tuple):
             raise ValueError('val is not tuple')
         self._metadata = val
 
     def get_metadata(self, as_dict: bool = False) -> Union[MetadataDict, MetadataTuple]:
+        """Gets metadata from the request.
+
+        Args:
+            as_dict (bool): dict type metadata if as_dict is True. Otherwise, return
+                tuple metadata.
+
+        Returns:
+            dict or tuple: request metadata.
+        """
         if as_dict:
             return tuple_to_dict(self._metadata)
         return self._metadata
@@ -50,6 +67,7 @@ class InvokeServiceRequest(DaprRequest):
     buffer message.
 
     Attributes:
+        metadata(dict): A dict to include the headers from Dapr Request.
         data (str, bytes, GrpcAny, GrpcMessage, optional): the serialized data
             for invoke_service request.
         content_type (str, optional): the content type of data which is valid
@@ -97,29 +115,43 @@ class InvokeServiceRequest(DaprRequest):
 
     @property
     def http_verb(self) -> Optional[str]:
+        """Gets HTTP method in Dapr invocation request."""
         return self._http_verb
 
     @http_verb.setter
     def http_verb(self, val: Optional[str]) -> None:
+        """Sets HTTP method to Dapr invocation request."""
         if val not in self.HTTP_METHODS:
             raise ValueError(f'{val} is the invalid HTTP verb.')
         self._http_verb = val
 
     @property
     def http_querystring(self) -> Dict[str, str]:
+        """Gets HTTP querystring as dict."""
         return self._http_querystring
 
     def is_http(self) -> bool:
+        """Return true if this request is http compatible."""
         return hasattr(self, '_http_verb') and not (not self._http_verb)
 
     @property
     def proto(self) -> GrpcAny:
+        """Gets raw data as proto any type."""
         return self._data
 
     def is_proto(self) -> bool:
+        """Returns true if data is protocol-buffer serialized."""
         return hasattr(self, '_data') and self._data.type_url != ''
 
     def pack(self, val: Union[GrpcAny, GrpcMessage]) -> None:
+        """Serializes protocol buffer message.
+        
+        Args:
+            message (:class:`GrpcMessage`, :class:`GrpcAny`): the protocol buffer message object
+
+        Raises:
+            ValueError: message is neither GrpcAny nor GrpcMessage.
+        """
         if isinstance(val, GrpcAny):
             self._data = val
         elif isinstance(val, GrpcMessage):
@@ -129,10 +161,10 @@ class InvokeServiceRequest(DaprRequest):
             raise ValueError('invalid data type')
 
     def unpack(self, message: GrpcMessage) -> None:
-        """Unpack the serialized protocol buffer message.
+        """Deserializes the serialized protocol buffer message.
 
         Args:
-            message (:obj:`google.protobuf.message.Message`): the protocol buffer message object
+            message (:obj:`GrpcMessage`): the protocol buffer message object
                 to which the response data is deserialized.
 
         Raises:
@@ -143,15 +175,18 @@ class InvokeServiceRequest(DaprRequest):
 
     @property
     def data(self) -> bytes:
+        """Gets request data as bytes."""
         if self.is_proto():
             raise ValueError('data is protocol buffer message object.')
         return self._data.value
 
     @data.setter
     def data(self, val: Union[str, bytes]) -> None:
+        """Sets str or bytes type data to request data."""
         self.set_data(to_bytes(val))
 
     def set_data(self, val: Union[str, bytes, GrpcAny, GrpcMessage, None]) -> None:
+        """Sets data to request data."""
         if val is None:
             self._data = GrpcAny()
         elif isinstance(val, (bytes, str)):
@@ -162,14 +197,17 @@ class InvokeServiceRequest(DaprRequest):
             raise ValueError(f'invalid data type {type(val)}')
 
     def text(self) -> str:
+        """Gets the request data as str."""
         return to_str(self.data)
 
     @property
     def content_type(self) -> Optional[str]:
+        """Gets content_type for bytes data."""
         return self._content_type
 
     @content_type.setter
     def content_type(self, val: Optional[str]) -> None:
+        """Sets content type for bytes data."""
         self._content_type = val
 
 
@@ -202,15 +240,19 @@ class BindingRequest(DaprRequest):
 
     @property
     def data(self) -> bytes:
+        """Gets request data as bytes."""
         return self._data
 
     @data.setter
     def data(self, val: Union[str, bytes]) -> None:
+        """Sets str or bytes type data to request data."""
         self._data = to_bytes(val)
 
     def text(self) -> str:
+        """Gets the request data as str."""
         return to_str(self.data)
 
     @property
     def binding_metadata(self):
+        """Gets the metadata for output binding."""
         return self._binding_metadata

@@ -18,28 +18,28 @@ from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
 from dapr.clients.grpc._response import InvokeServiceResponse
 
 
-InvokeMethodCallback = Callable[[InvokeServiceRequest], Union[str, bytes, InvokeServiceResponse]]
-SubscriberCallback = Callable[[v1.Event], None]
-BindingCallback = Callable[[BindingRequest], None]
+InvokeMethodCallable = Callable[[InvokeServiceRequest], Union[str, bytes, InvokeServiceResponse]]
+TopicSubscribeCallable = Callable[[v1.Event], None]
+BindingCallable = Callable[[BindingRequest], None]
 
 
 class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
     def __init__(self):
-        self._invoke_method_map: Dict[str, InvokeMethodCallback] = {}
-        self._topic_map: Dict[str, SubscriberCallback] = {}
-        self._binding_map: Dict[str, BindingCallback] = {}
+        self._invoke_method_map: Dict[str, InvokeMethodCallable] = {}
+        self._topic_map: Dict[str, TopicSubscribeCallable] = {}
+        self._binding_map: Dict[str, BindingCallable] = {}
 
         self._registered_topics: List[str] = []
         self._registered_bindings: List[str] = []
 
-    def register_method(self, method: str, cb: InvokeMethodCallback) -> None:
+    def register_method(self, method: str, cb: InvokeMethodCallable) -> None:
         if method in self._invoke_method_map:
             raise ValueError(f'{method} is already registered')
         self._invoke_method_map[method] = cb
 
     def register_topic(
             self, topic: str,
-            cb: SubscriberCallback,
+            cb: TopicSubscribeCallable,
             metadata: Optional[Dict[str, str]]) -> None:
         if topic in self._topic_map:
             raise ValueError(f'{topic} is already registered')
@@ -48,7 +48,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             appcallback_v1.TopicSubscription(topic=topic, metadata=metadata))
 
     def register_binding(
-            self, name: str, cb: BindingCallback) -> None:
+            self, name: str, cb: BindingCallable) -> None:
         if name in self._binding_map:
             raise ValueError(f'{name} is already registered')
         self._binding_map[name] = cb
@@ -58,8 +58,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             self,
             request: common_v1.InvokeRequest,
             context: grpc.ServicerContext) -> common_v1.InvokeResponse:
-        """Invokes service method with InvokeRequest.
-        """
+        """Invokes service method with InvokeRequest."""
         if request.method not in self._invoke_method_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             raise NotImplementedError(f'{request.method} method not implemented!')
