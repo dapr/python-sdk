@@ -24,7 +24,7 @@ from dapr.clients.grpc._helpers import (
 class DaprRequest:
     """A base class for Dapr Request.
 
-    This is the base class for Dapr Request. User can gets the metadata.
+    This is the base class for Dapr Request. User can get the metadata.
 
     Attributes:
         metadata(dict): A dict to include the headers from Dapr Request.
@@ -92,13 +92,13 @@ class InvokeServiceRequest(DaprRequest):
         """Inits InvokeServiceRequestData with data and content_type.
 
         Args:
-            data (bytes, str, or :obj:`google.protobuf.message.Message`): the data
+            data (bytes, str, GrpcAny, GrpcMessage, optional): the data
                 which is used for invoke_service request.
             content_type (str): the content_type of data when the data is bytes.
                 The default content type is application/json.
 
         Raises:
-            ValueError: data is not bytes or :obj:`google.protobuf.message.Message`.
+            ValueError: data is not supported.
         """
         super(InvokeServiceRequest, self).__init__(())
 
