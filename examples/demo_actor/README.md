@@ -6,6 +6,8 @@ This document describes how to create an Actor(DemoActor) and invoke its methods
 
 * **The actor service(demo_actor_service.py).** This implements FastAPI service that is going to host the actor. It contains the implementation of the actor, `demo_actor.py`. An actor implementation is a class that derives from the base type `Actor` and implements the interfaces defined in `demo_actor_interface.py`.
 
+* **The actor service for flask(demo_actor_flask.py).** This implements Flask web service that is going to host the actor.
+
 * **The actor client(demo_actor_client.py)** This contains the implementation of the actor client which calls DemoActor's method defined in Actor Interfaces.
 
 ## Prerequisites
@@ -46,7 +48,13 @@ $ dapr run --app-id demo-actor --app-port 3000 -- uvicorn --port 3000 demo_actor
 ...
 ```
 
-2. Run Demo client in new terminal window
+**For Flask web service**
+
+```bash
+dapr run --app-id demo-actor --app-port 3000 python3 demo_actor_flask.py
+```
+
+1. Run Demo client in new terminal window
 
 ```bash
 $ cd examples/demo_actor
