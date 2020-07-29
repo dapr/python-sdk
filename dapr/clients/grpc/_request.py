@@ -24,7 +24,7 @@ from dapr.clients.grpc._helpers import (
 class DaprRequest:
     """A base class for Dapr Request.
 
-    This is the base class for Dapr Request. User can gets the metadata.
+    This is the base class for Dapr Request. User can get the metadata.
 
     Attributes:
         metadata(dict): A dict to include the headers from Dapr Request.
