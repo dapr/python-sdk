@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from fastapi import FastAPI
-from dapr.ext.fastapi import DaprActor
+from fastapi import FastAPI  # type: ignore
+from dapr.ext.fastapi import DaprActor  # type: ignore
 from demo_actor import DemoActor
 
 
