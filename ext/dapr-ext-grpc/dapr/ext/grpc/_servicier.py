@@ -24,6 +24,14 @@ BindingCallable = Callable[[BindingRequest], None]
 
 
 class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
+    """The implementation of AppCallback Server.
+
+    This internal class implements application server and provides helpers to register
+    method, topic, and input bindings. It implements the routing handling logic to route
+    mulitple methods, topics, and bindings.
+
+    :class:`App` provides useful decorators to register method, topic, input bindings.
+    """
     def __init__(self):
         self._invoke_method_map: Dict[str, InvokeMethodCallable] = {}
         self._topic_map: Dict[str, TopicSubscribeCallable] = {}
@@ -33,6 +41,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._registered_bindings: List[str] = []
 
     def register_method(self, method: str, cb: InvokeMethodCallable) -> None:
+        """Registers method for service invocation."""
         if method in self._invoke_method_map:
             raise ValueError(f'{method} is already registered')
         self._invoke_method_map[method] = cb
@@ -41,6 +50,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             self, topic: str,
             cb: TopicSubscribeCallable,
             metadata: Optional[Dict[str, str]]) -> None:
+        """Registers topic subscription for pubsub."""
         if topic in self._topic_map:
             raise ValueError(f'{topic} is already registered')
         self._topic_map[topic] = cb
@@ -49,6 +59,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
     def register_binding(
             self, name: str, cb: BindingCallable) -> None:
+        """Registers input bindings."""
         if name in self._binding_map:
             raise ValueError(f'{name} is already registered')
         self._binding_map[name] = cb
