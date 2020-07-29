@@ -1,6 +1,6 @@
 from dapr.ext.grpc import App, InvokeServiceRequest, InvokeServiceResponse
 
-app = App(50051)
+app = App()
 
 @app.method(name='my-method')
 def mymethod(request: InvokeServiceRequest) -> InvokeServiceResponse:
@@ -9,4 +9,4 @@ def mymethod(request: InvokeServiceRequest) -> InvokeServiceResponse:
 
     return InvokeServiceResponse(b'INVOKE_RECEIVED', "text/plain; charset=UTF-8")
 
-app.run()
+app.run(50051)

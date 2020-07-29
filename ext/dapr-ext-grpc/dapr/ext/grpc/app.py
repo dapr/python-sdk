@@ -26,7 +26,7 @@ class App:
         app = App()
     """
 
-    def __init__(self, app_port: Optional[int] = -1):
+    def __init__(self):
         """Inits App object and creates gRPC server.
 
         Args:
@@ -35,15 +35,15 @@ class App:
         self._servicer = _CallbackServicer()
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
-        if app_port == -1:
-            app_port = settings.GRPC_APP_PORT
-        self._server.add_insecure_port(f'[::]:{app_port}')
 
     def __del__(self):
         self.stop()
 
-    def run(self) -> None:
+    def run(self, app_port: Optional[int]) -> None:
         """Starts app gRPC server and waits until :class:`App`.stop() is called."""
+        if app_port is None:
+            app_port = settings.GRPC_APP_PORT
+        self._server.add_insecure_port(f'[::]:{app_port}')
         self._server.start()
         self._server.wait_for_termination()
 

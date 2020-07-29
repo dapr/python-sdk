@@ -2,7 +2,7 @@ from dapr.ext.grpc import App, InvokeServiceRequest
 
 import proto.response_pb2 as response_messages
 
-app = App(50051)
+app = App()
 
 @app.method('my_method')
 def mymethod(request: InvokeServiceRequest):
@@ -14,4 +14,4 @@ def mymethod(request: InvokeServiceRequest):
         code=200,
         message="Hello World - Success!")
 
-app.run()
+app.run(50051)
