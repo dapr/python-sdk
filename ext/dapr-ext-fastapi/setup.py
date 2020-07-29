@@ -10,7 +10,7 @@ import os
 from setuptools import setup
 
 # Load version in dapr package.
-exec(open('dapr/ext/grpc/version.py').read())
+exec(open('dapr/ext/fastapi/version.py').read())
 version = __version__
 
 
