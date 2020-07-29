@@ -15,7 +15,7 @@ version = __version__
 
 
 def is_release():
-    return '.dev' in __version__
+    return '.dev' not in __version__
 
 
 name = 'dapr-ext-grpc'

@@ -55,3 +55,9 @@ jobs:
         cd ext/dapr-ext-grpc
         python setup.py sdist bdist_wheel
         twine upload dist/*
+    - name: Build and publish dapr-ext-fastapi
+      if: github.event_name != 'pull_request'
+      run: |
+        cd ext/dapr-ext-fastapi
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
