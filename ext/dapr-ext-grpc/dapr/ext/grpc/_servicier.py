@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 import grpc
 
-from cloudevents.sdk.event import v1
+from cloudevents.sdk.event import v1  # type: ignore
 from typing import Callable, Dict, List, Optional, Union
 
 from google.protobuf import empty_pb2
@@ -65,13 +65,10 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._binding_map[name] = cb
         self._registered_bindings.append(name)
 
-    def OnInvoke(
-            self,
-            request: common_v1.InvokeRequest,
-            context: grpc.ServicerContext) -> common_v1.InvokeResponse:
+    def OnInvoke(self, request, context):
         """Invokes service method with InvokeRequest."""
         if request.method not in self._invoke_method_map:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
             raise NotImplementedError(f'{request.method} method not implemented!')
 
         req = InvokeServiceRequest(request.data, request.content_type)
@@ -100,21 +97,15 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         return common_v1.InvokeResponse(
             data=resp_data.proto, content_type=resp_data.content_type)
 
-    def ListTopicSubscriptions(
-            self,
-            request: empty_pb2.Empty,
-            context: grpc.ServicerContext) -> appcallback_v1.ListTopicSubscriptionsResponse:
+    def ListTopicSubscriptions(self, request, context):
         """Lists all topics subscribed by this app."""
         return appcallback_v1.ListTopicSubscriptionsResponse(
             subscriptions=self._registered_topics)
 
-    def OnTopicEvent(
-            self,
-            request: appcallback_v1.TopicEventRequest,
-            context: grpc.ServicerContext) -> None:
+    def OnTopicEvent(self, request, context):
         """Subscribes events from Pubsub."""
         if request.topic not in self._topic_map:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
             raise NotImplementedError(f'topic {request.topic} is not implemented!')
 
         event = v1.Event()
@@ -130,24 +121,18 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
         return empty_pb2.Empty()
 
-    def ListInputBindings(
-            self,
-            request: empty_pb2.Empty,
-            context: grpc.ServicerContext) -> appcallback_v1.ListInputBindingsResponse:
+    def ListInputBindings(self, request, context):
         """Lists all input bindings subscribed by this app."""
         return appcallback_v1.ListInputBindingsResponse(
             bindings=self._registered_bindings)
 
-    def OnBindingEvent(
-            self,
-            request: appcallback_v1.BindingEventRequest,
-            context: grpc.ServicerContext) -> appcallback_v1.BindingEventResponse:
+    def OnBindingEvent(self, request, context):
         """Listens events from the input bindings
         User application can save the states or send the events to the output
         bindings optionally by returning BindingEventResponse.
         """
         if request.name not in self._binding_map:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+            context.set_code(grpc.StatusCode.UNIMPLEMENTED)   # type: ignore
             raise NotImplementedError(f'{request.name} binding not implemented!')
 
         req = BindingRequest(request.data, request.metadata)

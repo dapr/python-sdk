@@ -51,12 +51,13 @@ class DaprClient:
         """
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
-        self._channel = grpc.insecure_channel(address)
+        self._channel = grpc.insecure_channel(address)   # type: ignore
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
-            self._channel = grpc.intercept_channel(self._channel, api_token_interceptor)
+            self._channel = grpc.intercept_channel(   # type: ignore
+                self._channel, api_token_interceptor)
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
