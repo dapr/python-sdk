@@ -149,7 +149,7 @@ class BindingTests(unittest.TestCase):
             ('key2', 'value1'),
         )
 
-    def test_duplicated_topic(self):
+    def test_duplicated_binding(self):
         with self.assertRaises(ValueError):
             self._servicier.register_binding(
                 'binding1', self._binding1_method)
@@ -167,7 +167,7 @@ class BindingTests(unittest.TestCase):
 
         self._binding1_method.assert_called_once()
 
-    def test_non_binding_topic(self):
+    def test_non_registered_binding(self):
         with self.assertRaises(NotImplementedError):
             self._servicier.OnBindingEvent(
                 appcallback_v1.BindingEventRequest(name='binding3'),
