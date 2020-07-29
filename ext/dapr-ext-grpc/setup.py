@@ -10,7 +10,7 @@ import os
 from setuptools import setup
 
 # Load version in dapr package.
-exec(open('flask_dapr/version.py').read())
+exec(open('dapr/ext/grpc/version.py').read())
 version = __version__
 
 
@@ -18,10 +18,10 @@ def is_release():
     return '.dev' in __version__
 
 
-name = 'flask-dapr'
-description = 'The official release of Dapr Python SDK Flask Extension'
+name = 'dapr-ext-grpc'
+description = 'The official release of Dapr Python SDK gRPC Extension'
 long_description = '''
-This is the Flask extension for Dapr.
+This is the gRPC extension for Dapr.
 
 Dapr is a portable, serverless, event-driven runtime that makes it easy for developers to
 build resilient, stateless and stateful microservices that run on the cloud and edge and
@@ -39,8 +39,8 @@ build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 if not is_release():
     name += '-dev'
     version = f'{__version__}{build_number}'
-    description = 'The developmental release for Dapr Python SDK Flask.'
-    long_description = 'This is the developmental release for Dapr Python SDK Flask.'
+    description = 'The developmental release for Dapr gRPC AppCallback.'
+    long_description = 'This is the developmental release for Dapr gRPC AppCallback.'
 
 print(f'package name: {name}, version: {version}', flush=True)
 

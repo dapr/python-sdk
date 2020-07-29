@@ -8,7 +8,7 @@ Licensed under the MIT License.
 # Default environment settings that environment variables overrides
 
 HTTP_APP_PORT = 3000
-GRPC_APP_PORT = 50000
+GRPC_APP_PORT = 3010
 
 DAPR_API_TOKEN = None
 DAPR_RUNTIME_HOST = '127.0.0.1'

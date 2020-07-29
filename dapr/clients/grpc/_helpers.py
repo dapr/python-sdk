@@ -5,13 +5,71 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+from collections import namedtuple
 from typing import Dict, List, Union, Tuple
+
+from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.message import Message as GrpcMessage
 from grpc import UnaryUnaryClientInterceptor, ClientCallDetails     # type: ignore
 
-from collections import namedtuple
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
+
+
+def tuple_to_dict(tupledata: MetadataTuple) -> MetadataDict:
+    """Converts tuple to dict.
+
+    Args:
+        tupledata (tuple): tuple storing metadata
+
+    Returns:
+        A dict which is converted from tuple
+    """
+
+    d: MetadataDict = {}
+    for k, v in tupledata:  # type: ignore
+        d.setdefault(k, []).append(v)
+    return d
+
+
+def unpack(data: GrpcAny, message: GrpcMessage) -> None:
+    """Unpack the serialized protocol buffer message.
+
+    Args:
+        data (:obj:`google.protobuf.message.Any`): the serialized protocol buffer message.
+        message (:obj:`google.protobuf.message.Message`): the protocol buffer message object
+            to which the response data is deserialized.
+
+    Raises:
+        ValueError: message is not protocol buffer message object or message's type is not
+            matched with the response data type
+    """
+    if not isinstance(message, GrpcMessage):
+        raise ValueError('output message is not protocol buffer message object')
+    if not data.Is(message.DESCRIPTOR):
+        raise ValueError(f'invalid type. serialized message type: {data.type_url}')
+    data.Unpack(message)
+
+
+def to_bytes(data: Union[str, bytes]) -> bytes:
+    """Convert str data to bytes."""
+    if isinstance(data, bytes):
+        return data
+    elif isinstance(data, str):
+        return data.encode('utf-8')
+    else:
+        raise(f'invalid data type {type(data)}')
+
+
+def to_str(data: Union[str, bytes]) -> str:
+    """Convert bytes data to str."""
+    if isinstance(data, str):
+        return data
+    elif isinstance(data, bytes):
+        return data.decode('utf-8')
+    else:
+        raise(f'invalid data type {type(data)}')
 
 
 class _ClientCallDetails(

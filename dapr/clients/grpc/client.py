@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import grpc  # type: ignore
 
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 from google.protobuf.message import Message as GrpcMessage
 
@@ -15,8 +15,13 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor
-from dapr.clients.grpc._request import InvokeServiceRequestData, InvokeBindingRequestData
-from dapr.clients.grpc._response import InvokeServiceResponse, InvokeBindingResponse, DaprResponse
+from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
+from dapr.clients.grpc._response import (
+    BindingResponse,
+    DaprResponse,
+    GetSecretResponse,
+    InvokeServiceResponse
+)
 
 
 class DaprClient:
@@ -27,14 +32,14 @@ class DaprClient:
 
     Examples:
 
-        >>> import dapr
-        >>> d = dapr.DaprClient()
+        >>> from dapr.clients import DaprClient
+        >>> d = DaprClient()
         >>> resp = d.invoke_service('callee', 'method', b'data')
 
     With context manager:
 
-        >>> import dapr
-        >>> with dapr.DaprClient() as d:
+        >>> from dapr.clients import DaprClient
+        >>> with DaprClient() as d:
         ...     resp = d.invoke_service('callee', 'method', b'data')
     """
 
@@ -96,7 +101,7 @@ class DaprClient:
 
         The example calls `callee` service with bytes data, which implements grpc appcallback:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
 
             with DaprClient() as d:
                 resp = d.invoke_service(
@@ -115,7 +120,7 @@ class DaprClient:
 
         When sending custom protocol buffer message object, it doesn't requires content_type:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
 
             req_data = dapr_example_v1.CustomRequestMessage(data='custom')
 
@@ -135,7 +140,7 @@ class DaprClient:
 
         The example calls `callee` service which implements http appcallback:
 
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
 
             with DaprClient() as d:
                 resp = d.invoke_service(
@@ -168,8 +173,7 @@ class DaprClient:
         Returns:
             :class:`InvokeServiceResponse` object returned from callee
         """
-        req_data = InvokeServiceRequestData(data, content_type)
-
+        req_data = InvokeServiceRequest(data, content_type)
         http_ext = None
         if http_verb:
             http_ext = self._get_http_extension(http_verb, http_querystring)
@@ -178,31 +182,36 @@ class DaprClient:
             id=id,
             message=common_v1.InvokeRequest(
                 method=method,
-                data=req_data.data,
+                data=req_data.proto,
                 content_type=req_data.content_type,
                 http_extension=http_ext)
         )
 
         response, call = self._stub.InvokeService.with_call(req, metadata=metadata)
 
-        return InvokeServiceResponse(
-            response.data, response.content_type,
-            call.initial_metadata(), call.trailing_metadata())
+        resp_data = InvokeServiceResponse(response.data, response.content_type)
+        resp_data.headers = call.initial_metadata()  # type: ignore
+        return resp_data
 
     def invoke_binding(
             self,
             name: str,
             operation: str,
             data: Union[bytes, str],
-            metadata: Optional[MetadataTuple] = ()) -> InvokeBindingResponse:
-        """Invokes the output bindnig with the specified operation.
+            binding_metadata: Dict[str, str] = {},
+            metadata: Optional[MetadataTuple] = ()) -> BindingResponse:
+        """Invokes the output binding with the specified operation.
+
         The data field takes any JSON serializable value and acts as the
         payload to be sent to the output binding. The metadata field is an
         array of key/value pairs and allows you to set binding specific metadata
         for each call. The operation field tells the Dapr binding which operation
         it should perform.
+
         The example calls output `binding` service with bytes data:
-            from dapr import DaprClient
+
+            from dapr.clients import DaprClient
+
             with DaprClient() as d:
                 resp = d.invoke_binding(
                     name = 'kafkaBinding',
@@ -212,29 +221,32 @@ class DaprClient:
                         ('header1', 'value1)
                     ),
                 )
-                # resp.content includes the content in bytes.
+                # resp.data includes the response data in bytes.
                 # resp.metadata include the metadata returned from the external system.
+
         Args:
             name (str): the name of the binding as defined in the components
             operation (str): the operation to perform on the binding
             data (bytes or str): bytes or str for data which will sent to the binding
+            binding_metadata (dict, optional): metadata for output binding
             metadata (tuple, optional): custom metadata to send to the binding
+
         Returns:
             :class:`InvokeBindingResponse` object returned from binding
         """
-        req_data = InvokeBindingRequestData(data, metadata)
+        req_data = BindingRequest(data, binding_metadata)
 
         req = api_v1.InvokeBindingRequest(
             name=name,
             data=req_data.data,
-            metadata=req_data.metadata,
+            metadata=req_data.binding_metadata,
             operation=operation
         )
 
-        response, call = self._stub.InvokeBinding.with_call(req)
-        return InvokeBindingResponse(
+        response, call = self._stub.InvokeBinding.with_call(req, metadata=metadata)
+        return BindingResponse(
             response.data, dict(response.metadata),
-            call.initial_metadata(), call.trailing_metadata())
+            call.initial_metadata())
 
     def publish_event(
             self,
@@ -246,8 +258,10 @@ class DaprClient:
         The str data is encoded into bytes with default charset of utf-8.
         Custom metadata can be passed with the metadata field which will be passed
         on a gRPC metadata.
+
         The example publishes a byte array event to a topic:
-            from dapr import DaprClient
+
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.publish_event(
                     topic='TOPIC_A'
@@ -257,11 +271,12 @@ class DaprClient:
                     ),
                 )
                 # resp.headers includes the gRPC initial metadata.
-                # resp.trailers includes that gRPC trailing metadata.
+
         Args:
             topic (str): the topic name to publish to
             data (bytes or str): bytes or str for data
             metadata (tuple, optional): custom metadata
+
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
@@ -277,8 +292,57 @@ class DaprClient:
             data=req_data)
 
         # response is google.protobuf.Empty
-        response, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+        _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
 
-        return DaprResponse(
-            headers=call.initial_metadata(),
-            trailers=call.trailing_metadata())
+        return DaprResponse(call.initial_metadata())
+
+    def get_secret(
+            self,
+            store_name: str,
+            key: str,
+            secret_metadata: Optional[Dict[str, str]] = {},
+            metadata: Optional[MetadataTuple] = ()) -> GetSecretResponse:
+        """Get secret with a given key.
+
+        This gets a secret from secret store with a given key and secret store name.
+        Metadata for request can be passed with the secret_metadata field and custom
+        metadata can be passed with metadata field.
+
+
+        The example gets a secret from secret store:
+
+            from dapr.clients import DaprClient
+
+            with DaprClient() as d:
+                resp = d.get_secret(
+                    store_name='secretstoreA',
+                    key='keyA',
+                    secret_metadata={'header1', 'value1'}
+                    metadata=(
+                        ('headerA', 'valueB')
+                    ),
+                )
+
+                # resp.headers includes the gRPC initial metadata.
+                # resp.trailers includes that gRPC trailing metadata.
+
+        Args:
+            store_name (str): store name to get secret from
+            key (str): str for key
+            secret_metadata (Dict[str, str], Optional): metadata of request
+            metadata (MetadataTuple, optional): custom metadata
+
+        Returns:
+            :class:`GetSecretResponse` object with the secret and metadata returned from callee
+        """
+
+        req = api_v1.GetSecretRequest(
+            store_name=store_name,
+            key=key,
+            metadata=secret_metadata)
+
+        response, call = self._stub.GetSecret.with_call(req, metadata=metadata)
+
+        return GetSecretResponse(
+            secret=response.data,
+            headers=call.initial_metadata())

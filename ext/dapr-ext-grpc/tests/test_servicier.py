@@ -1,0 +1,179 @@
+# -*- coding: utf-8 -*-
+
+"""
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT License.
+"""
+
+import unittest
+
+from unittest.mock import MagicMock, Mock
+
+from dapr.clients.grpc._request import InvokeServiceRequest
+from dapr.clients.grpc._response import InvokeServiceResponse
+from dapr.ext.grpc._servicier import _CallbackServicer
+from dapr.proto import common_v1, appcallback_v1
+
+from google.protobuf.any_pb2 import Any as GrpcAny
+
+
+class OnInvokeTests(unittest.TestCase):
+    def setUp(self):
+        self._servicier = _CallbackServicer()
+
+    def _on_invoke(self, method_name, method_cb):
+        self._servicier.register_method(method_name, method_cb)
+
+        # fake context
+        fake_context = MagicMock()
+        fake_context.invocation_metadata.return_value = (
+            ('key1', 'value1'),
+            ('key2', 'value1'),
+        )
+
+        return self._servicier.OnInvoke(
+            common_v1.InvokeRequest(method=method_name, data=GrpcAny()),
+            fake_context,
+        )
+
+    def test_on_invoke_return_str(self):
+        def method_cb(request: InvokeServiceRequest):
+            return 'method_str_cb'
+        resp = self._on_invoke('method_str', method_cb)
+
+        self.assertEqual(b'method_str_cb', resp.data.value)
+
+    def test_on_invoke_return_bytes(self):
+        def method_cb(request: InvokeServiceRequest):
+            return b'method_str_cb'
+        resp = self._on_invoke('method_bytes', method_cb)
+
+        self.assertEqual(b'method_str_cb', resp.data.value)
+
+    def test_on_invoke_return_proto(self):
+        def method_cb(request: InvokeServiceRequest):
+            return common_v1.StateItem(key='fake_key')
+        resp = self._on_invoke('method_proto', method_cb)
+
+        state = common_v1.StateItem()
+        resp.data.Unpack(state)
+
+        self.assertEqual('fake_key', state.key)
+
+    def test_on_invoke_return_invoke_service_response(self):
+        def method_cb(request: InvokeServiceRequest):
+            return InvokeServiceResponse(
+                data='fake_data',
+                content_type='text/plain',
+            )
+        resp = self._on_invoke('method_resp', method_cb)
+
+        self.assertEqual(b'fake_data', resp.data.value)
+        self.assertEqual('text/plain', resp.content_type)
+
+    def test_on_invoke_invalid_response(self):
+        def method_cb(request: InvokeServiceRequest):
+            return 1000
+
+        with self.assertRaises(NotImplementedError):
+            self._on_invoke('method_resp', method_cb)
+
+
+class TopicSubscriptionTests(unittest.TestCase):
+    def setUp(self):
+        self._servicier = _CallbackServicer()
+        self._topic1_method = Mock()
+        self._topic2_method = Mock()
+
+        self._servicier.register_topic(
+            'topic1',
+            self._topic1_method,
+            {'session': 'key'})
+        self._servicier.register_topic(
+            'topic2',
+            self._topic2_method,
+            {'session': 'key'})
+
+        # fake context
+        self.fake_context = MagicMock()
+        self.fake_context.invocation_metadata.return_value = (
+            ('key1', 'value1'),
+            ('key2', 'value1'),
+        )
+
+    def test_duplicated_topic(self):
+        with self.assertRaises(ValueError):
+            self._servicier.register_topic(
+                'topic1',
+                self._topic1_method,
+                {'session': 'key'})
+
+    def test_list_topic_subscription(self):
+        resp = self._servicier.ListTopicSubscriptions(None, None)
+        self.assertEqual('topic1', resp.subscriptions[0].topic)
+        self.assertEqual({'session': 'key'}, resp.subscriptions[0].metadata)
+        self.assertEqual('topic2', resp.subscriptions[1].topic)
+        self.assertEqual({'session': 'key'}, resp.subscriptions[1].metadata)
+
+    def test_topic_event(self):
+        self._servicier.OnTopicEvent(
+            appcallback_v1.TopicEventRequest(topic='topic1'),
+            self.fake_context,
+        )
+
+        self._topic1_method.assert_called_once()
+
+    def test_non_registered_topic(self):
+        with self.assertRaises(NotImplementedError):
+            self._servicier.OnTopicEvent(
+                appcallback_v1.TopicEventRequest(topic='topic_non_existed'),
+                self.fake_context,
+            )
+
+
+class BindingTests(unittest.TestCase):
+    def setUp(self):
+        self._servicier = _CallbackServicer()
+        self._binding1_method = Mock()
+        self._binding2_method = Mock()
+
+        self._servicier.register_binding(
+            'binding1', self._binding1_method)
+        self._servicier.register_binding(
+            'binding2', self._binding2_method)
+
+        # fake context
+        self.fake_context = MagicMock()
+        self.fake_context.invocation_metadata.return_value = (
+            ('key1', 'value1'),
+            ('key2', 'value1'),
+        )
+
+    def test_duplicated_topic(self):
+        with self.assertRaises(ValueError):
+            self._servicier.register_binding(
+                'binding1', self._binding1_method)
+
+    def test_list_bindings(self):
+        resp = self._servicier.ListInputBindings(None, None)
+        self.assertEqual('binding1', resp.bindings[0])
+        self.assertEqual('binding2', resp.bindings[1])
+
+    def test_binding_event(self):
+        self._servicier.OnBindingEvent(
+            appcallback_v1.BindingEventRequest(name='binding1'),
+            self.fake_context,
+        )
+
+        self._binding1_method.assert_called_once()
+
+    def test_non_binding_topic(self):
+        with self.assertRaises(NotImplementedError):
+            self._servicier.OnBindingEvent(
+                appcallback_v1.BindingEventRequest(name='binding3'),
+                self.fake_context,
+            )
+
+
+if __name__ == '__main__':
+    unittest.main()
