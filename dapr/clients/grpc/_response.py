@@ -73,11 +73,11 @@ class InvokeServiceResponse(DaprResponse):
     and protocol buffer data.
 
     Attributes:
-        data (:obj:`google.protobuf.any_pb2.Any`): the serialized protocol
+        data (str, bytes, GrpcAny, GrpcMessage, optional): the serialized protocol
             buffer raw message
-        content (bytes): bytes data if response data is not serialized
+        content (bytes, optional): bytes data if response data is not serialized
             protocol buffer message
-        content_type (str): the type of `content`
+        content_type (str, optional): the type of `content`
     """
     def __init__(
             self,
@@ -90,11 +90,7 @@ class InvokeServiceResponse(DaprResponse):
             data (str, bytes, GrpcAny, GrpcMessage, optional): the response data
                 from Dapr response
             content_type (str, optional): the content type of the bytes data
-            headers (Tuple, optional): the headers from Dapr gRPC response
-
-        Raises:
-            ValueError: if the response data is not :class:`google.protobuf.any_pb2.Any`
-                object.
+            headers (tuple, optional): the headers from Dapr gRPC response
         """
         super(InvokeServiceResponse, self).__init__(headers)
         self._content_type = content_type

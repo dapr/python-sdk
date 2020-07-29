@@ -5,12 +5,13 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+from collections import namedtuple
 from typing import Dict, List, Union, Tuple
+
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 from grpc import UnaryUnaryClientInterceptor, ClientCallDetails     # type: ignore
 
-from collections import namedtuple
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
@@ -52,6 +53,7 @@ def unpack(data: GrpcAny, message: GrpcMessage) -> None:
 
 
 def to_bytes(data: Union[str, bytes]) -> bytes:
+    """Convert str data to bytes."""
     if isinstance(data, bytes):
         return data
     elif isinstance(data, str):
@@ -61,6 +63,7 @@ def to_bytes(data: Union[str, bytes]) -> bytes:
 
 
 def to_str(data: Union[str, bytes]) -> str:
+    """Convert bytes data to str."""
     if isinstance(data, str):
         return data
     elif isinstance(data, bytes):
