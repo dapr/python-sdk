@@ -23,20 +23,6 @@ This includes the following packages:
 
 > Note: Dapr SDK for python is currently under community development in alpha phase.
 
-* [x] Initial implementation of Actor Runtime/Manager/Proxy
-* [x] Actor service invocation
-* [x] RPC style actor proxy
-* [x] Flask integration for Dapr Actor Service
-* [x] Example for Actor service invocation
-* [x] Complete tox.ini setup
-* [x] Actor state management
-* [x] Actor timer
-* [x] Actor reminder
-* [x] Enhance error handling
-* [ ] Auto generated documents
-* [ ] Create convenient layer wrapping gRPC and HTTP clients for Dapr
-* [ ] Flask extensions for Dapr State/Pubsub/Bindings
-
 ## Getting started
 
 ### Prerequisites
@@ -75,12 +61,11 @@ git clone https://github.com/dapr/python-sdk.git
 cd python-sdk
 ```
 
-2. Set PYTHONPATH environment
-
-Make sure that you set `PYTHONPATH` environment variable to repo root path.
+2. Install a project in a editable mode
 
 ```bash
-export PYTHONPATH=`pwd`
+pip3 install -e .
+pip3 install -e ./ext/dapr-ext-grpc/
 ```
 
 3. Install required packages
@@ -102,6 +87,7 @@ tox -e type
 ```
 
 ## Documentation
+
 Documentation is generated using Sphinx. Extensions used are mainly Napoleon (To process the Google Comment Style) and Autodocs (For automatically generating documentation). The `.rst` files are generated using Sphinx-Apidocs.
 
 To generate documentation:
