@@ -49,3 +49,9 @@ jobs:
         cd ext/flask_dapr
         python setup.py sdist bdist_wheel
         twine upload dist/*
+    - name: Build and publish dapr-ext-grpc
+      if: github.event_name != 'pull_request'
+      run: |
+        cd ext/dapr-ext-grpc
+        python setup.py sdist bdist_wheel
+        twine upload dist/*

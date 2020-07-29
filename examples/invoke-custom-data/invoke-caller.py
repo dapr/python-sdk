@@ -1,4 +1,4 @@
-from dapr import DaprClient
+from dapr.clients import DaprClient
 
 import proto.response_pb2 as response_messages
 

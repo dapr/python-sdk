@@ -3,7 +3,7 @@
 # Licensed under the MIT License.
 # ------------------------------------------------------------
 
-from dapr import DaprClient
+from dapr.clients import DaprClient
 
 with DaprClient() as d:
     key = 'secretKey'
