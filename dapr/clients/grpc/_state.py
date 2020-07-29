@@ -11,13 +11,13 @@ class State:
 
 
 class Consistency(Enum):
-    EVENTUAL = common_v1.StateOptions.StateConsistency.CONSISTENCY_EVENTUAL
-    STRONG = common_v1.StateOptions.StateConsistency.CONSISTENCY_STRONG
+    eventual = common_v1.StateOptions.StateConsistency.CONSISTENCY_EVENTUAL
+    strong = common_v1.StateOptions.StateConsistency.CONSISTENCY_STRONG
 
 
 class Concurrency(Enum):
-    FIRST_WRITE = common_v1.StateOptions.StateConcurrency.CONCURRENCY_FIRST_WRITE
-    LAST_WRITE = common_v1.StateOptions.StateConcurrency.CONCURRENCY_LAST_WRITE
+    first_write = common_v1.StateOptions.StateConcurrency.CONCURRENCY_FIRST_WRITE
+    last_write = common_v1.StateOptions.StateConcurrency.CONCURRENCY_LAST_WRITE
 
 
 class RetryPolicy:
@@ -29,8 +29,8 @@ class RetryPolicy:
 
 
 class RetryPattern(Enum):
-    LINEAR = common_v1.StateOptions.StateRetryPolicy.RetryPattern.RETRY_LINEAR
-    EXPONENTIAL = common_v1.StateOptions.StateRetryPolicy.RetryPattern.RETRY_EXPONENTIAL
+    linear = common_v1.StateOptions.StateRetryPolicy.RetryPattern.RETRY_LINEAR
+    exponential = common_v1.StateOptions.StateRetryPolicy.RetryPattern.RETRY_EXPONENTIAL
 
 
 class StateOptions:
