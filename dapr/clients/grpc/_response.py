@@ -164,7 +164,7 @@ class InvokeServiceResponse(DaprResponse):
 
     def pack(self, val: Union[GrpcAny, GrpcMessage]) -> None:
         """Serializes protocol buffer message.
-        
+
         Args:
             message (:class:`GrpcMessage`, :class:`GrpcAny`): the protocol buffer message object
 
