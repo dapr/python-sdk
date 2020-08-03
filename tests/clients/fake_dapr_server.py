@@ -1,10 +1,8 @@
 import grpc
-import json
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
 from dapr.proto import api_service_v1, common_v1, api_v1
-from google.protobuf.json_format import MessageToJson
 
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
