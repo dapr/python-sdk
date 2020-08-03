@@ -79,6 +79,7 @@ class InvokeServiceResponse(DaprResponse):
             protocol buffer message
         content_type (str, optional): the type of `content`
     """
+
     def __init__(
             self,
             data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
@@ -202,6 +203,7 @@ class BindingResponse(DaprResponse):
         data (bytes): the data in response from the invoke_binding call
         binding_metadata (Dict[str, str]): metadata sent as a reponse by the binding
     """
+
     def __init__(
             self,
             data: Union[bytes, str],
@@ -250,6 +252,7 @@ class GetSecretResponse(DaprResponse):
     Attributes:
         secret (Dict[str, str]): secret received from response
     """
+
     def __init__(
             self,
             secret: Dict[str, str],
@@ -268,6 +271,7 @@ class GetSecretResponse(DaprResponse):
         """Gets secret as a dict."""
         return self._secret
 
+
 class StateResponse(DaprResponse):
     """The response of get_state API.
 
@@ -276,6 +280,7 @@ class StateResponse(DaprResponse):
     Attributes:
         data (Dict[str, str]): secret received from response
     """
+
     def __init__(
             self,
             data: Union[bytes, str],

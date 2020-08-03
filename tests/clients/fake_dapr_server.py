@@ -82,6 +82,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         for state in request.states:
             state = json.loads(MessageToJson(state))
             self.store[state['key']] = state['value'].decode('utf-8')
+
+        context.send_initial_metadata(headers)
+        context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
     def GetState(self, request, context):
