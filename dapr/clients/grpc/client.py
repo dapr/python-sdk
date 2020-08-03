@@ -337,19 +337,19 @@ class DaprClient:
         if not isinstance(value, bytes) and not isinstance(value, str):
             raise ValueError(f'invalid type for data {type(value)}')
 
-        req_value = to_bytes(value)
+        req_value = value
 
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
 
-        state = [common_v1.StateItem(
-            key=state['key'], value=req_value, etag=to_bytes(etag),
-            options=state_options)]
+        state = common_v1.StateItem(
+            key=state['key'], value=req_value, etag=etag,  # type: ignore
+            options=state_options)
 
         if state_options is not None:
             state.options = state_options
 
-        req = api_v1.SaveStateRequest(store_name=store_name, states=state)
+        req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         response, call = self._stub.SaveState.with_call(req, metadata=metadata)
         return DaprResponse(
             headers=call.initial_metadata())

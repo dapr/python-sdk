@@ -167,12 +167,17 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_save_state(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
+        key = "key_1"
+        value = "value_1"
         resp = dapr.save_state(
             store_name="statestore",
-            states=[{'key': 'key1', 'value': 'value1'}, {'key': 'key2', 'value': 'value2'}]
+            key=key,
+            value=value
         )
-        resp = dapr.get_state(store_name="statestore", key="key1")
-        self.assertEqual(resp.data, b"value1")
+        resp = dapr.get_state(store_name="statestore", key=key)
+
+        self.assertEqual(1, len(resp.headers))
+        self.assertEqual(value, resp.data)
 
     def test_get_secret(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
