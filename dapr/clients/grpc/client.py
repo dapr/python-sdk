@@ -15,13 +15,14 @@ from google.protobuf.message import Message as GrpcMessage
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
-from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor
+from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes, to_str
 from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
 from dapr.clients.grpc._response import (
     BindingResponse,
     DaprResponse,
     GetSecretResponse,
-    InvokeServiceResponse
+    InvokeServiceResponse,
+    StateResponse
 )
 
 
@@ -307,7 +308,8 @@ class DaprClient:
             raise ValueError("State store name cannot be empty")
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=metadata)
         response, call = self._stub.GetState.with_call(req)
-        return DaprResponse(
+        return StateResponse(
+            data=to_bytes(response.data),
             headers=call.initial_metadata(),
             trailers=call.trailing_metadata())
 
@@ -316,8 +318,8 @@ class DaprClient:
             store_name: str,
             key: str,
             value: Union[bytes, str],
-            etag: str = "",
-            state_options: StateOptions = None,
+            etag: Optional[str] = None,
+            state_options: Optional[StateOptions] = None,
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Saves key-value pairs to a statestore
         The example saves states to a statestore:
@@ -336,17 +338,18 @@ class DaprClient:
         if not isinstance(value, bytes) and not isinstance(value, str):
             raise ValueError(f'invalid type for data {type(value)}')
 
-        req_value = value
-        if isinstance(value, str):
-            req_value = value.encode('utf-8')
+        req_value = to_bytes(value)
 
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
+        
         state = [common_v1.StateItem(
-            key=state['key'], value=req_value, etag=etag.encode('utf-8'),
+            key=state['key'], value=req_value, etag=to_bytes(etag),
             options=state_options)]
+        
         if state_options is not None:
             state.options = state_options
+        
         req = api_v1.SaveStateRequest(store_name=store_name, states=state)
         response, call = self._stub.SaveState.with_call(req, metadata=metadata)
         return DaprResponse(
