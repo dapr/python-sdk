@@ -306,8 +306,8 @@ class DaprClient:
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
-        req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=metadata)
-        response, call = self._stub.GetState.with_call(req)
+        req = api_v1.GetStateRequest(store_name=store_name, key=key)
+        response, call = self._stub.GetState.with_call(req, metadata=metadata)
         return StateResponse(
             data=to_bytes(response.data),
             headers=call.initial_metadata())
@@ -343,7 +343,7 @@ class DaprClient:
             raise ValueError("State store name cannot be empty")
 
         state = common_v1.StateItem(
-            key=state['key'], value=req_value, etag=etag,  # type: ignore
+            key=key, value=to_bytes(req_value), etag=etag,
             options=state_options)
 
         if state_options is not None:

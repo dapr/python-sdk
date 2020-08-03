@@ -12,6 +12,7 @@ from dapr.clients.grpc.client import DaprClient
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
+from dapr.clients.grpc._helpers import to_bytes
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -176,8 +177,8 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
         resp = dapr.get_state(store_name="statestore", key=key)
 
-        self.assertEqual(1, len(resp.headers))
-        self.assertEqual(value, resp.data)
+        #self.assertEqual(1, len(resp.headers))
+        self.assertEqual(to_bytes(value), resp.data)
 
     def test_get_secret(self):
         dapr = DaprClient(f'localhost:{self.server_port}')

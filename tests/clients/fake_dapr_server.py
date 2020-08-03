@@ -80,8 +80,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         headers = ()
         trailers = ()
         for state in request.states:
-            state = json.loads(MessageToJson(state))
-            self.store[state['key']] = state['value'].decode('utf-8')
+            self.store[state.key] = state.value
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -92,7 +91,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         if key not in self.store:
             return empty_pb2.Empty()
         else:
-            return api_v1.GetStateResponse(data=str.encode(self.store[key]), etag="")
+            return api_v1.GetStateResponse(data=self.store[key], etag="")
 
     def GetSecret(self, request, context) -> api_v1.GetSecretResponse:
         headers = ()
