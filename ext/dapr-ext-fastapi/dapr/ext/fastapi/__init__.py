@@ -5,11 +5,9 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from .version import __version__
+from .actor import DaprActor
 
-from dapr.clients import DaprClient
 
 __all__ = [
-    '__version__',
-    'DaprClient',
+    'DaprActor',
 ]
