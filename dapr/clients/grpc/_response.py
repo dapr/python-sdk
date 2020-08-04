@@ -79,6 +79,7 @@ class InvokeServiceResponse(DaprResponse):
             protocol buffer message
         content_type (str, optional): the type of `content`
     """
+
     def __init__(
             self,
             data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
@@ -202,6 +203,7 @@ class BindingResponse(DaprResponse):
         data (bytes): the data in response from the invoke_binding call
         binding_metadata (Dict[str, str]): metadata sent as a reponse by the binding
     """
+
     def __init__(
             self,
             data: Union[bytes, str],
@@ -250,6 +252,7 @@ class GetSecretResponse(DaprResponse):
     Attributes:
         secret (Dict[str, str]): secret received from response
     """
+
     def __init__(
             self,
             secret: Dict[str, str],
@@ -267,3 +270,44 @@ class GetSecretResponse(DaprResponse):
     def secret(self) -> Dict[str, str]:
         """Gets secret as a dict."""
         return self._secret
+
+
+class StateResponse(DaprResponse):
+    """The response of get_state API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        data (Dict[str, str]): secret received from response
+    """
+
+    def __init__(
+            self,
+            data: Union[bytes, str],
+            headers: MetadataTuple = ()):
+        """Initializes StateResponse from :obj:`runtime_v1.GetStateResponse`.
+
+        Args:
+            data (bytes): the data in response from the get_state call
+            headers (Tuple, optional): the headers from Dapr gRPC response
+
+        Raises:
+            ValueError: if the response data is not :class:`google.protobuf.any_pb2.Any`
+                object.
+        """
+        super(StateResponse, self).__init__(headers)
+        self.data = data  # type: ignore
+
+    def text(self) -> str:
+        """Gets content as str."""
+        return to_str(self._data)
+
+    @property
+    def data(self) -> bytes:
+        """Gets raw bytes data."""
+        return self._data
+
+    @data.setter
+    def data(self, val: Union[bytes, str]) -> None:
+        """Sets str or bytes type data to request data."""
+        self._data = to_bytes(val)

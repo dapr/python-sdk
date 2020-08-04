@@ -1,5 +1,4 @@
 import grpc
-
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
@@ -10,6 +9,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def __init__(self):
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         api_service_v1.add_DaprServicer_to_server(self, self._server)
+        self.store = {}
 
     def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
@@ -73,6 +73,23 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
+
+    def SaveState(self, request, context):
+        headers = ()
+        trailers = ()
+        for state in request.states:
+            self.store[state.key] = state.value
+
+        context.send_initial_metadata(headers)
+        context.set_trailing_metadata(trailers)
+        return empty_pb2.Empty()
+
+    def GetState(self, request, context):
+        key = request.key
+        if key not in self.store:
+            return empty_pb2.Empty()
+        else:
+            return api_v1.GetStateResponse(data=self.store[key], etag="")
 
     def GetSecret(self, request, context) -> api_v1.GetSecretResponse:
         headers = ()

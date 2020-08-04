@@ -12,6 +12,7 @@ from dapr.clients.grpc.client import DaprClient
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
+from dapr.clients.grpc._helpers import to_bytes
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -164,6 +165,19 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(4, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
+
+    def test_get_save_state(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        key = "key_1"
+        value = "value_1"
+        resp = dapr.save_state(
+            store_name="statestore",
+            key=key,
+            value=value
+        )
+        resp = dapr.get_state(store_name="statestore", key=key)
+
+        self.assertEqual(to_bytes(value), resp.data)
 
     def test_get_secret(self):
         dapr = DaprClient(f'localhost:{self.server_port}')

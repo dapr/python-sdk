@@ -6,6 +6,7 @@ Licensed under the MIT License.
 """
 
 import grpc  # type: ignore
+from dapr.clients.grpc._state import StateOptions
 
 from typing import Dict, Optional, Union
 
@@ -14,13 +15,14 @@ from google.protobuf.message import Message as GrpcMessage
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
-from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor
+from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes
 from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
 from dapr.clients.grpc._response import (
     BindingResponse,
     DaprResponse,
     GetSecretResponse,
-    InvokeServiceResponse
+    InvokeServiceResponse,
+    StateResponse
 )
 
 
@@ -296,6 +298,61 @@ class DaprClient:
         _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
 
         return DaprResponse(call.initial_metadata())
+
+    def get_state(
+            self,
+            store_name: str,
+            key: str,
+            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+        if len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("State store name cannot be empty")
+        req = api_v1.GetStateRequest(store_name=store_name, key=key)
+        response, call = self._stub.GetState.with_call(req, metadata=metadata)
+        return StateResponse(
+            data=to_bytes(response.data),
+            headers=call.initial_metadata())
+
+    def save_state(
+            self,
+            store_name: str,
+            key: str,
+            value: Union[bytes, str],
+            etag: Optional[str] = None,
+            state_options: Optional[StateOptions] = None,
+            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+        """Saves key-value pairs to a statestore
+        The example saves states to a statestore:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.save_state(
+                    store_name='state_store'
+                    states=[{'key': 'key1', 'value': 'value1'}],
+                )
+        Args:
+            store_name (str): the state store name to save to
+            states (List[dict]): the key-value pairs to be saved
+        Returns:
+            None
+        """
+        if not isinstance(value, bytes) and not isinstance(value, str):
+            raise ValueError(f'invalid type for data {type(value)}')
+
+        req_value = value
+
+        if len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("State store name cannot be empty")
+
+        state = common_v1.StateItem(
+            key=key, value=to_bytes(req_value), etag=etag,
+            options=state_options)
+
+        if state_options is not None:
+            state.options = state_options
+
+        req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
+        response, call = self._stub.SaveState.with_call(req, metadata=metadata)
+        return DaprResponse(
+            headers=call.initial_metadata())
 
     def get_secret(
             self,
