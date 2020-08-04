@@ -20,19 +20,6 @@ class Concurrency(Enum):
     last_write = common_v1.StateOptions.StateConcurrency.CONCURRENCY_LAST_WRITE  # type: ignore
 
 
-class RetryPolicy:
-    def __init__(self, threshold, interval, pattern):
-        self.threshold = threshold
-        self.interval = interval
-        if pattern is None:
-            self.pattern = common_v1.StateRetryPolicy.RetryPattern.RETRY_UNSPECIFIED  # type: ignore
-
-
-class RetryPattern(Enum):
-    linear = common_v1.StateRetryPolicy.RetryPattern.RETRY_LINEAR  # type: ignore
-    exponential = common_v1.StateRetryPolicy.RetryPattern.RETRY_EXPONENTIAL  # type: ignore
-
-
 class StateOptions:
     def __init__(self, consistency=None,
                  concurrency=None, retry_policy=None):
