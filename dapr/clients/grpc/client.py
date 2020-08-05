@@ -354,6 +354,36 @@ class DaprClient:
         return DaprResponse(
             headers=call.initial_metadata())
 
+    def delete_state(
+            self,
+            store_name: str,
+            key: str,
+            etag: Optional[str] = None,
+            state_options: Optional[StateOptions] = None,
+            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+        """Deletes key-value pairs from a statestore
+        The example deletes states from a statestore:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.save_state(
+                    store_name='state_store',
+                    key='key1,
+                )
+        Args:
+            store_name (str): the state store name to delete from
+            states (List[dict]): the key-value pairs to be deleted from
+        Returns:
+            None
+        """
+        
+        if len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("State store name cannot be empty")
+        
+        req = api_v1.DeleteStateRequest(store_name=store_name, key=key, etag=etag, options=state_options)
+        response, call = self._stub.DeleteState.with_call(req, metadata=metadata)
+        return DaprResponse(
+            headers=call.initial_metadata())
+
     def get_secret(
             self,
             store_name: str,
