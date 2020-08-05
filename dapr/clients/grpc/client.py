@@ -375,11 +375,12 @@ class DaprClient:
         Returns:
             None
         """
-        
+
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
-        
-        req = api_v1.DeleteStateRequest(store_name=store_name, key=key, etag=etag, options=state_options)
+
+        req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
+                                        etag=etag, options=state_options)
         response, call = self._stub.DeleteState.with_call(req, metadata=metadata)
         return DaprResponse(
             headers=call.initial_metadata())

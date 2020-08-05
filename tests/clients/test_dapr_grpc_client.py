@@ -13,7 +13,6 @@ from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
-from google.protobuf import empty_pb2
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -177,7 +176,7 @@ class DaprGrpcClientTests(unittest.TestCase):
             value=value
         )
         resp = dapr.get_state(store_name="statestore", key=key)
-        
+
         self.assertEqual(to_bytes(value), resp.data)
 
         dapr.delete_state(
