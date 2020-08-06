@@ -304,6 +304,25 @@ class DaprClient:
             store_name: str,
             key: str,
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+        """Gets value from a statestore with a key
+        The example gets value from a statestore:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.get_state(
+                    store_name='state_store'
+                    key='key_1',
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                )
+        Args:
+            store_name (str): the state store name to get from
+            key (str): the key of the key-value pair to be gotten
+            metadata (tuple, optional): custom metadata
+        Returns:
+            None
+        """
+
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
         req = api_v1.GetStateRequest(store_name=store_name, key=key)
@@ -337,7 +356,8 @@ class DaprClient:
             key (str): the key to be saved
             value (bytes or str): the value to be saved
             etag (str, optional): custom etag to save with
-            options (StateOptions, optional): custom options for concurrency, consistency and retry policy
+            options (StateOptions, optional): custom options
+                for concurrency, consistency and retry policy
             metadata (tuple, optional): custom metadata
         Returns:
             None
@@ -349,7 +369,7 @@ class DaprClient:
 
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
-        
+
         if options is None:
             state_options = None
         else:
@@ -386,7 +406,8 @@ class DaprClient:
             store_name (str): the state store name to save to
             key (str): the key to be saved
             etag (str, optional): custom etag to save with
-            options (StateOptions, optional): custom options for concurrency, consistency and retry policy
+            options (StateOptions, optional): custom options
+                for concurrency, consistency and retry policy
             metadata (tuple, optional): custom metadata
         Returns:
             None
@@ -394,7 +415,7 @@ class DaprClient:
 
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
-        
+
         if options is None:
             state_options = None
         else:

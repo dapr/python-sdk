@@ -161,6 +161,7 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         response = continuation(new_call_details, request)
         return response
 
+
 def convert_string_to_duration(time: str) -> Duration:
     hour_index = time.find("h")
     minute_index = time.find("m")
@@ -168,12 +169,12 @@ def convert_string_to_duration(time: str) -> Duration:
     msecond_index = time.find('ms')
 
     hours = get_number_from_string(time[:hour_index])
-    days = hours//24
-    hours = hours%24
-    
-    minutes = get_number_from_string(time[hour_index+1:minute_index])
-    seconds = get_number_from_string(time[minute_index+1:second_index])
-    mseconds = get_number_from_string(time[second_index+1:msecond_index])
+    days = hours // 24
+    hours = hours % 24
+
+    minutes = get_number_from_string(time[hour_index + 1:minute_index])
+    seconds = get_number_from_string(time[minute_index + 1:second_index])
+    mseconds = get_number_from_string(time[second_index + 1:msecond_index])
     duration = Duration()
     duration.FromTimedelta(datetime.timedelta(
         days=days,
@@ -183,6 +184,7 @@ def convert_string_to_duration(time: str) -> Duration:
         milliseconds=mseconds
     ))
     return duration
+
 
 def get_number_from_string(string: str):
     try:
