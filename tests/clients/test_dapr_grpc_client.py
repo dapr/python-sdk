@@ -194,7 +194,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         resp = dapr.get_state(store_name="statestore", key="NotValidKey")
         self.assertEqual(resp.data, b'')
-        
+
         dapr.delete_state(
             store_name="statestore",
             key=key
