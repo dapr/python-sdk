@@ -309,7 +309,7 @@ class DaprClient:
         req = api_v1.GetStateRequest(store_name=store_name, key=key)
         response, call = self._stub.GetState.with_call(req, metadata=metadata)
         return StateResponse(
-            data=to_bytes(response.data),
+            data=response.data,
             headers=call.initial_metadata())
 
     def save_state(
@@ -318,7 +318,7 @@ class DaprClient:
             key: str,
             value: Union[bytes, str],
             etag: Optional[str] = None,
-            state_options: Optional[StateOptions] = None,
+            options: Optional[StateOptions] = None,
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Saves key-value pairs to a statestore
         The example saves states to a statestore:
@@ -327,27 +327,36 @@ class DaprClient:
                 resp = d.save_state(
                     store_name='state_store'
                     states=[{'key': 'key1', 'value': 'value1'}],
+                    etag='etag',
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
                 )
         Args:
             store_name (str): the state store name to save to
-            states (List[dict]): the key-value pairs to be saved
+            key (str): the key to be saved
+            value (bytes or str): the value to be saved
+            etag (str, optional): custom etag to save with
+            options (StateOptions, optional): custom options for concurrency, consistency and retry policy
+            metadata (tuple, optional): custom metadata
         Returns:
             None
         """
-        if not isinstance(value, bytes) and not isinstance(value, str):
+        if not isinstance(value, (bytes, str)):
             raise ValueError(f'invalid type for data {type(value)}')
 
         req_value = value
 
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
+        
+        if options is None:
+            state_options = None
+        else:
+            state_options = options.get_proto()
 
         state = common_v1.StateItem(
-            key=key, value=to_bytes(req_value), etag=etag,
-            options=state_options)
-
-        if state_options is not None:
-            state.options = state_options
+            key=key, value=to_bytes(req_value), etag=etag, options=state_options)
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         response, call = self._stub.SaveState.with_call(req, metadata=metadata)
@@ -359,7 +368,7 @@ class DaprClient:
             store_name: str,
             key: str,
             etag: Optional[str] = None,
-            state_options: Optional[StateOptions] = None,
+            options: Optional[StateOptions] = None,
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Deletes key-value pairs from a statestore
         The example deletes states from a statestore:
@@ -367,17 +376,29 @@ class DaprClient:
             with DaprClient() as d:
                 resp = d.save_state(
                     store_name='state_store',
-                    key='key1,
+                    key='key1'
+                    etag='etag',
+                    metadata=(
+                        ('header1', 'value1')
+                    )
                 )
         Args:
-            store_name (str): the state store name to delete from
-            states (List[dict]): the key-value pairs to be deleted from
+            store_name (str): the state store name to save to
+            key (str): the key to be saved
+            etag (str, optional): custom etag to save with
+            options (StateOptions, optional): custom options for concurrency, consistency and retry policy
+            metadata (tuple, optional): custom metadata
         Returns:
             None
         """
 
         if len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
+        
+        if options is None:
+            state_options = None
+        else:
+            state_options = options.get_proto()
 
         req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
                                         etag=etag, options=state_options)
