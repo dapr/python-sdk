@@ -10,9 +10,7 @@ from typing import Dict, List, Union, Tuple
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
-from google.protobuf.duration_pb2 import Duration
 from grpc import UnaryUnaryClientInterceptor, ClientCallDetails     # type: ignore
-import datetime
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
@@ -160,35 +158,3 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         # Call continuation
         response = continuation(new_call_details, request)
         return response
-
-
-def convert_string_to_duration(time: str) -> Duration:
-    hour_index = time.find("h")
-    minute_index = time.find("m")
-    second_index = time.find("s")
-    msecond_index = time.find('ms')
-
-    hours = get_number_from_string(time[:hour_index])
-    days = hours // 24
-    hours = hours % 24
-
-    minutes = get_number_from_string(time[hour_index + 1:minute_index])
-    seconds = get_number_from_string(time[minute_index + 1:second_index])
-    mseconds = get_number_from_string(time[second_index + 1:msecond_index])
-    duration = Duration()
-    duration.FromTimedelta(datetime.timedelta(
-        days=days,
-        hours=hours,
-        minutes=minutes,
-        seconds=seconds,
-        milliseconds=mseconds
-    ))
-    return duration
-
-
-def get_number_from_string(string: str):
-    try:
-        time = int(string)
-        return time
-    except ValueError:
-        return 0

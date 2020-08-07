@@ -305,6 +305,7 @@ class DaprClient:
             key: str,
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Gets value from a statestore with a key
+
         The example gets value from a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
@@ -315,12 +316,15 @@ class DaprClient:
                         ('header1', 'value1')
                     ),
                 )
+
         Args:
             store_name (str): the state store name to get from
             key (str): the key of the key-value pair to be gotten
             metadata (tuple, optional): custom metadata
+
         Returns:
-            None
+            :class:`StateResponse` gRPC metadata returned from callee
+            and value obtained from the state store
         """
 
         if len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -340,6 +344,11 @@ class DaprClient:
             options: Optional[StateOptions] = None,
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Saves key-value pairs to a statestore
+
+        This saves a value to the statestore with a given key and state store name.
+        Options for request can be passed with the options field and custom
+        metadata can be passed with metadata field.
+
         The example saves states to a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
@@ -351,14 +360,16 @@ class DaprClient:
                         ('header1', 'value1')
                     ),
                 )
+
         Args:
             store_name (str): the state store name to save to
             key (str): the key to be saved
             value (bytes or str): the value to be saved
             etag (str, optional): custom etag to save with
             options (StateOptions, optional): custom options
-                for concurrency, consistency and retry policy
+                for concurrency and consistency
             metadata (tuple, optional): custom metadata
+
         Returns:
             None
         """
@@ -391,10 +402,15 @@ class DaprClient:
             options: Optional[StateOptions] = None,
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Deletes key-value pairs from a statestore
+
+        This deletes a value from the statestore with a given key and state store name.
+        Options for request can be passed with the options field and custom
+        metadata can be passed with metadata field.
+
         The example deletes states from a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
-                resp = d.save_state(
+                resp = d.delete_state(
                     store_name='state_store',
                     key='key1'
                     etag='etag',
@@ -402,13 +418,15 @@ class DaprClient:
                         ('header1', 'value1')
                     )
                 )
+
         Args:
             store_name (str): the state store name to save to
             key (str): the key to be saved
             etag (str, optional): custom etag to save with
             options (StateOptions, optional): custom options
-                for concurrency, consistency and retry policy
+                for concurrency and consistency
             metadata (tuple, optional): custom metadata
+
         Returns:
             None
         """

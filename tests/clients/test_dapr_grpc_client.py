@@ -13,8 +13,7 @@ from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.clients.grpc._state import StateOptions, Consistency,\
-    Concurrency, RetryPolicy, RetryPattern
+from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -172,15 +171,9 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr = DaprClient(f'localhost:{self.server_port}')
         key = "key_1"
         value = "value_1"
-        retry_policy = RetryPolicy(
-            threshold=10,
-            interval="1h2m3s4ms",
-            pattern=RetryPattern.linear
-        )
         options = StateOptions(
             consistency=Consistency.eventual,
             concurrency=Concurrency.first_write,
-            retry_policy=retry_policy
         )
         dapr.save_state(
             store_name="statestore",
