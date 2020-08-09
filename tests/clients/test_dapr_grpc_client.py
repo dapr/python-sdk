@@ -13,6 +13,7 @@ from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
+from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -166,18 +167,33 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
 
-    def test_get_save_state(self):
+    def test_get_save_delete_state(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         key = "key_1"
         value = "value_1"
-        resp = dapr.save_state(
+        options = StateOptions(
+            consistency=Consistency.eventual,
+            concurrency=Concurrency.first_write,
+        )
+        dapr.save_state(
             store_name="statestore",
             key=key,
-            value=value
+            value=value,
+            options=options
         )
         resp = dapr.get_state(store_name="statestore", key=key)
 
-        self.assertEqual(to_bytes(value), resp.data)
+        self.assertEqual(resp.data, to_bytes(value))
+
+        resp = dapr.get_state(store_name="statestore", key="NotValidKey")
+        self.assertEqual(resp.data, b'')
+
+        dapr.delete_state(
+            store_name="statestore",
+            key=key
+        )
+        resp = dapr.get_state(store_name="statestore", key=key)
+        self.assertEqual(resp.data, b'')
 
     def test_get_secret(self):
         dapr = DaprClient(f'localhost:{self.server_port}')

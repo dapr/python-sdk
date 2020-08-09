@@ -91,6 +91,17 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         else:
             return api_v1.GetStateResponse(data=self.store[key], etag="")
 
+    def DeleteState(self, request, context):
+        headers = ()
+        trailers = ()
+        key = request.key
+        if key in self.store:
+            del self.store[key]
+
+        context.send_initial_metadata(headers)
+        context.set_trailing_metadata(trailers)
+        return empty_pb2.Empty()
+
     def GetSecret(self, request, context) -> api_v1.GetSecretResponse:
         headers = ()
         trailers = ()
