@@ -365,13 +365,13 @@ class DaprClient:
             store_name (str): the state store name to save to
             key (str): the key to be saved
             value (bytes or str): the value to be saved
-            etag (str, optional): custom etag to save with
+            etag (str, optional): the etag to save with
             options (StateOptions, optional): custom options
                 for concurrency and consistency
             metadata (tuple, optional): custom metadata
 
         Returns:
-            None
+            :class:`DaprResponse` gRPC metadata returned from callee
         """
         if not isinstance(value, (bytes, str)):
             raise ValueError(f'invalid type for data {type(value)}')
@@ -420,15 +420,15 @@ class DaprClient:
                 )
 
         Args:
-            store_name (str): the state store name to save to
-            key (str): the key to be saved
-            etag (str, optional): custom etag to save with
+            store_name (str): the state store name to delete from
+            key (str): the key of the key-value pair to delete
+            etag (str, optional): the etag to delete with
             options (StateOptions, optional): custom options
                 for concurrency and consistency
             metadata (tuple, optional): custom metadata
 
         Returns:
-            None
+            :class:`DaprResponse` gRPC metadata returned from callee
         """
 
         if len(store_name) == 0 or len(store_name.strip()) == 0:
