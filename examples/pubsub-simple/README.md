@@ -12,8 +12,8 @@ To run this example, the following code can be utilized:
 
 ```bash
 # 1. Start Subscriber (expose gRPC server receiver on port 50051)
-dapr run --app-id python-subscriber --protocol grpc --app-port 50051 python3 subscriber.py
+dapr run --app-id python-subscriber --app-protocol grpc --app-port 50051 python3 subscriber.py
 
 # 2. Start Publisher
-dapr run --app-id python-publisher --protocol grpc python3 publisher.py
+dapr run --app-id python-publisher --app-protocol grpc python3 publisher.py
 ```

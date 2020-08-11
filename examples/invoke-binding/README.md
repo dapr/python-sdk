@@ -13,10 +13,10 @@ To run this example, the following code can be utilized:
 docker-compose -f ./docker-compose-single-kafka.yml up -d
 
 # 2. Start Receiver (expose gRPC server receiver on port 50051) 
-dapr run --app-id receiver --protocol grpc --app-port 50051 --components-path ./components python3 invoke-input-binding.py
+dapr run --app-id receiver --app-protocol grpc --app-port 50051 --components-path ./components python3 invoke-input-binding.py
 
 # 3. Start Publisher
-dapr run --app-id publisher --protocol grpc --components-path ./components python3 invoke-output-binding.py
+dapr run --app-id publisher --app-protocol grpc --components-path ./components python3 invoke-output-binding.py
 ```
 
 ## Cleanup

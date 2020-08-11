@@ -10,7 +10,7 @@ It creates a dapr client and calls the `get_secret` method in the `DaprClient`.
 To run this example, use the following command:
 
 ```bash
-dapr run --app-id=secretsapp --protocol grpc --components-path components/ python3 example.py
+dapr run --app-id=secretsapp --app-protocol grpc --components-path components/ python3 example.py
 ```
 
 You should be able to see the following output:

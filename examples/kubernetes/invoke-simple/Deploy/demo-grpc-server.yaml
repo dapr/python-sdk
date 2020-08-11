@@ -15,9 +15,9 @@ spec:
         app: p-demo-grpc-server # pod-roadwork-...
       annotations:
         dapr.io/enabled: "true" # Do we inject a sidecar to this deployment?
-        dapr.io/id: "id-demo-grpc-server" # Unique ID or Name for Dapr App (so we can communicate with it)
-        dapr.io/protocol: "grpc"
-        dapr.io/port: "50050"
+        dapr.io/app-id: "id-demo-grpc-server" # Unique ID or Name for Dapr App (so we can communicate with it)
+        dapr.io/app-protocol: "grpc"
+        dapr.io/app-port: "50050"
     spec:
       containers:
       - name: c-demo-grpc-server # Name of our container, e.g. `kubectl logs -c c-rw-...`

@@ -1,6 +1,6 @@
 
 """
-dapr run --protocol grpc --grpc-port=50001 python example.py
+dapr run --app-protocol grpc --dapr-grpc-port=50001 python example.py
 """
 
 from dapr.clients import DaprClient

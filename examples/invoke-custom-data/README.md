@@ -13,8 +13,8 @@ To run this example, the following steps should be followed:
 python -m grpc_tools.protoc --proto_path=./proto/ --python_out=./proto/ --grpc_python_out=./proto/ ./proto/response.proto
 
 # 2. Start Receiver (expose gRPC server receiver on port 50051)
-dapr run --app-id invoke-receiver --protocol grpc --app-port 50051 python3 invoke-receiver.py
+dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
 
 # 3. Start Caller
-dapr run --app-id invoke-caller --protocol grpc python invoke-caller.py
+dapr run --app-id invoke-caller --app-protocol grpc python invoke-caller.py
 ```
