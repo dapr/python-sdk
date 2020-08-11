@@ -18,8 +18,8 @@ spec:
         app: demoactor
       annotations:
         dapr.io/enabled: "true"
-        dapr.io/id: "demoactor"
-        dapr.io/port: "3000"
+        dapr.io/app-id: "demoactor"
+        dapr.io/app-port: "3000"
     spec:
       containers:
       - name: demoactor

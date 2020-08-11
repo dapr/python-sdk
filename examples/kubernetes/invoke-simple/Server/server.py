@@ -16,7 +16,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
-APP_PORT_GRPC  = os.getenv('APP_GRPC_PORT',  50050) # Note: this we need to expose in .yaml through dapr.io/port
+APP_PORT_GRPC  = os.getenv('APP_GRPC_PORT',  50050) # Note: this we need to expose in .yaml through dapr.io/app-port
 DAPR_PORT_HTTP = os.getenv('DAPR_HTTP_PORT', 3500)
 DAPR_PORT_GRPC = os.getenv('DAPR_GRPC_PORT', 50001) # Note: currently 50001 is always default
 

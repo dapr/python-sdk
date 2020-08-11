@@ -18,7 +18,7 @@ spec:
         app: demoactor-client
       annotations:
         dapr.io/enabled: "true"
-        dapr.io/id: "demoactor-client"
+        dapr.io/app-id: "demoactor-client"
     spec:
       containers:
       - name: demoactor-client

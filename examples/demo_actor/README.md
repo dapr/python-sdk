@@ -37,7 +37,7 @@ export PYTHONPATH=`pwd`
 
 ```bash
 $ cd examples/demo_actor
-$ dapr run --app-id demo-actor --app-port 3000 -- uvicorn --port 3000 demo_actor_service:app
+$ dapr run --app-id demo-actor --app-port 3000 -- uvicorn --dapr-http-port 3000 demo_actor_service:app
 ...
 == APP == Activate DemoActor actor!
 == APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "POST /actors/DemoActor/1 HTTP/1.1" 200 -
