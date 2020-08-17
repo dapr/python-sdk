@@ -253,20 +253,22 @@ class DaprClient:
 
     def publish_event(
             self,
+            pubsub_name : str,
             topic: str,
             data: Union[bytes, str],
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Publish to a given topic.
-        This publishes an event with bytes array or str data to a specified topic.
-        The str data is encoded into bytes with default charset of utf-8.
-        Custom metadata can be passed with the metadata field which will be passed
-        on a gRPC metadata.
+        This publishes an event with bytes array or str data to a specified topic and
+        specified pubsub component. The str data is encoded into bytes with default
+        charset of utf-8. Custom metadata can be passed with the metadata field which
+        will be passed on a gRPC metadata.
 
         The example publishes a byte array event to a topic:
 
             from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.publish_event(
+                    pubsub_name='pubsub_1'
                     topic='TOPIC_A'
                     data=b'message',
                     metadata=(
@@ -276,6 +278,7 @@ class DaprClient:
                 # resp.headers includes the gRPC initial metadata.
 
         Args:
+            pubsub_name (str): the name of the pubsub component
             topic (str): the topic name to publish to
             data (bytes or str): bytes or str for data
             metadata (tuple, optional): custom metadata
@@ -291,6 +294,7 @@ class DaprClient:
             req_data = data.encode('utf-8')
 
         req = api_v1.PublishEventRequest(
+            pubsub_name=pubsub_name,
             topic=topic,
             data=req_data)
 

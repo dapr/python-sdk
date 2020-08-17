@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='dapr.proto.runtime.v1',
   syntax='proto3',
   serialized_options=_b('\n\nio.dapr.v1B\025DaprAppCallbackProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\252\002 Dapr.AppCallback.Autogen.Grpc.v1'),
-  serialized_pb=_b('\n\'dapr/proto/runtime/v1/appcallback.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a!dapr/proto/common/v1/common.proto\"\x8b\x01\n\x11TopicEventRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06source\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x14\n\x0cspec_version\x18\x04 \x01(\t\x12\x19\n\x11\x64\x61ta_content_type\x18\x05 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\x12\r\n\x05topic\x18\x06 \x01(\t\"\xae\x01\n\x13\x42indingEventRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12J\n\x08metadata\x18\x03 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.BindingEventRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x88\x02\n\x14\x42indingEventResponse\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\x12\n\n\x02to\x18\x03 \x03(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\x12X\n\x0b\x63oncurrency\x18\x05 \x01(\x0e\x32\x43.dapr.proto.runtime.v1.BindingEventResponse.BindingEventConcurrency\"7\n\x17\x42indingEventConcurrency\x12\x0e\n\nSEQUENTIAL\x10\x00\x12\x0c\n\x08PARALLEL\x10\x01\"a\n\x1eListTopicSubscriptionsResponse\x12?\n\rsubscriptions\x18\x01 \x03(\x0b\x32(.dapr.proto.runtime.v1.TopicSubscription\"\x9d\x01\n\x11TopicSubscription\x12\r\n\x05topic\x18\x01 \x01(\t\x12H\n\x08metadata\x18\x02 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.TopicSubscription.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"-\n\x19ListInputBindingsResponse\x12\x10\n\x08\x62indings\x18\x01 \x03(\t2\xf3\x03\n\x0b\x41ppCallback\x12W\n\x08OnInvoke\x12#.dapr.proto.common.v1.InvokeRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12i\n\x16ListTopicSubscriptions\x12\x16.google.protobuf.Empty\x1a\x35.dapr.proto.runtime.v1.ListTopicSubscriptionsResponse\"\x00\x12R\n\x0cOnTopicEvent\x12(.dapr.proto.runtime.v1.TopicEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12_\n\x11ListInputBindings\x12\x16.google.protobuf.Empty\x1a\x30.dapr.proto.runtime.v1.ListInputBindingsResponse\"\x00\x12k\n\x0eOnBindingEvent\x12*.dapr.proto.runtime.v1.BindingEventRequest\x1a+.dapr.proto.runtime.v1.BindingEventResponse\"\x00\x42y\n\nio.dapr.v1B\x15\x44\x61prAppCallbackProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02 Dapr.AppCallback.Autogen.Grpc.v1b\x06proto3')
+  serialized_pb=_b('\n\'dapr/proto/runtime/v1/appcallback.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a!dapr/proto/common/v1/common.proto\"\xa0\x01\n\x11TopicEventRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06source\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x14\n\x0cspec_version\x18\x04 \x01(\t\x12\x19\n\x11\x64\x61ta_content_type\x18\x05 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\x12\r\n\x05topic\x18\x06 \x01(\t\x12\x13\n\x0bpubsub_name\x18\x08 \x01(\t\"\x14\n\x12TopicEventResponse\"\xae\x01\n\x13\x42indingEventRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12J\n\x08metadata\x18\x03 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.BindingEventRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x88\x02\n\x14\x42indingEventResponse\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\x12\n\n\x02to\x18\x03 \x03(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\x12X\n\x0b\x63oncurrency\x18\x05 \x01(\x0e\x32\x43.dapr.proto.runtime.v1.BindingEventResponse.BindingEventConcurrency\"7\n\x17\x42indingEventConcurrency\x12\x0e\n\nSEQUENTIAL\x10\x00\x12\x0c\n\x08PARALLEL\x10\x01\"a\n\x1eListTopicSubscriptionsResponse\x12?\n\rsubscriptions\x18\x01 \x03(\x0b\x32(.dapr.proto.runtime.v1.TopicSubscription\"\xb2\x01\n\x11TopicSubscription\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12H\n\x08metadata\x18\x03 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.TopicSubscription.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"-\n\x19ListInputBindingsResponse\x12\x10\n\x08\x62indings\x18\x01 \x03(\t2\x86\x04\n\x0b\x41ppCallback\x12W\n\x08OnInvoke\x12#.dapr.proto.common.v1.InvokeRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12i\n\x16ListTopicSubscriptions\x12\x16.google.protobuf.Empty\x1a\x35.dapr.proto.runtime.v1.ListTopicSubscriptionsResponse\"\x00\x12\x65\n\x0cOnTopicEvent\x12(.dapr.proto.runtime.v1.TopicEventRequest\x1a).dapr.proto.runtime.v1.TopicEventResponse\"\x00\x12_\n\x11ListInputBindings\x12\x16.google.protobuf.Empty\x1a\x30.dapr.proto.runtime.v1.ListInputBindingsResponse\"\x00\x12k\n\x0eOnBindingEvent\x12*.dapr.proto.runtime.v1.BindingEventRequest\x1a+.dapr.proto.runtime.v1.BindingEventResponse\"\x00\x42y\n\nio.dapr.v1B\x15\x44\x61prAppCallbackProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02 Dapr.AppCallback.Autogen.Grpc.v1b\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,dapr_dot_proto_dot_common_dot_v1_dot_common__pb2.DESCRIPTOR,])
 
@@ -45,8 +45,8 @@ _BINDINGEVENTRESPONSE_BINDINGEVENTCONCURRENCY = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=659,
-  serialized_end=714,
+  serialized_start=702,
+  serialized_end=757,
 )
 _sym_db.RegisterEnumDescriptor(_BINDINGEVENTRESPONSE_BINDINGEVENTCONCURRENCY)
 
@@ -107,6 +107,13 @@ _TOPICEVENTREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='pubsub_name', full_name='dapr.proto.runtime.v1.TopicEventRequest.pubsub_name', index=7,
+      number=8, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -120,7 +127,31 @@ _TOPICEVENTREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=131,
-  serialized_end=270,
+  serialized_end=291,
+)
+
+
+_TOPICEVENTRESPONSE = _descriptor.Descriptor(
+  name='TopicEventResponse',
+  full_name='dapr.proto.runtime.v1.TopicEventResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=293,
+  serialized_end=313,
 )
 
 
@@ -157,8 +188,8 @@ _BINDINGEVENTREQUEST_METADATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=400,
-  serialized_end=447,
+  serialized_start=443,
+  serialized_end=490,
 )
 
 _BINDINGEVENTREQUEST = _descriptor.Descriptor(
@@ -201,8 +232,8 @@ _BINDINGEVENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=273,
-  serialized_end=447,
+  serialized_start=316,
+  serialized_end=490,
 )
 
 
@@ -261,8 +292,8 @@ _BINDINGEVENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=450,
-  serialized_end=714,
+  serialized_start=493,
+  serialized_end=757,
 )
 
 
@@ -292,8 +323,8 @@ _LISTTOPICSUBSCRIPTIONSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=716,
-  serialized_end=813,
+  serialized_start=759,
+  serialized_end=856,
 )
 
 
@@ -330,8 +361,8 @@ _TOPICSUBSCRIPTION_METADATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=400,
-  serialized_end=447,
+  serialized_start=443,
+  serialized_end=490,
 )
 
 _TOPICSUBSCRIPTION = _descriptor.Descriptor(
@@ -342,15 +373,22 @@ _TOPICSUBSCRIPTION = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='topic', full_name='dapr.proto.runtime.v1.TopicSubscription.topic', index=0,
+      name='pubsub_name', full_name='dapr.proto.runtime.v1.TopicSubscription.pubsub_name', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='metadata', full_name='dapr.proto.runtime.v1.TopicSubscription.metadata', index=1,
-      number=2, type=11, cpp_type=10, label=3,
+      name='topic', full_name='dapr.proto.runtime.v1.TopicSubscription.topic', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='metadata', full_name='dapr.proto.runtime.v1.TopicSubscription.metadata', index=2,
+      number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -367,8 +405,8 @@ _TOPICSUBSCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=816,
-  serialized_end=973,
+  serialized_start=859,
+  serialized_end=1037,
 )
 
 
@@ -398,8 +436,8 @@ _LISTINPUTBINDINGSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=975,
-  serialized_end=1020,
+  serialized_start=1039,
+  serialized_end=1084,
 )
 
 _BINDINGEVENTREQUEST_METADATAENTRY.containing_type = _BINDINGEVENTREQUEST
@@ -411,6 +449,7 @@ _LISTTOPICSUBSCRIPTIONSRESPONSE.fields_by_name['subscriptions'].message_type = _
 _TOPICSUBSCRIPTION_METADATAENTRY.containing_type = _TOPICSUBSCRIPTION
 _TOPICSUBSCRIPTION.fields_by_name['metadata'].message_type = _TOPICSUBSCRIPTION_METADATAENTRY
 DESCRIPTOR.message_types_by_name['TopicEventRequest'] = _TOPICEVENTREQUEST
+DESCRIPTOR.message_types_by_name['TopicEventResponse'] = _TOPICEVENTRESPONSE
 DESCRIPTOR.message_types_by_name['BindingEventRequest'] = _BINDINGEVENTREQUEST
 DESCRIPTOR.message_types_by_name['BindingEventResponse'] = _BINDINGEVENTRESPONSE
 DESCRIPTOR.message_types_by_name['ListTopicSubscriptionsResponse'] = _LISTTOPICSUBSCRIPTIONSRESPONSE
@@ -424,6 +463,13 @@ TopicEventRequest = _reflection.GeneratedProtocolMessageType('TopicEventRequest'
   # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TopicEventRequest)
   })
 _sym_db.RegisterMessage(TopicEventRequest)
+
+TopicEventResponse = _reflection.GeneratedProtocolMessageType('TopicEventResponse', (_message.Message,), {
+  'DESCRIPTOR' : _TOPICEVENTRESPONSE,
+  '__module__' : 'dapr.proto.runtime.v1.appcallback_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TopicEventResponse)
+  })
+_sym_db.RegisterMessage(TopicEventResponse)
 
 BindingEventRequest = _reflection.GeneratedProtocolMessageType('BindingEventRequest', (_message.Message,), {
 
@@ -487,8 +533,8 @@ _APPCALLBACK = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=1023,
-  serialized_end=1522,
+  serialized_start=1087,
+  serialized_end=1605,
   methods=[
   _descriptor.MethodDescriptor(
     name='OnInvoke',
@@ -514,7 +560,7 @@ _APPCALLBACK = _descriptor.ServiceDescriptor(
     index=2,
     containing_service=None,
     input_type=_TOPICEVENTREQUEST,
-    output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
+    output_type=_TOPICEVENTRESPONSE,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(

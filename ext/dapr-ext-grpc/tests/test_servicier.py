@@ -84,14 +84,27 @@ class TopicSubscriptionTests(unittest.TestCase):
         self._servicier = _CallbackServicer()
         self._topic1_method = Mock()
         self._topic2_method = Mock()
+        self._topic3_method = Mock()
 
         self._servicier.register_topic(
+            'pubsub1',
             'topic1',
             self._topic1_method,
             {'session': 'key'})
         self._servicier.register_topic(
+            'pubsub1',
+            'topic3',
+            self._topic3_method,
+            {'session': 'key'})
+        self._servicier.register_topic(
+            'pubsub2',
             'topic2',
             self._topic2_method,
+            {'session': 'key'})
+        self._servicier.register_topic(
+            'pubsub2',
+            'topic3',
+            self._topic3_method,
             {'session': 'key'})
 
         # fake context
@@ -104,29 +117,46 @@ class TopicSubscriptionTests(unittest.TestCase):
     def test_duplicated_topic(self):
         with self.assertRaises(ValueError):
             self._servicier.register_topic(
+                'pubsub1',
                 'topic1',
                 self._topic1_method,
                 {'session': 'key'})
 
     def test_list_topic_subscription(self):
         resp = self._servicier.ListTopicSubscriptions(None, None)
+        self.assertEqual('pubsub1', resp.subscriptions[0].pubsub_name)
         self.assertEqual('topic1', resp.subscriptions[0].topic)
         self.assertEqual({'session': 'key'}, resp.subscriptions[0].metadata)
-        self.assertEqual('topic2', resp.subscriptions[1].topic)
+        self.assertEqual('pubsub1', resp.subscriptions[1].pubsub_name)
+        self.assertEqual('topic3', resp.subscriptions[1].topic)
         self.assertEqual({'session': 'key'}, resp.subscriptions[1].metadata)
+        self.assertEqual('pubsub2', resp.subscriptions[2].pubsub_name)
+        self.assertEqual('topic2', resp.subscriptions[2].topic)
+        self.assertEqual({'session': 'key'}, resp.subscriptions[2].metadata)
+        self.assertEqual('pubsub2', resp.subscriptions[3].pubsub_name)
+        self.assertEqual('topic3', resp.subscriptions[3].topic)
+        self.assertEqual({'session': 'key'}, resp.subscriptions[3].metadata)
 
     def test_topic_event(self):
         self._servicier.OnTopicEvent(
-            appcallback_v1.TopicEventRequest(topic='topic1'),
+            appcallback_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic1'),
             self.fake_context,
         )
 
         self._topic1_method.assert_called_once()
 
+    def test_topic3_event_called_once(self):
+        self._servicier.OnTopicEvent(
+            appcallback_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic3'),
+            self.fake_context,
+        )
+
+        self._topic3_method.assert_called_once()
+
     def test_non_registered_topic(self):
         with self.assertRaises(NotImplementedError):
             self._servicier.OnTopicEvent(
-                appcallback_v1.TopicEventRequest(topic='topic_non_existed'),
+                appcallback_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic_non_existed'),
                 self.fake_context,
             )
 
