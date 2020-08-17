@@ -3,7 +3,7 @@ from dapr.ext.grpc import App
 
 app = App()
 
-@app.subscribe(topic='TOPIC_A')
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
 def mytopic(event: v1.Event) -> None:
     print(event.Data(),flush=True)
 
