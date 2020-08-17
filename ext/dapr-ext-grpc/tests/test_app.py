@@ -39,11 +39,11 @@ class AppTests(unittest.TestCase):
             str(binding_map['binding1']))
 
     def test_subscribe_decorator(self):
-        @self._app.subscribe(topic='topic')
+        @self._app.subscribe(pubsub_name='pubsub', topic='topic')
         def topic(event: v1.Event) -> None:
             pass
 
         subscription_map = self._app._servicer._topic_map
         self.assertIn(
             'AppTests.test_subscribe_decorator.<locals>.topic',
-            str(subscription_map['topic']))
+            str(subscription_map['pubsub:topic']))

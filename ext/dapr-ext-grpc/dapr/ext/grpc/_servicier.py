@@ -22,6 +22,8 @@ InvokeMethodCallable = Callable[[InvokeServiceRequest], Union[str, bytes, Invoke
 TopicSubscribeCallable = Callable[[v1.Event], None]
 BindingCallable = Callable[[BindingRequest], None]
 
+DELIMITER = ":"
+
 
 class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
     """The implementation of AppCallback Server.
@@ -47,15 +49,23 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._invoke_method_map[method] = cb
 
     def register_topic(
-            self, topic: str,
+            self,
+            pubsub_name: str,
+            topic: str,
             cb: TopicSubscribeCallable,
             metadata: Optional[Dict[str, str]]) -> None:
         """Registers topic subscription for pubsub."""
-        if topic in self._topic_map:
-            raise ValueError(f'{topic} is already registered')
-        self._topic_map[topic] = cb
+        pubsub_topic = pubsub_name + DELIMITER + topic
+        if pubsub_topic in self._topic_map:
+            raise ValueError(f'{topic} is already registered with {pubsub_name}')
+        self._topic_map[pubsub_topic] = cb
         self._registered_topics.append(
-            appcallback_v1.TopicSubscription(topic=topic, metadata=metadata))
+            appcallback_v1.TopicSubscription(
+                pubsub_name=pubsub_name,
+                topic=topic,
+                metadata=metadata
+            )
+        )
 
     def register_binding(
             self, name: str, cb: BindingCallable) -> None:
@@ -104,7 +114,8 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
     def OnTopicEvent(self, request, context):
         """Subscribes events from Pubsub."""
-        if request.topic not in self._topic_map:
+        pubsub_topic = request.pubsub_name + DELIMITER + request.topic
+        if pubsub_topic not in self._topic_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
             raise NotImplementedError(f'topic {request.topic} is not implemented!')
 
@@ -117,7 +128,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
         # TODO: add metadata from context to CE envelope
 
-        self._topic_map[request.topic](event)
+        self._topic_map[pubsub_topic](event)
 
         return empty_pb2.Empty()
 

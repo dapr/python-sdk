@@ -31,7 +31,7 @@ class AppCallbackStub(object):
     self.OnTopicEvent = channel.unary_unary(
         '/dapr.proto.runtime.v1.AppCallback/OnTopicEvent',
         request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventRequest.SerializeToString,
-        response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+        response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventResponse.FromString,
         )
     self.ListInputBindings = channel.unary_unary(
         '/dapr.proto.runtime.v1.AppCallback/ListInputBindings',
@@ -105,7 +105,7 @@ def add_AppCallbackServicer_to_server(servicer, server):
       'OnTopicEvent': grpc.unary_unary_rpc_method_handler(
           servicer.OnTopicEvent,
           request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventRequest.FromString,
-          response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+          response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventResponse.SerializeToString,
       ),
       'ListInputBindings': grpc.unary_unary_rpc_method_handler(
           servicer.ListInputBindings,

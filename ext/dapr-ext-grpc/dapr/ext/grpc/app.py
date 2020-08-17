@@ -92,7 +92,7 @@ class App:
             self._servicer.register_method(name, func)
         return decorator
 
-    def subscribe(self, topic: str, metadata: Optional[Dict[str, str]] = {}):
+    def subscribe(self, pubsub_name: str, topic: str, metadata: Optional[Dict[str, str]] = {}):
         """A decorator that is used to register the subscribing topic method.
 
         The below example registers 'topic' subscription topic and pass custom
@@ -100,17 +100,18 @@ class App:
 
             from cloudevents.sdk.event import v1
 
-            @app.subscribe('topic', metadata=(('session-id', 'session-id-value'),))
+            @app.subscribe('pubsub_name', 'topic', metadata=(('session-id', 'session-id-value'),))
             def topic(event: v1.Event) -> None:
                 ...
 
         Args:
+            pubsub_name (str): the name of the pubsub component
             topic (str): the topic name which is subscribed
             metadata (dict, optional): metadata which will be passed to pubsub component
                 during initialization
         """
         def decorator(func):
-            self._servicer.register_topic(topic, func, metadata)
+            self._servicer.register_topic(pubsub_name, topic, func, metadata)
         return decorator
 
     def binding(self, name: str):

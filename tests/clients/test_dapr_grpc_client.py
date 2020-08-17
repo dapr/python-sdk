@@ -132,6 +132,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_publish_event(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         resp = dapr.publish_event(
+            pubsub_name='pubsub',
             topic='example',
             data=b'haha',
         )
@@ -143,6 +144,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr = DaprClient(f'localhost:{self.server_port}')
         with self.assertRaisesRegex(ValueError, "invalid type for data <class 'int'>"):
             dapr.publish_event(
+                pubsub_name='pubsub',
                 topic='example',
                 data=111,
             )

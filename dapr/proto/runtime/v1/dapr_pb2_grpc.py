@@ -26,6 +26,11 @@ class DaprStub(object):
         request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetStateRequest.SerializeToString,
         response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetStateResponse.FromString,
         )
+    self.GetBulkState = channel.unary_unary(
+        '/dapr.proto.runtime.v1.Dapr/GetBulkState',
+        request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetBulkStateRequest.SerializeToString,
+        response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetBulkStateResponse.FromString,
+        )
     self.SaveState = channel.unary_unary(
         '/dapr.proto.runtime.v1.Dapr/SaveState',
         request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SaveStateRequest.SerializeToString,
@@ -34,6 +39,11 @@ class DaprStub(object):
     self.DeleteState = channel.unary_unary(
         '/dapr.proto.runtime.v1.Dapr/DeleteState',
         request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteStateRequest.SerializeToString,
+        response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+        )
+    self.ExecuteStateTransaction = channel.unary_unary(
+        '/dapr.proto.runtime.v1.Dapr/ExecuteStateTransaction',
+        request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ExecuteStateTransactionRequest.SerializeToString,
         response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
         )
     self.PublishEvent = channel.unary_unary(
@@ -71,6 +81,13 @@ class DaprServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def GetBulkState(self, request, context):
+    """Gets a bulk of state items for a list of keys
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def SaveState(self, request, context):
     """Saves the state for a specific key.
     """
@@ -80,6 +97,13 @@ class DaprServicer(object):
 
   def DeleteState(self, request, context):
     """Deletes the state for a specific key.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ExecuteStateTransaction(self, request, context):
+    """Executes transactions for a specified store
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -119,6 +143,11 @@ def add_DaprServicer_to_server(servicer, server):
           request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetStateRequest.FromString,
           response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetStateResponse.SerializeToString,
       ),
+      'GetBulkState': grpc.unary_unary_rpc_method_handler(
+          servicer.GetBulkState,
+          request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetBulkStateRequest.FromString,
+          response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetBulkStateResponse.SerializeToString,
+      ),
       'SaveState': grpc.unary_unary_rpc_method_handler(
           servicer.SaveState,
           request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SaveStateRequest.FromString,
@@ -127,6 +156,11 @@ def add_DaprServicer_to_server(servicer, server):
       'DeleteState': grpc.unary_unary_rpc_method_handler(
           servicer.DeleteState,
           request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteStateRequest.FromString,
+          response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+      ),
+      'ExecuteStateTransaction': grpc.unary_unary_rpc_method_handler(
+          servicer.ExecuteStateTransaction,
+          request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ExecuteStateTransactionRequest.FromString,
           response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
       ),
       'PublishEvent': grpc.unary_unary_rpc_method_handler(
