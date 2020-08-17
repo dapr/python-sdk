@@ -253,7 +253,7 @@ class DaprClient:
 
     def publish_event(
             self,
-            pubsub_name : str,
+            pubsub_name: str,
             topic: str,
             data: Union[bytes, str],
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
