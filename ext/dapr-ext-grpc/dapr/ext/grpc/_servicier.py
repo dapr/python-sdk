@@ -50,7 +50,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
     def register_topic(
             self,
-            pubsub_name: str, 
+            pubsub_name: str,
             topic: str,
             cb: TopicSubscribeCallable,
             metadata: Optional[Dict[str, str]]) -> None:
@@ -60,7 +60,8 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             raise ValueError(f'{topic} is already registered with {pubsub_name}')
         self._topic_map[pubsub_topic] = cb
         self._registered_topics.append(
-            appcallback_v1.TopicSubscription(pubsub_name=pubsub_name, topic=topic, metadata=metadata))
+            appcallback_v1.TopicSubscription(pubsub_name=pubsub_name, topic=topic,
+            metadata=metadata))
 
     def register_binding(
             self, name: str, cb: BindingCallable) -> None:
