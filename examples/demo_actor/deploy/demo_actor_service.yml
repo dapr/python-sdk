@@ -24,8 +24,8 @@ spec:
       containers:
       - name: demoactor
         image: demo_actor:latest  # EDIT HERE: Replace the image nmae with [docker registry]/demo_actor:latest
-        command: ["python"]
-        args: ["/app/demo_actor_service.py"]
+        command: ["uvicorn"]
+        args: ["--port", "3000", "--reload-dir", "/app", "demo_actor_service:app"]
         ports:
         - containerPort: 3000
         imagePullPolicy: Always

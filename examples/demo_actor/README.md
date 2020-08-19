@@ -36,8 +36,8 @@ export PYTHONPATH=`pwd`
 1. Run Demo Actor service in new terminal window
 
 ```bash
-$ cd examples/demo_actor
-$ dapr run --app-id demo-actor --app-port 3000 -- uvicorn --dapr-http-port 3000 demo_actor_service:app
+$ cd ./demo_actor
+$ dapr run --app-id demo-actor --app-port 3000 -- uvicorn --port 3000 demo_actor_service:app
 ...
 == APP == Activate DemoActor actor!
 == APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "POST /actors/DemoActor/1 HTTP/1.1" 200 -
@@ -57,7 +57,7 @@ dapr run --app-id demo-actor --app-port 3000 python3 demo_actor_flask.py
 1. Run Demo client in new terminal window
 
 ```bash
-$ cd examples/demo_actor
+$ cd ./demo_actor
 # Run actor client
 $ dapr run --app-id demo-client python3 demo_actor_client.py
 ...
