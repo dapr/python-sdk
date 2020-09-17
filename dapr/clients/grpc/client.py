@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import grpc  # type: ignore
 from dapr.clients.grpc._state import StateOptions
 
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Sequence
 
 from google.protobuf.message import Message as GrpcMessage
 
@@ -22,7 +22,9 @@ from dapr.clients.grpc._response import (
     DaprResponse,
     GetSecretResponse,
     InvokeServiceResponse,
-    StateResponse
+    StateResponse,
+    BulkStatesResponse,
+    BulkStateItem,
 )
 
 
@@ -331,12 +333,63 @@ class DaprClient:
             and value obtained from the state store
         """
 
-        if len(store_name) == 0 or len(store_name.strip()) == 0:
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
         req = api_v1.GetStateRequest(store_name=store_name, key=key)
         response, call = self._stub.GetState.with_call(req, metadata=metadata)
         return StateResponse(
             data=response.data,
+            headers=call.initial_metadata())
+
+    def get_states(
+            self,
+            store_name: str,
+            keys: Sequence[str],
+            parallelism: int = 1,
+            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+        """Gets values from a statestore with keys
+
+        The example gets value from a statestore:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.get_states(
+                    store_name='state_store'
+                    keys=['key_1', key_2],
+                    parallelism=2,
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                )
+
+        Args:
+            store_name (str): the state store name to get from
+            key (Sequence[str]): the keys to be retrieved
+            parallelism (int): number of items to be retrieved in parallel.
+            metadata (tuple, optional): custom metadata
+
+        Returns:
+            :class:`BulkStatesResponse` gRPC metadata returned from callee
+            and value obtained from the state store
+        """
+
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("State store name cannot be empty")
+        req = api_v1.GetBulkStateRequest(
+            store_name=store_name,
+            keys=keys,
+            parallelism=parallelism)
+        response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+
+        items = []
+        for item in response.items:
+            items.append(
+                BulkStateItem(
+                    key=item.key,
+                    data=item.data,
+                    etag=item.etag,
+                    error=item.error))
+        return BulkStatesResponse(
+            items=items,
             headers=call.initial_metadata())
 
     def save_state(
@@ -382,7 +435,7 @@ class DaprClient:
 
         req_value = value
 
-        if len(store_name) == 0 or len(store_name.strip()) == 0:
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
 
         if options is None:
@@ -435,7 +488,7 @@ class DaprClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
 
-        if len(store_name) == 0 or len(store_name.strip()) == 0:
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
 
         if options is None:

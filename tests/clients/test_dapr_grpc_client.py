@@ -6,6 +6,7 @@ Licensed under the MIT License.
 """
 
 import unittest
+import uuid
 from unittest.mock import patch
 
 from dapr.clients.grpc.client import DaprClient
@@ -196,6 +197,38 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
         resp = dapr.get_state(store_name="statestore", key=key)
         self.assertEqual(resp.data, b'')
+
+    def test_save_get_states(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+
+        key = str(uuid.uuid4())
+        value = str(uuid.uuid4())
+        another_key = str(uuid.uuid4())
+        another_value = str(uuid.uuid4())
+
+        options = StateOptions(
+            consistency=Consistency.eventual,
+            concurrency=Concurrency.first_write,
+        )
+        dapr.save_state(
+            store_name="statestore",
+            key=key,
+            value=value,
+            options=options
+        )
+        dapr.save_state(
+            store_name="statestore",
+            key=another_key,
+            value=another_value,
+            options=options
+        )
+
+        resp = dapr.get_states(store_name="statestore", keys=[key, another_key])
+
+        self.assertEqual(resp.items[0].key, key)
+        self.assertEqual(resp.items[0].data, to_bytes(value))
+        self.assertEqual(resp.items[1].key, another_key)
+        self.assertEqual(resp.items[1].data, to_bytes(another_value))
 
     def test_get_secret(self):
         dapr = DaprClient(f'localhost:{self.server_port}')

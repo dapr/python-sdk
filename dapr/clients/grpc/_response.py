@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Sequence
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -311,3 +311,85 @@ class StateResponse(DaprResponse):
     def data(self, val: Union[bytes, str]) -> None:
         """Sets str or bytes type data to request data."""
         self._data = to_bytes(val)
+
+
+class BulkStateItem:
+    """A state item from bulk_get_state API.
+
+    Attributes:
+        key (str): state's key.
+        data (Union[bytes, str]): state's data.
+        etag (str): state's etag.
+        error (str): error when state was retrieved
+    """
+
+    def __init__(
+            self,
+            key: str,
+            data: Union[bytes, str],
+            etag: str = '',
+            error: str = ''):
+        """Initializes BulkStateItem item from :obj:`runtime_v1.BulkStateItem`.
+
+        Args:
+            key (str): state's key.
+            data (Union[bytes, str]): state's data.
+            etag (str): state's etag.
+            error (str): error when state was retrieved
+        """
+        self._key = key
+        self._data = data  # type: ignore
+        self._etag = etag
+        self._error = error
+
+    def text(self) -> str:
+        """Gets content as str."""
+        return to_str(self._data)
+
+    @property
+    def key(self) -> str:
+        """Gets key."""
+        return self._key
+
+    @property
+    def data(self) -> Union[bytes, str]:
+        """Gets raw data."""
+        return self._data
+
+    @property
+    def etag(self) -> str:
+        """Gets etag."""
+        return self._etag
+
+    @property
+    def error(self) -> str:
+        """Gets error."""
+        return self._error
+
+
+class BulkStatesResponse(DaprResponse):
+    """The response of bulk_get_state API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        data (Union[bytes, str]): state's data.
+    """
+
+    def __init__(
+            self,
+            items: Sequence[BulkStateItem],
+            headers: MetadataTuple = ()):
+        """Initializes BulkStatesResponse from :obj:`runtime_v1.GetBulkStateResponse`.
+
+        Args:
+            items (Sequence[BulkStatesItem]): the items retrieved.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super(BulkStatesResponse, self).__init__(headers)
+        self._items = items
+
+    @property
+    def items(self) -> Sequence[BulkStateItem]:
+        """Gets the items."""
+        return self._items
