@@ -91,6 +91,14 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         else:
             return api_v1.GetStateResponse(data=self.store[key], etag="")
 
+    def GetBulkState(self, request, context):
+        items = []
+        for key in request.keys:
+            req = api_v1.GetStateRequest(store_name=request.store_name, key=key)
+            res = self.GetState(req, context)
+            items.append(api_v1.BulkStateItem(key=key, data=res.data))
+        return api_v1.GetBulkStateResponse(items=items)
+
     def DeleteState(self, request, context):
         headers = ()
         trailers = ()
