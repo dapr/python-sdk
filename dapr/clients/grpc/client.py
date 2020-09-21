@@ -479,9 +479,7 @@ class DaprClient:
                             operation_type=TransactionOperationType.delete,
                             key=key_to_delete),
                     ],
-                    transactional_metadata=(
-                        ('header1', 'value1')
-                    ),
+                    transactional_metadata={"header1": "value1"},
                     metadata=(
                         ('header1', 'value1')
                     ),
@@ -490,7 +488,7 @@ class DaprClient:
         Args:
             store_name (str): the state store name to save to.
             operations (Sequence[TransactionalStateOperation]): the transaction operations.
-            transactional_metadata (tuple, optional): custom metadata for transaction request.
+            transactional_metadata (Dict[str, str], optional): custom metadata for transaction.
             metadata (tuple, optional): custom grpc metadata.
 
         Returns:
