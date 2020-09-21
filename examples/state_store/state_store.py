@@ -24,7 +24,7 @@ with DaprClient() as d:
     print(f"State store has successfully saved {another_value} with {another_key} as key")
 
     # Get one state by key.
-    data = d.get_state(store_name=storeName, key=key).data
+    data = d.get_state(store_name=storeName, key=key, state_metadata={"metakey": "metavalue"}).data
     print(f"Got value: {data}")
 
     # Transaction upsert
@@ -37,10 +37,10 @@ with DaprClient() as d:
     ])
 
     # Batch get
-    items = d.get_states(store_name=storeName, keys=[key, another_key]).items
+    items = d.get_states(store_name=storeName, keys=[key, another_key], states_metadata={"metakey": "metavalue"}).items
     print(f"Got items: {[i.data for i in items]}")
 
     # Delete one state by key.
-    d.delete_state(store_name=storeName, key=key)
+    d.delete_state(store_name=storeName, key=key, state_metadata={"metakey": "metavalue"})
     data = d.get_state(store_name=storeName, key=key).data
     print(f"Got value after delete: {data}")
