@@ -2,10 +2,15 @@
 
 This example utilizes a local secret store to show how to retrieve secrets using dapr
 It creates a dapr client and calls the `get_secret` method in the `DaprClient`.
+This example also illustrates the use of access control for secrets.
 
 > **Note:** Make sure to use the latest proto bindings
 
 ## Running
+Change directory to this folder. 
+```bash
+cd examples/secret_store
+```
 
 To run this example, use the following command:
 
@@ -14,17 +19,55 @@ dapr run --app-id=secretsapp --app-protocol grpc --components-path components/ p
 ```
 
 You should be able to see the following output:
-
-```bash
-
+```
 == APP == Got!
 
 == APP == {'secretKey': 'secretValue'}
+
+== APP == Got!
+
+== APP == {'random': 'randomValue'}
 ```
+
+In `config.yaml` you can see that the `localsecretstore` secret store has been defined with some restricted permissions.
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: daprConfig
+spec:
+  secrets:
+    scopes:
+        - storeName: "localsecretstore"
+          defaultAccess: "deny"
+          allowedSecrets: ["secretKey",]
+```
+
+The above configuration defines that the default access permission for the `localsecretstore` is `deny` and that only the 
+key `secretKey` is allowed to be accessed from the store.
+
+To see this run the same `example.py` app with the following command: 
+
+```bash
+dapr run --app-id=secretsapp --app-protocol grpc --config config.yaml --components-path components/ python3 example.py
+```
+The above command overrides the default configuration file with the `--config` flag.
+
+The output should be as follows:
+```
+== APP == Got!
+
+== APP == {'secretKey': 'secretValue'}
+== APP == Got expected error for accessing random key
+```
+
+It can be seen that when it tried to get the random key again, it fails as by default the access is denied for any key 
+unless defined in the `allowedSecrets` list.
 
 ## Clean Up
 
-Run the following command in a new terminal to stop the app
+Either press CTRL + C to quit the app or run the following command in a new terminal to stop the app
 ```bash
 dapr stop --app-id=secretsapp
 ```
