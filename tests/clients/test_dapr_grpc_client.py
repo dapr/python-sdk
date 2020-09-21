@@ -14,6 +14,7 @@ from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
+from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency
 
 
@@ -198,7 +199,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         resp = dapr.get_state(store_name="statestore", key=key)
         self.assertEqual(resp.data, b'')
 
-    def test_save_get_states(self):
+    def test_transaction_then_get_states(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
 
         key = str(uuid.uuid4())
@@ -206,21 +207,13 @@ class DaprGrpcClientTests(unittest.TestCase):
         another_key = str(uuid.uuid4())
         another_value = str(uuid.uuid4())
 
-        options = StateOptions(
-            consistency=Consistency.eventual,
-            concurrency=Concurrency.first_write,
-        )
-        dapr.save_state(
+        dapr.execute_transaction(
             store_name="statestore",
-            key=key,
-            value=value,
-            options=options
-        )
-        dapr.save_state(
-            store_name="statestore",
-            key=another_key,
-            value=another_value,
-            options=options
+            operations=[
+                TransactionalStateOperation(key=key, data=value),
+                TransactionalStateOperation(key=another_key, data=another_value),
+            ],
+            transactional_metadata={"metakey": "metavalue"}
         )
 
         resp = dapr.get_states(store_name="statestore", keys=[key, another_key])

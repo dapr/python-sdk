@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+from enum import Enum
 from typing import Dict, Optional, Union
 
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -256,3 +257,65 @@ class BindingRequest(DaprRequest):
     def binding_metadata(self):
         """Gets the metadata for output binding."""
         return self._binding_metadata
+
+
+class TransactionOperationType(Enum):
+    """Represents the type of operation for a Dapr Transaction State Api Call"""
+    upsert = "upsert"
+    delete = "delete"
+
+
+class TransactionalStateOperation:
+    """An upsert or delete operation for a state transaction, 'upsert' by default.
+
+    Attributes:
+        key (str): state's key.
+        data (Union[bytes, str]): state's data.
+        etag (str): state's etag.
+        operation_type (TransactionOperationType): operation to be performed.
+    """
+
+    def __init__(
+            self,
+            key: str,
+            data: Union[bytes, str],
+            etag: str = '',
+            operation_type: TransactionOperationType = TransactionOperationType.upsert):
+        """Initializes TransactionalStateOperation item from :obj:`runtime_v1.TransactionalStateOperation`.
+
+        Args:
+            key (str): state's key.
+            data (Union[bytes, str]): state's data.
+            etag (str): state's etag.
+            operationType (Optional[TransactionOperationType]): operation to be performed.
+
+        Raises:
+            ValueError: data is not bytes or str.
+        """
+        if not isinstance(data, (bytes, str)):
+            raise ValueError(f'invalid type for data {type(data)}')
+
+        self._key = key
+        self._data = data  # type: ignore
+        self._etag = etag
+        self._operation_type = operation_type
+
+    @property
+    def key(self) -> str:
+        """Gets key."""
+        return self._key
+
+    @property
+    def data(self) -> Union[bytes, str]:
+        """Gets raw data."""
+        return self._data
+
+    @property
+    def etag(self) -> str:
+        """Gets etag."""
+        return self._etag
+
+    @property
+    def operation_type(self) -> TransactionOperationType:
+        """Gets etag."""
+        return self._operation_type

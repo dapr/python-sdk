@@ -84,6 +84,19 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
+    def ExecuteStateTransaction(self, request, context):
+        headers = ()
+        trailers = ()
+        for operation in request.operations:
+            if operation.operationType == 'delete':
+                self.store[operation.request.key] = None
+            else:
+                self.store[operation.request.key] = operation.request.value
+
+        context.send_initial_metadata(headers)
+        context.set_trailing_metadata(trailers)
+        return empty_pb2.Empty()
+
     def GetState(self, request, context):
         key = request.key
         if key not in self.store:

@@ -16,7 +16,11 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes
-from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
+from dapr.clients.grpc._request import (
+    InvokeServiceRequest,
+    BindingRequest,
+    TransactionalStateOperation,
+)
 from dapr.clients.grpc._response import (
     BindingResponse,
     DaprResponse,
@@ -448,6 +452,62 @@ class DaprClient:
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         response, call = self._stub.SaveState.with_call(req, metadata=metadata)
+        return DaprResponse(
+            headers=call.initial_metadata())
+
+    def execute_transaction(
+            self,
+            store_name: str,
+            operations: Sequence[TransactionalStateOperation],
+            transactional_metadata: Optional[Dict[str, str]] = dict(),
+            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+        """Saves or deletes key-value pairs to a statestore as a transaction
+
+        This saves or deletes key-values to the statestore as part of a single transaction,
+        transaction_metadata is used for the transaction operation, while metadata is used
+        for the GRPC call.
+
+        The example saves states to a statestore:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.execute_transaction(
+                    store_name='state_store',
+                    operations=[
+                        TransactionalStateOperation(key=key, data=value),
+                        TransactionalStateOperation(key=another_key, data=another_value),
+                        TransactionalStateOperation(
+                            operation_type=TransactionOperationType.delete,
+                            key=key_to_delete),
+                    ],
+                    transactional_metadata={"header1": "value1"},
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                )
+
+        Args:
+            store_name (str): the state store name to save to.
+            operations (Sequence[TransactionalStateOperation]): the transaction operations.
+            transactional_metadata (Dict[str, str], optional): custom metadata for transaction.
+            metadata (tuple, optional): custom grpc metadata.
+
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
+        """
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("State store name cannot be empty")
+        req_ops = [api_v1.TransactionalStateOperation(
+            operationType=o.operation_type.value,
+            request=common_v1.StateItem(
+                key=o.key,
+                value=to_bytes(o.data),
+                etag=o.etag)) for o in operations]
+
+        req = api_v1.ExecuteStateTransactionRequest(
+            storeName=store_name,
+            operations=req_ops,
+            metadata=transactional_metadata)
+        _, call = self._stub.ExecuteStateTransaction.with_call(req, metadata=metadata)
         return DaprResponse(
             headers=call.initial_metadata())
 
