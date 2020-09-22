@@ -313,6 +313,7 @@ class DaprClient:
             self,
             store_name: str,
             key: str,
+            state_metadata: Optional[Dict[str, str]] = dict(),
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Gets value from a statestore with a key
 
@@ -322,6 +323,8 @@ class DaprClient:
                 resp = d.get_state(
                     store_name='state_store'
                     key='key_1',
+                    state={"key": "value"},
+                    state_metadata={"metakey": "metavalue"},
                     metadata=(
                         ('header1', 'value1')
                     ),
@@ -330,7 +333,8 @@ class DaprClient:
         Args:
             store_name (str): the state store name to get from
             key (str): the key of the key-value pair to be gotten
-            metadata (tuple, optional): custom metadata
+            state_metadata (Dict[str, str], optional): custom metadata for state request
+            metadata (tuple, optional): custom GRPC metadata
 
         Returns:
             :class:`StateResponse` gRPC metadata returned from callee
@@ -339,7 +343,7 @@ class DaprClient:
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
-        req = api_v1.GetStateRequest(store_name=store_name, key=key)
+        req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
         response, call = self._stub.GetState.with_call(req, metadata=metadata)
         return StateResponse(
             data=response.data,
@@ -350,6 +354,7 @@ class DaprClient:
             store_name: str,
             keys: Sequence[str],
             parallelism: int = 1,
+            states_metadata: Optional[Dict[str, str]] = dict(),
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Gets values from a statestore with keys
 
@@ -360,6 +365,7 @@ class DaprClient:
                     store_name='state_store'
                     keys=['key_1', key_2],
                     parallelism=2,
+                    states_metadata={"metakey": "metavalue"},
                     metadata=(
                         ('header1', 'value1')
                     ),
@@ -368,7 +374,8 @@ class DaprClient:
         Args:
             store_name (str): the state store name to get from
             key (Sequence[str]): the keys to be retrieved
-            parallelism (int): number of items to be retrieved in parallel.
+            parallelism (int): number of items to be retrieved in parallel
+            states_metadata (Dict[str, str], optional): custom metadata for state request
             metadata (tuple, optional): custom metadata
 
         Returns:
@@ -381,7 +388,8 @@ class DaprClient:
         req = api_v1.GetBulkStateRequest(
             store_name=store_name,
             keys=keys,
-            parallelism=parallelism)
+            parallelism=parallelism,
+            metadata=states_metadata)
         response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
 
         items = []
@@ -403,6 +411,7 @@ class DaprClient:
             value: Union[bytes, str],
             etag: Optional[str] = None,
             options: Optional[StateOptions] = None,
+            state_metadata: Optional[Dict[str, str]] = dict(),
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Saves key-value pairs to a statestore
 
@@ -417,6 +426,7 @@ class DaprClient:
                     store_name='state_store'
                     states=[{'key': 'key1', 'value': 'value1'}],
                     etag='etag',
+                    state_metadata={"metakey": "metavalue"},
                     metadata=(
                         ('header1', 'value1')
                     ),
@@ -429,6 +439,7 @@ class DaprClient:
             etag (str, optional): the etag to save with
             options (StateOptions, optional): custom options
                 for concurrency and consistency
+            state_metadata (Dict[str, str], optional): custom metadata for state request
             metadata (tuple, optional): custom metadata
 
         Returns:
@@ -448,10 +459,14 @@ class DaprClient:
             state_options = options.get_proto()
 
         state = common_v1.StateItem(
-            key=key, value=to_bytes(req_value), etag=etag, options=state_options)
+            key=key,
+            value=to_bytes(req_value),
+            etag=etag,
+            options=state_options,
+            metadata=state_metadata)
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
-        response, call = self._stub.SaveState.with_call(req, metadata=metadata)
+        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
         return DaprResponse(
             headers=call.initial_metadata())
 
@@ -486,10 +501,10 @@ class DaprClient:
                 )
 
         Args:
-            store_name (str): the state store name to save to.
-            operations (Sequence[TransactionalStateOperation]): the transaction operations.
-            transactional_metadata (Dict[str, str], optional): custom metadata for transaction.
-            metadata (tuple, optional): custom grpc metadata.
+            store_name (str): the state store name to save to
+            operations (Sequence[TransactionalStateOperation]): the transaction operations
+            transactional_metadata (Dict[str, str], optional): custom metadata for transaction
+            metadata (tuple, optional): custom grpc metadata
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -517,6 +532,7 @@ class DaprClient:
             key: str,
             etag: Optional[str] = None,
             options: Optional[StateOptions] = None,
+            state_metadata: Optional[Dict[str, str]] = dict(),
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Deletes key-value pairs from a statestore
 
@@ -531,6 +547,7 @@ class DaprClient:
                     store_name='state_store',
                     key='key1'
                     etag='etag',
+                    state_metadata={"header1": "value1"},
                     metadata=(
                         ('header1', 'value1')
                     )
@@ -542,6 +559,7 @@ class DaprClient:
             etag (str, optional): the etag to delete with
             options (StateOptions, optional): custom options
                 for concurrency and consistency
+            state_metadata (Dict[str, str], optional): custom metadata for state request
             metadata (tuple, optional): custom metadata
 
         Returns:
@@ -557,8 +575,8 @@ class DaprClient:
             state_options = options.get_proto()
 
         req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
-                                        etag=etag, options=state_options)
-        response, call = self._stub.DeleteState.with_call(req, metadata=metadata)
+                                        etag=etag, options=state_options, metadata=state_metadata)
+        _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
         return DaprResponse(
             headers=call.initial_metadata())
 

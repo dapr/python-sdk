@@ -7,6 +7,7 @@ Licensed under the MIT License.
 
 import unittest
 import uuid
+
 from unittest.mock import patch
 
 from dapr.clients.grpc.client import DaprClient
@@ -183,11 +184,15 @@ class DaprGrpcClientTests(unittest.TestCase):
             store_name="statestore",
             key=key,
             value=value,
-            options=options
+            options=options,
+            state_metadata={"capitalize": "1"}
         )
-        resp = dapr.get_state(store_name="statestore", key=key)
 
-        self.assertEqual(resp.data, to_bytes(value))
+        resp = dapr.get_state(store_name="statestore", key=key)
+        self.assertEqual(resp.data, to_bytes(value.capitalize()))
+
+        resp = dapr.get_state(store_name="statestore", key=key, state_metadata={"upper": "1"})
+        self.assertEqual(resp.data, to_bytes(value.upper()))
 
         resp = dapr.get_state(store_name="statestore", key="NotValidKey")
         self.assertEqual(resp.data, b'')
@@ -198,6 +203,14 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
         resp = dapr.get_state(store_name="statestore", key=key)
         self.assertEqual(resp.data, b'')
+
+        with self.assertRaises(Exception) as context:
+            dapr.delete_state(
+                store_name="statestore",
+                key=key,
+                state_metadata={"must_delete": "1"})
+        print(context.exception)
+        self.assertTrue('delete failed' in str(context.exception))
 
     def test_transaction_then_get_states(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
@@ -217,11 +230,19 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
 
         resp = dapr.get_states(store_name="statestore", keys=[key, another_key])
-
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].data, to_bytes(value))
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value))
+
+        resp = dapr.get_states(
+            store_name="statestore",
+            keys=[key, another_key],
+            states_metadata={"upper": "1"})
+        self.assertEqual(resp.items[0].key, key)
+        self.assertEqual(resp.items[0].data, to_bytes(value.upper()))
+        self.assertEqual(resp.items[1].key, another_key)
+        self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
     def test_get_secret(self):
         dapr = DaprClient(f'localhost:{self.server_port}')

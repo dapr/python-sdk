@@ -1,7 +1,9 @@
 import grpc
+
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
+from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
 
 
@@ -78,7 +80,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         headers = ()
         trailers = ()
         for state in request.states:
-            self.store[state.key] = state.value
+            data = state.value
+            if state.metadata["capitalize"]:
+                data = to_bytes(data.decode("utf-8").capitalize())
+            self.store[state.key] = data
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -102,14 +107,20 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         if key not in self.store:
             return empty_pb2.Empty()
         else:
-            return api_v1.GetStateResponse(data=self.store[key], etag="")
+            data = self.store[key]
+            if request.metadata["upper"]:
+                data = to_bytes(data.decode("utf-8").upper())
+            return api_v1.GetStateResponse(data=data, etag="")
 
     def GetBulkState(self, request, context):
         items = []
         for key in request.keys:
             req = api_v1.GetStateRequest(store_name=request.store_name, key=key)
             res = self.GetState(req, context)
-            items.append(api_v1.BulkStateItem(key=key, data=res.data))
+            data = res.data
+            if request.metadata["upper"]:
+                data = to_bytes(data.decode("utf-8").upper())
+            items.append(api_v1.BulkStateItem(key=key, data=data))
         return api_v1.GetBulkStateResponse(items=items)
 
     def DeleteState(self, request, context):
@@ -118,6 +129,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         key = request.key
         if key in self.store:
             del self.store[key]
+        else:
+            if request.metadata["must_delete"]:
+                raise ValueError("delete failed")
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
