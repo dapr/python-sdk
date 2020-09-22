@@ -6,9 +6,9 @@ Licensed under the MIT License.
 """
 
 import grpc  # type: ignore
-from dapr.clients.grpc._state import StateOptions
+from dapr.clients.grpc._state import StateOptions, StateItem
 
-from typing import Dict, Optional, Union, Sequence
+from typing import Dict, Optional, Union, Sequence, List
 
 from google.protobuf.message import Message as GrpcMessage
 
@@ -424,7 +424,8 @@ class DaprClient:
             with DaprClient() as d:
                 resp = d.save_state(
                     store_name='state_store'
-                    states=[{'key': 'key1', 'value': 'value1'}],
+                    key='key1',
+                    value='value1',
                     etag='etag',
                     state_metadata={"metakey": "metavalue"},
                     metadata=(
@@ -444,6 +445,10 @@ class DaprClient:
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
+
+        Raises:
+            ValueError: value is not bytes or str
+            ValueError: store_name is empty
         """
         if not isinstance(value, (bytes, str)):
             raise ValueError(f'invalid type for data {type(value)}')
@@ -466,6 +471,57 @@ class DaprClient:
             metadata=state_metadata)
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
+        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+        return DaprResponse(
+            headers=call.initial_metadata())
+
+    def save_states(
+            self,
+            store_name: str,
+            states: List[StateItem],
+            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+        """Saves state items to a statestore
+
+        This saves a given state item into the statestore specified by store_name.
+
+        The example saves states to a statestore:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.save_state(
+                    store_name='state_store'
+                    states=[StateItem(key='key1', value='value1'),
+                        StateItem(key='key2', value='value2', etag='etag'),],
+                    metadata=(
+                        ('header1', 'value1')
+                    ),
+                )
+
+        Args:
+            store_name (str): the state store name to save to
+            states (List[StateItem]): list of states to save
+            metadata (tuple, optional): custom metadata
+
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
+
+        Raises:
+            ValueError: states is empty
+            ValueError: store_name is empty
+        """
+        if not states or len(states) == 0:
+            raise ValueError("States to be saved cannot be empty")
+
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("State store name cannot be empty")
+
+        req_states = [common_v1.StateItem(
+            key=i.key,
+            value=to_bytes(i.value),
+            etag=i.etag,
+            options=i.options,
+            metadata=i.metadata) for i in states]
+
+        req = api_v1.SaveStateRequest(store_name=store_name, states=req_states)
         _, call = self._stub.SaveState.with_call(req, metadata=metadata)
         return DaprResponse(
             headers=call.initial_metadata())

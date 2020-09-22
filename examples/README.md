@@ -1,6 +1,6 @@
 # Dapr Python SDK - Examples
 
-This examples demonstrates how to use Dapr python sdk.
+These examples demonstrates how to use Dapr python sdk.
 
 * [demo_actor](./demo_actor)
   * Shows the usage of Dapr virtual actor features.
@@ -14,3 +14,5 @@ This examples demonstrates how to use Dapr python sdk.
   * Saves and gets state to the state stores
 * [pubsub-simple](./pubsub-simple)
   * Publishes and subscribes events
+* [secret_store](./secret_store)
+  * Gets secret from a defined secret store
