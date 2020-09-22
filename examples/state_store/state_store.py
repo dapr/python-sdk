@@ -6,6 +6,7 @@ dapr run python3 state_store.py
 from dapr.clients import DaprClient
 
 from dapr.clients.grpc._request import TransactionalStateOperation, TransactionOperationType
+from dapr.clients.grpc._state import StateItem
 
 with DaprClient() as d:
     storeName = 'statestore'
@@ -17,11 +18,18 @@ with DaprClient() as d:
     another_key = "key_2"
     another_value = "value_2"
 
-    # Save states.
+    yet_another_key = "key_3"
+    yet_another_value = "value_3"
+
+    # Save single state.
     d.save_state(store_name=storeName, key=key, value=value)
     print(f"State store has successfully saved {value} with {key} as key")
-    d.save_state(store_name=storeName, key=another_key, value=another_value)
+    
+    # Save multiple states.
+    d.save_states(store_name=storeName, states=[StateItem(key=another_key, value=another_value),
+        StateItem(key=yet_another_key, value=yet_another_value)])
     print(f"State store has successfully saved {another_value} with {another_key} as key")
+    print(f"State store has successfully saved {yet_another_value} with {yet_another_key} as key")
 
     # Get one state by key.
     data = d.get_state(store_name=storeName, key=key, state_metadata={"metakey": "metavalue"}).data

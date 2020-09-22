@@ -16,7 +16,7 @@ from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
-from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency
+from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -232,6 +232,38 @@ class DaprGrpcClientTests(unittest.TestCase):
         resp = dapr.get_states(store_name="statestore", keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].data, to_bytes(value))
+        self.assertEqual(resp.items[1].key, another_key)
+        self.assertEqual(resp.items[1].data, to_bytes(another_value))
+
+        resp = dapr.get_states(
+            store_name="statestore",
+            keys=[key, another_key],
+            states_metadata={"upper": "1"})
+        self.assertEqual(resp.items[0].key, key)
+        self.assertEqual(resp.items[0].data, to_bytes(value.upper()))
+        self.assertEqual(resp.items[1].key, another_key)
+        self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
+
+    def test_save_then_get_states(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+
+        key = str(uuid.uuid4())
+        value = str(uuid.uuid4())
+        another_key = str(uuid.uuid4())
+        another_value = str(uuid.uuid4())
+
+        dapr.save_states(
+            store_name="statestore",
+            states=[
+                StateItem(key=key, value=value, metadata={"capitalize": "1"}),
+                StateItem(key=another_key, value=another_value, etag="1"),
+            ],
+            metadata=(("metakey", "metavalue"),)
+        )
+
+        resp = dapr.get_states(store_name="statestore", keys=[key, another_key])
+        self.assertEqual(resp.items[0].key, key)
+        self.assertEqual(resp.items[0].data, to_bytes(value.capitalize()))
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value))
 
