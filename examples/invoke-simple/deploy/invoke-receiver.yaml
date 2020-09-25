@@ -19,11 +19,12 @@ spec:
       annotations:
         dapr.io/enabled: "true"
         dapr.io/app-id: "invoke-receiver"
+        dapr.io/app-protocol: "grpc"
         dapr.io/app-port: "50051"
     spec:
       containers:
       - name: invokereceiver
-        image: invokesimple:latest  # EDIT HERE: Replace the image nmae with [docker registry]/demo_actor:latest
+        image: invokesimple:latest  # EDIT HERE: Replace the image name
         command: ["python"]
         args: ["/app/invoke-receiver.py"]
         ports:

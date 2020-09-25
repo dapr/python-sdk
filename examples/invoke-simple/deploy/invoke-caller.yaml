@@ -19,10 +19,11 @@ spec:
       annotations:
         dapr.io/enabled: "true"
         dapr.io/app-id: "invoke-caller"
+        dapr.io/app-protocol: "grpc"
     spec:
       containers:
       - name: invokecaller
-        image: invokesimple:latest  # EDIT HERE: Replace the image nmae with [docker registry]/demo_actor:latest
+        image: youngp/invokesimple:latest  # EDIT HERE: Replace the image name
         command: ["python"]
         args: ["/app/invoke-caller.py"]
         imagePullPolicy: Always
