@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: invokecaller
-        image: youngp/invokesimple:latest  # EDIT HERE: Replace the image name
+        image: invokesimple:latest  # EDIT HERE: Replace the image name
         command: ["python"]
         args: ["/app/invoke-caller.py"]
         imagePullPolicy: Always
