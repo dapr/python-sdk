@@ -4,7 +4,7 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 
 > **Note:** Make sure to use the latest proto bindings
 
-## Running
+## Running in self hosted mode
 
 To run this example, the following code can be utilized:
 
@@ -14,4 +14,27 @@ dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 i
 
 # 2. Start Caller
 dapr run --app-id invoke-caller --app-protocol grpc python3 invoke-caller.py
+```
+
+## Running in kubernetes mode
+
+1. Build docker image
+
+```
+docker build -t [your registry]/invokesimple:latest .
+```
+
+2. Push docker image
+
+```
+docker push [your registry]/invokesimple:latest
+```
+
+3. Edit image name to `[your registry]/invokesimple:latest` in deploy/*.yaml
+
+4. Deploy applications
+
+```
+cd deploy
+kubectl apply -f .
 ```

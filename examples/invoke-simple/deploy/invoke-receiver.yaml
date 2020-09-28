@@ -1,0 +1,32 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invokereceiver
+  labels:
+    app: invokereceiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: invokereceiver
+  template:
+    metadata:
+      labels:
+        app: invokereceiver
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "invoke-receiver"
+        dapr.io/app-protocol: "grpc"
+        dapr.io/app-port: "50051"
+    spec:
+      containers:
+      - name: invokereceiver
+        image: invokesimple:latest  # EDIT HERE: Replace the image name
+        command: ["python"]
+        args: ["/app/invoke-receiver.py"]
+        ports:
+        - containerPort: 3000
+        imagePullPolicy: Always
