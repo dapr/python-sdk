@@ -149,7 +149,7 @@ Once running, the output should display the messages sent from invoker in the se
 
 ![exposeroutput](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/service.png)
 
-Method have been remotely invoked and displaying the remote messages.
+Methods have been remotely invoked and display the remote messages.
 
 Now, open Zipkin on [http://localhost:9411/zipkin](http://localhost:9411/zipkin). You should see a screen like the one below:
 
