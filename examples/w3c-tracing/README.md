@@ -92,7 +92,7 @@ def sleep(request: InvokeServiceRequest) -> InvokeServiceResponse:
         return InvokeServiceResponse(b'SLEEP', "text/plain; charset=UTF-8")
 ```
 
-Use the follow command to execute the service:
+Use the following command to execute the service:
 
 ```sh
 dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
