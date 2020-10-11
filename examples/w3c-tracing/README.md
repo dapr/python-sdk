@@ -55,7 +55,7 @@ If Zipkin is not working, [install the newest version of Dapr Cli and initialize
 
 The Demo service application exposes two methods that can be remotely invoked. In this example, the service code has two parts:
 
-In the `invoke-receiver.py` file, you will find the OpenCensus tracing ands exporter initialization in addition to two methods: `say` and `sleep`. The instrumentation for the service happens automatically via the `OpenCensusServerInterceptor` class.
+In the `invoke-receiver.py` file, you will find the OpenCensus tracing and exporter initialization in addition to two methods: `say` and `sleep`. The instrumentation for the service happens automatically via the `OpenCensusServerInterceptor` class.
 ```python
 tracer_interceptor = server_interceptor.OpenCensusServerInterceptor(AlwaysOnSampler())
 app = App(
