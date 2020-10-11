@@ -31,8 +31,8 @@ from dapr.clients.grpc._response import (
     BulkStateItem,
 )
 
-from opencensus.ext.grpc import client_interceptor
-from opencensus.trace.tracers.base import Tracer
+from opencensus.ext.grpc import client_interceptor   # type: ignore
+from opencensus.trace.tracers.base import Tracer   # type: ignore
 
 
 class DaprClient:
@@ -70,7 +70,7 @@ class DaprClient:
             self._channel = grpc.intercept_channel(   # type: ignore
                 self._channel, api_token_interceptor)
         if tracer:
-            self._channel = grpc.intercept_channel(
+            self._channel = grpc.intercept_channel(   # type: ignore
                 self._channel, client_interceptor.OpenCensusClientInterceptor(tracer=tracer))
 
         self._stub = api_service_v1.DaprStub(self._channel)
