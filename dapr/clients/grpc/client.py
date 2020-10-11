@@ -423,7 +423,7 @@ class DaprClient:
             from dapr import DaprClient
             with DaprClient() as d:
                 resp = d.save_state(
-                    store_name='state_store'
+                    store_name='state_store',
                     key='key1',
                     value='value1',
                     etag='etag',
