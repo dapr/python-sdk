@@ -139,7 +139,7 @@ with tracer.span(name="main") as span:
             print(resp.text(), flush=True)
 ```
 
-The class knows the app id for the remote application. It uses `invoke_service` method to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
+The class knows the `app-id` for the remote application. It uses `invoke_service` method to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
  
 Execute the follow script in order to run the caller example, it will make call each method twice:
 ```sh
