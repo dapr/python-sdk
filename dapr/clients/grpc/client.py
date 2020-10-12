@@ -31,6 +31,9 @@ from dapr.clients.grpc._response import (
     BulkStateItem,
 )
 
+from opencensus.ext.grpc import client_interceptor   # type: ignore
+from opencensus.trace.tracers.base import Tracer   # type: ignore
+
 
 class DaprClient:
     """The convenient layer implementation of Dapr gRPC APIs.
@@ -51,7 +54,7 @@ class DaprClient:
         ...     resp = d.invoke_service('callee', 'method', b'data')
     """
 
-    def __init__(self, address: Optional[str] = None):
+    def __init__(self, address: Optional[str] = None, tracer: Optional[Tracer] = None):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
         Args:
@@ -66,6 +69,9 @@ class DaprClient:
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
             self._channel = grpc.intercept_channel(   # type: ignore
                 self._channel, api_token_interceptor)
+        if tracer:
+            self._channel = grpc.intercept_channel(   # type: ignore
+                self._channel, client_interceptor.OpenCensusClientInterceptor(tracer=tracer))
 
         self._stub = api_service_v1.DaprStub(self._channel)
 

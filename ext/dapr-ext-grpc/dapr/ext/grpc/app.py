@@ -26,14 +26,17 @@ class App:
         app = App()
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """Inits App object and creates gRPC server.
 
         Args:
-            app_port (int, optional): application port gRPC server listens to.
+            kwargs: arguments to grpc.server()
         """
         self._servicer = _CallbackServicer()
-        self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))   # type: ignore
+        if not kwargs:
+            self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))   # type: ignore
+        else:
+            self._server = grpc.server(**kwargs)   # type: ignore
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
 
     def __del__(self):
