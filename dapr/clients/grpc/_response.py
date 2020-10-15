@@ -278,17 +278,21 @@ class StateResponse(DaprResponse):
     This inherits from DaprResponse
 
     Attributes:
-        data (Dict[str, str]): secret received from response
+        data (bytes): the data in response from the get_state call
+        etag (str): state's etag.
+        headers (Tuple, optional): the headers from Dapr gRPC response
     """
 
     def __init__(
             self,
             data: Union[bytes, str],
+            etag: str = '',
             headers: MetadataTuple = ()):
         """Initializes StateResponse from :obj:`runtime_v1.GetStateResponse`.
 
         Args:
             data (bytes): the data in response from the get_state call
+            etag (str): state's etag.
             headers (Tuple, optional): the headers from Dapr gRPC response
 
         Raises:
@@ -297,6 +301,7 @@ class StateResponse(DaprResponse):
         """
         super(StateResponse, self).__init__(headers)
         self.data = data  # type: ignore
+        self._etag = etag
 
     def text(self) -> str:
         """Gets content as str."""
@@ -306,6 +311,11 @@ class StateResponse(DaprResponse):
     def data(self) -> bytes:
         """Gets raw bytes data."""
         return self._data
+
+    @property
+    def etag(self) -> str:
+        """Gets etag."""
+        return self._etag
 
     @data.setter
     def data(self, val: Union[bytes, str]) -> None:
