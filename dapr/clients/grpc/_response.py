@@ -308,14 +308,14 @@ class StateResponse(DaprResponse):
         return to_str(self._data)
 
     @property
-    def data(self) -> bytes:
-        """Gets raw bytes data."""
-        return self._data
-
-    @property
     def etag(self) -> str:
         """Gets etag."""
         return self._etag
+
+    @property
+    def data(self) -> bytes:
+        """Gets raw bytes data."""
+        return self._data
 
     @data.setter
     def data(self, val: Union[bytes, str]) -> None:
