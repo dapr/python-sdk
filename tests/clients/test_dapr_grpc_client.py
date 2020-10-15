@@ -190,12 +190,15 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         resp = dapr.get_state(store_name="statestore", key=key)
         self.assertEqual(resp.data, to_bytes(value.capitalize()))
+        self.assertEqual(resp.etag, "fake_etag")
 
         resp = dapr.get_state(store_name="statestore", key=key, state_metadata={"upper": "1"})
         self.assertEqual(resp.data, to_bytes(value.upper()))
+        self.assertEqual(resp.etag, "fake_etag")
 
         resp = dapr.get_state(store_name="statestore", key="NotValidKey")
         self.assertEqual(resp.data, b'')
+        self.assertEqual(resp.etag, '')
 
         dapr.delete_state(
             store_name="statestore",
@@ -272,8 +275,10 @@ class DaprGrpcClientTests(unittest.TestCase):
             keys=[key, another_key],
             states_metadata={"upper": "1"})
         self.assertEqual(resp.items[0].key, key)
+        self.assertEqual(resp.items[0].etag, "fake_etag")
         self.assertEqual(resp.items[0].data, to_bytes(value.upper()))
         self.assertEqual(resp.items[1].key, another_key)
+        self.assertEqual(resp.items[1].etag, "fake_etag")
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
     def test_get_secret(self):

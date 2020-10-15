@@ -110,7 +110,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             data = self.store[key]
             if request.metadata["upper"]:
                 data = to_bytes(data.decode("utf-8").upper())
-            return api_v1.GetStateResponse(data=data, etag="")
+            return api_v1.GetStateResponse(data=data, etag="fake_etag")
 
     def GetBulkState(self, request, context):
         items = []
@@ -120,7 +120,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             data = res.data
             if request.metadata["upper"]:
                 data = to_bytes(data.decode("utf-8").upper())
-            items.append(api_v1.BulkStateItem(key=key, data=data))
+            items.append(api_v1.BulkStateItem(key=key, etag="fake_etag", data=data))
         return api_v1.GetBulkStateResponse(items=items)
 
     def DeleteState(self, request, context):

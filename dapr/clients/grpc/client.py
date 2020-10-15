@@ -320,7 +320,7 @@ class DaprClient:
             store_name: str,
             key: str,
             state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+            metadata: Optional[MetadataTuple] = ()) -> StateResponse:
         """Gets value from a statestore with a key
 
         The example gets value from a statestore:
@@ -353,6 +353,7 @@ class DaprClient:
         response, call = self._stub.GetState.with_call(req, metadata=metadata)
         return StateResponse(
             data=response.data,
+            etag=response.etag,
             headers=call.initial_metadata())
 
     def get_states(
@@ -361,7 +362,7 @@ class DaprClient:
             keys: Sequence[str],
             parallelism: int = 1,
             states_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+            metadata: Optional[MetadataTuple] = ()) -> BulkStatesResponse:
         """Gets values from a statestore with keys
 
         The example gets value from a statestore:
