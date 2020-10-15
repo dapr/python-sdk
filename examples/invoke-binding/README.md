@@ -4,6 +4,12 @@ This example utilizes a publisher and a receiver for the InvokeBinding / OnBindi
 
 > **Note:** Make sure to use the latest proto bindings
 
+## Install Dapr python-SDK
+
+```bash
+pip3 install dapr dapr-ext-grpc
+```
+
 ## Running
 
 To run this example, the following code can be utilized:

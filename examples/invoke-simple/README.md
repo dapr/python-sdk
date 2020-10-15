@@ -4,6 +4,12 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 
 > **Note:** Make sure to use the latest proto bindings
 
+## Install Dapr python-SDK
+
+```bash
+pip3 install dapr dapr-ext-grpc
+```
+
 ## Running in self hosted mode
 
 To run this example, the following code can be utilized:

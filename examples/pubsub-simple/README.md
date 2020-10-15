@@ -6,6 +6,12 @@ It will create a gRPC subscriber and bind the `OnTopicEvent` method, which gets 
 
 > **Note:** Make sure to use the latest proto bindings
 
+## Install Dapr python-SDK
+
+```bash
+pip3 install dapr dapr-ext-grpc
+```
+
 ## Running
 
 To run this example, the following code can be utilized:

@@ -4,6 +4,12 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 
 > **Note:** Make sure to use the latest proto bindings and have them available under `dapr_pb2` and `daprclient_pb2`
 
+## Install Dapr python-SDK
+
+```bash
+pip3 install dapr dapr-ext-grpc
+```
+
 ## How To - Run Example
 
 To run this example, the following steps should be followed:
