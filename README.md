@@ -48,6 +48,7 @@ pip3 install dapr-ext-fastapi
 * Development package
 
 ```sh
+# Install Dapr client sdk
 pip3 install dapr-dev
 
 # Install Dapr gRPC extension
