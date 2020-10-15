@@ -6,6 +6,13 @@ This example also illustrates the use of access control for secrets.
 
 > **Note:** Make sure to use the latest proto bindings
 
+
+## Install Dapr python-SDK
+
+```bash
+pip3 install dapr dapr-ext-grpc
+```
+
 ## Running
 Change directory to this folder. 
 ```bash

@@ -32,16 +32,29 @@ This includes the following packages:
 
 ### Install Dapr python sdk
 
-* Official package - WIP
+* Official package
 
 ```sh
+# Install Dapr client sdk
 pip3 install dapr
+
+# Install Dapr gRPC extension
+pip3 install dapr-ext-grpc
+
+# Install Dapr Fast Api extension for Actor
+pip3 install dapr-ext-fastapi
 ```
 
 * Development package
 
 ```sh
 pip3 install dapr-dev
+
+# Install Dapr gRPC extension
+pip3 install dapr-ext-grpc-dev
+
+# Install Dapr Fast Api extension for Actor
+pip3 install dapr-ext-fastapi-dev
 ```
 
 > Note: Do not install both packages.
@@ -66,6 +79,7 @@ cd python-sdk
 ```bash
 pip3 install -e .
 pip3 install -e ./ext/dapr-ext-grpc/
+pip3 install -e ./ext/dapr-ext-fastapi/
 ```
 
 3. Install required packages
