@@ -3,6 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/dapr.svg)](https://badge.fury.io/py/dapr)
 [![PyPI version](https://badge.fury.io/py/dapr-dev.svg)](https://badge.fury.io/py/dapr-dev)
 ![dapr-python](https://github.com/dapr/python-sdk/workflows/dapr-python/badge.svg?branch=master)
+[![codecov](https://codecov.io/gh/dapr/python-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk)
 [![Gitter](https://badges.gitter.im/Dapr/community.svg)](https://gitter.im/Dapr/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
