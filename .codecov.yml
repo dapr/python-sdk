@@ -8,3 +8,4 @@ coverage:
 
 ignore:
   - dapr/proto # - Generated GRPC client
+  - tests      # - tests
