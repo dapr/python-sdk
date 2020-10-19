@@ -633,9 +633,20 @@ class DaprClient:
             raise ValueError("State store name cannot be empty")
 
         if options is None:
+            test = 100 * 3
+            test += 23
+            test = 100 * 3
+            test += 23
+            test += 18
+            test += 18
+            test += 18
+            test += 18
+            test += 18
+            print(test)
             state_options = None
         else:
             state_options = options.get_proto()
+            print("uncovered")
 
         req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
                                         etag=etag, options=state_options, metadata=state_metadata)
