@@ -48,23 +48,32 @@ $ dapr run --app-id demo-actor --app-port 3000 -- uvicorn --port 3000 demo_actor
 ...
 ```
 
-**For Flask web service**
-
-```bash
-dapr run --app-id demo-actor --app-port 3000 python3 demo_actor_flask.py
-```
-
-1. Run Demo client in new terminal window
+2. Run Demo client in new terminal window
 
 ```bash
 $ cd ./demo_actor
 # Run actor client
 $ dapr run --app-id demo-client python3 demo_actor_client.py
 ...
-== APP == b'{"data":"default","ts":"2020-03-02T02:50:27.381Z"}'
-== APP == {'data': 'default', 'ts': datetime.datetime(2020, 3, 2, 2, 50, 27, 386000, tzinfo=tzutc())}
-== APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 3, 2, 2, 50, 27, 395000, tzinfo=tzutc())}
-...
+== APP == call actor method via proxy.invoke()
+
+== APP == b'null'
+
+== APP == call actor method using rpc style
+
+== APP == None
+
+== APP == call SetMyData actor method to save the state
+
+== APP == call GetMyData actor method to get the state
+
+== APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 11, 13, 0, 38, 36, 163000, tzinfo=tzutc())}
+
+== APP == Register reminder
+
+== APP == Register timer
+
+== APP == waiting for 30 seconds...
 ```
 
 ## Run DemoActor on Kubernetes

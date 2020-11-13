@@ -61,6 +61,21 @@ class DaprStub(object):
         request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetSecretRequest.SerializeToString,
         response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetSecretResponse.FromString,
         )
+    self.RegisterActorTimer = channel.unary_unary(
+        '/dapr.proto.runtime.v1.Dapr/RegisterActorTimer',
+        request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RegisterActorTimerRequest.SerializeToString,
+        response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+        )
+    self.UnregisterActorTimer = channel.unary_unary(
+        '/dapr.proto.runtime.v1.Dapr/UnregisterActorTimer',
+        request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnregisterActorTimerRequest.SerializeToString,
+        response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+        )
+    self.InvokeActor = channel.unary_unary(
+        '/dapr.proto.runtime.v1.Dapr/InvokeActor',
+        request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorRequest.SerializeToString,
+        response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorResponse.FromString,
+        )
 
 
 class DaprServicer(object):
@@ -130,6 +145,27 @@ class DaprServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def RegisterActorTimer(self, request, context):
+    """Register an actor timer.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def UnregisterActorTimer(self, request, context):
+    """Unregister an actor timer.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def InvokeActor(self, request, context):
+    """InvokeActor calls a method on an actor.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_DaprServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -177,6 +213,21 @@ def add_DaprServicer_to_server(servicer, server):
           servicer.GetSecret,
           request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetSecretRequest.FromString,
           response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetSecretResponse.SerializeToString,
+      ),
+      'RegisterActorTimer': grpc.unary_unary_rpc_method_handler(
+          servicer.RegisterActorTimer,
+          request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RegisterActorTimerRequest.FromString,
+          response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+      ),
+      'UnregisterActorTimer': grpc.unary_unary_rpc_method_handler(
+          servicer.UnregisterActorTimer,
+          request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnregisterActorTimerRequest.FromString,
+          response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+      ),
+      'InvokeActor': grpc.unary_unary_rpc_method_handler(
+          servicer.InvokeActor,
+          request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorRequest.FromString,
+          response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
