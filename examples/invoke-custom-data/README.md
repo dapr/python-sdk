@@ -14,13 +14,38 @@ pip3 install dapr dapr-ext-grpc
 
 To run this example, the following steps should be followed:
 
+
+1. Compile Protobuf for Custom Response
 ```bash
-# 1. Compile Protobuf for Custom Response
 python -m grpc_tools.protoc --proto_path=./proto/ --python_out=./proto/ --grpc_python_out=./proto/ ./proto/response.proto
+```
 
-# 2. Start Receiver (expose gRPC server receiver on port 50051)
+2. Start Receiver (expose gRPC server receiver on port 50051)
+```bash
 dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
+```
 
-# 3. Start Caller
+
+
+3. Start Caller
+```bash
 dapr run --app-id invoke-caller --app-protocol grpc python invoke-caller.py
+```
+
+Expected output from caller:
+```
+== APP == isSuccess: true
+
+== APP == code: 200
+
+== APP == message: "Hello World - Success!"
+
+== APP == 
+```
+
+Expected output from receiver: 
+```
+== APP == {'user-agent': ['grpc-go/1.33.1'], 'x-forwarded-host': ['BrionT_X1_Yoga.redmond.corp.microsoft.com'], 'x-forwarded-for': ['192.168.1.3'], 'forwarded': ['for=192.168.1.3;by=192.168.1.3;host=BrionT_X1_Yoga.redmond.corp.microsoft.com'], 'grpc-trace-bin': [b'\x00\x00\x90Zc\x17\xaav?5)L\xcd]>.\x88>\x01\x81\xe9\x9c\xbd\x01x\xfc\xc5\x02\x01']}
+
+== APP == SOME_DATA
 ```
