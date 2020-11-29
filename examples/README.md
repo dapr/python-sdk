@@ -8,7 +8,7 @@ These examples demonstrates how to use Dapr python sdk.
   * Invokes service by passing bytes data.
 * [invoke-custom_data](./invoke-custom-data)
   * Invokes service by using custom protobuf message.
-* [kuberentes](./kubernetes)
+* [kuberentes](./invoke-simple#running-in-kubernetes-mode)
   * Runs invoke-simple examples in kubernetes
 * [state_store](./state_store)
   * Saves and gets state to the state stores
