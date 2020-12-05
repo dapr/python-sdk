@@ -99,14 +99,14 @@ class ActorRuntime:
     @classmethod
     async def fire_reminder(
             cls, actor_type_name: str, actor_id: str,
-            name: str, request_body: bytes) -> None:
+            name: str, state: bytes) -> None:
         """Fires a reminder for the Actor.
 
         Args:
             actor_type_name (str): the name of actor type.
             actor_id (str): Actor ID.
             name (str): the name of reminder.
-            request_body (bytes): the body of request that is passed to reminder callback.
+            state (bytes): the body of request that is passed to reminder callback.
 
         Raises:
             ValueError: `actor_type_name` actor type is not registered.
@@ -115,16 +115,20 @@ class ActorRuntime:
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
-        await manager.fire_reminder(ActorId(actor_id), name, request_body)
+        await manager.fire_reminder(ActorId(actor_id), name, state)
 
     @classmethod
-    async def fire_timer(cls, actor_type_name: str, actor_id: str, name: str) -> None:
+    async def fire_timer(
+            cls, actor_type_name: str,
+            actor_id: str, name: str,
+            state: bytes) -> None:
         """Fires a timer for the Actor.
 
         Args:
             actor_type_name (str): the name of actor type.
             actor_id (str): Actor ID.
-            name (str): the timer name.
+            name (str): the timer's name.
+            state (bytes): the timer's trigger body.
 
         Raises:
             ValueError: `actor_type_name` actor type is not registered.
@@ -132,7 +136,7 @@ class ActorRuntime:
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
-        await manager.fire_timer(ActorId(actor_id), name)
+        await manager.fire_timer(ActorId(actor_id), name, state)
 
     @classmethod
     def set_actor_config(cls, config: ActorRuntimeConfig) -> None:

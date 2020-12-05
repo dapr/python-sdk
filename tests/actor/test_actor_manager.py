@@ -139,6 +139,9 @@ class ActorManagerTimerTests(unittest.TestCase):
             "timer call", timedelta(seconds=1), timedelta(seconds=1)))
 
         # Fire timer
-        _run(manager.fire_timer(test_actor_id, 'test_timer'))
+        _run(manager.fire_timer(
+            test_actor_id,
+            'test_timer',
+            '{ "callback": "timer_callback", "data": "timer call" }'.encode('UTF8')))
 
         self.assertTrue(actor.timer_called)

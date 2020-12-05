@@ -5,10 +5,10 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-import asyncio
+import uuid
 
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._method_context import ActorMethodContext
@@ -49,8 +49,6 @@ class Actor:
     def __init__(self, ctx: ActorRuntimeContext, actor_id: ActorId):
         self.id = actor_id
         self._runtime_ctx = ctx
-        self._timers: Dict[str, ActorTimerData] = {}
-        self._timers_lock = asyncio.Lock()
         self._state_manager: ActorStateManager = ActorStateManager(self)
 
     @property
@@ -58,7 +56,7 @@ class Actor:
         return self._runtime_ctx
 
     def __get_new_timer_name(self):
-        return f'{self.id}_Timer_{len(self._timers) + 1}'
+        return f'{self.id}_Timer_{uuid.uuid4()}'
 
     async def register_timer(
             self, name: Optional[str], callback: TIMER_CALLBACK, state: Any,
@@ -77,10 +75,9 @@ class Actor:
                 of the awaitable callback.
         """
         name = name or self.__get_new_timer_name()
-        async with self._timers_lock:
-            self._timers[name] = ActorTimerData(name, callback, state, due_time, period)
+        timer = ActorTimerData(name, callback, state, due_time, period)
 
-        req_body = self._runtime_ctx.message_serializer.serialize(self._timers[name].as_dict())
+        req_body = self._runtime_ctx.message_serializer.serialize(timer.as_dict())
         await self._runtime_ctx.dapr_client.register_timer(
             self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body)
 
@@ -92,8 +89,6 @@ class Actor:
         """
         await self._runtime_ctx.dapr_client.unregister_timer(
             self._runtime_ctx.actor_type_info.type_name, self.id.id, name)
-        async with self._timers_lock:
-            self._timers.pop(name)
 
     async def register_reminder(
             self, name: str, state: bytes,
@@ -182,14 +177,14 @@ class Actor:
         """
         await self._state_manager.save_state()
 
-    async def _fire_timer_internal(self, name: str) -> None:
+    async def _fire_timer_internal(self, timer_callback: str, timer_data: Any) -> None:
         """Calls timer callback.
 
         Args:
-            name (str): the name of timer.
+            timer_callback (str): the timer's callback method.
+            timer_data (Any): the timer's callback method data.
         """
-        timer = self._timers[name]
-        return await timer.callback(timer.state)
+        return await getattr(self, timer_callback)(timer_data)
 
     async def _on_activate(self) -> None:
         """Override this method to initialize the members.
