@@ -70,9 +70,13 @@ class ActorManager:
 
         await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_reminder)
 
-    async def fire_timer(self, actor_id: ActorId, timer_name: str) -> None:
+    async def fire_timer(
+            self, actor_id: ActorId,
+            timer_name: str, request_body: bytes) -> None:
+        timer = self._message_serializer.deserialize(request_body, object)
+
         async def invoke_timer(actor: Actor) -> Optional[bytes]:
-            await actor._fire_timer_internal(timer_name)
+            await actor._fire_timer_internal(timer['callback'], timer['data'])
             return None
 
         await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_timer)

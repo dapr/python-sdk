@@ -100,7 +100,9 @@ class DaprActor(object):
 
     def _timer_handler(self, actor_type_name, actor_id, timer_name):
         try:
-            asyncio.run(ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name))
+            # Read raw bytes from request stream
+            req_body = request.stream.read()
+            asyncio.run(ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name, req_body))
         except DaprInternalError as ex:
             return wrap_response(500, ex.as_dict())
         except Exception as ex:

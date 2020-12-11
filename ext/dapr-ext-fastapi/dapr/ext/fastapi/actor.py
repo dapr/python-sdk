@@ -98,9 +98,15 @@ class DaprActor(object):
             return _wrap_response(status.HTTP_200_OK, result)
 
         @router.put('/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}')
-        async def actor_timer(actor_type_name: str, actor_id: str, timer_name: str):
+        async def actor_timer(
+                actor_type_name: str,
+                actor_id: str,
+                timer_name: str,
+                request: Request):
             try:
-                await ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name)
+                # Read raw bytes from request stream
+                req_body = await request.body()
+                await ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name, req_body)
             except DaprInternalError as ex:
                 return _wrap_response(
                     status.HTTP_500_INTERNAL_SERVER_ERROR,

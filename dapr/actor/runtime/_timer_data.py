@@ -8,7 +8,6 @@ Licensed under the MIT License.
 from datetime import timedelta
 from typing import Any, Awaitable, Callable, Dict
 
-# TIMER_CALLBACK is the type hint for timer callback.
 TIMER_CALLBACK = Callable[[Any], Awaitable[None]]
 
 
@@ -40,7 +39,7 @@ class ActorTimerData:
                 invocations after the first timer trigger.
         """
         self._name = name
-        self._callback = callback
+        self._callback = callback.__name__
         self._state = state
         self._due_time = due_time
         self._period = period
@@ -66,7 +65,7 @@ class ActorTimerData:
         return self._period
 
     @property
-    def callback(self) -> TIMER_CALLBACK:
+    def callback(self) -> str:
         """Gets the callback of the actor timer."""
         return self._callback
 
@@ -77,6 +76,8 @@ class ActorTimerData:
         """
 
         return {
+            'callback': self._callback,
+            'data': self._state,
             'dueTime': self._due_time,
             'period': self._period,
         }

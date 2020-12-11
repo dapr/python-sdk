@@ -16,6 +16,7 @@ from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import (
     FakeSimpleActor,
     FakeMultiInterfacesActor,
+    FakeSimpleTimerActor,
 )
 
 from tests.actor.utils import _run
@@ -28,11 +29,13 @@ class ActorRuntimeTests(unittest.TestCase):
         self._serializer = DefaultJSONSerializer()
         _run(ActorRuntime.register_actor(FakeSimpleActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
+        _run(ActorRuntime.register_actor(FakeSimpleTimerActor))
 
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()
         self.assertTrue(actor_types.index('FakeSimpleActor') >= 0)
         self.assertTrue(actor_types.index(FakeMultiInterfacesActor.__name__) >= 0)
+        self.assertTrue(actor_types.index(FakeSimpleTimerActor.__name__) >= 0)
 
     def test_actor_config(self):
         config = ActorRuntime.get_actor_config()
@@ -41,7 +44,7 @@ class ActorRuntimeTests(unittest.TestCase):
         self.assertEqual(timedelta(hours=1), config._actor_idle_timeout)
         self.assertEqual(timedelta(seconds=30), config._actor_scan_interval)
         self.assertEqual(timedelta(minutes=1), config._drain_ongoing_call_timeout)
-        self.assertEqual(2, len(config._entities))
+        self.assertEqual(3, len(config._entities))
 
         # apply new config
         new_config = ActorRuntimeConfig(
@@ -55,7 +58,7 @@ class ActorRuntimeTests(unittest.TestCase):
         self.assertEqual(timedelta(hours=3), config._actor_idle_timeout)
         self.assertEqual(timedelta(seconds=10), config._actor_scan_interval)
         self.assertEqual(timedelta(minutes=1), config._drain_ongoing_call_timeout)
-        self.assertEqual(2, len(config._entities))
+        self.assertEqual(3, len(config._entities))
 
     def test_entities_update(self):
         # Clean up managers
@@ -89,3 +92,23 @@ class ActorRuntimeTests(unittest.TestCase):
         # Ensure test-id is deactivated
         with self.assertRaises(ValueError):
             _run(ActorRuntime.deactivate(FakeMultiInterfacesActor.__name__, 'test-id'))
+
+    def test_fire_timer_success(self):
+        # Fire timer
+        _run(ActorRuntime.fire_timer(
+            FakeSimpleTimerActor.__name__,
+            'test-id',
+            'test_timer',
+            '{ "callback": "timer_callback", "data": "timer call" }'.encode('UTF8')))
+
+        manager = ActorRuntime._actor_managers[FakeSimpleTimerActor.__name__]
+        actor = manager._active_actors['test-id']
+        self.assertTrue(actor.timer_called)
+
+    def test_fire_timer_unregistered(self):
+        with self.assertRaises(ValueError):
+            _run(ActorRuntime.fire_timer(
+                'UnknownType',
+                'test-id',
+                'test_timer',
+                '{ "callback": "timer_callback", "data": "timer call" }'.encode('UTF8')))

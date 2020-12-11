@@ -151,23 +151,19 @@ class ActorTests(unittest.TestCase):
         # register timer
         _run(test_actor.register_timer(
             'test_timer', test_actor.timer_callback,
-            "timer call", timedelta(seconds=1), timedelta(seconds=1)))
+            "mydata", timedelta(seconds=1), timedelta(seconds=2)))
         test_client.register_timer.mock.assert_called_once()
         test_client.register_timer.mock.assert_called_with(
             'FakeSimpleTimerActor', 'test_id', 'test_timer',
-            b'{"dueTime":"0h0m1s","period":"0h0m1s"}')
-        self.assertTrue('test_timer' in test_actor._timers)
-        self.assertEqual(1, len(test_actor._timers))
+            b'{"callback":"timer_callback","data":"mydata","dueTime":"0h0m1s","period":"0h0m2s"}')
 
         # unregister timer
         _run(test_actor.unregister_timer('test_timer'))
         test_client.unregister_timer.mock.assert_called_once()
         test_client.unregister_timer.mock.assert_called_with(
             'FakeSimpleTimerActor', 'test_id', 'test_timer')
-        self.assertEqual(0, len(test_actor._timers))
 
         # register timer without timer name
         _run(test_actor.register_timer(
             None, test_actor.timer_callback,
             "timer call", timedelta(seconds=1), timedelta(seconds=1)))
-        self.assertEqual("test_id_Timer_1", list(test_actor._timers)[0])
