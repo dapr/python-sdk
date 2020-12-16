@@ -41,6 +41,27 @@ docker push [your registry]/invokesimple:latest
 4. Deploy applications
 
 ```
-cd deploy
-kubectl apply -f .
+kubectl apply -f ./deploy/
+```
+
+5. See logs for the apps and sidecars
+
+Logs for caller sidecar:
+```
+dapr  logs -a invoke-caller -k
+```
+
+Logs for caller app:
+```
+kubectl logs -l app="invokecaller" -c invokecaller
+```
+
+Logs for receiver sidecar:
+```
+dapr  logs -a invoke-receiver -k
+```
+
+Logs for receiver app:
+```
+kubectl logs -l app="invokereceiver" -c invokereceiver
 ```

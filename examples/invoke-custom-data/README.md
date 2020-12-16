@@ -17,7 +17,7 @@ To run this example, the following steps should be followed:
 
 1. Compile Protobuf for Custom Response
 ```bash
-python -m grpc_tools.protoc --proto_path=./proto/ --python_out=./proto/ --grpc_python_out=./proto/ ./proto/response.proto
+python3 -m grpc_tools.protoc --proto_path=./proto/ --python_out=./proto/ --grpc_python_out=./proto/ ./proto/response.proto
 ```
 
 2. Start Receiver (expose gRPC server receiver on port 50051)
@@ -25,11 +25,9 @@ python -m grpc_tools.protoc --proto_path=./proto/ --python_out=./proto/ --grpc_p
 dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
 ```
 
-
-
 3. Start Caller
 ```bash
-dapr run --app-id invoke-caller --app-protocol grpc python invoke-caller.py
+dapr run --app-id invoke-caller --app-protocol grpc python3 invoke-caller.py
 ```
 
 Expected output from caller:
