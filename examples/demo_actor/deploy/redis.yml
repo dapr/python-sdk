@@ -7,8 +7,10 @@ spec:
   type: state.redis
   metadata:
   - name: redisHost
-    value: EDIT_HERE_REDIS_SERVER_ADDRESS:6379
+    value: redis-master.default.svc.cluster.local:6379
   - name: redisPassword
-    value: EDIT_HERE_REDIS_PASSWORD
+    secretKeyRef:
+      name: redis
+      key: redis-password
   - name: actorStateStore
     value: "true"
