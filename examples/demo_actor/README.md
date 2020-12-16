@@ -84,22 +84,23 @@ $ dapr run --app-id demo-client python3 demo_actor_client.py
 $ cd examples/demo_actor/demo_actor
 $ docker build -t [docker registry]/demo_actor:latest .
 $ docker push [docker registry]/demo_actor:latest
+$ cd ..
 ```
 
 > For example, [docker registry] is docker hub account.
 
-2. Follow [these steps](https://github.com/dapr/docs/blob/master/howto/configure-redis/README.md) to create a Redis store.
+2. Follow [these steps](https://docs.dapr.io/getting-started/configure-redis/) to create a Redis store.
 
-3. Once your store is created, add the keys to the `redis.yaml` file in the `deploy` directory. 
-    > **Note:** the `redis.yaml` file provided in this sample takes plain text secrets. In a production-grade application, follow [secret management](https://github.com/dapr/docs/blob/master/concepts/secrets/) instructions to securely manage your secrets.
+3. Once your store is created,  confirm validate `redis.yml` file in the `deploy` directory. 
+    > **Note:** the `redis.yml` uses the secret created by `bitmany/redis` Helm chat to securely inject the password.
 
-4. Apply the `redis.yaml` file: `kubectl apply -f ./deploy/redis.yaml` and observe that your state store was successfully configured!
+4. Apply the `redis.yml` file: `kubectl apply -f ./deploy/redis.yml` and observe that your state store was successfully configured!
 
 ```bash
-component.dapr.io "statestore" configured
+component.dapr.io/statestore configured
 ```
 
-5. Update docker image location in `./deploy/demo_actor_client.yaml` and `./deploy/demo_actor_service.yaml`
+5. Update docker image location in `./deploy/demo_actor_client.yml` and `./deploy/demo_actor_service.yml`
 
 6. Deploy actor service and clients
 
@@ -108,3 +109,26 @@ cd deploy
 kubectl apply -f ./deploy/demo_actor_service.yml
 kubectl apply -f ./deploy/demo_actor_client.yml
 ```
+
+7. See logs for actor service and client
+
+Logs for actor service sidecar:
+```
+dapr  logs -a demoactor -k
+```
+
+Logs for actor service app:
+```
+kubectl logs -l app="demoactor" -c demoactor
+```
+
+Logs for actor client sidecar:
+```
+dapr  logs -a demoactor-client -k
+```
+
+Logs for actor service app:
+```
+kubectl logs -l app="demoactor-client" -c demoactor-client
+```
+
