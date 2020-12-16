@@ -14,7 +14,7 @@ This sample uses the Client provided in Dapr's Python SDK invoking a remote meth
 
 ## Pre-requisites
 
-* [Dapr and Dapr CLI](https://github.com/dapr/docs/blob/master/getting-started/environment-setup.md#environment-setup).
+* [Dapr and Dapr CLI](https://docs.dapr.io/getting-started/).
 * [Python 3](https://www.python.org/downloads/).
 
 ### Checking out the code
@@ -49,7 +49,7 @@ CONTAINER ID        IMAGE                  COMMAND                  CREATED     
 317fef6a8297        redis                  "docker-entrypoint.s…"   2 days ago          Up 32 hours         0.0.0.0:6379->6379/tcp             dapr_redis
 ```
 
-If Zipkin is not working, [install the newest version of Dapr Cli and initialize it](https://github.com/dapr/cli#install-dapr-on-your-local-machine-self-hosted).
+If Zipkin is not working, [install the newest version of Dapr Cli and initialize it](https://docs.dapr.io/getting-started/install-dapr/).
 
 ### Running the Demo service sample
 
