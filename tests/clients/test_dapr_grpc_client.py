@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import socket
 import unittest
 import uuid
 
@@ -308,6 +309,21 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(1, len(resp.headers))
         self.assertEqual([key1], resp.headers['keyh'])
         self.assertEqual({key1: "val"}, resp._secret)
+
+    def test_wait_ok(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        dapr.wait(0.1)
+
+    def test_wait_timeout(self):
+        # First, pick an unused port
+        port = 0
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            port = s.getsockname()[1]
+        dapr = DaprClient(f'localhost:{port}')
+        with self.assertRaises(Exception) as context:
+            dapr.wait(0.1)
+        self.assertTrue('Connection refused' in str(context.exception))
 
 
 if __name__ == '__main__':
