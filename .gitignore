@@ -48,14 +48,12 @@ coverage.xml
 .pytest_cache/
 
 # Editor config
+.idea
 .vscode
 
 # Translations
 *.mo
 *.pot
-
-# Editor settings
-.vscode
 
 # Django stuff:
 *.log
