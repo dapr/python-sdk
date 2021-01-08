@@ -21,6 +21,9 @@ with DaprClient() as d:
     yet_another_key = "key_3"
     yet_another_value = "value_3"
 
+    # Wait for sidecar to be up within 5 seconds.
+    d.wait(5)
+
     # Save single state.
     d.save_state(store_name=storeName, key=key, value=value)
     print(f"State store has successfully saved {value} with {key} as key")
