@@ -10,8 +10,10 @@ import os
 from setuptools import setup
 
 # Load version in dapr package.
-exec(open('dapr/version.py').read())
-version = __version__
+version_info = {}
+with open('dapr/version.py') as fp:
+    exec(fp.read(), version_info)
+__version__ = version_info['__version__']
 
 
 def is_release():
@@ -19,7 +21,8 @@ def is_release():
 
 
 name = 'dapr'
-description = 'The official release of Dapr Python SDK'
+version = __version__
+description = 'The official release of Dapr Python SDK.'
 long_description = '''
 Dapr is a portable, serverless, event-driven runtime that makes it easy for developers to
 build resilient, stateless and stateful microservices that run on the cloud and edge and
