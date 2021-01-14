@@ -52,11 +52,11 @@ class DaprGrpcClientTests(unittest.TestCase):
         for key, val in qs:
             self.assertEqual(val, ext.querystring[key])
 
-    def test_invoke_service_bytes_data(self):
+    def test_invoke_method_bytes_data(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
-        resp = dapr.invoke_service(
-            id='targetId',
-            method='bytes',
+        resp = dapr.invoke_method(
+            app_id='targetId',
+            method_name='bytes',
             data=b'haha',
             content_type="text/plain",
             metadata=(
@@ -70,12 +70,12 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(3, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
 
-    def test_invoke_service_proto_data(self):
+    def test_invoke_method_proto_data(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         req = common_v1.StateItem(key='test')
-        resp = dapr.invoke_service(
-            id='targetId',
-            method='proto',
+        resp = dapr.invoke_method(
+            app_id='targetId',
+            method_name='proto',
             data=req,
             metadata=(
                 ('key1', 'value1'),
@@ -95,7 +95,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_invoke_binding_bytes_data(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         resp = dapr.invoke_binding(
-            name='binding',
+            binding_name='binding',
             operation='create',
             data=b'haha',
             binding_metadata={
@@ -112,7 +112,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_invoke_binding_no_metadata(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         resp = dapr.invoke_binding(
-            name='binding',
+            binding_name='binding',
             operation='create',
             data=b'haha',
         )
@@ -124,7 +124,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_invoke_binding_no_create(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         resp = dapr.invoke_binding(
-            name='binding',
+            binding_name='binding',
             operation='delete',
             data=b'haha',
         )
@@ -137,7 +137,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr = DaprClient(f'localhost:{self.server_port}')
         resp = dapr.publish_event(
             pubsub_name='pubsub',
-            topic='example',
+            topic_name='example',
             data=b'haha',
         )
 
@@ -149,16 +149,16 @@ class DaprGrpcClientTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid type for data <class 'int'>"):
             dapr.publish_event(
                 pubsub_name='pubsub',
-                topic='example',
+                topic_name='example',
                 data=111,
             )
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     def test_dapr_api_token_insertion(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
-        resp = dapr.invoke_service(
-            id='targetId',
-            method='bytes',
+        resp = dapr.invoke_method(
+            app_id='targetId',
+            method_name='bytes',
             data=b'haha',
             content_type="text/plain",
             metadata=(
@@ -224,7 +224,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         another_key = str(uuid.uuid4())
         another_value = str(uuid.uuid4())
 
-        dapr.execute_transaction(
+        dapr.execute_state_transaction(
             store_name="statestore",
             operations=[
                 TransactionalStateOperation(key=key, data=value),
@@ -233,13 +233,13 @@ class DaprGrpcClientTests(unittest.TestCase):
             transactional_metadata={"metakey": "metavalue"}
         )
 
-        resp = dapr.get_states(store_name="statestore", keys=[key, another_key])
+        resp = dapr.get_bulk_state(store_name="statestore", keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].data, to_bytes(value))
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value))
 
-        resp = dapr.get_states(
+        resp = dapr.get_bulk_state(
             store_name="statestore",
             keys=[key, another_key],
             states_metadata={"upper": "1"})
@@ -256,7 +256,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         another_key = str(uuid.uuid4())
         another_value = str(uuid.uuid4())
 
-        dapr.save_states(
+        dapr.save_bulk_state(
             store_name="statestore",
             states=[
                 StateItem(key=key, value=value, metadata={"capitalize": "1"}),
@@ -265,13 +265,13 @@ class DaprGrpcClientTests(unittest.TestCase):
             metadata=(("metakey", "metavalue"),)
         )
 
-        resp = dapr.get_states(store_name="statestore", keys=[key, another_key])
+        resp = dapr.get_bulk_state(store_name="statestore", keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].data, to_bytes(value.capitalize()))
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value))
 
-        resp = dapr.get_states(
+        resp = dapr.get_bulk_state(
             store_name="statestore",
             keys=[key, another_key],
             states_metadata={"upper": "1"})

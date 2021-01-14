@@ -47,13 +47,13 @@ class DaprClient:
 
         >>> from dapr.clients import DaprClient
         >>> d = DaprClient()
-        >>> resp = d.invoke_service('callee', 'method', b'data')
+        >>> resp = d.invoke_method('callee', 'method', b'data')
 
     With context manager:
 
         >>> from dapr.clients import DaprClient
         >>> with DaprClient() as d:
-        ...     resp = d.invoke_service('callee', 'method', b'data')
+        ...     resp = d.invoke_method('callee', 'method', b'data')
     """
 
     def __init__(self, address: Optional[str] = None, tracer: Optional[Tracer] = None):
@@ -101,10 +101,10 @@ class DaprClient:
             http_ext.querystring[key] = val
         return http_ext
 
-    def invoke_service(
+    def invoke_method(
             self,
-            id: str,
-            method: str,
+            app_id: str,
+            method_name: str,
             data: Union[bytes, str, GrpcMessage],
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
@@ -122,9 +122,9 @@ class DaprClient:
             from dapr.clients import DaprClient
 
             with DaprClient() as d:
-                resp = d.invoke_service(
-                    id='callee',
-                    method='method',
+                resp = d.invoke_method(
+                    app_id='callee',
+                    method_name='method',
                     data=b'message',
                     content_type='text/plain',
                     metadata=(
@@ -143,9 +143,9 @@ class DaprClient:
             req_data = dapr_example_v1.CustomRequestMessage(data='custom')
 
             with DaprClient() as d:
-                resp = d.invoke_service(
-                    id='callee',
-                    method='method',
+                resp = d.invoke_method(
+                    app_id='callee',
+                    method_name='method',
                     data=req_data,
                     metadata=(
                         ('header1', 'value1')
@@ -161,9 +161,9 @@ class DaprClient:
             from dapr.clients import DaprClient
 
             with DaprClient() as d:
-                resp = d.invoke_service(
-                    id='callee',
-                    method='method',
+                resp = d.invoke_method(
+                    app_id='callee',
+                    method_name='method',
                     data=b'message',
                     content_type='text/plain',
                     metadata=(
@@ -180,7 +180,7 @@ class DaprClient:
                 # Thus, resp.content can be deserialized properly.
 
         Args:
-            id (str): the callee app id
+            app_id (str): the callee app id
             method (str): the method name which is called
             data (bytes or :obj:`google.protobuf.message.Message`): bytes or Message for data
                 which will send to id
@@ -197,9 +197,9 @@ class DaprClient:
             http_ext = self._get_http_extension(http_verb, http_querystring)
 
         req = api_v1.InvokeServiceRequest(
-            id=id,
+            id=app_id,
             message=common_v1.InvokeRequest(
-                method=method,
+                method=method_name,
                 data=req_data.proto,
                 content_type=req_data.content_type,
                 http_extension=http_ext)
@@ -213,7 +213,7 @@ class DaprClient:
 
     def invoke_binding(
             self,
-            name: str,
+            binding_name: str,
             operation: str,
             data: Union[bytes, str],
             binding_metadata: Dict[str, str] = {},
@@ -232,7 +232,7 @@ class DaprClient:
 
             with DaprClient() as d:
                 resp = d.invoke_binding(
-                    name = 'kafkaBinding',
+                    binding_name = 'kafkaBinding',
                     operation = 'create',
                     data = b'message',
                     metadata = (
@@ -243,7 +243,7 @@ class DaprClient:
                 # resp.metadata include the metadata returned from the external system.
 
         Args:
-            name (str): the name of the binding as defined in the components
+            binding_name (str): the name of the binding as defined in the components
             operation (str): the operation to perform on the binding
             data (bytes or str): bytes or str for data which will sent to the binding
             binding_metadata (dict, optional): metadata for output binding
@@ -255,7 +255,7 @@ class DaprClient:
         req_data = BindingRequest(data, binding_metadata)
 
         req = api_v1.InvokeBindingRequest(
-            name=name,
+            name=binding_name,
             data=req_data.data,
             metadata=req_data.binding_metadata,
             operation=operation
@@ -269,7 +269,7 @@ class DaprClient:
     def publish_event(
             self,
             pubsub_name: str,
-            topic: str,
+            topic_name: str,
             data: Union[bytes, str],
             metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
         """Publish to a given topic.
@@ -284,7 +284,7 @@ class DaprClient:
             with DaprClient() as d:
                 resp = d.publish_event(
                     pubsub_name='pubsub_1'
-                    topic='TOPIC_A'
+                    topic_name='TOPIC_A'
                     data=b'message',
                     metadata=(
                         ('header1', 'value1')
@@ -294,7 +294,7 @@ class DaprClient:
 
         Args:
             pubsub_name (str): the name of the pubsub component
-            topic (str): the topic name to publish to
+            topic_name (str): the topic name to publish to
             data (bytes or str): bytes or str for data
             metadata (tuple, optional): custom metadata
 
@@ -310,7 +310,7 @@ class DaprClient:
 
         req = api_v1.PublishEventRequest(
             pubsub_name=pubsub_name,
-            topic=topic,
+            topic=topic_name,
             data=req_data)
 
         # response is google.protobuf.Empty
@@ -359,7 +359,7 @@ class DaprClient:
             etag=response.etag,
             headers=call.initial_metadata())
 
-    def get_states(
+    def get_bulk_state(
             self,
             store_name: str,
             keys: Sequence[str],
@@ -371,7 +371,7 @@ class DaprClient:
         The example gets value from a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
-                resp = d.get_states(
+                resp = d.get_bulk_state(
                     store_name='state_store'
                     keys=['key_1', key_2],
                     parallelism=2,
@@ -485,7 +485,7 @@ class DaprClient:
         return DaprResponse(
             headers=call.initial_metadata())
 
-    def save_states(
+    def save_bulk_state(
             self,
             store_name: str,
             states: List[StateItem],
@@ -497,7 +497,7 @@ class DaprClient:
         The example saves states to a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
-                resp = d.save_state(
+                resp = d.save_bulk_state(
                     store_name='state_store'
                     states=[StateItem(key='key1', value='value1'),
                         StateItem(key='key2', value='value2', etag='etag'),],
@@ -536,7 +536,7 @@ class DaprClient:
         return DaprResponse(
             headers=call.initial_metadata())
 
-    def execute_transaction(
+    def execute_state_transaction(
             self,
             store_name: str,
             operations: Sequence[TransactionalStateOperation],
@@ -551,7 +551,7 @@ class DaprClient:
         The example saves states to a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
-                resp = d.execute_transaction(
+                resp = d.execute_state_transaction(
                     store_name='state_store',
                     operations=[
                         TransactionalStateOperation(key=key, data=value),

@@ -61,7 +61,7 @@ class DaprRequest:
 
 
 class InvokeServiceRequest(DaprRequest):
-    """A request data representation for invoke_service API.
+    """A request data representation for invoke_method API.
 
     This stores the request data with the proper serialization. This seralizes
     data to :obj:`google.protobuf.any_pb2.Any` if data is the type of protocol
@@ -70,7 +70,7 @@ class InvokeServiceRequest(DaprRequest):
     Attributes:
         metadata(dict): A dict to include the headers from Dapr Request.
         data (str, bytes, GrpcAny, GrpcMessage, optional): the serialized data
-            for invoke_service request.
+            for invoke_method request.
         content_type (str, optional): the content type of data which is valid
             only for bytes array data.
     """
@@ -94,7 +94,7 @@ class InvokeServiceRequest(DaprRequest):
 
         Args:
             data (bytes, str, GrpcAny, GrpcMessage, optional): the data
-                which is used for invoke_service request.
+                which is used for invoke_method request.
             content_type (str): the content_type of data when the data is bytes.
                 The default content type is application/json.
 

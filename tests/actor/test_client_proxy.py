@@ -52,7 +52,7 @@ class ActorProxyTests(unittest.TestCase):
         'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke(self):
-        response = _run(self._proxy.invoke('ActionMethod', b'arg0'))
+        response = _run(self._proxy.invoke_method('ActionMethod', b'arg0'))
         self.assertEqual(b'"expected_response"', response)
         self._fake_client.invoke_method.mock.assert_called_once_with(
             FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0')
@@ -61,7 +61,7 @@ class ActorProxyTests(unittest.TestCase):
         'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'))
     def test_invoke_no_arg(self):
-        response = _run(self._proxy.invoke('ActionMethodWithoutArg'))
+        response = _run(self._proxy.invoke_method('ActionMethodWithoutArg'))
         self.assertEqual(b'"expected_response"', response)
         self._fake_client.invoke_method.mock.assert_called_once_with(
             FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethodWithoutArg', None)

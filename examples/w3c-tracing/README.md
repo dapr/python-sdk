@@ -121,7 +121,7 @@ with tracer.span(name="main") as span:
 
         for i in range(num_messages):
             # Create a typed message with content type and body
-            resp = d.invoke_service(
+            resp = d.invoke_method(
                 'invoke-receiver',
                 'say',
                 data=json.dumps({
@@ -133,13 +133,13 @@ with tracer.span(name="main") as span:
             print(resp.content_type, flush=True)
             print(resp.text(), flush=True)
 
-            resp = d.invoke_service('invoke-receiver', 'sleep', data='')
+            resp = d.invoke_method('invoke-receiver', 'sleep', data='')
             # Print the response
             print(resp.content_type, flush=True)
             print(resp.text(), flush=True)
 ```
 
-The class knows the `app-id` for the remote application. It uses `invoke_service` method to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
+The class knows the `app-id` for the remote application. It uses `invoke_method` to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
  
 Execute the following command in order to run the caller example, it will call each method twice:
 ```sh
