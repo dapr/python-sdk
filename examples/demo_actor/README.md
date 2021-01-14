@@ -55,7 +55,7 @@ $ cd ./demo_actor
 # Run actor client
 $ dapr run --app-id demo-client python3 demo_actor_client.py
 ...
-== APP == call actor method via proxy.invoke()
+== APP == call actor method via proxy.invoke_method()
 
 == APP == b'null'
 
