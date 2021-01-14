@@ -41,7 +41,7 @@ class ActorReminderTests(unittest.TestCase):
             timedelta(seconds=1),
             timedelta(seconds=1))
         expected = {
-            'name': 'test_reminder',
+            'reminderName': 'test_reminder',
             'dueTime': timedelta(seconds=1),
             'period': timedelta(seconds=1),
             'data': 'cmVtaW5kZXJfc3RhdGU=',
@@ -54,7 +54,7 @@ class ActorReminderTests(unittest.TestCase):
             'period': timedelta(seconds=1),
             'data': 'cmVtaW5kZXJfc3RhdGU=',
         })
-        self.assertEqual('test_reminder', reminder.name)
+        self.assertEqual('test_reminder', reminder.reminder_name)
         self.assertEqual(timedelta(seconds=1), reminder.due_time)
         self.assertEqual(timedelta(seconds=1), reminder.period)
         self.assertEqual(b'reminder_state', reminder.state)

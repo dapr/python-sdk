@@ -66,7 +66,7 @@ class DaprResponse:
 
 
 class InvokeServiceResponse(DaprResponse):
-    """The response of invoke_service API.
+    """The response of invoke_method API.
 
     This inherits from DaprResponse and has the helpers to handle bytes array
     and protocol buffer data.

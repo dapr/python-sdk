@@ -19,7 +19,7 @@ class ActorTimerDataTests(unittest.TestCase):
         timer = ActorTimerData(
             'timer_name', my_callback, 'called',
             timedelta(seconds=2), timedelta(seconds=1))
-        self.assertEqual('timer_name', timer.name)
+        self.assertEqual('timer_name', timer.timer_name)
         self.assertEqual('my_callback', timer.callback)
         self.assertEqual('called', timer.state)
         self.assertEqual(timedelta(seconds=2), timer.due_time)

@@ -66,7 +66,7 @@ class CallableProxy:
             else:
                 bytes_data = self._message_serializer.serialize(args[0])
 
-        rtnval = await self._proxy.invoke(self._attr_call_type['actor_method'], bytes_data)
+        rtnval = await self._proxy.invoke_method(self._attr_call_type['actor_method'], bytes_data)
 
         return self._message_serializer.deserialize(rtnval, self._attr_call_type['return_types'])
 
@@ -127,7 +127,7 @@ class ActorProxy:
         factory = cls._default_proxy_factory if not actor_proxy_factory else actor_proxy_factory
         return factory.create(actor_type, actor_id, actor_interface)
 
-    async def invoke(self, method: str, raw_body: Optional[bytes] = None) -> bytes:
+    async def invoke_method(self, method: str, raw_body: Optional[bytes] = None) -> bytes:
         """Invokes actor method.
 
         This is the non-rpc style actor method invocation. It needs to serialize
