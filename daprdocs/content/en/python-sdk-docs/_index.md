@@ -3,18 +3,44 @@ type: docs
 title: "Dapr Python SDK"
 linkTitle: "Python"
 weight: 1000
-description: Python SDK for developing Dapr applications
+description: Python SDK packages for developing Dapr applications
 no_list: true
 ---
 
-## Features
+Dapr offers a variety of packages to help with the development of Python applications. Using them you can create Python clients, servers, and virtual actors with Dapr.
 
-- [**Dapr Client**]({{< ref python-client.md >}}) for writing Python applications to interact with the Dapr sidecar and other Dapr applications
-- [**Dapr Server**]({{< ref python-server.md >}}) for creating microservices that can be invoked by Dapr and subscribe to Dapr events
-    - **FastAPI extension** for adding Dapr capabilities to FastAPI applications
-    - **Flask extension** for adding Dapr capabilities to Flask applications
-- **Dapr Actor** for creating stateful virtual actors in Python
+## Install the Dapr module
+
+{{< tabs Stable Development>}}
+
+{{% codetab %}}
+```bash
+pip install dapr
+```
+{{% /codetab %}}
+
+{{% codetab %}}
+{{% alert title="Note" color="warning" %}}
+The development package will contain features and behavior that will be compatible with the pre-release version of the Dapr runtime. Make sure to uninstall any stable versions of the Python SDK before installing the dapr-dev package.
+{{% /alert %}}
+
+```bash
+pip install dapr-dev
+```
+{{% /codetab %}}
+
+{{< /tabs >}}
+
+## Available packages
+
+- [**Dapr client**]({{< ref python-client.md >}}) for writing Python applications to interact with the Dapr sidecar and other Dapr applications
+- [**Dapr actor**]() for creating for creating and interacting with stateful virtual actors in Python
+- [**Extensions**]({{< ref python-sdk-extensions >}}) for adding Dapr capabilities to other Python frameworks
+    - [**gRPC extension**]({{< ref python-grpc.md >}}) for creating a gRPC server with Dapr
+    - [**FastAPI extension**]({{< ref python-fastapi.md >}}) for adding Dapr capabilities to FastAPI applications
+    - [**Flask extension**]({{< ref python-flask.md >}}) for adding Dapr capabilities to Flask applications
 
 ## More information
 
-- [Python Package Index (PyPI)](https://pypi.org/project/dapr/)
+- [Python Package Index (PyPI)](https://pypi.org/user/dapr.io/)
+- [Dapr SDK serialization]({{< ref sdk-serialization.md >}})
