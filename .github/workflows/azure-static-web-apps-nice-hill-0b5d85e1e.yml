@@ -25,6 +25,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_HILL_0B5D85E1E }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
+          app_build_command: pip3 install tox && pip3 install -e . && pip3 install -e ./ext/dapr-ext-grpc/ && pip3 install -e ./ext/dapr-ext-fastapi && pip3 install -r dev-requirements.txt && tox -e doc
           ###### Repository/Build Configurations - These values can be configured to match you app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "/" # App source code path
