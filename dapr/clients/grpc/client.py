@@ -5,7 +5,9 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import time
 import grpc  # type: ignore
+import socket
 from dapr.clients.grpc._state import StateOptions, StateItem
 
 from typing import Dict, Optional, Union, Sequence, List
@@ -62,6 +64,7 @@ class DaprClient:
         """
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+        self._address = address
         self._channel = grpc.insecure_channel(address)   # type: ignore
 
         if settings.DAPR_API_TOKEN:
@@ -693,3 +696,35 @@ class DaprClient:
         return GetSecretResponse(
             secret=response.data,
             headers=call.initial_metadata())
+
+    def wait(self, timeout_s: float):
+        """Waits for sidecar to be available within the timeout.
+
+        It checks if sidecar socket is available within the given timeout.
+
+        The example gets a secret from secret store:
+
+            from dapr.clients import DaprClient
+
+            with DaprClient() as d:
+                d.wait(1000) # waits for 1 second.
+                # Sidecar is available after this.
+
+        Args:
+            timeout_s (float): timeout in seconds
+        """
+
+        host_port_str = self._address.split(":")
+        host_port = (host_port_str[0], int(host_port_str[1]))
+        start = time.time()
+        while True:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(timeout_s)
+                try:
+                    s.connect(host_port)
+                    return
+                except Exception as e:
+                    remaining = (start + timeout_s) - time.time()
+                    if remaining < 0:
+                        raise e
+                    time.sleep(min(1, remaining))
