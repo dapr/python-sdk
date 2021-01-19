@@ -1,4 +1,4 @@
-# Example - Secret Store
+# Example - Retrieve a secret from a secret store
 
 This example utilizes a local secret store to show how to retrieve secrets using dapr
 It creates a dapr client and calls the `get_secret` method in the `DaprClient`.
@@ -6,6 +6,10 @@ This example also illustrates the use of access control for secrets.
 
 > **Note:** Make sure to use the latest proto bindings
 
+## Pre-requisites
+
+- [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
+- [Install Python 3.7+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -13,8 +17,9 @@ This example also illustrates the use of access control for secrets.
 pip3 install dapr dapr-ext-grpc
 ```
 
-## Running
-Change directory to this folder. 
+## Run the example
+
+Change directory to this folder:
 ```bash
 cd examples/secret_store
 ```
@@ -28,11 +33,8 @@ dapr run --app-id=secretsapp --app-protocol grpc --components-path components/ p
 You should be able to see the following output:
 ```
 == APP == Got!
-
 == APP == {'secretKey': 'secretValue'}
-
 == APP == Got!
-
 == APP == {'random': 'randomValue'}
 ```
 
@@ -64,7 +66,6 @@ The above command overrides the default configuration file with the `--config` f
 The output should be as follows:
 ```
 == APP == Got!
-
 == APP == {'secretKey': 'secretValue'}
 == APP == Got expected error for accessing random key
 ```
@@ -72,7 +73,7 @@ The output should be as follows:
 It can be seen that when it tried to get the random key again, it fails as by default the access is denied for any key 
 unless defined in the `allowedSecrets` list.
 
-## Clean Up
+## Cleanup
 
 Either press CTRL + C to quit the app or run the following command in a new terminal to stop the app
 ```bash
