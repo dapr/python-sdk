@@ -23,11 +23,11 @@ The dapr package contains the `DaprClient` which will be used to create and use 
 from dapr.clients import DaprClient
 ```
 
-## Examples
+## Building blocks
+
+The Python SDK allows you to interface with all of the [Dapr building blocks]({{< ref building-blocks >}}).
 
 ### Invoke a service
-
-For a full guide on service invocation visit [this guide]({{< ref howto-invoke-discover-services.md >}}).
 
 ```python 
 from dapr.clients import DaprClient
@@ -36,9 +36,10 @@ with DaprClient() as d:
     resp = d.invoke_service(id='service-to-invoke', method='method-to-invoke', data='{"message":"Hello World"}')
 ```
 
-### Save & get application state
+- For a full guide on service invocation visit [How-To: Invoke a service]({{< ref howto-invoke-discover-services.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/invoke-simple) for code samples and instructions to try out service invocation
 
-For a full list of state operations visit [this guide]({{< ref howto-get-save-state.md >}}).
+### Save & get application state
 
 ```python
 from dapr.clients import DaprClient
@@ -54,9 +55,10 @@ with DaprClient() as d:
     d.delete_state(store_name="statestore", key="key1")
 ```
 
-### Publish messages
+- For a full list of state operations visit [How-To: Get & save state]({{< ref howto-get-save-state.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/state_store) for code samples and instructions to try out state management
 
-For a full list of state operations visit [this guide]({{< ref howto-publish-subscribe.md >}}).
+### Publish messages
 
 ```python
 from dapr.clients import DaprClient
@@ -65,9 +67,10 @@ with DaprClient() as d:
     resp = d.publish_event(pubsub_name='pubsub', topic='TOPIC_A', data='{"message":"Hello World"}')
 ```
 
-### Interact with output bindings
+- For a full list of state operations visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/pubsub-simple) for code samples and instructions to try out pub/sub
 
-For a full guide on output bindings visit [this guide]({{< ref howto-bindings.md >}}).
+### Interact with output bindings
 
 ```python
 from dapr.clients import DaprClient
@@ -76,9 +79,10 @@ with DaprClient() as d:
     resp = d.invoke_binding(name='kafkaBinding', operation='create', data='{"message":"Hello World"}')
 ```
 
-### Retrieve secrets
+- For a full guide on output bindings visit [How-To: Use bindings]({{< ref howto-bindings.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/invoke-binding) for code samples and instructions to try out output bindings
 
-For a full guide on secrets visit [this guide]({{< ref howto-secrets.md >}}).
+### Retrieve secrets
 
 ```python
 from dapr.clients import DaprClient
@@ -86,3 +90,9 @@ from dapr.clients import DaprClient
 with DaprClient() as d:
     resp = d.get_secret(store_name='localsecretstore', key='secretKey')
 ```
+
+- For a full guide on secrets visit [How-To: Retrieve secrets]({{< ref howto-secrets.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/secret_store) for code samples and instructions to try out retrieving secrets
+
+## Related links
+- [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples)

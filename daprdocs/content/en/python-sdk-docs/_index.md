@@ -9,6 +9,15 @@ no_list: true
 
 Dapr offers a variety of packages to help with the development of Python applications. Using them you can create Python clients, servers, and virtual actors with Dapr.
 
+## Available packages
+
+- [**Dapr client**]({{< ref python-client.md >}}) for writing Python applications to interact with the Dapr sidecar and other Dapr applications
+- [**Dapr actor**]({{< ref python-actor.md >}}) for creating for creating and interacting with stateful virtual actors in Python
+- [**Extensions**]({{< ref python-sdk-extensions >}}) for adding Dapr capabilities to other Python frameworks
+    - [**gRPC extension**]({{< ref python-grpc.md >}}) for creating a gRPC server with Dapr
+    - [**FastAPI extension**]({{< ref python-fastapi.md >}}) for adding Dapr actor capabilities to FastAPI applications
+    - [**Flask extension**]({{< ref python-flask.md >}}) for adding Dapr actor capabilities to Flask applications
+
 ## Install the Dapr module
 
 {{< tabs Stable Development>}}
@@ -31,14 +40,13 @@ pip install dapr-dev
 
 {{< /tabs >}}
 
-## Available packages
+## Try it out
 
-- [**Dapr client**]({{< ref python-client.md >}}) for writing Python applications to interact with the Dapr sidecar and other Dapr applications
-- [**Dapr actor**]() for creating for creating and interacting with stateful virtual actors in Python
-- [**Extensions**]({{< ref python-sdk-extensions >}}) for adding Dapr capabilities to other Python frameworks
-    - [**gRPC extension**]({{< ref python-grpc.md >}}) for creating a gRPC server with Dapr
-    - [**FastAPI extension**]({{< ref python-fastapi.md >}}) for adding Dapr capabilities to FastAPI applications
-    - [**Flask extension**]({{< ref python-flask.md >}}) for adding Dapr capabilities to Flask applications
+Clone the Python SDK repo to try out some of the [examples](https://github.com/dapr/python-sdk/tree/master/examples).
+
+```bash
+git clone https://github.com/dapr/python-sdk.git
+```
 
 ## More information
 
