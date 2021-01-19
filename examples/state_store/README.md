@@ -1,12 +1,12 @@
-# Example - Statestore
+# Example - Save and get state
 
 This example demonstrates the Statestore APIs in Dapr.
 It demonstrates the following APIs:
-* save state: Save single or mutiple states to statestore
-* get state: Get a single state from statestore
-* bulk get: Get multiple states(Bulk get) from statestore
-* transaction: Execute a transaction on supported statestores
-* delete state: Delete specified key from statestore
+- **save state**: Save single or mutiple states to statestore
+- **get state**: Get a single state from statestore
+- **bulk get**: Get multiple states(Bulk get) from statestore
+- **transaction**: Execute a transaction on supported statestores
+- **delete state**: Delete specified key from statestore
 
 
 It creates a client using `DaprClient` and calls all the state API methods available as example.
@@ -14,6 +14,10 @@ It uses the default configuration from Dapr init in [self-hosted mode](https://g
 
 > **Note:** Make sure to use the latest proto bindings
 
+## Pre-requisites
+
+- [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
+- [Install Python 3.7+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -21,7 +25,7 @@ It uses the default configuration from Dapr init in [self-hosted mode](https://g
 pip3 install dapr dapr-ext-grpc
 ```
 
-## Running
+## Run the example
 
 To run this example, the following code can be utilized:
 
@@ -34,14 +38,9 @@ The output should be as follows:
 
 ```
 == APP == State store has successfully saved value_1 with key_1 as key
-
 == APP == State store has successfully saved value_2 with key_2 as key
-
 == APP == State store has successfully saved value_3 with key_3 as key
-
 == APP == Got value: b'value_1'
-
 == APP == Got items: [b'value_1_updated', b'value_2']
-
 == APP == Got value after delete: b''
 ```

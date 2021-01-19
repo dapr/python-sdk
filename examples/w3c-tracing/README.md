@@ -1,23 +1,23 @@
-# Distributed Tracing Sample
+# Example - Distributed tracing
 
 In this sample, we'll run two Python applications: a service application, which exposes two methods, and a client application which will invoke the methods from the service using Dapr. The code is instrumented with [OpenCensus SDK for Python](https://opencensus.io/guides/grpc/python/).
 This sample includes:
 
-* invoke-receiver (Exposes the methods to be remotely accessed)
-* invoke-caller (Invokes the exposed methods)
+- invoke-receiver: Exposes the methods to be remotely accessed
+- invoke-caller: Invokes the exposed methods
 
 Also consider [getting started with observability in Dapr](https://github.com/dapr/quickstarts/tree/master/observability).
  
-## Remote invocation using the Python-SDK
+## Example overview
 
 This sample uses the Client provided in Dapr's Python SDK invoking a remote method and Zipkin to collect and display tracing data. 
 
 ## Pre-requisites
 
-* [Dapr and Dapr CLI](https://docs.dapr.io/getting-started/).
-* [Python 3](https://www.python.org/downloads/).
+- [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
+- [Install Python 3.7+](https://www.python.org/downloads/)
 
-### Checking out the code
+### Install dependencies
 
 Clone this repository:
 
@@ -51,7 +51,7 @@ CONTAINER ID        IMAGE                  COMMAND                  CREATED     
 
 If Zipkin is not working, [install the newest version of Dapr Cli and initialize it](https://docs.dapr.io/getting-started/install-dapr/).
 
-### Running the Demo service sample
+### Run the Demo service sample
 
 The Demo service application exposes two methods that can be remotely invoked. In this example, the service code has two parts:
 
@@ -101,7 +101,7 @@ dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 i
 Once running, the service is now ready to be invoked by Dapr.
 
 
-### Running the InvokeClient sample
+### Run the InvokeClient sample
 
 This sample code uses the Dapr SDK for invoking two remote methods (`say` and `sleep`). Again, it is instrumented with OpenCensus with Zipkin exporter. See the code snippet below:
 
@@ -147,18 +147,18 @@ dapr run --app-id invoke-caller --app-protocol grpc python3 invoke-caller.py
 ```
 Once running, the output should display the messages sent from invoker in the service output as follows:
 
-![exposeroutput](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/service.png)
+![exposeroutput](./img/service.png)
 
 Methods have been remotely invoked and display the remote messages.
 
 Now, open Zipkin on [http://localhost:9411/zipkin](http://localhost:9411/zipkin). You should see a screen like the one below:
 
-![zipking-landing](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/zipkin-landing.png)
+![zipking-landing](./img/zipkin-landing.png)
 
 Click on the search icon to see the latest query results. You should see a tracing diagram similar to the one below:
 
-![zipking-landing](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/zipkin-result.png)
+![zipking-landing](./img/zipkin-result.png)
 
 Once you click on the tracing event, you will see the details of the call stack starting in the client and then showing the service API calls right below.
 
-![zipking-details](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/zipkin-details.png)
+![zipking-details](./img/zipkin-details.png)
