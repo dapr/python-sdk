@@ -33,7 +33,7 @@ The Python SDK allows you to interface with all of the [Dapr building blocks]({{
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
-    resp = d.invoke_service(id='service-to-invoke', method='method-to-invoke', data='{"message":"Hello World"}')
+    resp = d.invoke_method(id='service-to-invoke', method='method-to-invoke', data='{"message":"Hello World"}')
 ```
 
 - For a full guide on service invocation visit [How-To: Invoke a service]({{< ref howto-invoke-discover-services.md >}}).

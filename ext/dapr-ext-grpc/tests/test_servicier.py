@@ -60,7 +60,7 @@ class OnInvokeTests(unittest.TestCase):
 
         self.assertEqual('fake_key', state.key)
 
-    def test_on_invoke_return_invoke_service_response(self):
+    def test_on_invoke_return_invoke_method_response(self):
         def method_cb(request: InvokeMethodRequest):
             return InvokeMethodResponse(
                 data='fake_data',
