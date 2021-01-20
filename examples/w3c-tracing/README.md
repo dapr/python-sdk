@@ -68,7 +68,7 @@ The `say` method prints the incoming payload and metadata in console. See the co
 
 ```python
 @app.method(name='say')
-def say(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def say(request: InvokeMethodRequest) -> InvokeMethodResponse:
     tracer = Tracer(sampler=AlwaysOnSampler())
     with tracer.span(name='say') as span:
         data = request.text()
@@ -76,20 +76,20 @@ def say(request: InvokeServiceRequest) -> InvokeServiceResponse:
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        return InvokeServiceResponse(b'SAY', "text/plain; charset=UTF-8")
+        return InvokeMethodResponse(b'SAY', "text/plain; charset=UTF-8")
 ```
 
 The `sleep` methods simply waits for two seconds to simulate a slow operation.
 ```python
 @app.method(name='sleep')
-def sleep(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def sleep(request: InvokeMethodRequest) -> InvokeMethodResponse:
     tracer = Tracer(sampler=AlwaysOnSampler())
     with tracer.span(name='sleep') as _:
         time.sleep(2)
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        return InvokeServiceResponse(b'SLEEP', "text/plain; charset=UTF-8")
+        return InvokeMethodResponse(b'SLEEP', "text/plain; charset=UTF-8")
 ```
 
 Use the following command to execute the service:

@@ -19,7 +19,7 @@ from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes
 from dapr.clients.grpc._request import (
-    InvokeServiceRequest,
+    InvokeMethodRequest,
     BindingRequest,
     TransactionalStateOperation,
 )
@@ -27,7 +27,7 @@ from dapr.clients.grpc._response import (
     BindingResponse,
     DaprResponse,
     GetSecretResponse,
-    InvokeServiceResponse,
+    InvokeMethodResponse,
     StateResponse,
     BulkStatesResponse,
     BulkStateItem,
@@ -109,7 +109,7 @@ class DaprClient:
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> InvokeServiceResponse:
+            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
         """Invokes the target service to call method.
 
         This can invoke the specified target service to call method with bytes array data or
@@ -189,9 +189,9 @@ class DaprClient:
             http_querystring (tuple, optional): the tuple to represent query string
 
         Returns:
-            :class:`InvokeServiceResponse` object returned from callee
+            :class:`InvokeMethodResponse` object returned from callee
         """
-        req_data = InvokeServiceRequest(data, content_type)
+        req_data = InvokeMethodRequest(data, content_type)
         http_ext = None
         if http_verb:
             http_ext = self._get_http_extension(http_verb, http_querystring)
@@ -207,7 +207,7 @@ class DaprClient:
 
         response, call = self._stub.InvokeService.with_call(req, metadata=metadata)
 
-        resp_data = InvokeServiceResponse(response.data, response.content_type)
+        resp_data = InvokeMethodResponse(response.data, response.content_type)
         resp_data.headers = call.initial_metadata()  # type: ignore
         return resp_data
 
