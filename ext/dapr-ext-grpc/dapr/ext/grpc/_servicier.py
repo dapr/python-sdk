@@ -14,11 +14,11 @@ from google.protobuf.message import Message as GrpcMessage
 
 from dapr.proto import appcallback_service_v1, common_v1, appcallback_v1
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
-from dapr.clients.grpc._response import InvokeServiceResponse
+from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
+from dapr.clients.grpc._response import InvokeMethodResponse
 
 
-InvokeMethodCallable = Callable[[InvokeServiceRequest], Union[str, bytes, InvokeServiceResponse]]
+InvokeMethodCallable = Callable[[InvokeMethodRequest], Union[str, bytes, InvokeMethodResponse]]
 TopicSubscribeCallable = Callable[[v1.Event], None]
 BindingCallable = Callable[[BindingRequest], None]
 
@@ -81,20 +81,20 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
             raise NotImplementedError(f'{request.method} method not implemented!')
 
-        req = InvokeServiceRequest(request.data, request.content_type)
+        req = InvokeMethodRequest(request.data, request.content_type)
         req.metadata = context.invocation_metadata()
         resp = self._invoke_method_map[request.method](req)
 
         if not resp:
             return common_v1.InvokeResponse()
 
-        resp_data = InvokeServiceResponse()
+        resp_data = InvokeMethodResponse()
         if isinstance(resp, (bytes, str)):
             resp_data.set_data(resp)
             resp_data.content_type = DEFAULT_JSON_CONTENT_TYPE
         elif isinstance(resp, GrpcMessage):
             resp_data.set_data(resp)
-        elif isinstance(resp, InvokeServiceResponse):
+        elif isinstance(resp, InvokeMethodResponse):
             resp_data = resp
         else:
             context.set_code(grpc.StatusCode.OUT_OF_RANGE)

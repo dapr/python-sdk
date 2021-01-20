@@ -7,14 +7,14 @@ Licensed under the MIT License.
 
 import unittest
 
-from dapr.clients.grpc._request import InvokeServiceRequest, BindingRequest
+from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
 from dapr.proto import common_v1
 
 
-class InvokeServiceRequestTests(unittest.TestCase):
+class InvokeMethodRequestTests(unittest.TestCase):
     def test_bytes_data(self):
         # act
-        req = InvokeServiceRequest(data=b'hello dapr')
+        req = InvokeMethodRequest(data=b'hello dapr')
 
         # arrange
         self.assertEqual(b'hello dapr', req.data)
@@ -25,7 +25,7 @@ class InvokeServiceRequestTests(unittest.TestCase):
         fake_req = common_v1.InvokeRequest(method="test")
 
         # act
-        req = InvokeServiceRequest(data=fake_req)
+        req = InvokeMethodRequest(data=fake_req)
 
         # assert
         self.assertIsNotNone(req.proto)
@@ -37,7 +37,7 @@ class InvokeServiceRequestTests(unittest.TestCase):
 
     def test_invalid_data(self):
         with self.assertRaises(ValueError):
-            data = InvokeServiceRequest(data=123)
+            data = InvokeMethodRequest(data=123)
             self.assertIsNone(data, 'This should not be reached.')
 
 

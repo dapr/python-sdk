@@ -60,7 +60,7 @@ class DaprRequest:
         return self._metadata
 
 
-class InvokeServiceRequest(DaprRequest):
+class InvokeMethodRequest(DaprRequest):
     """A request data representation for invoke_method API.
 
     This stores the request data with the proper serialization. This seralizes
@@ -90,7 +90,7 @@ class InvokeServiceRequest(DaprRequest):
             self,
             data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
             content_type: Optional[str] = None):
-        """Inits InvokeServiceRequestData with data and content_type.
+        """Inits InvokeMethodRequestData with data and content_type.
 
         Args:
             data (bytes, str, GrpcAny, GrpcMessage, optional): the data
@@ -101,7 +101,7 @@ class InvokeServiceRequest(DaprRequest):
         Raises:
             ValueError: data is not supported.
         """
-        super(InvokeServiceRequest, self).__init__(())
+        super(InvokeMethodRequest, self).__init__(())
 
         self._content_type = content_type
         self._http_verb = None
