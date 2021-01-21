@@ -60,7 +60,7 @@ class App:
         Return JSON formatted data response::
 
             @app.method('start')
-            def start(request: InvokeServiceRequest):
+            def start(request: InvokeMethodRequest):
 
                 ...
 
@@ -69,7 +69,7 @@ class App:
         Return Protocol buffer response::
 
             @app.method('start')
-            def start(request: InvokeServiceRequest):
+            def start(request: InvokeMethodRequest):
 
                 ...
 
@@ -79,11 +79,11 @@ class App:
         Specify Response header::
 
             @app.method('start')
-            def start(request: InvokeServiceRequest):
+            def start(request: InvokeMethodRequest):
 
                 ...
 
-                resp = InvokeServiceResponse('hello world', 'text/plain')
+                resp = InvokeMethodResponse('hello world', 'text/plain')
                 resp.headers = ('key', 'value')
 
                 return resp

@@ -1,11 +1,11 @@
-from dapr.ext.grpc import App, InvokeServiceRequest
+from dapr.ext.grpc import App, InvokeMethodRequest
 
 import proto.response_pb2 as response_messages
 
 app = App()
 
 @app.method('my_method')
-def mymethod(request: InvokeServiceRequest):
+def mymethod(request: InvokeMethodRequest):
     print(request.metadata, flush=True)
     print(request.text(), flush=True)
 

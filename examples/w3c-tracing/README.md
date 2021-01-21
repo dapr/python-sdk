@@ -68,7 +68,7 @@ The `say` method prints the incoming payload and metadata in console. See the co
 
 ```python
 @app.method(name='say')
-def say(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def say(request: InvokeMethodRequest) -> InvokeMethodResponse:
     tracer = Tracer(sampler=AlwaysOnSampler())
     with tracer.span(name='say') as span:
         data = request.text()
@@ -76,20 +76,20 @@ def say(request: InvokeServiceRequest) -> InvokeServiceResponse:
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        return InvokeServiceResponse(b'SAY', "text/plain; charset=UTF-8")
+        return InvokeMethodResponse(b'SAY', "text/plain; charset=UTF-8")
 ```
 
 The `sleep` methods simply waits for two seconds to simulate a slow operation.
 ```python
 @app.method(name='sleep')
-def sleep(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def sleep(request: InvokeMethodRequest) -> InvokeMethodResponse:
     tracer = Tracer(sampler=AlwaysOnSampler())
     with tracer.span(name='sleep') as _:
         time.sleep(2)
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        return InvokeServiceResponse(b'SLEEP', "text/plain; charset=UTF-8")
+        return InvokeMethodResponse(b'SLEEP', "text/plain; charset=UTF-8")
 ```
 
 Use the following command to execute the service:
@@ -121,7 +121,7 @@ with tracer.span(name="main") as span:
 
         for i in range(num_messages):
             # Create a typed message with content type and body
-            resp = d.invoke_service(
+            resp = d.invoke_method(
                 'invoke-receiver',
                 'say',
                 data=json.dumps({
@@ -133,13 +133,13 @@ with tracer.span(name="main") as span:
             print(resp.content_type, flush=True)
             print(resp.text(), flush=True)
 
-            resp = d.invoke_service('invoke-receiver', 'sleep', data='')
+            resp = d.invoke_method('invoke-receiver', 'sleep', data='')
             # Print the response
             print(resp.content_type, flush=True)
             print(resp.text(), flush=True)
 ```
 
-The class knows the `app-id` for the remote application. It uses `invoke_service` method to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
+The class knows the `app-id` for the remote application. It uses `invoke_method` to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
  
 Execute the following command in order to run the caller example, it will call each method twice:
 ```sh

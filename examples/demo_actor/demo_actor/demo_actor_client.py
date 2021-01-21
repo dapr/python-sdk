@@ -16,8 +16,8 @@ async def main():
     # Actor invocation demo
     # -----------------------------------------------
     # non-remoting actor invocation
-    print("call actor method via proxy.invoke()", flush=True)
-    rtn_bytes = await proxy.invoke("GetMyData")
+    print("call actor method via proxy.invoke_method()", flush=True)
+    rtn_bytes = await proxy.invoke_method("GetMyData")
     print(rtn_bytes, flush=True)
     # RPC style using python duck-typing
     print("call actor method using rpc style", flush=True)

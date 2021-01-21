@@ -9,7 +9,7 @@ import unittest
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 
-from dapr.clients.grpc._response import DaprResponse, InvokeServiceResponse, BindingResponse
+from dapr.clients.grpc._response import DaprResponse, InvokeMethodResponse, BindingResponse
 from dapr.proto import common_v1
 
 
@@ -30,15 +30,15 @@ class DaprResponseTests(unittest.TestCase):
             self.assertEqual(resp.headers[k], [v])
 
 
-class InvokeServiceResponseTests(unittest.TestCase):
+class InvokeMethodResponseTests(unittest.TestCase):
     def test_non_protobuf_message(self):
         with self.assertRaises(ValueError):
-            resp = InvokeServiceResponse(data=123)
+            resp = InvokeMethodResponse(data=123)
             self.assertIsNone(resp, 'This should not be reached.')
 
     def test_is_proto_for_non_protobuf(self):
         test_data = GrpcAny(value=b'hello dapr')
-        resp = InvokeServiceResponse(
+        resp = InvokeMethodResponse(
             data=test_data,
             content_type='application/json')
         self.assertFalse(resp.is_proto())
@@ -47,17 +47,17 @@ class InvokeServiceResponseTests(unittest.TestCase):
         fake_req = common_v1.InvokeRequest(method="test")
         test_data = GrpcAny()
         test_data.Pack(fake_req)
-        resp = InvokeServiceResponse(data=test_data)
+        resp = InvokeMethodResponse(data=test_data)
         self.assertTrue(resp.is_proto())
 
     def test_proto(self):
         fake_req = common_v1.InvokeRequest(method="test")
-        resp = InvokeServiceResponse(data=fake_req)
+        resp = InvokeMethodResponse(data=fake_req)
         self.assertIsNotNone(resp.proto)
 
     def test_data(self):
         test_data = GrpcAny(value=b'hello dapr')
-        resp = InvokeServiceResponse(
+        resp = InvokeMethodResponse(
             data=test_data,
             content_type='application/json')
         self.assertEqual(b'hello dapr', resp.data)
@@ -69,7 +69,7 @@ class InvokeServiceResponseTests(unittest.TestCase):
         fake_req = common_v1.InvokeRequest(method="test")
 
         # act
-        resp = InvokeServiceResponse(data=fake_req)
+        resp = InvokeMethodResponse(data=fake_req)
         resp_proto = common_v1.InvokeRequest()
         resp.unpack(resp_proto)
 
