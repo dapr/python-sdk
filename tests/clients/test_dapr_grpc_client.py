@@ -185,6 +185,7 @@ class DaprGrpcClientTests(unittest.TestCase):
             store_name="statestore",
             key=key,
             value=value,
+            etag='fake_etag',
             options=options,
             state_metadata={"capitalize": "1"}
         )
@@ -207,6 +208,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
         resp = dapr.get_state(store_name="statestore", key=key)
         self.assertEqual(resp.data, b'')
+        self.assertEqual(resp.etag, '')
 
         with self.assertRaises(Exception) as context:
             dapr.delete_state(
@@ -215,6 +217,33 @@ class DaprGrpcClientTests(unittest.TestCase):
                 state_metadata={"must_delete": "1"})
         print(context.exception)
         self.assertTrue('delete failed' in str(context.exception))
+
+    def test_get_save_state_etag_none(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+
+        value = 'test'
+        no_etag_key = 'no_etag'
+        empty_etag_key = 'empty_etag'
+        dapr.save_state(
+            store_name="statestore",
+            key=no_etag_key,
+            value=value,
+        )
+
+        dapr.save_state(
+            store_name="statestore",
+            key=empty_etag_key,
+            value=value,
+            etag=""
+        )
+
+        resp = dapr.get_state(store_name="statestore", key=no_etag_key)
+        self.assertEqual(resp.data, to_bytes(value))
+        self.assertEqual(resp.etag, "ETAG_WAS_NONE")
+
+        resp = dapr.get_state(store_name="statestore", key=empty_etag_key)
+        self.assertEqual(resp.data, to_bytes(value))
+        self.assertEqual(resp.etag, "")
 
     def test_transaction_then_get_states(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
@@ -227,7 +256,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr.execute_state_transaction(
             store_name="statestore",
             operations=[
-                TransactionalStateOperation(key=key, data=value),
+                TransactionalStateOperation(key=key, data=value, etag="foo"),
                 TransactionalStateOperation(key=another_key, data=another_value),
             ],
             transactional_metadata={"metakey": "metavalue"}
@@ -236,8 +265,10 @@ class DaprGrpcClientTests(unittest.TestCase):
         resp = dapr.get_bulk_state(store_name="statestore", keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].data, to_bytes(value))
+        self.assertEqual(resp.items[0].etag, "foo")
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value))
+        self.assertEqual(resp.items[1].etag, "ETAG_WAS_NONE")
 
         resp = dapr.get_bulk_state(
             store_name="statestore",
@@ -267,19 +298,21 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         resp = dapr.get_bulk_state(store_name="statestore", keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)
+        self.assertEqual(resp.items[0].etag, "ETAG_WAS_NONE")
         self.assertEqual(resp.items[0].data, to_bytes(value.capitalize()))
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value))
+        self.assertEqual(resp.items[1].etag, "1")
 
         resp = dapr.get_bulk_state(
             store_name="statestore",
             keys=[key, another_key],
             states_metadata={"upper": "1"})
         self.assertEqual(resp.items[0].key, key)
-        self.assertEqual(resp.items[0].etag, "fake_etag")
+        self.assertEqual(resp.items[0].etag, "ETAG_WAS_NONE")
         self.assertEqual(resp.items[0].data, to_bytes(value.upper()))
         self.assertEqual(resp.items[1].key, another_key)
-        self.assertEqual(resp.items[1].etag, "fake_etag")
+        self.assertEqual(resp.items[1].etag, "1")
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
     def test_get_secret(self):
