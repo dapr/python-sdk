@@ -95,7 +95,7 @@ class StateItem:
         return self._etag
 
     @etag.setter
-    def etag(self, val: str):
+    def etag(self, val: Optional[str] = None):
         """Set etag for instance of :class:`StateItem`"""
         self._etag = val
 

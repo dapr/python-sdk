@@ -279,7 +279,7 @@ class TransactionalStateOperation:
             self,
             key: str,
             data: Union[bytes, str],
-            etag: str = '',
+            etag: Optional[str] = None,
             operation_type: TransactionOperationType = TransactionOperationType.upsert):
         """Initializes TransactionalStateOperation item from :obj:`runtime_v1.TransactionalStateOperation`.
 
@@ -311,7 +311,7 @@ class TransactionalStateOperation:
         return self._data
 
     @property
-    def etag(self) -> str:
+    def etag(self) -> Optional[str]:
         """Gets etag."""
         return self._etag
 

@@ -83,7 +83,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             data = state.value
             if state.metadata["capitalize"]:
                 data = to_bytes(data.decode("utf-8").capitalize())
-            self.store[state.key] = data
+            if state.HasField('etag'):
+                self.store[state.key] = (data, state.etag.value)
+            else:
+                self.store[state.key] = (data, 'ETAG_WAS_NONE')
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -94,9 +97,12 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         trailers = ()
         for operation in request.operations:
             if operation.operationType == 'delete':
-                self.store[operation.request.key] = None
+                del self.store[operation.request.key]
             else:
-                self.store[operation.request.key] = operation.request.value
+                etag = 'ETAG_WAS_NONE'
+                if operation.request.HasField("etag"):
+                    etag = operation.request.etag.value
+                self.store[operation.request.key] = (operation.request.value, etag)
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -107,10 +113,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         if key not in self.store:
             return empty_pb2.Empty()
         else:
-            data = self.store[key]
+            data, etag = self.store[key]
             if request.metadata["upper"]:
                 data = to_bytes(data.decode("utf-8").upper())
-            return api_v1.GetStateResponse(data=data, etag="fake_etag")
+            return api_v1.GetStateResponse(data=data, etag=etag)
 
     def GetBulkState(self, request, context):
         items = []
@@ -118,9 +124,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             req = api_v1.GetStateRequest(store_name=request.store_name, key=key)
             res = self.GetState(req, context)
             data = res.data
+            etag = res.etag
             if request.metadata["upper"]:
                 data = to_bytes(data.decode("utf-8").upper())
-            items.append(api_v1.BulkStateItem(key=key, etag="fake_etag", data=data))
+            items.append(api_v1.BulkStateItem(key=key, etag=etag, data=data))
         return api_v1.GetBulkStateResponse(items=items)
 
     def DeleteState(self, request, context):

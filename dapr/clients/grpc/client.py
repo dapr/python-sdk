@@ -476,7 +476,7 @@ class DaprClient:
         state = common_v1.StateItem(
             key=key,
             value=to_bytes(req_value),
-            etag=etag,
+            etag=common_v1.Etag(value=etag) if etag is not None else None,
             options=state_options,
             metadata=state_metadata)
 
@@ -527,7 +527,7 @@ class DaprClient:
         req_states = [common_v1.StateItem(
             key=i.key,
             value=to_bytes(i.value),
-            etag=i.etag,
+            etag=common_v1.Etag(value=i.etag) if i.etag is not None else None,
             options=i.options,
             metadata=i.metadata) for i in states]
 
@@ -582,7 +582,8 @@ class DaprClient:
             request=common_v1.StateItem(
                 key=o.key,
                 value=to_bytes(o.data),
-                etag=o.etag)) for o in operations]
+                etag=common_v1.Etag(value=o.etag) if o.etag is not None else None))
+            for o in operations]
 
         req = api_v1.ExecuteStateTransactionRequest(
             storeName=store_name,
