@@ -9,8 +9,8 @@ import unittest
 
 from unittest.mock import MagicMock, Mock
 
-from dapr.clients.grpc._request import InvokeServiceRequest
-from dapr.clients.grpc._response import InvokeServiceResponse
+from dapr.clients.grpc._request import InvokeMethodRequest
+from dapr.clients.grpc._response import InvokeMethodResponse
 from dapr.ext.grpc._servicier import _CallbackServicer
 from dapr.proto import common_v1, appcallback_v1
 
@@ -37,21 +37,21 @@ class OnInvokeTests(unittest.TestCase):
         )
 
     def test_on_invoke_return_str(self):
-        def method_cb(request: InvokeServiceRequest):
+        def method_cb(request: InvokeMethodRequest):
             return 'method_str_cb'
         resp = self._on_invoke('method_str', method_cb)
 
         self.assertEqual(b'method_str_cb', resp.data.value)
 
     def test_on_invoke_return_bytes(self):
-        def method_cb(request: InvokeServiceRequest):
+        def method_cb(request: InvokeMethodRequest):
             return b'method_str_cb'
         resp = self._on_invoke('method_bytes', method_cb)
 
         self.assertEqual(b'method_str_cb', resp.data.value)
 
     def test_on_invoke_return_proto(self):
-        def method_cb(request: InvokeServiceRequest):
+        def method_cb(request: InvokeMethodRequest):
             return common_v1.StateItem(key='fake_key')
         resp = self._on_invoke('method_proto', method_cb)
 
@@ -60,9 +60,9 @@ class OnInvokeTests(unittest.TestCase):
 
         self.assertEqual('fake_key', state.key)
 
-    def test_on_invoke_return_invoke_service_response(self):
-        def method_cb(request: InvokeServiceRequest):
-            return InvokeServiceResponse(
+    def test_on_invoke_return_invoke_method_response(self):
+        def method_cb(request: InvokeMethodRequest):
+            return InvokeMethodResponse(
                 data='fake_data',
                 content_type='text/plain',
             )
@@ -72,7 +72,7 @@ class OnInvokeTests(unittest.TestCase):
         self.assertEqual('text/plain', resp.content_type)
 
     def test_on_invoke_invalid_response(self):
-        def method_cb(request: InvokeServiceRequest):
+        def method_cb(request: InvokeMethodRequest):
             return 1000
 
         with self.assertRaises(NotImplementedError):
