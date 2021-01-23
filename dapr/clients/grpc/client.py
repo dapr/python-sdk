@@ -641,8 +641,10 @@ class DaprClient:
         else:
             state_options = options.get_proto()
 
+        etag_object = common_v1.Etag(value=etag) if etag is not None else None
         req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
-                                        etag=etag, options=state_options, metadata=state_metadata)
+                                        etag=etag_object, options=state_options,
+                                        metadata=state_metadata)
         _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
         return DaprResponse(
             headers=call.initial_metadata())
