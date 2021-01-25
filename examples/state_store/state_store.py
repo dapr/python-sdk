@@ -35,7 +35,10 @@ with DaprClient() as d:
         d.save_state(store_name=storeName, key=key, value=another_value, etag="9999")
     except grpc.RpcError as err:
         # StatusCode should be StatusCode.ABORTED.
-        print(f"Cannot save due to bad etag. ErrorCode={err.code()} Details={err.details()}")
+        print(f"Cannot save due to bad etag. ErrorCode={err.code()}")
+
+        # For detailed error messages from the dapr runtime:
+        # print(f"Details={err.details()})
 
     # Save multiple states.
     d.save_bulk_state(store_name=storeName, states=[StateItem(key=another_key, value=another_value),
@@ -50,7 +53,10 @@ with DaprClient() as d:
             StateItem(key=yet_another_key, value=yet_another_value, etag="999")])
     except grpc.RpcError as err:
         # StatusCode should be StatusCode.ABORTED.
-        print(f"Cannot save bulk due to bad etags. ErrorCode={err.code()} Details={err.details()}")
+        print(f"Cannot save bulk due to bad etags. ErrorCode={err.code()}")
+        
+        # For detailed error messages from the dapr runtime:
+        # print(f"Details={err.details()})
 
     # Get one state by key.
     state = d.get_state(store_name=storeName, key=key, state_metadata={"metakey": "metavalue"})

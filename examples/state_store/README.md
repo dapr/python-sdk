@@ -21,6 +21,8 @@ It uses the default configuration from Dapr init in [self-hosted mode](https://g
 
 ## Install Dapr python-SDK
 
+<!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
+
 ```bash
 pip3 install dapr dapr-ext-grpc
 ```
@@ -29,23 +31,37 @@ pip3 install dapr dapr-ext-grpc
 
 To run this example, the following code can be utilized:
 
+<!-- STEP
+name: Run state store example
+expected_stdout_lines:
+  - "== APP == State store has successfully saved value_1 with key_1 as key"
+  - "== APP == Cannot save due to bad etag. ErrorCode=StatusCode.ABORTED"
+  - "== APP == State store has successfully saved value_2 with key_2 as key"
+  - "== APP == State store has successfully saved value_3 with key_3 as key"
+  - "== APP == Cannot save bulk due to bad etags. ErrorCode=StatusCode.ABORTED"
+  - "== APP == Got value=b'value_1' eTag=1"
+  - "== APP == Got items with etags: [(b'value_1_updated', '2'), (b'value_2', '2')]"
+  - "== APP == Got value after delete: b''"
+timeout_seconds: 5
+-->
+
 ```bash
-cd examples/state_store
 dapr run -- python3 state_store.py
 ```
+<!-- END_STEP -->
 
 The output should be as follows:
 
 ```
 == APP == State store has successfully saved value_1 with key_1 as key
 
-== APP == Cannot save due to bad etag. ErrorCode=StatusCode.ABORTED Details=failed saving state in state store statestore: possible etag mismatch. error from state store: ERR Error running script (call to f_83e03ec05d6a3b6fb48483accf5e594597b6058f): @user_script:1: user_script:1: failed to set key Warlockspring-Wolverine||key_1
+== APP == Cannot save due to bad etag. ErrorCode=StatusCode.ABORTED
 
 == APP == State store has successfully saved value_2 with key_2 as key
 
 == APP == State store has successfully saved value_3 with key_3 as key
 
-== APP == Cannot save bulk due to bad etags. ErrorCode=StatusCode.ABORTED Details=failed saving state in state store statestore: possible etag mismatch. error from state store: ERR Error running script (call to f_83e03ec05d6a3b6fb48483accf5e594597b6058f): @user_script:1: user_script:1: failed to set key Warlockspring-Wolverine||key_2
+== APP == Cannot save bulk due to bad etags. ErrorCode=StatusCode.ABORTED
 
 == APP == Got value=b'value_1' eTag=1
 
@@ -53,3 +69,7 @@ The output should be as follows:
 
 == APP == Got value after delete: b''
 ```
+
+## Error Handling
+
+The Dapr python-sdk will pass through errors that it receives from the Dapr runtime. In the case of an etag mismatch, the Dapr runtime will return StatusCode.ABORTED
