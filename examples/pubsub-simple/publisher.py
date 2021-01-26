@@ -20,7 +20,7 @@ with DaprClient() as d:
         # Create a typed message with content type and body
         resp = d.publish_event(
             pubsub_name='pubsub',
-            topic_name='TOPIC_A',
+            topic='TOPIC_A',
             data=json.dumps(req_data),
         )
 
