@@ -159,3 +159,17 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
 
         return api_v1.GetSecretResponse(data=resp)
+
+    def GetBulkSecret(self, request, context) -> api_v1.GetBulkSecretResponse:
+        headers = ()
+        trailers = ()
+
+        headers = headers + (('keyh', "bulk"), )
+        trailers = trailers + (('keyt', "bulk"), )
+
+        resp = {"keya": api_v1.SecretResponse(secrets={"keyb": "val"})}
+
+        context.send_initial_metadata(headers)
+        context.set_trailing_metadata(trailers)
+
+        return api_v1.GetBulkSecretResponse(data=resp)

@@ -272,6 +272,34 @@ class GetSecretResponse(DaprResponse):
         return self._secret
 
 
+class GetBulkSecretResponse(DaprResponse):
+    """The response of get_bulk_secret API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        secret (Dict[str, Dict[str, str]]): secret received from response
+    """
+
+    def __init__(
+            self,
+            secrets: Dict[str, Dict[str, str]],
+            headers: MetadataTuple = ()):
+        """Initializes GetBulkSecretReponse from :obj:`dapr_v1.GetBulkSecretResponse`.
+
+        Args:
+            secrets (Dict[Str, Dict[str, str]]): the secret from Dapr response
+            headers (Tuple, optional): the headers from Dapr gRPC response
+        """
+        super(GetBulkSecretResponse, self).__init__(headers)
+        self._secrets = secrets
+
+    @property
+    def secrets(self) -> Dict[str, Dict[str, str]]:
+        """Gets secrets as a dict."""
+        return self._secrets
+
+
 class StateResponse(DaprResponse):
     """The response of get_state API.
 

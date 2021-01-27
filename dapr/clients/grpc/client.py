@@ -27,6 +27,7 @@ from dapr.clients.grpc._response import (
     BindingResponse,
     DaprResponse,
     GetSecretResponse,
+    GetBulkSecretResponse,
     InvokeMethodResponse,
     StateResponse,
     BulkStatesResponse,
@@ -698,6 +699,61 @@ class DaprClient:
 
         return GetSecretResponse(
             secret=response.data,
+            headers=call.initial_metadata())
+
+    def get_bulk_secret(
+            self,
+            store_name: str,
+            secret_metadata: Optional[Dict[str, str]] = {},
+            metadata: Optional[MetadataTuple] = ()) -> GetBulkSecretResponse:
+        """Get all granted secrets.
+
+        This gets all granted secrets from secret store.
+        Metadata for request can be passed with the secret_metadata field and custom
+        metadata can be passed with metadata field.
+
+
+        The example gets all secrets from secret store:
+
+            from dapr.clients import DaprClient
+
+            with DaprClient() as d:
+                resp = d.get_bulk_secret(
+                    store_name='secretstoreA',
+                    secret_metadata={'header1', 'value1'}
+                    metadata=(
+                        ('headerA', 'valueB')
+                    ),
+                )
+
+                # resp.headers includes the gRPC initial metadata.
+                # resp.trailers includes that gRPC trailing metadata.
+
+        Args:
+            store_name (str): store name to get secret from
+            secret_metadata (Dict[str, Dict[str, str]], Optional): metadata of request
+            metadata (MetadataTuple, optional): custom metadata
+
+        Returns:
+            :class:`GetBulkSecretResponse` object with secrets and metadata returned from callee
+        """
+
+        req = api_v1.GetBulkSecretRequest(
+            store_name=store_name,
+            metadata=secret_metadata)
+
+        response, call = self._stub.GetBulkSecret.with_call(req, metadata=metadata)
+
+        secrets_map = {}
+        for key in response.data.keys():
+            secret_response = response.data[key]
+            secrets_submap = {}
+            for subkey in secret_response.secrets.keys():
+                secrets_submap[subkey] = secret_response.secrets[subkey]
+            secrets_map[key] = secrets_submap
+
+        return GetBulkSecretResponse(
+            secrets=secrets_map,
             headers=call.initial_metadata())
 
     def wait(self, timeout_s: float):

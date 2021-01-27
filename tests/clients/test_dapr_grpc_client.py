@@ -343,6 +343,28 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual([key1], resp.headers['keyh'])
         self.assertEqual({key1: "val"}, resp._secret)
 
+    def test_get_bulk_secret(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        resp = dapr.get_bulk_secret(
+            store_name='store_1',
+            metadata=(
+                ('key1', 'value1'),
+                ('key2', 'value2'),
+            ),
+        )
+
+        self.assertEqual(1, len(resp.headers))
+        self.assertEqual(["bulk"], resp.headers['keyh'])
+        self.assertEqual({"keya": {"keyb": "val"}}, resp._secrets)
+
+    def test_get_bulk_secret_metadata_absent(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        resp = dapr.get_bulk_secret(store_name='store_1')
+
+        self.assertEqual(1, len(resp.headers))
+        self.assertEqual(["bulk"], resp.headers['keyh'])
+        self.assertEqual({"keya": {"keyb": "val"}}, resp._secrets)
+
     def test_wait_ok(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         dapr.wait(0.1)
