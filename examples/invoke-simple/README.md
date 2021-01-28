@@ -11,6 +11,8 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 
 ## Install Dapr python-SDK
 
+<!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
+
 ```bash
 pip3 install dapr dapr-ext-grpc
 ```
@@ -19,17 +21,58 @@ pip3 install dapr dapr-ext-grpc
 
 Run the following command in a terminal/command-prompt:
 
+<!-- STEP
+name: Run receiver
+expected_stdout_lines:
+  - '== APP == {"id": 1, "message": "hello world"}'
+  - '== APP == {"id": 1, "message": "hello world"}'
+background: true
+sleep: 5
+-->
+
 ```bash
 # 1. Start Receiver (expose gRPC server receiver on port 50051)
 dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
 ```
 
+<!-- END_STEP -->
+
 In another terminal/command prompt run:
+
+<!-- STEP
+name: Run caller
+expected_stdout_lines:
+  - '== APP == text/plain'
+  - '== APP == INVOKE_RECEIVED'
+  - '== APP == text/plain'
+  - '== APP == INVOKE_RECEIVED'
+background: true
+sleep: 5 
+-->
 
 ```bash
 # 2. Start Caller
-dapr run --app-id invoke-caller --app-protocol grpc python3 invoke-caller.py
+dapr run --app-id invoke-caller --app-protocol grpc --dapr-http-port 3500 python3 invoke-caller.py
 ```
+
+<!-- END_STEP -->
+
+## Cleanup
+
+<!-- STEP
+expected_stdout_lines: 
+  - '✅  app stopped successfully: invoke-caller'
+  - '✅  app stopped successfully: invoke-receiver'
+expected_stderr_lines:
+name: Shutdown dapr
+-->
+
+```bash
+dapr stop --app-id invoke-caller
+dapr stop --app-id invoke-receiver
+```
+
+<!-- END_STEP -->
 
 ## Running in Kubernetes mode
 

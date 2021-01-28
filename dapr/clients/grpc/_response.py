@@ -191,6 +191,11 @@ class InvokeMethodResponse(DaprResponse):
             ValueError: message is not protocol buffer message object or message's type is not
                 matched with the response data type
         """
+
+        if self.content_type is not None and self.content_type.lower() == "application/x-protobuf":
+            message.ParseFromString(self.data)
+            return
+
         unpack(self.proto, message)
 
 

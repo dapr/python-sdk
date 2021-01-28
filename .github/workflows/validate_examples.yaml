@@ -19,11 +19,11 @@ jobs:
       GOOS: linux
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
-      DAPR_CLI_VER: 1.0.0-rc.3
-      DAPR_RUNTIME_VER: 1.0.0-rc.2
-      DAPR_INSTALL_URL: https://raw.githubusercontent.com/dapr/cli/3dacfb672d55f1436c249057aaebbe597e1066f3/install/install.sh
+      DAPR_CLI_VER: 1.0.0-rc.4
+      DAPR_RUNTIME_VER: 1.0.0-rc.3
+      DAPR_INSTALL_URL: https://raw.githubusercontent.com/dapr/cli/v1.0.0-rc.4/install/install.sh
       DAPR_CLI_REF:
-      DAPR_REF: f4327d91c3cd921b26077d99abe0f237c9a38f5d
+      DAPR_REF: 
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ env.PYTHON_VER }}
