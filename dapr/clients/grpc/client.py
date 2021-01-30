@@ -38,7 +38,7 @@ from opencensus.ext.grpc import client_interceptor   # type: ignore
 from opencensus.trace.tracers.base import Tracer   # type: ignore
 
 
-class DaprClient:
+class DaprGrpcClient:
     """The convenient layer implementation of Dapr gRPC APIs.
 
     This provides the wrappers and helpers to allows developers to use Dapr runtime gRPC API
@@ -86,7 +86,7 @@ class DaprClient:
     def __del__(self):
         self.close()
 
-    def __enter__(self) -> 'DaprClient':
+    def __enter__(self) -> 'DaprGrpcClient':
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
