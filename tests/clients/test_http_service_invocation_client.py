@@ -235,7 +235,8 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
     def test_invoke_method_with_tracer(self):
         tracer = Tracer(sampler=samplers.AlwaysOnSampler(), exporter=print_exporter.PrintExporter())
 
-        self.client = DaprClient(tracer=tracer)
+        self.client = DaprClient(
+            headers_callback=lambda: tracer.propagator.to_headers(tracer.span_context))
         self.server.set_response(b"FOO")
 
         with tracer.span(name="test"):

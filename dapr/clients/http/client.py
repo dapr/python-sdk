@@ -7,14 +7,13 @@ Licensed under the MIT License.
 
 import aiohttp
 
-from typing import Dict, Optional, Union, Tuple, TYPE_CHECKING
+from typing import Callable, Dict, Optional, Union, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
 from dapr.conf import settings
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
-from opencensus.trace.tracers.base import Tracer   # type: ignore
 
 CONTENT_TYPE_HEADER = 'content-type'
 DAPR_API_TOKEN_HEADER = 'dapr-api-token'
@@ -25,12 +24,18 @@ class DaprHttpClient:
 
     def __init__(self,
                  message_serializer: 'Serializer',
-                 timeout: int = 60,
-                 tracer: Optional[Tracer] = None):
+                 timeout: Optional[int] = 60,
+                 headers_callback: Optional[Callable[[], Dict[str, str]]] = None):
+        """Invokes Dapr over HTTP.
 
+        Args:
+            message_serializer (Serializer): Dapr serializer.
+            timeout (int, optional): Timeout in seconds, defaults to 60.
+            headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
+        """
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
-        self._tracer = tracer
+        self._headers_callback = headers_callback
 
     def get_api_url(self) -> str:
         return 'http://{}:{}/{}'.format(
@@ -44,15 +49,16 @@ class DaprHttpClient:
             headers: Dict[str, Union[bytes, str]] = {},
             query_params: Dict[str, Union[bytes, str]] = {}
     ) -> Tuple[bytes, aiohttp.ClientResponse]:
-        if not headers.get(CONTENT_TYPE_HEADER):
-            headers[CONTENT_TYPE_HEADER] = DEFAULT_JSON_CONTENT_TYPE
+        headers_map = headers
+        if not headers_map.get(CONTENT_TYPE_HEADER):
+            headers_map[CONTENT_TYPE_HEADER] = DEFAULT_JSON_CONTENT_TYPE
 
         if settings.DAPR_API_TOKEN is not None:
-            headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
+            headers_map[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
 
-        if self._tracer is not None:
-            trace_headers = self._tracer.propagator.to_headers(self._tracer.span_context)
-            headers.update(trace_headers)
+        if self._headers_callback is not None:
+            trace_headers = self._headers_callback()
+            headers_map.update(trace_headers)
 
         r = None
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
@@ -60,7 +66,7 @@ class DaprHttpClient:
                 method=method,
                 url=url,
                 data=data,
-                headers=headers,
+                headers=headers_map,
                 params=query_params)
 
             if r.status >= 200 and r.status < 300:

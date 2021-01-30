@@ -7,20 +7,28 @@ Licensed under the MIT License.
 
 import asyncio
 
-from typing import Optional, Union
+from typing import Callable, Dict, Optional, Union
 
 from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
 from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
 from dapr.clients.grpc._response import InvokeMethodResponse
 from dapr.serializers import DefaultJSONSerializer
-from opencensus.trace.tracers.base import Tracer   # type: ignore
 
 
 class DaprInvocationHttpClient:
     """Service Invocation HTTP Client"""
 
-    def __init__(self, timeout: int = 60, tracer: Optional[Tracer] = None):
-        self._client = DaprHttpClient(DefaultJSONSerializer(), timeout, tracer)
+    def __init__(
+            self,
+            timeout: int = 60,
+            headers_callback: Optional[Callable[[], Dict[str, str]]] = None):
+        """Invokes Dapr's API for method invocation over HTTP.
+
+        Args:
+            timeout (int, optional): Timeout in seconds, defaults to 60.
+            headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
+        """
+        self._client = DaprHttpClient(DefaultJSONSerializer(), timeout, headers_callback)
 
     def invoke_method(
             self,
@@ -31,9 +39,20 @@ class DaprInvocationHttpClient:
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
             http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
-        """This implementation is designed to seemlessly mimic the behavior of the grpc
-        service invoke implementation. Please see the grpc version for parameter definitions
-        and samples"""
+        """Invoke a service method over HTTP.
+
+        Args:
+            app_id (str): Application Id.
+            method_name (str): Method to be invoked.
+            data (bytes or str or GrpcMessage, optional): Data for requet's body.
+            content_type (str, optional): Content type header.
+            metadata (MetadataTuple, optional): Additional headers.
+            http_verb (str, optional): HTTP verb for the request.
+            http_querystring (MetadataTuple, optional): Query parameters.
+
+        Returns:
+            InvokeMethodResponse: the response from the method invocation.
+        """
 
         verb = 'GET'
         if http_verb is not None:

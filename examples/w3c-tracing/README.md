@@ -95,7 +95,7 @@ def sleep(request: InvokeMethodRequest) -> InvokeMethodResponse:
 Use the following command to execute the service:
 
 ```sh
-dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
+dapr run --app-id invoke-receiver --app-protocol grpc --app-port 3001 python3 invoke-receiver.py
 ```
 
 Once running, the service is now ready to be invoked by Dapr.
