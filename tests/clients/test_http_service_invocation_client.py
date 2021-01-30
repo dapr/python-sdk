@@ -10,7 +10,7 @@ import unittest
 
 from .fake_http_server import FakeHttpServer
 from dapr.conf import settings
-from dapr.clients.main import DaprClient
+from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
 from dapr.proto import common_v1
 from opencensus.trace.tracer import Tracer   # type: ignore
