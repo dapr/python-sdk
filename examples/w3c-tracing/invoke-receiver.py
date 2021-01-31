@@ -36,4 +36,4 @@ def sleep(request: InvokeMethodRequest) -> InvokeMethodResponse:
         return InvokeMethodResponse(b'SLEEP', "text/plain; charset=UTF-8")
 
 
-app.run(50051)
+app.run(3001)

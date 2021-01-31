@@ -10,7 +10,7 @@ import unittest
 
 from .fake_http_server import FakeHttpServer
 from dapr.conf import settings
-from dapr.clients.main import DaprClient
+from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
 from dapr.proto import common_v1
 from opencensus.trace.tracer import Tracer   # type: ignore
@@ -235,7 +235,8 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
     def test_invoke_method_with_tracer(self):
         tracer = Tracer(sampler=samplers.AlwaysOnSampler(), exporter=print_exporter.PrintExporter())
 
-        self.client = DaprClient(tracer=tracer)
+        self.client = DaprClient(
+            headers_callback=lambda: tracer.propagator.to_headers(tracer.span_context))
         self.server.set_response(b"FOO")
 
         with tracer.span(name="test"):

@@ -5,14 +5,13 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import Callable, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
 from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.base import DaprActorClientBase
-from opencensus.trace.tracers.base import Tracer  # type: ignore
 
 
 class DaprActorHttpClient(DaprActorClientBase):
@@ -22,9 +21,15 @@ class DaprActorHttpClient(DaprActorClientBase):
             self,
             message_serializer: 'Serializer',
             timeout: int = 60,
-            tracer: Optional[Tracer] = None):
+            headers_callback: Optional[Callable[[], Dict[str, str]]] = None):
+        """Invokes Dapr Actors over HTTP.
 
-        self._client = DaprHttpClient(message_serializer, timeout, tracer)
+        Args:
+            message_serializer (Serializer): Dapr serializer.
+            timeout (int, optional): Timeout in seconds, defaults to 60.
+            headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
+        """
+        self._client = DaprHttpClient(message_serializer, timeout, headers_callback)
 
     async def invoke_method(
             self, actor_type: str, actor_id: str,

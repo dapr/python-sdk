@@ -6,8 +6,16 @@ Licensed under the MIT License.
 """
 
 import time
-import grpc  # type: ignore
 import socket
+
+import grpc  # type: ignore
+from grpc import (  # type: ignore
+    UnaryUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    StreamStreamClientInterceptor
+)
+
 from dapr.clients.grpc._state import StateOptions, StateItem
 
 from typing import Dict, Optional, Union, Sequence, List
@@ -34,9 +42,6 @@ from dapr.clients.grpc._response import (
     BulkStateItem,
 )
 
-from opencensus.ext.grpc import client_interceptor   # type: ignore
-from opencensus.trace.tracers.base import Tracer   # type: ignore
-
 
 class DaprGrpcClient:
     """The convenient layer implementation of Dapr gRPC APIs.
@@ -57,11 +62,22 @@ class DaprGrpcClient:
         ...     resp = d.invoke_method('callee', 'method', b'data')
     """
 
-    def __init__(self, address: Optional[str] = None, tracer: Optional[Tracer] = None):
+    def __init__(
+        self,
+        address: Optional[str] = None,
+        interceptors: Optional[List[Union[
+            UnaryUnaryClientInterceptor,
+            UnaryStreamClientInterceptor,
+            StreamUnaryClientInterceptor,
+            StreamStreamClientInterceptor]]] = None):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
         Args:
             address (str, optional): Dapr Runtime gRPC endpoint address.
+            interceptors (list of UnaryUnaryClientInterceptor or
+                UnaryStreamClientInterceptor or
+                StreamUnaryClientInterceptor or
+                StreamStreamClientInterceptor, optional): gRPC interceptors.
         """
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
@@ -73,15 +89,16 @@ class DaprGrpcClient:
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
             self._channel = grpc.intercept_channel(   # type: ignore
                 self._channel, api_token_interceptor)
-        if tracer:
+        if interceptors:
             self._channel = grpc.intercept_channel(   # type: ignore
-                self._channel, client_interceptor.OpenCensusClientInterceptor(tracer=tracer))
+                self._channel, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
-        self._channel.close()
+        if self._channel:
+            self._channel.close()
 
     def __del__(self):
         self.close()
