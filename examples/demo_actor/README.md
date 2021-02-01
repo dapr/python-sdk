@@ -68,21 +68,12 @@ export PYTHONPATH=`pwd`
 
 1. Build and push docker image
 
-<<<<<<< HEAD
-```
-$ cd examples/demo_actor/demo_actor
-$ docker build -t [docker registry]/demo_actor:latest .
-$ docker push [docker registry]/demo_actor:latest
-$ cd ..
-```
-=======
    ```
    $ cd examples/demo_actor/demo_actor
    $ docker build -t [docker registry]/demo_actor:latest .
    $ docker push [docker registry]/demo_actor:latest
    $ cd ..
    ```
->>>>>>> origin/master
 
 > For example, [docker registry] is docker hub account.
 
@@ -93,49 +84,14 @@ $ cd ..
 
 4. Apply the `redis.yml` file: `kubectl apply -f ./deploy/redis.yml` and observe that your state store was successfully configured!
 
-<<<<<<< HEAD
-```bash
-component.dapr.io/statestore configured
-```
-=======
    ```bash
    component.dapr.io/statestore configured
    ```
->>>>>>> origin/master
 
 5. Update docker image location in `./deploy/demo_actor_client.yml` and `./deploy/demo_actor_service.yml`
 
 6. Deploy actor service and clients
 
-<<<<<<< HEAD
-```
-cd deploy
-kubectl apply -f ./deploy/demo_actor_service.yml
-kubectl apply -f ./deploy/demo_actor_client.yml
-```
-
-7. See logs for actor service and client
-
-Logs for actor service sidecar:
-```
-dapr  logs -a demoactor -k
-```
-
-Logs for actor service app:
-```
-kubectl logs -l app="demoactor" -c demoactor
-```
-
-Logs for actor client sidecar:
-```
-dapr  logs -a demoactor-client -k
-```
-
-Logs for actor service app:
-```
-kubectl logs -l app="demoactor-client" -c demoactor-client
-```
-=======
    ```
    cd deploy
    kubectl apply -f ./deploy/demo_actor_service.yml
@@ -163,5 +119,4 @@ kubectl logs -l app="demoactor-client" -c demoactor-client
    ```
    kubectl logs -l app="demoactor-client" -c demoactor-client
    ```
->>>>>>> origin/master
 
