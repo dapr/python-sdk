@@ -289,7 +289,8 @@ class DaprGrpcClient:
             pubsub_name: str,
             topic_name: str,
             data: Union[bytes, str],
-            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+            metadata: Optional[MetadataTuple] = (),
+            data_content_type: Optional[str] = None) -> DaprResponse:
         """Publish to a given topic.
         This publishes an event with bytes array or str data to a specified topic and
         specified pubsub component. The str data is encoded into bytes with default
@@ -315,6 +316,7 @@ class DaprGrpcClient:
             topic_name (str): the topic name to publish to
             data (bytes or str): bytes or str for data
             metadata (tuple, optional): custom metadata
+            data_content_type: (str, optional): content type of the data payload
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -329,7 +331,8 @@ class DaprGrpcClient:
         req = api_v1.PublishEventRequest(
             pubsub_name=pubsub_name,
             topic=topic_name,
-            data=req_data)
+            data=req_data,
+            data_content_type=data_content_type)
 
         # response is google.protobuf.Empty
         _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
