@@ -26,11 +26,11 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-  - '== APP == Subscriber received: id=1, message="hello world"'
-  - '== APP == Subscriber received: id=2, message="hello world"'
-  - '== APP == Subscriber received: id=3, message="hello world"'
-  - '== APP == Subscriber received: id=4, message="hello world"'
-  - '== APP == Subscriber received: id=5, message="hello world"'
+  - '== APP == Subscriber received: id=1, message="hello world", content_type="application/json"'
+  - '== APP == Subscriber received: id=2, message="hello world", content_type="application/json"'
+  - '== APP == Subscriber received: id=3, message="hello world", content_type="application/json"'
+  - '== APP == Subscriber received: id=4, message="hello world", content_type="application/json"'
+  - '== APP == Subscriber received: id=5, message="hello world", content_type="application/json"'
 background: true
 sleep: 5 
 -->
@@ -58,7 +58,7 @@ sleep: 15
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-publisher --app-protocol grpc python3 publisher.py
+dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 python3 publisher.py
 ```
 
 <!-- END_STEP -->

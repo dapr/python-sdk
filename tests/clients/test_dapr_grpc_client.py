@@ -138,11 +138,24 @@ class DaprGrpcClientTests(unittest.TestCase):
         resp = dapr.publish_event(
             pubsub_name='pubsub',
             topic_name='example',
-            data=b'haha',
+            data=b'haha'
         )
 
         self.assertEqual(2, len(resp.headers))
         self.assertEqual(['haha'], resp.headers['hdata'])
+
+    def test_publish_event_with_content_type(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        resp = dapr.publish_event(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=b'{"foo": "bar"}',
+            data_content_type='application/json'
+        )
+
+        self.assertEqual(3, len(resp.headers))
+        self.assertEqual(['{"foo": "bar"}'], resp.headers['hdata'])
+        self.assertEqual(['application/json'], resp.headers['data_content_type'])
 
     def test_publish_error(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')

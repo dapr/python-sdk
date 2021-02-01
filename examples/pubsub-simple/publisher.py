@@ -22,6 +22,7 @@ with DaprClient() as d:
             pubsub_name='pubsub',
             topic_name='TOPIC_A',
             data=json.dumps(req_data),
+            data_content_type='application/json',
         )
 
         # Print the request
