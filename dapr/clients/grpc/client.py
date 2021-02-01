@@ -5,7 +5,17 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
 """
 
+import time
+import socket
+
 import grpc  # type: ignore
+from grpc import (  # type: ignore
+    UnaryUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    StreamStreamClientInterceptor
+)
+
 from dapr.clients.grpc._state import StateOptions, StateItem
 
 from typing import Dict, Optional, Union, Sequence, List
@@ -17,7 +27,7 @@ from dapr.proto import api_v1, api_service_v1, common_v1
 
 from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes
 from dapr.clients.grpc._request import (
-    InvokeServiceRequest,
+    InvokeMethodRequest,
     BindingRequest,
     TransactionalStateOperation,
 )
@@ -25,17 +35,15 @@ from dapr.clients.grpc._response import (
     BindingResponse,
     DaprResponse,
     GetSecretResponse,
-    InvokeServiceResponse,
+    GetBulkSecretResponse,
+    InvokeMethodResponse,
     StateResponse,
     BulkStatesResponse,
     BulkStateItem,
 )
 
-from opencensus.ext.grpc import client_interceptor   # type: ignore
-from opencensus.trace.tracers.base import Tracer   # type: ignore
 
-
-class DaprClient:
+class DaprGrpcClient:
     """The convenient layer implementation of Dapr gRPC APIs.
 
     This provides the wrappers and helpers to allows developers to use Dapr runtime gRPC API
@@ -45,23 +53,35 @@ class DaprClient:
 
         >>> from dapr.clients import DaprClient
         >>> d = DaprClient()
-        >>> resp = d.invoke_service('callee', 'method', b'data')
+        >>> resp = d.invoke_method('callee', 'method', b'data')
 
     With context manager:
 
         >>> from dapr.clients import DaprClient
         >>> with DaprClient() as d:
-        ...     resp = d.invoke_service('callee', 'method', b'data')
+        ...     resp = d.invoke_method('callee', 'method', b'data')
     """
 
-    def __init__(self, address: Optional[str] = None, tracer: Optional[Tracer] = None):
+    def __init__(
+        self,
+        address: Optional[str] = None,
+        interceptors: Optional[List[Union[
+            UnaryUnaryClientInterceptor,
+            UnaryStreamClientInterceptor,
+            StreamUnaryClientInterceptor,
+            StreamStreamClientInterceptor]]] = None):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
         Args:
             address (str, optional): Dapr Runtime gRPC endpoint address.
+            interceptors (list of UnaryUnaryClientInterceptor or
+                UnaryStreamClientInterceptor or
+                StreamUnaryClientInterceptor or
+                StreamStreamClientInterceptor, optional): gRPC interceptors.
         """
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+        self._address = address
         self._channel = grpc.insecure_channel(address)   # type: ignore
 
         if settings.DAPR_API_TOKEN:
@@ -69,20 +89,21 @@ class DaprClient:
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
             self._channel = grpc.intercept_channel(   # type: ignore
                 self._channel, api_token_interceptor)
-        if tracer:
+        if interceptors:
             self._channel = grpc.intercept_channel(   # type: ignore
-                self._channel, client_interceptor.OpenCensusClientInterceptor(tracer=tracer))
+                self._channel, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
-        self._channel.close()
+        if self._channel:
+            self._channel.close()
 
     def __del__(self):
         self.close()
 
-    def __enter__(self) -> 'DaprClient':
+    def __enter__(self) -> 'DaprGrpcClient':
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
@@ -98,15 +119,15 @@ class DaprClient:
             http_ext.querystring[key] = val
         return http_ext
 
-    def invoke_service(
+    def invoke_method(
             self,
-            id: str,
-            method: str,
+            app_id: str,
+            method_name: str,
             data: Union[bytes, str, GrpcMessage],
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> InvokeServiceResponse:
+            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
         """Invokes the target service to call method.
 
         This can invoke the specified target service to call method with bytes array data or
@@ -119,9 +140,9 @@ class DaprClient:
             from dapr.clients import DaprClient
 
             with DaprClient() as d:
-                resp = d.invoke_service(
-                    id='callee',
-                    method='method',
+                resp = d.invoke_method(
+                    app_id='callee',
+                    method_name='method',
                     data=b'message',
                     content_type='text/plain',
                     metadata=(
@@ -140,9 +161,9 @@ class DaprClient:
             req_data = dapr_example_v1.CustomRequestMessage(data='custom')
 
             with DaprClient() as d:
-                resp = d.invoke_service(
-                    id='callee',
-                    method='method',
+                resp = d.invoke_method(
+                    app_id='callee',
+                    method_name='method',
                     data=req_data,
                     metadata=(
                         ('header1', 'value1')
@@ -158,9 +179,9 @@ class DaprClient:
             from dapr.clients import DaprClient
 
             with DaprClient() as d:
-                resp = d.invoke_service(
-                    id='callee',
-                    method='method',
+                resp = d.invoke_method(
+                    app_id='callee',
+                    method_name='method',
                     data=b'message',
                     content_type='text/plain',
                     metadata=(
@@ -177,7 +198,7 @@ class DaprClient:
                 # Thus, resp.content can be deserialized properly.
 
         Args:
-            id (str): the callee app id
+            app_id (str): the callee app id
             method (str): the method name which is called
             data (bytes or :obj:`google.protobuf.message.Message`): bytes or Message for data
                 which will send to id
@@ -186,17 +207,17 @@ class DaprClient:
             http_querystring (tuple, optional): the tuple to represent query string
 
         Returns:
-            :class:`InvokeServiceResponse` object returned from callee
+            :class:`InvokeMethodResponse` object returned from callee
         """
-        req_data = InvokeServiceRequest(data, content_type)
+        req_data = InvokeMethodRequest(data, content_type)
         http_ext = None
         if http_verb:
             http_ext = self._get_http_extension(http_verb, http_querystring)
 
         req = api_v1.InvokeServiceRequest(
-            id=id,
+            id=app_id,
             message=common_v1.InvokeRequest(
-                method=method,
+                method=method_name,
                 data=req_data.proto,
                 content_type=req_data.content_type,
                 http_extension=http_ext)
@@ -204,13 +225,13 @@ class DaprClient:
 
         response, call = self._stub.InvokeService.with_call(req, metadata=metadata)
 
-        resp_data = InvokeServiceResponse(response.data, response.content_type)
+        resp_data = InvokeMethodResponse(response.data, response.content_type)
         resp_data.headers = call.initial_metadata()  # type: ignore
         return resp_data
 
     def invoke_binding(
             self,
-            name: str,
+            binding_name: str,
             operation: str,
             data: Union[bytes, str],
             binding_metadata: Dict[str, str] = {},
@@ -229,7 +250,7 @@ class DaprClient:
 
             with DaprClient() as d:
                 resp = d.invoke_binding(
-                    name = 'kafkaBinding',
+                    binding_name = 'kafkaBinding',
                     operation = 'create',
                     data = b'message',
                     metadata = (
@@ -240,7 +261,7 @@ class DaprClient:
                 # resp.metadata include the metadata returned from the external system.
 
         Args:
-            name (str): the name of the binding as defined in the components
+            binding_name (str): the name of the binding as defined in the components
             operation (str): the operation to perform on the binding
             data (bytes or str): bytes or str for data which will sent to the binding
             binding_metadata (dict, optional): metadata for output binding
@@ -252,7 +273,7 @@ class DaprClient:
         req_data = BindingRequest(data, binding_metadata)
 
         req = api_v1.InvokeBindingRequest(
-            name=name,
+            name=binding_name,
             data=req_data.data,
             metadata=req_data.binding_metadata,
             operation=operation
@@ -266,9 +287,10 @@ class DaprClient:
     def publish_event(
             self,
             pubsub_name: str,
-            topic: str,
+            topic_name: str,
             data: Union[bytes, str],
-            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+            metadata: Optional[MetadataTuple] = (),
+            data_content_type: Optional[str] = None) -> DaprResponse:
         """Publish to a given topic.
         This publishes an event with bytes array or str data to a specified topic and
         specified pubsub component. The str data is encoded into bytes with default
@@ -281,7 +303,7 @@ class DaprClient:
             with DaprClient() as d:
                 resp = d.publish_event(
                     pubsub_name='pubsub_1'
-                    topic='TOPIC_A'
+                    topic_name='TOPIC_A'
                     data=b'message',
                     metadata=(
                         ('header1', 'value1')
@@ -291,9 +313,10 @@ class DaprClient:
 
         Args:
             pubsub_name (str): the name of the pubsub component
-            topic (str): the topic name to publish to
+            topic_name (str): the topic name to publish to
             data (bytes or str): bytes or str for data
             metadata (tuple, optional): custom metadata
+            data_content_type: (str, optional): content type of the data payload
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -307,8 +330,9 @@ class DaprClient:
 
         req = api_v1.PublishEventRequest(
             pubsub_name=pubsub_name,
-            topic=topic,
-            data=req_data)
+            topic=topic_name,
+            data=req_data,
+            data_content_type=data_content_type)
 
         # response is google.protobuf.Empty
         _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
@@ -356,7 +380,7 @@ class DaprClient:
             etag=response.etag,
             headers=call.initial_metadata())
 
-    def get_states(
+    def get_bulk_state(
             self,
             store_name: str,
             keys: Sequence[str],
@@ -368,7 +392,7 @@ class DaprClient:
         The example gets value from a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
-                resp = d.get_states(
+                resp = d.get_bulk_state(
                     store_name='state_store'
                     keys=['key_1', key_2],
                     parallelism=2,
@@ -473,7 +497,7 @@ class DaprClient:
         state = common_v1.StateItem(
             key=key,
             value=to_bytes(req_value),
-            etag=etag,
+            etag=common_v1.Etag(value=etag) if etag is not None else None,
             options=state_options,
             metadata=state_metadata)
 
@@ -482,7 +506,7 @@ class DaprClient:
         return DaprResponse(
             headers=call.initial_metadata())
 
-    def save_states(
+    def save_bulk_state(
             self,
             store_name: str,
             states: List[StateItem],
@@ -494,7 +518,7 @@ class DaprClient:
         The example saves states to a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
-                resp = d.save_state(
+                resp = d.save_bulk_state(
                     store_name='state_store'
                     states=[StateItem(key='key1', value='value1'),
                         StateItem(key='key2', value='value2', etag='etag'),],
@@ -524,7 +548,7 @@ class DaprClient:
         req_states = [common_v1.StateItem(
             key=i.key,
             value=to_bytes(i.value),
-            etag=i.etag,
+            etag=common_v1.Etag(value=i.etag) if i.etag is not None else None,
             options=i.options,
             metadata=i.metadata) for i in states]
 
@@ -533,7 +557,7 @@ class DaprClient:
         return DaprResponse(
             headers=call.initial_metadata())
 
-    def execute_transaction(
+    def execute_state_transaction(
             self,
             store_name: str,
             operations: Sequence[TransactionalStateOperation],
@@ -548,7 +572,7 @@ class DaprClient:
         The example saves states to a statestore:
             from dapr import DaprClient
             with DaprClient() as d:
-                resp = d.execute_transaction(
+                resp = d.execute_state_transaction(
                     store_name='state_store',
                     operations=[
                         TransactionalStateOperation(key=key, data=value),
@@ -579,7 +603,8 @@ class DaprClient:
             request=common_v1.StateItem(
                 key=o.key,
                 value=to_bytes(o.data),
-                etag=o.etag)) for o in operations]
+                etag=common_v1.Etag(value=o.etag) if o.etag is not None else None))
+            for o in operations]
 
         req = api_v1.ExecuteStateTransactionRequest(
             storeName=store_name,
@@ -637,8 +662,10 @@ class DaprClient:
         else:
             state_options = options.get_proto()
 
+        etag_object = common_v1.Etag(value=etag) if etag is not None else None
         req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
-                                        etag=etag, options=state_options, metadata=state_metadata)
+                                        etag=etag_object, options=state_options,
+                                        metadata=state_metadata)
         _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
         return DaprResponse(
             headers=call.initial_metadata())
@@ -693,3 +720,90 @@ class DaprClient:
         return GetSecretResponse(
             secret=response.data,
             headers=call.initial_metadata())
+
+    def get_bulk_secret(
+            self,
+            store_name: str,
+            secret_metadata: Optional[Dict[str, str]] = {},
+            metadata: Optional[MetadataTuple] = ()) -> GetBulkSecretResponse:
+        """Get all granted secrets.
+
+        This gets all granted secrets from secret store.
+        Metadata for request can be passed with the secret_metadata field and custom
+        metadata can be passed with metadata field.
+
+
+        The example gets all secrets from secret store:
+
+            from dapr.clients import DaprClient
+
+            with DaprClient() as d:
+                resp = d.get_bulk_secret(
+                    store_name='secretstoreA',
+                    secret_metadata={'header1', 'value1'}
+                    metadata=(
+                        ('headerA', 'valueB')
+                    ),
+                )
+
+                # resp.headers includes the gRPC initial metadata.
+                # resp.trailers includes that gRPC trailing metadata.
+
+        Args:
+            store_name (str): store name to get secret from
+            secret_metadata (Dict[str, Dict[str, str]], Optional): metadata of request
+            metadata (MetadataTuple, optional): custom metadata
+
+        Returns:
+            :class:`GetBulkSecretResponse` object with secrets and metadata returned from callee
+        """
+
+        req = api_v1.GetBulkSecretRequest(
+            store_name=store_name,
+            metadata=secret_metadata)
+
+        response, call = self._stub.GetBulkSecret.with_call(req, metadata=metadata)
+
+        secrets_map = {}
+        for key in response.data.keys():
+            secret_response = response.data[key]
+            secrets_submap = {}
+            for subkey in secret_response.secrets.keys():
+                secrets_submap[subkey] = secret_response.secrets[subkey]
+            secrets_map[key] = secrets_submap
+
+        return GetBulkSecretResponse(
+            secrets=secrets_map,
+            headers=call.initial_metadata())
+
+    def wait(self, timeout_s: float):
+        """Waits for sidecar to be available within the timeout.
+
+        It checks if sidecar socket is available within the given timeout.
+
+        The example gets a secret from secret store:
+
+            from dapr.clients import DaprClient
+
+            with DaprClient() as d:
+                d.wait(1000) # waits for 1 second.
+                # Sidecar is available after this.
+
+        Args:
+            timeout_s (float): timeout in seconds
+        """
+
+        host_port_str = self._address.split(":")
+        host_port = (host_port_str[0], int(host_port_str[1]))
+        start = time.time()
+        while True:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(timeout_s)
+                try:
+                    s.connect(host_port)
+                    return
+                except Exception as e:
+                    remaining = (start + timeout_s) - time.time()
+                    if remaining < 0:
+                        raise e
+                    time.sleep(min(1, remaining))

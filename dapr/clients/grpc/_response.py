@@ -65,8 +65,8 @@ class DaprResponse:
         return self._headers
 
 
-class InvokeServiceResponse(DaprResponse):
-    """The response of invoke_service API.
+class InvokeMethodResponse(DaprResponse):
+    """The response of invoke_method API.
 
     This inherits from DaprResponse and has the helpers to handle bytes array
     and protocol buffer data.
@@ -85,7 +85,7 @@ class InvokeServiceResponse(DaprResponse):
             data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
             content_type: Optional[str] = None,
             headers: MetadataTuple = ()):
-        """Initializes InvokeServiceReponse from :obj:`common_v1.InvokeResponse`.
+        """Initializes InvokeMethodReponse from :obj:`common_v1.InvokeResponse`.
 
         Args:
             data (str, bytes, GrpcAny, GrpcMessage, optional): the response data
@@ -93,7 +93,7 @@ class InvokeServiceResponse(DaprResponse):
             content_type (str, optional): the content type of the bytes data
             headers (tuple, optional): the headers from Dapr gRPC response
         """
-        super(InvokeServiceResponse, self).__init__(headers)
+        super(InvokeMethodResponse, self).__init__(headers)
         self._content_type = content_type
 
         self.set_data(data)
@@ -191,6 +191,11 @@ class InvokeServiceResponse(DaprResponse):
             ValueError: message is not protocol buffer message object or message's type is not
                 matched with the response data type
         """
+
+        if self.content_type is not None and self.content_type.lower() == "application/x-protobuf":
+            message.ParseFromString(self.data)
+            return
+
         unpack(self.proto, message)
 
 
@@ -270,6 +275,34 @@ class GetSecretResponse(DaprResponse):
     def secret(self) -> Dict[str, str]:
         """Gets secret as a dict."""
         return self._secret
+
+
+class GetBulkSecretResponse(DaprResponse):
+    """The response of get_bulk_secret API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        secret (Dict[str, Dict[str, str]]): secret received from response
+    """
+
+    def __init__(
+            self,
+            secrets: Dict[str, Dict[str, str]],
+            headers: MetadataTuple = ()):
+        """Initializes GetBulkSecretReponse from :obj:`dapr_v1.GetBulkSecretResponse`.
+
+        Args:
+            secrets (Dict[Str, Dict[str, str]]): the secret from Dapr response
+            headers (Tuple, optional): the headers from Dapr gRPC response
+        """
+        super(GetBulkSecretResponse, self).__init__(headers)
+        self._secrets = secrets
+
+    @property
+    def secrets(self) -> Dict[str, Dict[str, str]]:
+        """Gets secrets as a dict."""
+        return self._secrets
 
 
 class StateResponse(DaprResponse):

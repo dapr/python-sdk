@@ -1,23 +1,23 @@
-# Distributed Tracing Sample
+# Example - Distributed tracing
 
 In this sample, we'll run two Python applications: a service application, which exposes two methods, and a client application which will invoke the methods from the service using Dapr. The code is instrumented with [OpenCensus SDK for Python](https://opencensus.io/guides/grpc/python/).
 This sample includes:
 
-* invoke-receiver (Exposes the methods to be remotely accessed)
-* invoke-caller (Invokes the exposed methods)
+- invoke-receiver: Exposes the methods to be remotely accessed
+- invoke-caller: Invokes the exposed methods
 
 Also consider [getting started with observability in Dapr](https://github.com/dapr/quickstarts/tree/master/observability).
  
-## Remote invocation using the Python-SDK
+## Example overview
 
 This sample uses the Client provided in Dapr's Python SDK invoking a remote method and Zipkin to collect and display tracing data. 
 
 ## Pre-requisites
 
-* [Dapr and Dapr CLI](https://docs.dapr.io/getting-started/).
-* [Python 3](https://www.python.org/downloads/).
+- [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
+- [Install Python 3.7+](https://www.python.org/downloads/)
 
-### Checking out the code
+### Install dependencies
 
 Clone this repository:
 
@@ -51,7 +51,7 @@ CONTAINER ID        IMAGE                  COMMAND                  CREATED     
 
 If Zipkin is not working, [install the newest version of Dapr Cli and initialize it](https://docs.dapr.io/getting-started/install-dapr/).
 
-### Running the Demo service sample
+### Run the Demo service sample
 
 The Demo service application exposes two methods that can be remotely invoked. In this example, the service code has two parts:
 
@@ -68,7 +68,7 @@ The `say` method prints the incoming payload and metadata in console. See the co
 
 ```python
 @app.method(name='say')
-def say(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def say(request: InvokeMethodRequest) -> InvokeMethodResponse:
     tracer = Tracer(sampler=AlwaysOnSampler())
     with tracer.span(name='say') as span:
         data = request.text()
@@ -76,32 +76,32 @@ def say(request: InvokeServiceRequest) -> InvokeServiceResponse:
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        return InvokeServiceResponse(b'SAY', "text/plain; charset=UTF-8")
+        return InvokeMethodResponse(b'SAY', "text/plain; charset=UTF-8")
 ```
 
 The `sleep` methods simply waits for two seconds to simulate a slow operation.
 ```python
 @app.method(name='sleep')
-def sleep(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def sleep(request: InvokeMethodRequest) -> InvokeMethodResponse:
     tracer = Tracer(sampler=AlwaysOnSampler())
     with tracer.span(name='sleep') as _:
         time.sleep(2)
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        return InvokeServiceResponse(b'SLEEP', "text/plain; charset=UTF-8")
+        return InvokeMethodResponse(b'SLEEP', "text/plain; charset=UTF-8")
 ```
 
 Use the following command to execute the service:
 
 ```sh
-dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
+dapr run --app-id invoke-receiver --app-protocol grpc --app-port 3001 python3 invoke-receiver.py
 ```
 
 Once running, the service is now ready to be invoked by Dapr.
 
 
-### Running the InvokeClient sample
+### Run the InvokeClient sample
 
 This sample code uses the Dapr SDK for invoking two remote methods (`say` and `sleep`). Again, it is instrumented with OpenCensus with Zipkin exporter. See the code snippet below:
 
@@ -121,7 +121,7 @@ with tracer.span(name="main") as span:
 
         for i in range(num_messages):
             # Create a typed message with content type and body
-            resp = d.invoke_service(
+            resp = d.invoke_method(
                 'invoke-receiver',
                 'say',
                 data=json.dumps({
@@ -133,13 +133,13 @@ with tracer.span(name="main") as span:
             print(resp.content_type, flush=True)
             print(resp.text(), flush=True)
 
-            resp = d.invoke_service('invoke-receiver', 'sleep', data='')
+            resp = d.invoke_method('invoke-receiver', 'sleep', data='')
             # Print the response
             print(resp.content_type, flush=True)
             print(resp.text(), flush=True)
 ```
 
-The class knows the `app-id` for the remote application. It uses `invoke_service` method to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
+The class knows the `app-id` for the remote application. It uses `invoke_method` to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
  
 Execute the following command in order to run the caller example, it will call each method twice:
 ```sh
@@ -147,18 +147,18 @@ dapr run --app-id invoke-caller --app-protocol grpc python3 invoke-caller.py
 ```
 Once running, the output should display the messages sent from invoker in the service output as follows:
 
-![exposeroutput](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/service.png)
+![exposeroutput](./img/service.png)
 
 Methods have been remotely invoked and display the remote messages.
 
 Now, open Zipkin on [http://localhost:9411/zipkin](http://localhost:9411/zipkin). You should see a screen like the one below:
 
-![zipking-landing](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/zipkin-landing.png)
+![zipking-landing](./img/zipkin-landing.png)
 
 Click on the search icon to see the latest query results. You should see a tracing diagram similar to the one below:
 
-![zipking-landing](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/zipkin-result.png)
+![zipking-landing](./img/zipkin-result.png)
 
 Once you click on the tracing event, you will see the details of the call stack starting in the client and then showing the service API calls right below.
 
-![zipking-details](https://raw.githubusercontent.com/dapr/python-sdk/master/examples/w3c-tracing/img/zipkin-details.png)
+![zipking-details](./img/zipkin-details.png)

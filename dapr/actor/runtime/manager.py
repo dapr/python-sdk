@@ -64,7 +64,7 @@ class ActorManager:
         async def invoke_reminder(actor: Actor) -> Optional[bytes]:
             reminder = getattr(actor, REMINDER_METHOD_NAME)
             if reminder is not None:
-                await reminder(reminder_data.name, reminder_data.state,
+                await reminder(reminder_data.reminder_name, reminder_data.state,
                                reminder_data.due_time, reminder_data.period)
             return None
 

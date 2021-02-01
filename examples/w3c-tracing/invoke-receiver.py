@@ -2,7 +2,7 @@ import time
 
 from concurrent import futures
 
-from dapr.ext.grpc import App, InvokeServiceRequest, InvokeServiceResponse
+from dapr.ext.grpc import App, InvokeMethodRequest, InvokeMethodResponse
 
 from opencensus.trace.samplers import AlwaysOnSampler
 from opencensus.trace.tracer import Tracer
@@ -15,7 +15,7 @@ app = App(
     interceptors=(tracer_interceptor,))
 
 @app.method(name='say')
-def say(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def say(request: InvokeMethodRequest) -> InvokeMethodResponse:
     tracer = Tracer(sampler=AlwaysOnSampler())
     with tracer.span(name='say') as span:
         data = request.text()
@@ -23,17 +23,17 @@ def say(request: InvokeServiceRequest) -> InvokeServiceResponse:
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        return InvokeServiceResponse(b'SAY', "text/plain; charset=UTF-8")
+        return InvokeMethodResponse(b'SAY', "text/plain; charset=UTF-8")
 
 @app.method(name='sleep')
-def sleep(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def sleep(request: InvokeMethodRequest) -> InvokeMethodResponse:
     tracer = Tracer(sampler=AlwaysOnSampler())
     with tracer.span(name='sleep') as _:
         time.sleep(2)
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        return InvokeServiceResponse(b'SLEEP', "text/plain; charset=UTF-8")
+        return InvokeMethodResponse(b'SLEEP', "text/plain; charset=UTF-8")
 
 
-app.run(50051)
+app.run(3001)
