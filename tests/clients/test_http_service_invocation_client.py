@@ -74,6 +74,20 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.assertEqual(b"STRING_BODY", response.data)
         self.assertEqual(f"{self.invoke_url}?key1=value1&key2=value2", self.server.request_path())
 
+    def test_invoke_GET_with_duplicate_query_params(self):
+        self.server.set_response(b"STRING_BODY")
+        query_params = (('key1', 'value1'),
+                        ('key1', 'value2'))
+
+        response = self.client.invoke_method(
+            self.app_id,
+            self.method_name,
+            '',
+            http_querystring=query_params)
+
+        self.assertEqual(b"STRING_BODY", response.data)
+        self.assertEqual(f"{self.invoke_url}?key1=value1&key1=value2", self.server.request_path())
+
     def test_invoke_PUT_with_content_type(self):
         self.server.set_response(b"STRING_BODY")
 

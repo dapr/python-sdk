@@ -42,6 +42,11 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteStateRequest.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
+        self.DeleteBulkState = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/DeleteBulkState',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteBulkStateRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
         self.ExecuteStateTransaction = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/ExecuteStateTransaction',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ExecuteStateTransactionRequest.SerializeToString,
@@ -148,6 +153,13 @@ class DaprServicer(object):
 
     def DeleteState(self, request, context):
         """Deletes the state for a specific key.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteBulkState(self, request, context):
+        """Deletes a bulk of state items for a list of keys
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -277,6 +289,11 @@ def add_DaprServicer_to_server(servicer, server):
             'DeleteState': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteState,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteStateRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'DeleteBulkState': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteBulkState,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteBulkStateRequest.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
             'ExecuteStateTransaction': grpc.unary_unary_rpc_method_handler(
@@ -441,6 +458,23 @@ class Dapr(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/DeleteState',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteStateRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def DeleteBulkState(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/DeleteBulkState',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteBulkStateRequest.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

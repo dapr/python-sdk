@@ -9,6 +9,7 @@ import asyncio
 
 from typing import Callable, Dict, Optional, Union
 
+from multidict import MultiDict
 from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
 from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
 from dapr.clients.grpc._response import InvokeMethodResponse
@@ -62,10 +63,10 @@ class DaprInvocationHttpClient:
         if metadata is not None:
             for key, value in metadata:
                 headers[key] = value
-        query_params = {}
+        query_params: MultiDict = MultiDict()
         if http_querystring is not None:
             for key, value in http_querystring:
-                query_params[key] = value
+                query_params.add(key, value)
 
         if content_type is not None:
             headers[CONTENT_TYPE_HEADER] = content_type

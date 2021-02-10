@@ -45,12 +45,12 @@ class DaprGrpcClientTests(unittest.TestCase):
         qs = (
             ('query1', 'string1'),
             ('query2', 'string2'),
+            ('query1', 'string 3'),
         )
         ext = dapr._get_http_extension('POST', qs)
 
         self.assertEqual(common_v1.HTTPExtension.Verb.POST, ext.verb)
-        for key, val in qs:
-            self.assertEqual(val, ext.querystring[key])
+        self.assertEqual("query1=string1&query2=string2&query1=string+3", ext.querystring)
 
     def test_invoke_method_bytes_data(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
@@ -63,6 +63,7 @@ class DaprGrpcClientTests(unittest.TestCase):
                 ('key1', 'value1'),
                 ('key2', 'value2'),
             ),
+            http_verb='PUT',
         )
 
         self.assertEqual(b'haha', resp.data)
