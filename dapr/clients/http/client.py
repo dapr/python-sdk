@@ -7,7 +7,7 @@ Licensed under the MIT License.
 
 import aiohttp
 
-from typing import Callable, Dict, Optional, Union, Tuple, TYPE_CHECKING
+from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
@@ -47,7 +47,7 @@ class DaprHttpClient:
             self, method: str, url: str,
             data: Optional[bytes],
             headers: Dict[str, Union[bytes, str]] = {},
-            query_params: Dict[str, Union[bytes, str]] = {}
+            query_params: Optional[Mapping] = None
     ) -> Tuple[bytes, aiohttp.ClientResponse]:
         headers_map = headers
         if not headers_map.get(CONTENT_TYPE_HEADER):
