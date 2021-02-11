@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -41,6 +41,8 @@ from dapr.clients.grpc._response import (
     BulkStatesResponse,
     BulkStateItem,
 )
+
+from urllib.parse import urlencode
 
 
 class DaprGrpcClient:
@@ -115,8 +117,8 @@ class DaprGrpcClient:
     ) -> common_v1.HTTPExtension:  # type: ignore
         verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
         http_ext = common_v1.HTTPExtension(verb=verb)
-        for key, val in http_querystring:  # type: ignore
-            http_ext.querystring[key] = val
+        if http_querystring is not None and len(http_querystring):
+            http_ext.querystring = urlencode(http_querystring)
         return http_ext
 
     def invoke_method(
