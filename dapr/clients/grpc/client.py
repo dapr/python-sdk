@@ -304,8 +304,8 @@ class DaprGrpcClient:
             from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.publish_event(
-                    pubsub_name='pubsub_1'
-                    topic_name='TOPIC_A'
+                    pubsub_name='pubsub_1',
+                    topic_name='TOPIC_A',
                     data=b'message',
                     metadata=(
                         ('header1', 'value1')
@@ -395,7 +395,7 @@ class DaprGrpcClient:
             from dapr import DaprClient
             with DaprClient() as d:
                 resp = d.get_bulk_state(
-                    store_name='state_store'
+                    store_name='state_store',
                     keys=['key_1', key_2],
                     parallelism=2,
                     states_metadata={"metakey": "metavalue"},
@@ -521,7 +521,7 @@ class DaprGrpcClient:
             from dapr import DaprClient
             with DaprClient() as d:
                 resp = d.save_bulk_state(
-                    store_name='state_store'
+                    store_name='state_store',
                     states=[StateItem(key='key1', value='value1'),
                         StateItem(key='key2', value='value2', etag='etag'),],
                     metadata=(
@@ -635,7 +635,7 @@ class DaprGrpcClient:
             with DaprClient() as d:
                 resp = d.delete_state(
                     store_name='state_store',
-                    key='key1'
+                    key='key1',
                     etag='etag',
                     state_metadata={"header1": "value1"},
                     metadata=(
