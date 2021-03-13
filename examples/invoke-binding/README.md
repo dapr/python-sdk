@@ -11,6 +11,8 @@ This example utilizes a publisher and a receiver for the InvokeBinding / OnBindi
 
 ## Install Dapr python-SDK
 
+<!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
+
 ```bash
 pip3 install dapr dapr-ext-grpc
 ```
@@ -19,25 +21,80 @@ pip3 install dapr dapr-ext-grpc
 
 Run the following commands in a terminal/command-prompt:
 
-```bash
-# 1. Start the kafka containers using docker-compose 
-docker-compose -f ./docker-compose-single-kafka.yml up -d
+<!-- STEP
+name: Kafka install
+sleep: 30
+expected_stderr_lines:
+  - 'Creating network "invoke-binding_default" with the default driver'
+  - 'Creating invoke-binding_zookeeper_1 ... '
+-->
 
-# 2. Start Receiver (expose gRPC server receiver on port 50051) 
+1. Start the kafka containers using docker-compose 
+
+```bash
+docker-compose -f ./docker-compose-single-kafka.yml up -d
+```
+
+<!-- END_STEP -->
+
+<!-- STEP
+name: Start Receiver
+expected_stdout_lines: 
+  - '== APP == {"id": 1, "message": "hello world"}'
+  - '== APP == {"id": 2, "message": "hello world"}'
+  - '== APP == {"id": 3, "message": "hello world"}'
+background: true
+sleep: 5
+-->
+
+2. Start Receiver (expose gRPC server receiver on port 50051) 
+
+```bash
 dapr run --app-id receiver --app-protocol grpc --app-port 50051 --components-path ./components python3 invoke-input-binding.py
 ```
 
+<!-- END_STEP -->
+
+3. Start Publisher
+
 In another terminal/command-prompt run:
 
+<!-- STEP
+name: Start Publisher
+expected_stdout_lines: 
+  - '== APP == Sending message id: 1, message "hello world"'
+  - '== APP == Sending message id: 2, message "hello world"'
+  - '== APP == Sending message id: 3, message "hello world"'
+background: true
+sleep: 5
+-->
+
 ```bash
-# 3. Start Publisher
 dapr run --app-id publisher --app-protocol grpc --components-path ./components python3 invoke-output-binding.py
 ```
 
+<!-- END_STEP -->
+
 ## Cleanup
 
-The dapr apps can be stopped by calling stop or terminating the process. For kafka cleanup, run the following code:
+<!-- STEP
+name: Cleanup
+expected_stdout_lines:
+  - '✅  app stopped successfully: publisher'
+  - '✅  app stopped successfully: receiver'
+-->
+
+The dapr apps can be stopped by calling stop or terminating the process:
+
+```bash
+dapr stop --app-id publisher
+dapr stop --app-id receiver
+```
+
+For kafka cleanup, run the following code:
 
 ```bash
 docker-compose -f ./docker-compose-single-kafka.yml down
 ```
+
+<!-- END_STEP -->
