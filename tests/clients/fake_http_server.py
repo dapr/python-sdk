@@ -1,4 +1,4 @@
-
+import time
 
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -12,6 +12,8 @@ class DaprHandler(BaseHTTPRequestHandler):
             self.handle_request()
 
     def do_request(self, verb):
+        if self.server.sleep_time is not None:
+            time.sleep(self.server.sleep_time)
         self.received_verb = verb
         self.server.request_headers = self.headers
         if 'Content-Length' in self.headers:
@@ -50,6 +52,7 @@ class FakeHttpServer(Thread):
         self.server.response_code = 200
         self.server.response_header_list = []
         self.server.request_body = b''
+        self.server.sleep_time = None
 
     def get_port(self):
         return self.server.socket.getsockname()[1]
@@ -74,6 +77,9 @@ class FakeHttpServer(Thread):
 
     def get_request_body(self):
         return self.server.request_body
+
+    def set_server_delay(self, delay_seconds):
+        self.server.sleep_time = delay_seconds
 
     def run(self):
         self.server.serve_forever()
