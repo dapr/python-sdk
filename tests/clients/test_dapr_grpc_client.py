@@ -382,6 +382,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_shutdown(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
         dapr.shutdown()
+        self.assertTrue(self._fake_dapr_server.shutdown_received)
 
     def test_wait_ok(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
