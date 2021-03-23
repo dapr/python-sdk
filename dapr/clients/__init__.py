@@ -38,14 +38,15 @@ class DaprClient(DaprGrpcClient):
     variable. See: https://github.com/dapr/python-sdk/issues/176 for more details"""
 
     def __init__(
-        self,
-        address: Optional[str] = None,
-        headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
-        interceptors: Optional[List[Union[
-            UnaryUnaryClientInterceptor,
-            UnaryStreamClientInterceptor,
-            StreamUnaryClientInterceptor,
-            StreamStreamClientInterceptor]]] = None):
+            self,
+            address: Optional[str] = None,
+            headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+            interceptors: Optional[List[Union[
+                UnaryUnaryClientInterceptor,
+                UnaryStreamClientInterceptor,
+                StreamUnaryClientInterceptor,
+                StreamStreamClientInterceptor]]] = None,
+            http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS):
         """Connects to Dapr Runtime and via gRPC and HTTP.
 
         Args:
@@ -55,6 +56,7 @@ class DaprClient(DaprGrpcClient):
                 UnaryStreamClientInterceptor or
                 StreamUnaryClientInterceptor or
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
+            http_timeout_seconds (int): specify a timeout for http connections
         """
         super().__init__(address, interceptors)
         self.invocation_client = None
@@ -62,7 +64,8 @@ class DaprClient(DaprGrpcClient):
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
 
         if invocation_protocol == 'HTTP':
-            self.invocation_client = DaprInvocationHttpClient(headers_callback=headers_callback)
+            self.invocation_client = DaprInvocationHttpClient(headers_callback=headers_callback,
+                                                              timeout=http_timeout_seconds)
         elif invocation_protocol == 'GRPC':
             pass
         else:
