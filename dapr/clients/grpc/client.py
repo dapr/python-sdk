@@ -811,9 +811,7 @@ class DaprGrpcClient:
                         raise e
                     time.sleep(min(1, remaining))
 
-    def shutdown(
-            self,
-            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
+    def shutdown(self) -> DaprResponse:
         """Shutdown the sidecar.
 
         This will ask the sidecar to gracefully shutdown.
@@ -824,8 +822,11 @@ class DaprGrpcClient:
 
             with DaprClient() as d:
                 resp = d.shutdown()
+
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
         """
 
-        _, call = self._stub.Shutdown.with_call(GrpcEmpty(), metadata=metadata)
+        _, call = self._stub.Shutdown.with_call(GrpcEmpty())
 
         return DaprResponse(call.initial_metadata())
