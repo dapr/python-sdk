@@ -9,6 +9,7 @@ import json
 import unittest
 
 from .fake_http_server import FakeHttpServer
+from asyncio import TimeoutError
 from dapr.conf import settings
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
@@ -266,3 +267,19 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
 
         self.assertIn('Traceparent', request_headers)
         self.assertEqual(b'FOO', resp.data)
+
+    def test_timeout_exception_thrown_when_timeout_reached(self):
+        new_client = DaprClient(http_timeout_seconds=1)
+        self.server.set_server_delay(1.5)
+        with self.assertRaises(TimeoutError):
+            new_client.invoke_method(self.app_id, self.method_name, "")
+
+    def test_global_timeout_setting_is_honored(self):
+        previous_timeout = settings.DAPR_HTTP_TIMEOUT_SECONDS
+        settings.DAPR_HTTP_TIMEOUT_SECONDS = 1
+        new_client = DaprClient()
+        self.server.set_server_delay(1.5)
+        with self.assertRaises(TimeoutError):
+            new_client.invoke_method(self.app_id, self.method_name, "")
+
+        settings.DAPR_HTTP_TIMEOUT_SECONDS = previous_timeout
