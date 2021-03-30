@@ -379,6 +379,11 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(["bulk"], resp.headers['keyh'])
         self.assertEqual({"keya": {"keyb": "val"}}, resp._secrets)
 
+    def test_shutdown(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr.shutdown()
+        self.assertTrue(self._fake_dapr_server.shutdown_received)
+
     def test_wait_ok(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
         dapr.wait(0.1)
