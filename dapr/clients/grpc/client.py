@@ -21,6 +21,7 @@ from dapr.clients.grpc._state import StateOptions, StateItem
 from typing import Dict, Optional, Union, Sequence, List
 
 from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
@@ -809,3 +810,23 @@ class DaprGrpcClient:
                     if remaining < 0:
                         raise e
                     time.sleep(min(1, remaining))
+
+    def shutdown(self) -> DaprResponse:
+        """Shutdown the sidecar.
+
+        This will ask the sidecar to gracefully shutdown.
+
+        The example shutdown the sidecar:
+
+            from dapr.clients import DaprClient
+
+            with DaprClient() as d:
+                resp = d.shutdown()
+
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
+        """
+
+        _, call = self._stub.Shutdown.with_call(GrpcEmpty())
+
+        return DaprResponse(call.initial_metadata())

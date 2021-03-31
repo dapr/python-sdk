@@ -12,6 +12,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         api_service_v1.add_DaprServicer_to_server(self, self._server)
         self.store = {}
+        self.shutdown_received = False
 
     def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
@@ -176,3 +177,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
 
         return api_v1.GetBulkSecretResponse(data=resp)
+
+    def Shutdown(self, request, context):
+        self.shutdown_received = True
+        return empty_pb2.Empty()
