@@ -46,8 +46,6 @@ class ActorRuntimeContext:
             message_serializer(:class:`Serializer`): the serializer for actor invocation
                 request and response body.
             state_serializer(:class:`Serializer`): the seralizer for state value.
-            state_provider(:class:`StateProvider`): the provider which is the adapter used
-                for state manager.
             actor_client(:class:`DaprActorClientBase`): the actor client used for dapr runtime.
             actor_factory(Callable): the factory to create Actor object by actor_type_info.
         """
