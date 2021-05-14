@@ -81,14 +81,16 @@ class ActorRuntime:
     @classmethod
     async def dispatch(
             cls, actor_type_name: str, actor_id: str,
-            actor_method_name: str, request_body: bytes, reentrancy_id: Optional[str]=None) -> bytes:
+            actor_method_name: str, request_body: bytes,
+            reentrancy_id: Optional[str] = None) -> bytes:
         """Dispatches actor method defined in actor_type.
 
         Args:
             actor_type_name (str): the name of actor type.
             actor_id (str): Actor ID.
             actor_method_name (str): the method name that is dispatched.
-            reentrancy_id (str): reentrancy ID obtained from the dapr_reentrancy_id header if present.
+            reentrancy_id (str): reentrancy ID obtained from the dapr_reentrancy_id header
+                if present.
             request_body (bytes): the body of request that is passed to actor method arguments.
 
         Returns:

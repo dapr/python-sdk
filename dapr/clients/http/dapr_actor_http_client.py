@@ -16,6 +16,7 @@ from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
+
 class DaprActorHttpClient(DaprActorClientBase):
     """A Dapr Actor http client implementing :class:`DaprActorClientBase`"""
 

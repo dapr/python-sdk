@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from dapr.actor.runtime.reentrancy_config import ActorReentrancyConfig
 
+
 class ActorRuntimeConfig:
     """Actor runtime configuration that configures Actor behavior in
     Dapr Runtime.
@@ -21,8 +22,7 @@ class ActorRuntimeConfig:
             actor_scan_interval: Optional[timedelta] = timedelta(seconds=30),
             drain_ongoing_call_timeout: Optional[timedelta] = timedelta(minutes=1),
             drain_rebalanced_actors: Optional[bool] = True,
-            reentrancy: Optional[ActorReentrancyConfig] = None
-            ):
+            reentrancy: Optional[ActorReentrancyConfig] = None):
         """Inits :class:`ActorRuntimeConfig` to configure actors when dapr runtime starts.
 
         Args:

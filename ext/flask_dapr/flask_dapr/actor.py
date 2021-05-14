@@ -17,6 +17,7 @@ from dapr.serializers import DefaultJSONSerializer
 DEFAULT_CONTENT_TYPE = "application/json; utf-8"
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
+
 class DaprActor(object):
     def __init__(self, app=None):
         self._app = app

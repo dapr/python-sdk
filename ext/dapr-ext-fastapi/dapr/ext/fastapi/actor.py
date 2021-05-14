@@ -18,6 +18,7 @@ from dapr.serializers import DefaultJSONSerializer
 DEFAULT_CONTENT_TYPE = "application/json; utf-8"
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
+
 def _wrap_response(
         status_code: int,
         msg: Any,
