@@ -8,6 +8,7 @@ Licensed under the MIT License.
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
+from .reentrancy_config import ActorReentrancyConfig
 
 class ActorRuntimeConfig:
     """Actor runtime configuration that configures Actor behavior in
@@ -19,7 +20,9 @@ class ActorRuntimeConfig:
             actor_idle_timeout: Optional[timedelta] = timedelta(hours=1),
             actor_scan_interval: Optional[timedelta] = timedelta(seconds=30),
             drain_ongoing_call_timeout: Optional[timedelta] = timedelta(minutes=1),
-            drain_rebalanced_actors: Optional[bool] = True):
+            drain_rebalanced_actors: Optional[bool] = True,
+            reentrancy: Optional[ActorReentrancyConfig] = None
+            ):
         """Inits :class:`ActorRuntimeConfig` to configure actors when dapr runtime starts.
 
         Args:
@@ -32,12 +35,15 @@ class ActorRuntimeConfig:
                 method to finish. If there is no current actor method call, this is ignored.
             drain_rebalanced_actors (bool): If true, Dapr will wait for drain_ongoing_call_timeout
                 to allow a current actor call to complete before trying to deactivate an actor.
+            reentrancy (ActorReentrancyConfig): Configure the reentrancy behavior for an actor.
+                If not provided, reentrancy is diabled.
         """
         self._entities: List[str] = []
         self._actor_idle_timeout = actor_idle_timeout
         self._actor_scan_interval = actor_scan_interval
         self._drain_ongoing_call_timeout = drain_ongoing_call_timeout
         self._drain_rebalanced_actors = drain_rebalanced_actors
+        self._reentrancy = reentrancy
 
     def update_entities(self, entities: List[str]) -> None:
         """Updates actor types in entities property.
@@ -49,10 +55,16 @@ class ActorRuntimeConfig:
 
     def as_dict(self) -> Dict[str, Any]:
         """Returns ActorRuntimeConfig as a dict."""
-        return {
+
+        configDict = {
             'entities': self._entities,
             'actorIdleTimeout': self._actor_idle_timeout,
             'actorScanInterval': self._actor_scan_interval,
             'drainOngoingCallTimeout': self._drain_ongoing_call_timeout,
             'drainRebalancedActors': self._drain_rebalanced_actors,
         }
+
+        if self._reentrancy:
+            configDict['reentrancy'] = self._reentrancy.as_dict()
+
+        return configDict
