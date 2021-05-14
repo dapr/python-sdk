@@ -25,9 +25,9 @@ class ActorReentrancyConfig:
                 to an actor, further requests are denied.
         """
 
-        self.enabled = enabled
-        self.methods = methods
-        self.limit = limit
+        self._enabled = enabled
+        self._methods = methods
+        self._limit = limit
 
     def as_dict(self) -> Dict[str, Any]:
         """Returns ActorReentrancyConfig as a dict."""

@@ -56,7 +56,7 @@ class ActorRuntimeConfig:
     def as_dict(self) -> Dict[str, Any]:
         """Returns ActorRuntimeConfig as a dict."""
 
-        configDict = {
+        configDict: Dict[str, Any] = {
             'entities': self._entities,
             'actorIdleTimeout': self._actor_idle_timeout,
             'actorScanInterval': self._actor_scan_interval,
@@ -65,6 +65,6 @@ class ActorRuntimeConfig:
         }
 
         if self._reentrancy:
-            configDict['reentrancy'] = self._reentrancy.as_dict()
+            configDict.update({'reentrancy': self._reentrancy.as_dict()})
 
         return configDict

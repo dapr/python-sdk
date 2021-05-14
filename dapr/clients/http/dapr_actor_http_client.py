@@ -5,7 +5,7 @@ Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
-from typing import Callable, Dict, Optional, TYPE_CHECKING
+from typing import Callable, Dict, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
@@ -51,7 +51,8 @@ class DaprActorHttpClient(DaprActorClientBase):
         url = f'{self._get_base_url(actor_type, actor_id)}/method/{method}'
 
         reentrancy_id = reentrancy_ctx.get()
-        headers = {DAPR_REENTRANCY_ID_HEADER: reentrancy_id} if reentrancy_id else {}
+        headers: Dict[str, Union[bytes, str]] = (
+            {DAPR_REENTRANCY_ID_HEADER: reentrancy_id} if reentrancy_id else {})
 
         body, r = await self._client.send_bytes(method='POST', url=url, data=data, headers=headers)
 
