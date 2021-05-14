@@ -8,7 +8,7 @@ Licensed under the MIT License.
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
-from dapr.actor.runtime.reentrancy_config import ReentrancyConfig
+from dapr.actor.runtime.reentrancy_config import ActorReentrancyConfig
 
 class ActorRuntimeConfig:
     """Actor runtime configuration that configures Actor behavior in
