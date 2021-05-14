@@ -89,7 +89,7 @@ class DaprActor(object):
             req_body = request.stream.read()
             reentrancy_id = request.headers.get(DAPR_REENTRANCY_ID_HEADER)
             result = asyncio.run(ActorRuntime.dispatch(
-                actor_type_name, actor_id, method_name, reentrancy_id, req_body))
+                actor_type_name, actor_id, method_name, req_body, reentrancy_id))
         except DaprInternalError as ex:
             return wrap_response(500, ex.as_dict())
         except Exception as ex:

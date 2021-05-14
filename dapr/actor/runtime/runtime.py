@@ -81,7 +81,7 @@ class ActorRuntime:
     @classmethod
     async def dispatch(
             cls, actor_type_name: str, actor_id: str,
-            actor_method_name: str, reentrancy_id: str, request_body: bytes) -> bytes:
+            actor_method_name: str, request_body: bytes, reentrancy_id: Optional[str]=None) -> bytes:
         """Dispatches actor method defined in actor_type.
 
         Args:
