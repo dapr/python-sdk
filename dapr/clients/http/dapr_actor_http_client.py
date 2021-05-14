@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.base import DaprActorClientBase
-from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
@@ -50,6 +49,8 @@ class DaprActorHttpClient(DaprActorClientBase):
         """
         url = f'{self._get_base_url(actor_type, actor_id)}/method/{method}'
 
+        # import to avoid circular dependency
+        from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
         reentrancy_id = reentrancy_ctx.get()
         headers: Dict[str, Union[bytes, str]] = (
             {DAPR_REENTRANCY_ID_HEADER: reentrancy_id} if reentrancy_id else {})
