@@ -19,6 +19,8 @@ from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
 from dapr.conf import settings
 
+from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+
 
 class ActorRuntime:
     """The class that creates instances of :class:`Actor` and
@@ -79,13 +81,14 @@ class ActorRuntime:
     @classmethod
     async def dispatch(
             cls, actor_type_name: str, actor_id: str,
-            actor_method_name: str, request_body: bytes) -> bytes:
+            actor_method_name: str, reentrancy_id: str, request_body: bytes) -> bytes:
         """Dispatches actor method defined in actor_type.
 
         Args:
             actor_type_name (str): the name of actor type.
             actor_id (str): Actor ID.
             actor_method_name (str): the method name that is dispatched.
+            reentrancy_id (str): reentrancy ID obtained from the dapr_reentrancy_id header if present.
             request_body (bytes): the body of request that is passed to actor method arguments.
 
         Returns:
@@ -94,6 +97,7 @@ class ActorRuntime:
         Raises:
             ValueError: `actor_type_name` actor type is not registered.
         """
+        reentrancy_ctx.set(reentrancy_id)
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
