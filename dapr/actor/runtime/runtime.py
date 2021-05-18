@@ -89,9 +89,9 @@ class ActorRuntime:
             actor_type_name (str): the name of actor type.
             actor_id (str): Actor ID.
             actor_method_name (str): the method name that is dispatched.
+            request_body (bytes): the body of request that is passed to actor method arguments.
             reentrancy_id (str): reentrancy ID obtained from the dapr_reentrancy_id header
                 if present.
-            request_body (bytes): the body of request that is passed to actor method arguments.
 
         Returns:
             bytes: serialized response data.

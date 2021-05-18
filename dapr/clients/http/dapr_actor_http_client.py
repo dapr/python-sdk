@@ -55,7 +55,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         headers: Dict[str, Union[bytes, str]] = (
             {DAPR_REENTRANCY_ID_HEADER: reentrancy_id} if reentrancy_id else {})
 
-        body, r = await self._client.send_bytes(method='POST', url=url, data=data, headers=headers)
+        body, _ = await self._client.send_bytes(method='POST', url=url, data=data, headers=headers)
 
         return body
 
@@ -85,7 +85,7 @@ class DaprActorHttpClient(DaprActorClientBase):
             bytes: the value of the state.
         """
         url = f'{self._get_base_url(actor_type, actor_id)}/state/{name}'
-        body, r = await self._client.send_bytes(method='GET', url=url, data=None)
+        body, _ = await self._client.send_bytes(method='GET', url=url, data=None)
         return body
 
     async def register_reminder(
