@@ -5,11 +5,10 @@ Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
-from dapr.actor.runtime.reentrancy_config import ActorReentrancyConfig
 import unittest
 
 from datetime import timedelta
-from dapr.actor.runtime.config import ActorRuntimeConfig
+from dapr.actor.runtime.config import ActorRuntimeConfig, ActorReentrancyConfig
 
 
 class ActorRuntimeConfigTests(unittest.TestCase):
