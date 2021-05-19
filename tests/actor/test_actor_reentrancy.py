@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
+from ext.flask_dapr import flask_dapr
 import unittest
 import asyncio
 
@@ -126,3 +127,69 @@ class ActorRuntimeTests(unittest.TestCase):
         # Ensure test-id is deactivated
         with self.assertRaises(ValueError):
             _run(ActorRuntime.deactivate(FakeReentrantActor.__name__, 'test-id'))
+
+    def test_header_passthrough_reentrancy_disabled(self):
+        config = ActorRuntimeConfig(reentrancy=None)
+        ActorRuntime.set_actor_config(config)
+        _run(ActorRuntime.register_actor(FakeReentrantActor))
+        _run(ActorRuntime.register_actor(FakeSlowReentrantActor))
+
+        request_body = self._serializer.serialize({
+            "message": "Normal",
+        })
+
+        async def expected_return_value():
+            return ["expected", "None"]
+
+        reentrancy_id = "f6319f23-dc0a-4880-90d9-87b23c19c20a"
+        actor = FakeSlowReentrantActor.__name__
+        method = 'ReentrantMethod'
+
+        with mock.patch('dapr.clients.http.client.DaprHttpClient.send_bytes') as mocked:
+
+            mocked.return_value = expected_return_value()
+            _run(ActorRuntime.dispatch(
+                FakeReentrantActor.__name__, 'test-id', 'ReentrantMethodWithPassthrough',
+                request_body, reentrancy_id=reentrancy_id))
+
+            mocked.assert_called_with(
+                method="POST",
+                url=f'http://127.0.0.1:3500/v1.0/actors/{actor}/test-id/method/{method}',
+                data=None,
+                headers={})
+
+        _run(ActorRuntime.deactivate(FakeReentrantActor.__name__, 'test-id'))
+
+        # Ensure test-id is deactivated
+        with self.assertRaises(ValueError):
+            _run(ActorRuntime.deactivate(FakeReentrantActor.__name__, 'test-id'))
+
+    def test_parse_incoming_reentrancy_header(self):
+        _run(ActorRuntime.register_actor(FakeReentrantActor))
+        from ext.flask_dapr.flask_dapr import DaprActor
+        from flask import Flask
+
+        app = Flask(f'{FakeReentrantActor.__name__}Service')
+        DaprActor(app)
+
+        reentrancy_id = "b1653a2f-fe54-4514-8197-98b52d156454"
+        actor_type_name = FakeReentrantActor.__name__
+        actor_id = 'test-id'
+        method_name = 'ReentrantMethod'
+
+        request_body = self._serializer.serialize({
+            "message": "Normal",
+        })
+
+        relativeUrl = f'/actors/{actor_type_name}/{actor_id}/method/{method_name}'
+
+        with mock.patch('dapr.actor.runtime.runtime.ActorRuntime.dispatch') as mocked:
+            client = app.test_client()
+            client.put(
+                relativeUrl,
+                headers={
+                    flask_dapr.actor.DAPR_REENTRANCY_ID_HEADER: reentrancy_id},
+                method="PUT", data=request_body)
+            mocked.return_value = None
+            mocked.assert_called_with(
+                actor_type_name, actor_id, method_name, request_body, reentrancy_id)

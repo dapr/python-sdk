@@ -99,7 +99,8 @@ class ActorRuntime:
         Raises:
             ValueError: `actor_type_name` actor type is not registered.
         """
-        reentrancy_ctx.set(reentrancy_id)
+        if cls._actor_config._reentrancy and cls._actor_config._reentrancy._enabled:
+            reentrancy_ctx.set(reentrancy_id)
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
