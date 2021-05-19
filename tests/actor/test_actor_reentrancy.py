@@ -5,7 +5,6 @@ Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
-from ext.flask_dapr import flask_dapr
 import unittest
 import asyncio
 
@@ -165,11 +164,11 @@ class ActorRuntimeTests(unittest.TestCase):
             _run(ActorRuntime.deactivate(FakeReentrantActor.__name__, 'test-id'))
 
     def test_parse_incoming_reentrancy_header_flask(self):
-        from ext.flask_dapr.flask_dapr import DaprActor
+        from ext.flask_dapr import flask_dapr
         from flask import Flask
 
         app = Flask(f'{FakeReentrantActor.__name__}Service')
-        DaprActor(app)
+        flask_dapr.DaprActor(app)
 
         reentrancy_id = "b1653a2f-fe54-4514-8197-98b52d156454"
         actor_type_name = FakeReentrantActor.__name__
@@ -195,11 +194,11 @@ class ActorRuntimeTests(unittest.TestCase):
 
     def test_parse_incoming_reentrancy_header_fastapi(self):
         from fastapi import FastAPI
-        from dapr.ext.fastapi import DaprActor
         from fastapi.testclient import TestClient
+        from dapr.ext import fastapi
 
         app = FastAPI(title=f'{FakeReentrantActor.__name__}Service')
-        DaprActor(app)
+        fastapi.DaprActor(app)
 
         reentrancy_id = "b1653a2f-fe54-4514-8197-98b52d156454"
         actor_type_name = FakeReentrantActor.__name__
@@ -217,7 +216,7 @@ class ActorRuntimeTests(unittest.TestCase):
             client.put(
                 relativeUrl,
                 headers={
-                    flask_dapr.actor.DAPR_REENTRANCY_ID_HEADER: reentrancy_id},
+                    fastapi.actor.DAPR_REENTRANCY_ID_HEADER: reentrancy_id},
                 data=request_body)
             mocked.return_value = None
             mocked.assert_called_with(

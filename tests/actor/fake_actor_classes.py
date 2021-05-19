@@ -5,7 +5,6 @@ Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 from dapr.serializers.json import DefaultJSONSerializer
-import logging
 import asyncio
 
 from datetime import timedelta
@@ -154,11 +153,9 @@ class FakeReentrantActor(Actor, FakeActorCls1Interface, ReentrantActorInterface)
         super(FakeReentrantActor, self).__init__(ctx, actor_id)
 
     async def reentrant_method(self, data: object) -> str:
-        logging.warn("Reentrant FAKE NORMAL")
         return reentrancy_ctx.get()
 
     async def reentrant_pass_through_method(self, arg):
-        logging.warn("Reentrant pass through FAKE NORMAL")
         from dapr.actor.client import proxy
         await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
             FakeSlowReentrantActor.__name__, 'test-id', 'ReentrantMethod')
@@ -178,12 +175,10 @@ class FakeSlowReentrantActor(Actor, FakeActorCls2Interface, ReentrantActorInterf
         super(FakeSlowReentrantActor, self).__init__(ctx, actor_id)
 
     async def reentrant_method(self, data: object) -> str:
-        logging.warn("Reentrant FAKE SLOW")
         await asyncio.sleep(1)
         return reentrancy_ctx.get()
 
     async def reentrant_pass_through_method(self, arg):
-        logging.warn("Reentrant pass through FAKE SLOW")
         from dapr.actor.client import proxy
 
         await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
