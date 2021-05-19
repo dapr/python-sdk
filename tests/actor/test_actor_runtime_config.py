@@ -36,6 +36,7 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         self.assertEqual(config._entities, [])
         self.assertEqual(config.as_dict()['reentrancy'], reentrancyConfig.as_dict())
         self.assertEqual(config.as_dict()['reentrancy']['enabled'], True)
+        self.assertEqual(config.as_dict()['reentrancy']['maxStackDepth'], 32)
 
     def test_update_entities(self):
         config = ActorRuntimeConfig()
