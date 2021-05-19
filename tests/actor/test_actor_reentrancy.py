@@ -164,8 +164,7 @@ class ActorRuntimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _run(ActorRuntime.deactivate(FakeReentrantActor.__name__, 'test-id'))
 
-    def test_parse_incoming_reentrancy_header(self):
-        _run(ActorRuntime.register_actor(FakeReentrantActor))
+    def test_parse_incoming_reentrancy_header_flask(self):
         from ext.flask_dapr.flask_dapr import DaprActor
         from flask import Flask
 
@@ -189,7 +188,37 @@ class ActorRuntimeTests(unittest.TestCase):
                 relativeUrl,
                 headers={
                     flask_dapr.actor.DAPR_REENTRANCY_ID_HEADER: reentrancy_id},
-                method="PUT", data=request_body)
+                data=request_body)
+            mocked.return_value = None
+            mocked.assert_called_with(
+                actor_type_name, actor_id, method_name, request_body, reentrancy_id)
+
+    def test_parse_incoming_reentrancy_header_fastapi(self):
+        from fastapi import FastAPI
+        from dapr.ext.fastapi import DaprActor
+        from fastapi.testclient import TestClient
+
+        app = FastAPI(title=f'{FakeReentrantActor.__name__}Service')
+        DaprActor(app)
+
+        reentrancy_id = "b1653a2f-fe54-4514-8197-98b52d156454"
+        actor_type_name = FakeReentrantActor.__name__
+        actor_id = 'test-id'
+        method_name = 'ReentrantMethod'
+
+        request_body = self._serializer.serialize({
+            "message": "Normal",
+        })
+
+        relativeUrl = f'/actors/{actor_type_name}/{actor_id}/method/{method_name}'
+
+        with mock.patch('dapr.actor.runtime.runtime.ActorRuntime.dispatch') as mocked:
+            client = TestClient(app)
+            client.put(
+                relativeUrl,
+                headers={
+                    flask_dapr.actor.DAPR_REENTRANCY_ID_HEADER: reentrancy_id},
+                data=request_body)
             mocked.return_value = None
             mocked.assert_called_with(
                 actor_type_name, actor_id, method_name, request_body, reentrancy_id)
