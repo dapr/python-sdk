@@ -172,7 +172,6 @@ expected_stdout_lines:
   - '== APP == SLEEP'
   - '== APP == text/plain'
   - '== APP == SAY'
-  - "✅  Exited Dapr successfully"
   - "✅  Exited App successfully"
 expected_stderr_lines:
 background: true
@@ -261,7 +260,6 @@ Shutdown running dapr apps with Ctl-C or simply run the following:
 
 <!-- STEP
 expected_stdout_lines: 
-  - '✅  app stopped successfully: invoke-caller'
   - '✅  app stopped successfully: invoke-receiver'
 expected_stderr_lines:
 name: Shutdown dapr

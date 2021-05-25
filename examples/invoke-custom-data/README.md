@@ -52,6 +52,7 @@ expected_stdout_lines:
   - '== APP == isSuccess: true'
   - '== APP == code: 200'
   - '== APP == message: "Hello World - Success!"'
+  - '✅  Exited App successfully'
 background: true
 sleep: 5
 -->
@@ -82,7 +83,6 @@ Expected output from receiver:
 
 <!-- STEP
 expected_stdout_lines: 
-  - '✅  app stopped successfully: invoke-caller'
   - '✅  app stopped successfully: invoke-receiver'
 expected_stderr_lines:
 name: Shutdown dapr
