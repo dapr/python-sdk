@@ -151,7 +151,6 @@ expected_stdout_lines:
 6. Deploy actor service and clients
 
    ```
-   cd deploy
    kubectl apply -f ./deploy/demo_actor_service.yml
    kubectl apply -f ./deploy/demo_actor_client.yml
    ```
