@@ -33,7 +33,11 @@ The Python SDK allows you to interface with all of the [Dapr building blocks]({{
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
-    resp = d.invoke_service(id='service-to-invoke', method='method-to-invoke', data='{"message":"Hello World"}')
+    #invoke a 'GET' method
+    resp = d.invoke_method('service-to-invoke', 'method-to-invoke', data='{"message":"Hello World"}')
+
+    #invoke a 'POST' method
+    resp = d.invoke_method('service-to-invoke', 'method-to-invoke', data='{"id":"100", "FirstName":"Value", "LastName":"Value"}', http_verb='post')
 ```
 
 - For a full guide on service invocation visit [How-To: Invoke a service]({{< ref howto-invoke-discover-services.md >}}).
@@ -58,13 +62,31 @@ with DaprClient() as d:
 - For a full list of state operations visit [How-To: Get & save state]({{< ref howto-get-save-state.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store) for code samples and instructions to try out state management
 
-### Publish messages
+### Publish & subscribe to messages
+
+##### Publish messages
 
 ```python
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
     resp = d.publish_event(pubsub_name='pubsub', topic='TOPIC_A', data='{"message":"Hello World"}')
+```
+
+##### Subscribe to messages
+
+```python
+from cloudevents.sdk.event import v1
+from dapr.ext.grpc import App
+import json
+
+app = App()
+
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
+def mytopic(event: v1.Event) -> None:
+    data = json.loads(event.Data())
+    print(f'Subscriber received: id={data["id"]}, message="{data["message"]}", content_type="{event.content_type}"',flush=True)
+
 ```
 
 - For a full list of state operations visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
