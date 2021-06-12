@@ -37,7 +37,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on service invocation visit [How-To: Invoke a service]({{< ref howto-invoke-discover-services.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/invoke-simple) for code samples and instructions to try out service invocation
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-simple) for code samples and instructions to try out service invocation
 
 ### Save & get application state
 
@@ -56,7 +56,7 @@ with DaprClient() as d:
 ```
 
 - For a full list of state operations visit [How-To: Get & save state]({{< ref howto-get-save-state.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/state_store) for code samples and instructions to try out state management
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store) for code samples and instructions to try out state management
 
 ### Publish messages
 
@@ -68,7 +68,7 @@ with DaprClient() as d:
 ```
 
 - For a full list of state operations visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/pubsub-simple) for code samples and instructions to try out pub/sub
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/pubsub-simple) for code samples and instructions to try out pub/sub
 
 ### Interact with output bindings
 
@@ -80,7 +80,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on output bindings visit [How-To: Use bindings]({{< ref howto-bindings.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/invoke-binding) for code samples and instructions to try out output bindings
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-binding) for code samples and instructions to try out output bindings
 
 ### Retrieve secrets
 
@@ -92,7 +92,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on secrets visit [How-To: Retrieve secrets]({{< ref howto-secrets.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples/secret_store) for code samples and instructions to try out retrieving secrets
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/secret_store) for code samples and instructions to try out retrieving secrets
 
 ## Related links
-- [Python SDK examples](https://github.com/dapr/python-sdk/tree/daprdocs-setup/examples)
+- [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples)
