@@ -12,7 +12,7 @@ with DaprClient() as d:
             'message': 'hello world'
         }
 
-        print(req_data, flush=True)
+        print(f'Sending message id: {req_data["id"]}, message "{req_data["message"]}"', flush=True)
 
         # Create a typed message with content type and body
         resp = d.invoke_binding('kafkaBinding', 'create', json.dumps(req_data))

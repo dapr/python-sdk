@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -15,7 +15,7 @@ class ActorTimerData:
     """The class that holds actor timer data.
 
     Attributes:
-        name: the name of Actor timer.
+        timer_name: the name of Actor timer.
         state: the state object passed to timer callback.
         due_time: the amount of time to delay before the first timer trigger.
         period: the time interval between reminder invocations after
@@ -24,13 +24,13 @@ class ActorTimerData:
     """
 
     def __init__(
-            self, name: str,
+            self, timer_name: str,
             callback: TIMER_CALLBACK, state: Any,
             due_time: timedelta, period: timedelta):
         """Create new :class:`ActorTimerData` instance.
 
         Args:
-            name (str): the name of Actor timer.
+            timer_name (str): the name of Actor timer.
             callback (TIMER_CALLBACK): timer callback when timer is triggered.
             state (Any): the state object passed to timer callback.
             due_time (datetime.timedelta): the amount of time to delay
@@ -38,16 +38,16 @@ class ActorTimerData:
             period (datetime.timedelta): the time interval between reminder
                 invocations after the first timer trigger.
         """
-        self._name = name
+        self._timer_name = timer_name
         self._callback = callback.__name__
         self._state = state
         self._due_time = due_time
         self._period = period
 
     @property
-    def name(self) -> str:
+    def timer_name(self) -> str:
         """Gets the name of the actor timer."""
-        return self._name
+        return self._timer_name
 
     @property
     def state(self) -> Any:

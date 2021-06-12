@@ -16,8 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHON_VER: 3.7
-      TWINE_USERNAME: ${{ secrets.PYPI_UPLOAD_USER }}
-      TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      TWINE_USERNAME: "__token__"
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ env.PYTHON_VER }}
@@ -41,23 +40,31 @@ jobs:
       uses: codecov/codecov-action@v1
     - name: Build and publish Dapr Python SDK
       if: github.event_name != 'pull_request'
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish Dapr Flask Extension
       if: github.event_name != 'pull_request'
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/flask_dapr
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-grpc
       if: github.event_name != 'pull_request'
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-grpc
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-fastapi
       if: github.event_name != 'pull_request'
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-fastapi
         python setup.py sdist bdist_wheel

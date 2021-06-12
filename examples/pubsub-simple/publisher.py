@@ -1,5 +1,5 @@
 # ------------------------------------------------------------
-# Copyright (c) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation and Dapr Contributors.
 # Licensed under the MIT License.
 # ------------------------------------------------------------
 
@@ -20,8 +20,9 @@ with DaprClient() as d:
         # Create a typed message with content type and body
         resp = d.publish_event(
             pubsub_name='pubsub',
-            topic='TOPIC_A',
+            topic_name='TOPIC_A',
             data=json.dumps(req_data),
+            data_content_type='application/json',
         )
 
         # Print the request

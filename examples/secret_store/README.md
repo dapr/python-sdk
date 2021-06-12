@@ -13,6 +13,7 @@ This example also illustrates the use of access control for secrets.
 
 ## Install Dapr python-SDK
 
+<!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 ```bash
 pip3 install dapr dapr-ext-grpc
 ```
@@ -26,14 +27,30 @@ cd examples/secret_store
 
 To run this example, use the following command:
 
+<!-- STEP
+name: Run secret store example
+expected_stdout_lines:
+  - "== APP == Got!"
+  - "== APP == {'secretKey': 'secretValue'}"
+  - "== APP == Got!"
+  - "== APP == [('random', {'random': 'randomValue'}), ('secretKey', {'secretKey': 'secretValue'})]"
+  - "== APP == Got!"
+  - "== APP == {'random': 'randomValue'}"
+timeout_seconds: 2
+-->
+
 ```bash
 dapr run --app-id=secretsapp --app-protocol grpc --components-path components/ python3 example.py
 ```
+
+<!-- END_STEP -->
 
 You should be able to see the following output:
 ```
 == APP == Got!
 == APP == {'secretKey': 'secretValue'}
+== APP == Got!
+== APP == [('random', {'random': 'randomValue'}), ('secretKey', {'secretKey': 'secretValue'})]
 == APP == Got!
 == APP == {'random': 'randomValue'}
 ```
@@ -58,15 +75,31 @@ key `secretKey` is allowed to be accessed from the store.
 
 To see this run the same `example.py` app with the following command: 
 
+<!-- STEP
+name: Run secret store example with access config
+expected_stdout_lines:
+  - "== APP == Got!"
+  - "== APP == {'secretKey': 'secretValue'}"
+  - "== APP == Got!"
+  - "== APP == [('secretKey', {'secretKey': 'secretValue'})]"
+  - "== APP == Got expected error for accessing random key"
+timeout_seconds: 2
+-->
+
 ```bash
 dapr run --app-id=secretsapp --app-protocol grpc --config config.yaml --components-path components/ python3 example.py
 ```
+
+<!-- END_STEP -->
+
 The above command overrides the default configuration file with the `--config` flag.
 
 The output should be as follows:
 ```
 == APP == Got!
 == APP == {'secretKey': 'secretValue'}
+== APP == Got!
+== APP == [('secretKey', {'secretKey': 'secretValue'})]
 == APP == Got expected error for accessing random key
 ```
 

@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
 import unittest
 
 from cloudevents.sdk.event import v1
-from dapr.ext.grpc import App, InvokeServiceRequest, BindingRequest
+from dapr.ext.grpc import App, InvokeMethodRequest, BindingRequest
 
 
 class AppTests(unittest.TestCase):
@@ -17,11 +17,11 @@ class AppTests(unittest.TestCase):
 
     def test_method_decorator(self):
         @self._app.method('Method1')
-        def method1(request: InvokeServiceRequest):
+        def method1(request: InvokeMethodRequest):
             pass
 
         @self._app.method('Method2')
-        def method2(request: InvokeServiceRequest):
+        def method2(request: InvokeMethodRequest):
             pass
 
         method_map = self._app._servicer._invoke_method_map

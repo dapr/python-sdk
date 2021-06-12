@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -15,7 +15,7 @@ class ActorReminderData:
     """The class that holds actor reminder data.
 
     Attrtibutes:
-        name: the name of Actor reminder.
+        reminder_name: the name of Actor reminder.
         state: the state data data passed to receive_reminder callback.
         due_time: the amount of time to delay before invoking the reminder
             for the first time.
@@ -24,12 +24,12 @@ class ActorReminderData:
     """
 
     def __init__(
-            self, name: str, state: Optional[bytes],
+            self, reminder_name: str, state: Optional[bytes],
             due_time: timedelta, period: timedelta):
         """Creates new :class:`ActorReminderData` instance.
 
         Args:
-            name (str): the name of Actor reminder.
+            reminder_name (str): the name of Actor reminder.
             state (bytes, str): the state data passed to
                 receive_reminder callback.
             due_time (datetime.timedelta): the amount of time to delay before
@@ -37,7 +37,7 @@ class ActorReminderData:
             period (datetime.timedelta): the time interval between reminder
                 invocations after the first invocation.
         """
-        self._name = name
+        self._reminder_name = reminder_name
         self._due_time = due_time
         self._period = period
 
@@ -47,9 +47,9 @@ class ActorReminderData:
         self._state = state
 
     @property
-    def name(self) -> str:
+    def reminder_name(self) -> str:
         """Gets the name of Actor Reminder."""
-        return self._name
+        return self._reminder_name
 
     @property
     def state(self) -> bytes:
@@ -72,7 +72,7 @@ class ActorReminderData:
         if self._state is not None:
             encoded_state = base64.b64encode(self._state)
         return {
-            'name': self._name,
+            'reminderName': self._reminder_name,
             'dueTime': self._due_time,
             'period': self._due_time,
             'data': encoded_state.decode("utf-8"),

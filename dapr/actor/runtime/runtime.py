@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -17,6 +17,7 @@ from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
+from dapr.conf import settings
 
 
 class ActorRuntime:
@@ -33,7 +34,8 @@ class ActorRuntime:
     async def register_actor(
             cls, actor: Type[Actor],
             message_serializer: Serializer = DefaultJSONSerializer(),
-            state_serializer: Serializer = DefaultJSONSerializer()) -> None:
+            state_serializer: Serializer = DefaultJSONSerializer(),
+            http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS) -> None:
         """Registers an :class:`Actor` object with the runtime.
 
         Args:
@@ -41,10 +43,11 @@ class ActorRuntime:
             message_serializer (:class:`Serializer`): A serializer that serializes message
                 between actors.
             state_serializer (:class:`Serializer`): Serializer that serializes state values.
+            http_timeout_seconds (:int:): a configurable timeout value
         """
         type_info = ActorTypeInformation.create(actor)
         # TODO: We will allow to use gRPC client later.
-        actor_client = DaprActorHttpClient(message_serializer)
+        actor_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
         ctx = ActorRuntimeContext(type_info, message_serializer, state_serializer, actor_client)
 
         # Create an ActorManager, override existing entry if registered again.

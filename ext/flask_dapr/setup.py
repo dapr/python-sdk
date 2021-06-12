@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -10,8 +10,10 @@ import os
 from setuptools import setup
 
 # Load version in dapr package.
-exec(open('flask_dapr/version.py').read())
-version = __version__
+version_info = {}
+with open('flask_dapr/version.py') as fp:
+    exec(fp.read(), version_info)
+__version__ = version_info['__version__']
 
 
 def is_release():
@@ -19,7 +21,8 @@ def is_release():
 
 
 name = 'flask-dapr'
-description = 'The official release of Dapr Python SDK Flask Extension'
+version = __version__
+description = 'The official release of Dapr Python SDK Flask Extension.'
 long_description = '''
 This is the Flask extension for Dapr.
 

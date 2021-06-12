@@ -11,7 +11,7 @@ with DaprClient() as d:
 
     while True:
         # Create a typed message with content type and body
-        resp = d.invoke_service(
+        resp = d.invoke_method(
             'invoke-receiver',
             'my-method',
             data=json.dumps(req_data),

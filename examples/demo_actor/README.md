@@ -16,43 +16,97 @@ This document describes how to create an Actor(DemoActor) and invoke its methods
 
 You can install dapr SDK package using pip command:
 
-```sh
-pip3 install -r ./demo_actor/requirements.txt
-```
-
-Or, you can use the current repo:
+<!-- STEP 
+name: Install requirements
+-->
 
 ```sh
-cd <repo root>
-pip3 install -r ./dev-requirement.txt
-export PYTHONPATH=`pwd`
+pip3 install -r demo_actor/requirements.txt
 ```
+
+<!-- END_STEP -->
 
 ## Run in self-hosted mode
 
+<!-- STEP
+name: Actor Service
+background: true
+sleep: 5
+expected_stdout_lines:
+  - '== APP == Activate DemoActor actor!'
+  - '== APP == has_value: False'
+  - '== APP == has_value: False'
+  - "== APP == set_my_data: {'data': 'new_data'}"
+  - '== APP == has_value: True'
+  - '== APP == set reminder to True'
+  - '== APP == set reminder is done'
+  - '== APP == set_timer to True'
+  - '== APP == set_timer is done'
+  - "== APP == receive_reminder is called - demo_reminder reminder - b'reminder_state'"
+-->
+
 1. Run Demo Actor service in new terminal window
 
+
    ```bash
-   $ cd ./demo_actor
-   $ dapr run --app-id demo-actor --app-port 3000 -- uvicorn --port 3000 demo_actor_service:app
+   cd demo_actor
+   dapr run --app-id demo-actor --app-port 3000 -- uvicorn --port 3000 demo_actor_service:app
+   ```
+
+   Expected output:
+   ```
    ...
    == APP == Activate DemoActor actor!
-   == APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "POST /actors/DemoActor/1 HTTP/1.1" 200 -
-   == APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 -
-   == APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 -
-   == APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/SetMyData HTTP/1.1" 200 -
-   == APP == 127.0.0.1 - - [01/Mar/2020 18:50:27] "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 -
+   == APP == has_value: False
+   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
+   == APP == has_value: False
+   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
+   == APP == set_my_data: {'data': 'new_data'}
+   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetMyData HTTP/1.1" 200 OK
+   == APP == has_value: True
+   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
+   == APP == set reminder to True
+   == APP == set reminder is done
+   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetReminder HTTP/1.1" 200 OK
+   == APP == set_timer to True
+   == APP == set_timer is done
+   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetTimer HTTP/1.1" 200 OK
+   == APP == receive_reminder is called - demo_reminder reminder - b'reminder_state'
    ...
    ```
 
+<!-- END_STEP -->
+
+<!-- STEP
+name: Actor Client
+background: true
+expected_stdout_lines:
+  - '== APP == call actor method via proxy.invoke_method()'
+  - "== APP == b'null'"
+  - '== APP == call actor method using rpc style'
+  - '== APP == None'
+  - '== APP == call SetMyData actor method to save the state'
+  - '== APP == call GetMyData actor method to get the state'
+  - '== APP == Register reminder'
+  - '== APP == Register timer'
+  - '== APP == waiting for 30 seconds'
+  - '== APP == stop reminder'
+  - '== APP == stop timer'
+-->
+
 2. Run Demo client in new terminal window
 
+
    ```bash
-   $ cd ./demo_actor
    # Run actor client
-   $ dapr run --app-id demo-client python3 demo_actor_client.py
+   cd demo_actor
+   dapr run --app-id demo-client python3 demo_actor_client.py
+   ```
+
+   Expected output:
+   ```
    ...
-   == APP == call actor method via proxy.invoke()
+   == APP == call actor method via proxy.invoke_method()
    == APP == b'null'
    == APP == call actor method using rpc style
    == APP == None
@@ -61,8 +115,12 @@ export PYTHONPATH=`pwd`
    == APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 11, 13, 0, 38, 36, 163000, tzinfo=tzutc())}
    == APP == Register reminder
    == APP == Register timer
-   == APP == waiting for 30 seconds...
+   == APP == waiting for 30 seconds
+   == APP == stop reminder
+   == APP == stop timer
    ```
+
+<!-- END_STEP -->
 
 ## Run DemoActor on Kubernetes
 

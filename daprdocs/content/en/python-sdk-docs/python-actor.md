@@ -33,8 +33,8 @@ class DemoActorInterface(ActorInterface):
 An actor service hosts the virtual actor. It is implemented a class that derives from the base type `Actor` and implements the interfaces defined in the actor interface.
 
 Actors can be created using one of the Dapr actor extensions:
-   - [FastAPI actor extension]({{< ref python-flask.md >}})
-   - [Flask actor extension]({{< ref python-fastapi.md >}})
+   - [FastAPI actor extension]({{< ref python-fastapi.md >}})
+   - [Flask actor extension]({{< ref python-flask.md >}})
 
 ## Actor client
 

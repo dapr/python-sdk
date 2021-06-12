@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -13,6 +13,7 @@ from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_utils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 from dapr.serializers import Serializer, DefaultJSONSerializer
+from dapr.conf import settings
 
 # Actor factory Callable type hint.
 ACTOR_FACTORY_CALLBACK = Callable[[ActorInterface, str, str], 'ActorProxy']
@@ -34,9 +35,12 @@ class ActorProxyFactory(ActorFactoryBase):
     :class:`DaprActorHttpClient` connecting to Dapr runtime.
     """
 
-    def __init__(self, message_serializer=DefaultJSONSerializer()):
+    def __init__(
+            self,
+            message_serializer=DefaultJSONSerializer(),
+            http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS):
         # TODO: support serializer for state store later
-        self._dapr_client = DaprActorHttpClient(message_serializer)
+        self._dapr_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
         self._message_serializer = message_serializer
 
     def create(
@@ -66,7 +70,7 @@ class CallableProxy:
             else:
                 bytes_data = self._message_serializer.serialize(args[0])
 
-        rtnval = await self._proxy.invoke(self._attr_call_type['actor_method'], bytes_data)
+        rtnval = await self._proxy.invoke_method(self._attr_call_type['actor_method'], bytes_data)
 
         return self._message_serializer.deserialize(rtnval, self._attr_call_type['return_types'])
 
@@ -127,7 +131,7 @@ class ActorProxy:
         factory = cls._default_proxy_factory if not actor_proxy_factory else actor_proxy_factory
         return factory.create(actor_type, actor_id, actor_interface)
 
-    async def invoke(self, method: str, raw_body: Optional[bytes] = None) -> bytes:
+    async def invoke_method(self, method: str, raw_body: Optional[bytes] = None) -> bytes:
         """Invokes actor method.
 
         This is the non-rpc style actor method invocation. It needs to serialize

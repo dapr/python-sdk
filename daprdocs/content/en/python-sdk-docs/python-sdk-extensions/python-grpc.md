@@ -38,21 +38,21 @@ The `App` object can be used to create a server.
 
 ### Listen for service invocation requests
 
-The `InvokeServiceReqest` and `InvokeServiceResponse` objects can be used to handle incoming requests.
+The `InvokeMethodReqest` and `InvokeMethodResponse` objects can be used to handle incoming requests.
 
 A simple service that will listen and respond to requests will look like:
 
 ```python
-from dapr.ext.grpc import App, InvokeServiceRequest, InvokeServiceResponse
+from dapr.ext.grpc import App, InvokeMethodRequest, InvokeMethodResponse
 
 app = App()
 
 @app.method(name='my-method')
-def mymethod(request: InvokeServiceRequest) -> InvokeServiceResponse:
+def mymethod(request: InvokeMethodRequest) -> InvokeMethodResponse:
     print(request.metadata, flush=True)
     print(request.text(), flush=True)
 
-    return InvokeServiceResponse(b'INVOKE_RECEIVED', "text/plain; charset=UTF-8")
+    return InvokeMethodResponse(b'INVOKE_RECEIVED', "text/plain; charset=UTF-8")
 
 app.run(50051)
 ```

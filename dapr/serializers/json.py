@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -13,7 +13,6 @@ import json
 from typing import Any, Callable, Optional, Type
 from dateutil import parser
 
-from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.serializers.base import Serializer
 from dapr.serializers.util import (
     convert_from_dapr_duration,
@@ -28,6 +27,9 @@ class DefaultJSONSerializer(Serializer):
             custom_hook: Optional[Callable[[object], bytes]] = None) -> bytes:
 
         dict_obj = obj
+
+        # importing this from top scope creates a circular import
+        from dapr.actor.runtime.config import ActorRuntimeConfig
         if callable(custom_hook):
             dict_obj = custom_hook(obj)
         elif isinstance(obj, bytes):

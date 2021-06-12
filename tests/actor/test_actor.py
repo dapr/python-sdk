@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -124,7 +124,7 @@ class ActorTests(unittest.TestCase):
         test_client.register_reminder.mock.assert_called_with(
             'FakeSimpleReminderActor', 'test_id',
             'test_reminder',
-            b'{"name":"test_reminder","dueTime":"0h0m1s","period":"0h0m1s","data":"cmVtaW5kZXJfbWVzc2FnZQ=="}')  # noqa E501
+            b'{"reminderName":"test_reminder","dueTime":"0h0m1s","period":"0h0m1s","data":"cmVtaW5kZXJfbWVzc2FnZQ=="}')  # noqa E501
 
         # unregister reminder
         _run(test_actor.unregister_reminder('test_reminder'))

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
@@ -10,8 +10,10 @@ import os
 from setuptools import setup
 
 # Load version in dapr package.
-exec(open('dapr/ext/fastapi/version.py').read())
-version = __version__
+version_info = {}
+with open('dapr/ext/fastapi/version.py') as fp:
+    exec(fp.read(), version_info)
+__version__ = version_info['__version__']
 
 
 def is_release():
@@ -19,7 +21,8 @@ def is_release():
 
 
 name = 'dapr-ext-fastapi'
-description = 'The official release of Dapr FastAPI extension'
+version = __version__
+description = 'The official release of Dapr FastAPI extension.'
 long_description = '''
 This is the FastAPI extension for Dapr.
 
