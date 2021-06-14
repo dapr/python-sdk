@@ -33,10 +33,11 @@ The Python SDK allows you to interface with all of the [Dapr building blocks]({{
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
-    #invoke a 'GET' method
+    # invoke a method (gRPC or HTTP GET)    
     resp = d.invoke_method('service-to-invoke', 'method-to-invoke', data='{"message":"Hello World"}')
 
-    #invoke a 'POST' method
+    # for other HTTP verbs the verb must be specified
+    # invoke a 'POST' method (HTTP only)    
     resp = d.invoke_method('service-to-invoke', 'method-to-invoke', data='{"id":"100", "FirstName":"Value", "LastName":"Value"}', http_verb='post')
 ```
 
@@ -85,8 +86,8 @@ app = App()
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
 def mytopic(event: v1.Event) -> None:
     data = json.loads(event.Data())
-    print(f'Subscriber received: id={data["id"]}, message="{data["message"]}", content_type="{event.content_type}"',flush=True)
-
+    print(f'Received: id={data["id"]}, message="{data ["message"]}"' 
+          ' content_type="{event.content_type}"',flush=True)
 ```
 
 - For a full list of state operations visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
