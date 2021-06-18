@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional
 class ActorReentrancyConfig:
     def __init__(
             self,
-            enabled: Optional[bool] = False,
-            maxStackDepth: Optional[int] = 32):
+            enabled: bool = False,
+            maxStackDepth: int = 32):
         """Inits :class:`ActorReentrancyConfig` to optionally configure actor
         reentrancy.
 
