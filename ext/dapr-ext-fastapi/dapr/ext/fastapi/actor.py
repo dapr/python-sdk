@@ -16,6 +16,7 @@ from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.serializers import DefaultJSONSerializer
 
 DEFAULT_CONTENT_TYPE = "application/json; utf-8"
+DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
 
 def _wrap_response(
@@ -82,8 +83,9 @@ class DaprActor(object):
             try:
                 # Read raw bytes from request stream
                 req_body = await request.body()
+                reentrancy_id = request.headers.get(DAPR_REENTRANCY_ID_HEADER)
                 result = await ActorRuntime.dispatch(
-                    actor_type_name, actor_id, method_name, req_body)
+                    actor_type_name, actor_id, method_name, req_body, reentrancy_id)
             except DaprInternalError as ex:
                 return _wrap_response(
                     status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_dict())

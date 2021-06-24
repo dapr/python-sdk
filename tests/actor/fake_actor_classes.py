@@ -4,12 +4,16 @@
 Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
+from dapr.serializers.json import DefaultJSONSerializer
+import asyncio
 
 from datetime import timedelta
 
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.actor_interface import ActorInterface, actormethod
+
+from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 
 
 # Fake Simple Actor Class for testing
@@ -90,7 +94,18 @@ class FakeActorCls2Interface(ActorInterface):
         ...
 
 
-class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Interface):
+class ReentrantActorInterface(ActorInterface):
+    @actormethod(name="ReentrantMethod")
+    async def reentrant_method(self, data: object) -> str:
+        ...
+
+    @actormethod(name="ReentrantMethodWithPassthrough")
+    async def reentrant_pass_through_method(self, arg):
+        ...
+
+
+class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Interface,
+                               ReentrantActorInterface):
     def __init__(self, ctx, actor_id):
         super(FakeMultiInterfacesActor, self).__init__(ctx, actor_id)
         self.activated = False
@@ -124,3 +139,56 @@ class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Inter
     async def _on_deactivate(self):
         self.activated = False
         self.deactivated = True
+
+    async def reentrant_method(self, data: object) -> str:
+        self.action_data = data
+        return self.action_data['message']
+
+    async def reentrant_pass_through_method(self, arg):
+        pass
+
+
+class FakeReentrantActor(Actor, FakeActorCls1Interface, ReentrantActorInterface):
+    def __init__(self, ctx, actor_id):
+        super(FakeReentrantActor, self).__init__(ctx, actor_id)
+
+    async def reentrant_method(self, data: object) -> str:
+        return reentrancy_ctx.get()
+
+    async def reentrant_pass_through_method(self, arg):
+        from dapr.actor.client import proxy
+        await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
+            FakeSlowReentrantActor.__name__, 'test-id', 'ReentrantMethod')
+
+    async def actor_cls1_method(self, arg):
+        pass
+
+    async def actor_cls1_method1(self, arg):
+        pass
+
+    async def actor_cls1_method2(self, arg):
+        pass
+
+
+class FakeSlowReentrantActor(Actor, FakeActorCls2Interface, ReentrantActorInterface):
+    def __init__(self, ctx, actor_id):
+        super(FakeSlowReentrantActor, self).__init__(ctx, actor_id)
+
+    async def reentrant_method(self, data: object) -> str:
+        await asyncio.sleep(1)
+        return reentrancy_ctx.get()
+
+    async def reentrant_pass_through_method(self, arg):
+        from dapr.actor.client import proxy
+
+        await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
+            FakeReentrantActor.__name__, 'test-id', 'ReentrantMethod')
+
+    async def actor_cls2_method(self, arg):
+        pass
+
+    async def action_no_arg(self) -> str:
+        pass
+
+    async def action(self, data: object) -> str:
+        pass

@@ -5,13 +5,15 @@ Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
-from typing import Callable, Dict, Optional, TYPE_CHECKING
+from typing import Callable, Dict, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
 from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.base import DaprActorClientBase
+
+DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
 
 class DaprActorHttpClient(DaprActorClientBase):
@@ -47,7 +49,14 @@ class DaprActorHttpClient(DaprActorClientBase):
         """
         url = f'{self._get_base_url(actor_type, actor_id)}/method/{method}'
 
-        body, r = await self._client.send_bytes(method='POST', url=url, data=data)
+        # import to avoid circular dependency
+        from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+        reentrancy_id = reentrancy_ctx.get()
+        headers: Dict[str, Union[bytes, str]] = (
+            {DAPR_REENTRANCY_ID_HEADER: reentrancy_id} if reentrancy_id else {})
+
+        body, _ = await self._client.send_bytes(method='POST', url=url, data=data, headers=headers)
+
         return body
 
     async def save_state_transactionally(
@@ -76,7 +85,7 @@ class DaprActorHttpClient(DaprActorClientBase):
             bytes: the value of the state.
         """
         url = f'{self._get_base_url(actor_type, actor_id)}/state/{name}'
-        body, r = await self._client.send_bytes(method='GET', url=url, data=None)
+        body, _ = await self._client.send_bytes(method='GET', url=url, data=None)
         return body
 
     async def register_reminder(

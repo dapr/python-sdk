@@ -15,6 +15,7 @@ from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.serializers import DefaultJSONSerializer
 
 DEFAULT_CONTENT_TYPE = "application/json; utf-8"
+DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
 
 class DaprActor(object):
@@ -87,8 +88,9 @@ class DaprActor(object):
         try:
             # Read raw bytes from request stream
             req_body = request.stream.read()
+            reentrancy_id = request.headers.get(DAPR_REENTRANCY_ID_HEADER)
             result = asyncio.run(ActorRuntime.dispatch(
-                actor_type_name, actor_id, method_name, req_body))
+                actor_type_name, actor_id, method_name, req_body, reentrancy_id))
         except DaprInternalError as ex:
             return wrap_response(500, ex.as_dict())
         except Exception as ex:

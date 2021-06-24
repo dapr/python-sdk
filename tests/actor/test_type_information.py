@@ -13,6 +13,7 @@ from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeActorCls1Interface,
     FakeActorCls2Interface,
+    ReentrantActorInterface,
 )
 
 
@@ -32,6 +33,7 @@ class ActorTypeInformationTests(unittest.TestCase):
         type_info = ActorTypeInformation.create(FakeMultiInterfacesActor)
 
         self.assertEqual(FakeMultiInterfacesActor.__name__, type_info.type_name)
-        self.assertEqual(2, len(type_info.actor_interfaces))
+        self.assertEqual(3, len(type_info.actor_interfaces))
         self.assertTrue(type_info.actor_interfaces.index(FakeActorCls1Interface) >= 0)
         self.assertTrue(type_info.actor_interfaces.index(FakeActorCls2Interface) >= 0)
+        self.assertTrue(type_info.actor_interfaces.index(ReentrantActorInterface) >= 0)

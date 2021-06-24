@@ -135,7 +135,7 @@ class ActorProxy:
         """Invokes actor method.
 
         This is the non-rpc style actor method invocation. It needs to serialize
-        the request object and deserailize the response body.
+        the request object and deserialize the response body.
 
         If the client has Actor interface, it is recommended to use RPC style actor
         invocation.
