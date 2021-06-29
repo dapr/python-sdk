@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/ext/dapr-ext-fastapi"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/ext/dapr-ext-grpc"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/ext/flask_dapr"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
