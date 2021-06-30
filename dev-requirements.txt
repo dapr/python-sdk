@@ -11,6 +11,6 @@ six==1.16.0
 tox == 3.23.1
 cloudevents >= 1.0.0
 opencensus == 0.7.13
-opencensus-ext-grpc == 0.7.1
+opencensus-ext-grpc == 0.7.2
 coverage >= 5.3
 codecov >= 1.4.0
