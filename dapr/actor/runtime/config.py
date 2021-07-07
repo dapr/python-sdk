@@ -61,7 +61,8 @@ class ActorRuntimeConfig:
                 to allow a current actor call to complete before trying to deactivate an actor.
             reentrancy (ActorReentrancyConfig): Configure the reentrancy behavior for an actor.
                 If not provided, reentrancy is diabled.
-            reminders_storage_partitions (int): The number of partitions to use for reminders storage.
+            reminders_storage_partitions (int): The number of partitions to use for reminders
+                storage.
         """
         self._entities: List[str] = []
         self._actor_idle_timeout = actor_idle_timeout
