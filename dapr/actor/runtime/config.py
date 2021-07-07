@@ -45,7 +45,8 @@ class ActorRuntimeConfig:
             actor_scan_interval: Optional[timedelta] = timedelta(seconds=30),
             drain_ongoing_call_timeout: Optional[timedelta] = timedelta(minutes=1),
             drain_rebalanced_actors: Optional[bool] = True,
-            reentrancy: Optional[ActorReentrancyConfig] = None):
+            reentrancy: Optional[ActorReentrancyConfig] = None,
+            reminders_storage_partitions: Optional[int] = None):
         """Inits :class:`ActorRuntimeConfig` to configure actors when dapr runtime starts.
 
         Args:
@@ -60,6 +61,7 @@ class ActorRuntimeConfig:
                 to allow a current actor call to complete before trying to deactivate an actor.
             reentrancy (ActorReentrancyConfig): Configure the reentrancy behavior for an actor.
                 If not provided, reentrancy is diabled.
+            reminders_storage_partitions (int): The number of partitions to use for reminders storage.
         """
         self._entities: List[str] = []
         self._actor_idle_timeout = actor_idle_timeout
@@ -67,6 +69,7 @@ class ActorRuntimeConfig:
         self._drain_ongoing_call_timeout = drain_ongoing_call_timeout
         self._drain_rebalanced_actors = drain_rebalanced_actors
         self._reentrancy = reentrancy
+        self._reminders_storage_partitions = reminders_storage_partitions
 
     def update_entities(self, entities: List[str]) -> None:
         """Updates actor types in entities property.
@@ -89,5 +92,9 @@ class ActorRuntimeConfig:
 
         if self._reentrancy:
             configDict.update({'reentrancy': self._reentrancy.as_dict()})
+
+        if self._reminders_storage_partitions:
+            configDict.update(
+                {'remindersStoragePartitions': self._reminders_storage_partitions})
 
         return configDict
