@@ -47,12 +47,13 @@ class ActorStateManagerTests(unittest.TestCase):
     def test_add_state(self):
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
 
         # Add first 'state1'
         added = _run(state_manager.try_add_state('state1', 'value1'))
         self.assertTrue(added)
 
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual('value1', state.value)
         self.assertEqual(StateChangeKind.add, state.change_kind)
 
@@ -90,10 +91,11 @@ class ActorStateManagerTests(unittest.TestCase):
     def test_get_state_for_removed_value(self):
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         removed = _run(state_manager.try_remove_state('state1'))
         self.assertTrue(removed)
 
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.remove, state.change_kind)
 
         has_value, val = _run(state_manager.try_get_state('state1'))
@@ -104,9 +106,10 @@ class ActorStateManagerTests(unittest.TestCase):
     def test_set_state_for_new_state(self):
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.set_state('state1', 'value1'))
 
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.add, state.change_kind)
         self.assertEqual('value1', state.value)
 
@@ -114,14 +117,15 @@ class ActorStateManagerTests(unittest.TestCase):
     def test_set_state_for_existing_state_only_in_mem(self):
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.set_state('state1', 'value1'))
 
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.add, state.change_kind)
         self.assertEqual('value1', state.value)
 
         _run(state_manager.set_state('state1', 'value2'))
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.add, state.change_kind)
         self.assertEqual('value2', state.value)
 
@@ -131,8 +135,9 @@ class ActorStateManagerTests(unittest.TestCase):
     def test_set_state_for_existing_state(self):
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.set_state('state1', 'value2'))
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.update, state.change_kind)
         self.assertEqual('value2', state.value)
 
@@ -149,10 +154,11 @@ class ActorStateManagerTests(unittest.TestCase):
     def test_remove_state_for_existing_state(self):
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         removed = _run(state_manager.try_remove_state('state1'))
         self.assertTrue(removed)
 
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.remove, state.change_kind)
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
@@ -205,9 +211,10 @@ class ActorStateManagerTests(unittest.TestCase):
         new=_async_mock())
     def test_get_or_add_state_for_non_existing_state(self):
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         val = _run(state_manager.get_or_add_state('state1', 'value2'))
 
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.add, state.change_kind)
         self.assertEqual('value2', val)
 
@@ -221,12 +228,13 @@ class ActorStateManagerTests(unittest.TestCase):
     def test_get_or_add_state_for_removed_state(self):
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.remove_state('state1'))
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.remove, state.change_kind)
 
         val = _run(state_manager.get_or_add_state('state1', 'value2'))
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.update, state.change_kind)
         self.assertEqual('value2', val)
 
@@ -237,9 +245,10 @@ class ActorStateManagerTests(unittest.TestCase):
             return f'{name}-{value}'
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         val = _run(state_manager.add_or_update_state('state1', 'value1', test_update_value))
         self.assertEqual('value1', val)
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.add, state.change_kind)
 
     @mock.patch(
@@ -252,9 +261,10 @@ class ActorStateManagerTests(unittest.TestCase):
             return f'{name}-{value}'
 
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         val = _run(state_manager.add_or_update_state('state1', 'value1', test_update_value))
         self.assertEqual('state1-value1', val)
-        state = state_manager._state_change_tracker['state1']
+        state = state_change_tracker['state1']
         self.assertEqual(StateChangeKind.update, state.change_kind)
 
     @mock.patch(
@@ -320,12 +330,13 @@ class ActorStateManagerTests(unittest.TestCase):
         new=_async_mock(return_value=b'"value0"'))
     def test_clear_cache(self):
         state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.set_state('state1', 'value1'))
         _run(state_manager.set_state('state2', 'value2'))
         _run(state_manager.set_state('state3', 'value3'))
         _run(state_manager.clear_cache())
 
-        self.assertEqual(0, len(state_manager._state_change_tracker))
+        self.assertEqual(0, len(state_change_tracker))
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
