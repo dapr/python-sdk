@@ -19,8 +19,8 @@ jobs:
       GOOS: linux
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
-      DAPR_CLI_VER: 1.2.0-rc.2
-      DAPR_RUNTIME_VER: 1.2.0-rc.5
+      DAPR_CLI_VER: 1.3.0-rc.2
+      DAPR_RUNTIME_VER: 1.3.0-rc.3
       DAPR_INSTALL_URL: https://raw.githubusercontent.com/dapr/cli/master/install/install.sh
       DAPR_CLI_REF:
       DAPR_REF: 
