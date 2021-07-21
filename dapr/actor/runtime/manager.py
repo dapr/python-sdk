@@ -6,6 +6,7 @@ Licensed under the MIT License.
 """
 
 import asyncio
+import uuid
 
 from typing import Any, Callable, Coroutine, Dict, Optional
 
@@ -16,6 +17,7 @@ from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime._method_context import ActorMethodContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.actor.runtime._reminder_data import ActorReminderData
+from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 
 TIMER_METHOD_NAME = 'fire_timer'
 REMINDER_METHOD_NAME = 'receive_reminder'
@@ -115,11 +117,16 @@ class ActorManager:
             raise ValueError(f'{actor_id} is not activated')
 
         try:
+            if reentrancy_ctx.get(None) is not None:
+                actor._state_manager.set_state_context(str(uuid.uuid4()))
             await actor._on_pre_actor_method_internal(method_context)
             retval = await dispatch_action(actor)
             await actor._on_post_actor_method_internal(method_context)
         except DaprInternalError as ex:
             await actor._on_invoke_failed_internal(ex)
             raise ex
+        finally:
+            if reentrancy_ctx is not None:
+                actor._state_manager.set_state_context(None)
 
         return retval
