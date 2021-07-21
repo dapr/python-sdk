@@ -37,7 +37,7 @@ jobs:
       run: |
         tox -e py37
     - name: Upload test coverage
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v2.0.1
     - name: Build and publish Dapr Python SDK
       if: github.event_name != 'pull_request'
       env:
