@@ -9,6 +9,7 @@ import asyncio
 from contextvars import ContextVar
 
 from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
+from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 
 from typing import Any, Callable, Dict, Generic, List, Tuple, TypeVar, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -233,7 +234,7 @@ class ActorStateManager(Generic[T]):
 
     def _get_contextual_state_tracker(self) -> Dict[str, StateMetadata]:
         context = CONTEXT.get(None)
-        if (context is not None):
+        if (context is not None and reentrancy_ctx.get(None) is not None):
             return context['tracker']
         else:
             return self._default_state_change_tracker
