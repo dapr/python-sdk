@@ -4,12 +4,12 @@
 [![PyPI version](https://badge.fury.io/py/dapr-dev.svg)](https://badge.fury.io/py/dapr-dev)
 ![dapr-python](https://github.com/dapr/python-sdk/workflows/dapr-python/badge.svg?branch=master)
 [![codecov](https://codecov.io/gh/dapr/python-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk)
-[![Gitter](https://badges.gitter.im/Dapr/community.svg)](https://gitter.im/Dapr/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Discord](https://img.shields.io/discord/778680217417809931)](https://discord.com/channels/778680217417809931/778680217417809934)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Dapr](https://github.com/dapr/docs/tree/master/concepts#dapr-concepts) is a portable, event-driven, serverless runtime for building distributed applications across cloud and edge.
+[Dapr](https://docs.dapr.io/concepts/overview/) is a portable, event-driven, serverless runtime for building distributed applications across cloud and edge.
 
-Dapr SDK for Python allows you to implement the [Virtual Actor model](https://github.com/dapr/docs/tree/master/concepts/actors), based on the actor design pattern. This SDK can run locally, in a container and in any distributed systems environment.
+Dapr SDK for Python allows you to implement the [Virtual Actor model](https://docs.dapr.io/developing-applications/building-blocks/actors/actors-overview/), based on the actor design pattern. This SDK can run locally, in a container and in any distributed systems environment.
 
 This includes the following packages:
 
