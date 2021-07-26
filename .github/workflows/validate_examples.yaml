@@ -32,7 +32,7 @@ jobs:
           echo "Found $RUNTIME_VERSION"
       - name: Determine latest Dapr Cli version
         run: |
-          export CLI_VERSION=$(curl "https://api.github.com/repos/dapr/cli/releases?per_page=1&page=1" | jq '.[0].tag_name'| tr -d '",v')
+          export CLI_VERSION=$(curl "https://api.github.com/repos/dapr/cli/releases?per_page=1&page=1" --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' | jq '.[0].tag_name'| tr -d '",v')
           echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
           echo "Found $CLI_VERSION"
       - name: Set up Python ${{ env.PYTHON_VER }}
