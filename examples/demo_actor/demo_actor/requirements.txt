@@ -1,1 +1,1 @@
-dapr-ext-fastapi>=1.2.0rc1
+dapr-ext-fastapi>=1.2.0
