@@ -15,17 +15,26 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHON_VER: 3.7
-      GOVER: 1.16.3
+      GOVER: 1.16
       GOOS: linux
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
-      DAPR_CLI_VER: 1.2.0-rc.2
-      DAPR_RUNTIME_VER: 1.2.0-rc.5
       DAPR_INSTALL_URL: https://raw.githubusercontent.com/dapr/cli/master/install/install.sh
       DAPR_CLI_REF:
       DAPR_REF: 
     steps:
       - uses: actions/checkout@v2
+      - uses: azure/setup-helm@v1
+      - name: Determine latest Dapr Runtime version
+        run: |
+          helm repo add dapr https://dapr.github.io/helm-charts/ && helm repo update && export RUNTIME_VERSION=$(helm search repo dapr/dapr --devel --versions | awk '/dapr\/dapr/ {print $3; exit}' )
+          echo "DAPR_RUNTIME_VER=$RUNTIME_VERSION" >> $GITHUB_ENV
+          echo "Found $RUNTIME_VERSION"
+      - name: Determine latest Dapr Cli version
+        run: |
+          export CLI_VERSION=$(curl "https://api.github.com/repos/dapr/cli/releases?per_page=1&page=1" --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' | jq '.[0].tag_name'| tr -d '",v')
+          echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
+          echo "Found $CLI_VERSION"
       - name: Set up Python ${{ env.PYTHON_VER }}
         uses: actions/setup-python@v2
         with:
