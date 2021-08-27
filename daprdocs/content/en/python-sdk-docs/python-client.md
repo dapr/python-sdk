@@ -83,8 +83,17 @@ import json
 
 app = App()
 
+# Default subscription for a topic
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
 def mytopic(event: v1.Event) -> None:
+    data = json.loads(event.Data())
+    print(f'Received: id={data["id"]}, message="{data ["message"]}"' 
+          ' content_type="{event.content_type}"',flush=True)
+
+# Specific handler using Pub/Sub routing
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A',
+               rule=Rule("event.type == \"important\"", 1))
+def mytopic_important(event: v1.Event) -> None:
     data = json.loads(event.Data())
     print(f'Received: id={data["id"]}, message="{data ["message"]}"' 
           ' content_type="{event.content_type}"',flush=True)

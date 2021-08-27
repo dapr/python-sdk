@@ -67,8 +67,15 @@ from dapr.ext.grpc import App
 
 app = App()
 
+# Default subscription for a topic
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
 def mytopic(event: v1.Event) -> None:
+    print(event.Data(),flush=True)
+
+# Specific handler using Pub/Sub routing
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A',
+               rule=Rule("event.type == \"important\"", 1))
+def mytopic_important(event: v1.Event) -> None:
     print(event.Data(),flush=True)
 
 app.run(50051)

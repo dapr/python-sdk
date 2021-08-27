@@ -4,10 +4,11 @@
 Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
+from dapr.proto.runtime.v1.appcallback_pb2 import TopicRule
 import grpc
 
 from cloudevents.sdk.event import v1  # type: ignore
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, OrderedDict, Tuple, Union
 
 from google.protobuf import empty_pb2
 from google.protobuf.message import Message as GrpcMessage
@@ -25,6 +26,16 @@ BindingCallable = Callable[[BindingRequest], None]
 DELIMITER = ":"
 
 
+class Rule:
+    def __init__(self, match: str, priority: int) -> None:
+        self.match = match
+        self.priority = priority
+
+class RegisteredSubscription:
+    def __init__(self, subscription: str, rules: List[Tuple[int, appcallback_v1.TopicRule]]):
+        self.subscription = subscription
+        self.rules = rules
+
 class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
     """The implementation of AppCallback Server.
 
@@ -39,6 +50,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._topic_map: Dict[str, TopicSubscribeCallable] = {}
         self._binding_map: Dict[str, BindingCallable] = {}
 
+        self._registered_topics_map: Dict[str, RegisteredSubscription] = {} #(TopicSubscription, Dict[int, TopicRule])] = {}
         self._registered_topics: List[str] = []
         self._registered_bindings: List[str] = []
 
@@ -53,19 +65,43 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             pubsub_name: str,
             topic: str,
             cb: TopicSubscribeCallable,
-            metadata: Optional[Dict[str, str]]) -> None:
+            metadata: Optional[Dict[str, str]],
+            rule: Optional[Rule] = None) -> None:
         """Registers topic subscription for pubsub."""
-        pubsub_topic = pubsub_name + DELIMITER + topic
+        topic_key =  pubsub_name + DELIMITER + topic
+        pubsub_topic = topic_key + DELIMITER
+        if rule != None:
+            path = getattr(cb, '__name__', rule.match)
+            pubsub_topic = pubsub_topic + path
         if pubsub_topic in self._topic_map:
             raise ValueError(f'{topic} is already registered with {pubsub_name}')
         self._topic_map[pubsub_topic] = cb
-        self._registered_topics.append(
-            appcallback_v1.TopicSubscription(
-                pubsub_name=pubsub_name,
-                topic=topic,
-                metadata=metadata
-            )
-        )
+
+        registered_topic = self._registered_topics_map.get(topic_key)
+        sub: appcallback_v1.TopicSubscription = None
+        rules: List[Tuple[int, appcallback_v1.TopicRule]]
+        if not registered_topic:
+            sub = appcallback_v1.TopicSubscription(
+                    pubsub_name=pubsub_name,
+                    topic=topic,
+                    metadata=metadata,
+                    routes=appcallback_v1.TopicRoutes()
+                )
+            rules = []
+            registered_topic = RegisteredSubscription(sub, rules)
+            self._registered_topics_map[topic_key] = registered_topic
+            self._registered_topics.append(sub)
+
+        sub = registered_topic.subscription
+        rules = registered_topic.rules
+    
+        if rule != None:
+            path = getattr(cb, '__name__', rule.match)
+            rules.append((rule.priority, TopicRule(match=rule.match, path=path)))
+            rules.sort(key = lambda x: x[0])
+            rs = list(map(lambda r: r[1], rules))
+            del sub.routes.rules[:]
+            sub.routes.rules.extend(rs)
 
     def register_binding(
             self, name: str, cb: BindingCallable) -> None:
@@ -114,7 +150,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
     def OnTopicEvent(self, request, context):
         """Subscribes events from Pubsub."""
-        pubsub_topic = request.pubsub_name + DELIMITER + request.topic
+        pubsub_topic = request.pubsub_name + DELIMITER + request.topic + DELIMITER + request.path
         if pubsub_topic not in self._topic_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
             raise NotImplementedError(f'topic {request.topic} is not implemented!')
