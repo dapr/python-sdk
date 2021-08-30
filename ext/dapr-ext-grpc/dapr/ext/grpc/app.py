@@ -95,7 +95,8 @@ class App:
             self._servicer.register_method(name, func)
         return decorator
 
-    def subscribe(self, pubsub_name: str, topic: str, metadata: Optional[Dict[str, str]] = {}, rule: Optional[Rule] = None):
+    def subscribe(self, pubsub_name: str, topic: str, metadata: Optional[Dict[str, str]] = {},
+                  rule: Optional[Rule] = None):
         """A decorator that is used to register the subscribing topic method.
 
         The below example registers 'topic' subscription topic and pass custom
