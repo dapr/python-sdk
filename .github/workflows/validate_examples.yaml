@@ -14,7 +14,6 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      PYTHON_VER: 3.7
       GOVER: 1.16
       GOOS: linux
       GOARCH: amd64
@@ -22,6 +21,10 @@ jobs:
       DAPR_INSTALL_URL: https://raw.githubusercontent.com/dapr/cli/master/install/install.sh
       DAPR_CLI_REF:
       DAPR_REF: 
+    strategy:
+      fail-fast: false
+      matrix:
+        python_ver: [3.7, 3.8, 3.9]
     steps:
       - uses: actions/checkout@v2
       - uses: azure/setup-helm@v1
@@ -35,10 +38,10 @@ jobs:
           export CLI_VERSION=$(curl "https://api.github.com/repos/dapr/cli/releases?per_page=1&page=1" --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' | jq '.[0].tag_name'| tr -d '",v')
           echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
           echo "Found $CLI_VERSION"
-      - name: Set up Python ${{ env.PYTHON_VER }}
+      - name: Set up Python ${{ matrix.python_ver }}
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ env.PYTHON_VER }}
+          python-version: ${{ matrix.python_ver }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
