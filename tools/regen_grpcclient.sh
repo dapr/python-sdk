@@ -55,7 +55,7 @@ generateGrpc() {
     FILE_NAME=$2
     FILE_PATH="${PROTO_PATH}/${PKG_NAME}/v1"
 
-    python3 -m grpc_tools.protoc -I ${SRC} --python_out=${SRC} --grpc_python_out=${SRC} ${FILE_PATH}/${FILE_NAME}.proto
+    python3 -m grpc_tools.protoc -I ${SRC} --python_out=${SRC} --grpc_python_out=${SRC} --mypy_out=${SRC} ${FILE_PATH}/${FILE_NAME}.proto
 
     if [ ! -e "${FILE_PATH}/${FILE_NAME}_pb2.py" ]; then
         echo "failed to generate proto buf $FILE_NAME"

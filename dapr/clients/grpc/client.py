@@ -217,12 +217,15 @@ class DaprGrpcClient:
         if http_verb:
             http_ext = self._get_http_extension(http_verb, http_querystring)
 
+        content_type = ""
+        if req_data.content_type:
+            content_type = req_data.content_type
         req = api_v1.InvokeServiceRequest(
             id=app_id,
             message=common_v1.InvokeRequest(
                 method=method_name,
                 data=req_data.proto,
-                content_type=req_data.content_type,
+                content_type=content_type,
                 http_extension=http_ext)
         )
 
@@ -327,15 +330,21 @@ class DaprGrpcClient:
         if not isinstance(data, bytes) and not isinstance(data, str):
             raise ValueError(f'invalid type for data {type(data)}')
 
-        req_data = data
-        if isinstance(data, str):
-            req_data = data.encode('utf-8')
+        req_data: bytes
+        if isinstance(data, bytes):
+            req_data = data
+        else:
+            if isinstance(data, str):
+                req_data = data.encode('utf-8')
 
+        content_type = ""
+        if data_content_type:
+            content_type = data_content_type
         req = api_v1.PublishEventRequest(
             pubsub_name=pubsub_name,
             topic=topic_name,
             data=req_data,
-            data_content_type=data_content_type)
+            data_content_type=content_type)
 
         # response is google.protobuf.Empty
         _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)

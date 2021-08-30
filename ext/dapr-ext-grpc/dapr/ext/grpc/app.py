@@ -11,7 +11,7 @@ from concurrent import futures
 from typing import Dict, Optional
 
 from dapr.conf import settings
-from dapr.ext.grpc._servicier import _CallbackServicer   # type: ignore
+from dapr.ext.grpc._servicier import _CallbackServicer, Rule   # type: ignore
 from dapr.proto import appcallback_service_v1
 
 
@@ -95,7 +95,8 @@ class App:
             self._servicer.register_method(name, func)
         return decorator
 
-    def subscribe(self, pubsub_name: str, topic: str, metadata: Optional[Dict[str, str]] = {}):
+    def subscribe(self, pubsub_name: str, topic: str, metadata: Optional[Dict[str, str]] = {},
+                  rule: Optional[Rule] = None):
         """A decorator that is used to register the subscribing topic method.
 
         The below example registers 'topic' subscription topic and pass custom
@@ -114,7 +115,7 @@ class App:
                 during initialization
         """
         def decorator(func):
-            self._servicer.register_topic(pubsub_name, topic, func, metadata)
+            self._servicer.register_topic(pubsub_name, topic, func, metadata, rule)
         return decorator
 
     def binding(self, name: str):
