@@ -4,7 +4,6 @@
 Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
-from dapr.proto.runtime.v1.appcallback_pb2 import TopicRule
 import grpc
 
 from cloudevents.sdk.event import v1  # type: ignore
@@ -17,7 +16,6 @@ from dapr.proto import appcallback_service_v1, common_v1, appcallback_v1
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
 from dapr.clients.grpc._response import InvokeMethodResponse
-
 
 InvokeMethodCallable = Callable[[
     InvokeMethodRequest], Union[str, bytes, InvokeMethodResponse]]
@@ -33,8 +31,9 @@ class Rule:
         self.priority = priority
 
 
-class RegisteredSubscription:
-    def __init__(self, subscription: str, rules: List[Tuple[int, appcallback_v1.TopicRule]]):
+class _RegisteredSubscription:
+    def __init__(self, subscription: appcallback_v1.TopicSubscription, # type: ignore
+                 rules: List[Tuple[int, appcallback_v1.TopicRule]]): # type: ignore
         self.subscription = subscription
         self.rules = rules
 
@@ -54,8 +53,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._topic_map: Dict[str, TopicSubscribeCallable] = {}
         self._binding_map: Dict[str, BindingCallable] = {}
 
-        # (TopicSubscription, Dict[int, TopicRule])] = {}
-        self._registered_topics_map: Dict[str, RegisteredSubscription] = {}
+        self._registered_topics_map: Dict[str, _RegisteredSubscription] = {}
         self._registered_topics: List[str] = []
         self._registered_bindings: List[str] = []
 
@@ -84,8 +82,8 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._topic_map[pubsub_topic] = cb
 
         registered_topic = self._registered_topics_map.get(topic_key)
-        sub: appcallback_v1.TopicSubscription = None
-        rules: List[Tuple[int, appcallback_v1.TopicRule]]
+        sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription() # type: ignore
+        rules: List[Tuple[int, appcallback_v1.TopicRule]] = [] # type: ignore
         if not registered_topic:
             sub = appcallback_v1.TopicSubscription(
                 pubsub_name=pubsub_name,
@@ -93,8 +91,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
                 metadata=metadata,
                 routes=appcallback_v1.TopicRoutes()
             )
-            rules = []
-            registered_topic = RegisteredSubscription(sub, rules)
+            registered_topic = _RegisteredSubscription(sub, rules)
             self._registered_topics_map[topic_key] = registered_topic
             self._registered_topics.append(sub)
 
@@ -103,12 +100,12 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
         if rule is not None:
             path = getattr(cb, '__name__', rule.match)
-            rules.append((rule.priority, TopicRule(
+            rules.append((rule.priority, appcallback_v1.TopicRule(
                 match=rule.match, path=path)))
             rules.sort(key=lambda x: x[0])
             rs = list(map(lambda r: r[1], rules))
-            del sub.routes.rules[:]
-            sub.routes.rules.extend(rs)
+            del sub.routes.rules[:] # type: ignore
+            sub.routes.rules.extend(rs) # type: ignore
 
     def register_binding(
             self, name: str, cb: BindingCallable) -> None:
