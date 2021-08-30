@@ -32,8 +32,8 @@ class Rule:
 
 
 class _RegisteredSubscription:
-    def __init__(self, subscription: appcallback_v1.TopicSubscription, # type: ignore
-                 rules: List[Tuple[int, appcallback_v1.TopicRule]]): # type: ignore
+    def __init__(self, subscription: appcallback_v1.TopicSubscription,  # type: ignore
+                 rules: List[Tuple[int, appcallback_v1.TopicRule]]):  # type: ignore
         self.subscription = subscription
         self.rules = rules
 
@@ -82,8 +82,8 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._topic_map[pubsub_topic] = cb
 
         registered_topic = self._registered_topics_map.get(topic_key)
-        sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription() # type: ignore
-        rules: List[Tuple[int, appcallback_v1.TopicRule]] = [] # type: ignore
+        sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription()  # type: ignore
+        rules: List[Tuple[int, appcallback_v1.TopicRule]] = []  # type: ignore
         if not registered_topic:
             sub = appcallback_v1.TopicSubscription(
                 pubsub_name=pubsub_name,
@@ -104,8 +104,8 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
                 match=rule.match, path=path)))
             rules.sort(key=lambda x: x[0])
             rs = list(map(lambda r: r[1], rules))
-            del sub.routes.rules[:] # type: ignore
-            sub.routes.rules.extend(rs) # type: ignore
+            del sub.routes.rules[:]  # type: ignore
+            sub.routes.rules.extend(rs)  # type: ignore
 
     def register_binding(
             self, name: str, cb: BindingCallable) -> None:
