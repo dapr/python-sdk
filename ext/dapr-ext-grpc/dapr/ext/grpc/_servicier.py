@@ -103,7 +103,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             rules.append((rule.priority, appcallback_v1.TopicRule(
                 match=rule.match, path=path)))
             rules.sort(key=lambda x: x[0])
-            rs = list(map(lambda r: r[1], rules))
+            rs = [rule for id, rule in rules]
             del sub.routes.rules[:]
             sub.routes.rules.extend(rs)
 
