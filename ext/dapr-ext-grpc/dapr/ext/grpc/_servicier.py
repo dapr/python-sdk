@@ -32,8 +32,8 @@ class Rule:
 
 
 class _RegisteredSubscription:
-    def __init__(self, subscription: appcallback_v1.TopicSubscription,  # type: ignore
-                 rules: List[Tuple[int, appcallback_v1.TopicRule]]):  # type: ignore
+    def __init__(self, subscription: appcallback_v1.TopicSubscription,
+                 rules: List[Tuple[int, appcallback_v1.TopicRule]]):
         self.subscription = subscription
         self.rules = rules
 
@@ -54,7 +54,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._binding_map: Dict[str, BindingCallable] = {}
 
         self._registered_topics_map: Dict[str, _RegisteredSubscription] = {}
-        self._registered_topics: List[str] = []
+        self._registered_topics: List[appcallback_v1.TopicSubscription] = []
         self._registered_bindings: List[str] = []
 
     def register_method(self, method: str, cb: InvokeMethodCallable) -> None:
@@ -82,8 +82,8 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._topic_map[pubsub_topic] = cb
 
         registered_topic = self._registered_topics_map.get(topic_key)
-        sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription()  # type: ignore
-        rules: List[Tuple[int, appcallback_v1.TopicRule]] = []  # type: ignore
+        sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription()
+        rules: List[Tuple[int, appcallback_v1.TopicRule]] = []
         if not registered_topic:
             sub = appcallback_v1.TopicSubscription(
                 pubsub_name=pubsub_name,
@@ -98,14 +98,14 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         sub = registered_topic.subscription
         rules = registered_topic.rules
 
-        if rule is not None:
+        if rule:
             path = getattr(cb, '__name__', rule.match)
             rules.append((rule.priority, appcallback_v1.TopicRule(
                 match=rule.match, path=path)))
             rules.sort(key=lambda x: x[0])
             rs = list(map(lambda r: r[1], rules))
-            del sub.routes.rules[:]  # type: ignore
-            sub.routes.rules.extend(rs)  # type: ignore
+            del sub.routes.rules[:]
+            sub.routes.rules.extend(rs)
 
     def register_binding(
             self, name: str, cb: BindingCallable) -> None:
@@ -146,8 +146,12 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         if len(resp_data.get_headers()) > 0:
             context.send_initial_metadata(resp_data.get_headers())
 
+        content_type = ""
+        if resp_data.content_type:
+            content_type = resp_data.content_type
+
         return common_v1.InvokeResponse(
-            data=resp_data.proto, content_type=resp_data.content_type)
+            data=resp_data.proto, content_type=content_type)
 
     def ListTopicSubscriptions(self, request, context):
         """Lists all topics subscribed by this app."""
