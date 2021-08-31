@@ -101,7 +101,7 @@ class ActorRuntimeTests(unittest.TestCase):
             "message": "Normal",
         })
 
-        async def expected_return_value():
+        async def expected_return_value(*args, **kwargs):
             return ["expected", "None"]
 
         reentrancy_id = "f6319f23-dc0a-4880-90d9-87b23c19c20a"
@@ -110,7 +110,7 @@ class ActorRuntimeTests(unittest.TestCase):
 
         with mock.patch('dapr.clients.http.client.DaprHttpClient.send_bytes') as mocked:
 
-            mocked.return_value = expected_return_value()
+            mocked.side_effect = expected_return_value
             _run(ActorRuntime.dispatch(
                  FakeReentrantActor.__name__, 'test-id', 'ReentrantMethodWithPassthrough',
                  request_body, reentrancy_id=reentrancy_id))
@@ -137,7 +137,7 @@ class ActorRuntimeTests(unittest.TestCase):
             "message": "Normal",
         })
 
-        async def expected_return_value():
+        async def expected_return_value(*args, **kwargs):
             return ["expected", "None"]
 
         reentrancy_id = "f6319f23-dc0a-4880-90d9-87b23c19c20a"
@@ -146,7 +146,7 @@ class ActorRuntimeTests(unittest.TestCase):
 
         with mock.patch('dapr.clients.http.client.DaprHttpClient.send_bytes') as mocked:
 
-            mocked.return_value = expected_return_value()
+            mocked.side_effect = expected_return_value
             _run(ActorRuntime.dispatch(
                 FakeReentrantActor.__name__, 'test-id', 'ReentrantMethodWithPassthrough',
                 request_body, reentrancy_id=reentrancy_id))
@@ -183,12 +183,12 @@ class ActorRuntimeTests(unittest.TestCase):
 
         with mock.patch('dapr.actor.runtime.runtime.ActorRuntime.dispatch') as mocked:
             client = app.test_client()
+            mocked.return_value = None
             client.put(
                 relativeUrl,
                 headers={
                     flask_dapr.actor.DAPR_REENTRANCY_ID_HEADER: reentrancy_id},
                 data=request_body)
-            mocked.return_value = None
             mocked.assert_called_with(
                 actor_type_name, actor_id, method_name, request_body, reentrancy_id)
 
@@ -213,11 +213,11 @@ class ActorRuntimeTests(unittest.TestCase):
 
         with mock.patch('dapr.actor.runtime.runtime.ActorRuntime.dispatch') as mocked:
             client = TestClient(app)
+            mocked.return_value = None
             client.put(
                 relativeUrl,
                 headers={
                     fastapi.actor.DAPR_REENTRANCY_ID_HEADER: reentrancy_id},
                 data=request_body)
-            mocked.return_value = None
             mocked.assert_called_with(
                 actor_type_name, actor_id, method_name, request_body, reentrancy_id)
