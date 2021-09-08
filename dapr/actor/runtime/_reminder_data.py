@@ -74,7 +74,7 @@ class ActorReminderData:
         return {
             'reminderName': self._reminder_name,
             'dueTime': self._due_time,
-            'period': self._due_time,
+            'period': self._period,
             'data': encoded_state.decode("utf-8"),
         }
 
