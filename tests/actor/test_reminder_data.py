@@ -18,11 +18,11 @@ class ActorReminderTests(unittest.TestCase):
                 'test_reminder',
                 123,  # int type
                 timedelta(seconds=1),
-                timedelta(seconds=1))
+                timedelta(seconds=2))
             ActorReminderData(
                 'test_reminder',
                 'reminder_state',  # string type
-                timedelta(seconds=1),
+                timedelta(seconds=2),
                 timedelta(seconds=1))
 
     def test_valid_state(self):
@@ -31,7 +31,7 @@ class ActorReminderTests(unittest.TestCase):
             'test_reminder',
             b'reminder_state',
             timedelta(seconds=1),
-            timedelta(seconds=1))
+            timedelta(seconds=2))
         self.assertEqual(b'reminder_state', reminder.state)
 
     def test_as_dict(self):
@@ -39,11 +39,11 @@ class ActorReminderTests(unittest.TestCase):
             'test_reminder',
             b'reminder_state',
             timedelta(seconds=1),
-            timedelta(seconds=1))
+            timedelta(seconds=2))
         expected = {
             'reminderName': 'test_reminder',
             'dueTime': timedelta(seconds=1),
-            'period': timedelta(seconds=1),
+            'period': timedelta(seconds=2),
             'data': 'cmVtaW5kZXJfc3RhdGU=',
         }
         self.assertDictEqual(expected, reminder.as_dict())
@@ -51,10 +51,10 @@ class ActorReminderTests(unittest.TestCase):
     def test_from_dict(self):
         reminder = ActorReminderData.from_dict('test_reminder', {
             'dueTime': timedelta(seconds=1),
-            'period': timedelta(seconds=1),
+            'period': timedelta(seconds=2),
             'data': 'cmVtaW5kZXJfc3RhdGU=',
         })
         self.assertEqual('test_reminder', reminder.reminder_name)
         self.assertEqual(timedelta(seconds=1), reminder.due_time)
-        self.assertEqual(timedelta(seconds=1), reminder.period)
+        self.assertEqual(timedelta(seconds=2), reminder.period)
         self.assertEqual(b'reminder_state', reminder.state)
