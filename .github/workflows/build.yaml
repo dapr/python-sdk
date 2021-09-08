@@ -56,14 +56,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine tox
     - name: Build and publish Dapr Python SDK
-      if: github.event_name != 'pull_request'
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish Dapr Flask Extension
-      if: github.event_name != 'pull_request'
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -71,7 +69,6 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-grpc
-      if: github.event_name != 'pull_request'
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -79,7 +76,6 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-fastapi
-      if: github.event_name != 'pull_request'
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
