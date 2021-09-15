@@ -1,5 +1,5 @@
-dapr-ext-grpc-dev >= 1.3.0rc1.dev
-dapr-dev >= 1.3.0rc1.dev
+dapr-ext-grpc-dev >= 1.4.0rc1.dev
+dapr-dev >= 1.4.0rc1.dev
 opencensus == 0.7.10
 opencensus-ext-grpc == 0.7.1
 opencensus-ext-zipkin == 0.2.2
