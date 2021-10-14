@@ -11,7 +11,7 @@ protobuf==3.18.0
 six==1.16.0
 tox == 3.24.4
 cloudevents >= 1.0.0
-opencensus == 0.7.13
+opencensus == 0.8.0
 opencensus-ext-grpc == 0.7.2
 coverage >= 5.3
 codecov >= 1.4.0
