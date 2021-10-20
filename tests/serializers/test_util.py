@@ -12,6 +12,7 @@ from datetime import timedelta
 from dapr.serializers.util import convert_from_dapr_duration, convert_to_dapr_duration
 from dapr.serializers.json import DaprJSONDecoder
 
+
 class UtilTests(unittest.TestCase):
     def setUp(self):
         pass
