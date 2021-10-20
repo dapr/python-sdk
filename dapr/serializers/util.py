@@ -9,7 +9,7 @@ import re
 from datetime import timedelta
 
 # Regex to parse Go Duration datatype, e.g. 4h15m50s
-DAPR_DURATION_PARSER = re.compile(r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?')
+DAPR_DURATION_PARSER = re.compile(r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?$')
 
 
 def convert_from_dapr_duration(duration: str) -> timedelta:
@@ -24,7 +24,7 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
 
     matched = DAPR_DURATION_PARSER.match(duration)
     if not matched or matched.lastindex == 0:
-        raise ValueError(f'Invalid Dapr Duartion format: \'{duration}\'')
+        raise ValueError(f'Invalid Dapr Duration format: \'{duration}\'')
 
     days = 0.0
     hours = 0.0
