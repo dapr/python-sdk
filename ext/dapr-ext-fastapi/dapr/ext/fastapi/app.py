@@ -4,8 +4,8 @@ Copyright (c) Microsoft Corporation and Dapr Contributors.
 Licensed under the MIT License.
 """
 
-from typing import Dict, Optional
-from fastapi import FastAPI
+from typing import Dict, List, Optional
+from fastapi import FastAPI  # type: ignore
 
 
 class DaprApp:
@@ -15,9 +15,10 @@ class DaprApp:
     Args:
         app_instance: The FastAPI instance to wrap.
     """
+
     def __init__(self, app_instance: FastAPI):
         self._app = app_instance
-        self._subscriptions = []
+        self._subscriptions: List[Dict[str, object]] = []
 
         self._app.add_api_route("/dapr/subscribe",
                                 self._get_subscriptions,
