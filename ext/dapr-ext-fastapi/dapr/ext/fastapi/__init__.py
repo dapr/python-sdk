@@ -6,8 +6,10 @@ Licensed under the MIT License.
 """
 
 from .actor import DaprActor
+from .app import DaprApp
 
 
 __all__ = [
     'DaprActor',
+    'DaprApp'
 ]
