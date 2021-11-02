@@ -7,6 +7,7 @@ coverage:
         threshold: 0%
 
 ignore:
-  - dapr/proto # - Generated GRPC client
-  - tests      # - tests
-  - .tox       # - environment
+  - dapr/proto                  # - Generated GRPC client
+  - tests                       # - tests
+  - .tox                        # - environment
+  - ext/dapr-ext-fastapi/tests  # - fastapi extention tests
