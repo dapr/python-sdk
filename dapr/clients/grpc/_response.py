@@ -20,6 +20,8 @@ from dapr.clients.grpc._helpers import (
     unpack,
 )
 
+import json
+
 
 class DaprResponse:
     """A base class for Dapr Response.
@@ -153,6 +155,15 @@ class InvokeMethodResponse(DaprResponse):
         """
         return to_str(self.data)
 
+    def json(self) -> dict[str, object]:
+        """Gets the content as json if the response data content is not a serialized
+        protocol buffer message.
+
+        Returns:
+            str: [description]
+        """
+        return json.loads(to_str(self.data))
+
     @property
     def content_type(self) -> Optional[str]:
         """Gets the content type of content attribute."""
@@ -232,6 +243,10 @@ class BindingResponse(DaprResponse):
     def text(self) -> str:
         """Gets content as str."""
         return to_str(self._data)
+
+    def json(self) -> dict[str, object]:
+        """Gets content as deserialized JSON dictionary."""
+        return json.loads(to_str(self._data))
 
     @property
     def data(self) -> bytes:
@@ -340,6 +355,10 @@ class StateResponse(DaprResponse):
         """Gets content as str."""
         return to_str(self._data)
 
+    def json(self) -> dict[str, object]:
+        """Gets content as deserialized JSON dictionary."""
+        return json.loads(to_str(self._data))
+
     @property
     def etag(self) -> str:
         """Gets etag."""
@@ -388,6 +407,10 @@ class BulkStateItem:
     def text(self) -> str:
         """Gets content as str."""
         return to_str(self._data)
+
+    def json(self) -> dict[str, object]:
+        """Gets content as deserialized JSON dictionary."""
+        return json.loads(to_str(self._data))
 
     @property
     def key(self) -> str:

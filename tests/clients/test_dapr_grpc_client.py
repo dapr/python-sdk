@@ -397,7 +397,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr = DaprGrpcClient(f'localhost:{port}')
         with self.assertRaises(Exception) as context:
             dapr.wait(0.1)
-        self.assertTrue('Connection refused' in str(context.exception))
+        self.assertTrue(type(context.exception) is socket.timeout)
 
 
 if __name__ == '__main__':

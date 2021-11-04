@@ -9,7 +9,7 @@ import unittest
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 
-from dapr.clients.grpc._response import DaprResponse, InvokeMethodResponse, BindingResponse
+from dapr.clients.grpc._response import DaprResponse, InvokeMethodResponse, BindingResponse, StateResponse
 from dapr.proto import common_v1
 
 
@@ -64,6 +64,10 @@ class InvokeMethodResponseTests(unittest.TestCase):
         self.assertEqual('hello dapr', resp.text())
         self.assertEqual('application/json', resp.content_type)
 
+    def test_json_data(self):
+        resp = InvokeMethodResponse(data=b'{ "status": "ok" }', content_type='application/json')
+        self.assertEqual({'status': 'ok'}, resp.json())
+
     def test_unpack(self):
         # arrange
         fake_req = common_v1.InvokeRequest(method="test")
@@ -84,11 +88,26 @@ class InvokeBindingResponseTests(unittest.TestCase):
         self.assertEqual(b'data', resp.data)
         self.assertEqual('data', resp.text())
 
+    def test_json_data(self):
+        resp = BindingResponse(data=b'{"status": "ok"}', binding_metadata={})
+        self.assertEqual({'status': 'ok'}, resp.json())
+
     def test_metadata(self):
         resp = BindingResponse(data=b'data', binding_metadata={'status': 'ok'})
         self.assertEqual({'status': 'ok'}, resp.binding_metadata)
         self.assertEqual(b'data', resp.data)
         self.assertEqual('data', resp.text())
+
+
+class StateResponseTests(unittest.TestCase):
+    def test_data(self):
+        resp = StateResponse(data=b'hello dapr')
+        self.assertEqual('hello dapr', resp.text())
+        self.assertEqual(b'hello dapr', resp.data)
+
+    def test_json_data(self):   
+        resp = StateResponse(data=b'{"status": "ok"}')
+        self.assertEqual({'status': 'ok'}, resp.json())
 
 
 if __name__ == '__main__':
