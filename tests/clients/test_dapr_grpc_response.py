@@ -9,7 +9,10 @@ import unittest
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 
-from dapr.clients.grpc._response import DaprResponse, InvokeMethodResponse, BindingResponse, StateResponse
+from dapr.clients.grpc._response import (
+    DaprResponse, InvokeMethodResponse, BindingResponse, StateResponse
+)
+
 from dapr.proto import common_v1
 
 
@@ -105,7 +108,7 @@ class StateResponseTests(unittest.TestCase):
         self.assertEqual('hello dapr', resp.text())
         self.assertEqual(b'hello dapr', resp.data)
 
-    def test_json_data(self):   
+    def test_json_data(self):
         resp = StateResponse(data=b'{"status": "ok"}')
         self.assertEqual({'status': 'ok'}, resp.json())
 
