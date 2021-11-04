@@ -155,7 +155,7 @@ class InvokeMethodResponse(DaprResponse):
         """
         return to_str(self.data)
 
-    def json(self) -> dict[str, object]:
+    def json(self) -> Dict[str, object]:
         """Gets the content as json if the response data content is not a serialized
         protocol buffer message.
 
@@ -244,7 +244,7 @@ class BindingResponse(DaprResponse):
         """Gets content as str."""
         return to_str(self._data)
 
-    def json(self) -> dict[str, object]:
+    def json(self) -> Dict[str, object]:
         """Gets content as deserialized JSON dictionary."""
         return json.loads(to_str(self._data))
 
@@ -355,7 +355,7 @@ class StateResponse(DaprResponse):
         """Gets content as str."""
         return to_str(self._data)
 
-    def json(self) -> dict[str, object]:
+    def json(self) -> Dict[str, object]:
         """Gets content as deserialized JSON dictionary."""
         return json.loads(to_str(self._data))
 
@@ -408,7 +408,7 @@ class BulkStateItem:
         """Gets content as str."""
         return to_str(self._data)
 
-    def json(self) -> dict[str, object]:
+    def json(self) -> Dict[str, object]:
         """Gets content as deserialized JSON dictionary."""
         return json.loads(to_str(self._data))
 
