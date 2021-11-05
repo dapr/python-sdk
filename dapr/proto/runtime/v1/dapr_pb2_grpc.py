@@ -37,6 +37,11 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SaveStateRequest.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
+        self.QueryStateAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/QueryStateAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.QueryStateRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.QueryStateResponse.FromString,
+                )
         self.DeleteState = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/DeleteState',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.DeleteStateRequest.SerializeToString,
@@ -107,6 +112,16 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorResponse.FromString,
                 )
+        self.GetConfigurationAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/GetConfigurationAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetConfigurationRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetConfigurationResponse.FromString,
+                )
+        self.SubscribeConfigurationAlpha1 = channel.unary_stream(
+                '/dapr.proto.runtime.v1.Dapr/SubscribeConfigurationAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationResponse.FromString,
+                )
         self.GetMetadata = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/GetMetadata',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
@@ -151,6 +166,13 @@ class DaprServicer(object):
 
     def SaveState(self, request, context):
         """Saves the state for a specific key.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def QueryStateAlpha1(self, request, context):
+        """Queries the state.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -254,6 +276,20 @@ class DaprServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetConfigurationAlpha1(self, request, context):
+        """GetConfiguration gets configuration from configuration store.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SubscribeConfigurationAlpha1(self, request, context):
+        """SubscribeConfiguration gets configuration from configuration store and subscribe the updates event by grpc stream
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetMetadata(self, request, context):
         """Gets metadata of the sidecar
         """
@@ -297,6 +333,11 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.SaveState,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SaveStateRequest.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'QueryStateAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.QueryStateAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.QueryStateRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.QueryStateResponse.SerializeToString,
             ),
             'DeleteState': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteState,
@@ -367,6 +408,16 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.InvokeActor,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorResponse.SerializeToString,
+            ),
+            'GetConfigurationAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetConfigurationAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetConfigurationRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetConfigurationResponse.SerializeToString,
+            ),
+            'SubscribeConfigurationAlpha1': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeConfigurationAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationResponse.SerializeToString,
             ),
             'GetMetadata': grpc.unary_unary_rpc_method_handler(
                     servicer.GetMetadata,
@@ -459,6 +510,23 @@ class Dapr(object):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/SaveState',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SaveStateRequest.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def QueryStateAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/QueryStateAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.QueryStateRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.QueryStateResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -697,6 +765,40 @@ class Dapr(object):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/InvokeActor',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeActorResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetConfigurationAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/GetConfigurationAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetConfigurationRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetConfigurationResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SubscribeConfigurationAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/dapr.proto.runtime.v1.Dapr/SubscribeConfigurationAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
