@@ -10,7 +10,7 @@ import unittest
 from google.protobuf.any_pb2 import Any as GrpcAny
 
 from dapr.clients.grpc._response import (
-    DaprResponse, InvokeMethodResponse, BindingResponse, StateResponse, 
+    DaprResponse, InvokeMethodResponse, BindingResponse, StateResponse,
     BulkStateItem
 )
 
