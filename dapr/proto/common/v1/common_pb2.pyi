@@ -13,18 +13,21 @@ import typing_extensions
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor = ...
 
-# HTTPExtension includes HTTP verb and querystring
-# when Dapr runtime delivers HTTP content.
-# 
-# For example, when callers calls http invoke api
-# POST http://localhost:3500/v1.0/invoke/<app_id>/method/<method>?query1=value1&query2=value2
-# 
-# Dapr runtime will parse POST as a verb and extract querystring to quersytring map.
 class HTTPExtension(google.protobuf.message.Message):
+    """HTTPExtension includes HTTP verb and querystring
+    when Dapr runtime delivers HTTP content.
+
+    For example, when callers calls http invoke api
+    POST http://localhost:3500/v1.0/invoke/<app_id>/method/<method>?query1=value1&query2=value2
+
+    Dapr runtime will parse POST as a verb and extract querystring to quersytring map.
+    """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
-    # Type of HTTP 1.1 Methods
-    # RFC 7231: https://tools.ietf.org/html/rfc7231#page-24
     class Verb(_Verb, metaclass=_VerbEnumTypeWrapper):
+        """Type of HTTP 1.1 Methods
+        RFC 7231: https://tools.ietf.org/html/rfc7231#page-24
+        RFC 5789: https://datatracker.ietf.org/doc/html/rfc5789
+        """
         pass
     class _Verb:
         V = typing.NewType('V', builtins.int)
@@ -39,6 +42,7 @@ class HTTPExtension(google.protobuf.message.Message):
         CONNECT = HTTPExtension.Verb.V(6)
         OPTIONS = HTTPExtension.Verb.V(7)
         TRACE = HTTPExtension.Verb.V(8)
+        PATCH = HTTPExtension.Verb.V(9)
 
     NONE = HTTPExtension.Verb.V(0)
     GET = HTTPExtension.Verb.V(1)
@@ -49,47 +53,58 @@ class HTTPExtension(google.protobuf.message.Message):
     CONNECT = HTTPExtension.Verb.V(6)
     OPTIONS = HTTPExtension.Verb.V(7)
     TRACE = HTTPExtension.Verb.V(8)
+    PATCH = HTTPExtension.Verb.V(9)
 
     VERB_FIELD_NUMBER: builtins.int
     QUERYSTRING_FIELD_NUMBER: builtins.int
-    # Required. HTTP verb.
     verb: global___HTTPExtension.Verb.V = ...
-    # Optional. querystring represents an encoded HTTP url query string in the following format: name=value&name2=value2
+    """Required. HTTP verb."""
+
     querystring: typing.Text = ...
+    """Optional. querystring represents an encoded HTTP url query string in the following format: name=value&name2=value2"""
+
     def __init__(self,
         *,
         verb : global___HTTPExtension.Verb.V = ...,
         querystring : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"querystring",b"querystring",u"verb",b"verb"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["querystring",b"querystring","verb",b"verb"]) -> None: ...
 global___HTTPExtension = HTTPExtension
 
-# InvokeRequest is the message to invoke a method with the data.
-# This message is used in InvokeService of Dapr gRPC Service and OnInvoke
-# of AppCallback gRPC service.
 class InvokeRequest(google.protobuf.message.Message):
+    """InvokeRequest is the message to invoke a method with the data.
+    This message is used in InvokeService of Dapr gRPC Service and OnInvoke
+    of AppCallback gRPC service.
+    """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     METHOD_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
     CONTENT_TYPE_FIELD_NUMBER: builtins.int
     HTTP_EXTENSION_FIELD_NUMBER: builtins.int
-    # Required. method is a method name which will be invoked by caller.
     method: typing.Text = ...
-    # Required. Bytes value or Protobuf message which caller sent.
-    # Dapr treats Any.value as bytes type if Any.type_url is unset.
+    """Required. method is a method name which will be invoked by caller."""
+
     @property
-    def data(self) -> google.protobuf.any_pb2.Any: ...
-    # The type of data content.
-    #
-    # This field is required if data delivers http request body
-    # Otherwise, this is optional.
+    def data(self) -> google.protobuf.any_pb2.Any:
+        """Required. Bytes value or Protobuf message which caller sent.
+        Dapr treats Any.value as bytes type if Any.type_url is unset.
+        """
+        pass
     content_type: typing.Text = ...
-    # HTTP specific fields if request conveys http-compatible request.
-    #
-    # This field is required for http-compatible request. Otherwise,
-    # this field is optional.
+    """The type of data content.
+
+    This field is required if data delivers http request body
+    Otherwise, this is optional.
+    """
+
     @property
-    def http_extension(self) -> global___HTTPExtension: ...
+    def http_extension(self) -> global___HTTPExtension:
+        """HTTP specific fields if request conveys http-compatible request.
+
+        This field is required for http-compatible request. Otherwise,
+        this field is optional.
+        """
+        pass
     def __init__(self,
         *,
         method : typing.Text = ...,
@@ -97,34 +112,37 @@ class InvokeRequest(google.protobuf.message.Message):
         content_type : typing.Text = ...,
         http_extension : typing.Optional[global___HTTPExtension] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal[u"data",b"data",u"http_extension",b"http_extension"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"content_type",b"content_type",u"data",b"data",u"http_extension",b"http_extension",u"method",b"method"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["data",b"data","http_extension",b"http_extension"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["content_type",b"content_type","data",b"data","http_extension",b"http_extension","method",b"method"]) -> None: ...
 global___InvokeRequest = InvokeRequest
 
-# InvokeResponse is the response message inclduing data and its content type
-# from app callback.
-# This message is used in InvokeService of Dapr gRPC Service and OnInvoke
-# of AppCallback gRPC service.
 class InvokeResponse(google.protobuf.message.Message):
+    """InvokeResponse is the response message inclduing data and its content type
+    from app callback.
+    This message is used in InvokeService of Dapr gRPC Service and OnInvoke
+    of AppCallback gRPC service.
+    """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     DATA_FIELD_NUMBER: builtins.int
     CONTENT_TYPE_FIELD_NUMBER: builtins.int
-    # Required. The content body of InvokeService response.
     @property
-    def data(self) -> google.protobuf.any_pb2.Any: ...
-    # Required. The type of data content.
+    def data(self) -> google.protobuf.any_pb2.Any:
+        """Required. The content body of InvokeService response."""
+        pass
     content_type: typing.Text = ...
+    """Required. The type of data content."""
+
     def __init__(self,
         *,
         data : typing.Optional[google.protobuf.any_pb2.Any] = ...,
         content_type : typing.Text = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal[u"data",b"data"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"content_type",b"content_type",u"data",b"data"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["data",b"data"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["content_type",b"content_type","data",b"data"]) -> None: ...
 global___InvokeResponse = InvokeResponse
 
-# StateItem represents state key, value, and additional options to save state.
 class StateItem(google.protobuf.message.Message):
+    """StateItem represents state key, value, and additional options to save state."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -137,27 +155,33 @@ class StateItem(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     KEY_FIELD_NUMBER: builtins.int
     VALUE_FIELD_NUMBER: builtins.int
     ETAG_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
     OPTIONS_FIELD_NUMBER: builtins.int
-    # Required. The state key
     key: typing.Text = ...
-    # Required. The state data for key
+    """Required. The state key"""
+
     value: builtins.bytes = ...
-    # The entity tag which represents the specific version of data.
-    # The exact ETag format is defined by the corresponding data store.
+    """Required. The state data for key"""
+
     @property
-    def etag(self) -> global___Etag: ...
-    # The metadata which will be passed to state store component.
+    def etag(self) -> global___Etag:
+        """The entity tag which represents the specific version of data.
+        The exact ETag format is defined by the corresponding data store.
+        """
+        pass
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
-    # Options for concurrency and consistency to save the state.
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be passed to state store component."""
+        pass
     @property
-    def options(self) -> global___StateOptions: ...
+    def options(self) -> global___StateOptions:
+        """Options for concurrency and consistency to save the state."""
+        pass
     def __init__(self,
         *,
         key : typing.Text = ...,
@@ -166,28 +190,29 @@ class StateItem(google.protobuf.message.Message):
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         options : typing.Optional[global___StateOptions] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal[u"etag",b"etag",u"options",b"options"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"etag",b"etag",u"key",b"key",u"metadata",b"metadata",u"options",b"options",u"value",b"value"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["etag",b"etag","options",b"options"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["etag",b"etag","key",b"key","metadata",b"metadata","options",b"options","value",b"value"]) -> None: ...
 global___StateItem = StateItem
 
-# Etag represents a state item version
 class Etag(google.protobuf.message.Message):
+    """Etag represents a state item version"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     VALUE_FIELD_NUMBER: builtins.int
-    # value sets the etag value
     value: typing.Text = ...
+    """value sets the etag value"""
+
     def __init__(self,
         *,
         value : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"value",b"value"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["value",b"value"]) -> None: ...
 global___Etag = Etag
 
-# StateOptions configures concurrency and consistency for state operations
 class StateOptions(google.protobuf.message.Message):
+    """StateOptions configures concurrency and consistency for state operations"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
-    # Enum describing the supported concurrency for state.
     class StateConcurrency(_StateConcurrency, metaclass=_StateConcurrencyEnumTypeWrapper):
+        """Enum describing the supported concurrency for state."""
         pass
     class _StateConcurrency:
         V = typing.NewType('V', builtins.int)
@@ -201,8 +226,8 @@ class StateOptions(google.protobuf.message.Message):
     CONCURRENCY_FIRST_WRITE = StateOptions.StateConcurrency.V(1)
     CONCURRENCY_LAST_WRITE = StateOptions.StateConcurrency.V(2)
 
-    # Enum describing the supported consistency for state.
     class StateConsistency(_StateConsistency, metaclass=_StateConsistencyEnumTypeWrapper):
+        """Enum describing the supported consistency for state."""
         pass
     class _StateConsistency:
         V = typing.NewType('V', builtins.int)
@@ -225,5 +250,48 @@ class StateOptions(google.protobuf.message.Message):
         concurrency : global___StateOptions.StateConcurrency.V = ...,
         consistency : global___StateOptions.StateConsistency.V = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"concurrency",b"concurrency",u"consistency",b"consistency"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["concurrency",b"concurrency","consistency",b"consistency"]) -> None: ...
 global___StateOptions = StateOptions
+
+class ConfigurationItem(google.protobuf.message.Message):
+    """ConfigurationItem represents all the configuration with its name(key)."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text = ...
+        value: typing.Text = ...
+        def __init__(self,
+            *,
+            key : typing.Text = ...,
+            value : typing.Text = ...,
+            ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
+    KEY_FIELD_NUMBER: builtins.int
+    VALUE_FIELD_NUMBER: builtins.int
+    VERSION_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    key: typing.Text = ...
+    """Required. The name of configuration item"""
+
+    value: typing.Text = ...
+    """Required. The value of configuration item."""
+
+    version: typing.Text = ...
+    """Version is response only and cannot be fetched. Store is not expected to keep all versions available"""
+
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """the metadata which will be passed to/from configuration store component."""
+        pass
+    def __init__(self,
+        *,
+        key : typing.Text = ...,
+        value : typing.Text = ...,
+        version : typing.Text = ...,
+        metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["key",b"key","metadata",b"metadata","value",b"value","version",b"version"]) -> None: ...
+global___ConfigurationItem = ConfigurationItem
