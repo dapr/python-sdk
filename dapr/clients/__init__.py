@@ -102,6 +102,7 @@ class DaprClient(DaprGrpcClient):
             metadata (MetadataTuple, optional): Additional metadata or headers.
             http_verb (str, optional): HTTP verb for the request.
             http_querystring (MetadataTuple, optional): Query parameters.
+            return_coroutine (bool, optional): Makes the function return a coroutine.
 
         Returns:
             InvokeMethodResponse: the response from the method invocation.

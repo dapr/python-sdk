@@ -59,6 +59,7 @@ class DaprInvocationHttpClient:
             metadata (MetadataTuple, optional): Additional headers.
             http_verb (str, optional): HTTP verb for the request.
             http_querystring (MetadataTuple, optional): Query parameters.
+            return_coroutine (bool, optional): Makes the function return a coroutine.
 
         Returns:
             InvokeMethodResponse: the response from the method invocation.
@@ -104,7 +105,7 @@ class DaprInvocationHttpClient:
 
         if return_coroutine:
             return make_request()
-            
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
