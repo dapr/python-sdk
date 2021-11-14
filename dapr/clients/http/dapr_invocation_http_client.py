@@ -101,7 +101,10 @@ class DaprInvocationHttpClient:
                 resp_data.headers[key] = r.headers.getall(key)  # type: ignore
             return resp_data
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        return loop.run_until_complete(make_request())
+        try:
+            asyncio.get_event_loop()
+            return asyncio.create_task(make_request())
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return loop.run_until_complete(make_request())
