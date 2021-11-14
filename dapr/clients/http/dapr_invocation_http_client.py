@@ -47,7 +47,8 @@ class DaprInvocationHttpClient:
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
+            http_querystring: Optional[MetadataTuple] = None,
+            return_coroutine: bool = False) -> InvokeMethodResponse:
         """Invoke a service method over HTTP.
 
         Args:
@@ -101,10 +102,10 @@ class DaprInvocationHttpClient:
                 resp_data.headers[key] = r.headers.getall(key)  # type: ignore
             return resp_data
 
-        try:
-            asyncio.get_event_loop()
-            return asyncio.create_task(make_request())
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            return loop.run_until_complete(make_request())
+        if return_coroutine:
+            return make_request()
+            
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(make_request())

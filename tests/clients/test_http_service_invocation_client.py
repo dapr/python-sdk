@@ -51,6 +51,14 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.assertEqual(b"STRING_BODY", response.data)
         self.assertEqual(self.invoke_url, self.server.request_path())
 
+    async def test_coroutine_basic_invoke(self):
+        self.server.set_response(b"STRING_BODY")
+
+        response = await self.client.invoke_method(self.app_id, self.method_name, "", return_coroutine=True)
+
+        self.assertEqual(b"STRING_BODY", response.data)
+        self.assertEqual(self.invoke_url, self.server.request_path())
+
     def test_invoke_PUT_with_body(self):
         self.server.set_response(b"STRING_BODY")
 
