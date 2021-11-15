@@ -41,6 +41,10 @@ class App:
 
     def __del__(self):
         self.stop()
+    
+    def add_external_service(self, servicer_callback, external_servicer):
+        """Adds an external gRPC service to the same server"""
+        servicer_callback(external_servicer, self._server)
 
     def run(self, app_port: Optional[int]) -> None:
         """Starts app gRPC server and waits until :class:`App`.stop() is called."""
