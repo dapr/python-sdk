@@ -21,7 +21,13 @@ pip3 install dapr dapr-ext-grpc
 
 Run the following command in a terminal/command-prompt:
 
-<!-- STEP -->
+<!-- STEP 
+name: Run receiver
+expected_stdout_lines:
+  - '== APP == INFO:root:name: "you"'
+background: true
+sleep: 5
+-->
 
 ```bash
 # 1. Start Receiver (expose gRPC server receiver on port 50051)
@@ -33,6 +39,14 @@ dapr run --app-id  invoke-receiver --app-protocol grpc --app-port 50051 --config
 In another terminal/command prompt run:
 
 
+<!-- STEP
+name: Run caller
+expected_stdout_lines:
+  - '== APP == Greeter client received: Hello, you!'
+background: true
+sleep: 5 
+-->
+
 
 ```bash
 # 2. Start Caller
@@ -43,11 +57,15 @@ dapr run --app-id  invoke-caller --dapr-grpc-port 50007 --config config.yaml -- 
 
 ## Cleanup
 
-<!-- STEP -->
+<!-- STEP
+expected_stdout_lines: 
+  - '✅  app stopped successfully: invoke-receiver'
+expected_stderr_lines:
+name: Shutdown dapr
+-->
 
 ```bash
 dapr stop --app-id  invoke-receiver
-dapr stop --app-id  invoke-caller
 ```
 
 <!-- END_STEP -->
