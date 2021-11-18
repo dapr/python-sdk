@@ -295,6 +295,7 @@ class DaprGrpcClient:
             pubsub_name: str,
             topic_name: str,
             data: Union[bytes, str],
+            publish_metadata: Dict[str, str] = {},
             metadata: Optional[MetadataTuple] = (),
             data_content_type: Optional[str] = None) -> DaprResponse:
         """Publish to a given topic.
@@ -311,6 +312,7 @@ class DaprGrpcClient:
                     pubsub_name='pubsub_1',
                     topic_name='TOPIC_A',
                     data=b'message',
+                    publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'}
                     metadata=(
                         ('header1', 'value1')
                     ),
@@ -321,6 +323,7 @@ class DaprGrpcClient:
             pubsub_name (str): the name of the pubsub component
             topic_name (str): the topic name to publish to
             data (bytes or str): bytes or str for data
+            publish_metadata (Dict[str, str], optional): per message metadata
             metadata (tuple, optional): custom metadata
             data_content_type: (str, optional): content type of the data payload
 
@@ -344,7 +347,8 @@ class DaprGrpcClient:
             pubsub_name=pubsub_name,
             topic=topic_name,
             data=req_data,
-            data_content_type=content_type)
+            data_content_type=content_type,
+            metadata=publish_metadata)
 
         # response is google.protobuf.Empty
         _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
