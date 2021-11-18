@@ -1,1 +1,1 @@
-dapr-ext-fastapi>=1.4.0
+dapr-ext-fastapi>=1.4.1

@@ -158,6 +158,20 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['{"foo": "bar"}'], resp.headers['hdata'])
         self.assertEqual(['application/json'], resp.headers['data_content_type'])
 
+    def test_publish_event_with_metadata(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        resp = dapr.publish_event(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=b'{"foo": "bar"}',
+            publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'}
+        )
+
+        print(resp.headers)
+        self.assertEqual(['{"foo": "bar"}'], resp.headers['hdata'])
+        self.assertEqual(['false'], resp.headers['metadata_raw_payload'])
+        self.assertEqual(['100'], resp.headers['metadata_ttl_in_seconds'])
+
     def test_publish_error(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
         with self.assertRaisesRegex(ValueError, "invalid type for data <class 'int'>"):
