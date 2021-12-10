@@ -6,10 +6,6 @@ This project welcomes contributions and suggestions. Most contributions require 
 agree to a Contributor License Agreement (CLA) declaring that you have the right to,
 and actually do, grant us the rights to use your contribution.
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need
-to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the
-instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
-
 Contributions come in many forms: submitting issues, writing code, participating in discussions and community calls.
 
 This document provides the guidelines for how to contribute to the Dapr project.
