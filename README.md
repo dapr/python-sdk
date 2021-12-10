@@ -5,7 +5,7 @@
 ![dapr-python](https://github.com/dapr/python-sdk/workflows/dapr-python/badge.svg?branch=master)
 [![codecov](https://codecov.io/gh/dapr/python-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk)
 [![Discord](https://img.shields.io/discord/778680217417809931)](https://discord.com/channels/778680217417809931/778680217417809934)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache](https://img.shields.io/badge/License-Apache-yellow.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 [Dapr](https://docs.dapr.io/concepts/overview/) is a portable, event-driven, serverless runtime for building distributed applications across cloud and edge.
 
@@ -126,5 +126,4 @@ pip3 install -r dev-requirements.txt
 
 ## Code of Conduct
 
-This project has adopted the [Microsoft Open Source Code of conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+This project follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
