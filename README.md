@@ -104,6 +104,12 @@ tox -e py37
 tox -e type
 ```
 
+6. Run examples
+
+```bash
+tox -e examples
+```
+
 ## Documentation
 
 Documentation is generated using Sphinx. Extensions used are mainly Napoleon (To process the Google Comment Style) and Autodocs (For automatically generating documentation). The `.rst` files are generated using Sphinx-Apidocs.
