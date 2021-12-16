@@ -75,7 +75,7 @@ class ActorManager:
             reminder = getattr(actor, REMINDER_METHOD_NAME)
             if reminder is not None:
                 await reminder(reminder_data.reminder_name, reminder_data.state,
-                               reminder_data.due_time, reminder_data.period)
+                               reminder_data.due_time, reminder_data.period, reminder_data.ttl)
             return None
 
         await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_reminder)

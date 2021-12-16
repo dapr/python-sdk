@@ -95,6 +95,7 @@ class ActorManagerReminderTests(unittest.TestCase):
             'name': 'test_reminder',
             'dueTime': timedelta(seconds=1),
             'period': timedelta(seconds=1),
+            'ttl': timedelta(seconds=1),
             'data': 'cmVtaW5kZXJfc3RhdGU=',
         })
 
@@ -144,7 +145,7 @@ class ActorManagerTimerTests(unittest.TestCase):
         # Setup timer
         _run(actor.register_timer(
             'test_timer', actor.timer_callback,
-            "timer call", timedelta(seconds=1), timedelta(seconds=1)))
+            "timer call", timedelta(seconds=1), timedelta(seconds=1), timedelta(seconds=1)))
 
         # Fire timer
         _run(manager.fire_timer(

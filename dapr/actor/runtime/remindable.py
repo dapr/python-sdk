@@ -24,7 +24,7 @@ class Remindable(ABC):
 
     @abstractmethod
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta) -> None:
+                               due_time: timedelta, period: timedelta, ttl: timedelta) -> None:
         """A callback which will be called when reminder is triggered.
 
         Args:
@@ -34,5 +34,6 @@ class Remindable(ABC):
                 for the first time.
             period (datetime.timedelta): the time interval between reminder invocations
                 after the first invocation.
+            # TODO
         """
         ...

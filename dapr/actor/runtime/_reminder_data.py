@@ -33,7 +33,7 @@ class ActorReminderData:
 
     def __init__(
             self, reminder_name: str, state: Optional[bytes],
-            due_time: timedelta, period: timedelta):
+            due_time: timedelta, period: timedelta, ttl: timedelta):
         """Creates new :class:`ActorReminderData` instance.
 
         Args:
@@ -48,6 +48,7 @@ class ActorReminderData:
         self._reminder_name = reminder_name
         self._due_time = due_time
         self._period = period
+        self._ttl = ttl
 
         if not isinstance(state, bytes):
             raise ValueError(f'only bytes are allowed for state: {type(state)}')
@@ -74,6 +75,11 @@ class ActorReminderData:
         """Gets period of Actor Reminder."""
         return self._period
 
+    @property
+    def ttl(self) -> timedelta:
+        """Gets ttl of Actor Reminder."""
+        return self._ttl
+
     def as_dict(self) -> Dict[str, Any]:
         """Gets :class:`ActorReminderData` as a dict object."""
         encoded_state = None
@@ -83,6 +89,7 @@ class ActorReminderData:
             'reminderName': self._reminder_name,
             'dueTime': self._due_time,
             'period': self._period,
+            'ttl': self._ttl,
             'data': encoded_state.decode("utf-8"),
         }
 
@@ -93,4 +100,4 @@ class ActorReminderData:
         state_bytes = None
         if b64encoded_state is not None and len(b64encoded_state) > 0:
             state_bytes = base64.b64decode(b64encoded_state)
-        return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'])
+        return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'], obj['ttl'])

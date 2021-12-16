@@ -53,7 +53,7 @@ class FakeSimpleReminderActor(Actor, FakeSimpleActorInterface, Remindable):
         pass
 
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta) -> None:
+                               due_time: timedelta, period: timedelta, ttl: timedelta) -> None:
         pass
 
 
@@ -69,7 +69,7 @@ class FakeSimpleTimerActor(Actor, FakeSimpleActorInterface):
         self.timer_called = True
 
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta) -> None:
+                               due_time: timedelta, period: timedelta, ttl: timedelta) -> None:
         pass
 
 

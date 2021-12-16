@@ -68,7 +68,7 @@ class Actor:
 
     async def register_timer(
             self, name: Optional[str], callback: TIMER_CALLBACK, state: Any,
-            due_time: timedelta, period: timedelta) -> None:
+            due_time: timedelta, period: timedelta, ttl: timedelta) -> None:
         """Registers actor timer.
 
         All timers are stopped when the actor is deactivated as part of garbage collection.
@@ -83,7 +83,7 @@ class Actor:
                 of the awaitable callback.
         """
         name = name or self.__get_new_timer_name()
-        timer = ActorTimerData(name, callback, state, due_time, period)
+        timer = ActorTimerData(name, callback, state, due_time, period, ttl)
 
         req_body = self._runtime_ctx.message_serializer.serialize(timer.as_dict())
         await self._runtime_ctx.dapr_client.register_timer(
@@ -100,7 +100,7 @@ class Actor:
 
     async def register_reminder(
             self, name: str, state: bytes,
-            due_time: timedelta, period: timedelta) -> None:
+            due_time: timedelta, period: timedelta, ttl: timedelta) -> None:
         """Registers actor reminder.
 
         Reminders are a mechanism to trigger persistent callbacks on an actor at specified times.
@@ -119,7 +119,7 @@ class Actor:
             period (datetime.timedelta): the time interval between reminder invocations after
                 the first invocation.
         """
-        reminder = ActorReminderData(name, state, due_time, period)
+        reminder = ActorReminderData(name, state, due_time, period, ttl)
         req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())
         await self._runtime_ctx.dapr_client.register_reminder(
             self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body)

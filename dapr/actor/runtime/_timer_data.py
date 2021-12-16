@@ -34,7 +34,8 @@ class ActorTimerData:
     def __init__(
             self, timer_name: str,
             callback: TIMER_CALLBACK, state: Any,
-            due_time: timedelta, period: timedelta):
+            due_time: timedelta, period: timedelta,
+            ttl: timedelta):
         """Create new :class:`ActorTimerData` instance.
 
         Args:
@@ -51,6 +52,7 @@ class ActorTimerData:
         self._state = state
         self._due_time = due_time
         self._period = period
+        self._ttl = ttl
 
     @property
     def timer_name(self) -> str:
@@ -73,6 +75,11 @@ class ActorTimerData:
         return self._period
 
     @property
+    def ttl(self) -> timedelta:
+        """Gets ttl of the actor timer."""
+        return self._ttl
+
+    @property
     def callback(self) -> str:
         """Gets the callback of the actor timer."""
         return self._callback
@@ -87,5 +94,6 @@ class ActorTimerData:
             'callback': self._callback,
             'data': self._state,
             'dueTime': self._due_time,
+            'ttl': self._ttl,
             'period': self._period,
         }
