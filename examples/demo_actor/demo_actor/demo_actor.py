@@ -65,8 +65,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
                 b'reminder_state',             # user_state (bytes)
                 # The amount of time to delay before firing the reminder
                 datetime.timedelta(seconds=5),
-                datetime.timedelta(seconds=5),  # The time interval between firing of reminders
-                datetime.timedelta(seconds=5))  # The time interval before expiry
+                datetime.timedelta(seconds=5))  # The time interval between firing of reminders
         else:
             # Unregister 'demo_reminder'
             await self.unregister_reminder('demo_reminder')
@@ -87,8 +86,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
                 'timer_state',                  # Parameter to pass to the callback method
                 # Amount of time to delay before the callback is invoked
                 datetime.timedelta(seconds=5),
-                datetime.timedelta(seconds=5),  # Time interval between invocations
-                datetime.timedelta(seconds=5))  # Time to live
+                datetime.timedelta(seconds=5))  # Time interval between invocations
         else:
             # Unregister 'demo_timer'
             await self.unregister_timer('demo_timer')
