@@ -100,4 +100,5 @@ class ActorReminderData:
         state_bytes = None
         if b64encoded_state is not None and len(b64encoded_state) > 0:
             state_bytes = base64.b64decode(b64encoded_state)
-        return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'], obj['ttl'])
+        return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'],
+                                 obj['ttl'])
