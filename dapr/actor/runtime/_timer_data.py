@@ -94,6 +94,6 @@ class ActorTimerData:
             'callback': self._callback,
             'data': self._state,
             'dueTime': self._due_time,
-            'ttl': self._ttl,
             'period': self._period,
+            'ttl': self._ttl
         }
