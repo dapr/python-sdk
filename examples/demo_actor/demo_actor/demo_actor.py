@@ -103,6 +103,6 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         print(f'time_callback is called - {state}', flush=True)
 
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: datetime.timedelta, period: datetime.timedelta) -> None:
+                               due_time: datetime.timedelta, period: datetime.timedelta, ttl: datetime.timedelta) -> None:
         """A callback which will be called when reminder is triggered."""
         print(f'receive_reminder is called - {name} reminder - {str(state)}', flush=True)
