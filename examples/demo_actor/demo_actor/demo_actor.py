@@ -65,7 +65,8 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
                 b'reminder_state',             # user_state (bytes)
                 # The amount of time to delay before firing the reminder
                 datetime.timedelta(seconds=5),
-                datetime.timedelta(seconds=5))  # The time interval between firing of reminders
+                datetime.timedelta(seconds=5),  # The time interval between firing of reminders
+                datetime.timedelta(seconds=5))
         else:
             # Unregister 'demo_reminder'
             await self.unregister_reminder('demo_reminder')
@@ -86,7 +87,8 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
                 'timer_state',                  # Parameter to pass to the callback method
                 # Amount of time to delay before the callback is invoked
                 datetime.timedelta(seconds=5),
-                datetime.timedelta(seconds=5))  # Time interval between invocations
+                datetime.timedelta(seconds=5),  # Time interval between invocations
+                datetime.timedelta(seconds=5))
         else:
             # Unregister 'demo_timer'
             await self.unregister_timer('demo_timer')
@@ -101,6 +103,6 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         print(f'time_callback is called - {state}', flush=True)
 
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: datetime.timedelta, period: datetime.timedelta, ttl: datetime.timedelta) -> None:
+                               due_time: datetime.timedelta, period: datetime.timedelta) -> None:
         """A callback which will be called when reminder is triggered."""
         print(f'receive_reminder is called - {name} reminder - {str(state)}', flush=True)
