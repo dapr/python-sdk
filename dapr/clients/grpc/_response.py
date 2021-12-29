@@ -467,3 +467,89 @@ class BulkStatesResponse(DaprResponse):
     def items(self) -> Sequence[BulkStateItem]:
         """Gets the items."""
         return self._items
+
+
+class ConfigurationItem:
+    """A config item from get_configuration API.
+
+    Attributes:
+        key (str): config's key.
+            value (Union[bytes, str]): config's value.
+            version (str): config's version.
+            metadata (str): metadata
+    """
+
+    def __init__(
+            self,
+            key: str,
+            value: str,
+            version: str,
+            metadata: Optional[Dict[str, str]] = dict()):
+        """Initializes ConfigurationItem item from :obj:`runtime_v1.ConfigurationItem`.
+
+        Args:
+            key (str): config's key.
+            value (str): config's value.
+            version (str): config's version.
+            metadata (Optional[Dict[str, str]] = dict()): metadata
+        """
+        self._key = key
+        self._value = value
+        self._version = version
+        self._metadata = metadata
+
+    def text(self) -> str:
+        """Gets content as str."""
+        return to_str(self._value)
+
+    def json(self) -> Dict[str, object]:
+        """Gets content as deserialized JSON dictionary."""
+        return json.loads(to_str(self._value))
+
+    @property
+    def key(self) -> str:
+        """Gets key."""
+        return self._key
+
+    @property
+    def value(self) -> str:
+        """Gets value."""
+        return self._value
+
+    @property
+    def version(self) -> str:
+        """Gets version."""
+        return self._version
+
+    @property
+    def metadata(self) -> str:
+        """Gets metadata."""
+        return self._metadata
+
+
+class ConfigurationResponse(DaprResponse):
+    """The response of get_configuration API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        data (Union[bytes, str]): state's data.
+    """
+
+    def __init__(
+            self,
+            items: Sequence[ConfigurationItem],
+            headers: MetadataTuple = ()):
+        """Initializes ConfigurationResponse from :obj:`runtime_v1.GetConfigurationResponse`.
+
+        Args:
+            items (Sequence[ConfigurationItem]): the items retrieved.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super(ConfigurationResponse, self).__init__(headers)
+        self._items = items
+
+    @property
+    def items(self) -> Sequence[ConfigurationItem]:
+        """Gets the items."""
+        return self._items

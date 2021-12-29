@@ -182,6 +182,15 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return api_v1.GetBulkSecretResponse(data=resp)
 
+    def GetConfigurationAlpha1(self, request, context):
+        items = []
+        for key in request.keys:
+            if request.metadata["upper"]:
+                data = to_bytes(data.decode("utf-8").upper())
+            item = {'key':key, 'value': 'value', 'version':'1.5.0', 'metadata':{}}
+            items.append(item)
+        return api_v1.GetConfigurationResponse(items=items)
+
     def Shutdown(self, request, context):
         self.shutdown_received = True
         return empty_pb2.Empty()
