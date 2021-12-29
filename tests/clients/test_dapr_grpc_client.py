@@ -409,19 +409,20 @@ class DaprGrpcClientTests(unittest.TestCase):
         version = "1.5.0"
         metadata = {}
 
-        resp = dapr.get_configuration(store_name="statestore", keys=key)
+        resp = dapr.get_configuration(store_name="configurationstore", keys=key)
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].value, value)
         self.assertEqual(resp.items[0].version, version)
         self.assertEqual(resp.items[0].metadata, metadata)
 
-        resp = dapr.get_configuration(store_name="statestore", keys=key, config_metadata=metadata)
+        resp = dapr.get_configuration(
+            store_name="configurationstore", keys=key, config_metadata=metadata)
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].value, value)
         self.assertEqual(resp.items[0].version, version)
         self.assertEqual(resp.items[0].metadata, metadata)
 
-        resp = dapr.get_configuration(store_name="statestore", keys="NotValidKey")
+        resp = dapr.get_configuration(store_name="configurationstore", keys="NotValidKey")
         self.assertEqual(resp.items[0].key, invalid_key)
         self.assertEqual(resp.items[0].value, value)
         self.assertEqual(resp.items[0].version, version)

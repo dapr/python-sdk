@@ -522,7 +522,7 @@ class ConfigurationItem:
         return self._version
 
     @property
-    def metadata(self) -> str:
+    def metadata(self) -> Optional[Dict[str, str]]:
         """Gets metadata."""
         return self._metadata
 

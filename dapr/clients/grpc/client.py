@@ -815,17 +815,13 @@ class DaprGrpcClient:
                 resp = d.get_configuration(
                     store_name='state_store'
                     key='key_1',
-                    config_metadata={"metakey": "metavalue"},
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
+                    config_metadata={"metakey": "metavalue"}
                 )
 
         Args:
             store_name (str): the state store name to get from
             key (str): the key of the key-value pair to be gotten
             config_metadata (Dict[str, str], optional): custom metadata for configuration
-            metadata (tuple, optional): custom GRPC metadata
 
         Returns:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
@@ -834,7 +830,8 @@ class DaprGrpcClient:
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
-        req = api_v1.GetConfigurationRequest(store_name=store_name, keys=keys, metadata=config_metadata)
+        req = api_v1.GetConfigurationRequest(
+            store_name=store_name, keys=keys, metadata=config_metadata)
         response, call = self._stub.GetConfigurationAlpha1.with_call(req)
         items = []
         for item in response.items:
