@@ -23,7 +23,7 @@ pip3 install dapr dapr-ext-grpc
 name: Set configuration value
 expected_stdout_lines:
   - "OK"
-timeout_seconds: 5
+timeout_seconds: 2
 -->
 
 ```bash
@@ -56,11 +56,4 @@ dapr run --app-id configexample --components-path components/ -- python3 configu
 You should be able to see the following output:
 ```
 == APP == Got key=greeting value=hello world version=1
-```
-
-## Cleanup
-
-Either press CTRL + C to quit the app or run the following command in a new terminal to stop the app
-```bash
-dapr stop --app-id=configexample
 ```

@@ -474,9 +474,9 @@ class ConfigurationItem:
 
     Attributes:
         key (str): config's key.
-            value (Union[bytes, str]): config's value.
-            version (str): config's version.
-            metadata (str): metadata
+        value (Union[bytes, str]): config's value.
+        version (str): config's version.
+        metadata (str): metadata
     """
 
     def __init__(
