@@ -27,7 +27,7 @@ timeout_seconds: 5
 -->
 
 ```bash
-docker exec -it dapr_redis redis-cli SET greeting "hello world||1"
+docker exec dapr_redis redis-cli SET greeting "hello world||1"
 ```
 
 <!-- END_STEP -->
