@@ -11,7 +11,7 @@ with DaprClient() as d:
         key = 'greeting'
 
         # Wait for sidecar to be up within 5 seconds.
-        d.wait(2)
+        d.wait(20)
 
         # Get one configuration by key.
         configuration = d.get_configuration(store_name=storeName, keys=[key], config_metadata={})

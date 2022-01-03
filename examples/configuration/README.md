@@ -23,7 +23,7 @@ pip3 install dapr dapr-ext-grpc
 name: Set configuration value
 expected_stdout_lines:
   - "OK"
-timeout_seconds: 2
+timeout_seconds: 20
 -->
 
 ```bash
