@@ -10,7 +10,7 @@ with DaprClient() as d:
 
         key = 'greeting'
 
-        # Wait for sidecar to be up within 5 seconds.
+        # Wait for sidecar to be up within 20 seconds.
         d.wait(20)
 
         # Get one configuration by key.
