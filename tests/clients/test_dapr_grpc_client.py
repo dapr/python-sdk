@@ -401,6 +401,33 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(["bulk"], resp.headers['keyh'])
         self.assertEqual({"keya": {"keyb": "val"}}, resp._secrets)
 
+    def test_get_configuration(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        invalid_key = "N"
+        key = "k"
+        value = "value"
+        version = "1.5.0"
+        metadata = {}
+
+        resp = dapr.get_configuration(store_name="configurationstore", keys=key)
+        self.assertEqual(resp.items[0].key, key)
+        self.assertEqual(resp.items[0].value, value)
+        self.assertEqual(resp.items[0].version, version)
+        self.assertEqual(resp.items[0].metadata, metadata)
+
+        resp = dapr.get_configuration(
+            store_name="configurationstore", keys=key, config_metadata=metadata)
+        self.assertEqual(resp.items[0].key, key)
+        self.assertEqual(resp.items[0].value, value)
+        self.assertEqual(resp.items[0].version, version)
+        self.assertEqual(resp.items[0].metadata, metadata)
+
+        resp = dapr.get_configuration(store_name="configurationstore", keys="NotValidKey")
+        self.assertEqual(resp.items[0].key, invalid_key)
+        self.assertEqual(resp.items[0].value, value)
+        self.assertEqual(resp.items[0].version, version)
+        self.assertEqual(resp.items[0].metadata, metadata)
+
     def test_shutdown(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
         dapr.shutdown()
