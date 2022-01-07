@@ -16,6 +16,15 @@ limitations under the License.
 import time
 import socket
 
+from urllib.parse import urlencode
+
+from warnings import warn
+
+from typing import Dict, Optional, Union, Sequence, List
+
+from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.empty_pb2 import Empty as GrpcEmpty
+
 import grpc  # type: ignore
 from grpc import (  # type: ignore
     UnaryUnaryClientInterceptor,
@@ -25,12 +34,6 @@ from grpc import (  # type: ignore
 )
 
 from dapr.clients.grpc._state import StateOptions, StateItem
-
-from typing import Dict, Optional, Union, Sequence, List
-
-from google.protobuf.message import Message as GrpcMessage
-from google.protobuf.empty_pb2 import Empty as GrpcEmpty
-
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
@@ -38,7 +41,7 @@ from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
-    TransactionalStateOperation,
+    TransactionalStateOperation
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
@@ -50,12 +53,10 @@ from dapr.clients.grpc._response import (
     BulkStatesResponse,
     BulkStateItem,
     ConfigurationResponse,
-    ConfigurationItem
+    ConfigurationItem,
+    QueryResponse,
+    QueryResponseItem
 )
-
-from urllib.parse import urlencode
-
-from warnings import warn
 
 
 class DaprGrpcClient:
@@ -457,6 +458,72 @@ class DaprGrpcClient:
                     error=item.error))
         return BulkStatesResponse(
             items=items,
+            headers=call.initial_metadata())
+
+    def query_state_alpha1(
+            self,
+            store_name: str,
+            query: str,
+            states_metadata: Optional[Dict[str, str]] = dict()) -> QueryResponse:
+        """Queries a statestore with a query
+
+        For details on supported queries see https://docs.dapr.io/developing-applications/building-blocks/state-management/howto-state-query-api/
+
+        This example queries a statestore:
+            from dapr import DaprClient
+
+            query = '''
+            {
+                "filter": {
+                    "EQ": { "value.state": "CA" }
+                },
+                "sort": [
+                    {
+                        "key": "value.person.id",
+                        "order": "DESC"
+                    }
+                ]
+            }
+            '''
+
+            with DaprClient() as d:
+                resp = d.query_state_alpha1(
+                    store_name='state_store',
+                    query=query,
+                    states_metadata={"metakey": "metavalue"},
+                )
+
+        Args:
+            store_name (str): the state store name to query
+            query (str): the query to be executed
+            states_metadata (Dict[str, str], optional): custom metadata for state request
+
+        Returns:
+            :class:`QueryStateResponse` gRPC metadata returned from callee, pagination token and results of the query
+        """
+
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("State store name cannot be empty")
+        req = api_v1.QueryStateRequest(
+            store_name=store_name,
+            query=query,
+            metadata=states_metadata)
+        response, call = self._stub.QueryStateAlpha1.with_call(req)
+
+        results: Sequence[QueryResponseItem]= []
+        for item in response.results:
+            results.append(
+                QueryResponseItem(
+                    key=item.key,
+                    value=item.data,
+                    etag=item.etag,
+                    error=item.error)
+                )
+
+        return QueryResponse(
+            token=response.token,
+            results=results,
+            metadata=response.metadata,
             headers=call.initial_metadata())
 
     def save_state(

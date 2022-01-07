@@ -468,6 +468,108 @@ class BulkStatesResponse(DaprResponse):
         """Gets the items."""
         return self._items
 
+class QueryResponseItem:
+    """A query response item from state store query API.
+
+    Attributes:
+        key (str): query reponse item's key.
+        value (bytes): query reponse item's data.
+        etag (str): query reponse item's etag.
+        error (str): error when state was retrieved
+    """
+
+    def __init__(
+            self,
+            key: str,
+            value: bytes,
+            etag: str = '',
+            error: str = ''):
+        """Initializes QueryResponseItem item from :obj:`runtime_v1.QueryStateItem`.
+
+        Args:
+            key (str): query reponse item's key.
+            value (bytes): query reponse item's data.
+            etag (str): query reponse item's etag.
+            error (str): error when state was retrieved
+        """
+        self._key = key
+        self._value = value
+        self._etag = etag
+        self._error = error
+
+    def text(self) -> str:
+        """Gets value as str."""
+        return to_str(self._value)
+
+    def json(self) -> Dict[str, object]:
+        """Gets value as deserialized JSON dictionary."""
+        return json.loads(to_str(self._value))
+
+    @property
+    def key(self) -> str:
+        """Gets key."""
+        return self._key
+
+    @property
+    def value(self) -> bytes:
+        """Gets raw value."""
+        return self._value
+
+    @property
+    def etag(self) -> str:
+        """Gets etag."""
+        return self._etag
+
+    @property
+    def error(self) -> str:
+        """Gets error."""
+        return self._error
+
+
+class QueryResponse(DaprResponse):
+    """The response of state store query API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        results (Sequence[QueryResponseItem]): the query results.
+        token (str): query reponse token for pagination.
+        metadata (Dict[str, str]): query response metadata.
+    """
+
+    def __init__(
+            self,
+            results: Sequence[QueryResponseItem],
+            token: str = '',
+            metadata: Dict[str, str] = dict(),
+            headers: MetadataTuple = ()):
+        """Initializes QueryResponse from :obj:`runtime_v1.QueryStateResponse`.
+
+        Args:
+            results (Sequence[QueryResponseItem]): the query results.
+            token (str): query reponse token for pagination.
+            metadata (Dict[str, str]): query response metadata.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super(QueryResponse, self).__init__(headers)
+        self._metadata = metadata
+        self._results = results
+        self._token = token
+
+    @property
+    def results(self) -> Sequence[QueryResponseItem]:
+        """Gets the query results."""
+        return self._results
+    
+    @property
+    def token(self) -> str:
+        """Gets the query pagination token."""
+        return self._token
+    
+    @property
+    def metadata(self) -> Dict[str, str]:
+        """Gets the query response metadata."""
+        return self._metadata
 
 class ConfigurationItem:
     """A config item from get_configuration API.
