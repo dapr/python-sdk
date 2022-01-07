@@ -467,7 +467,7 @@ class DaprGrpcClient:
             states_metadata: Optional[Dict[str, str]] = dict()) -> QueryResponse:
         """Queries a statestore with a query
 
-        For details on supported queries see https://docs.dapr.io/developing-applications/building-blocks/state-management/howto-state-query-api/
+        For details on supported queries see https://docs.dapr.io/
 
         This example queries a statestore:
             from dapr import DaprClient
@@ -499,7 +499,8 @@ class DaprGrpcClient:
             states_metadata (Dict[str, str], optional): custom metadata for state request
 
         Returns:
-            :class:`QueryStateResponse` gRPC metadata returned from callee, pagination token and results of the query
+            :class:`QueryStateResponse` gRPC metadata returned from callee,
+                pagination token and results of the query
         """
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -518,7 +519,7 @@ class DaprGrpcClient:
                     value=item.data,
                     etag=item.etag,
                     error=item.error)
-                )
+            )
 
         return QueryResponse(
             token=response.token,

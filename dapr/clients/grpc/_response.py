@@ -468,6 +468,7 @@ class BulkStatesResponse(DaprResponse):
         """Gets the items."""
         return self._items
 
+
 class QueryResponseItem:
     """A query response item from state store query API.
 
@@ -560,16 +561,17 @@ class QueryResponse(DaprResponse):
     def results(self) -> Sequence[QueryResponseItem]:
         """Gets the query results."""
         return self._results
-    
+
     @property
     def token(self) -> str:
         """Gets the query pagination token."""
         return self._token
-    
+
     @property
     def metadata(self) -> Dict[str, str]:
         """Gets the query response metadata."""
         return self._metadata
+
 
 class ConfigurationItem:
     """A config item from get_configuration API.

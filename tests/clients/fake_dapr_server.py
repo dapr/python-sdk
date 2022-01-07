@@ -190,9 +190,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             item = {'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}}
             items.append(item)
         return api_v1.GetConfigurationResponse(items=items)
-    
+
     def QueryStateAlpha1(self, request, context):
-        items = [QueryStateItem(key=str(key), data=bytes('value of ' + str(key), 'UTF-8')) for key in range(1, 11)]
+        items = [QueryStateItem(
+            key=str(key), data=bytes('value of ' + str(key), 'UTF-8')) for key in range(1, 11)]
         query = json.loads(request.query)
 
         tokenIndex = 1
@@ -200,13 +201,13 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             if 'token' in query['page']:
                 # For testing purposes, we return a token that is the same as the key
                 tokenIndex = int(query['page']['token'])
-                items=items[tokenIndex-1:]
+                items = items[tokenIndex - 1:]
             if 'limit' in query['page']:
                 limit = int(query['page']['limit'])
                 if len(items) > limit:
                     items = items[:limit]
                 tokenIndex = tokenIndex + len(items)
-                
+
         return api_v1.QueryStateResponse(results=items, token=str(tokenIndex))
 
     def Shutdown(self, request, context):
