@@ -510,7 +510,7 @@ class DaprGrpcClient:
             metadata=states_metadata)
         response, call = self._stub.QueryStateAlpha1.with_call(req)
 
-        results: Sequence[QueryResponseItem]= []
+        results = []
         for item in response.results:
             results.append(
                 QueryResponseItem(
