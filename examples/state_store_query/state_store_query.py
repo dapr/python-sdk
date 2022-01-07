@@ -19,13 +19,13 @@ with DaprClient() as d:
     query = open('query.json', 'r').read()
     res = d.query_state_alpha1(store_name=storeName, query=query)
     for r in res.results:
-        print(r.key, r.value)
+        print(r.key, json.dumps(json.loads(str(r.value, 'UTF-8')), sort_keys=True))
     print("Token:", res.token)
 
-    # Get more results using pagination token
+    # Get more results using a pagination token
 
     query = open('query-token.json', 'r').read()
     res = d.query_state_alpha1(store_name=storeName, query=query)
     for r in res.results:
-        print(r.key, r.value)
+        print(r.key, json.dumps(json.loads(str(r.value, 'UTF-8')), sort_keys=True))
     print("Token:", res.token)
