@@ -23,41 +23,42 @@ class HTTPExtension(google.protobuf.message.Message):
     Dapr runtime will parse POST as a verb and extract querystring to quersytring map.
     """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class _Verb:
+        ValueType = typing.NewType('ValueType', builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+    class _VerbEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_Verb.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
+        NONE: HTTPExtension.Verb.ValueType = ...  # 0
+        GET: HTTPExtension.Verb.ValueType = ...  # 1
+        HEAD: HTTPExtension.Verb.ValueType = ...  # 2
+        POST: HTTPExtension.Verb.ValueType = ...  # 3
+        PUT: HTTPExtension.Verb.ValueType = ...  # 4
+        DELETE: HTTPExtension.Verb.ValueType = ...  # 5
+        CONNECT: HTTPExtension.Verb.ValueType = ...  # 6
+        OPTIONS: HTTPExtension.Verb.ValueType = ...  # 7
+        TRACE: HTTPExtension.Verb.ValueType = ...  # 8
+        PATCH: HTTPExtension.Verb.ValueType = ...  # 9
     class Verb(_Verb, metaclass=_VerbEnumTypeWrapper):
         """Type of HTTP 1.1 Methods
         RFC 7231: https://tools.ietf.org/html/rfc7231#page-24
         RFC 5789: https://datatracker.ietf.org/doc/html/rfc5789
         """
         pass
-    class _Verb:
-        V = typing.NewType('V', builtins.int)
-    class _VerbEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_Verb.V], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
-        NONE = HTTPExtension.Verb.V(0)
-        GET = HTTPExtension.Verb.V(1)
-        HEAD = HTTPExtension.Verb.V(2)
-        POST = HTTPExtension.Verb.V(3)
-        PUT = HTTPExtension.Verb.V(4)
-        DELETE = HTTPExtension.Verb.V(5)
-        CONNECT = HTTPExtension.Verb.V(6)
-        OPTIONS = HTTPExtension.Verb.V(7)
-        TRACE = HTTPExtension.Verb.V(8)
-        PATCH = HTTPExtension.Verb.V(9)
 
-    NONE = HTTPExtension.Verb.V(0)
-    GET = HTTPExtension.Verb.V(1)
-    HEAD = HTTPExtension.Verb.V(2)
-    POST = HTTPExtension.Verb.V(3)
-    PUT = HTTPExtension.Verb.V(4)
-    DELETE = HTTPExtension.Verb.V(5)
-    CONNECT = HTTPExtension.Verb.V(6)
-    OPTIONS = HTTPExtension.Verb.V(7)
-    TRACE = HTTPExtension.Verb.V(8)
-    PATCH = HTTPExtension.Verb.V(9)
+    NONE: HTTPExtension.Verb.ValueType = ...  # 0
+    GET: HTTPExtension.Verb.ValueType = ...  # 1
+    HEAD: HTTPExtension.Verb.ValueType = ...  # 2
+    POST: HTTPExtension.Verb.ValueType = ...  # 3
+    PUT: HTTPExtension.Verb.ValueType = ...  # 4
+    DELETE: HTTPExtension.Verb.ValueType = ...  # 5
+    CONNECT: HTTPExtension.Verb.ValueType = ...  # 6
+    OPTIONS: HTTPExtension.Verb.ValueType = ...  # 7
+    TRACE: HTTPExtension.Verb.ValueType = ...  # 8
+    PATCH: HTTPExtension.Verb.ValueType = ...  # 9
 
     VERB_FIELD_NUMBER: builtins.int
     QUERYSTRING_FIELD_NUMBER: builtins.int
-    verb: global___HTTPExtension.Verb.V = ...
+    verb: global___HTTPExtension.Verb.ValueType = ...
     """Required. HTTP verb."""
 
     querystring: typing.Text = ...
@@ -65,7 +66,7 @@ class HTTPExtension(google.protobuf.message.Message):
 
     def __init__(self,
         *,
-        verb : global___HTTPExtension.Verb.V = ...,
+        verb : global___HTTPExtension.Verb.ValueType = ...,
         querystring : typing.Text = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["querystring",b"querystring","verb",b"verb"]) -> None: ...
@@ -211,44 +212,46 @@ global___Etag = Etag
 class StateOptions(google.protobuf.message.Message):
     """StateOptions configures concurrency and consistency for state operations"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class _StateConcurrency:
+        ValueType = typing.NewType('ValueType', builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+    class _StateConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_StateConcurrency.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
+        CONCURRENCY_UNSPECIFIED: StateOptions.StateConcurrency.ValueType = ...  # 0
+        CONCURRENCY_FIRST_WRITE: StateOptions.StateConcurrency.ValueType = ...  # 1
+        CONCURRENCY_LAST_WRITE: StateOptions.StateConcurrency.ValueType = ...  # 2
     class StateConcurrency(_StateConcurrency, metaclass=_StateConcurrencyEnumTypeWrapper):
         """Enum describing the supported concurrency for state."""
         pass
-    class _StateConcurrency:
-        V = typing.NewType('V', builtins.int)
-    class _StateConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_StateConcurrency.V], builtins.type):
+
+    CONCURRENCY_UNSPECIFIED: StateOptions.StateConcurrency.ValueType = ...  # 0
+    CONCURRENCY_FIRST_WRITE: StateOptions.StateConcurrency.ValueType = ...  # 1
+    CONCURRENCY_LAST_WRITE: StateOptions.StateConcurrency.ValueType = ...  # 2
+
+    class _StateConsistency:
+        ValueType = typing.NewType('ValueType', builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+    class _StateConsistencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_StateConsistency.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
-        CONCURRENCY_UNSPECIFIED = StateOptions.StateConcurrency.V(0)
-        CONCURRENCY_FIRST_WRITE = StateOptions.StateConcurrency.V(1)
-        CONCURRENCY_LAST_WRITE = StateOptions.StateConcurrency.V(2)
-
-    CONCURRENCY_UNSPECIFIED = StateOptions.StateConcurrency.V(0)
-    CONCURRENCY_FIRST_WRITE = StateOptions.StateConcurrency.V(1)
-    CONCURRENCY_LAST_WRITE = StateOptions.StateConcurrency.V(2)
-
+        CONSISTENCY_UNSPECIFIED: StateOptions.StateConsistency.ValueType = ...  # 0
+        CONSISTENCY_EVENTUAL: StateOptions.StateConsistency.ValueType = ...  # 1
+        CONSISTENCY_STRONG: StateOptions.StateConsistency.ValueType = ...  # 2
     class StateConsistency(_StateConsistency, metaclass=_StateConsistencyEnumTypeWrapper):
         """Enum describing the supported consistency for state."""
         pass
-    class _StateConsistency:
-        V = typing.NewType('V', builtins.int)
-    class _StateConsistencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_StateConsistency.V], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
-        CONSISTENCY_UNSPECIFIED = StateOptions.StateConsistency.V(0)
-        CONSISTENCY_EVENTUAL = StateOptions.StateConsistency.V(1)
-        CONSISTENCY_STRONG = StateOptions.StateConsistency.V(2)
 
-    CONSISTENCY_UNSPECIFIED = StateOptions.StateConsistency.V(0)
-    CONSISTENCY_EVENTUAL = StateOptions.StateConsistency.V(1)
-    CONSISTENCY_STRONG = StateOptions.StateConsistency.V(2)
+    CONSISTENCY_UNSPECIFIED: StateOptions.StateConsistency.ValueType = ...  # 0
+    CONSISTENCY_EVENTUAL: StateOptions.StateConsistency.ValueType = ...  # 1
+    CONSISTENCY_STRONG: StateOptions.StateConsistency.ValueType = ...  # 2
 
     CONCURRENCY_FIELD_NUMBER: builtins.int
     CONSISTENCY_FIELD_NUMBER: builtins.int
-    concurrency: global___StateOptions.StateConcurrency.V = ...
-    consistency: global___StateOptions.StateConsistency.V = ...
+    concurrency: global___StateOptions.StateConcurrency.ValueType = ...
+    consistency: global___StateOptions.StateConsistency.ValueType = ...
     def __init__(self,
         *,
-        concurrency : global___StateOptions.StateConcurrency.V = ...,
-        consistency : global___StateOptions.StateConsistency.V = ...,
+        concurrency : global___StateOptions.StateConcurrency.ValueType = ...,
+        consistency : global___StateOptions.StateConsistency.ValueType = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["concurrency",b"concurrency","consistency",b"consistency"]) -> None: ...
 global___StateOptions = StateOptions
