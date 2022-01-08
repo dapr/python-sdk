@@ -9,7 +9,7 @@ grpcio>=1.26.0
 grpcio-tools>=1.26.0
 protobuf==3.19.1
 six==1.16.0
-tox == 3.24.4
+tox == 3.24.5
 cloudevents >= 1.0.0
 opencensus == 0.8.0
 opencensus-ext-grpc == 0.7.2

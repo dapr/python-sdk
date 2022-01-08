@@ -49,6 +49,8 @@ from dapr.clients.grpc._response import (
     StateResponse,
     BulkStatesResponse,
     BulkStateItem,
+    ConfigurationResponse,
+    ConfigurationItem
 )
 
 from urllib.parse import urlencode
@@ -798,6 +800,48 @@ class DaprGrpcClient:
 
         return GetBulkSecretResponse(
             secrets=secrets_map,
+            headers=call.initial_metadata())
+
+    def get_configuration(
+            self,
+            store_name: str,
+            keys: str,
+            config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationResponse:
+        """Gets value from a config store with a key
+
+        The example gets value from a config store:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.get_configuration(
+                    store_name='state_store'
+                    key='key_1',
+                    config_metadata={"metakey": "metavalue"}
+                )
+
+        Args:
+            store_name (str): the state store name to get from
+            key (str): the key of the key-value pair to be gotten
+            config_metadata (Dict[str, str], optional): custom metadata for configuration
+
+        Returns:
+            :class:`ConfigurationResponse` gRPC metadata returned from callee
+            and value obtained from the config store
+        """
+
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("Config store name cannot be empty to get the configuration")
+        req = api_v1.GetConfigurationRequest(
+            store_name=store_name, keys=keys, metadata=config_metadata)
+        response, call = self._stub.GetConfigurationAlpha1.with_call(req)
+        items = []
+        for item in response.items:
+            items.append(
+                ConfigurationItem(
+                    key=item.key,
+                    value=item.value,
+                    version=item.version))
+        return ConfigurationResponse(
+            items=items,
             headers=call.initial_metadata())
 
     def wait(self, timeout_s: float):

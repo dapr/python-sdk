@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\252\002\033Dapr.Client.Autogen.Grpc.v1',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n dapr/proto/runtime/v1/dapr.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequest\"\xf5\x01\n\x0fGetStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12H\n\x0b\x63onsistency\x18\x03 \x01(\x0e\x32\x33.dapr.proto.common.v1.StateOptions.StateConsistency\x12\x46\n\x08metadata\x18\x04 \x03(\x0b\x32\x34.dapr.proto.runtime.v1.GetStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc9\x01\n\x13GetBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12\x13\n\x0bparallelism\x18\x03 \x01(\x05\x12J\n\x08metadata\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.GetBulkStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"K\n\x14GetBulkStateResponse\x12\x33\n\x05items\x18\x01 \x03(\x0b\x32$.dapr.proto.runtime.v1.BulkStateItem\"\xbe\x01\n\rBulkStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\x12\x44\n\x08metadata\x18\x05 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.BulkStateItem.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa8\x01\n\x10GetStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x90\x02\n\x12\x44\x65leteStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12(\n\x04\x65tag\x18\x03 \x01(\x0b\x32\x1a.dapr.proto.common.v1.Etag\x12\x33\n\x07options\x18\x04 \x01(\x0b\x32\".dapr.proto.common.v1.StateOptions\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.DeleteStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"]\n\x16\x44\x65leteBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"W\n\x10SaveStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\xdf\x01\n\x13PublishEventRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x19\n\x11\x64\x61ta_content_type\x18\x04 \x01(\t\x12J\n\x08metadata\x18\x05 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.PublishEventRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc3\x01\n\x14InvokeBindingRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12K\n\x08metadata\x18\x03 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry\x12\x11\n\toperation\x18\x04 \x01(\t\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa4\x01\n\x15InvokeBindingResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12L\n\x08metadata\x18\x02 \x03(\x0b\x32:.dapr.proto.runtime.v1.InvokeBindingResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xad\x01\n\x10GetSecretRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x82\x01\n\x11GetSecretResponse\x12@\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.GetSecretResponse.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa8\x01\n\x14GetBulkSecretRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12K\n\x08metadata\x18\x02 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.GetBulkSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x85\x01\n\x0eSecretResponse\x12\x43\n\x07secrets\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.SecretResponse.SecretsEntry\x1a.\n\x0cSecretsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb1\x01\n\x15GetBulkSecretResponse\x12\x44\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.GetBulkSecretResponse.DataEntry\x1aR\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x34\n\x05value\x18\x02 \x01(\x0b\x32%.dapr.proto.runtime.v1.SecretResponse:\x02\x38\x01\"f\n\x1bTransactionalStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x30\n\x07request\x18\x02 \x01(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\x83\x02\n\x1e\x45xecuteStateTransactionRequest\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12\x46\n\noperations\x18\x02 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.TransactionalStateOperation\x12U\n\x08metadata\x18\x03 \x03(\x0b\x32\x43.dapr.proto.runtime.v1.ExecuteStateTransactionRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9e\x01\n\x19RegisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x10\n\x08\x63\x61llback\x18\x06 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\x12\x0b\n\x03ttl\x18\x08 \x01(\t\"Q\n\x1bUnregisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"\x8f\x01\n\x1cRegisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x06 \x01(\x0c\x12\x0b\n\x03ttl\x18\x07 \x01(\t\"T\n\x1eUnregisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"I\n\x14GetActorStateRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0b\n\x03key\x18\x03 \x01(\t\"%\n\x15GetActorStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x98\x01\n#ExecuteActorStateTransactionRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12K\n\noperations\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.TransactionalActorStateOperation\"k\n TransactionalActorStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12#\n\x05value\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\"X\n\x12InvokeActorRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0e\n\x06method\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"#\n\x13InvokeActorResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\xca\x02\n\x13GetMetadataResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\x45\n\x13\x61\x63tive_actors_count\x18\x02 \x03(\x0b\x32(.dapr.proto.runtime.v1.ActiveActorsCount\x12J\n\x15registered_components\x18\x03 \x03(\x0b\x32+.dapr.proto.runtime.v1.RegisteredComponents\x12[\n\x11\x65xtended_metadata\x18\x04 \x03(\x0b\x32@.dapr.proto.runtime.v1.GetMetadataResponse.ExtendedMetadataEntry\x1a\x37\n\x15\x45xtendedMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"0\n\x11\x41\x63tiveActorsCount\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\"C\n\x14RegisteredComponents\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\"0\n\x12SetMetadataRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t2\x85\x10\n\x04\x44\x61pr\x12\x64\n\rInvokeService\x12+.dapr.proto.runtime.v1.InvokeServiceRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12]\n\x08GetState\x12&.dapr.proto.runtime.v1.GetStateRequest\x1a\'.dapr.proto.runtime.v1.GetStateResponse\"\x00\x12i\n\x0cGetBulkState\x12*.dapr.proto.runtime.v1.GetBulkStateRequest\x1a+.dapr.proto.runtime.v1.GetBulkStateResponse\"\x00\x12N\n\tSaveState\x12\'.dapr.proto.runtime.v1.SaveStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12R\n\x0b\x44\x65leteState\x12).dapr.proto.runtime.v1.DeleteStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12Z\n\x0f\x44\x65leteBulkState\x12-.dapr.proto.runtime.v1.DeleteBulkStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17\x45xecuteStateTransaction\x12\x35.dapr.proto.runtime.v1.ExecuteStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12T\n\x0cPublishEvent\x12*.dapr.proto.runtime.v1.PublishEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n\rInvokeBinding\x12+.dapr.proto.runtime.v1.InvokeBindingRequest\x1a,.dapr.proto.runtime.v1.InvokeBindingResponse\"\x00\x12`\n\tGetSecret\x12\'.dapr.proto.runtime.v1.GetSecretRequest\x1a(.dapr.proto.runtime.v1.GetSecretResponse\"\x00\x12l\n\rGetBulkSecret\x12+.dapr.proto.runtime.v1.GetBulkSecretRequest\x1a,.dapr.proto.runtime.v1.GetBulkSecretResponse\"\x00\x12`\n\x12RegisterActorTimer\x12\x30.dapr.proto.runtime.v1.RegisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x14UnregisterActorTimer\x12\x32.dapr.proto.runtime.v1.UnregisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x15RegisterActorReminder\x12\x33.dapr.proto.runtime.v1.RegisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17UnregisterActorReminder\x12\x35.dapr.proto.runtime.v1.UnregisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n\rGetActorState\x12+.dapr.proto.runtime.v1.GetActorStateRequest\x1a,.dapr.proto.runtime.v1.GetActorStateResponse\"\x00\x12t\n\x1c\x45xecuteActorStateTransaction\x12:.dapr.proto.runtime.v1.ExecuteActorStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x0bInvokeActor\x12).dapr.proto.runtime.v1.InvokeActorRequest\x1a*.dapr.proto.runtime.v1.InvokeActorResponse\"\x00\x12S\n\x0bGetMetadata\x12\x16.google.protobuf.Empty\x1a*.dapr.proto.runtime.v1.GetMetadataResponse\"\x00\x12R\n\x0bSetMetadata\x12).dapr.proto.runtime.v1.SetMetadataRequest\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x08Shutdown\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3'
+  serialized_pb=b'\n dapr/proto/runtime/v1/dapr.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequest\"\xf5\x01\n\x0fGetStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12H\n\x0b\x63onsistency\x18\x03 \x01(\x0e\x32\x33.dapr.proto.common.v1.StateOptions.StateConsistency\x12\x46\n\x08metadata\x18\x04 \x03(\x0b\x32\x34.dapr.proto.runtime.v1.GetStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc9\x01\n\x13GetBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12\x13\n\x0bparallelism\x18\x03 \x01(\x05\x12J\n\x08metadata\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.GetBulkStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"K\n\x14GetBulkStateResponse\x12\x33\n\x05items\x18\x01 \x03(\x0b\x32$.dapr.proto.runtime.v1.BulkStateItem\"\xbe\x01\n\rBulkStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\x12\x44\n\x08metadata\x18\x05 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.BulkStateItem.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa8\x01\n\x10GetStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x90\x02\n\x12\x44\x65leteStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12(\n\x04\x65tag\x18\x03 \x01(\x0b\x32\x1a.dapr.proto.common.v1.Etag\x12\x33\n\x07options\x18\x04 \x01(\x0b\x32\".dapr.proto.common.v1.StateOptions\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.DeleteStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"]\n\x16\x44\x65leteBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"W\n\x10SaveStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\xb1\x01\n\x11QueryStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\r\n\x05query\x18\x02 \x01(\t\x12H\n\x08metadata\x18\x03 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"H\n\x0eQueryStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"\xd7\x01\n\x12QueryStateResponse\x12\x36\n\x07results\x18\x01 \x03(\x0b\x32%.dapr.proto.runtime.v1.QueryStateItem\x12\r\n\x05token\x18\x02 \x01(\t\x12I\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xdf\x01\n\x13PublishEventRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x19\n\x11\x64\x61ta_content_type\x18\x04 \x01(\t\x12J\n\x08metadata\x18\x05 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.PublishEventRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc3\x01\n\x14InvokeBindingRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12K\n\x08metadata\x18\x03 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry\x12\x11\n\toperation\x18\x04 \x01(\t\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa4\x01\n\x15InvokeBindingResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12L\n\x08metadata\x18\x02 \x03(\x0b\x32:.dapr.proto.runtime.v1.InvokeBindingResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xad\x01\n\x10GetSecretRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x82\x01\n\x11GetSecretResponse\x12@\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.GetSecretResponse.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa8\x01\n\x14GetBulkSecretRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12K\n\x08metadata\x18\x02 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.GetBulkSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x85\x01\n\x0eSecretResponse\x12\x43\n\x07secrets\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.SecretResponse.SecretsEntry\x1a.\n\x0cSecretsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb1\x01\n\x15GetBulkSecretResponse\x12\x44\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.GetBulkSecretResponse.DataEntry\x1aR\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x34\n\x05value\x18\x02 \x01(\x0b\x32%.dapr.proto.runtime.v1.SecretResponse:\x02\x38\x01\"f\n\x1bTransactionalStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x30\n\x07request\x18\x02 \x01(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\x83\x02\n\x1e\x45xecuteStateTransactionRequest\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12\x46\n\noperations\x18\x02 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.TransactionalStateOperation\x12U\n\x08metadata\x18\x03 \x03(\x0b\x32\x43.dapr.proto.runtime.v1.ExecuteStateTransactionRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9e\x01\n\x19RegisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x10\n\x08\x63\x61llback\x18\x06 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\x12\x0b\n\x03ttl\x18\x08 \x01(\t\"Q\n\x1bUnregisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"\x8f\x01\n\x1cRegisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x06 \x01(\x0c\x12\x0b\n\x03ttl\x18\x07 \x01(\t\"T\n\x1eUnregisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"I\n\x14GetActorStateRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0b\n\x03key\x18\x03 \x01(\t\"%\n\x15GetActorStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x98\x01\n#ExecuteActorStateTransactionRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12K\n\noperations\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.TransactionalActorStateOperation\"k\n TransactionalActorStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12#\n\x05value\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\"X\n\x12InvokeActorRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0e\n\x06method\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"#\n\x13InvokeActorResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\xca\x02\n\x13GetMetadataResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\x45\n\x13\x61\x63tive_actors_count\x18\x02 \x03(\x0b\x32(.dapr.proto.runtime.v1.ActiveActorsCount\x12J\n\x15registered_components\x18\x03 \x03(\x0b\x32+.dapr.proto.runtime.v1.RegisteredComponents\x12[\n\x11\x65xtended_metadata\x18\x04 \x03(\x0b\x32@.dapr.proto.runtime.v1.GetMetadataResponse.ExtendedMetadataEntry\x1a\x37\n\x15\x45xtendedMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"0\n\x11\x41\x63tiveActorsCount\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\"C\n\x14RegisteredComponents\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\"0\n\x12SetMetadataRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\xbc\x01\n\x17GetConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12N\n\x08metadata\x18\x03 \x03(\x0b\x32<.dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"R\n\x18GetConfigurationResponse\x12\x36\n\x05items\x18\x01 \x03(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem\"\xc8\x01\n\x1dSubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12T\n\x08metadata\x18\x03 \x03(\x0b\x32\x42.dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"X\n\x1eSubscribeConfigurationResponse\x12\x36\n\x05items\x18\x01 \x03(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem2\xff\x12\n\x04\x44\x61pr\x12\x64\n\rInvokeService\x12+.dapr.proto.runtime.v1.InvokeServiceRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12]\n\x08GetState\x12&.dapr.proto.runtime.v1.GetStateRequest\x1a\'.dapr.proto.runtime.v1.GetStateResponse\"\x00\x12i\n\x0cGetBulkState\x12*.dapr.proto.runtime.v1.GetBulkStateRequest\x1a+.dapr.proto.runtime.v1.GetBulkStateResponse\"\x00\x12N\n\tSaveState\x12\'.dapr.proto.runtime.v1.SaveStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12i\n\x10QueryStateAlpha1\x12(.dapr.proto.runtime.v1.QueryStateRequest\x1a).dapr.proto.runtime.v1.QueryStateResponse\"\x00\x12R\n\x0b\x44\x65leteState\x12).dapr.proto.runtime.v1.DeleteStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12Z\n\x0f\x44\x65leteBulkState\x12-.dapr.proto.runtime.v1.DeleteBulkStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17\x45xecuteStateTransaction\x12\x35.dapr.proto.runtime.v1.ExecuteStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12T\n\x0cPublishEvent\x12*.dapr.proto.runtime.v1.PublishEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n\rInvokeBinding\x12+.dapr.proto.runtime.v1.InvokeBindingRequest\x1a,.dapr.proto.runtime.v1.InvokeBindingResponse\"\x00\x12`\n\tGetSecret\x12\'.dapr.proto.runtime.v1.GetSecretRequest\x1a(.dapr.proto.runtime.v1.GetSecretResponse\"\x00\x12l\n\rGetBulkSecret\x12+.dapr.proto.runtime.v1.GetBulkSecretRequest\x1a,.dapr.proto.runtime.v1.GetBulkSecretResponse\"\x00\x12`\n\x12RegisterActorTimer\x12\x30.dapr.proto.runtime.v1.RegisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x14UnregisterActorTimer\x12\x32.dapr.proto.runtime.v1.UnregisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x15RegisterActorReminder\x12\x33.dapr.proto.runtime.v1.RegisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17UnregisterActorReminder\x12\x35.dapr.proto.runtime.v1.UnregisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n\rGetActorState\x12+.dapr.proto.runtime.v1.GetActorStateRequest\x1a,.dapr.proto.runtime.v1.GetActorStateResponse\"\x00\x12t\n\x1c\x45xecuteActorStateTransaction\x12:.dapr.proto.runtime.v1.ExecuteActorStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x0bInvokeActor\x12).dapr.proto.runtime.v1.InvokeActorRequest\x1a*.dapr.proto.runtime.v1.InvokeActorResponse\"\x00\x12{\n\x16GetConfigurationAlpha1\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12\x8f\x01\n\x1cSubscribeConfigurationAlpha1\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12S\n\x0bGetMetadata\x12\x16.google.protobuf.Empty\x1a*.dapr.proto.runtime.v1.GetMetadataResponse\"\x00\x12R\n\x0bSetMetadata\x12).dapr.proto.runtime.v1.SetMetadataRequest\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x08Shutdown\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,dapr_dot_proto_dot_common_dot_v1_dot_common__pb2.DESCRIPTOR,])
 
@@ -640,6 +640,227 @@ _SAVESTATEREQUEST = _descriptor.Descriptor(
 )
 
 
+_QUERYSTATEREQUEST_METADATAENTRY = _descriptor.Descriptor(
+  name='MetadataEntry',
+  full_name='dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=b'8\001',
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=439,
+  serialized_end=486,
+)
+
+_QUERYSTATEREQUEST = _descriptor.Descriptor(
+  name='QueryStateRequest',
+  full_name='dapr.proto.runtime.v1.QueryStateRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='store_name', full_name='dapr.proto.runtime.v1.QueryStateRequest.store_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='query', full_name='dapr.proto.runtime.v1.QueryStateRequest.query', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='metadata', full_name='dapr.proto.runtime.v1.QueryStateRequest.metadata', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[_QUERYSTATEREQUEST_METADATAENTRY, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1593,
+  serialized_end=1770,
+)
+
+
+_QUERYSTATEITEM = _descriptor.Descriptor(
+  name='QueryStateItem',
+  full_name='dapr.proto.runtime.v1.QueryStateItem',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='dapr.proto.runtime.v1.QueryStateItem.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='data', full_name='dapr.proto.runtime.v1.QueryStateItem.data', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='etag', full_name='dapr.proto.runtime.v1.QueryStateItem.etag', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='error', full_name='dapr.proto.runtime.v1.QueryStateItem.error', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1772,
+  serialized_end=1844,
+)
+
+
+_QUERYSTATERESPONSE_METADATAENTRY = _descriptor.Descriptor(
+  name='MetadataEntry',
+  full_name='dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=b'8\001',
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=439,
+  serialized_end=486,
+)
+
+_QUERYSTATERESPONSE = _descriptor.Descriptor(
+  name='QueryStateResponse',
+  full_name='dapr.proto.runtime.v1.QueryStateResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='results', full_name='dapr.proto.runtime.v1.QueryStateResponse.results', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='token', full_name='dapr.proto.runtime.v1.QueryStateResponse.token', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='metadata', full_name='dapr.proto.runtime.v1.QueryStateResponse.metadata', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[_QUERYSTATERESPONSE_METADATAENTRY, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1847,
+  serialized_end=2062,
+)
+
+
 _PUBLISHEVENTREQUEST_METADATAENTRY = _descriptor.Descriptor(
   name='MetadataEntry',
   full_name='dapr.proto.runtime.v1.PublishEventRequest.MetadataEntry',
@@ -733,8 +954,8 @@ _PUBLISHEVENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1593,
-  serialized_end=1816,
+  serialized_start=2065,
+  serialized_end=2288,
 )
 
 
@@ -824,8 +1045,8 @@ _INVOKEBINDINGREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1819,
-  serialized_end=2014,
+  serialized_start=2291,
+  serialized_end=2486,
 )
 
 
@@ -901,8 +1122,8 @@ _INVOKEBINDINGRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2017,
-  serialized_end=2181,
+  serialized_start=2489,
+  serialized_end=2653,
 )
 
 
@@ -985,8 +1206,8 @@ _GETSECRETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2184,
-  serialized_end=2357,
+  serialized_start=2656,
+  serialized_end=2829,
 )
 
 
@@ -1024,8 +1245,8 @@ _GETSECRETRESPONSE_DATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2447,
-  serialized_end=2490,
+  serialized_start=2919,
+  serialized_end=2962,
 )
 
 _GETSECRETRESPONSE = _descriptor.Descriptor(
@@ -1055,8 +1276,8 @@ _GETSECRETRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2360,
-  serialized_end=2490,
+  serialized_start=2832,
+  serialized_end=2962,
 )
 
 
@@ -1132,8 +1353,8 @@ _GETBULKSECRETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2493,
-  serialized_end=2661,
+  serialized_start=2965,
+  serialized_end=3133,
 )
 
 
@@ -1171,8 +1392,8 @@ _SECRETRESPONSE_SECRETSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2751,
-  serialized_end=2797,
+  serialized_start=3223,
+  serialized_end=3269,
 )
 
 _SECRETRESPONSE = _descriptor.Descriptor(
@@ -1202,8 +1423,8 @@ _SECRETRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2664,
-  serialized_end=2797,
+  serialized_start=3136,
+  serialized_end=3269,
 )
 
 
@@ -1241,8 +1462,8 @@ _GETBULKSECRETRESPONSE_DATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2895,
-  serialized_end=2977,
+  serialized_start=3367,
+  serialized_end=3449,
 )
 
 _GETBULKSECRETRESPONSE = _descriptor.Descriptor(
@@ -1272,8 +1493,8 @@ _GETBULKSECRETRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2800,
-  serialized_end=2977,
+  serialized_start=3272,
+  serialized_end=3449,
 )
 
 
@@ -1311,8 +1532,8 @@ _TRANSACTIONALSTATEOPERATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2979,
-  serialized_end=3081,
+  serialized_start=3451,
+  serialized_end=3553,
 )
 
 
@@ -1395,8 +1616,8 @@ _EXECUTESTATETRANSACTIONREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3084,
-  serialized_end=3343,
+  serialized_start=3556,
+  serialized_end=3815,
 )
 
 
@@ -1476,8 +1697,8 @@ _REGISTERACTORTIMERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3346,
-  serialized_end=3504,
+  serialized_start=3818,
+  serialized_end=3976,
 )
 
 
@@ -1522,8 +1743,8 @@ _UNREGISTERACTORTIMERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3506,
-  serialized_end=3587,
+  serialized_start=3978,
+  serialized_end=4059,
 )
 
 
@@ -1596,8 +1817,8 @@ _REGISTERACTORREMINDERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3590,
-  serialized_end=3733,
+  serialized_start=4062,
+  serialized_end=4205,
 )
 
 
@@ -1642,8 +1863,8 @@ _UNREGISTERACTORREMINDERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3735,
-  serialized_end=3819,
+  serialized_start=4207,
+  serialized_end=4291,
 )
 
 
@@ -1688,8 +1909,8 @@ _GETACTORSTATEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3821,
-  serialized_end=3894,
+  serialized_start=4293,
+  serialized_end=4366,
 )
 
 
@@ -1720,8 +1941,8 @@ _GETACTORSTATERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3896,
-  serialized_end=3933,
+  serialized_start=4368,
+  serialized_end=4405,
 )
 
 
@@ -1766,8 +1987,8 @@ _EXECUTEACTORSTATETRANSACTIONREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3936,
-  serialized_end=4088,
+  serialized_start=4408,
+  serialized_end=4560,
 )
 
 
@@ -1812,8 +2033,8 @@ _TRANSACTIONALACTORSTATEOPERATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4090,
-  serialized_end=4197,
+  serialized_start=4562,
+  serialized_end=4669,
 )
 
 
@@ -1865,8 +2086,8 @@ _INVOKEACTORREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4199,
-  serialized_end=4287,
+  serialized_start=4671,
+  serialized_end=4759,
 )
 
 
@@ -1897,8 +2118,8 @@ _INVOKEACTORRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4289,
-  serialized_end=4324,
+  serialized_start=4761,
+  serialized_end=4796,
 )
 
 
@@ -1936,8 +2157,8 @@ _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4602,
-  serialized_end=4657,
+  serialized_start=5074,
+  serialized_end=5129,
 )
 
 _GETMETADATARESPONSE = _descriptor.Descriptor(
@@ -1988,8 +2209,8 @@ _GETMETADATARESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4327,
-  serialized_end=4657,
+  serialized_start=4799,
+  serialized_end=5129,
 )
 
 
@@ -2027,8 +2248,8 @@ _ACTIVEACTORSCOUNT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4659,
-  serialized_end=4707,
+  serialized_start=5131,
+  serialized_end=5179,
 )
 
 
@@ -2073,8 +2294,8 @@ _REGISTEREDCOMPONENTS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4709,
-  serialized_end=4776,
+  serialized_start=5181,
+  serialized_end=5248,
 )
 
 
@@ -2112,8 +2333,240 @@ _SETMETADATAREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4778,
-  serialized_end=4826,
+  serialized_start=5250,
+  serialized_end=5298,
+)
+
+
+_GETCONFIGURATIONREQUEST_METADATAENTRY = _descriptor.Descriptor(
+  name='MetadataEntry',
+  full_name='dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=b'8\001',
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=439,
+  serialized_end=486,
+)
+
+_GETCONFIGURATIONREQUEST = _descriptor.Descriptor(
+  name='GetConfigurationRequest',
+  full_name='dapr.proto.runtime.v1.GetConfigurationRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='store_name', full_name='dapr.proto.runtime.v1.GetConfigurationRequest.store_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='keys', full_name='dapr.proto.runtime.v1.GetConfigurationRequest.keys', index=1,
+      number=2, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='metadata', full_name='dapr.proto.runtime.v1.GetConfigurationRequest.metadata', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[_GETCONFIGURATIONREQUEST_METADATAENTRY, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=5301,
+  serialized_end=5489,
+)
+
+
+_GETCONFIGURATIONRESPONSE = _descriptor.Descriptor(
+  name='GetConfigurationResponse',
+  full_name='dapr.proto.runtime.v1.GetConfigurationResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='items', full_name='dapr.proto.runtime.v1.GetConfigurationResponse.items', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=5491,
+  serialized_end=5573,
+)
+
+
+_SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY = _descriptor.Descriptor(
+  name='MetadataEntry',
+  full_name='dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=b'8\001',
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=439,
+  serialized_end=486,
+)
+
+_SUBSCRIBECONFIGURATIONREQUEST = _descriptor.Descriptor(
+  name='SubscribeConfigurationRequest',
+  full_name='dapr.proto.runtime.v1.SubscribeConfigurationRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='store_name', full_name='dapr.proto.runtime.v1.SubscribeConfigurationRequest.store_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='keys', full_name='dapr.proto.runtime.v1.SubscribeConfigurationRequest.keys', index=1,
+      number=2, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='metadata', full_name='dapr.proto.runtime.v1.SubscribeConfigurationRequest.metadata', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[_SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=5576,
+  serialized_end=5776,
+)
+
+
+_SUBSCRIBECONFIGURATIONRESPONSE = _descriptor.Descriptor(
+  name='SubscribeConfigurationResponse',
+  full_name='dapr.proto.runtime.v1.SubscribeConfigurationResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='items', full_name='dapr.proto.runtime.v1.SubscribeConfigurationResponse.items', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=5778,
+  serialized_end=5866,
 )
 
 _INVOKESERVICEREQUEST.fields_by_name['message'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._INVOKEREQUEST
@@ -2133,6 +2586,11 @@ _DELETESTATEREQUEST.fields_by_name['options'].message_type = dapr_dot_proto_dot_
 _DELETESTATEREQUEST.fields_by_name['metadata'].message_type = _DELETESTATEREQUEST_METADATAENTRY
 _DELETEBULKSTATEREQUEST.fields_by_name['states'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._STATEITEM
 _SAVESTATEREQUEST.fields_by_name['states'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._STATEITEM
+_QUERYSTATEREQUEST_METADATAENTRY.containing_type = _QUERYSTATEREQUEST
+_QUERYSTATEREQUEST.fields_by_name['metadata'].message_type = _QUERYSTATEREQUEST_METADATAENTRY
+_QUERYSTATERESPONSE_METADATAENTRY.containing_type = _QUERYSTATERESPONSE
+_QUERYSTATERESPONSE.fields_by_name['results'].message_type = _QUERYSTATEITEM
+_QUERYSTATERESPONSE.fields_by_name['metadata'].message_type = _QUERYSTATERESPONSE_METADATAENTRY
 _PUBLISHEVENTREQUEST_METADATAENTRY.containing_type = _PUBLISHEVENTREQUEST
 _PUBLISHEVENTREQUEST.fields_by_name['metadata'].message_type = _PUBLISHEVENTREQUEST_METADATAENTRY
 _INVOKEBINDINGREQUEST_METADATAENTRY.containing_type = _INVOKEBINDINGREQUEST
@@ -2160,6 +2618,12 @@ _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY.containing_type = _GETMETADATARESPONS
 _GETMETADATARESPONSE.fields_by_name['active_actors_count'].message_type = _ACTIVEACTORSCOUNT
 _GETMETADATARESPONSE.fields_by_name['registered_components'].message_type = _REGISTEREDCOMPONENTS
 _GETMETADATARESPONSE.fields_by_name['extended_metadata'].message_type = _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY
+_GETCONFIGURATIONREQUEST_METADATAENTRY.containing_type = _GETCONFIGURATIONREQUEST
+_GETCONFIGURATIONREQUEST.fields_by_name['metadata'].message_type = _GETCONFIGURATIONREQUEST_METADATAENTRY
+_GETCONFIGURATIONRESPONSE.fields_by_name['items'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._CONFIGURATIONITEM
+_SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY.containing_type = _SUBSCRIBECONFIGURATIONREQUEST
+_SUBSCRIBECONFIGURATIONREQUEST.fields_by_name['metadata'].message_type = _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY
+_SUBSCRIBECONFIGURATIONRESPONSE.fields_by_name['items'].message_type = dapr_dot_proto_dot_common_dot_v1_dot_common__pb2._CONFIGURATIONITEM
 DESCRIPTOR.message_types_by_name['InvokeServiceRequest'] = _INVOKESERVICEREQUEST
 DESCRIPTOR.message_types_by_name['GetStateRequest'] = _GETSTATEREQUEST
 DESCRIPTOR.message_types_by_name['GetBulkStateRequest'] = _GETBULKSTATEREQUEST
@@ -2169,6 +2633,9 @@ DESCRIPTOR.message_types_by_name['GetStateResponse'] = _GETSTATERESPONSE
 DESCRIPTOR.message_types_by_name['DeleteStateRequest'] = _DELETESTATEREQUEST
 DESCRIPTOR.message_types_by_name['DeleteBulkStateRequest'] = _DELETEBULKSTATEREQUEST
 DESCRIPTOR.message_types_by_name['SaveStateRequest'] = _SAVESTATEREQUEST
+DESCRIPTOR.message_types_by_name['QueryStateRequest'] = _QUERYSTATEREQUEST
+DESCRIPTOR.message_types_by_name['QueryStateItem'] = _QUERYSTATEITEM
+DESCRIPTOR.message_types_by_name['QueryStateResponse'] = _QUERYSTATERESPONSE
 DESCRIPTOR.message_types_by_name['PublishEventRequest'] = _PUBLISHEVENTREQUEST
 DESCRIPTOR.message_types_by_name['InvokeBindingRequest'] = _INVOKEBINDINGREQUEST
 DESCRIPTOR.message_types_by_name['InvokeBindingResponse'] = _INVOKEBINDINGRESPONSE
@@ -2193,6 +2660,10 @@ DESCRIPTOR.message_types_by_name['GetMetadataResponse'] = _GETMETADATARESPONSE
 DESCRIPTOR.message_types_by_name['ActiveActorsCount'] = _ACTIVEACTORSCOUNT
 DESCRIPTOR.message_types_by_name['RegisteredComponents'] = _REGISTEREDCOMPONENTS
 DESCRIPTOR.message_types_by_name['SetMetadataRequest'] = _SETMETADATAREQUEST
+DESCRIPTOR.message_types_by_name['GetConfigurationRequest'] = _GETCONFIGURATIONREQUEST
+DESCRIPTOR.message_types_by_name['GetConfigurationResponse'] = _GETCONFIGURATIONRESPONSE
+DESCRIPTOR.message_types_by_name['SubscribeConfigurationRequest'] = _SUBSCRIBECONFIGURATIONREQUEST
+DESCRIPTOR.message_types_by_name['SubscribeConfigurationResponse'] = _SUBSCRIBECONFIGURATIONRESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 InvokeServiceRequest = _reflection.GeneratedProtocolMessageType('InvokeServiceRequest', (_message.Message,), {
@@ -2297,6 +2768,43 @@ SaveStateRequest = _reflection.GeneratedProtocolMessageType('SaveStateRequest', 
   # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SaveStateRequest)
   })
 _sym_db.RegisterMessage(SaveStateRequest)
+
+QueryStateRequest = _reflection.GeneratedProtocolMessageType('QueryStateRequest', (_message.Message,), {
+
+  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
+    'DESCRIPTOR' : _QUERYSTATEREQUEST_METADATAENTRY,
+    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry)
+    })
+  ,
+  'DESCRIPTOR' : _QUERYSTATEREQUEST,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateRequest)
+  })
+_sym_db.RegisterMessage(QueryStateRequest)
+_sym_db.RegisterMessage(QueryStateRequest.MetadataEntry)
+
+QueryStateItem = _reflection.GeneratedProtocolMessageType('QueryStateItem', (_message.Message,), {
+  'DESCRIPTOR' : _QUERYSTATEITEM,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateItem)
+  })
+_sym_db.RegisterMessage(QueryStateItem)
+
+QueryStateResponse = _reflection.GeneratedProtocolMessageType('QueryStateResponse', (_message.Message,), {
+
+  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
+    'DESCRIPTOR' : _QUERYSTATERESPONSE_METADATAENTRY,
+    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry)
+    })
+  ,
+  'DESCRIPTOR' : _QUERYSTATERESPONSE,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateResponse)
+  })
+_sym_db.RegisterMessage(QueryStateResponse)
+_sym_db.RegisterMessage(QueryStateResponse.MetadataEntry)
 
 PublishEventRequest = _reflection.GeneratedProtocolMessageType('PublishEventRequest', (_message.Message,), {
 
@@ -2546,6 +3054,50 @@ SetMetadataRequest = _reflection.GeneratedProtocolMessageType('SetMetadataReques
   })
 _sym_db.RegisterMessage(SetMetadataRequest)
 
+GetConfigurationRequest = _reflection.GeneratedProtocolMessageType('GetConfigurationRequest', (_message.Message,), {
+
+  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
+    'DESCRIPTOR' : _GETCONFIGURATIONREQUEST_METADATAENTRY,
+    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry)
+    })
+  ,
+  'DESCRIPTOR' : _GETCONFIGURATIONREQUEST,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetConfigurationRequest)
+  })
+_sym_db.RegisterMessage(GetConfigurationRequest)
+_sym_db.RegisterMessage(GetConfigurationRequest.MetadataEntry)
+
+GetConfigurationResponse = _reflection.GeneratedProtocolMessageType('GetConfigurationResponse', (_message.Message,), {
+  'DESCRIPTOR' : _GETCONFIGURATIONRESPONSE,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetConfigurationResponse)
+  })
+_sym_db.RegisterMessage(GetConfigurationResponse)
+
+SubscribeConfigurationRequest = _reflection.GeneratedProtocolMessageType('SubscribeConfigurationRequest', (_message.Message,), {
+
+  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
+    'DESCRIPTOR' : _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY,
+    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry)
+    })
+  ,
+  'DESCRIPTOR' : _SUBSCRIBECONFIGURATIONREQUEST,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubscribeConfigurationRequest)
+  })
+_sym_db.RegisterMessage(SubscribeConfigurationRequest)
+_sym_db.RegisterMessage(SubscribeConfigurationRequest.MetadataEntry)
+
+SubscribeConfigurationResponse = _reflection.GeneratedProtocolMessageType('SubscribeConfigurationResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SUBSCRIBECONFIGURATIONRESPONSE,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubscribeConfigurationResponse)
+  })
+_sym_db.RegisterMessage(SubscribeConfigurationResponse)
+
 
 DESCRIPTOR._options = None
 _GETSTATEREQUEST_METADATAENTRY._options = None
@@ -2553,6 +3105,8 @@ _GETBULKSTATEREQUEST_METADATAENTRY._options = None
 _BULKSTATEITEM_METADATAENTRY._options = None
 _GETSTATERESPONSE_METADATAENTRY._options = None
 _DELETESTATEREQUEST_METADATAENTRY._options = None
+_QUERYSTATEREQUEST_METADATAENTRY._options = None
+_QUERYSTATERESPONSE_METADATAENTRY._options = None
 _PUBLISHEVENTREQUEST_METADATAENTRY._options = None
 _INVOKEBINDINGREQUEST_METADATAENTRY._options = None
 _INVOKEBINDINGRESPONSE_METADATAENTRY._options = None
@@ -2563,6 +3117,8 @@ _SECRETRESPONSE_SECRETSENTRY._options = None
 _GETBULKSECRETRESPONSE_DATAENTRY._options = None
 _EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY._options = None
 _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY._options = None
+_GETCONFIGURATIONREQUEST_METADATAENTRY._options = None
+_SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY._options = None
 
 _DAPR = _descriptor.ServiceDescriptor(
   name='Dapr',
@@ -2571,8 +3127,8 @@ _DAPR = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=4829,
-  serialized_end=6882,
+  serialized_start=5869,
+  serialized_end=8300,
   methods=[
   _descriptor.MethodDescriptor(
     name='InvokeService',
@@ -2615,9 +3171,19 @@ _DAPR = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
+    name='QueryStateAlpha1',
+    full_name='dapr.proto.runtime.v1.Dapr.QueryStateAlpha1',
+    index=4,
+    containing_service=None,
+    input_type=_QUERYSTATEREQUEST,
+    output_type=_QUERYSTATERESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
     name='DeleteState',
     full_name='dapr.proto.runtime.v1.Dapr.DeleteState',
-    index=4,
+    index=5,
     containing_service=None,
     input_type=_DELETESTATEREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2627,7 +3193,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='DeleteBulkState',
     full_name='dapr.proto.runtime.v1.Dapr.DeleteBulkState',
-    index=5,
+    index=6,
     containing_service=None,
     input_type=_DELETEBULKSTATEREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2637,7 +3203,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ExecuteStateTransaction',
     full_name='dapr.proto.runtime.v1.Dapr.ExecuteStateTransaction',
-    index=6,
+    index=7,
     containing_service=None,
     input_type=_EXECUTESTATETRANSACTIONREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2647,7 +3213,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='PublishEvent',
     full_name='dapr.proto.runtime.v1.Dapr.PublishEvent',
-    index=7,
+    index=8,
     containing_service=None,
     input_type=_PUBLISHEVENTREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2657,7 +3223,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='InvokeBinding',
     full_name='dapr.proto.runtime.v1.Dapr.InvokeBinding',
-    index=8,
+    index=9,
     containing_service=None,
     input_type=_INVOKEBINDINGREQUEST,
     output_type=_INVOKEBINDINGRESPONSE,
@@ -2667,7 +3233,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GetSecret',
     full_name='dapr.proto.runtime.v1.Dapr.GetSecret',
-    index=9,
+    index=10,
     containing_service=None,
     input_type=_GETSECRETREQUEST,
     output_type=_GETSECRETRESPONSE,
@@ -2677,7 +3243,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GetBulkSecret',
     full_name='dapr.proto.runtime.v1.Dapr.GetBulkSecret',
-    index=10,
+    index=11,
     containing_service=None,
     input_type=_GETBULKSECRETREQUEST,
     output_type=_GETBULKSECRETRESPONSE,
@@ -2687,7 +3253,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='RegisterActorTimer',
     full_name='dapr.proto.runtime.v1.Dapr.RegisterActorTimer',
-    index=11,
+    index=12,
     containing_service=None,
     input_type=_REGISTERACTORTIMERREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2697,7 +3263,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='UnregisterActorTimer',
     full_name='dapr.proto.runtime.v1.Dapr.UnregisterActorTimer',
-    index=12,
+    index=13,
     containing_service=None,
     input_type=_UNREGISTERACTORTIMERREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2707,7 +3273,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='RegisterActorReminder',
     full_name='dapr.proto.runtime.v1.Dapr.RegisterActorReminder',
-    index=13,
+    index=14,
     containing_service=None,
     input_type=_REGISTERACTORREMINDERREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2717,7 +3283,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='UnregisterActorReminder',
     full_name='dapr.proto.runtime.v1.Dapr.UnregisterActorReminder',
-    index=14,
+    index=15,
     containing_service=None,
     input_type=_UNREGISTERACTORREMINDERREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2727,7 +3293,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GetActorState',
     full_name='dapr.proto.runtime.v1.Dapr.GetActorState',
-    index=15,
+    index=16,
     containing_service=None,
     input_type=_GETACTORSTATEREQUEST,
     output_type=_GETACTORSTATERESPONSE,
@@ -2737,7 +3303,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ExecuteActorStateTransaction',
     full_name='dapr.proto.runtime.v1.Dapr.ExecuteActorStateTransaction',
-    index=16,
+    index=17,
     containing_service=None,
     input_type=_EXECUTEACTORSTATETRANSACTIONREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2747,7 +3313,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='InvokeActor',
     full_name='dapr.proto.runtime.v1.Dapr.InvokeActor',
-    index=17,
+    index=18,
     containing_service=None,
     input_type=_INVOKEACTORREQUEST,
     output_type=_INVOKEACTORRESPONSE,
@@ -2755,9 +3321,29 @@ _DAPR = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
+    name='GetConfigurationAlpha1',
+    full_name='dapr.proto.runtime.v1.Dapr.GetConfigurationAlpha1',
+    index=19,
+    containing_service=None,
+    input_type=_GETCONFIGURATIONREQUEST,
+    output_type=_GETCONFIGURATIONRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SubscribeConfigurationAlpha1',
+    full_name='dapr.proto.runtime.v1.Dapr.SubscribeConfigurationAlpha1',
+    index=20,
+    containing_service=None,
+    input_type=_SUBSCRIBECONFIGURATIONREQUEST,
+    output_type=_SUBSCRIBECONFIGURATIONRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
     name='GetMetadata',
     full_name='dapr.proto.runtime.v1.Dapr.GetMetadata',
-    index=18,
+    index=21,
     containing_service=None,
     input_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
     output_type=_GETMETADATARESPONSE,
@@ -2767,7 +3353,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='SetMetadata',
     full_name='dapr.proto.runtime.v1.Dapr.SetMetadata',
-    index=19,
+    index=22,
     containing_service=None,
     input_type=_SETMETADATAREQUEST,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
@@ -2777,7 +3363,7 @@ _DAPR = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='Shutdown',
     full_name='dapr.proto.runtime.v1.Dapr.Shutdown',
-    index=20,
+    index=23,
     containing_service=None,
     input_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,

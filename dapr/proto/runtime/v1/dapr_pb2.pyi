@@ -13,27 +13,29 @@ import typing_extensions
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor = ...
 
-# InvokeServiceRequest represents the request message for Service invocation.
 class InvokeServiceRequest(google.protobuf.message.Message):
+    """InvokeServiceRequest represents the request message for Service invocation."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ID_FIELD_NUMBER: builtins.int
     MESSAGE_FIELD_NUMBER: builtins.int
-    # Required. Callee's app id.
     id: typing.Text = ...
-    # Required. message which will be delivered to callee.
+    """Required. Callee's app id."""
+
     @property
-    def message(self) -> dapr.proto.common.v1.common_pb2.InvokeRequest: ...
+    def message(self) -> dapr.proto.common.v1.common_pb2.InvokeRequest:
+        """Required. message which will be delivered to callee."""
+        pass
     def __init__(self,
         *,
         id : typing.Text = ...,
         message : typing.Optional[dapr.proto.common.v1.common_pb2.InvokeRequest] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal[u"message",b"message"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"id",b"id",u"message",b"message"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["message",b"message"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["id",b"id","message",b"message"]) -> None: ...
 global___InvokeServiceRequest = InvokeServiceRequest
 
-# GetStateRequest is the message to get key-value states from specific state store.
 class GetStateRequest(google.protobuf.message.Message):
+    """GetStateRequest is the message to get key-value states from specific state store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -46,21 +48,25 @@ class GetStateRequest(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     STORE_NAME_FIELD_NUMBER: builtins.int
     KEY_FIELD_NUMBER: builtins.int
     CONSISTENCY_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # The name of state store.
     store_name: typing.Text = ...
-    # The key of the desired state
+    """The name of state store."""
+
     key: typing.Text = ...
-    # The read consistency of the state store.
+    """The key of the desired state"""
+
     consistency: dapr.proto.common.v1.common_pb2.StateOptions.StateConsistency.V = ...
-    # The metadata which will be sent to state store components.
+    """The read consistency of the state store."""
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to state store components."""
+        pass
     def __init__(self,
         *,
         store_name : typing.Text = ...,
@@ -68,11 +74,11 @@ class GetStateRequest(google.protobuf.message.Message):
         consistency : dapr.proto.common.v1.common_pb2.StateOptions.StateConsistency.V = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"consistency",b"consistency",u"key",b"key",u"metadata",b"metadata",u"store_name",b"store_name"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["consistency",b"consistency","key",b"key","metadata",b"metadata","store_name",b"store_name"]) -> None: ...
 global___GetStateRequest = GetStateRequest
 
-# GetBulkStateRequest is the message to get a list of key-value states from specific state store.
 class GetBulkStateRequest(google.protobuf.message.Message):
+    """GetBulkStateRequest is the message to get a list of key-value states from specific state store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -85,22 +91,26 @@ class GetBulkStateRequest(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     STORE_NAME_FIELD_NUMBER: builtins.int
     KEYS_FIELD_NUMBER: builtins.int
     PARALLELISM_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # The name of state store.
     store_name: typing.Text = ...
-    # The keys to get.
+    """The name of state store."""
+
     @property
-    def keys(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
-    # The number of parallel operations executed on the state store for a get operation.
+    def keys(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]:
+        """The keys to get."""
+        pass
     parallelism: builtins.int = ...
-    # The metadata which will be sent to state store components.
+    """The number of parallel operations executed on the state store for a get operation."""
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to state store components."""
+        pass
     def __init__(self,
         *,
         store_name : typing.Text = ...,
@@ -108,26 +118,28 @@ class GetBulkStateRequest(google.protobuf.message.Message):
         parallelism : builtins.int = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"keys",b"keys",u"metadata",b"metadata",u"parallelism",b"parallelism",u"store_name",b"store_name"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["keys",b"keys","metadata",b"metadata","parallelism",b"parallelism","store_name",b"store_name"]) -> None: ...
 global___GetBulkStateRequest = GetBulkStateRequest
 
-# GetBulkStateResponse is the response conveying the list of state values.
 class GetBulkStateResponse(google.protobuf.message.Message):
+    """GetBulkStateResponse is the response conveying the list of state values."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ITEMS_FIELD_NUMBER: builtins.int
-    # The list of items containing the keys to get values for.
     @property
-    def items(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___BulkStateItem]: ...
+    def items(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___BulkStateItem]:
+        """The list of items containing the keys to get values for."""
+        pass
     def __init__(self,
         *,
         items : typing.Optional[typing.Iterable[global___BulkStateItem]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"items",b"items"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["items",b"items"]) -> None: ...
 global___GetBulkStateResponse = GetBulkStateResponse
 
-# BulkStateItem is the response item for a bulk get operation.
-# Return values include the item key, data and etag.
 class BulkStateItem(google.protobuf.message.Message):
+    """BulkStateItem is the response item for a bulk get operation.
+    Return values include the item key, data and etag.
+    """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -140,25 +152,31 @@ class BulkStateItem(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     KEY_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
     ETAG_FIELD_NUMBER: builtins.int
     ERROR_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # state item key
     key: typing.Text = ...
-    # The byte array data
+    """state item key"""
+
     data: builtins.bytes = ...
-    # The entity tag which represents the specific version of data.
-    # ETag format is defined by the corresponding data store.
+    """The byte array data"""
+
     etag: typing.Text = ...
-    # The error that was returned from the state store in case of a failed get operation.
+    """The entity tag which represents the specific version of data.
+    ETag format is defined by the corresponding data store.
+    """
+
     error: typing.Text = ...
-    # The metadata which will be sent to app.
+    """The error that was returned from the state store in case of a failed get operation."""
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to app."""
+        pass
     def __init__(self,
         *,
         key : typing.Text = ...,
@@ -167,11 +185,11 @@ class BulkStateItem(google.protobuf.message.Message):
         error : typing.Text = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data",u"error",b"error",u"etag",b"etag",u"key",b"key",u"metadata",b"metadata"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data","error",b"error","etag",b"etag","key",b"key","metadata",b"metadata"]) -> None: ...
 global___BulkStateItem = BulkStateItem
 
-# GetStateResponse is the response conveying the state value and etag.
 class GetStateResponse(google.protobuf.message.Message):
+    """GetStateResponse is the response conveying the state value and etag."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -184,30 +202,34 @@ class GetStateResponse(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     DATA_FIELD_NUMBER: builtins.int
     ETAG_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # The byte array data
     data: builtins.bytes = ...
-    # The entity tag which represents the specific version of data.
-    # ETag format is defined by the corresponding data store.
+    """The byte array data"""
+
     etag: typing.Text = ...
-    # The metadata which will be sent to app.
+    """The entity tag which represents the specific version of data.
+    ETag format is defined by the corresponding data store.
+    """
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to app."""
+        pass
     def __init__(self,
         *,
         data : builtins.bytes = ...,
         etag : typing.Text = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data",u"etag",b"etag",u"metadata",b"metadata"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data","etag",b"etag","metadata",b"metadata"]) -> None: ...
 global___GetStateResponse = GetStateResponse
 
-# DeleteStateRequest is the message to delete key-value states in the specific state store.
 class DeleteStateRequest(google.protobuf.message.Message):
+    """DeleteStateRequest is the message to delete key-value states in the specific state store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -220,28 +242,35 @@ class DeleteStateRequest(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     STORE_NAME_FIELD_NUMBER: builtins.int
     KEY_FIELD_NUMBER: builtins.int
     ETAG_FIELD_NUMBER: builtins.int
     OPTIONS_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # The name of state store.
     store_name: typing.Text = ...
-    # The key of the desired state
+    """The name of state store."""
+
     key: typing.Text = ...
-    # The entity tag which represents the specific version of data.
-    # The exact ETag format is defined by the corresponding data store.
+    """The key of the desired state"""
+
     @property
-    def etag(self) -> dapr.proto.common.v1.common_pb2.Etag: ...
-    # State operation options which includes concurrency/
-    # consistency/retry_policy.
+    def etag(self) -> dapr.proto.common.v1.common_pb2.Etag:
+        """The entity tag which represents the specific version of data.
+        The exact ETag format is defined by the corresponding data store.
+        """
+        pass
     @property
-    def options(self) -> dapr.proto.common.v1.common_pb2.StateOptions: ...
-    # The metadata which will be sent to state store components.
+    def options(self) -> dapr.proto.common.v1.common_pb2.StateOptions:
+        """State operation options which includes concurrency/
+        consistency/retry_policy.
+        """
+        pass
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to state store components."""
+        pass
     def __init__(self,
         *,
         store_name : typing.Text = ...,
@@ -250,48 +279,52 @@ class DeleteStateRequest(google.protobuf.message.Message):
         options : typing.Optional[dapr.proto.common.v1.common_pb2.StateOptions] = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal[u"etag",b"etag",u"options",b"options"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"etag",b"etag",u"key",b"key",u"metadata",b"metadata",u"options",b"options",u"store_name",b"store_name"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["etag",b"etag","options",b"options"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["etag",b"etag","key",b"key","metadata",b"metadata","options",b"options","store_name",b"store_name"]) -> None: ...
 global___DeleteStateRequest = DeleteStateRequest
 
-# DeleteBulkStateRequest is the message to delete a list of key-value states from specific state store.
 class DeleteBulkStateRequest(google.protobuf.message.Message):
+    """DeleteBulkStateRequest is the message to delete a list of key-value states from specific state store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     STORE_NAME_FIELD_NUMBER: builtins.int
     STATES_FIELD_NUMBER: builtins.int
-    # The name of state store.
     store_name: typing.Text = ...
-    # The array of the state key values.
+    """The name of state store."""
+
     @property
-    def states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.StateItem]: ...
+    def states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.StateItem]:
+        """The array of the state key values."""
+        pass
     def __init__(self,
         *,
         store_name : typing.Text = ...,
         states : typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.StateItem]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"states",b"states",u"store_name",b"store_name"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["states",b"states","store_name",b"store_name"]) -> None: ...
 global___DeleteBulkStateRequest = DeleteBulkStateRequest
 
-# SaveStateRequest is the message to save multiple states into state store.
 class SaveStateRequest(google.protobuf.message.Message):
+    """SaveStateRequest is the message to save multiple states into state store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     STORE_NAME_FIELD_NUMBER: builtins.int
     STATES_FIELD_NUMBER: builtins.int
-    # The name of state store.
     store_name: typing.Text = ...
-    # The array of the state key values.
+    """The name of state store."""
+
     @property
-    def states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.StateItem]: ...
+    def states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.StateItem]:
+        """The array of the state key values."""
+        pass
     def __init__(self,
         *,
         store_name : typing.Text = ...,
         states : typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.StateItem]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"states",b"states",u"store_name",b"store_name"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["states",b"states","store_name",b"store_name"]) -> None: ...
 global___SaveStateRequest = SaveStateRequest
 
-# PublishEventRequest is the message to publish event data to pubsub topic
-class PublishEventRequest(google.protobuf.message.Message):
+class QueryStateRequest(google.protobuf.message.Message):
+    """QueryStateRequest is the message to query state store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -304,27 +337,140 @@ class PublishEventRequest(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
+    STORE_NAME_FIELD_NUMBER: builtins.int
+    QUERY_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    store_name: typing.Text = ...
+    """The name of state store."""
+
+    query: typing.Text = ...
+    """The query in JSON format."""
+
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to state store components."""
+        pass
+    def __init__(self,
+        *,
+        store_name : typing.Text = ...,
+        query : typing.Text = ...,
+        metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["metadata",b"metadata","query",b"query","store_name",b"store_name"]) -> None: ...
+global___QueryStateRequest = QueryStateRequest
+
+class QueryStateItem(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    KEY_FIELD_NUMBER: builtins.int
+    DATA_FIELD_NUMBER: builtins.int
+    ETAG_FIELD_NUMBER: builtins.int
+    ERROR_FIELD_NUMBER: builtins.int
+    key: typing.Text = ...
+    """The object key."""
+
+    data: builtins.bytes = ...
+    """The object value."""
+
+    etag: typing.Text = ...
+    """The entity tag which represents the specific version of data.
+    ETag format is defined by the corresponding data store.
+    """
+
+    error: typing.Text = ...
+    """The error message indicating an error in processing of the query result."""
+
+    def __init__(self,
+        *,
+        key : typing.Text = ...,
+        data : builtins.bytes = ...,
+        etag : typing.Text = ...,
+        error : typing.Text = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data","error",b"error","etag",b"etag","key",b"key"]) -> None: ...
+global___QueryStateItem = QueryStateItem
+
+class QueryStateResponse(google.protobuf.message.Message):
+    """QueryStateResponse is the response conveying the query results."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text = ...
+        value: typing.Text = ...
+        def __init__(self,
+            *,
+            key : typing.Text = ...,
+            value : typing.Text = ...,
+            ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
+    RESULTS_FIELD_NUMBER: builtins.int
+    TOKEN_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    @property
+    def results(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___QueryStateItem]:
+        """An array of query results."""
+        pass
+    token: typing.Text = ...
+    """Pagination token."""
+
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to app."""
+        pass
+    def __init__(self,
+        *,
+        results : typing.Optional[typing.Iterable[global___QueryStateItem]] = ...,
+        token : typing.Text = ...,
+        metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["metadata",b"metadata","results",b"results","token",b"token"]) -> None: ...
+global___QueryStateResponse = QueryStateResponse
+
+class PublishEventRequest(google.protobuf.message.Message):
+    """PublishEventRequest is the message to publish event data to pubsub topic"""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text = ...
+        value: typing.Text = ...
+        def __init__(self,
+            *,
+            key : typing.Text = ...,
+            value : typing.Text = ...,
+            ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     PUBSUB_NAME_FIELD_NUMBER: builtins.int
     TOPIC_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
     DATA_CONTENT_TYPE_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # The name of the pubsub component
     pubsub_name: typing.Text = ...
-    # The pubsub topic
+    """The name of the pubsub component"""
+
     topic: typing.Text = ...
-    # The data which will be published to topic.
+    """The pubsub topic"""
+
     data: builtins.bytes = ...
-    # The content type for the data (optional).
+    """The data which will be published to topic."""
+
     data_content_type: typing.Text = ...
-    # The metadata passing to pub components
-    #
-    # metadata property:
-    # - key : the key of the message.
+    """The content type for the data (optional)."""
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata passing to pub components
+
+        metadata property:
+        - key : the key of the message.
+        """
+        pass
     def __init__(self,
         *,
         pubsub_name : typing.Text = ...,
@@ -333,11 +479,11 @@ class PublishEventRequest(google.protobuf.message.Message):
         data_content_type : typing.Text = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data",u"data_content_type",b"data_content_type",u"metadata",b"metadata",u"pubsub_name",b"pubsub_name",u"topic",b"topic"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data","data_content_type",b"data_content_type","metadata",b"metadata","pubsub_name",b"pubsub_name","topic",b"topic"]) -> None: ...
 global___PublishEventRequest = PublishEventRequest
 
-# InvokeBindingRequest is the message to send data to output bindings
 class InvokeBindingRequest(google.protobuf.message.Message):
+    """InvokeBindingRequest is the message to send data to output bindings"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -350,27 +496,32 @@ class InvokeBindingRequest(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     NAME_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
     OPERATION_FIELD_NUMBER: builtins.int
-    # The name of the output binding to invoke.
     name: typing.Text = ...
-    # The data which will be sent to output binding.
+    """The name of the output binding to invoke."""
+
     data: builtins.bytes = ...
-    # The metadata passing to output binding components
-    # 
-    # Common metadata property:
-    # - ttlInSeconds : the time to live in seconds for the message. 
-    # If set in the binding definition will cause all messages to 
-    # have a default time to live. The message ttl overrides any value
-    # in the binding definition.
+    """The data which will be sent to output binding."""
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
-    # The name of the operation type for the binding to invoke
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata passing to output binding components
+
+        Common metadata property:
+        - ttlInSeconds : the time to live in seconds for the message. 
+        If set in the binding definition will cause all messages to 
+        have a default time to live. The message ttl overrides any value
+        in the binding definition.
+        """
+        pass
     operation: typing.Text = ...
+    """The name of the operation type for the binding to invoke"""
+
     def __init__(self,
         *,
         name : typing.Text = ...,
@@ -378,11 +529,11 @@ class InvokeBindingRequest(google.protobuf.message.Message):
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         operation : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data",u"metadata",b"metadata",u"name",b"name",u"operation",b"operation"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data","metadata",b"metadata","name",b"name","operation",b"operation"]) -> None: ...
 global___InvokeBindingRequest = InvokeBindingRequest
 
-# InvokeBindingResponse is the message returned from an output binding invocation
 class InvokeBindingResponse(google.protobuf.message.Message):
+    """InvokeBindingResponse is the message returned from an output binding invocation"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -395,25 +546,27 @@ class InvokeBindingResponse(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     DATA_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # The data which will be sent to output binding.
     data: builtins.bytes = ...
-    # The metadata returned from an external system
+    """The data which will be sent to output binding."""
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata returned from an external system"""
+        pass
     def __init__(self,
         *,
         data : builtins.bytes = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data",u"metadata",b"metadata"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data","metadata",b"metadata"]) -> None: ...
 global___InvokeBindingResponse = InvokeBindingResponse
 
-# GetSecretRequest is the message to get secret from secret store.
 class GetSecretRequest(google.protobuf.message.Message):
+    """GetSecretRequest is the message to get secret from secret store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -426,29 +579,32 @@ class GetSecretRequest(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     STORE_NAME_FIELD_NUMBER: builtins.int
     KEY_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # The name of secret store.
     store_name: typing.Text = ...
-    # The name of secret key.
+    """The name of secret store."""
+
     key: typing.Text = ...
-    # The metadata which will be sent to secret store components.
+    """The name of secret key."""
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to secret store components."""
+        pass
     def __init__(self,
         *,
         store_name : typing.Text = ...,
         key : typing.Text = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"metadata",b"metadata",u"store_name",b"store_name"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["key",b"key","metadata",b"metadata","store_name",b"store_name"]) -> None: ...
 global___GetSecretRequest = GetSecretRequest
 
-# GetSecretResponse is the response message to convey the requested secret.
 class GetSecretResponse(google.protobuf.message.Message):
+    """GetSecretResponse is the response message to convey the requested secret."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class DataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -461,22 +617,24 @@ class GetSecretResponse(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     DATA_FIELD_NUMBER: builtins.int
-    # data is the secret value. Some secret store, such as kubernetes secret
-    # store, can save multiple secrets for single secret key.
     @property
-    def data(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def data(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """data is the secret value. Some secret store, such as kubernetes secret
+        store, can save multiple secrets for single secret key.
+        """
+        pass
     def __init__(self,
         *,
         data : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___GetSecretResponse = GetSecretResponse
 
-# GetBulkSecretRequest is the message to get the secrets from secret store.
 class GetBulkSecretRequest(google.protobuf.message.Message):
+    """GetBulkSecretRequest is the message to get the secrets from secret store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -489,25 +647,27 @@ class GetBulkSecretRequest(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     STORE_NAME_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # The name of secret store.
     store_name: typing.Text = ...
-    # The metadata which will be sent to secret store components.
+    """The name of secret store."""
+
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to secret store components."""
+        pass
     def __init__(self,
         *,
         store_name : typing.Text = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"metadata",b"metadata",u"store_name",b"store_name"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["metadata",b"metadata","store_name",b"store_name"]) -> None: ...
 global___GetBulkSecretRequest = GetBulkSecretRequest
 
-# SecretResponse is a map of decrypted string/string values
 class SecretResponse(google.protobuf.message.Message):
+    """SecretResponse is a map of decrypted string/string values"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class SecretsEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -520,7 +680,7 @@ class SecretResponse(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     SECRETS_FIELD_NUMBER: builtins.int
     @property
@@ -529,11 +689,11 @@ class SecretResponse(google.protobuf.message.Message):
         *,
         secrets : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"secrets",b"secrets"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["secrets",b"secrets"]) -> None: ...
 global___SecretResponse = SecretResponse
 
-# GetBulkSecretResponse is the response message to convey the requested secrets.
 class GetBulkSecretResponse(google.protobuf.message.Message):
+    """GetBulkSecretResponse is the response message to convey the requested secrets."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class DataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -547,42 +707,46 @@ class GetBulkSecretResponse(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Optional[global___SecretResponse] = ...,
             ) -> None: ...
-        def HasField(self, field_name: typing_extensions.Literal[u"value",b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def HasField(self, field_name: typing_extensions.Literal["value",b"value"]) -> builtins.bool: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     DATA_FIELD_NUMBER: builtins.int
-    # data hold the secret values. Some secret store, such as kubernetes secret
-    # store, can save multiple secrets for single secret key.
     @property
-    def data(self) -> google.protobuf.internal.containers.MessageMap[typing.Text, global___SecretResponse]: ...
+    def data(self) -> google.protobuf.internal.containers.MessageMap[typing.Text, global___SecretResponse]:
+        """data hold the secret values. Some secret store, such as kubernetes secret
+        store, can save multiple secrets for single secret key.
+        """
+        pass
     def __init__(self,
         *,
         data : typing.Optional[typing.Mapping[typing.Text, global___SecretResponse]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___GetBulkSecretResponse = GetBulkSecretResponse
 
-# TransactionalStateOperation is the message to execute a specified operation with a key-value pair.
 class TransactionalStateOperation(google.protobuf.message.Message):
+    """TransactionalStateOperation is the message to execute a specified operation with a key-value pair."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     OPERATIONTYPE_FIELD_NUMBER: builtins.int
     REQUEST_FIELD_NUMBER: builtins.int
-    # The type of operation to be executed
     operationType: typing.Text = ...
-    # State values to be operated on
+    """The type of operation to be executed"""
+
     @property
-    def request(self) -> dapr.proto.common.v1.common_pb2.StateItem: ...
+    def request(self) -> dapr.proto.common.v1.common_pb2.StateItem:
+        """State values to be operated on"""
+        pass
     def __init__(self,
         *,
         operationType : typing.Text = ...,
         request : typing.Optional[dapr.proto.common.v1.common_pb2.StateItem] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal[u"request",b"request"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"operationType",b"operationType",u"request",b"request"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["request",b"request"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["operationType",b"operationType","request",b"request"]) -> None: ...
 global___TransactionalStateOperation = TransactionalStateOperation
 
-# ExecuteStateTransactionRequest is the message to execute multiple operations on a specified store.
 class ExecuteStateTransactionRequest(google.protobuf.message.Message):
+    """ExecuteStateTransactionRequest is the message to execute multiple operations on a specified store."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -595,30 +759,33 @@ class ExecuteStateTransactionRequest(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     STORENAME_FIELD_NUMBER: builtins.int
     OPERATIONS_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    # Required. name of state store.
     storeName: typing.Text = ...
-    # Required. transactional operation list.
+    """Required. name of state store."""
+
     @property
-    def operations(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TransactionalStateOperation]: ...
-    # The metadata used for transactional operations.
+    def operations(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TransactionalStateOperation]:
+        """Required. transactional operation list."""
+        pass
     @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]: ...
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata used for transactional operations."""
+        pass
     def __init__(self,
         *,
         storeName : typing.Text = ...,
         operations : typing.Optional[typing.Iterable[global___TransactionalStateOperation]] = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"metadata",b"metadata",u"operations",b"operations",u"storeName",b"storeName"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["metadata",b"metadata","operations",b"operations","storeName",b"storeName"]) -> None: ...
 global___ExecuteStateTransactionRequest = ExecuteStateTransactionRequest
 
-# RegisterActorTimerRequest is the message to register a timer for an actor of a given type and id.
 class RegisterActorTimerRequest(google.protobuf.message.Message):
+    """RegisterActorTimerRequest is the message to register a timer for an actor of a given type and id."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ACTOR_TYPE_FIELD_NUMBER: builtins.int
     ACTOR_ID_FIELD_NUMBER: builtins.int
@@ -647,11 +814,11 @@ class RegisterActorTimerRequest(google.protobuf.message.Message):
         data : builtins.bytes = ...,
         ttl : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"actor_id",b"actor_id",u"actor_type",b"actor_type",u"callback",b"callback",u"data",b"data",u"due_time",b"due_time",u"name",b"name",u"period",b"period",u"ttl",b"ttl"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["actor_id",b"actor_id","actor_type",b"actor_type","callback",b"callback","data",b"data","due_time",b"due_time","name",b"name","period",b"period","ttl",b"ttl"]) -> None: ...
 global___RegisterActorTimerRequest = RegisterActorTimerRequest
 
-# UnregisterActorTimerRequest is the message to unregister an actor timer
 class UnregisterActorTimerRequest(google.protobuf.message.Message):
+    """UnregisterActorTimerRequest is the message to unregister an actor timer"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ACTOR_TYPE_FIELD_NUMBER: builtins.int
     ACTOR_ID_FIELD_NUMBER: builtins.int
@@ -665,11 +832,11 @@ class UnregisterActorTimerRequest(google.protobuf.message.Message):
         actor_id : typing.Text = ...,
         name : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"actor_id",b"actor_id",u"actor_type",b"actor_type",u"name",b"name"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["actor_id",b"actor_id","actor_type",b"actor_type","name",b"name"]) -> None: ...
 global___UnregisterActorTimerRequest = UnregisterActorTimerRequest
 
-# RegisterActorReminderRequest is the message to register a reminder for an actor of a given type and id.
 class RegisterActorReminderRequest(google.protobuf.message.Message):
+    """RegisterActorReminderRequest is the message to register a reminder for an actor of a given type and id."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ACTOR_TYPE_FIELD_NUMBER: builtins.int
     ACTOR_ID_FIELD_NUMBER: builtins.int
@@ -695,11 +862,11 @@ class RegisterActorReminderRequest(google.protobuf.message.Message):
         data : builtins.bytes = ...,
         ttl : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"actor_id",b"actor_id",u"actor_type",b"actor_type",u"data",b"data",u"due_time",b"due_time",u"name",b"name",u"period",b"period",u"ttl",b"ttl"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["actor_id",b"actor_id","actor_type",b"actor_type","data",b"data","due_time",b"due_time","name",b"name","period",b"period","ttl",b"ttl"]) -> None: ...
 global___RegisterActorReminderRequest = RegisterActorReminderRequest
 
-# UnregisterActorReminderRequest is the message to unregister an actor reminder.
 class UnregisterActorReminderRequest(google.protobuf.message.Message):
+    """UnregisterActorReminderRequest is the message to unregister an actor reminder."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ACTOR_TYPE_FIELD_NUMBER: builtins.int
     ACTOR_ID_FIELD_NUMBER: builtins.int
@@ -713,11 +880,11 @@ class UnregisterActorReminderRequest(google.protobuf.message.Message):
         actor_id : typing.Text = ...,
         name : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"actor_id",b"actor_id",u"actor_type",b"actor_type",u"name",b"name"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["actor_id",b"actor_id","actor_type",b"actor_type","name",b"name"]) -> None: ...
 global___UnregisterActorReminderRequest = UnregisterActorReminderRequest
 
-# GetActorStateRequest is the message to get key-value states from specific actor.
 class GetActorStateRequest(google.protobuf.message.Message):
+    """GetActorStateRequest is the message to get key-value states from specific actor."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ACTOR_TYPE_FIELD_NUMBER: builtins.int
     ACTOR_ID_FIELD_NUMBER: builtins.int
@@ -731,11 +898,11 @@ class GetActorStateRequest(google.protobuf.message.Message):
         actor_id : typing.Text = ...,
         key : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"actor_id",b"actor_id",u"actor_type",b"actor_type",u"key",b"key"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["actor_id",b"actor_id","actor_type",b"actor_type","key",b"key"]) -> None: ...
 global___GetActorStateRequest = GetActorStateRequest
 
-# GetActorStateResponse is the response conveying the actor's state value.
 class GetActorStateResponse(google.protobuf.message.Message):
+    """GetActorStateResponse is the response conveying the actor's state value."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     DATA_FIELD_NUMBER: builtins.int
     data: builtins.bytes = ...
@@ -743,11 +910,11 @@ class GetActorStateResponse(google.protobuf.message.Message):
         *,
         data : builtins.bytes = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___GetActorStateResponse = GetActorStateResponse
 
-# ExecuteActorStateTransactionRequest is the message to execute multiple operations on a specified actor.
 class ExecuteActorStateTransactionRequest(google.protobuf.message.Message):
+    """ExecuteActorStateTransactionRequest is the message to execute multiple operations on a specified actor."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ACTOR_TYPE_FIELD_NUMBER: builtins.int
     ACTOR_ID_FIELD_NUMBER: builtins.int
@@ -762,11 +929,11 @@ class ExecuteActorStateTransactionRequest(google.protobuf.message.Message):
         actor_id : typing.Text = ...,
         operations : typing.Optional[typing.Iterable[global___TransactionalActorStateOperation]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"actor_id",b"actor_id",u"actor_type",b"actor_type",u"operations",b"operations"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["actor_id",b"actor_id","actor_type",b"actor_type","operations",b"operations"]) -> None: ...
 global___ExecuteActorStateTransactionRequest = ExecuteActorStateTransactionRequest
 
-# TransactionalAcorStateOperation is the message to execute a specified operation with a key-value pair.
 class TransactionalActorStateOperation(google.protobuf.message.Message):
+    """TransactionalAcorStateOperation is the message to execute a specified operation with a key-value pair."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     OPERATIONTYPE_FIELD_NUMBER: builtins.int
     KEY_FIELD_NUMBER: builtins.int
@@ -781,12 +948,12 @@ class TransactionalActorStateOperation(google.protobuf.message.Message):
         key : typing.Text = ...,
         value : typing.Optional[google.protobuf.any_pb2.Any] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal[u"value",b"value"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"operationType",b"operationType",u"value",b"value"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["value",b"value"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["key",b"key","operationType",b"operationType","value",b"value"]) -> None: ...
 global___TransactionalActorStateOperation = TransactionalActorStateOperation
 
-# InvokeActorRequest is the message to call an actor.
 class InvokeActorRequest(google.protobuf.message.Message):
+    """InvokeActorRequest is the message to call an actor."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     ACTOR_TYPE_FIELD_NUMBER: builtins.int
     ACTOR_ID_FIELD_NUMBER: builtins.int
@@ -803,11 +970,11 @@ class InvokeActorRequest(google.protobuf.message.Message):
         method : typing.Text = ...,
         data : builtins.bytes = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"actor_id",b"actor_id",u"actor_type",b"actor_type",u"data",b"data",u"method",b"method"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["actor_id",b"actor_id","actor_type",b"actor_type","data",b"data","method",b"method"]) -> None: ...
 global___InvokeActorRequest = InvokeActorRequest
 
-# InvokeActorResponse is the method that returns an actor invocation response.
 class InvokeActorResponse(google.protobuf.message.Message):
+    """InvokeActorResponse is the method that returns an actor invocation response."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     DATA_FIELD_NUMBER: builtins.int
     data: builtins.bytes = ...
@@ -815,11 +982,11 @@ class InvokeActorResponse(google.protobuf.message.Message):
         *,
         data : builtins.bytes = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"data",b"data"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___InvokeActorResponse = InvokeActorResponse
 
-# GetMetadataResponse is a message that is returned on GetMetadata rpc call
 class GetMetadataResponse(google.protobuf.message.Message):
+    """GetMetadataResponse is a message that is returned on GetMetadata rpc call"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class ExtendedMetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -832,7 +999,7 @@ class GetMetadataResponse(google.protobuf.message.Message):
             key : typing.Text = ...,
             value : typing.Text = ...,
             ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     ID_FIELD_NUMBER: builtins.int
     ACTIVE_ACTORS_COUNT_FIELD_NUMBER: builtins.int
@@ -852,7 +1019,7 @@ class GetMetadataResponse(google.protobuf.message.Message):
         registered_components : typing.Optional[typing.Iterable[global___RegisteredComponents]] = ...,
         extended_metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"active_actors_count",b"active_actors_count",u"extended_metadata",b"extended_metadata",u"id",b"id",u"registered_components",b"registered_components"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count",b"active_actors_count","extended_metadata",b"extended_metadata","id",b"id","registered_components",b"registered_components"]) -> None: ...
 global___GetMetadataResponse = GetMetadataResponse
 
 class ActiveActorsCount(google.protobuf.message.Message):
@@ -866,7 +1033,7 @@ class ActiveActorsCount(google.protobuf.message.Message):
         type : typing.Text = ...,
         count : builtins.int = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"count",b"count",u"type",b"type"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["count",b"count","type",b"type"]) -> None: ...
 global___ActiveActorsCount = ActiveActorsCount
 
 class RegisteredComponents(google.protobuf.message.Message):
@@ -883,7 +1050,7 @@ class RegisteredComponents(google.protobuf.message.Message):
         type : typing.Text = ...,
         version : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"name",b"name",u"type",b"type",u"version",b"version"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["name",b"name","type",b"type","version",b"version"]) -> None: ...
 global___RegisteredComponents = RegisteredComponents
 
 class SetMetadataRequest(google.protobuf.message.Message):
@@ -897,5 +1064,118 @@ class SetMetadataRequest(google.protobuf.message.Message):
         key : typing.Text = ...,
         value : typing.Text = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal[u"key",b"key",u"value",b"value"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 global___SetMetadataRequest = SetMetadataRequest
+
+class GetConfigurationRequest(google.protobuf.message.Message):
+    """GetConfigurationRequest is the message to get a list of key-value configuration from specified configuration store."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text = ...
+        value: typing.Text = ...
+        def __init__(self,
+            *,
+            key : typing.Text = ...,
+            value : typing.Text = ...,
+            ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
+    STORE_NAME_FIELD_NUMBER: builtins.int
+    KEYS_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    store_name: typing.Text = ...
+    """Required. The name of configuration store."""
+
+    @property
+    def keys(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]:
+        """Optional. The key of the configuration item to fetch.
+        If set, only query for the specified configuration items.
+        Empty list means fetch all.
+        """
+        pass
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """Optional. The metadata which will be sent to configuration store components."""
+        pass
+    def __init__(self,
+        *,
+        store_name : typing.Text = ...,
+        keys : typing.Optional[typing.Iterable[typing.Text]] = ...,
+        metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["keys",b"keys","metadata",b"metadata","store_name",b"store_name"]) -> None: ...
+global___GetConfigurationRequest = GetConfigurationRequest
+
+class GetConfigurationResponse(google.protobuf.message.Message):
+    """GetConfigurationResponse is the response conveying the list of configuration values.
+    It should be the FULL configuration of specified application which contains all of its configuration items.
+    """
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    ITEMS_FIELD_NUMBER: builtins.int
+    @property
+    def items(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.ConfigurationItem]: ...
+    def __init__(self,
+        *,
+        items : typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.ConfigurationItem]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["items",b"items"]) -> None: ...
+global___GetConfigurationResponse = GetConfigurationResponse
+
+class SubscribeConfigurationRequest(google.protobuf.message.Message):
+    """SubscribeConfigurationRequest is the message to get a list of key-value configuration from specified configuration store."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text = ...
+        value: typing.Text = ...
+        def __init__(self,
+            *,
+            key : typing.Text = ...,
+            value : typing.Text = ...,
+            ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
+    STORE_NAME_FIELD_NUMBER: builtins.int
+    KEYS_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    store_name: typing.Text = ...
+    """The name of configuration store."""
+
+    @property
+    def keys(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]:
+        """Optional. The key of the configuration item to fetch.
+        If set, only query for the specified configuration items.
+        Empty list means fetch all.
+        """
+        pass
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata which will be sent to configuration store components."""
+        pass
+    def __init__(self,
+        *,
+        store_name : typing.Text = ...,
+        keys : typing.Optional[typing.Iterable[typing.Text]] = ...,
+        metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["keys",b"keys","metadata",b"metadata","store_name",b"store_name"]) -> None: ...
+global___SubscribeConfigurationRequest = SubscribeConfigurationRequest
+
+class SubscribeConfigurationResponse(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    ITEMS_FIELD_NUMBER: builtins.int
+    @property
+    def items(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.ConfigurationItem]:
+        """The list of items containing configuration values"""
+        pass
+    def __init__(self,
+        *,
+        items : typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.ConfigurationItem]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["items",b"items"]) -> None: ...
+global___SubscribeConfigurationResponse = SubscribeConfigurationResponse
