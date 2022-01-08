@@ -16,8 +16,9 @@ limitations under the License.
 import re
 from datetime import timedelta
 
-# Regex to parse Go Duration datatype, e.g. 4h15m50s
-DAPR_DURATION_PARSER = re.compile(r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?$')
+# Regex to parse Go Duration datatype, e.g. 4h15m50s123ms345μs
+DAPR_DURATION_PARSER = re.compile(
+    r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?((?P<milliseconds>\d+)ms)?((?P<microseconds>\d+)μs)?$')  # noqa: E501
 
 
 def convert_from_dapr_duration(duration: str) -> timedelta:
@@ -41,12 +42,19 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
         days, hours = divmod(float(matched.group('hours')), 24)
     mins = 0.0 if not matched.group('mins') else float(matched.group('mins'))
     seconds = 0.0 if not matched.group('seconds') else float(matched.group('seconds'))
+    milliseconds = 0.0 if not matched.group(
+        'milliseconds') else float(matched.group('milliseconds'))
+    microseconds = 0.0 if not matched.group(
+        'microseconds') else float(matched.group('microseconds'))
 
     return timedelta(
         days=days,
         hours=hours,
         minutes=mins,
-        seconds=seconds)
+        seconds=seconds,
+        milliseconds=milliseconds,
+        microseconds=microseconds
+    )
 
 
 def convert_to_dapr_duration(td: timedelta) -> str:
@@ -59,7 +67,8 @@ def convert_to_dapr_duration(td: timedelta) -> str:
         str: dapr duration format string.
     """
 
-    total_minutes, secs = divmod(td.total_seconds(), 60.0)
+    total_minutes, seconds = divmod(td.total_seconds(), 60.0)
+    milliseconds, microseconds = divmod(td.microseconds, 1000.0)
     hours, mins = divmod(total_minutes, 60.0)
 
-    return f'{hours:.0f}h{mins:.0f}m{secs:.0f}s'
+    return f'{hours:.0f}h{mins:.0f}m{seconds:.0f}s{milliseconds:.0f}ms{microseconds:.0f}μs'
