@@ -490,7 +490,7 @@ class QueryResponseItem:
         Args:
             key (str): query reponse item's key.
             value (bytes): query response item's data.
-            etag (str): query reponse item's etag.
+            etag (str): query response item's etag.
             error (str): error when state was retrieved
         """
         self._key = key
