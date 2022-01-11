@@ -60,7 +60,7 @@ class GetStateRequest(google.protobuf.message.Message):
     key: typing.Text = ...
     """The key of the desired state"""
 
-    consistency: dapr.proto.common.v1.common_pb2.StateOptions.StateConsistency.V = ...
+    consistency: dapr.proto.common.v1.common_pb2.StateOptions.StateConsistency.ValueType = ...
     """The read consistency of the state store."""
 
     @property
@@ -71,7 +71,7 @@ class GetStateRequest(google.protobuf.message.Message):
         *,
         store_name : typing.Text = ...,
         key : typing.Text = ...,
-        consistency : dapr.proto.common.v1.common_pb2.StateOptions.StateConsistency.V = ...,
+        consistency : dapr.proto.common.v1.common_pb2.StateOptions.StateConsistency.ValueType = ...,
         metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["consistency",b"consistency","key",b"key","metadata",b"metadata","store_name",b"store_name"]) -> None: ...

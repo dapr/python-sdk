@@ -82,40 +82,41 @@ global___TopicEventRequest = TopicEventRequest
 class TopicEventResponse(google.protobuf.message.Message):
     """TopicEventResponse is response from app on published message"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class _TopicEventResponseStatus:
+        ValueType = typing.NewType('ValueType', builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+    class _TopicEventResponseStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_TopicEventResponseStatus.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
+        SUCCESS: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 0
+        """SUCCESS is the default behavior: message is acknowledged and not retried or logged."""
+
+        RETRY: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 1
+        """RETRY status signals Dapr to retry the message as part of an expected scenario (no warning is logged)."""
+
+        DROP: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 2
+        """DROP status signals Dapr to drop the message as part of an unexpected scenario (warning is logged)."""
+
     class TopicEventResponseStatus(_TopicEventResponseStatus, metaclass=_TopicEventResponseStatusEnumTypeWrapper):
         """TopicEventResponseStatus allows apps to have finer control over handling of the message."""
         pass
-    class _TopicEventResponseStatus:
-        V = typing.NewType('V', builtins.int)
-    class _TopicEventResponseStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_TopicEventResponseStatus.V], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
-        SUCCESS = TopicEventResponse.TopicEventResponseStatus.V(0)
-        """SUCCESS is the default behavior: message is acknowledged and not retried or logged."""
 
-        RETRY = TopicEventResponse.TopicEventResponseStatus.V(1)
-        """RETRY status signals Dapr to retry the message as part of an expected scenario (no warning is logged)."""
-
-        DROP = TopicEventResponse.TopicEventResponseStatus.V(2)
-        """DROP status signals Dapr to drop the message as part of an unexpected scenario (warning is logged)."""
-
-
-    SUCCESS = TopicEventResponse.TopicEventResponseStatus.V(0)
+    SUCCESS: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 0
     """SUCCESS is the default behavior: message is acknowledged and not retried or logged."""
 
-    RETRY = TopicEventResponse.TopicEventResponseStatus.V(1)
+    RETRY: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 1
     """RETRY status signals Dapr to retry the message as part of an expected scenario (no warning is logged)."""
 
-    DROP = TopicEventResponse.TopicEventResponseStatus.V(2)
+    DROP: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 2
     """DROP status signals Dapr to drop the message as part of an unexpected scenario (warning is logged)."""
 
 
     STATUS_FIELD_NUMBER: builtins.int
-    status: global___TopicEventResponse.TopicEventResponseStatus.V = ...
+    status: global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...
     """The list of output bindings."""
 
     def __init__(self,
         *,
-        status : global___TopicEventResponse.TopicEventResponseStatus.V = ...,
+        status : global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["status",b"status"]) -> None: ...
 global___TopicEventResponse = TopicEventResponse
@@ -163,24 +164,25 @@ class BindingEventResponse(google.protobuf.message.Message):
     send data to output bindings optionally.
     """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    class _BindingEventConcurrency:
+        ValueType = typing.NewType('ValueType', builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+    class _BindingEventConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_BindingEventConcurrency.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
+        SEQUENTIAL: BindingEventResponse.BindingEventConcurrency.ValueType = ...  # 0
+        """SEQUENTIAL sends data to output bindings specified in "to" sequentially."""
+
+        PARALLEL: BindingEventResponse.BindingEventConcurrency.ValueType = ...  # 1
+        """PARALLEL sends data to output bindings specified in "to" in parallel."""
+
     class BindingEventConcurrency(_BindingEventConcurrency, metaclass=_BindingEventConcurrencyEnumTypeWrapper):
         """BindingEventConcurrency is the kind of concurrency"""
         pass
-    class _BindingEventConcurrency:
-        V = typing.NewType('V', builtins.int)
-    class _BindingEventConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_BindingEventConcurrency.V], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
-        SEQUENTIAL = BindingEventResponse.BindingEventConcurrency.V(0)
-        """SEQUENTIAL sends data to output bindings specified in "to" sequentially."""
 
-        PARALLEL = BindingEventResponse.BindingEventConcurrency.V(1)
-        """PARALLEL sends data to output bindings specified in "to" in parallel."""
-
-
-    SEQUENTIAL = BindingEventResponse.BindingEventConcurrency.V(0)
+    SEQUENTIAL: BindingEventResponse.BindingEventConcurrency.ValueType = ...  # 0
     """SEQUENTIAL sends data to output bindings specified in "to" sequentially."""
 
-    PARALLEL = BindingEventResponse.BindingEventConcurrency.V(1)
+    PARALLEL: BindingEventResponse.BindingEventConcurrency.ValueType = ...  # 1
     """PARALLEL sends data to output bindings specified in "to" in parallel."""
 
 
@@ -203,7 +205,7 @@ class BindingEventResponse(google.protobuf.message.Message):
     data: builtins.bytes = ...
     """The content which will be sent to "to" output bindings."""
 
-    concurrency: global___BindingEventResponse.BindingEventConcurrency.V = ...
+    concurrency: global___BindingEventResponse.BindingEventConcurrency.ValueType = ...
     """The concurrency of output bindings to send data to
     "to" output bindings list. The default is SEQUENTIAL.
     """
@@ -214,7 +216,7 @@ class BindingEventResponse(google.protobuf.message.Message):
         states : typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.StateItem]] = ...,
         to : typing.Optional[typing.Iterable[typing.Text]] = ...,
         data : builtins.bytes = ...,
-        concurrency : global___BindingEventResponse.BindingEventConcurrency.V = ...,
+        concurrency : global___BindingEventResponse.BindingEventConcurrency.ValueType = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["concurrency",b"concurrency","data",b"data","states",b"states","store_name",b"store_name","to",b"to"]) -> None: ...
 global___BindingEventResponse = BindingEventResponse
