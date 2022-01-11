@@ -1,4 +1,4 @@
-# Example - Get Configuration
+# Example - Query State Store
 
 This example demonstrates the State Store Query Alpha API in Dapr.
 It demonstrates the following APIs:
