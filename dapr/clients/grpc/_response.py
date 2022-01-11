@@ -548,7 +548,7 @@ class QueryResponse(DaprResponse):
 
         Args:
             results (Sequence[QueryResponseItem]): the query results.
-            token (str): query reponse token for pagination.
+            token (str): query response token for pagination.
             metadata (Dict[str, str]): query response metadata.
             headers (Tuple, optional): the headers from Dapr gRPC response.
         """
