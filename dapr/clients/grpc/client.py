@@ -274,7 +274,7 @@ class DaprGrpcClient:
             operation (str): the operation to perform on the binding
             data (bytes or str): bytes or str for data which will sent to the binding
             binding_metadata (dict, optional): Dapr metadata for output binding
-            metadata (tuple, optional, DEPRECATED): gRPC custom metadata to send to the binding
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
         Returns:
             :class:`InvokeBindingResponse` object returned from binding
