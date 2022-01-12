@@ -57,6 +57,7 @@ from urllib.parse import urlencode
 
 from warnings import warn
 
+
 class DaprGrpcClient:
     """The convenient layer implementation of Dapr gRPC APIs.
 
@@ -215,8 +216,9 @@ class DaprGrpcClient:
             :class:`InvokeMethodResponse` object returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
-         
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+
         req_data = InvokeMethodRequest(data, content_type)
         http_ext = None
         if http_verb:
@@ -278,7 +280,8 @@ class DaprGrpcClient:
             :class:`InvokeBindingResponse` object returned from binding
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req_data = BindingRequest(data, binding_metadata)
 
@@ -332,7 +335,8 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not isinstance(data, bytes) and not isinstance(data, str):
             raise ValueError(f'invalid type for data {type(data)}')
@@ -388,7 +392,8 @@ class DaprGrpcClient:
             and value obtained from the state store
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
@@ -416,9 +421,6 @@ class DaprGrpcClient:
                     keys=['key_1', key_2],
                     parallelism=2,
                     states_metadata={"metakey": "metavalue"},
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
                 )
 
         Args:
@@ -426,12 +428,15 @@ class DaprGrpcClient:
             key (Sequence[str]): the keys to be retrieved
             parallelism (int): number of items to be retrieved in parallel
             states_metadata (Dict[str, str], optional): custom metadata for state request
-            metadata (tuple, optional): custom metadata
+            metadata (tuple, optional, DEPRECATED): custom metadata
 
         Returns:
             :class:`BulkStatesResponse` gRPC metadata returned from callee
             and value obtained from the state store
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
@@ -498,7 +503,8 @@ class DaprGrpcClient:
             ValueError: store_name is empty
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not isinstance(value, (bytes, str)):
             raise ValueError(f'invalid type for data {type(value)}')
@@ -556,7 +562,8 @@ class DaprGrpcClient:
             ValueError: store_name is empty
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not states or len(states) == 0:
             raise ValueError("States to be saved cannot be empty")
@@ -613,7 +620,9 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
         req_ops = [api_v1.TransactionalStateOperation(
@@ -669,7 +678,8 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
@@ -724,7 +734,8 @@ class DaprGrpcClient:
             :class:`GetSecretResponse` object with the secret and metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req = api_v1.GetSecretRequest(
             store_name=store_name,
@@ -745,7 +756,7 @@ class DaprGrpcClient:
         """Get all granted secrets.
 
         This gets all granted secrets from secret store.
-        Metadata for request can be passed with the secret_metadata field.  
+        Metadata for request can be passed with the secret_metadata field.
 
 
         The example gets all secrets from secret store:
@@ -770,7 +781,8 @@ class DaprGrpcClient:
             :class:`GetBulkSecretResponse` object with secrets and metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req = api_v1.GetBulkSecretRequest(
             store_name=store_name,
