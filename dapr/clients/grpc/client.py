@@ -216,7 +216,7 @@ class DaprGrpcClient:
             :class:`InvokeMethodResponse` object returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req_data = InvokeMethodRequest(data, content_type)
@@ -280,7 +280,7 @@ class DaprGrpcClient:
             :class:`InvokeBindingResponse` object returned from binding
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req_data = BindingRequest(data, binding_metadata)
@@ -335,7 +335,7 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not isinstance(data, bytes) and not isinstance(data, str):
@@ -392,7 +392,7 @@ class DaprGrpcClient:
             and value obtained from the state store
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -435,7 +435,7 @@ class DaprGrpcClient:
             and value obtained from the state store
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -503,7 +503,7 @@ class DaprGrpcClient:
             ValueError: store_name is empty
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not isinstance(value, (bytes, str)):
@@ -562,7 +562,7 @@ class DaprGrpcClient:
             ValueError: store_name is empty
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not states or len(states) == 0:
@@ -620,7 +620,7 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -678,7 +678,7 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -734,7 +734,7 @@ class DaprGrpcClient:
             :class:`GetSecretResponse` object with the secret and metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req = api_v1.GetSecretRequest(
@@ -781,7 +781,7 @@ class DaprGrpcClient:
             :class:`GetBulkSecretResponse` object with secrets and metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata property is deprecated. Dapr already intercepts API token headers '
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req = api_v1.GetBulkSecretRequest(
