@@ -55,6 +55,7 @@ from dapr.clients.grpc._response import (
 
 from urllib.parse import urlencode
 
+from warnings import warn
 
 class DaprGrpcClient:
     """The convenient layer implementation of Dapr gRPC APIs.
@@ -158,9 +159,6 @@ class DaprGrpcClient:
                     method_name='method',
                     data=b'message',
                     content_type='text/plain',
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
                 )
 
                 # resp.content includes the content in bytes.
@@ -178,9 +176,6 @@ class DaprGrpcClient:
                     app_id='callee',
                     method_name='method',
                     data=req_data,
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
                 )
                 # Create protocol buffer object
                 resp_data = dapr_example_v1.CustomResponseMessage()
@@ -197,9 +192,6 @@ class DaprGrpcClient:
                     method_name='method',
                     data=b'message',
                     content_type='text/plain',
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
                     http_verb='POST',
                     http_querystring=(
                         ('key1', 'value1')
@@ -215,13 +207,16 @@ class DaprGrpcClient:
             method (str): the method name which is called
             data (bytes or :obj:`google.protobuf.message.Message`): bytes or Message for data
                 which will send to id
-            metadata (tuple, optional): custom metadata
+            metadata (tuple, optional, DEPRECATED): custom metadata
             http_verb (str, optional): http method verb to call HTTP callee application
             http_querystring (tuple, optional): the tuple to represent query string
 
         Returns:
             :class:`InvokeMethodResponse` object returned from callee
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+         
         req_data = InvokeMethodRequest(data, content_type)
         http_ext = None
         if http_verb:
@@ -269,23 +264,22 @@ class DaprGrpcClient:
                     binding_name = 'kafkaBinding',
                     operation = 'create',
                     data = b'message',
-                    metadata = (
-                        ('header1', 'value1)
-                    ),
                 )
                 # resp.data includes the response data in bytes.
-                # resp.metadata include the metadata returned from the external system.
 
         Args:
             binding_name (str): the name of the binding as defined in the components
             operation (str): the operation to perform on the binding
             data (bytes or str): bytes or str for data which will sent to the binding
             binding_metadata (dict, optional): metadata for output binding
-            metadata (tuple, optional): custom metadata to send to the binding
+            metadata (tuple, optional, DEPRECATED): custom metadata to send to the binding
 
         Returns:
             :class:`InvokeBindingResponse` object returned from binding
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+
         req_data = BindingRequest(data, binding_metadata)
 
         req = api_v1.InvokeBindingRequest(
@@ -322,10 +316,7 @@ class DaprGrpcClient:
                     pubsub_name='pubsub_1',
                     topic_name='TOPIC_A',
                     data=b'message',
-                    publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'}
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
+                    publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'},
                 )
                 # resp.headers includes the gRPC initial metadata.
 
@@ -334,12 +325,15 @@ class DaprGrpcClient:
             topic_name (str): the topic name to publish to
             data (bytes or str): bytes or str for data
             publish_metadata (Dict[str, str], optional): per message metadata
-            metadata (tuple, optional): custom metadata
+            metadata (tuple, optional, DEPRECATED): custom metadata
             data_content_type: (str, optional): content type of the data payload
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+
         if not isinstance(data, bytes) and not isinstance(data, str):
             raise ValueError(f'invalid type for data {type(data)}')
 
@@ -381,21 +375,20 @@ class DaprGrpcClient:
                     key='key_1',
                     state={"key": "value"},
                     state_metadata={"metakey": "metavalue"},
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
                 )
 
         Args:
             store_name (str): the state store name to get from
             key (str): the key of the key-value pair to be gotten
             state_metadata (Dict[str, str], optional): custom metadata for state request
-            metadata (tuple, optional): custom GRPC metadata
+            metadata (tuple, optional, DEPRECATED): custom GRPC metadata
 
         Returns:
             :class:`StateResponse` gRPC metadata returned from callee
             and value obtained from the state store
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
@@ -485,9 +478,6 @@ class DaprGrpcClient:
                     value='value1',
                     etag='etag',
                     state_metadata={"metakey": "metavalue"},
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
                 )
 
         Args:
@@ -498,7 +488,7 @@ class DaprGrpcClient:
             options (StateOptions, optional): custom options
                 for concurrency and consistency
             state_metadata (Dict[str, str], optional): custom metadata for state request
-            metadata (tuple, optional): custom metadata
+            metadata (tuple, optional, DEPRECATED): custom metadata
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -507,6 +497,9 @@ class DaprGrpcClient:
             ValueError: value is not bytes or str
             ValueError: store_name is empty
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+
         if not isinstance(value, (bytes, str)):
             raise ValueError(f'invalid type for data {type(value)}')
 
@@ -548,9 +541,6 @@ class DaprGrpcClient:
                     store_name='state_store',
                     states=[StateItem(key='key1', value='value1'),
                         StateItem(key='key2', value='value2', etag='etag'),],
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
                 )
 
         Args:
@@ -565,6 +555,9 @@ class DaprGrpcClient:
             ValueError: states is empty
             ValueError: store_name is empty
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
+
         if not states or len(states) == 0:
             raise ValueError("States to be saved cannot be empty")
 
@@ -608,20 +601,19 @@ class DaprGrpcClient:
                             key=key_to_delete),
                     ],
                     transactional_metadata={"header1": "value1"},
-                    metadata=(
-                        ('header1', 'value1')
-                    ),
                 )
 
         Args:
             store_name (str): the state store name to save to
             operations (Sequence[TransactionalStateOperation]): the transaction operations
             transactional_metadata (Dict[str, str], optional): custom metadata for transaction
-            metadata (tuple, optional): custom grpc metadata
+            metadata (tuple, optional, DEPRECATED): custom grpc metadata
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
         req_ops = [api_v1.TransactionalStateOperation(
@@ -662,9 +654,6 @@ class DaprGrpcClient:
                     key='key1',
                     etag='etag',
                     state_metadata={"header1": "value1"},
-                    metadata=(
-                        ('header1', 'value1')
-                    )
                 )
 
         Args:
@@ -674,11 +663,13 @@ class DaprGrpcClient:
             options (StateOptions, optional): custom options
                 for concurrency and consistency
             state_metadata (Dict[str, str], optional): custom metadata for state request
-            metadata (tuple, optional): custom metadata
+            metadata (tuple, optional, DEPRECATED): custom metadata
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
@@ -718,9 +709,6 @@ class DaprGrpcClient:
                     store_name='secretstoreA',
                     key='keyA',
                     secret_metadata={'header1', 'value1'}
-                    metadata=(
-                        ('headerA', 'valueB')
-                    ),
                 )
 
                 # resp.headers includes the gRPC initial metadata.
@@ -730,11 +718,13 @@ class DaprGrpcClient:
             store_name (str): store name to get secret from
             key (str): str for key
             secret_metadata (Dict[str, str], Optional): metadata of request
-            metadata (MetadataTuple, optional): custom metadata
+            metadata (MetadataTuple, optional, DEPRECATED): custom metadata
 
         Returns:
             :class:`GetSecretResponse` object with the secret and metadata returned from callee
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req = api_v1.GetSecretRequest(
             store_name=store_name,
@@ -755,8 +745,7 @@ class DaprGrpcClient:
         """Get all granted secrets.
 
         This gets all granted secrets from secret store.
-        Metadata for request can be passed with the secret_metadata field and custom
-        metadata can be passed with metadata field.
+        Metadata for request can be passed with the secret_metadata field.  
 
 
         The example gets all secrets from secret store:
@@ -767,9 +756,6 @@ class DaprGrpcClient:
                 resp = d.get_bulk_secret(
                     store_name='secretstoreA',
                     secret_metadata={'header1', 'value1'}
-                    metadata=(
-                        ('headerA', 'valueB')
-                    ),
                 )
 
                 # resp.headers includes the gRPC initial metadata.
@@ -778,11 +764,13 @@ class DaprGrpcClient:
         Args:
             store_name (str): store name to get secret from
             secret_metadata (Dict[str, Dict[str, str]], Optional): metadata of request
-            metadata (MetadataTuple, optional): custom metadata
+            metadata (MetadataTuple, optional, DEPRECATED): custom metadata
 
         Returns:
             :class:`GetBulkSecretResponse` object with secrets and metadata returned from callee
         """
+        if metadata is not None:
+            warn('metadata property is deprecated. Dapr already intercepts API token headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req = api_v1.GetBulkSecretRequest(
             store_name=store_name,
