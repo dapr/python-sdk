@@ -208,7 +208,7 @@ class DaprGrpcClient:
             method (str): the method name which is called
             data (bytes or :obj:`google.protobuf.message.Message`): bytes or Message for data
                 which will send to id
-            metadata (tuple, optional, DEPRECATED): custom metadata
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
             http_verb (str, optional): http method verb to call HTTP callee application
             http_querystring (tuple, optional): the tuple to represent query string
 
@@ -273,8 +273,8 @@ class DaprGrpcClient:
             binding_name (str): the name of the binding as defined in the components
             operation (str): the operation to perform on the binding
             data (bytes or str): bytes or str for data which will sent to the binding
-            binding_metadata (dict, optional): metadata for output binding
-            metadata (tuple, optional, DEPRECATED): custom metadata to send to the binding
+            binding_metadata (dict, optional): Dapr metadata for output binding
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata to send to the binding
 
         Returns:
             :class:`InvokeBindingResponse` object returned from binding
@@ -327,8 +327,8 @@ class DaprGrpcClient:
             pubsub_name (str): the name of the pubsub component
             topic_name (str): the topic name to publish to
             data (bytes or str): bytes or str for data
-            publish_metadata (Dict[str, str], optional): per message metadata
-            metadata (tuple, optional, DEPRECATED): custom metadata
+            publish_metadata (Dict[str, str], optional): Dapr metadata per Pub/Sub message
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
             data_content_type: (str, optional): content type of the data payload
 
         Returns:
@@ -384,8 +384,8 @@ class DaprGrpcClient:
         Args:
             store_name (str): the state store name to get from
             key (str): the key of the key-value pair to be gotten
-            state_metadata (Dict[str, str], optional): custom metadata for state request
-            metadata (tuple, optional, DEPRECATED): custom GRPC metadata
+            state_metadata (Dict[str, str], optional): Dapr metadata for state request
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
         Returns:
             :class:`StateResponse` gRPC metadata returned from callee
@@ -427,8 +427,8 @@ class DaprGrpcClient:
             store_name (str): the state store name to get from
             key (Sequence[str]): the keys to be retrieved
             parallelism (int): number of items to be retrieved in parallel
-            states_metadata (Dict[str, str], optional): custom metadata for state request
-            metadata (tuple, optional, DEPRECATED): custom metadata
+            states_metadata (Dict[str, str], optional): Dapr metadata for state request
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
         Returns:
             :class:`BulkStatesResponse` gRPC metadata returned from callee
@@ -492,8 +492,8 @@ class DaprGrpcClient:
             etag (str, optional): the etag to save with
             options (StateOptions, optional): custom options
                 for concurrency and consistency
-            state_metadata (Dict[str, str], optional): custom metadata for state request
-            metadata (tuple, optional, DEPRECATED): custom metadata
+            state_metadata (Dict[str, str], optional): Dapr metadata for state request
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -552,7 +552,7 @@ class DaprGrpcClient:
         Args:
             store_name (str): the state store name to save to
             states (List[StateItem]): list of states to save
-            metadata (tuple, optional): custom metadata
+            metadata (tuple, optional): gRPC custom metadata
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -613,8 +613,8 @@ class DaprGrpcClient:
         Args:
             store_name (str): the state store name to save to
             operations (Sequence[TransactionalStateOperation]): the transaction operations
-            transactional_metadata (Dict[str, str], optional): custom metadata for transaction
-            metadata (tuple, optional, DEPRECATED): custom grpc metadata
+            transactional_metadata (Dict[str, str], optional): Dapr metadata for transaction
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -671,8 +671,8 @@ class DaprGrpcClient:
             etag (str, optional): the etag to delete with
             options (StateOptions, optional): custom options
                 for concurrency and consistency
-            state_metadata (Dict[str, str], optional): custom metadata for state request
-            metadata (tuple, optional, DEPRECATED): custom metadata
+            state_metadata (Dict[str, str], optional): Dapr metadata for state request
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -727,8 +727,8 @@ class DaprGrpcClient:
         Args:
             store_name (str): store name to get secret from
             key (str): str for key
-            secret_metadata (Dict[str, str], Optional): metadata of request
-            metadata (MetadataTuple, optional, DEPRECATED): custom metadata
+            secret_metadata (Dict[str, str], Optional): Dapr metadata for secrets request
+            metadata (MetadataTuple, optional, DEPRECATED): gRPC custom metadata
 
         Returns:
             :class:`GetSecretResponse` object with the secret and metadata returned from callee
@@ -774,8 +774,8 @@ class DaprGrpcClient:
 
         Args:
             store_name (str): store name to get secret from
-            secret_metadata (Dict[str, Dict[str, str]], Optional): metadata of request
-            metadata (MetadataTuple, optional, DEPRECATED): custom metadata
+            secret_metadata (Dict[str, Dict[str, str]], Optional): Dapr metadata of secrets request
+            metadata (MetadataTuple, optional, DEPRECATED): gRPC custom metadata
 
         Returns:
             :class:`GetBulkSecretResponse` object with secrets and metadata returned from callee
@@ -821,7 +821,7 @@ class DaprGrpcClient:
         Args:
             store_name (str): the state store name to get from
             key (str): the key of the key-value pair to be gotten
-            config_metadata (Dict[str, str], optional): custom metadata for configuration
+            config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
