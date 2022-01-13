@@ -81,6 +81,7 @@ class Actor:
                 callback is first invoked.
             period (datetime.timedelta): the time interval between invocations
                 of the awaitable callback.
+            ttl (datetime.timedelta): the time interval before the timer stops firing
         """
         name = name or self.__get_new_timer_name()
         timer = ActorTimerData(name, callback, state, due_time, period, ttl)
@@ -118,6 +119,7 @@ class Actor:
                 for the first time.
             period (datetime.timedelta): the time interval between reminder invocations after
                 the first invocation.
+            ttl (datetime.timedelta): the time interval before the reminder stops firing
         """
         reminder = ActorReminderData(name, state, due_time, period, ttl)
         req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())

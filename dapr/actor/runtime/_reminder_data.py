@@ -44,6 +44,7 @@ class ActorReminderData:
                 invoking the reminder for the first time.
             period (datetime.timedelta): the time interval between reminder
                 invocations after the first invocation.
+            ttl (datetime.timedelta): the time interval before the reminder stops firing.
         """
         self._reminder_name = reminder_name
         self._due_time = due_time

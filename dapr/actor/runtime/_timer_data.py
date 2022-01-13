@@ -46,6 +46,7 @@ class ActorTimerData:
                 before the first timer trigger.
             period (datetime.timedelta): the time interval between reminder
                 invocations after the first timer trigger.
+            ttl (datetime.timedelta): the time interval before the timer stops firing.
         """
         self._timer_name = timer_name
         self._callback = callback.__name__

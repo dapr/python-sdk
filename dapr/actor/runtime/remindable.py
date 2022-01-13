@@ -34,6 +34,6 @@ class Remindable(ABC):
                 for the first time.
             period (datetime.timedelta): the time interval between reminder invocations
                 after the first invocation.
-            # TODO
+            ttl (datetime.timedelta): the time interval before the reminder stops firing
         """
         ...
