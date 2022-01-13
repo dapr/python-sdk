@@ -502,8 +502,8 @@ class DaprGrpcClient:
             :class:`QueryStateResponse` gRPC metadata returned from callee,
                 pagination token and results of the query
         """
-        warn('The State Store Query API is an Alpha version and is subject to change. ',
-             RuntimeWarning, stacklevel=2)
+        warn('The State Store Query API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
