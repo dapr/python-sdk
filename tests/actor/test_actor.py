@@ -132,7 +132,7 @@ class ActorTests(unittest.TestCase):
         test_client.register_reminder.mock.assert_called_with(
             'FakeSimpleReminderActor', 'test_id',
             'test_reminder',
-            b'{"reminderName":"test_reminder","dueTime":"0h0m1s","period":"0h0m1s","data":"cmVtaW5kZXJfbWVzc2FnZQ=="}')  # noqa E501
+            b'{"reminderName":"test_reminder","dueTime":"0h0m1s0ms0\\u03bcs","period":"0h0m1s0ms0\\u03bcs","data":"cmVtaW5kZXJfbWVzc2FnZQ=="}')  # noqa E501
 
         # unregister reminder
         _run(test_actor.unregister_reminder('test_reminder'))
@@ -163,7 +163,7 @@ class ActorTests(unittest.TestCase):
         test_client.register_timer.mock.assert_called_once()
         test_client.register_timer.mock.assert_called_with(
             'FakeSimpleTimerActor', 'test_id', 'test_timer',
-            b'{"callback":"timer_callback","data":"mydata","dueTime":"0h0m1s","period":"0h0m2s"}')
+            b'{"callback":"timer_callback","data":"mydata","dueTime":"0h0m1s0ms0\\u03bcs","period":"0h0m2s0ms0\\u03bcs"}')  # noqa E501
 
         # unregister timer
         _run(test_actor.unregister_timer('test_timer'))

@@ -8,7 +8,7 @@ from dapr.clients import DaprClient
 with DaprClient() as d:
         storeName = 'configurationstore'
 
-        key = 'greeting'
+        key = 'orderId'
 
         # Wait for sidecar to be up within 20 seconds.
         d.wait(20)
