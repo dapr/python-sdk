@@ -827,6 +827,8 @@ class DaprGrpcClient:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
             and value obtained from the config store
         """
+        warn('The Get Configuration API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
