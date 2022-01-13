@@ -18,7 +18,7 @@ from datetime import timedelta
 
 # Regex to parse Go Duration datatype, e.g. 4h15m50s123ms345μs
 DAPR_DURATION_PARSER = re.compile(
-    r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?((?P<milliseconds>\d+)ms)?((?P<microseconds>\d+)μs)?$')  # noqa: E501
+    r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?((?P<milliseconds>\d+)ms)?((?P<microseconds>\d+)(μs|us))?$')  # noqa: E501
 
 
 def convert_from_dapr_duration(duration: str) -> timedelta:
