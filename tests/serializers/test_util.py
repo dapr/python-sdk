@@ -44,7 +44,7 @@ class UtilTests(unittest.TestCase):
     def test_convert_microsecs_μs(self):
         delta = convert_from_dapr_duration('123μs')
         self.assertEqual(delta.microseconds, 123)
-    
+
     def test_convert_microsecs_us(self):
         delta = convert_from_dapr_duration('345us')
         self.assertEqual(delta.microseconds, 345)
@@ -68,6 +68,7 @@ class UtilTests(unittest.TestCase):
                          "Invalid Dapr Duration format: '{}'".format(TESTSTRING))
         decoded = json.loads(json.dumps({"somevar": TESTSTRING}), cls=DaprJSONDecoder)
         self.assertEqual(decoded['somevar'], TESTSTRING)
+
 
 if __name__ == '__main__':
     unittest.main()
