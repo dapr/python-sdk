@@ -432,14 +432,14 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_query_state(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
 
-        resp = dapr.query_state_alpha1(
+        resp = dapr.query_state(
             store_name="statestore",
             query=json.dumps({"filter": {}, "page": {"limit": 2}}),
         )
         self.assertEqual(resp.results[0].key, "1")
         self.assertEqual(len(resp.results), 2)
 
-        resp = dapr.query_state_alpha1(
+        resp = dapr.query_state(
             store_name="statestore",
             query=json.dumps({"filter": {}, "page": {"limit": 3, "token": "3"}}),
         )

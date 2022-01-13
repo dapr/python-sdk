@@ -460,7 +460,7 @@ class DaprGrpcClient:
             items=items,
             headers=call.initial_metadata())
 
-    def query_state_alpha1(
+    def query_state(
             self,
             store_name: str,
             query: str,
@@ -487,7 +487,7 @@ class DaprGrpcClient:
             '''
 
             with DaprClient() as d:
-                resp = d.query_state_alpha1(
+                resp = d.query_state(
                     store_name='state_store',
                     query=query,
                     states_metadata={"metakey": "metavalue"},
@@ -502,6 +502,8 @@ class DaprGrpcClient:
             :class:`QueryStateResponse` gRPC metadata returned from callee,
                 pagination token and results of the query
         """
+        warn('The State Store Query API is an Alpha version and is subject to change. ',
+             RuntimeWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
