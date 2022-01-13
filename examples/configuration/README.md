@@ -27,7 +27,7 @@ timeout_seconds: 20
 -->
 
 ```bash
-docker exec dapr_redis redis-cli SET greeting "hello world||1"
+docker exec dapr_redis redis-cli SET orderId "100||1"
 ```
 
 <!-- END_STEP -->
@@ -44,7 +44,7 @@ To run this example, use the following command:
 <!-- STEP
 name: Run get configuration example
 expected_stdout_lines:
-  - "== APP == Got key=greeting value=hello world version=1"
+  - "== APP == Got key=orderId value=100 version=1"
 timeout_seconds: 5
 -->
 
@@ -55,5 +55,5 @@ dapr run --app-id configexample --components-path components/ -- python3 configu
 
 You should be able to see the following output:
 ```
-== APP == Got key=greeting value=hello world version=1
+== APP == Got key=orderId value=100 version=1
 ```
