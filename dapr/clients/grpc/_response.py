@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from enum import Enum
 from typing import Dict, Optional, Union, Sequence
 
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -27,6 +28,7 @@ from dapr.clients.grpc._helpers import (
     tuple_to_dict,
     unpack,
 )
+from dapr.proto import appcallback_v1
 
 import json
 
@@ -553,3 +555,49 @@ class ConfigurationResponse(DaprResponse):
     def items(self) -> Sequence[ConfigurationItem]:
         """Gets the items."""
         return self._items
+
+
+class TopicEventResponseStatus(Enum):
+    # success is the default behavior: message is acknowledged and not retried
+    success = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
+    retry = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.RETRY
+    drop = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.DROP
+
+
+class TopicEventResponse(DaprResponse):
+    """The response of subscribed topic events.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        status (Union[str, TopicEventResponseStatus]): status of the response
+    """
+
+    def __init__(
+        self,
+        status: Union[str, TopicEventResponseStatus],
+        headers: MetadataTuple = (),
+    ):
+        """Initializes a TopicEventResponse.
+
+        Args:
+            status (TopicEventResponseStatus): The status of the response.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super(TopicEventResponse, self).__init__(headers)
+        values = [e.name for e in TopicEventResponseStatus]
+        errormsg = f"`status` must be one of {values} or a TopicEventResponseStatus"
+
+        if isinstance(status, str):
+            try:
+                status = TopicEventResponseStatus[status.lower()]
+            except KeyError as e:
+                raise KeyError(errormsg) from e
+        if not isinstance(status, TopicEventResponseStatus):
+            raise ValueError(errormsg)
+        self._status = status
+
+    @property
+    def status(self) -> TopicEventResponseStatus:
+        """Gets the status."""
+        return self._status
