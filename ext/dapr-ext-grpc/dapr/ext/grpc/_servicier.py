@@ -23,11 +23,11 @@ from google.protobuf.message import Message as GrpcMessage
 from dapr.proto import appcallback_service_v1, common_v1, appcallback_v1
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
-from dapr.clients.grpc._response import InvokeMethodResponse
+from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
 
 InvokeMethodCallable = Callable[[
     InvokeMethodRequest], Union[str, bytes, InvokeMethodResponse]]
-TopicSubscribeCallable = Callable[[v1.Event], None]
+TopicSubscribeCallable = Callable[[v1.Event], Optional[TopicEventResponse]]
 BindingCallable = Callable[[BindingRequest], None]
 
 DELIMITER = ":"
@@ -184,8 +184,9 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
         # TODO: add metadata from context to CE envelope
 
-        self._topic_map[pubsub_topic](event)
-
+        response = self._topic_map[pubsub_topic](event)
+        if isinstance(response, TopicEventResponse):
+            return appcallback_v1.TopicEventResponse(status=response.status.value)
         return empty_pb2.Empty()
 
     def ListInputBindings(self, request, context):
