@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import json
 import socket
 import unittest
 import uuid
@@ -427,6 +428,23 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[0].value, value)
         self.assertEqual(resp.items[0].version, version)
         self.assertEqual(resp.items[0].metadata, metadata)
+
+    def test_query_state(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+
+        resp = dapr.query_state(
+            store_name="statestore",
+            query=json.dumps({"filter": {}, "page": {"limit": 2}}),
+        )
+        self.assertEqual(resp.results[0].key, "1")
+        self.assertEqual(len(resp.results), 2)
+
+        resp = dapr.query_state(
+            store_name="statestore",
+            query=json.dumps({"filter": {}, "page": {"limit": 3, "token": "3"}}),
+        )
+        self.assertEqual(resp.results[0].key, "3")
+        self.assertEqual(len(resp.results), 3)
 
     def test_shutdown(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')

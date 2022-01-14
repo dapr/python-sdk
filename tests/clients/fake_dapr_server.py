@@ -1,10 +1,12 @@
 import grpc
+import json
 
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
+from dapr.proto.runtime.v1.dapr_pb2 import QueryStateItem
 
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
@@ -188,6 +190,25 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             item = {'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}}
             items.append(item)
         return api_v1.GetConfigurationResponse(items=items)
+
+    def QueryStateAlpha1(self, request, context):
+        items = [QueryStateItem(
+            key=str(key), data=bytes('value of ' + str(key), 'UTF-8')) for key in range(1, 11)]
+        query = json.loads(request.query)
+
+        tokenIndex = 1
+        if 'page' in query:
+            if 'token' in query['page']:
+                # For testing purposes, we return a token that is the same as the key
+                tokenIndex = int(query['page']['token'])
+                items = items[tokenIndex - 1:]
+            if 'limit' in query['page']:
+                limit = int(query['page']['limit'])
+                if len(items) > limit:
+                    items = items[:limit]
+                tokenIndex = tokenIndex + len(items)
+
+        return api_v1.QueryStateResponse(results=items, token=str(tokenIndex))
 
     def Shutdown(self, request, context):
         self.shutdown_received = True
