@@ -80,13 +80,15 @@ expected_stdout_lines:
 <!-- STEP
 name: Actor Client
 background: true
+output_match_mode: substring
 expected_stdout_lines:
   - '== APP == call actor method via proxy.invoke_method()'
-  - "== APP == b'null'"
+  - "== APP == b'{\"data\":\"new_data\",\"ts\":\""
   - '== APP == call actor method using rpc style'
-  - '== APP == None'
+  - "== APP == {'data': 'new_data', 'ts': datetime.datetime("
   - '== APP == call SetMyData actor method to save the state'
   - '== APP == call GetMyData actor method to get the state'
+  - "== APP == {'data': 'new_data', 'ts': datetime.datetime("
   - '== APP == Register reminder'
   - '== APP == Register timer'
   - '== APP == waiting for 30 seconds'
@@ -107,9 +109,9 @@ expected_stdout_lines:
    ```
    ...
    == APP == call actor method via proxy.invoke_method()
-   == APP == b'null'
+   == APP == b'{"data":"new_data","ts":"2022-01-20T01:49:45.593Z"}'
    == APP == call actor method using rpc style
-   == APP == None
+   == APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 11, 13, 0, 38, 36, 163000, tzinfo=tzutc())}
    == APP == call SetMyData actor method to save the state
    == APP == call GetMyData actor method to get the state
    == APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 11, 13, 0, 38, 36, 163000, tzinfo=tzutc())}
