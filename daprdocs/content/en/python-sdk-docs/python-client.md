@@ -156,5 +156,18 @@ with DaprClient() as d:
 - For a full guide on secrets visit [How-To: Retrieve secrets]({{< ref howto-secrets.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/secret_store) for code samples and instructions to try out retrieving secrets
 
+### Get configuration
+
+```python
+from dapr.clients import DaprClient
+
+with DaprClient() as d:
+    # Get Configuration
+    configuration = d.get_configuration(store_name='configurationstore', keys=['orderId'], config_metadata={})
+```
+
+- For a full list of state operations visit [How-To: Get & save state]({{< ref howto-manage-configuration.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/configuration) for code samples and instructions to try out state management
+
 ## Related links
 - [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples)
