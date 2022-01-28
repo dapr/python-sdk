@@ -54,7 +54,7 @@ class DaprApp:
             >> def my_event_handler():
             >>    # To get the event data import the flask request object:
             >>    # from flask import request
-            >>    # request.data contains the event data 
+            >>    # request.data contains the event data
             >>    pass
 
         Args:

@@ -33,7 +33,7 @@ class DaprAppTest(unittest.TestCase):
 
         response = self.client.post("/events/pubsub/test", json={"body": "new message"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data.decode("utf-8") , "default route")
+        self.assertEqual(response.data.decode("utf-8"), "default route")
 
     def test_subscribe_with_route_subscription_registered_with_custom_route(self):
         @self.dapr_app.subscribe(pubsub="pubsub", topic="test", route="/do-something")
@@ -78,7 +78,7 @@ class DaprAppTest(unittest.TestCase):
 
         response = self.client.post("/events/pubsub/test", json={"body": "new message"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data.decode("utf-8") , "custom metadata")
+        self.assertEqual(response.data.decode("utf-8"), "custom metadata")
 
 
 if __name__ == '__main__':
