@@ -22,7 +22,7 @@ class TopicEventResponseTests(unittest.TestCase):
     def test_topic_event_response_creation_from_enum(self):
         for status in TopicEventResponseStatus:
             response = TopicEventResponse(status)
-            self.assertEqual(response.status, status.value)
+            self.assertEqual(response.status.value, status.value)
 
     def test_topic_event_response_creation_fails(self):
         with self.assertRaises(KeyError):
@@ -31,7 +31,7 @@ class TopicEventResponseTests(unittest.TestCase):
     def test_topic_event_response_creation_from_str(self):
         for status in TopicEventResponseStatus:
             response = TopicEventResponse(status.name)
-            self.assertEqual(response.status, status.value)
+            self.assertEqual(response.status.value, status.value)
 
     def test_topic_event_response_creation_fails_with_object(self):
         with self.assertRaises(ValueError):
