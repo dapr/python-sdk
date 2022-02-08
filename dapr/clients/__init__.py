@@ -124,7 +124,6 @@ class DaprClient(DaprGrpcClient):
                 http_verb=http_verb,
                 http_querystring=http_querystring)
 
-
     async def invoke_method_async(
             self,
             app_id: str,
