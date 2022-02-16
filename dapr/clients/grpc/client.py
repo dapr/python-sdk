@@ -127,7 +127,7 @@ class DaprGrpcClient:
 
     def _get_http_extension(
             self, http_verb: str,
-            http_querystring: Optional[MetadataTuple] = ()
+            http_querystring: Optional[MetadataTuple] = None
     ) -> common_v1.HTTPExtension:  # type: ignore
         verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
         http_ext = common_v1.HTTPExtension(verb=verb)
@@ -249,7 +249,7 @@ class DaprGrpcClient:
             operation: str,
             data: Union[bytes, str],
             binding_metadata: Dict[str, str] = {},
-            metadata: Optional[MetadataTuple] = ()) -> BindingResponse:
+            metadata: Optional[MetadataTuple] = None) -> BindingResponse:
         """Invokes the output binding with the specified operation.
 
         The data field takes any JSON serializable value and acts as the
@@ -304,7 +304,7 @@ class DaprGrpcClient:
             topic_name: str,
             data: Union[bytes, str],
             publish_metadata: Dict[str, str] = {},
-            metadata: Optional[MetadataTuple] = (),
+            metadata: Optional[MetadataTuple] = None,
             data_content_type: Optional[str] = None) -> DaprResponse:
         """Publish to a given topic.
         This publishes an event with bytes array or str data to a specified topic and
@@ -369,7 +369,7 @@ class DaprGrpcClient:
             store_name: str,
             key: str,
             state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = ()) -> StateResponse:
+            metadata: Optional[MetadataTuple] = None) -> StateResponse:
         """Gets value from a statestore with a key
 
         The example gets value from a statestore:
@@ -411,7 +411,7 @@ class DaprGrpcClient:
             keys: Sequence[str],
             parallelism: int = 1,
             states_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = ()) -> BulkStatesResponse:
+            metadata: Optional[MetadataTuple] = None) -> BulkStatesResponse:
         """Gets values from a statestore with keys
 
         The example gets value from a statestore:
@@ -537,7 +537,7 @@ class DaprGrpcClient:
             etag: Optional[str] = None,
             options: Optional[StateOptions] = None,
             state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
         """Saves key-value pairs to a statestore
 
         This saves a value to the statestore with a given key and state store name.
@@ -605,7 +605,7 @@ class DaprGrpcClient:
             self,
             store_name: str,
             states: List[StateItem],
-            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
         """Saves state items to a statestore
 
         This saves a given state item into the statestore specified by store_name.
@@ -658,7 +658,7 @@ class DaprGrpcClient:
             store_name: str,
             operations: Sequence[TransactionalStateOperation],
             transactional_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
         """Saves or deletes key-value pairs to a statestore as a transaction
 
         This saves or deletes key-values to the statestore as part of a single transaction,
@@ -718,7 +718,7 @@ class DaprGrpcClient:
             etag: Optional[str] = None,
             options: Optional[StateOptions] = None,
             state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = ()) -> DaprResponse:
+            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
         """Deletes key-value pairs from a statestore
 
         This deletes a value from the statestore with a given key and state store name.
@@ -772,7 +772,7 @@ class DaprGrpcClient:
             store_name: str,
             key: str,
             secret_metadata: Optional[Dict[str, str]] = {},
-            metadata: Optional[MetadataTuple] = ()) -> GetSecretResponse:
+            metadata: Optional[MetadataTuple] = None) -> GetSecretResponse:
         """Get secret with a given key.
 
         This gets a secret from secret store with a given key and secret store name.
@@ -822,7 +822,7 @@ class DaprGrpcClient:
             self,
             store_name: str,
             secret_metadata: Optional[Dict[str, str]] = {},
-            metadata: Optional[MetadataTuple] = ()) -> GetBulkSecretResponse:
+            metadata: Optional[MetadataTuple] = None) -> GetBulkSecretResponse:
         """Get all granted secrets.
 
         This gets all granted secrets from secret store.
