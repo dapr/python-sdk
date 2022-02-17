@@ -37,5 +37,6 @@ class TopicEventResponseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             TopicEventResponse(None)
 
+
 if __name__ == '__main__':
     unittest.main()
