@@ -15,7 +15,7 @@ limitations under the License.
 
 import asyncio
 
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, Optional, Union, Awaitable, Any
 
 from multidict import MultiDict
 from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
@@ -48,7 +48,7 @@ class DaprInvocationHttpClient:
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
             http_querystring: Optional[MetadataTuple] = None,
-            return_coroutine: bool = False) -> InvokeMethodResponse:
+            return_coroutine: bool = False) -> Union[InvokeMethodResponse,Awaitable[Any]]:
         """Invoke a service method over HTTP.
 
         Args:
@@ -62,7 +62,7 @@ class DaprInvocationHttpClient:
             return_coroutine (bool, optional): Makes the function return a coroutine.
 
         Returns:
-            InvokeMethodResponse: the response from the method invocation.
+            Union[InvokeMethodResponse,Awaitable[Any]]: the response from the method invocation.
         """
 
         verb = 'GET'

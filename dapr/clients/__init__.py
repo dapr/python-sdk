@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Callable, Dict, List, Optional, Union, Awaitable
+from typing import Callable, Dict, List, Optional, Union, Awaitable, Any
 
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
@@ -106,16 +106,17 @@ class DaprClient(DaprGrpcClient):
             InvokeMethodResponse: the response from the method invocation.
         """
         if self.invocation_client:
-            return self.invocation_client.invoke_method(
+            result = self.invocation_client.invoke_method(
                 app_id,
                 method_name,
                 data,
                 content_type=content_type,
                 metadata=metadata,
                 http_verb=http_verb,
-                http_querystring=http_querystring)
+                http_querystring=http_querystring,
+                return_coroutine=False)
         else:
-            return super().invoke_method(
+            result = super().invoke_method(
                 app_id,
                 method_name,
                 data,
@@ -123,6 +124,11 @@ class DaprClient(DaprGrpcClient):
                 metadata=metadata,
                 http_verb=http_verb,
                 http_querystring=http_querystring)
+        if isinstance(result, InvokeMethodResponse):
+            return result
+        else:
+            raise DaprInternalError(
+                f'Failed to invoke method: Unexpected return type')
 
     async def invoke_method_async(
             self,
@@ -132,7 +138,7 @@ class DaprClient(DaprGrpcClient):
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> Awaitable[InvokeMethodResponse]:
+            http_querystring: Optional[MetadataTuple] = None) -> Union[InvokeMethodResponse, Awaitable[Any]]:
         """Invoke a service method over gRPC or HTTP.
 
         Args:
@@ -145,10 +151,10 @@ class DaprClient(DaprGrpcClient):
             http_querystring (MetadataTuple, optional): Query parameters.
 
         Returns:
-            Awaitable[InvokeMethodResponse]: the response from the method invocation.
+            Union[InvokeMethodResponse,Awaitable[Any]]: the response from the method invocation.
         """
         if self.invocation_client:
-            return await self.invocation_client.invoke_method(
+            result = self.invocation_client.invoke_method(
                 app_id,
                 method_name,
                 data,
@@ -158,7 +164,7 @@ class DaprClient(DaprGrpcClient):
                 http_querystring=http_querystring,
                 return_coroutine=True)
         else:
-            return super().invoke_method(
+            result = super().invoke_method(
                 app_id,
                 method_name,
                 data,
@@ -166,3 +172,4 @@ class DaprClient(DaprGrpcClient):
                 metadata=metadata,
                 http_verb=http_verb,
                 http_querystring=http_querystring)
+        return result
