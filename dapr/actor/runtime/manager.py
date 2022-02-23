@@ -89,7 +89,7 @@ class ActorManager:
             await actor._fire_timer_internal(timer['callback'], timer['data'])
             return None
 
-        await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_timer)
+        await self._dispatch_internal(actor_id, self._timer_method_context, invoke_timer)
 
     async def dispatch(
             self, actor_id: ActorId,
