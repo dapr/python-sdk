@@ -29,7 +29,6 @@ name: Run subscriber
 expected_stdout_lines:
   - '== APP == Subscriber received: id=1, message="hello world", content_type="application/json"'
   - 'RETRY status returned from app while processing pub/sub event'
-  - '== APP == Subscriber received: id=1, message="hello world", content_type="application/json"'
   - '== APP == Subscriber received: id=2, message="hello world", content_type="application/json"'
   - '== APP == Subscriber received: id=3, message="hello world", content_type="application/json"'
   - '== APP == Subscriber received: id=4, message="hello world", content_type="application/json"'
