@@ -6,6 +6,7 @@
 [![codecov](https://codecov.io/gh/dapr/python-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk)
 [![Discord](https://img.shields.io/discord/778680217417809931)](https://discord.com/channels/778680217417809931/778680217417809934)
 [![License: Apache](https://img.shields.io/badge/License-Apache-yellow.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdapr%2Fpython-sdk.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdapr%2Fpython-sdk?ref=badge_shield)
 
 [Dapr](https://docs.dapr.io/concepts/overview/) is a portable, event-driven, serverless runtime for building distributed applications across cloud and edge.
 
@@ -133,3 +134,7 @@ pip3 install -r dev-requirements.txt
 ## Code of Conduct
 
 This project follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdapr%2Fpython-sdk.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdapr%2Fpython-sdk?ref=badge_large)
