@@ -13,6 +13,8 @@
 
 name: fossa
 on:
+  repository_dispatch:
+    types: [fossa]
   push:
     branches:
       - master
@@ -20,11 +22,6 @@ on:
       - feature/*
     tags:
       - v*
-  pull_request:
-    branches:
-      - master
-      - release-*
-      - feature/*
   workflow_dispatch: {}
 jobs:
   fossa-scan:
