@@ -72,24 +72,3 @@ jobs:
                 }
               }
             });
-            if (isFromPulls && commentBody) {
-              if (commentBody.indexOf("/ok-to-test") == 0) {
-                // Get pull request
-                const pull = await github.pulls.get({
-                  owner: issue.owner,
-                  repo: issue.repo,
-                  pull_number: issue.number
-                });
-                if (pull && pull.data) {                
-                  // Fire repository_dispatch event to trigger e2e test
-                  await github.repos.createDispatchEvent({
-                    owner: issue.owner,
-                    repo: issue.repo,
-                    event_type: "fossa",
-                    client_payload: {},
-                  });
-                  
-                  console.log(`Trigger Fossa scan for PR ${issue.number}`);
-                }
-              }
-            }

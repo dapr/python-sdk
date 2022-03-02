@@ -22,6 +22,11 @@ on:
       - feature/*
     tags:
       - v*
+  pull_request:
+    branches:
+      - master
+      - release-*
+      - feature/*
   workflow_dispatch: {}
 jobs:
   fossa-scan:
@@ -33,10 +38,5 @@ jobs:
       - name: "Run FOSSA Scan"
         uses: fossas/fossa-action@main # Use a specific version if locking is preferred
         with:
-          api-key: ${{secrets.FOSSA_API_KEY}}
+          api-key: f886d86744fc734c13de463b87eb3482 # This is a PUSH ONLY token that is safe to be shared with the public
 
-      - name: "Run FOSSA Test"
-        uses: fossas/fossa-action@main # Use a specific version if locking is preferred
-        with:
-          api-key: ${{secrets.FOSSA_API_KEY}}
-          run-tests: true
