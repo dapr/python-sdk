@@ -22,14 +22,20 @@ g = Github(os.getenv("GITHUB_TOKEN"))
 repo = g.get_repo(os.getenv("GITHUB_REPOSITORY"))
 maintainers = [m.strip() for m in os.getenv("MAINTAINERS").split(',')]
 
-def fetch_pulls(mergeable_state, labels = {'automerge'}):
-    return [pr for pr in repo.get_pulls(state='open', sort='created') \
-        if (not pr.draft) and pr.mergeable_state == mergeable_state and \
-            (not labels or len(labels.intersection({l.name for l in pr.labels})) > 0)]
+
+def fetch_pulls(mergeable_state, labels={'automerge'}):
+    return [pr for pr in repo.get_pulls(state='open', sort='created')
+            # noqa: E502
+            if (not pr.draft) and (pr.mergeable_state == mergeable_state) and \
+               (not labels or len(labels.intersection({label.name for label in pr.labels})) > 0)]
+
 
 def is_approved(pr):
-    approvers = [r.user.login for r in pr.get_reviews() if r.state == 'APPROVED' and r.user.login in maintainers]
-    return len([a for a in approvers if repo.get_collaborator_permission(a) in ['admin', 'write']]) > 0
+    approvers = [r.user.login for r in pr.get_reviews()
+                 if r.state == 'APPROVED' and r.user.login in maintainers]
+    return len([a for a in approvers if
+               repo.get_collaborator_permission(a) in ['admin', 'write']]) > 0
+
 
 # First, find a PR that can be merged
 pulls = fetch_pulls('clean')
@@ -43,7 +49,7 @@ for pr in pulls:
             pr.merge(merge_method='squash')
             merged = True
             break
-        except:
+        except Exception:
             print(f"Failed to merge PR {pr.html_url}")
 
 if len(pulls) > 0 and not merged:
@@ -56,11 +62,12 @@ for pr in pulls:
     print(f"Updating PR {pr.html_url}")
     try:
         pr.update_branch()
-    except:
+    except Exception:
         print(f"Failed to update PR {pr.html_url}")
 
 pulls = fetch_pulls('dirty')
-print(f"Detected {len(pulls)} open pull requests in {repo.name} to be automerged but are in dirty state.")
+print(f"Detected {len(pulls)} open pull requests in {repo.name}"
+      "to be automerged but are in dirty state.")
 for pr in pulls:
     print(f"PR is in dirty state: {pr.html_url}")
 
