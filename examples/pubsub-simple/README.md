@@ -3,7 +3,7 @@
 This example utilizes a publisher and a subscriber to show the pubsub pattern, it also shows `PublishEvent`, `OnTopicEvent`, `GetTopicSubscriptions`, and `TopicEventResponse` functionality.
 It creates a publisher and calls the `publish_event` method in the `DaprClient`.
 It will create a gRPC subscriber and bind the `OnTopicEvent` method, which gets triggered after a message is published to the subscribed topic.
-The subscriber will tell dapr to retry delivery of the first message it receives, logging that the message will be retried, and printing it twice to standard output.
+The subscriber will tell dapr to retry delivery of the first message it receives, logging that the message will be retried, and printing it at least once to standard output.
 
 > **Note:** Make sure to use the latest proto bindings
 
