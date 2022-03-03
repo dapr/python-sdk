@@ -18,7 +18,7 @@ import unittest
 from unittest.mock import MagicMock, Mock
 
 from dapr.clients.grpc._request import InvokeMethodRequest
-from dapr.clients.grpc._response import InvokeMethodResponse
+from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
 from dapr.ext.grpc._servicier import _CallbackServicer
 from dapr.proto import common_v1, appcallback_v1
 
@@ -93,6 +93,7 @@ class TopicSubscriptionTests(unittest.TestCase):
         self._topic1_method = Mock()
         self._topic2_method = Mock()
         self._topic3_method = Mock()
+        self._topic3_method.return_value = TopicEventResponse("success")
 
         self._servicier.register_topic(
             'pubsub1',
@@ -160,6 +161,17 @@ class TopicSubscriptionTests(unittest.TestCase):
         )
 
         self._topic3_method.assert_called_once()
+
+    def test_topic3_event_response(self):
+        response = self._servicier.OnTopicEvent(
+            appcallback_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic3'),
+            self.fake_context,
+        )
+        self.assertIsInstance(response, appcallback_v1.TopicEventResponse)
+        self.assertEqual(
+            response.status,
+            appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
+        )
 
     def test_non_registered_topic(self):
         with self.assertRaises(NotImplementedError):
