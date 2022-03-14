@@ -61,16 +61,26 @@ A full sample can be found [here](https://github.com/dapr/python-sdk/tree/v1.0.0
 
 ### Subscribe to a topic
 
+When subscribing to a topic, you can instruct dapr whether the event delivered has been accepted, or whether it should be dropped, or retried later.
+
 ```python
+from typing import Optional
 from cloudevents.sdk.event import v1
 from dapr.ext.grpc import App
+from dapr.clients.grpc._response import TopicEventResponse
 
 app = App()
 
 # Default subscription for a topic
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
-def mytopic(event: v1.Event) -> None:
+def mytopic(event: v1.Event) -> Optional[TopicEventResponse]:
     print(event.Data(),flush=True)
+    # Returning None (or not doing a return explicitly) is equivalent
+    # to returning a TopicEventResponse("success").
+    # You can also return TopicEventResponse("retry") for dapr to log
+    # the message and retry delivery later, or TopicEventResponse("drop")
+    # for it to drop the message
+    return TopicEventResponse("success")
 
 # Specific handler using Pub/Sub routing
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A',

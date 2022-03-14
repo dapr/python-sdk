@@ -26,7 +26,7 @@ jobs:
       matrix:
         python_ver: [3.7, 3.8, 3.9, "3.10"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: azure/setup-helm@v2.0
       - name: Determine latest Dapr Runtime version
         run: |
@@ -39,7 +39,7 @@ jobs:
           echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
           echo "Found $CLI_VERSION"
       - name: Set up Python ${{ matrix.python_ver }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python_ver }}
       - name: Install dependencies
@@ -54,14 +54,14 @@ jobs:
         with:
           go-version: ${{ env.GOVER }}
       - name: Checkout Dapr CLI repo to override dapr command.
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         if: env.DAPR_CLI_REF != ''
         with:
           repository: dapr/cli
           ref: ${{ env.DAPR_CLI_REF }}
           path: cli
       - name: Checkout Dapr repo to override daprd.
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         if: env.DAPR_REF != ''
         with:
           repository: dapr/dapr
