@@ -48,7 +48,7 @@ class DaprInvocationHttpClient:
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
             http_querystring: Optional[MetadataTuple] = None,
-            return_coroutine: bool = False) -> Union[InvokeMethodResponse,Awaitable[Any]]:
+            return_coroutine: bool = False) -> Union[InvokeMethodResponse, Awaitable[Any]]:
         """Invoke a service method over HTTP.
 
         Args:

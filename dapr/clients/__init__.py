@@ -128,7 +128,7 @@ class DaprClient(DaprGrpcClient):
             return result
         else:
             raise DaprInternalError(
-                f'Failed to invoke method: Unexpected return type')
+                'Failed to invoke method: Unexpected return type')
 
     async def invoke_method_async(
             self,
@@ -138,7 +138,8 @@ class DaprClient(DaprGrpcClient):
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> Union[InvokeMethodResponse, Awaitable[Any]]:
+            http_querystring: Optional[MetadataTuple] = None) -> Union[
+                InvokeMethodResponse, Awaitable[Any]]:
         """Invoke a service method over gRPC or HTTP.
 
         Args:
