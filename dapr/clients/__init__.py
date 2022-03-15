@@ -152,7 +152,7 @@ class DaprClient(DaprGrpcClient):
             http_querystring (MetadataTuple, optional): Query parameters.
 
         Returns:
-            Awaitable[InvokeMethodResponse]: an awaitable of the response from the method invocation.
+            Union[InvokeMethodResponse, Awaitable[Any]]: the method invocation response.
         """
         if self.invocation_client:
             result = await self.invocation_client.invoke_method(

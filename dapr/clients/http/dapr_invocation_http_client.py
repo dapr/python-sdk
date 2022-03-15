@@ -62,7 +62,7 @@ class DaprInvocationHttpClient:
             return_coroutine (bool, optional): Makes the function return a coroutine.
 
         Returns:
-            Union[InvokeMethodResponse,Awaitable[Any]]: the response from the method invocation.
+            Union[InvokeMethodResponse, Awaitable[Any]]: the response from the method invocation.
         """
 
         verb = 'GET'
