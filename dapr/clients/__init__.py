@@ -154,7 +154,7 @@ class DaprClient(DaprGrpcClient):
             Union[InvokeMethodResponse,Awaitable[Any]]: the response from the method invocation.
         """
         if self.invocation_client:
-            result = self.invocation_client.invoke_method(
+            result = await self.invocation_client.invoke_method(
                 app_id,
                 method_name,
                 data,
