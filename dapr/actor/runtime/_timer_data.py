@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 from datetime import timedelta
-from typing import Any, Awaitable, Callable, Dict
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 TIMER_CALLBACK = Callable[[Any], Awaitable[None]]
 
@@ -29,13 +29,14 @@ class ActorTimerData:
         period: the time interval between reminder invocations after
             the first timer trigger.
         callback: timer callback when timer is triggered.
+        ttl: the time interval before the timer stops firing.
     """
 
     def __init__(
             self, timer_name: str,
             callback: TIMER_CALLBACK, state: Any,
             due_time: timedelta, period: timedelta,
-            ttl: timedelta):
+            ttl: Optional[timedelta] = None):
         """Create new :class:`ActorTimerData` instance.
 
         Args:
@@ -46,7 +47,7 @@ class ActorTimerData:
                 before the first timer trigger.
             period (datetime.timedelta): the time interval between reminder
                 invocations after the first timer trigger.
-            ttl (datetime.timedelta): the time interval before the timer stops firing.
+            ttl (Optional[datetime.timedelta]): the time interval before the timer stops firing.
         """
         self._timer_name = timer_name
         self._callback = callback.__name__
@@ -76,7 +77,7 @@ class ActorTimerData:
         return self._period
 
     @property
-    def ttl(self) -> timedelta:
+    def ttl(self) -> Optional[timedelta]:
         """Gets ttl of the actor timer."""
         return self._ttl
 
@@ -91,10 +92,14 @@ class ActorTimerData:
         This is used to serialize Actor Timer Data for Dapr runtime API.
         """
 
-        return {
+        timerDict: Dict[str, Any] = {
             'callback': self._callback,
             'data': self._state,
             'dueTime': self._due_time,
-            'period': self._period,
-            'ttl': self._ttl
+            'period': self._period
         }
+
+        if self._ttl:
+            timerDict.update({'ttl': self._ttl})
+
+        return timerDict

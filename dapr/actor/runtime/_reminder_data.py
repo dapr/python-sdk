@@ -33,7 +33,7 @@ class ActorReminderData:
 
     def __init__(
             self, reminder_name: str, state: Optional[bytes],
-            due_time: timedelta, period: timedelta, ttl: timedelta):
+            due_time: timedelta, period: timedelta, ttl: Optional[timedelta] = None):
         """Creates new :class:`ActorReminderData` instance.
 
         Args:
@@ -44,7 +44,7 @@ class ActorReminderData:
                 invoking the reminder for the first time.
             period (datetime.timedelta): the time interval between reminder
                 invocations after the first invocation.
-            ttl (datetime.timedelta): the time interval before the reminder stops firing.
+            ttl (Optional[datetime.timedelta]): the time interval before the reminder stops firing.
         """
         self._reminder_name = reminder_name
         self._due_time = due_time
@@ -77,7 +77,7 @@ class ActorReminderData:
         return self._period
 
     @property
-    def ttl(self) -> timedelta:
+    def ttl(self) -> Optional[timedelta]:
         """Gets ttl of Actor Reminder."""
         return self._ttl
 
@@ -86,13 +86,17 @@ class ActorReminderData:
         encoded_state = None
         if self._state is not None:
             encoded_state = base64.b64encode(self._state)
-        return {
+        reminderDict: Dict[str, Any] = {
             'reminderName': self._reminder_name,
             'dueTime': self._due_time,
             'period': self._period,
-            'ttl': self._ttl,
-            'data': encoded_state.decode("utf-8"),
+            'data': encoded_state.decode("utf-8")
         }
+
+        if self._ttl is not None:
+            reminderDict.update({'ttl': self._ttl})
+
+        return reminderDict
 
     @classmethod
     def from_dict(cls, reminder_name: str, obj: Dict[str, Any]) -> 'ActorReminderData':

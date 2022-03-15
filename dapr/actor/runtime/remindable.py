@@ -15,6 +15,7 @@ limitations under the License.
 
 from abc import ABC, abstractmethod
 from datetime import timedelta
+from typing import Optional
 
 
 class Remindable(ABC):
@@ -24,7 +25,8 @@ class Remindable(ABC):
 
     @abstractmethod
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta, ttl: timedelta) -> None:
+                               due_time: timedelta, period: timedelta,
+                               ttl: Optional[timedelta] = None) -> None:
         """A callback which will be called when reminder is triggered.
 
         Args:

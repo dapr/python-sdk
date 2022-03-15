@@ -16,6 +16,7 @@ from dapr.serializers.json import DefaultJSONSerializer
 import asyncio
 
 from datetime import timedelta
+from typing import Optional
 
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.remindable import Remindable
@@ -53,7 +54,8 @@ class FakeSimpleReminderActor(Actor, FakeSimpleActorInterface, Remindable):
         pass
 
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta, ttl: timedelta) -> None:
+                               due_time: timedelta, period: timedelta,
+                               ttl: Optional[timedelta]) -> None:
         pass
 
 
@@ -69,7 +71,8 @@ class FakeSimpleTimerActor(Actor, FakeSimpleActorInterface):
         self.timer_called = True
 
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta, ttl: timedelta) -> None:
+                               due_time: timedelta, period: timedelta,
+                               ttl: Optional[timedelta]) -> None:
         pass
 
 
