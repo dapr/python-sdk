@@ -45,11 +45,12 @@ To run this example, use the following command:
 name: Run get configuration example
 expected_stdout_lines:
   - "== APP == Got key=orderId value=100 version=1"
+  - "== APP == Subscribe key=orderId value=100 version=1"
 timeout_seconds: 5
 -->
 
 ```bash
-dapr run --app-id configexample --components-path components/ -- python3 configuration.py
+dapr run --app-id configexample --components-path components/ --log-level debug -- python3 configuration.py
 ```
 <!-- END_STEP -->
 

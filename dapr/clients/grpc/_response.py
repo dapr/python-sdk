@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from http import client
+import threading
 from enum import Enum
 from typing import Dict, Optional, Union, Sequence
 
@@ -31,6 +33,8 @@ from dapr.clients.grpc._helpers import (
 from dapr.proto import appcallback_v1
 
 import json
+
+from dapr.proto import api_v1, api_service_v1, common_v1
 
 
 class DaprResponse:
@@ -659,6 +663,30 @@ class ConfigurationResponse(DaprResponse):
     def items(self) -> Sequence[ConfigurationItem]:
         """Gets the items."""
         return self._items
+
+
+class ConfigurationWatcher():
+    def __init__(self):
+        self.items = []
+
+    def get_dict(self):
+        return self.items
+
+    async def watch_configuration(self, stub, store_name, keys, config_metadata):
+        req = api_v1.SubscribeConfigurationRequest(
+            store_name=store_name, keys=keys, metadata=config_metadata)
+        thread = threading.Thread(target=await self.read_subscribe_config(stub, req), args=())
+        thread.daemon = True
+        thread.start()
+
+    async def read_subscribe_config(self, stub, req):
+        response, call = stub.SubscribeConfigurationAlpha1.__call__(req)
+        async for item in response.items:
+            self.items.append(
+                ConfigurationItem(
+                    key=item.key,
+                    value=item.value,
+                    version=item.version))
 
 
 class TopicEventResponseStatus(Enum):

@@ -1,4 +1,3 @@
-
 """
 dapr run python3 configuration.py
 """
@@ -15,17 +14,13 @@ with DaprClient() as d:
                 # Wait for sidecar to be up within 20 seconds.
                 d.wait(20)
 
-                # Get one configuration by key.
-                configuration = d.get_configuration(store_name=storeName, keys=[key], config_metadata={})
-                print(f"Got key={configuration.items[0].key} value={configuration.items[0].value} version={configuration.items[0].version}", flush=True)
-
                 # Subscribe to configuration by key.
                 configuration = asyncio.run(d.subscribe_configuration(store_name=storeName, keys=[key], config_metadata={}))
 
                 for i in range(10):
                         if configuration != None:
-                                print(f"Subscribe key={configuration.get_dict}", flush=True)
+                                print(f"Subscribe key={configuration.get_dict}")
                                 # print(f"Subscribe key={configuration.get_dict} value={configuration.items[0].value} version={configuration.items[0].version}")
                         else:
                                 print("Nothing yet")
-                        
+                        sleep(1)
