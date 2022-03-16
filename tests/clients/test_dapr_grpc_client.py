@@ -438,7 +438,6 @@ class DaprGrpcClientTests(unittest.TestCase):
         metadata = {}
 
         resp = await dapr.subscribe_configuration(store_name="configurationstore", keys=key)
-        print("testing")
         print(resp)
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].value, value)
