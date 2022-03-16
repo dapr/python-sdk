@@ -1,6 +1,5 @@
-
 """
-dapr run python3 configuration.py
+dapr run --app-id configexample --components-path components/ -- python3 configuration.py
 """
 
 import asyncio
