@@ -948,9 +948,9 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
         configWatcher = ConfigurationWatcher()
-        await configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
+        configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
         return configWatcher
-        
+
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
 

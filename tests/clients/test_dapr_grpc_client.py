@@ -452,7 +452,8 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[0].version, version)
         self.assertEqual(resp.items[0].metadata, metadata)
 
-        resp = await dapr.subscribe_configuration(store_name="configurationstore", keys="NotValidKey")
+        resp = await dapr.subscribe_configuration(store_name="configurationstore", 
+                keys="NotValidKey")
         self.assertEqual(resp.items[0].key, invalid_key)
         self.assertEqual(resp.items[0].value, value)
         self.assertEqual(resp.items[0].version, version)
