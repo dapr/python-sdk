@@ -32,11 +32,11 @@ docker exec dapr_redis redis-cli SET orderId "100||1"
 
 <!-- END_STEP -->
 
-## Run the example
+## Run get configuration example
 
 Change directory to this folder:
 ```bash
-cd examples/configuration
+cd examples/configuration 
 ```
 
 To run this example, use the following command:
@@ -56,4 +56,44 @@ dapr run --app-id configexample --components-path components/ -- python3 configu
 You should be able to see the following output:
 ```
 == APP == Got key=orderId value=100 version=1
+```
+
+## Run subscribe configuration example
+
+Change directory to this folder:
+```bash
+cd examples/configuration 
+```
+
+To run this example, use the following command:
+
+<!-- STEP
+name: Run subscribe configuration example
+expected_stdout_lines:
+  - "== APP == Subscribe key=orderId value=200 version=2"
+background: true
+sleep: 15
+-->
+
+```bash
+dapr run --app-id configexample --components-path components/ -- python3 SubscribeConfiguration.py
+```
+<!-- END_STEP -->
+
+<!-- STEP
+name: Set configuration value
+expected_stdout_lines:
+  - "OK"
+timeout_seconds: 20
+-->
+
+```bash
+docker exec dapr_redis redis-cli SET orderId "200||2"
+```
+
+<!-- END_STEP -->
+
+You should be able to see the following output:
+```
+== APP == Subscribe key=orderId value=200 version=2
 ```
