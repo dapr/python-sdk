@@ -72,7 +72,8 @@ name: Run subscribe configuration example
 expected_stdout_lines:
   - "== APP == Subscribe key=orderId value=200 version=2"
 background: true
-sleep: 5
+sleep: 25
+timeout_seconds: 20
 -->
 
 ```bash
