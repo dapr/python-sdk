@@ -79,19 +79,10 @@ timeout_seconds: 20
 ```bash
 dapr run --app-id configexample --components-path components/ -- python3 SubscribeConfiguration.py
 ```
-<!-- END_STEP -->
-
-<!-- STEP
-name: Set configuration value
-expected_stdout_lines:
-  - "OK"
-timeout_seconds: 20
--->
 
 ```bash
 docker exec dapr_redis redis-cli SET orderId "200||2"
 ```
-
 <!-- END_STEP -->
 
 You should be able to see the following output:
