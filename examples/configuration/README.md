@@ -23,7 +23,7 @@ pip3 install dapr dapr-ext-grpc
 name: Set configuration value
 expected_stdout_lines:
   - "OK"
-timeout_seconds: 20
+timeout_seconds: 10
 -->
 
 ```bash
@@ -47,8 +47,8 @@ expected_stdout_lines:
   - "== APP == Got key=orderId value=100 version=1"
   - "== APP == Subscribe key=orderId value=200 version=2"
 background: true
-sleep: 25
-timeout_seconds: 20
+sleep: 10
+timeout_seconds: 50
 -->
 
 ```bash
