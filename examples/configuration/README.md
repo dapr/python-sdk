@@ -73,7 +73,7 @@ expected_stdout_lines:
   - "== APP == Subscribe key=orderId value=200 version=2"
 background: true
 sleep: 25
-timeout_seconds: 20
+timeout_seconds: 30
 -->
 
 ```bash
