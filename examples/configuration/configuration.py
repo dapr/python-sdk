@@ -3,7 +3,6 @@ dapr run --app-id configexample --components-path components/ -- python3 configu
 """
 
 import asyncio
-from time import sleep
 from dapr.clients import DaprClient
 
 async def executeConfiguration():

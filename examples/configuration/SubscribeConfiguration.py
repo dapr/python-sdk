@@ -17,13 +17,12 @@ async def executeConfiguration():
 
         # Subscribe to configuration by key.
         configuration = await d.subscribe_configuration(store_name=storeName, keys=[key], config_metadata={})
-        while True:
+        for x in range(10):
             if configuration != None:
                 items = configuration.get_items()
                 for item in items:
                     print(f"Subscribe key={item.key} value={item.value} version={item.version}", flush=True)
             else:
                 print("Nothing yet")
-        sleep(5)
-
+            sleep(5)
 asyncio.run(executeConfiguration())
