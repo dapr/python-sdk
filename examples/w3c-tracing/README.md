@@ -6,7 +6,7 @@ This sample includes:
 - invoke-receiver: Exposes the methods to be remotely accessed
 - invoke-caller: Invokes the exposed methods
 
-Also consider [getting started with observability in Dapr](https://github.com/dapr/quickstarts/tree/master/observability).
+Also consider [getting started with observability in Dapr](https://github.com/dapr/quickstarts/tree/master/tutorials/observability).
  
 ## Example overview
 
