@@ -45,6 +45,7 @@ To run this example, use the following command:
 name: Run get configuration example
 expected_stdout_lines:
   - "== APP == Got key=orderId value=100 version=1"
+  - "== APP == Subscribe key=orderId value=200 version=2"
 background: true
 sleep: 10
 timeout_seconds: 50
