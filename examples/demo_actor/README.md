@@ -135,7 +135,7 @@ expected_stdout_lines:
 
 > For example, [docker registry] is docker hub account.
 
-2. Follow [these steps](https://docs.dapr.io/getting-started/configure-redis/) to create a Redis store.
+2. Follow [these steps](https://docs.dapr.io/reference/components-reference/supported-configuration-stores/redis-configuration-store/#setup-redis) to create a Redis store.
 
 3. Once your store is created,  confirm validate `redis.yml` file in the `deploy` directory. 
     > **Note:** the `redis.yml` uses the secret created by `bitmany/redis` Helm chat to securely inject the password.
