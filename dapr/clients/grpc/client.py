@@ -71,10 +71,11 @@ class DaprGrpcClient:
         >>> d = DaprClient()
         >>> resp = d.invoke_method('callee', 'method', b'data')
 
-    With context manager:
+    With context manager and custom message size limit:
 
         >>> from dapr.clients import DaprClient
-        >>> with DaprClient() as d:
+        >>> MAX = 64 * 1024 * 1024 # 64MB
+        >>> with DaprClient(max_message_length=MAX) as d:
         ...     resp = d.invoke_method('callee', 'method', b'data')
     """
 
@@ -85,7 +86,9 @@ class DaprGrpcClient:
             UnaryUnaryClientInterceptor,
             UnaryStreamClientInterceptor,
             StreamUnaryClientInterceptor,
-            StreamStreamClientInterceptor]]] = None):
+            StreamStreamClientInterceptor]]] = None,
+        max_grpc_message_length: Optional[int] = None
+    ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
         Args:
@@ -94,11 +97,19 @@ class DaprGrpcClient:
                 UnaryStreamClientInterceptor or
                 StreamUnaryClientInterceptor or
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
+            max_grpc_messsage_length (int, optional): The maximum grpc send and receive
+                message length in bytes.
         """
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
         self._address = address
-        self._channel = grpc.insecure_channel(address)   # type: ignore
+        if not max_grpc_message_length:
+            self._channel = grpc.insecure_channel(address)   # type: ignore
+        else:
+            self._channel = grpc.insecure_channel(address, options=[   # type: ignore
+                ('grpc.max_send_message_length', max_grpc_message_length),
+                ('grpc.max_receive_message_length', max_grpc_message_length),
+            ])
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor([
