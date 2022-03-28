@@ -6,7 +6,7 @@ This sample includes:
 - invoke-receiver: Exposes the methods to be remotely accessed
 - invoke-caller: Invokes the exposed methods
 
-Also consider [getting started with observability in Dapr](https://github.com/dapr/quickstarts/tree/master/observability).
+Also consider [getting started with observability in Dapr](https://github.com/dapr/quickstarts/tree/master/tutorials/observability).
  
 ## Example overview
 
@@ -55,7 +55,7 @@ CONTAINER ID        IMAGE                  COMMAND                  CREATED     
 317fef6a8297        redis                  "docker-entrypoint.s…"   2 days ago          Up 32 hours         0.0.0.0:6379->6379/tcp             dapr_redis
 ```
 
-If Zipkin is not working, [install the newest version of Dapr Cli and initialize it](https://docs.dapr.io/getting-started/install-dapr/).
+If Zipkin is not working, [install the newest version of Dapr Cli and initialize it](https://docs.dapr.io/getting-started/install-dapr-cli/).
 
 ### Run the Demo service sample
 
