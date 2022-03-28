@@ -475,11 +475,11 @@ class DaprGrpcClient:
             query = '''
             {
                 "filter": {
-                    "EQ": { "value.state": "CA" }
+                    "EQ": { "state": "CA" }
                 },
                 "sort": [
                     {
-                        "key": "value.person.id",
+                        "key": "person.id",
                         "order": "DESC"
                     }
                 ]
