@@ -56,13 +56,13 @@ Now run the app
 <!-- STEP
 name: Run get query example
 expected_stdout_lines:
-- '== APP == 1 {"city": "Seattle", "person": {"id": {"$numberDouble": "1036.0"}, "org": "Dev Ops"}, "state": "WA"}'
-- '== APP == 4 {"city": "Spokane", "person": {"id": {"$numberDouble": "1042.0"}, "org": "Dev Ops"}, "state": "WA"}'
-- '== APP == 10 {"city": "New York", "person": {"id": {"$numberDouble": "1054.0"}, "org": "Dev Ops"}, "state": "NY"}'
+- '== APP == 1 {"city": "Seattle", "person": {"id": 1036.0, "org": "Dev Ops"}, "state": "WA"}'
+- '== APP == 4 {"city": "Spokane", "person": {"id": 1042.0, "org": "Dev Ops"}, "state": "WA"}'
+- '== APP == 10 {"city": "New York", "person": {"id": 1054.0, "org": "Dev Ops"}, "state": "NY"}'
 - '== APP == Token: 3'
-- '== APP == 9 {"city": "San Diego", "person": {"id": {"$numberDouble": "1002.0"}, "org": "Finance"}, "state": "CA"}'
-- '== APP == 7 {"city": "San Francisco", "person": {"id": {"$numberDouble": "1015.0"}, "org": "Dev Ops"}, "state": "CA"}'
-- '== APP == 3 {"city": "Sacramento", "person": {"id": {"$numberDouble": "1071.0"}, "org": "Finance"}, "state": "CA"}'
+- '== APP == 9 {"city": "San Diego", "person": {"id": 1002.0, "org": "Finance"}, "state": "CA"}'
+- '== APP == 7 {"city": "San Francisco", "person": {"id": 1015.0, "org": "Dev Ops"}, "state": "CA"}'
+- '== APP == 3 {"city": "Sacramento", "person": {"id": 1071.0, "org": "Finance"}, "state": "CA"}'
 - '== APP == Token: 6'
 timeout_seconds: 5
 -->
@@ -74,13 +74,13 @@ dapr run --app-id queryexample --components-path components/ -- python3 state_st
 
 You should be able to see the following output:
 ```
-== APP == 1 {"city": "Seattle", "person": {"id": {"$numberDouble": "1036.0"}, "org": "Dev Ops"}, "state": "WA"}
-== APP == 4 {"city": "Spokane", "person": {"id": {"$numberDouble": "1042.0"}, "org": "Dev Ops"}, "state": "WA"}
-== APP == 10 {"city": "New York", "person": {"id": {"$numberDouble": "1054.0"}, "org": "Dev Ops"}, "state": "NY"}
+== APP == 1 {"city": "Seattle", "person": {"id": 1036.0, "org": "Dev Ops"}, "state": "WA"}
+== APP == 4 {"city": "Spokane", "person": {"id": 1042.0, "org": "Dev Ops"}, "state": "WA"}
+== APP == 10 {"city": "New York", "person": {"id": 1054.0, "org": "Dev Ops"}, "state": "NY"}
 == APP == Token: 3
-== APP == 9 {"city": "San Diego", "person": {"id": {"$numberDouble": "1002.0"}, "org": "Finance"}, "state": "CA"}
-== APP == 7 {"city": "San Francisco", "person": {"id": {"$numberDouble": "1015.0"}, "org": "Dev Ops"}, "state": "CA"}
-== APP == 3 {"city": "Sacramento", "person": {"id": {"$numberDouble": "1071.0"}, "org": "Finance"}, "state": "CA"}
+== APP == 9 {"city": "San Diego", "person": {"id": 1002.0, "org": "Finance"}, "state": "CA"}
+== APP == 7 {"city": "San Francisco", "person": {"id": 1015.0, "org": "Dev Ops"}, "state": "CA"}
+== APP == 3 {"city": "Sacramento", "person": {"id": 1071.0, "org": "Finance"}, "state": "CA"}
 == APP == Token: 6
 ```
 
