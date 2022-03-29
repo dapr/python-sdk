@@ -55,7 +55,8 @@ from dapr.clients.grpc._response import (
     ConfigurationResponse,
     ConfigurationItem,
     QueryResponse,
-    QueryResponseItem
+    QueryResponseItem,
+    ConfigurationWatcher
 )
 
 
@@ -71,10 +72,11 @@ class DaprGrpcClient:
         >>> d = DaprClient()
         >>> resp = d.invoke_method('callee', 'method', b'data')
 
-    With context manager:
+    With context manager and custom message size limit:
 
         >>> from dapr.clients import DaprClient
-        >>> with DaprClient() as d:
+        >>> MAX = 64 * 1024 * 1024 # 64MB
+        >>> with DaprClient(max_message_length=MAX) as d:
         ...     resp = d.invoke_method('callee', 'method', b'data')
     """
 
@@ -85,7 +87,9 @@ class DaprGrpcClient:
             UnaryUnaryClientInterceptor,
             UnaryStreamClientInterceptor,
             StreamUnaryClientInterceptor,
-            StreamStreamClientInterceptor]]] = None):
+            StreamStreamClientInterceptor]]] = None,
+        max_grpc_message_length: Optional[int] = None
+    ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
         Args:
@@ -94,11 +98,19 @@ class DaprGrpcClient:
                 UnaryStreamClientInterceptor or
                 StreamUnaryClientInterceptor or
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
+            max_grpc_messsage_length (int, optional): The maximum grpc send and receive
+                message length in bytes.
         """
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
         self._address = address
-        self._channel = grpc.insecure_channel(address)   # type: ignore
+        if not max_grpc_message_length:
+            self._channel = grpc.insecure_channel(address)   # type: ignore
+        else:
+            self._channel = grpc.insecure_channel(address, options=[   # type: ignore
+                ('grpc.max_send_message_length', max_grpc_message_length),
+                ('grpc.max_receive_message_length', max_grpc_message_length),
+            ])
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor([
@@ -915,6 +927,40 @@ class DaprGrpcClient:
         return ConfigurationResponse(
             items=items,
             headers=call.initial_metadata())
+
+    async def subscribe_configuration(
+            self,
+            store_name: str,
+            keys: str,
+            config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationWatcher:
+        """Gets changed value from a config store with a key
+
+        The example gets value from a config store:
+            from dapr import DaprClient
+            with DaprClient() as d:
+                resp = d.subscribe_config(
+                    store_name='state_store'
+                    key='key_1',
+                    config_metadata={"metakey": "metavalue"}
+                )
+
+        Args:
+            store_name (str): the state store name to get from
+            key (str): the key of the key-value pair to be gotten
+            config_metadata (Dict[str, str], optional): Dapr metadata for configuration
+
+        Returns:
+            :class:`ConfigurationResponse` gRPC metadata returned from callee
+            and value obtained from the config store
+        """
+        warn('The Subscribe Configuration API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
+
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("Config store name cannot be empty to get the configuration")
+        configWatcher = ConfigurationWatcher()
+        configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
+        return configWatcher
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
