@@ -23,7 +23,7 @@ pip3 install dapr dapr-ext-grpc
 name: Set configuration value
 expected_stdout_lines:
   - "OK"
-timeout_seconds: 20
+timeout_seconds: 10
 -->
 
 ```bash
@@ -32,11 +32,11 @@ docker exec dapr_redis redis-cli SET orderId "100||1"
 
 <!-- END_STEP -->
 
-## Run the example
+## Run configuration example
 
 Change directory to this folder:
 ```bash
-cd examples/configuration
+cd examples/configuration 
 ```
 
 To run this example, use the following command:
@@ -45,15 +45,23 @@ To run this example, use the following command:
 name: Run get configuration example
 expected_stdout_lines:
   - "== APP == Got key=orderId value=100 version=1"
-timeout_seconds: 5
+  - "== APP == Subscribe key=orderId value=200 version=2"
+background: true
+sleep: 10
+timeout_seconds: 50
 -->
 
 ```bash
 dapr run --app-id configexample --components-path components/ -- python3 configuration.py
+```
+
+```bash
+docker exec dapr_redis redis-cli SET orderId "200||2"
 ```
 <!-- END_STEP -->
 
 You should be able to see the following output:
 ```
 == APP == Got key=orderId value=100 version=1
+== APP == Subscribe key=orderId value=200 version=2
 ```

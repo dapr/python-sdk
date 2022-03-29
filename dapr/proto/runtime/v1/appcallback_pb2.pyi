@@ -11,13 +11,13 @@ import google.protobuf.message
 import typing
 import typing_extensions
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor = ...
+DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
 class TopicEventRequest(google.protobuf.message.Message):
     """TopicEventRequest message is compatible with CloudEvent spec v1.0
     https://github.com/cloudevents/spec/blob/v1.0/spec.md
     """
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     ID_FIELD_NUMBER: builtins.int
     SOURCE_FIELD_NUMBER: builtins.int
     TYPE_FIELD_NUMBER: builtins.int
@@ -27,13 +27,13 @@ class TopicEventRequest(google.protobuf.message.Message):
     TOPIC_FIELD_NUMBER: builtins.int
     PUBSUB_NAME_FIELD_NUMBER: builtins.int
     PATH_FIELD_NUMBER: builtins.int
-    id: typing.Text = ...
+    id: typing.Text
     """id identifies the event. Producers MUST ensure that source + id 
     is unique for each distinct event. If a duplicate event is re-sent
     (e.g. due to a network error) it MAY have the same id.
     """
 
-    source: typing.Text = ...
+    source: typing.Text
     """source identifies the context in which an event happened.
     Often this will include information such as the type of the
     event source, the organization publishing the event or the process
@@ -41,109 +41,109 @@ class TopicEventRequest(google.protobuf.message.Message):
     the data encoded in the URI is defined by the event producer.
     """
 
-    type: typing.Text = ...
+    type: typing.Text
     """The type of event related to the originating occurrence."""
 
-    spec_version: typing.Text = ...
+    spec_version: typing.Text
     """The version of the CloudEvents specification."""
 
-    data_content_type: typing.Text = ...
+    data_content_type: typing.Text
     """The content type of data value."""
 
-    data: builtins.bytes = ...
+    data: builtins.bytes
     """The content of the event."""
 
-    topic: typing.Text = ...
+    topic: typing.Text
     """The pubsub topic which publisher sent to."""
 
-    pubsub_name: typing.Text = ...
+    pubsub_name: typing.Text
     """The name of the pubsub the publisher sent to."""
 
-    path: typing.Text = ...
+    path: typing.Text
     """The matching path from TopicSubscription/routes (if specified) for this event.
     This value is used by OnTopicEvent to "switch" inside the handler.
     """
 
     def __init__(self,
         *,
-        id : typing.Text = ...,
-        source : typing.Text = ...,
-        type : typing.Text = ...,
-        spec_version : typing.Text = ...,
-        data_content_type : typing.Text = ...,
-        data : builtins.bytes = ...,
-        topic : typing.Text = ...,
-        pubsub_name : typing.Text = ...,
-        path : typing.Text = ...,
+        id: typing.Text = ...,
+        source: typing.Text = ...,
+        type: typing.Text = ...,
+        spec_version: typing.Text = ...,
+        data_content_type: typing.Text = ...,
+        data: builtins.bytes = ...,
+        topic: typing.Text = ...,
+        pubsub_name: typing.Text = ...,
+        path: typing.Text = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["data",b"data","data_content_type",b"data_content_type","id",b"id","path",b"path","pubsub_name",b"pubsub_name","source",b"source","spec_version",b"spec_version","topic",b"topic","type",b"type"]) -> None: ...
 global___TopicEventRequest = TopicEventRequest
 
 class TopicEventResponse(google.protobuf.message.Message):
     """TopicEventResponse is response from app on published message"""
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     class _TopicEventResponseStatus:
         ValueType = typing.NewType('ValueType', builtins.int)
         V: typing_extensions.TypeAlias = ValueType
-    class _TopicEventResponseStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_TopicEventResponseStatus.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
-        SUCCESS: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 0
+    class _TopicEventResponseStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[TopicEventResponse._TopicEventResponseStatus.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+        SUCCESS: TopicEventResponse._TopicEventResponseStatus.ValueType  # 0
         """SUCCESS is the default behavior: message is acknowledged and not retried or logged."""
 
-        RETRY: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 1
+        RETRY: TopicEventResponse._TopicEventResponseStatus.ValueType  # 1
         """RETRY status signals Dapr to retry the message as part of an expected scenario (no warning is logged)."""
 
-        DROP: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 2
+        DROP: TopicEventResponse._TopicEventResponseStatus.ValueType  # 2
         """DROP status signals Dapr to drop the message as part of an unexpected scenario (warning is logged)."""
 
     class TopicEventResponseStatus(_TopicEventResponseStatus, metaclass=_TopicEventResponseStatusEnumTypeWrapper):
         """TopicEventResponseStatus allows apps to have finer control over handling of the message."""
         pass
 
-    SUCCESS: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 0
+    SUCCESS: TopicEventResponse.TopicEventResponseStatus.ValueType  # 0
     """SUCCESS is the default behavior: message is acknowledged and not retried or logged."""
 
-    RETRY: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 1
+    RETRY: TopicEventResponse.TopicEventResponseStatus.ValueType  # 1
     """RETRY status signals Dapr to retry the message as part of an expected scenario (no warning is logged)."""
 
-    DROP: TopicEventResponse.TopicEventResponseStatus.ValueType = ...  # 2
+    DROP: TopicEventResponse.TopicEventResponseStatus.ValueType  # 2
     """DROP status signals Dapr to drop the message as part of an unexpected scenario (warning is logged)."""
 
 
     STATUS_FIELD_NUMBER: builtins.int
-    status: global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...
+    status: global___TopicEventResponse.TopicEventResponseStatus.ValueType
     """The list of output bindings."""
 
     def __init__(self,
         *,
-        status : global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...,
+        status: global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["status",b"status"]) -> None: ...
 global___TopicEventResponse = TopicEventResponse
 
 class BindingEventRequest(google.protobuf.message.Message):
     """BindingEventRequest represents input bindings event."""
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
         KEY_FIELD_NUMBER: builtins.int
         VALUE_FIELD_NUMBER: builtins.int
-        key: typing.Text = ...
-        value: typing.Text = ...
+        key: typing.Text
+        value: typing.Text
         def __init__(self,
             *,
-            key : typing.Text = ...,
-            value : typing.Text = ...,
+            key: typing.Text = ...,
+            value: typing.Text = ...,
             ) -> None: ...
         def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
     NAME_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    name: typing.Text = ...
+    name: typing.Text
     """Required. The name of the input binding component."""
 
-    data: builtins.bytes = ...
+    data: builtins.bytes
     """Required. The payload that the input bindings sent"""
 
     @property
@@ -152,9 +152,9 @@ class BindingEventRequest(google.protobuf.message.Message):
         pass
     def __init__(self,
         *,
-        name : typing.Text = ...,
-        data : builtins.bytes = ...,
-        metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        name: typing.Text = ...,
+        data: builtins.bytes = ...,
+        metadata: typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["data",b"data","metadata",b"metadata","name",b"name"]) -> None: ...
 global___BindingEventRequest = BindingEventRequest
@@ -163,26 +163,26 @@ class BindingEventResponse(google.protobuf.message.Message):
     """BindingEventResponse includes operations to save state or
     send data to output bindings optionally.
     """
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     class _BindingEventConcurrency:
         ValueType = typing.NewType('ValueType', builtins.int)
         V: typing_extensions.TypeAlias = ValueType
-    class _BindingEventConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_BindingEventConcurrency.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor = ...
-        SEQUENTIAL: BindingEventResponse.BindingEventConcurrency.ValueType = ...  # 0
+    class _BindingEventConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[BindingEventResponse._BindingEventConcurrency.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+        SEQUENTIAL: BindingEventResponse._BindingEventConcurrency.ValueType  # 0
         """SEQUENTIAL sends data to output bindings specified in "to" sequentially."""
 
-        PARALLEL: BindingEventResponse.BindingEventConcurrency.ValueType = ...  # 1
+        PARALLEL: BindingEventResponse._BindingEventConcurrency.ValueType  # 1
         """PARALLEL sends data to output bindings specified in "to" in parallel."""
 
     class BindingEventConcurrency(_BindingEventConcurrency, metaclass=_BindingEventConcurrencyEnumTypeWrapper):
         """BindingEventConcurrency is the kind of concurrency"""
         pass
 
-    SEQUENTIAL: BindingEventResponse.BindingEventConcurrency.ValueType = ...  # 0
+    SEQUENTIAL: BindingEventResponse.BindingEventConcurrency.ValueType  # 0
     """SEQUENTIAL sends data to output bindings specified in "to" sequentially."""
 
-    PARALLEL: BindingEventResponse.BindingEventConcurrency.ValueType = ...  # 1
+    PARALLEL: BindingEventResponse.BindingEventConcurrency.ValueType  # 1
     """PARALLEL sends data to output bindings specified in "to" in parallel."""
 
 
@@ -191,7 +191,7 @@ class BindingEventResponse(google.protobuf.message.Message):
     TO_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
     CONCURRENCY_FIELD_NUMBER: builtins.int
-    store_name: typing.Text = ...
+    store_name: typing.Text
     """The name of state store where states are saved."""
 
     @property
@@ -202,28 +202,28 @@ class BindingEventResponse(google.protobuf.message.Message):
     def to(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]:
         """The list of output bindings."""
         pass
-    data: builtins.bytes = ...
+    data: builtins.bytes
     """The content which will be sent to "to" output bindings."""
 
-    concurrency: global___BindingEventResponse.BindingEventConcurrency.ValueType = ...
+    concurrency: global___BindingEventResponse.BindingEventConcurrency.ValueType
     """The concurrency of output bindings to send data to
     "to" output bindings list. The default is SEQUENTIAL.
     """
 
     def __init__(self,
         *,
-        store_name : typing.Text = ...,
-        states : typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.StateItem]] = ...,
-        to : typing.Optional[typing.Iterable[typing.Text]] = ...,
-        data : builtins.bytes = ...,
-        concurrency : global___BindingEventResponse.BindingEventConcurrency.ValueType = ...,
+        store_name: typing.Text = ...,
+        states: typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.StateItem]] = ...,
+        to: typing.Optional[typing.Iterable[typing.Text]] = ...,
+        data: builtins.bytes = ...,
+        concurrency: global___BindingEventResponse.BindingEventConcurrency.ValueType = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["concurrency",b"concurrency","data",b"data","states",b"states","store_name",b"store_name","to",b"to"]) -> None: ...
 global___BindingEventResponse = BindingEventResponse
 
 class ListTopicSubscriptionsResponse(google.protobuf.message.Message):
     """ListTopicSubscriptionsResponse is the message including the list of the subscribing topics."""
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     SUBSCRIPTIONS_FIELD_NUMBER: builtins.int
     @property
     def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicSubscription]:
@@ -231,24 +231,24 @@ class ListTopicSubscriptionsResponse(google.protobuf.message.Message):
         pass
     def __init__(self,
         *,
-        subscriptions : typing.Optional[typing.Iterable[global___TopicSubscription]] = ...,
+        subscriptions: typing.Optional[typing.Iterable[global___TopicSubscription]] = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["subscriptions",b"subscriptions"]) -> None: ...
 global___ListTopicSubscriptionsResponse = ListTopicSubscriptionsResponse
 
 class TopicSubscription(google.protobuf.message.Message):
     """TopicSubscription represents topic and metadata."""
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
         KEY_FIELD_NUMBER: builtins.int
         VALUE_FIELD_NUMBER: builtins.int
-        key: typing.Text = ...
-        value: typing.Text = ...
+        key: typing.Text
+        value: typing.Text
         def __init__(self,
             *,
-            key : typing.Text = ...,
-            value : typing.Text = ...,
+            key: typing.Text = ...,
+            value: typing.Text = ...,
             ) -> None: ...
         def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
@@ -256,10 +256,10 @@ class TopicSubscription(google.protobuf.message.Message):
     TOPIC_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
     ROUTES_FIELD_NUMBER: builtins.int
-    pubsub_name: typing.Text = ...
+    pubsub_name: typing.Text
     """Required. The name of the pubsub containing the topic below to subscribe to."""
 
-    topic: typing.Text = ...
+    topic: typing.Text
     """Required. The name of topic which will be subscribed"""
 
     @property
@@ -274,45 +274,45 @@ class TopicSubscription(google.protobuf.message.Message):
         pass
     def __init__(self,
         *,
-        pubsub_name : typing.Text = ...,
-        topic : typing.Text = ...,
-        metadata : typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
-        routes : typing.Optional[global___TopicRoutes] = ...,
+        pubsub_name: typing.Text = ...,
+        topic: typing.Text = ...,
+        metadata: typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        routes: typing.Optional[global___TopicRoutes] = ...,
         ) -> None: ...
     def HasField(self, field_name: typing_extensions.Literal["routes",b"routes"]) -> builtins.bool: ...
     def ClearField(self, field_name: typing_extensions.Literal["metadata",b"metadata","pubsub_name",b"pubsub_name","routes",b"routes","topic",b"topic"]) -> None: ...
 global___TopicSubscription = TopicSubscription
 
 class TopicRoutes(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     RULES_FIELD_NUMBER: builtins.int
     DEFAULT_FIELD_NUMBER: builtins.int
     @property
     def rules(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicRule]:
         """The list of rules for this topic."""
         pass
-    default: typing.Text = ...
+    default: typing.Text
     """The default path for this topic."""
 
     def __init__(self,
         *,
-        rules : typing.Optional[typing.Iterable[global___TopicRule]] = ...,
-        default : typing.Text = ...,
+        rules: typing.Optional[typing.Iterable[global___TopicRule]] = ...,
+        default: typing.Text = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["default",b"default","rules",b"rules"]) -> None: ...
 global___TopicRoutes = TopicRoutes
 
 class TopicRule(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     MATCH_FIELD_NUMBER: builtins.int
     PATH_FIELD_NUMBER: builtins.int
-    match: typing.Text = ...
+    match: typing.Text
     """The optional CEL expression used to match the event.
     If the match is not specified, then the route is considered
     the default.
     """
 
-    path: typing.Text = ...
+    path: typing.Text
     """The path used to identify matches for this subscription.
     This value is passed in TopicEventRequest and used by OnTopicEvent to "switch"
     inside the handler.
@@ -320,15 +320,15 @@ class TopicRule(google.protobuf.message.Message):
 
     def __init__(self,
         *,
-        match : typing.Text = ...,
-        path : typing.Text = ...,
+        match: typing.Text = ...,
+        path: typing.Text = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["match",b"match","path",b"path"]) -> None: ...
 global___TopicRule = TopicRule
 
 class ListInputBindingsResponse(google.protobuf.message.Message):
     """ListInputBindingsResponse is the message including the list of input bindings."""
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     BINDINGS_FIELD_NUMBER: builtins.int
     @property
     def bindings(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]:
@@ -336,7 +336,7 @@ class ListInputBindingsResponse(google.protobuf.message.Message):
         pass
     def __init__(self,
         *,
-        bindings : typing.Optional[typing.Iterable[typing.Text]] = ...,
+        bindings: typing.Optional[typing.Iterable[typing.Text]] = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["bindings",b"bindings"]) -> None: ...
 global___ListInputBindingsResponse = ListInputBindingsResponse

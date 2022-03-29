@@ -97,6 +97,11 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnregisterActorReminderRequest.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
+        self.RenameActorReminder = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/RenameActorReminder',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RenameActorReminderRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
         self.GetActorState = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/GetActorState',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetActorStateRequest.SerializeToString,
@@ -121,6 +126,11 @@ class DaprStub(object):
                 '/dapr.proto.runtime.v1.Dapr/SubscribeConfigurationAlpha1',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationResponse.FromString,
+                )
+        self.UnsubscribeConfigurationAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/UnsubscribeConfigurationAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationResponse.FromString,
                 )
         self.GetMetadata = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/GetMetadata',
@@ -255,6 +265,13 @@ class DaprServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def RenameActorReminder(self, request, context):
+        """Rename an actor reminder.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetActorState(self, request, context):
         """Gets the state for a specific actor.
         """
@@ -285,6 +302,13 @@ class DaprServicer(object):
 
     def SubscribeConfigurationAlpha1(self, request, context):
         """SubscribeConfiguration gets configuration from configuration store and subscribe the updates event by grpc stream
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UnsubscribeConfigurationAlpha1(self, request, context):
+        """UnSubscribeConfiguration unsubscribe the subscription of configuration
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -394,6 +418,11 @@ def add_DaprServicer_to_server(servicer, server):
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnregisterActorReminderRequest.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
+            'RenameActorReminder': grpc.unary_unary_rpc_method_handler(
+                    servicer.RenameActorReminder,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RenameActorReminderRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
             'GetActorState': grpc.unary_unary_rpc_method_handler(
                     servicer.GetActorState,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetActorStateRequest.FromString,
@@ -418,6 +447,11 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.SubscribeConfigurationAlpha1,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationResponse.SerializeToString,
+            ),
+            'UnsubscribeConfigurationAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.UnsubscribeConfigurationAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationResponse.SerializeToString,
             ),
             'GetMetadata': grpc.unary_unary_rpc_method_handler(
                     servicer.GetMetadata,
@@ -718,6 +752,23 @@ class Dapr(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
+    def RenameActorReminder(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/RenameActorReminder',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RenameActorReminderRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
     def GetActorState(request,
             target,
             options=(),
@@ -799,6 +850,23 @@ class Dapr(object):
         return grpc.experimental.unary_stream(request, target, '/dapr.proto.runtime.v1.Dapr/SubscribeConfigurationAlpha1',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeConfigurationResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UnsubscribeConfigurationAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/UnsubscribeConfigurationAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
