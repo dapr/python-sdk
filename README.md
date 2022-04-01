@@ -137,6 +137,10 @@ pip3 install -r dev-requirements.txt
 ./tools/regen_grpcclient.sh
 ```
 
+## Help & Feedback
+
+Need help or have feedback on the SDK? Please open a GitHub issue or come chat with us in the `#python-sdk` channel of our Discord server ([click here to join](https://discord.gg/MySdVxrH)).
+
 ## Code of Conduct
 
 This project follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
