@@ -162,4 +162,3 @@ class DaprClient(DaprGrpcClient):
         else:
             raise NotImplementedError(
                 'invoke_method_async is not implemented for gRPC')
-

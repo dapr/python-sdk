@@ -60,7 +60,7 @@ class DaprInvocationHttpClient:
             http_querystring (MetadataTuple, optional): Query parameters.
 
         Returns:
-            Union[InvokeMethodResponse, Awaitable[Any]]: the response from the method invocation.
+            Awaitable[InvokeMethodResponse]: the response from the method invocation.
         """
 
         verb = 'GET'
