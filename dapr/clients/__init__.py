@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Callable, Dict, List, Optional, Union, Awaitable, Any
+from typing import Callable, Dict, List, Optional, Union, Awaitable
 
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
@@ -116,8 +116,7 @@ class DaprClient(DaprGrpcClient):
                 content_type=content_type,
                 metadata=metadata,
                 http_verb=http_verb,
-                http_querystring=http_querystring,
-                return_coroutine=False)
+                http_querystring=http_querystring)
         else:
             result = super().invoke_method(
                 app_id,
@@ -141,8 +140,7 @@ class DaprClient(DaprGrpcClient):
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> Union[
-                InvokeMethodResponse, Awaitable[Any]]:
+            http_querystring: Optional[MetadataTuple] = None) -> Awaitable[InvokeMethodResponse]:
         """Invoke a service method over gRPC or HTTP.
 
         Args:
@@ -155,20 +153,10 @@ class DaprClient(DaprGrpcClient):
             http_querystring (MetadataTuple, optional): Query parameters.
 
         Returns:
-            Union[InvokeMethodResponse, Awaitable[Any]]: the method invocation response.
+            Awaitable[InvokeMethodResponse]: the method invocation response.
         """
         if self.invocation_client:
-            result = await self.invocation_client.invoke_method(
-                app_id,
-                method_name,
-                data,
-                content_type=content_type,
-                metadata=metadata,
-                http_verb=http_verb,
-                http_querystring=http_querystring,
-                return_coroutine=True)
-        else:
-            result = super().invoke_method(
+            result = await self.invocation_client.invoke_method_async(
                 app_id,
                 method_name,
                 data,
@@ -176,4 +164,7 @@ class DaprClient(DaprGrpcClient):
                 metadata=metadata,
                 http_verb=http_verb,
                 http_querystring=http_querystring)
+        else:
+            raise NotImplementedError(
+                'invoke_method_async is not implemented for gRPC')
         return result
