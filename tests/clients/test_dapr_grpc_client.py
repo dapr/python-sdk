@@ -17,8 +17,11 @@ import json
 import socket
 import unittest
 import uuid
+import asyncio
 
 from unittest.mock import patch
+
+from anyio import sleep
 
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
@@ -451,7 +454,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[0].version, version)
         self.assertEqual(resp.items[0].metadata, metadata)
 
-    async def test_subscribe_configuration(self):
+    def test_subscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
         invalid_key = "N"
         key = "k"
@@ -459,26 +462,24 @@ class DaprGrpcClientTests(unittest.TestCase):
         version = "1.5.0"
         metadata = {}
 
-        resp = await dapr.subscribe_configuration(store_name="configurationstore", keys=key)
-        print(resp)
-        self.assertEqual(resp.items[0].key, key)
-        self.assertEqual(resp.items[0].value, value)
-        self.assertEqual(resp.items[0].version, version)
-        self.assertEqual(resp.items[0].metadata, metadata)
+        loop = asyncio.new_event_loop()
+        resp =  loop.run_until_complete(dapr.subscribe_configuration(store_name="configurationstore", keys=key))
+        items = resp.get_items()
+        self.assertEqual(items[0].key, key)
+        self.assertEqual(items[0].value, value)
+        self.assertEqual(items[0].version, version)
 
-        resp = await dapr.subscribe_configuration(
-            store_name="configurationstore", keys=key, config_metadata=metadata)
-        self.assertEqual(resp.items[0].key, key)
-        self.assertEqual(resp.items[0].value, value)
-        self.assertEqual(resp.items[0].version, version)
-        self.assertEqual(resp.items[0].metadata, metadata)
+        resp = loop.run_until_complete(dapr.subscribe_configuration(
+            store_name="configurationstore", keys=key, config_metadata=metadata))
+        self.assertEqual(items[0].key, key)
+        self.assertEqual(items[0].value, value)
+        self.assertEqual(items[0].version, version)
 
-        resp = await dapr.subscribe_configuration(store_name="configurationstore",
-                                                  keys="NotValidKey")
-        self.assertEqual(resp.items[0].key, invalid_key)
-        self.assertEqual(resp.items[0].value, value)
-        self.assertEqual(resp.items[0].version, version)
-        self.assertEqual(resp.items[0].metadata, metadata)
+        resp = loop.run_until_complete(dapr.subscribe_configuration(store_name="configurationstore",
+                                                  keys="NotValidKey"))
+        self.assertEqual(items[0].key, invalid_key)
+        self.assertEqual(items[0].value, value)
+        self.assertEqual(items[0].version, version)
 
     def test_query_state(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
