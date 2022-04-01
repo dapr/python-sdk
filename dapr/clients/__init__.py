@@ -109,7 +109,7 @@ class DaprClient(DaprGrpcClient):
             InvokeMethodResponse: the response from the method invocation.
         """
         if self.invocation_client:
-            result = self.invocation_client.invoke_method(
+            return self.invocation_client.invoke_method(
                 app_id,
                 method_name,
                 data,
@@ -118,7 +118,7 @@ class DaprClient(DaprGrpcClient):
                 http_verb=http_verb,
                 http_querystring=http_querystring)
         else:
-            result = super().invoke_method(
+            return super().invoke_method(
                 app_id,
                 method_name,
                 data,
@@ -126,11 +126,6 @@ class DaprClient(DaprGrpcClient):
                 metadata=metadata,
                 http_verb=http_verb,
                 http_querystring=http_querystring)
-        if isinstance(result, InvokeMethodResponse):
-            return result
-        else:
-            raise DaprInternalError(
-                'Failed to invoke method: Unexpected return type')
 
     async def invoke_method_async(
             self,
@@ -156,7 +151,7 @@ class DaprClient(DaprGrpcClient):
             Awaitable[InvokeMethodResponse]: the method invocation response.
         """
         if self.invocation_client:
-            result = await self.invocation_client.invoke_method_async(
+            return await self.invocation_client.invoke_method_async(
                 app_id,
                 method_name,
                 data,
@@ -167,4 +162,4 @@ class DaprClient(DaprGrpcClient):
         else:
             raise NotImplementedError(
                 'invoke_method_async is not implemented for gRPC')
-        return result
+
