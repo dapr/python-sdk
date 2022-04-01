@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Callable, Dict, List, Optional, Union, Awaitable
+from typing import Callable, Dict, List, Optional, Union
 
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
@@ -135,7 +135,7 @@ class DaprClient(DaprGrpcClient):
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> Awaitable[InvokeMethodResponse]:
+            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
         """Invoke a service method over gRPC or HTTP.
 
         Args:
@@ -148,7 +148,7 @@ class DaprClient(DaprGrpcClient):
             http_querystring (MetadataTuple, optional): Query parameters.
 
         Returns:
-            Awaitable[InvokeMethodResponse]: the method invocation response.
+            InvokeMethodResponse: the method invocation response.
         """
         if self.invocation_client:
             return await self.invocation_client.invoke_method_async(

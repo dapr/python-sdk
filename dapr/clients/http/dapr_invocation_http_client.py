@@ -15,7 +15,7 @@ limitations under the License.
 
 import asyncio
 
-from typing import Callable, Dict, Optional, Union, Awaitable
+from typing import Callable, Dict, Optional, Union
 
 from multidict import MultiDict
 from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
@@ -47,7 +47,7 @@ class DaprInvocationHttpClient:
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> Awaitable[InvokeMethodResponse]:
+            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
         """Invoke a service method over HTTP (async).
 
         Args:
@@ -60,7 +60,7 @@ class DaprInvocationHttpClient:
             http_querystring (MetadataTuple, optional): Query parameters.
 
         Returns:
-            Awaitable[InvokeMethodResponse]: the response from the method invocation.
+            InvokeMethodResponse: the response from the method invocation.
         """
 
         verb = 'GET'
@@ -100,7 +100,7 @@ class DaprInvocationHttpClient:
             for key in r.headers:
                 resp_data.headers[key] = r.headers.getall(key)  # type: ignore
             return resp_data
-        return make_request()
+        return await make_request()
 
     def invoke_method(
         self,
@@ -141,5 +141,4 @@ class DaprInvocationHttpClient:
             metadata,
             http_verb,
             http_querystring)
-        make_request = loop.run_until_complete(awaitable)
-        return loop.run_until_complete(make_request)
+        return loop.run_until_complete(awaitable)
