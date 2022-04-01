@@ -21,6 +21,7 @@ import uuid
 from unittest.mock import patch
 
 from dapr.clients.grpc.client import DaprGrpcClient
+from dapr.clients import DaprClient
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
@@ -79,6 +80,27 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual("text/plain", resp.content_type)
         self.assertEqual(3, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
+
+    def test_invoke_method_async(self):
+        dapr = DaprClient(f'localhost:{self.server_port}')
+        dapr.invocation_client = None  # force to use grpc client
+
+        with self.assertRaises(NotImplementedError):
+            import asyncio
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(
+                dapr.invoke_method_async(
+                    app_id='targetId',
+                    method_name='bytes',
+                    data=b'haha',
+                    content_type="text/plain",
+                    metadata=(
+                        ('key1', 'value1'),
+                        ('key2', 'value2'),
+                    ),
+                    http_verb='PUT',
+                )
+            )
 
     def test_invoke_method_proto_data(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')

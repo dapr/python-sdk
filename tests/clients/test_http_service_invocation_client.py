@@ -51,10 +51,14 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.assertEqual(b"STRING_BODY", response.data)
         self.assertEqual(self.invoke_url, self.server.request_path())
 
-    async def test_coroutine_basic_invoke(self):
+    def test_coroutine_basic_invoke(self):
         self.server.set_response(b"STRING_BODY")
 
-        response = await self.client.invoke_method_async(self.app_id, self.method_name, "")
+        import asyncio
+        loop = asyncio.new_event_loop()
+        request = loop.run_until_complete(
+            self.client.invoke_method_async(self.app_id, self.method_name, ""))
+        response = loop.run_until_complete(request)
 
         self.assertEqual(b"STRING_BODY", response.data)
         self.assertEqual(self.invoke_url, self.server.request_path())
