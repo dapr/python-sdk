@@ -15,7 +15,7 @@ limitations under the License.
 
 import asyncio
 
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, Optional, Union, Awaitable
 
 from multidict import MultiDict
 from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
@@ -39,7 +39,7 @@ class DaprInvocationHttpClient:
         """
         self._client = DaprHttpClient(DefaultJSONSerializer(), timeout, headers_callback)
 
-    def invoke_method(
+    async def invoke_method_async(
             self,
             app_id: str,
             method_name: str,
@@ -47,8 +47,8 @@ class DaprInvocationHttpClient:
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
-        """Invoke a service method over HTTP.
+            http_querystring: Optional[MetadataTuple] = None) -> Awaitable[InvokeMethodResponse]:
+        """Invoke a service method over HTTP (async).
 
         Args:
             app_id (str): Application Id.
@@ -60,7 +60,7 @@ class DaprInvocationHttpClient:
             http_querystring (MetadataTuple, optional): Query parameters.
 
         Returns:
-            InvokeMethodResponse: the response from the method invocation.
+            Awaitable[InvokeMethodResponse]: the response from the method invocation.
         """
 
         verb = 'GET'
@@ -88,7 +88,7 @@ class DaprInvocationHttpClient:
         else:
             body = data
 
-        async def make_request():
+        async def make_request() -> InvokeMethodResponse:
             resp_body, r = await self._client.send_bytes(
                 method=verb,
                 headers=headers,
@@ -100,6 +100,32 @@ class DaprInvocationHttpClient:
             for key in r.headers:
                 resp_data.headers[key] = r.headers.getall(key)  # type: ignore
             return resp_data
+        return make_request()
+
+    def invoke_method(
+        self,
+        app_id: str,
+        method_name: str,
+        data: Union[bytes, str, GrpcMessage],
+        content_type: Optional[str] = None,
+        metadata: Optional[MetadataTuple] = None,
+        http_verb: Optional[str] = None,
+        http_querystring: Optional[MetadataTuple] = None
+    ) -> InvokeMethodResponse:
+        """Invoke a service method over HTTP (async).
+
+        Args:
+            app_id (str): Application Id.
+            method_name (str): Method to be invoked.
+            data (bytes or str or GrpcMessage, optional): Data for requet's body.
+            content_type (str, optional): Content type header.
+            metadata (MetadataTuple, optional): Additional headers.
+            http_verb (str, optional): HTTP verb for the request.
+            http_querystring (MetadataTuple, optional): Query parameters.
+
+        Returns:
+            InvokeMethodResponse: the response from the method invocation.
+        """
 
         try:
             loop = asyncio.get_running_loop()
@@ -107,4 +133,13 @@ class DaprInvocationHttpClient:
             loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        return loop.run_until_complete(make_request())
+        awaitable = self.invoke_method_async(
+            app_id,
+            method_name,
+            data,
+            content_type,
+            metadata,
+            http_verb,
+            http_querystring)
+        make_request = loop.run_until_complete(awaitable)
+        return loop.run_until_complete(make_request)

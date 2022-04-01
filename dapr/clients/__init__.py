@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, Awaitable
 
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
@@ -126,3 +126,39 @@ class DaprClient(DaprGrpcClient):
                 metadata=metadata,
                 http_verb=http_verb,
                 http_querystring=http_querystring)
+
+    async def invoke_method_async(
+            self,
+            app_id: str,
+            method_name: str,
+            data: Union[bytes, str, GrpcMessage],
+            content_type: Optional[str] = None,
+            metadata: Optional[MetadataTuple] = None,
+            http_verb: Optional[str] = None,
+            http_querystring: Optional[MetadataTuple] = None) -> Awaitable[InvokeMethodResponse]:
+        """Invoke a service method over gRPC or HTTP.
+
+        Args:
+            app_id (str): Application Id.
+            method_name (str): Method to be invoked.
+            data (bytes or str or GrpcMessage, optional): Data for requet's body.
+            content_type (str, optional): Content type of the data.
+            metadata (MetadataTuple, optional): Additional metadata or headers.
+            http_verb (str, optional): HTTP verb for the request.
+            http_querystring (MetadataTuple, optional): Query parameters.
+
+        Returns:
+            Awaitable[InvokeMethodResponse]: the method invocation response.
+        """
+        if self.invocation_client:
+            return await self.invocation_client.invoke_method_async(
+                app_id,
+                method_name,
+                data,
+                content_type=content_type,
+                metadata=metadata,
+                http_verb=http_verb,
+                http_querystring=http_querystring)
+        else:
+            raise NotImplementedError(
+                'invoke_method_async is not implemented for gRPC')
