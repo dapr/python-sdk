@@ -14,11 +14,12 @@ import datetime
 
 from dapr.actor import Actor, Remindable
 from demo_actor_interface import DemoActorInterface
+from typing import Optional
 
 
 class DemoActor(Actor, DemoActorInterface, Remindable):
     """Implements DemoActor actor service
-    
+
     This shows the usage of the below actor features:
 
     1. Actor method invocation
@@ -26,6 +27,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
     3. Actor reminder
     4. Actor timer
     """
+
     def __init__(self, ctx, actor_id):
         super(DemoActor, self).__init__(ctx, actor_id)
 
@@ -62,8 +64,10 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
             await self.register_reminder(
                 'demo_reminder',               # reminder name
                 b'reminder_state',             # user_state (bytes)
-                datetime.timedelta(seconds=5), # The amount of time to delay before firing the reminder
-                datetime.timedelta(seconds=5)) # The time interval between firing of reminders
+                # The amount of time to delay before firing the reminder
+                datetime.timedelta(seconds=5),
+                datetime.timedelta(seconds=5),  # The time interval between firing of reminders
+                datetime.timedelta(seconds=5))
         else:
             # Unregister 'demo_reminder'
             await self.unregister_reminder('demo_reminder')
@@ -82,13 +86,15 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
                 'demo_timer',                   # timer name
                 self.timer_callback,            # Callback method
                 'timer_state',                  # Parameter to pass to the callback method
-                datetime.timedelta(seconds=5),  # Amount of time to delay before the callback is invoked
-                datetime.timedelta(seconds=5))  # Time interval between invocations
+                # Amount of time to delay before the callback is invoked
+                datetime.timedelta(seconds=5),
+                datetime.timedelta(seconds=5),  # Time interval between invocations
+                datetime.timedelta(seconds=5))
         else:
             # Unregister 'demo_timer'
             await self.unregister_timer('demo_timer')
         print(f'set_timer is done', flush=True)
-    
+
     async def timer_callback(self, state) -> None:
         """A callback which will be called whenever timer is triggered.
 
@@ -98,6 +104,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         print(f'time_callback is called - {state}', flush=True)
 
     async def receive_reminder(self, name: str, state: bytes,
-                               due_time: datetime.timedelta, period: datetime.timedelta) -> None:
+                               due_time: datetime.timedelta, period: datetime.timedelta,
+                               ttl: Optional[datetime.timedelta] = None) -> None:
         """A callback which will be called when reminder is triggered."""
         print(f'receive_reminder is called - {name} reminder - {str(state)}', flush=True)

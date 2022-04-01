@@ -9,8 +9,8 @@
 		"terminal.integrated.shell.linux": "/bin/bash",
 		"python.pythonPath": "/usr/local/bin/python",
 		"python.linting.enabled": true,
-		"python.linting.pylintEnabled": true,
-		"python.linting.pylintPath": "/usr/local/bin/pylint"
+		"python.linting.flake8Enabled": true,
+		"python.linting.mypyEnabled": true,
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.

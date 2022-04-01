@@ -93,19 +93,25 @@ pip3 install -e ./ext/dapr-ext-fastapi/
 pip3 install -r dev-requirements.txt
 ```
 
-4. Run unit-test
+4. Run linter
+
+```bash
+tox -e flake8
+```
+
+5. Run unit-test
 
 ```bash
 tox -e py37
 ```
 
-5. Run type check
+6. Run type check
 
 ```bash
 tox -e type
 ```
 
-6. Run examples
+7. Run examples
 
 ```bash
 tox -e examples
@@ -130,6 +136,10 @@ pip3 install -r dev-requirements.txt
 
 ./tools/regen_grpcclient.sh
 ```
+
+## Help & Feedback
+
+Need help or have feedback on the SDK? Please open a GitHub issue or come chat with us in the `#python-sdk` channel of our Discord server ([click here to join](https://discord.gg/MySdVxrH)).
 
 ## Code of Conduct
 

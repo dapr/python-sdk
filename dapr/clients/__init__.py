@@ -54,7 +54,8 @@ class DaprClient(DaprGrpcClient):
                 UnaryStreamClientInterceptor,
                 StreamUnaryClientInterceptor,
                 StreamStreamClientInterceptor]]] = None,
-            http_timeout_seconds: Optional[int] = None):
+            http_timeout_seconds: Optional[int] = None,
+            max_grpc_message_length: Optional[int] = None):
         """Connects to Dapr Runtime and via gRPC and HTTP.
 
         Args:
@@ -65,8 +66,10 @@ class DaprClient(DaprGrpcClient):
                 StreamUnaryClientInterceptor or
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
             http_timeout_seconds (int): specify a timeout for http connections
+            max_grpc_messsage_length (int, optional): The maximum grpc send and receive
+                message length in bytes.
         """
-        super().__init__(address, interceptors)
+        super().__init__(address, interceptors, max_grpc_message_length)
         self.invocation_client = None
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
