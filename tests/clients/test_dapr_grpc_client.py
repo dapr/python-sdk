@@ -17,11 +17,8 @@ import json
 import socket
 import unittest
 import uuid
-import asyncio
 
 from unittest.mock import patch
-
-from anyio import sleep
 
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
@@ -36,10 +33,7 @@ from dapr.clients.grpc._response import (
     ConfigurationItem
 )
 
-from tests.actor.utils import (
-    _async_mock,
-    _run
-)
+from tests.actor.utils import _run
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -467,6 +461,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_subscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
         expectedConfigItem = ConfigurationItem("k", "value", "1.5.0")
+
         def mock_subscribe_configuration(store_name, keys, config_metadata):
             self.assertEqual(expectedConfigItem, store_name, keys, config_metadata)
         self._fake_client.subscribe_configuration.mock = mock_subscribe_configuration
