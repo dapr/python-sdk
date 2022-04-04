@@ -26,17 +26,27 @@ from anyio import sleep
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
 from dapr.proto import common_v1
+from tests.clients.fake_client import FakeDaprClient
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
+from dapr.clients.grpc._response import (
+    ConfigurationItem
+)
+
+from tests.actor.utils import (
+    _async_mock,
+    _run
+)
 
 
 class DaprGrpcClientTests(unittest.TestCase):
     server_port = 8080
 
     def setUp(self):
+        self._fake_client = FakeDaprClient
         self._fake_dapr_server = FakeDaprSidecar()
         self._fake_dapr_server.start(self.server_port)
 
@@ -456,30 +466,11 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_subscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
-        invalid_key = "N"
-        key = "k"
-        value = "value"
-        version = "1.5.0"
-        metadata = {}
-
-        loop = asyncio.new_event_loop()
-        resp =  loop.run_until_complete(dapr.subscribe_configuration(store_name="configurationstore", keys=key))
-        items = resp.get_items()
-        self.assertEqual(items[0].key, key)
-        self.assertEqual(items[0].value, value)
-        self.assertEqual(items[0].version, version)
-
-        resp = loop.run_until_complete(dapr.subscribe_configuration(
-            store_name="configurationstore", keys=key, config_metadata=metadata))
-        self.assertEqual(items[0].key, key)
-        self.assertEqual(items[0].value, value)
-        self.assertEqual(items[0].version, version)
-
-        resp = loop.run_until_complete(dapr.subscribe_configuration(store_name="configurationstore",
-                                                  keys="NotValidKey"))
-        self.assertEqual(items[0].key, invalid_key)
-        self.assertEqual(items[0].value, value)
-        self.assertEqual(items[0].version, version)
+        expectedConfigItem = ConfigurationItem("k", "value", "1.5.0")
+        def mock_subscribe_configuration(store_name, keys, config_metadata):
+            self.assertEqual(expectedConfigItem, store_name, keys, config_metadata)
+        self._fake_client.subscribe_configuration.mock = mock_subscribe_configuration
+        _run(dapr.subscribe_configuration(store_name="configurationstore", keys="k"))
 
     def test_query_state(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
