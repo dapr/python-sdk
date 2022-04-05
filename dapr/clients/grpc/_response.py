@@ -671,9 +671,9 @@ class ConfigurationWatcher():
     def get_items(self):
         return self.items
 
-    def watch_configuration(self, stub, store_name, keys, config_metadata):
+    def watch_configuration(self, stub, store_name, key, config_metadata):
         req = api_v1.SubscribeConfigurationRequest(
-            store_name=store_name, keys=keys, metadata=config_metadata)
+            store_name=store_name, keys=key, metadata=config_metadata)
         thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req))
         thread.daemon = True
         thread.start()

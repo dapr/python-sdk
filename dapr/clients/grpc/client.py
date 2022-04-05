@@ -887,7 +887,7 @@ class DaprGrpcClient:
     def get_configuration(
             self,
             store_name: str,
-            keys: str,
+            key: str,
             config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationResponse:
         """Gets value from a config store with a key
 
@@ -915,7 +915,7 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
         req = api_v1.GetConfigurationRequest(
-            store_name=store_name, keys=keys, metadata=config_metadata)
+            store_name=store_name, keys=key, metadata=config_metadata)
         response, call = self._stub.GetConfigurationAlpha1.with_call(req)
         items = []
         for item in response.items:
@@ -931,7 +931,7 @@ class DaprGrpcClient:
     async def subscribe_configuration(
             self,
             store_name: str,
-            keys: str,
+            key: str,
             config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationWatcher:
         """Gets changed value from a config store with a key
 
@@ -959,7 +959,7 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
         configWatcher = ConfigurationWatcher()
-        configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
+        configWatcher.watch_configuration(self._stub, store_name, key, config_metadata)
         return configWatcher
 
     def wait(self, timeout_s: float):
