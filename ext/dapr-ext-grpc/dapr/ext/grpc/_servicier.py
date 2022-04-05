@@ -77,9 +77,13 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             topic: str,
             cb: TopicSubscribeCallable,
             metadata: Optional[Dict[str, str]],
-            rule: Optional[Rule] = None) -> None:
+            rule: Optional[Rule] = None,
+            disable_topic_validation: Optional[bool] = False) -> None:
         """Registers topic subscription for pubsub."""
-        topic_key = pubsub_name + DELIMITER + topic
+        if not disable_topic_validation:
+            topic_key = pubsub_name + DELIMITER + topic
+        else:
+            topic_key = pubsub_name
         pubsub_topic = topic_key + DELIMITER
         if rule is not None:
             path = getattr(cb, '__name__', rule.match)
@@ -170,10 +174,15 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         """Subscribes events from Pubsub."""
         pubsub_topic = request.pubsub_name + DELIMITER + \
             request.topic + DELIMITER + request.path
+        no_validation_key = request.pubsub_name + DELIMITER + request.path
+
         if pubsub_topic not in self._topic_map:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(
-                f'topic {request.topic} is not implemented!')
+            if no_validation_key in self._topic_map:
+                pubsub_topic = no_validation_key
+            else:
+                context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
+                raise NotImplementedError(
+                    f'topic {request.topic} is not implemented!')
 
         event = v1.Event()
         event.SetEventType(request.type)
