@@ -33,7 +33,7 @@ from dapr.clients.grpc._response import (
     ConfigurationItem
 )
 
-from tests.actor.utils import _run
+from tests.clients.utils import _run
 
 
 class DaprGrpcClientTests(unittest.TestCase):
