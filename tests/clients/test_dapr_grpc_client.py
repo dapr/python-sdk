@@ -17,30 +17,28 @@ import json
 import socket
 import unittest
 import uuid
+import asyncio
 
 from unittest.mock import patch
 
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
 from dapr.proto import common_v1
-from tests.clients.fake_client import FakeDaprClient
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._response import (
-    ConfigurationItem
+    ConfigurationItem,
+    ConfigurationWatcher
 )
-
-from tests.clients.utils import _run
 
 
 class DaprGrpcClientTests(unittest.TestCase):
     server_port = 8080
 
     def setUp(self):
-        self._fake_client = FakeDaprClient
         self._fake_dapr_server = FakeDaprSidecar()
         self._fake_dapr_server.start(self.server_port)
 
@@ -460,12 +458,21 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_subscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
-        expectedConfigItem = ConfigurationItem("k", "value", "1.5.0")
 
-        def mock_subscribe_configuration(store_name, keys, config_metadata):
-            self.assertEqual(expectedConfigItem, store_name, keys, config_metadata)
-        self._fake_client.subscribe_configuration.mock = mock_subscribe_configuration
-        _run(dapr.subscribe_configuration(store_name="configurationstore", keys="k"))
+        def mock_watch(self, stub, store_name, keys, config_metadata):
+            self.items.append(ConfigurationItem(
+                key="k",
+                value="test",
+                version="1.7.0"))
+
+        with patch.object(ConfigurationWatcher, 'watch_configuration', mock_watch):
+            loop = asyncio.new_event_loop()
+            watcher = loop.run_until_complete(
+                dapr.subscribe_configuration(store_name="configurationstore", keys="k"))
+            resp = watcher.get_items()
+            self.assertEqual(resp[0].key, "k")
+            self.assertEqual(resp[0].value, "test")
+            self.assertEqual(resp[0].version, "1.7.0")
 
     def test_query_state(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
