@@ -28,6 +28,7 @@ timeout_seconds: 10
 
 ```bash
 docker exec dapr_redis redis-cli SET orderId "100||1"
+docker exec dapr_redis redis-cli SET orderId1 "200||2"
 ```
 
 <!-- END_STEP -->
@@ -45,6 +46,7 @@ To run this example, use the following command:
 name: Run get configuration example
 expected_stdout_lines:
   - "== APP == Got key=orderId value=100 version=1"
+  - "== APP == Got key=orderId1 value=200 version=2"
   - "== APP == Subscribe key=orderId value=200 version=2"
 background: true
 sleep: 10
