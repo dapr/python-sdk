@@ -10,17 +10,18 @@ async def executeConfiguration():
     with DaprClient() as d:
         storeName = 'configurationstore'
 
-        key = 'orderId'
+        keys = ['orderId','orderId1']
 
         # Wait for sidecar to be up within 20 seconds.
         d.wait(20)
 
         # Get one configuration by key.
-        configuration = d.get_configuration(store_name=storeName, keys=[key], config_metadata={})
+        configuration = d.get_configuration(store_name=storeName, keys=keys, config_metadata={})
         print(f"Got key={configuration.items[0].key} value={configuration.items[0].value} version={configuration.items[0].version}", flush=True)
+        print(f"Got key={configuration.items[1].key} value={configuration.items[1].value} version={configuration.items[1].version}", flush=True)
 
         # Subscribe to configuration by key.
-        configuration = await d.subscribe_configuration(store_name=storeName, keys=[key], config_metadata={})
+        configuration = await d.subscribe_configuration(store_name=storeName, keys=keys, config_metadata={})
         for x in range(10):
             if configuration != None:
                 items = configuration.get_items()
