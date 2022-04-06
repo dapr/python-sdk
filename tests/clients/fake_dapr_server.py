@@ -187,8 +187,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def GetConfigurationAlpha1(self, request, context):
         items = []
         for key in request.keys:
-            item = {'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}}
-            items.append(item)
+            items.append({'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}})
         return api_v1.GetConfigurationResponse(items=items)
 
     def SubscribeConfigurationAlpha1(self, request, context):

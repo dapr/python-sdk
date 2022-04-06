@@ -431,13 +431,13 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_get_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
-        invalid_key = "N"
-        keys = ["k"]
+        keys = ["k", "k1"]
         value = "value"
         version = "1.5.0"
         metadata = {}
 
         resp = dapr.get_configuration(store_name="configurationstore", keys=keys)
+        self.assertEqual(len(resp.items), len(keys))
         self.assertEqual(resp.items[0].key, keys[0])
         self.assertEqual(resp.items[0].value, value)
         self.assertEqual(resp.items[0].version, version)
@@ -445,13 +445,8 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         resp = dapr.get_configuration(
             store_name="configurationstore", keys=keys, config_metadata=metadata)
+        self.assertEqual(len(resp.items), len(keys))
         self.assertEqual(resp.items[0].key, keys[0])
-        self.assertEqual(resp.items[0].value, value)
-        self.assertEqual(resp.items[0].version, version)
-        self.assertEqual(resp.items[0].metadata, metadata)
-
-        resp = dapr.get_configuration(store_name="configurationstore", keys="NotValidKey")
-        self.assertEqual(resp.items[0].key, invalid_key)
         self.assertEqual(resp.items[0].value, value)
         self.assertEqual(resp.items[0].version, version)
         self.assertEqual(resp.items[0].metadata, metadata)
