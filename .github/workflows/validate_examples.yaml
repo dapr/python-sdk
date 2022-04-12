@@ -27,7 +27,7 @@ jobs:
         python_ver: [3.7, 3.8, 3.9, "3.10"]
     steps:
       - uses: actions/checkout@v3
-      - uses: azure/setup-helm@v2.0
+      - uses: azure/setup-helm@v2.1
       - name: Determine latest Dapr Runtime version
         run: |
           helm repo add dapr https://dapr.github.io/helm-charts/ && helm repo update && export RUNTIME_VERSION=$(helm search repo dapr/dapr --devel --versions | awk '/dapr\/dapr/ {print $3; exit}' )
@@ -50,7 +50,7 @@ jobs:
         run: wget -q ${{ env.DAPR_INSTALL_URL }} -O - | /bin/bash -s ${{ env.DAPR_CLI_VER }}
       - name: Set up Go ${{ env.GOVER }}
         if: env.DAPR_REF != '' || env.DAPR_CLI_REF != ''
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GOVER }}
       - name: Checkout Dapr CLI repo to override dapr command.

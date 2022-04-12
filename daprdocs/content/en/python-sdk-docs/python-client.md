@@ -138,7 +138,7 @@ def mytopic_important(event: v1.Event) -> None:
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
-    resp = d.invoke_binding(name='kafkaBinding', operation='create', data='{"message":"Hello World"}')
+    resp = d.invoke_binding(binding_name='kafkaBinding', operation='create', data='{"message":"Hello World"}')
 ```
 
 - For a full guide on output bindings visit [How-To: Use bindings]({{< ref howto-bindings.md >}}).
