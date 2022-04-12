@@ -896,13 +896,13 @@ class DaprGrpcClient:
             with DaprClient() as d:
                 resp = d.get_configuration(
                     store_name='state_store'
-                    key='key_1',
+                    keys=['key_1'],
                     config_metadata={"metakey": "metavalue"}
                 )
 
         Args:
             store_name (str): the state store name to get from
-            key (str): the key of the key-value pair to be gotten
+            keys (str): the keys of the key-value pairs to be gotten
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
@@ -946,7 +946,7 @@ class DaprGrpcClient:
 
         Args:
             store_name (str): the state store name to get from
-            key (str): the key of the key-value pair to be gotten
+            keys (str array): the keys of the key-value pairs to be gotten
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
