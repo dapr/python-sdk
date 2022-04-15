@@ -108,7 +108,7 @@ class App:
         return decorator
 
     def subscribe(self, pubsub_name: str, topic: str, metadata: Optional[Dict[str, str]] = {},
-                  rule: Optional[Rule] = None):
+                  rule: Optional[Rule] = None, disable_topic_validation: Optional[bool] = False):
         """A decorator that is used to register the subscribing topic method.
 
         The below example registers 'topic' subscription topic and pass custom
@@ -127,7 +127,8 @@ class App:
                 during initialization
         """
         def decorator(func):
-            self._servicer.register_topic(pubsub_name, topic, func, metadata, rule)
+            self._servicer.register_topic(pubsub_name, topic, func, metadata, rule,
+                                          disable_topic_validation)
         return decorator
 
     def binding(self, name: str):

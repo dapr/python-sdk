@@ -32,6 +32,12 @@ with DaprClient() as d:
             data=json.dumps(req_data),
             data_content_type='application/json',
         )
+        resp = d.publish_event(
+            pubsub_name='pubsub',
+            topic_name=f'topic/{id}',
+            data=json.dumps(req_data),
+            data_content_type='application/json',
+        )
 
         # Print the request
         print(req_data, flush=True)

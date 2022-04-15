@@ -94,6 +94,7 @@ class TopicSubscriptionTests(unittest.TestCase):
         self._topic2_method = Mock()
         self._topic3_method = Mock()
         self._topic3_method.return_value = TopicEventResponse("success")
+        self._topic4_method = Mock()
 
         self._servicier.register_topic(
             'pubsub1',
@@ -115,6 +116,12 @@ class TopicSubscriptionTests(unittest.TestCase):
             'topic3',
             self._topic3_method,
             {'session': 'key'})
+        self._servicier.register_topic(
+            'pubsub3',
+            'topic4',
+            self._topic4_method,
+            {'session': 'key'},
+            disable_topic_validation=True)
 
         # fake context
         self.fake_context = MagicMock()
@@ -145,6 +152,8 @@ class TopicSubscriptionTests(unittest.TestCase):
         self.assertEqual('pubsub2', resp.subscriptions[3].pubsub_name)
         self.assertEqual('topic3', resp.subscriptions[3].topic)
         self.assertEqual({'session': 'key'}, resp.subscriptions[3].metadata)
+        self.assertEqual('topic4', resp.subscriptions[4].topic)
+        self.assertEqual({'session': 'key'}, resp.subscriptions[4].metadata)
 
     def test_topic_event(self):
         self._servicier.OnTopicEvent(
@@ -172,6 +181,14 @@ class TopicSubscriptionTests(unittest.TestCase):
             response.status,
             appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
         )
+
+    def test_disable_topic_validation(self):
+        self._servicier.OnTopicEvent(
+            appcallback_v1.TopicEventRequest(pubsub_name='pubsub3', topic='should_be_ignored'),
+            self.fake_context,
+        )
+
+        self._topic4_method.assert_called_once()
 
     def test_non_registered_topic(self):
         with self.assertRaises(NotImplementedError):
