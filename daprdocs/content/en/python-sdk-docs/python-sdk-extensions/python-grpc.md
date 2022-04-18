@@ -88,6 +88,11 @@ def mytopic(event: v1.Event) -> Optional[TopicEventResponse]:
 def mytopic_important(event: v1.Event) -> None:
     print(event.Data(),flush=True)
 
+# Handler with disabled topic validation
+@app.subscribe(pubsub_name='pubsub-mqtt', topic='topic/#', disable_topic_validation=True,)
+def mytopic_wildcard(event: v1.Event) -> None:
+    print(event.Data(),flush=True)
+
 app.run(50051)
 ```
 
