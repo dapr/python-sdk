@@ -686,7 +686,8 @@ class ConfigurationWatcher():
                     ConfigurationItem(
                         key=item.key,
                         value=item.value,
-                        version=item.version))
+                        version=item.version,
+                        metadata=item.metadata))
 
 
 class TopicEventResponseStatus(Enum):

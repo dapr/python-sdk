@@ -923,7 +923,8 @@ class DaprGrpcClient:
                 ConfigurationItem(
                     key=item.key,
                     value=item.value,
-                    version=item.version))
+                    version=item.version,
+                    metadata=item.metadata))
         return ConfigurationResponse(
             items=items,
             headers=call.initial_metadata())
