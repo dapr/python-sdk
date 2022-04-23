@@ -1,5 +1,5 @@
 # ------------------------------------------------------------
-# Copyright 2021 The Dapr Authors
+# Copyright 2022 The Dapr Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,9 +17,9 @@ import time
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
-    id=0
-    while True:
-        id+=1
+    id = 0
+    while id < 3:
+        id += 1
         req_data = {
             'id': id,
             'message': 'hello world'
@@ -32,6 +32,22 @@ with DaprClient() as d:
             data=json.dumps(req_data),
             data_content_type='application/json',
         )
+
+        # Print the request
+        print(req_data, flush=True)
+
+        time.sleep(0.5)
+
+    # we can publish events to different topics but handle them with the same method
+    # by disabling topic validation in the subscriber
+
+    id = 3
+    while id < 6:
+        id += 1
+        req_data = {
+            'id': id,
+            'message': 'hello world'
+        }
         resp = d.publish_event(
             pubsub_name='pubsub',
             topic_name=f'topic/{id}',
@@ -41,4 +57,5 @@ with DaprClient() as d:
 
         # Print the request
         print(req_data, flush=True)
-        time.sleep(2)
+
+        time.sleep(0.5)
