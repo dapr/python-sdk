@@ -17,9 +17,9 @@ import time
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
-    id=0
-    while True:
-        id+=1
+    id = 0
+    while id < 3:
+        id += 1
         req_data = {
             'id': id,
             'message': 'hello world'
@@ -32,6 +32,19 @@ with DaprClient() as d:
             data=json.dumps(req_data),
             data_content_type='application/json',
         )
+
+        # Print the request
+        print(req_data, flush=True)
+
+        time.sleep(2)
+
+    id = 3
+    while id < 6:
+        id += 1
+        req_data = {
+            'id': id,
+            'message': 'hello world'
+        }
         resp = d.publish_event(
             pubsub_name='pubsub',
             topic_name=f'topic/{id}',
@@ -41,4 +54,5 @@ with DaprClient() as d:
 
         # Print the request
         print(req_data, flush=True)
+
         time.sleep(2)
