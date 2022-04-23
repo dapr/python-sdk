@@ -1,5 +1,5 @@
 # ------------------------------------------------------------
-# Copyright 2021 The Dapr Authors
+# Copyright 2022 The Dapr Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -36,7 +36,10 @@ with DaprClient() as d:
         # Print the request
         print(req_data, flush=True)
 
-        time.sleep(2)
+        time.sleep(0.5)
+
+    # we can publish events to different topics but handle them with the same method
+    # by disabling topic validation in the subscriber
 
     id = 3
     while id < 6:
@@ -55,4 +58,4 @@ with DaprClient() as d:
         # Print the request
         print(req_data, flush=True)
 
-        time.sleep(2)
+        time.sleep(0.5)
