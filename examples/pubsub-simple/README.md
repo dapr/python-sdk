@@ -29,18 +29,14 @@ name: Run subscriber
 expected_stdout_lines:
   - '== APP == Subscriber received: id=1, message="hello world", content_type="application/json"'
   - 'RETRY status returned from app while processing pub/sub event'
-  - '== APP == Wildcard-Subscriber received: id=1, message="hello world", content_type="application/json"'
   - '== APP == Subscriber received: id=2, message="hello world", content_type="application/json"'
-  - '== APP == Wildcard-Subscriber received: id=2, message="hello world", content_type="application/json"'
   - '== APP == Subscriber received: id=3, message="hello world", content_type="application/json"'
-  - '== APP == Wildcard-Subscriber received: id=3, message="hello world", content_type="application/json"'
-  - '== APP == Subscriber received: id=4, message="hello world", content_type="application/json"'
   - '== APP == Wildcard-Subscriber received: id=4, message="hello world", content_type="application/json"'
-  - '== APP == Subscriber received: id=5, message="hello world", content_type="application/json"'
   - '== APP == Wildcard-Subscriber received: id=5, message="hello world", content_type="application/json"'
+  - '== APP == Wildcard-Subscriber received: id=6, message="hello world", content_type="application/json"'
 output_match_mode: substring
 background: true
-sleep: 5 
+sleep: 3 
 -->
 
 ```bash
@@ -75,14 +71,12 @@ dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 pyt
 
 <!-- STEP
 expected_stdout_lines: 
-  - '✅  app stopped successfully: python-publisher'
   - '✅  app stopped successfully: python-subscriber'
 expected_stderr_lines:
 name: Shutdown dapr
 -->
 
 ```bash
-dapr stop --app-id python-publisher
 dapr stop --app-id python-subscriber
 ```
 
