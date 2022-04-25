@@ -36,7 +36,7 @@ with DaprClient() as d:
         # Print the request
         print(req_data, flush=True)
 
-        time.sleep(0.5)
+        time.sleep(1)
 
     # we can publish events to different topics but handle them with the same method
     # by disabling topic validation in the subscriber
