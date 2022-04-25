@@ -45,9 +45,9 @@ To run this example, use the following command:
 <!-- STEP
 name: Run get configuration example
 expected_stdout_lines:
-  - "== APP == Got key=orderId value=100 version=1"
-  - "== APP == Got key=orderId1 value=200 version=2"
-  - "== APP == Subscribe key=orderId value=200 version=2"
+  - "== APP == Got key=orderId value=100 version=1 metadata={}"
+  - "== APP == Got key=orderId1 value=200 version=2 metadata={}"
+  - "== APP == Subscribe key=orderId value=200 version=2 metadata={}"
 background: true
 sleep: 10
 timeout_seconds: 50

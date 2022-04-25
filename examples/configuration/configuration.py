@@ -17,8 +17,8 @@ async def executeConfiguration():
 
         # Get one configuration by key.
         configuration = d.get_configuration(store_name=storeName, keys=keys, config_metadata={})
-        print(f"Got key={configuration.items[0].key} value={configuration.items[0].value} version={configuration.items[0].version}", flush=True)
-        print(f"Got key={configuration.items[1].key} value={configuration.items[1].value} version={configuration.items[1].version}", flush=True)
+        print(f"Got key={configuration.items[0].key} value={configuration.items[0].value} version={configuration.items[0].version} metadata={configuration.items[0].metadata}", flush=True)
+        print(f"Got key={configuration.items[1].key} value={configuration.items[1].value} version={configuration.items[1].version} metadata={configuration.items[1].metadata}", flush=True)
 
         # Subscribe to configuration by key.
         configuration = await d.subscribe_configuration(store_name=storeName, keys=keys, config_metadata={})
@@ -26,7 +26,7 @@ async def executeConfiguration():
             if configuration != None:
                 items = configuration.get_items()
                 for item in items:
-                    print(f"Subscribe key={item.key} value={item.value} version={item.version}", flush=True)
+                    print(f"Subscribe key={item.key} value={item.value} version={item.version} metadata={item.metadata}", flush=True)
             else:
                 print("Nothing yet")
             sleep(5)
