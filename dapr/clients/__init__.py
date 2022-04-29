@@ -89,7 +89,7 @@ class DaprClient(DaprGrpcClient):
             self,
             app_id: str,
             method_name: str,
-            data: Union[bytes, str, GrpcMessage],
+            data: Union[bytes, str, GrpcMessage] = '',
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,

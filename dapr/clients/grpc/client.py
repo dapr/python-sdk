@@ -151,7 +151,7 @@ class DaprGrpcClient:
             self,
             app_id: str,
             method_name: str,
-            data: Optional[Union[bytes, str, GrpcMessage]] = '',
+            data: Union[bytes, str, GrpcMessage] = '',
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
@@ -259,7 +259,7 @@ class DaprGrpcClient:
             self,
             binding_name: str,
             operation: str,
-            data: Optional[Union[bytes, str]] = '',
+            data: Union[bytes, str] = '',
             binding_metadata: Dict[str, str] = {},
             metadata: Optional[MetadataTuple] = None) -> BindingResponse:
         """Invokes the output binding with the specified operation.
