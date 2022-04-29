@@ -86,6 +86,24 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(3, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
 
+    def test_invoke_method_no_data(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        resp = dapr.invoke_method(
+            app_id='targetId',
+            method_name='bytes',
+            content_type="text/plain",
+            metadata=(
+                ('key1', 'value1'),
+                ('key2', 'value2'),
+            ),
+            http_verb='PUT',
+        )
+
+        self.assertEqual(b'', resp.data)
+        self.assertEqual("text/plain", resp.content_type)
+        self.assertEqual(3, len(resp.headers))
+        self.assertEqual(['value1'], resp.headers['hkey1'])
+
     def test_invoke_method_async(self):
         dapr = DaprClient(f'localhost:{self.server_port}')
         dapr.invocation_client = None  # force to use grpc client
@@ -155,6 +173,17 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
 
         self.assertEqual(b'haha', resp.data)
+        self.assertEqual({}, resp.binding_metadata)
+        self.assertEqual(0, len(resp.headers))
+
+    def test_invoke_binding_no_data(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        resp = dapr.invoke_binding(
+            binding_name='binding',
+            operation='create',
+        )
+
+        self.assertEqual(b'', resp.data)
         self.assertEqual({}, resp.binding_metadata)
         self.assertEqual(0, len(resp.headers))
 

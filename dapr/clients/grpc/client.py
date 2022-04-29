@@ -151,7 +151,7 @@ class DaprGrpcClient:
             self,
             app_id: str,
             method_name: str,
-            data: Union[bytes, str, GrpcMessage],
+            data: Union[bytes, str, GrpcMessage] = '',
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
@@ -219,8 +219,8 @@ class DaprGrpcClient:
         Args:
             app_id (str): the callee app id
             method (str): the method name which is called
-            data (bytes or :obj:`google.protobuf.message.Message`): bytes or Message for data
-                which will send to id
+            data (bytes or :obj:`google.protobuf.message.Message`, optional): bytes
+                or Message for data which will be sent to app id
             metadata (tuple, optional, DEPRECATED): gRPC custom metadata
             http_verb (str, optional): http method verb to call HTTP callee application
             http_querystring (tuple, optional): the tuple to represent query string
@@ -259,7 +259,7 @@ class DaprGrpcClient:
             self,
             binding_name: str,
             operation: str,
-            data: Union[bytes, str],
+            data: Union[bytes, str] = '',
             binding_metadata: Dict[str, str] = {},
             metadata: Optional[MetadataTuple] = None) -> BindingResponse:
         """Invokes the output binding with the specified operation.
@@ -285,7 +285,7 @@ class DaprGrpcClient:
         Args:
             binding_name (str): the name of the binding as defined in the components
             operation (str): the operation to perform on the binding
-            data (bytes or str): bytes or str for data which will sent to the binding
+            data (bytes or str, optional): bytes or str for data which will sent to the binding
             binding_metadata (dict, optional): Dapr metadata for output binding
             metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
