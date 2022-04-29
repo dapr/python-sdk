@@ -219,8 +219,8 @@ class DaprGrpcClient:
         Args:
             app_id (str): the callee app id
             method (str): the method name which is called
-            data (bytes or :obj:`google.protobuf.message.Message`): bytes or Message for data
-                which will send to id
+            data (bytes or :obj:`google.protobuf.message.Message`, optional): bytes
+                or Message for data which will be sent to app id
             metadata (tuple, optional, DEPRECATED): gRPC custom metadata
             http_verb (str, optional): http method verb to call HTTP callee application
             http_querystring (tuple, optional): the tuple to represent query string
