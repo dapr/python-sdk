@@ -97,8 +97,12 @@ class DaprInvocationHttpClient:
                 query_params=query_params)
 
             resp_data = InvokeMethodResponse(resp_body, r.content_type)
+            respHeaders = resp_data.headers
             for key in r.headers:
-                resp_data.headers[key] = r.headers.getall(key)  # type: ignore
+                respHeaders.setdefault(key, []).append(r.headers[key])
+
+            headerTuples = tuple((k, v) for k, v in respHeaders.items())
+            resp_data.headers = headerTuples  # type: ignore
             return resp_data
         return await make_request()
 
