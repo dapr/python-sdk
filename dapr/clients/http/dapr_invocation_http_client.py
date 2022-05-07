@@ -99,7 +99,7 @@ class DaprInvocationHttpClient:
             resp_data = InvokeMethodResponse(resp_body, r.content_type)
             respHeaders = resp_data.headers
             for key in r.headers:
-                respHeaders.setdefault(key, []).append(r.headers[key])
+                respHeaders[key] = r.headers[key]  # type: ignore
 
             headerTuples = tuple((k, v) for k, v in respHeaders.items())
             resp_data.headers = headerTuples  # type: ignore
