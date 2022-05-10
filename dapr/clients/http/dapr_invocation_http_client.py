@@ -101,7 +101,7 @@ class DaprInvocationHttpClient:
             for key in r.headers:
                 respHeaders[key] = r.headers[key]  # type: ignore
 
-            headerTuples = tuple((k, v) for k, v in respHeaders.items())
+            headerTuples = [(k, v) for k, v in respHeaders.items()]
             resp_data.headers = headerTuples  # type: ignore
             return resp_data
         return await make_request()
