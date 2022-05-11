@@ -137,6 +137,7 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.assertEqual(b"\x0a\x04test", self.server.get_request_body())
         # unpack to new protobuf object
         new_resp = common_v1.StateItem()
+        self.assertEqual(resp.headers['Content-Type'], ['application/x-protobuf'])
         resp.unpack(new_resp)
         self.assertEqual('resp', new_resp.key)
 
