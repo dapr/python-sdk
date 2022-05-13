@@ -148,7 +148,7 @@ class ActorRuntimeTests(unittest.TestCase):
         async def expected_return_value(*args, **kwargs):
             return ["expected", "None"]
 
-        reentrancy_id = "f6319f23-dc0a-4880-90d9-87b23c19c20a"
+        reentrancy_id = None  # the runtime would not pass this header
         actor = FakeSlowReentrantActor.__name__
         method = 'ReentrantMethod'
 
