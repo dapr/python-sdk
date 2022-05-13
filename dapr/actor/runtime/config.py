@@ -56,7 +56,8 @@ class ActorTypeConfig:
             drain_rebalanced_actors: Optional[bool] = None,
             reentrancy: Optional[ActorReentrancyConfig] = None,
             reminders_storage_partitions: Optional[int] = None):
-        """Inits :class:`ActorRuntimeConfig` to configure actors when dapr runtime starts.
+        """Inits :class:`ActorTypeConfig` to configure the behavior of a specific actor type
+        when dapr runtime starts.
 
         Args:
             actor_type (str): Actor type.
