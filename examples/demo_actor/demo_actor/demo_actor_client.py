@@ -33,7 +33,7 @@ async def main():
     print(rtn_obj, flush=True)
     # Check actor is reentrant
     is_reentrant = await proxy.invoke_method("GetReentrancyStatus")
-    print(f'Actor reentrancy enabled: {is_reentrant}', flush=True)
+    print(f'Actor reentrancy enabled: {str(is_reentrant)}', flush=True)
 
     # -----------------------------------------------
     # Actor state management demo
