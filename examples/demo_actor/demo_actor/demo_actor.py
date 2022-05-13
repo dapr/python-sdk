@@ -71,7 +71,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         else:
             # Unregister 'demo_reminder'
             await self.unregister_reminder('demo_reminder')
-        print(f'set reminder is done', flush=True)
+        print('set reminder is done', flush=True)
 
     async def set_timer(self, enabled) -> None:
         """Enables and disables a timer.
@@ -93,7 +93,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         else:
             # Unregister 'demo_timer'
             await self.unregister_timer('demo_timer')
-        print(f'set_timer is done', flush=True)
+        print('set_timer is done', flush=True)
 
     async def timer_callback(self, state) -> None:
         """A callback which will be called whenever timer is triggered.
@@ -108,3 +108,8 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
                                ttl: Optional[datetime.timedelta] = None) -> None:
         """A callback which will be called when reminder is triggered."""
         print(f'receive_reminder is called - {name} reminder - {str(state)}', flush=True)
+
+    async def get_reentrancy_status(self) -> bool:
+        """For Testing Only: An actor method which gets reentrancy status."""
+        from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+        return reentrancy_ctx.get(None) is not None

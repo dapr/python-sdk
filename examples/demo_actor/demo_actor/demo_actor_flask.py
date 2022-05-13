@@ -14,14 +14,27 @@ from flask import Flask, jsonify
 from flask_dapr.actor import DaprActor
 
 from dapr.conf import settings
+from dapr.actor.runtime.config import ActorRuntimeConfig, ActorTypeConfig, ActorReentrancyConfig
+from dapr.actor.runtime.runtime import ActorRuntime
 from demo_actor import DemoActor
 
 app = Flask(f'{DemoActor.__name__}Service')
+
+# This is an optional advanced configuration which enables reentrancy only for the
+# specified actor type. By default reentrancy is not enabled for all actor types.
+config = ActorRuntimeConfig()  # init with default values
+config.update_actor_type_configs([
+    ActorTypeConfig(
+        actor_type=DemoActor.__name__,
+        reentrancy=ActorReentrancyConfig(enabled=True))
+])
+ActorRuntime.set_actor_config(config)
 
 # Enable DaprActor Flask extension
 actor = DaprActor(app)
 # Register DemoActor
 actor.register_actor(DemoActor)
+
 
 # This route is optional.
 @app.route('/')
