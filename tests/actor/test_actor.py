@@ -81,12 +81,11 @@ class ActorTests(unittest.TestCase):
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
 
         config = ActorRuntime.get_actor_config()
-        with self.assertRaises(ValueError):
-            config._entities.index(FakeSimpleActor.__name__)
+        self.assertFalse(FakeSimpleActor.__name__ in config._entities)
 
         _run(ActorRuntime.register_actor(FakeSimpleActor))
         config = ActorRuntime.get_actor_config()
-        self.assertTrue(config._entities.index(FakeSimpleActor.__name__) >= 0)
+        self.assertTrue(FakeSimpleActor.__name__ in config._entities)
 
     def test_dispatch(self):
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
