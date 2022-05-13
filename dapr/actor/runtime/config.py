@@ -65,9 +65,9 @@ class ActorTypeConfig:
             actor_scan_interval (datetime.timedelta): The duration which specifies how often to scan
                 for actors to deactivate idle actors. Actors that have been idle longer than
                 actor_idle_timeout will be deactivated.
-            drain_ongoing_call_timeout (datetime.timedelta): The duration when in the process of
-                draining rebalanced actors. This specifies the timeout for the current active actor
-                method to finish. If there is no current actor method call, this is ignored.
+            drain_ongoing_call_timeout (datetime.timedelta): The duration which specifies the
+                timeout for the current active actor method to finish before actor deactivation.
+                If there is no current actor method call, this is ignored.
             drain_rebalanced_actors (bool): If true, Dapr will wait for drain_ongoing_call_timeout
                 to allow a current actor call to complete before trying to deactivate an actor.
             reentrancy (ActorReentrancyConfig): Configure the reentrancy behavior for an actor.
@@ -132,9 +132,9 @@ class ActorRuntimeConfig:
             actor_scan_interval (datetime.timedelta): The duration which specifies how often to scan
                 for actors to deactivate idle actors. Actors that have been idle longer than
                 actor_idle_timeout will be deactivated.
-            drain_ongoing_call_timeout (datetime.timedelta): The duration when in the process of
-                draining rebalanced actors. This specifies the timeout for the current active actor
-                method to finish. If there is no current actor method call, this is ignored.
+            drain_ongoing_call_timeout (datetime.timedelta): The duration which specifies the
+                timeout for the current active actor method to finish before actor deactivation.
+                If there is no current actor method call, this is ignored.
             drain_rebalanced_actors (bool): If true, Dapr will wait for drain_ongoing_call_timeout
                 to allow a current actor call to complete before trying to deactivate an actor.
             reentrancy (ActorReentrancyConfig): Configure the reentrancy behavior for an actor.
