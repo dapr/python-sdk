@@ -31,6 +31,9 @@ async def main():
     print("call actor method using rpc style", flush=True)
     rtn_obj = await proxy.GetMyData()
     print(rtn_obj, flush=True)
+    # Check actor is reentrant
+    is_reentrant = await proxy.invoke_method("GetReentrancyStatus")
+    print(f'Actor reentrancy enabled: {str(is_reentrant)}', flush=True)
 
     # -----------------------------------------------
     # Actor state management demo

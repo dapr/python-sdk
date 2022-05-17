@@ -85,6 +85,7 @@ expected_stdout_lines:
   - "== APP == b'null'"
   - '== APP == call actor method using rpc style'
   - '== APP == None'
+  - "== APP == Actor reentrancy enabled: b'true'"
   - '== APP == call SetMyData actor method to save the state'
   - '== APP == call GetMyData actor method to get the state'
   - '== APP == Register reminder'
@@ -110,6 +111,7 @@ expected_stdout_lines:
    == APP == b'null'
    == APP == call actor method using rpc style
    == APP == None
+   == APP == Actor reentrancy enabled: True
    == APP == call SetMyData actor method to save the state
    == APP == call GetMyData actor method to get the state
    == APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 11, 13, 0, 38, 36, 163000, tzinfo=tzutc())}

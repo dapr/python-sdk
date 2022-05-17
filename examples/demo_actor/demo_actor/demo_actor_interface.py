@@ -29,3 +29,7 @@ class DemoActorInterface(ActorInterface):
     @actormethod(name="SetTimer")
     async def set_timer(self, enabled: bool) -> None:
         ...
+
+    @actormethod(name="GetReentrancyStatus")
+    async def get_reentrancy_status(self) -> bool:
+        ...
