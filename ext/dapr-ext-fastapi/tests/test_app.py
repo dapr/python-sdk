@@ -82,6 +82,36 @@ class DaprAppTest(unittest.TestCase):
         response = self.client.post("/events/pubsub/test", json={"body": "new message"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.text, '"custom metadata"')
+    
+    def test_router_tag(self):
+        app1 = FastAPI()
+        app2 = FastAPI()
+        DaprApp(app_instance=app1, router_tags=['MyTag', 'PubSub']).subscribe(
+            pubsub="mypubsub", topic="test")
+        DaprApp(app_instance=app2).subscribe(pubsub="mypubsub", topic="test")
+
+        PATHS_WITH_EXPECTED_TAGS = [
+            '/dapr/subscribe',
+            '/events/mypubsub/test'
+        ]
+
+        foundTags = False
+        for route in app1.router.routes:
+            if hasattr(route, "tags"):
+                self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
+                self.assertEqual(['MyTag', 'PubSub'], route.tags)
+                foundTags = True
+        if not foundTags:
+            self.fail('No tags found')
+        
+        foundTags = False
+        for route in app2.router.routes:
+            if hasattr(route, "tags"):
+                self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
+                self.assertEqual(['PubSub'], route.tags)
+                foundTags=True
+        if not foundTags:
+            self.fail('No tags found')
 
 
 if __name__ == '__main__':

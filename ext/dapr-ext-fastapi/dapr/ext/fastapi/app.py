@@ -24,13 +24,18 @@ class DaprApp:
         app_instance: The FastAPI instance to wrap.
     """
 
-    def __init__(self, app_instance: FastAPI):
+    _DEFAULT_ROUTER_TAGS: List[str] = ['PubSub']
+
+    def __init__(self, app_instance: FastAPI,
+                 router_tags: Optional[List[str]] = None):
+        self._router_tags = router_tags if router_tags else self._DEFAULT_ROUTER_TAGS
         self._app = app_instance
         self._subscriptions: List[Dict[str, object]] = []
 
         self._app.add_api_route("/dapr/subscribe",
                                 self._get_subscriptions,
-                                methods=["GET"])
+                                methods=["GET"],
+                                tags=self._router_tags)
 
     def subscribe(self,
                   pubsub: str,
@@ -69,7 +74,8 @@ class DaprApp:
 
             self._app.add_api_route(event_handler_route,
                                     func,
-                                    methods=["POST"])
+                                    methods=["POST"],
+                                    tags = self._router_tags)
 
             self._subscriptions.append({
                 "pubsubname": pubsub,
