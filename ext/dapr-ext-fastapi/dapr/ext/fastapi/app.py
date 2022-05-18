@@ -75,7 +75,7 @@ class DaprApp:
             self._app.add_api_route(event_handler_route,
                                     func,
                                     methods=["POST"],
-                                    tags = self._router_tags)
+                                    tags=self._router_tags)
 
             self._subscriptions.append({
                 "pubsubname": pubsub,

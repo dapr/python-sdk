@@ -43,7 +43,7 @@ class DaprActorTest(unittest.TestCase):
         r = _wrap_response(200, fake_data)
         self.assertEqual(fake_data, json.loads(r.body))
         self.assertEqual(200, r.status_code)
-    
+
     def test_router_tag(self):
         app1 = FastAPI()
         app2 = FastAPI()
@@ -67,13 +67,13 @@ class DaprActorTest(unittest.TestCase):
                 foundTags = True
         if not foundTags:
             self.fail('No tags found')
-        
+
         foundTags = False
         for route in app2.router.routes:
             if hasattr(route, "tags"):
                 self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
                 self.assertEqual(['Actor'], route.tags)
-                foundTags=True
+                foundTags = True
         if not foundTags:
             self.fail('No tags found')
 
