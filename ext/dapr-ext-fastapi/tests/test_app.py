@@ -115,7 +115,6 @@ class DaprAppTest(unittest.TestCase):
         if not foundTags:
             self.fail('No tags found')
 
-        foundTags = False
         for route in app3.router.routes:
             if hasattr(route, "tags"):
                 if len(route.tags) > 0:
