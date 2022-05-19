@@ -15,9 +15,6 @@ limitations under the License.
 from typing import Dict, List, Optional
 from fastapi import FastAPI  # type: ignore
 
-# This should be added to all magic Dapr App PubSub methods implemented here
-DEFAULT_ROUTER_TAGS: List[str] = ['PubSub']
-
 
 class DaprApp:
     """
@@ -28,7 +25,8 @@ class DaprApp:
     """
 
     def __init__(self, app_instance: FastAPI,
-                 router_tags: Optional[List[str]] = DEFAULT_ROUTER_TAGS):
+                 router_tags: Optional[List[str]] = ['PubSub']):
+        # The router_tags should be added to all magic Dapr App PubSub methods implemented here
         self._router_tags = router_tags
         self._app = app_instance
         self._subscriptions: List[Dict[str, object]] = []

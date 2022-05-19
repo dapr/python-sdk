@@ -26,9 +26,6 @@ from dapr.serializers import DefaultJSONSerializer
 DEFAULT_CONTENT_TYPE = "application/json; utf-8"
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
-# This should be added to all magic Dapr Actor methods implemented here
-DEFAULT_ACTOR_ROUTER_TAGS: List[str] = ['Actor']
-
 
 def _wrap_response(
         status_code: int,
@@ -53,7 +50,8 @@ def _wrap_response(
 class DaprActor(object):
 
     def __init__(self, app: FastAPI,
-                 router_tags: Optional[List[str]] = DEFAULT_ACTOR_ROUTER_TAGS):
+                 router_tags: Optional[List[str]] = ['Actor']):
+        # router_tags should be added to all magic Dapr Actor methods implemented here
         self._router_tags = router_tags
         self._router = APIRouter()
         self._dapr_serializer = DefaultJSONSerializer()
