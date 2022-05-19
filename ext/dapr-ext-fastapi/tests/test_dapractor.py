@@ -47,8 +47,10 @@ class DaprActorTest(unittest.TestCase):
     def test_router_tag(self):
         app1 = FastAPI()
         app2 = FastAPI()
+        app3 = FastAPI()
         DaprActor(app=app1, router_tags=['MyTag', 'Actor'])
         DaprActor(app=app2)
+        DaprActor(app=app3, router_tags=None)
 
         PATHS_WITH_EXPECTED_TAGS = [
             '/healthz',
@@ -76,6 +78,12 @@ class DaprActorTest(unittest.TestCase):
                 foundTags = True
         if not foundTags:
             self.fail('No tags found')
+
+        foundTags = False
+        for route in app3.router.routes:
+            if hasattr(route, "tags"):
+                if len(route.tags) > 0:
+                    self.fail('Found tags on route that should not have any')
 
 
 if __name__ == '__main__':
