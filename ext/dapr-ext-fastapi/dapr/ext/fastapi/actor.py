@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, List
 
 from fastapi import FastAPI, APIRouter, Request, Response, status   # type: ignore
 from fastapi.logger import logger
@@ -48,23 +48,27 @@ def _wrap_response(
 
 
 class DaprActor(object):
-    def __init__(self, app: FastAPI):
-        self._dapr_serializer = DefaultJSONSerializer()
+
+    def __init__(self, app: FastAPI,
+                 router_tags: Optional[List[str]] = ['Actor']):
+        # router_tags should be added to all magic Dapr Actor methods implemented here
+        self._router_tags = router_tags
         self._router = APIRouter()
+        self._dapr_serializer = DefaultJSONSerializer()
         self.init_routes(self._router)
         app.include_router(self._router)
 
     def init_routes(self, router: APIRouter):
-        @router.get("/healthz")
+        @router.get("/healthz", tags=self._router_tags)
         async def healthz():
             return {'status': 'ok'}
 
-        @router.get('/dapr/config')
+        @router.get('/dapr/config', tags=self._router_tags)
         async def dapr_config():
             serialized = self._dapr_serializer.serialize(ActorRuntime.get_actor_config())
             return _wrap_response(status.HTTP_200_OK, serialized)
 
-        @router.delete('/actors/{actor_type_name}/{actor_id}')
+        @router.delete('/actors/{actor_type_name}/{actor_id}', tags=self._router_tags)
         async def actor_deactivation(actor_type_name: str, actor_id: str):
             try:
                 await ActorRuntime.deactivate(actor_type_name, actor_id)
@@ -82,7 +86,8 @@ class DaprActor(object):
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, msg)
 
-        @router.put('/actors/{actor_type_name}/{actor_id}/method/{method_name}')
+        @router.put('/actors/{actor_type_name}/{actor_id}/method/{method_name}',
+                    tags=self._router_tags)
         async def actor_method(
                 actor_type_name: str,
                 actor_id: str,
@@ -107,7 +112,8 @@ class DaprActor(object):
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, result)
 
-        @router.put('/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}')
+        @router.put('/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}',
+                    tags=self._router_tags)
         async def actor_timer(
                 actor_type_name: str,
                 actor_id: str,
@@ -131,7 +137,8 @@ class DaprActor(object):
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, msg)
 
-        @router.put('/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}')
+        @router.put('/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}',
+                    tags=self._router_tags)
         async def actor_reminder(
                 actor_type_name: str,
                 actor_id: str,

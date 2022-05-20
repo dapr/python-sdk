@@ -16,7 +16,9 @@ limitations under the License.
 import json
 import unittest
 
-from dapr.ext.fastapi.actor import _wrap_response
+from fastapi import FastAPI
+
+from dapr.ext.fastapi.actor import DaprActor, _wrap_response
 
 
 class DaprActorTest(unittest.TestCase):
@@ -41,6 +43,46 @@ class DaprActorTest(unittest.TestCase):
         r = _wrap_response(200, fake_data)
         self.assertEqual(fake_data, json.loads(r.body))
         self.assertEqual(200, r.status_code)
+
+    def test_router_tag(self):
+        app1 = FastAPI()
+        app2 = FastAPI()
+        app3 = FastAPI()
+        DaprActor(app=app1, router_tags=['MyTag', 'Actor'])
+        DaprActor(app=app2)
+        DaprActor(app=app3, router_tags=None)
+
+        PATHS_WITH_EXPECTED_TAGS = [
+            '/healthz',
+            '/dapr/config',
+            '/actors/{actor_type_name}/{actor_id}',
+            '/actors/{actor_type_name}/{actor_id}/method/{method_name}',
+            '/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}',
+            '/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}'
+        ]
+
+        foundTags = False
+        for route in app1.router.routes:
+            if hasattr(route, "tags"):
+                self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
+                self.assertEqual(['MyTag', 'Actor'], route.tags)
+                foundTags = True
+        if not foundTags:
+            self.fail('No tags found')
+
+        foundTags = False
+        for route in app2.router.routes:
+            if hasattr(route, "tags"):
+                self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
+                self.assertEqual(['Actor'], route.tags)
+                foundTags = True
+        if not foundTags:
+            self.fail('No tags found')
+
+        for route in app3.router.routes:
+            if hasattr(route, "tags"):
+                if len(route.tags) > 0:
+                    self.fail('Found tags on route that should not have any')
 
 
 if __name__ == '__main__':
