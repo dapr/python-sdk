@@ -48,6 +48,8 @@ expected_stdout_lines:
   - "== APP == Got key=orderId value=100 version=1 metadata={}"
   - "== APP == Got key=orderId1 value=200 version=2 metadata={}"
   - "== APP == Subscribe key=orderId value=200 version=2 metadata={}"
+  - "== APP == Unsubscribed successfully? True"
+  - "== APP == configurationstore configuration watcher for keys ['orderId', 'orderId1'] stopped."
 background: true
 sleep: 10
 timeout_seconds: 50

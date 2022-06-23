@@ -498,6 +498,11 @@ class DaprGrpcClientTests(unittest.TestCase):
             self.assertEqual(resp[0].value, "test")
             self.assertEqual(resp[0].version, "1.7.0")
 
+    def test_unsubscribe_configuration(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        res = dapr.unsubscribe_configuration(store_name="configurationstore", key="k")
+        self.assertTrue(res)
+
     def test_query_state(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
 

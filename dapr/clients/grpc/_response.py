@@ -15,7 +15,7 @@ limitations under the License.
 
 import threading
 from enum import Enum
-from typing import Dict, Optional, Union, Sequence
+from typing import Dict, Optional, Union, Sequence, List
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -34,6 +34,7 @@ from dapr.proto import appcallback_v1
 import json
 
 from dapr.proto import api_v1
+from dapr.proto import api_service_v1
 
 
 class DaprResponse:
@@ -671,23 +672,32 @@ class ConfigurationWatcher():
     def get_items(self):
         return self.items
 
-    def watch_configuration(self, stub, store_name, keys, config_metadata):
+    def watch_configuration(self, stub: api_service_v1.DaprStub, store_name: str,
+                            keys: List[str], config_metadata: Optional[Dict[str, str]] = dict()):
         req = api_v1.SubscribeConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
         thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req))
         thread.daemon = True
         thread.start()
+        self.keys = keys
+        self.store_name = store_name
 
-    def _read_subscribe_config(self, stub, req):
-        responses = stub.SubscribeConfigurationAlpha1(req)
-        for response in responses:
-            for item in response.items:
-                self.items.append(
-                    ConfigurationItem(
-                        key=item.key,
-                        value=item.value,
-                        version=item.version,
-                        metadata=item.metadata))
+    def _read_subscribe_config(self, stub: api_service_v1.DaprStub,
+                               req: api_v1.SubscribeConfigurationRequest):
+        try:
+            responses = stub.SubscribeConfigurationAlpha1(req)
+            for response in responses:
+                for item in response.items:
+                    self.items.append(
+                        ConfigurationItem(
+                            key=item.key,
+                            value=item.value,
+                            version=item.version,
+                            metadata=item.metadata))
+        except Exception:
+            print(f"{self.store_name} configuration watcher for keys "
+                  f"{self.keys} stopped.")
+            pass
 
 
 class TopicEventResponseStatus(Enum):

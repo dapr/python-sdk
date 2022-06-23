@@ -36,6 +36,7 @@ from grpc import (  # type: ignore
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
+from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 
 from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes
 from dapr.clients.grpc._request import (
@@ -932,7 +933,7 @@ class DaprGrpcClient:
     async def subscribe_configuration(
             self,
             store_name: str,
-            keys: str,
+            keys: List[str],
             config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationWatcher:
         """Gets changed value from a config store with a key
 
@@ -962,6 +963,26 @@ class DaprGrpcClient:
         configWatcher = ConfigurationWatcher()
         configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
         return configWatcher
+
+    def unsubscribe_configuration(
+            self,
+            store_name: str,
+            key: str) -> bool:
+        """Unsubscribes from configuration changes.
+
+            Args:
+                store_name (str): the state store name to unsubscribe from
+                key (str): the key of the key-value pair to unsubscribe from
+
+            Returns:
+                bool: True if unsubscribed successfully, False otherwise
+        """
+        warn('The Unsubscribe Configuration API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
+        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=key)
+        self._stub.UnsubscribeConfigurationAlpha1(req)
+        response: UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfigurationAlpha1(req)
+        return response.ok
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.

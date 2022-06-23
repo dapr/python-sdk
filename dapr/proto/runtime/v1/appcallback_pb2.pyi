@@ -256,6 +256,7 @@ class TopicSubscription(google.protobuf.message.Message):
     TOPIC_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
     ROUTES_FIELD_NUMBER: builtins.int
+    DEAD_LETTER_TOPIC_FIELD_NUMBER: builtins.int
     pubsub_name: typing.Text
     """Required. The name of the pubsub containing the topic below to subscribe to."""
 
@@ -272,15 +273,19 @@ class TopicSubscription(google.protobuf.message.Message):
         is still invoked but the matching path is sent in the TopicEventRequest.
         """
         pass
+    dead_letter_topic: typing.Text
+    """The optional dead letter queue for this topic to send events to."""
+
     def __init__(self,
         *,
         pubsub_name: typing.Text = ...,
         topic: typing.Text = ...,
         metadata: typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         routes: typing.Optional[global___TopicRoutes] = ...,
+        dead_letter_topic: typing.Text = ...,
         ) -> None: ...
     def HasField(self, field_name: typing_extensions.Literal["routes",b"routes"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["metadata",b"metadata","pubsub_name",b"pubsub_name","routes",b"routes","topic",b"topic"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["dead_letter_topic",b"dead_letter_topic","metadata",b"metadata","pubsub_name",b"pubsub_name","routes",b"routes","topic",b"topic"]) -> None: ...
 global___TopicSubscription = TopicSubscription
 
 class TopicRoutes(google.protobuf.message.Message):

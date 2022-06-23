@@ -132,6 +132,16 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationResponse.FromString,
                 )
+        self.TryLockAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/TryLockAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TryLockRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TryLockResponse.FromString,
+                )
+        self.UnlockAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/UnlockAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnlockRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnlockResponse.FromString,
+                )
         self.GetMetadata = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/GetMetadata',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
@@ -314,6 +324,20 @@ class DaprServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def TryLockAlpha1(self, request, context):
+        """TryLockAlpha1 tries to get a lock with an expiry.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UnlockAlpha1(self, request, context):
+        """UnlockAlpha1 unlocks a lock.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetMetadata(self, request, context):
         """Gets metadata of the sidecar
         """
@@ -452,6 +476,16 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.UnsubscribeConfigurationAlpha1,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationResponse.SerializeToString,
+            ),
+            'TryLockAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.TryLockAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TryLockRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TryLockResponse.SerializeToString,
+            ),
+            'UnlockAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.UnlockAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnlockRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnlockResponse.SerializeToString,
             ),
             'GetMetadata': grpc.unary_unary_rpc_method_handler(
                     servicer.GetMetadata,
@@ -867,6 +901,40 @@ class Dapr(object):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/UnsubscribeConfigurationAlpha1',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnsubscribeConfigurationResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def TryLockAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/TryLockAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TryLockRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TryLockResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UnlockAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/UnlockAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnlockRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.UnlockResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
