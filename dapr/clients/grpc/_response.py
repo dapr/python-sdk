@@ -35,7 +35,6 @@ import json
 
 from dapr.proto import api_v1
 from dapr.proto import api_service_v1
-from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 
 
 class DaprResponse:
