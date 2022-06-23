@@ -933,7 +933,7 @@ class DaprGrpcClient:
     async def subscribe_configuration(
             self,
             store_name: str,
-            keys: str,
+            keys: List[str],
             config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationWatcher:
         """Gets changed value from a config store with a key
 
