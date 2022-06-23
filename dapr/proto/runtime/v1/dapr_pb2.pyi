@@ -7,6 +7,7 @@ import dapr.proto.common.v1.common_pb2
 import google.protobuf.any_pb2
 import google.protobuf.descriptor
 import google.protobuf.internal.containers
+import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
 import typing
 import typing_extensions
@@ -1062,16 +1063,20 @@ class RegisteredComponents(google.protobuf.message.Message):
     NAME_FIELD_NUMBER: builtins.int
     TYPE_FIELD_NUMBER: builtins.int
     VERSION_FIELD_NUMBER: builtins.int
+    CAPABILITIES_FIELD_NUMBER: builtins.int
     name: typing.Text
     type: typing.Text
     version: typing.Text
+    @property
+    def capabilities(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
     def __init__(self,
         *,
         name: typing.Text = ...,
         type: typing.Text = ...,
         version: typing.Text = ...,
+        capabilities: typing.Optional[typing.Iterable[typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["name",b"name","type",b"type","version",b"version"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["capabilities",b"capabilities","name",b"name","type",b"type","version",b"version"]) -> None: ...
 global___RegisteredComponents = RegisteredComponents
 
 class SetMetadataRequest(google.protobuf.message.Message):
@@ -1238,3 +1243,106 @@ class UnsubscribeConfigurationResponse(google.protobuf.message.Message):
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["message",b"message","ok",b"ok"]) -> None: ...
 global___UnsubscribeConfigurationResponse = UnsubscribeConfigurationResponse
+
+class TryLockRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    STORE_NAME_FIELD_NUMBER: builtins.int
+    RESOURCE_ID_FIELD_NUMBER: builtins.int
+    LOCK_OWNER_FIELD_NUMBER: builtins.int
+    EXPIRYINSECONDS_FIELD_NUMBER: builtins.int
+    store_name: typing.Text
+    """Required. The lock store name,e.g. `redis`."""
+
+    resource_id: typing.Text
+    """Required. resource_id is the lock key. e.g. `order_id_111`
+    It stands for "which resource I want to protect"
+    """
+
+    lock_owner: typing.Text
+    """Required. lock_owner indicate the identifier of lock owner.
+    You can generate a uuid as lock_owner.For example,in golang:
+
+    req.LockOwner = uuid.New().String()
+
+    This field is per request,not per process,so it is different for each request,
+    which aims to prevent multi-thread in the same process trying the same lock concurrently.
+
+    The reason why we don't make it automatically generated is:
+    1. If it is automatically generated,there must be a 'my_lock_owner_id' field in the response.
+    This name is so weird that we think it is inappropriate to put it into the api spec
+    2. If we change the field 'my_lock_owner_id' in the response to 'lock_owner',which means the current lock owner of this lock,
+    we find that in some lock services users can't get the current lock owner.Actually users don't need it at all.
+    3. When reentrant lock is needed,the existing lock_owner is required to identify client and check "whether this client can reenter this lock".
+    So this field in the request shouldn't be removed.
+    """
+
+    expiryInSeconds: builtins.int
+    """Required. The time before expiry.The time unit is second."""
+
+    def __init__(self,
+        *,
+        store_name: typing.Text = ...,
+        resource_id: typing.Text = ...,
+        lock_owner: typing.Text = ...,
+        expiryInSeconds: builtins.int = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["expiryInSeconds",b"expiryInSeconds","lock_owner",b"lock_owner","resource_id",b"resource_id","store_name",b"store_name"]) -> None: ...
+global___TryLockRequest = TryLockRequest
+
+class TryLockResponse(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    SUCCESS_FIELD_NUMBER: builtins.int
+    success: builtins.bool
+    def __init__(self,
+        *,
+        success: builtins.bool = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["success",b"success"]) -> None: ...
+global___TryLockResponse = TryLockResponse
+
+class UnlockRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    STORE_NAME_FIELD_NUMBER: builtins.int
+    RESOURCE_ID_FIELD_NUMBER: builtins.int
+    LOCK_OWNER_FIELD_NUMBER: builtins.int
+    store_name: typing.Text
+    resource_id: typing.Text
+    """resource_id is the lock key."""
+
+    lock_owner: typing.Text
+    def __init__(self,
+        *,
+        store_name: typing.Text = ...,
+        resource_id: typing.Text = ...,
+        lock_owner: typing.Text = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["lock_owner",b"lock_owner","resource_id",b"resource_id","store_name",b"store_name"]) -> None: ...
+global___UnlockRequest = UnlockRequest
+
+class UnlockResponse(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    class _Status:
+        ValueType = typing.NewType('ValueType', builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+    class _StatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[UnlockResponse._Status.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+        SUCCESS: UnlockResponse._Status.ValueType  # 0
+        LOCK_UNEXIST: UnlockResponse._Status.ValueType  # 1
+        LOCK_BELONG_TO_OTHERS: UnlockResponse._Status.ValueType  # 2
+        INTERNAL_ERROR: UnlockResponse._Status.ValueType  # 3
+    class Status(_Status, metaclass=_StatusEnumTypeWrapper):
+        pass
+
+    SUCCESS: UnlockResponse.Status.ValueType  # 0
+    LOCK_UNEXIST: UnlockResponse.Status.ValueType  # 1
+    LOCK_BELONG_TO_OTHERS: UnlockResponse.Status.ValueType  # 2
+    INTERNAL_ERROR: UnlockResponse.Status.ValueType  # 3
+
+    STATUS_FIELD_NUMBER: builtins.int
+    status: global___UnlockResponse.Status.ValueType
+    def __init__(self,
+        *,
+        status: global___UnlockResponse.Status.ValueType = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["status",b"status"]) -> None: ...
+global___UnlockResponse = UnlockResponse
