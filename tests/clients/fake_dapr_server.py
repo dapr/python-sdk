@@ -201,6 +201,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         responses = []
         responses.append(response)
         return api_v1.SubscribeConfigurationResponse(responses=responses)
+    
+    def UnsubscribeConfigurationAlpha1(self, request, context):
+        return api_v1.UnsubscribeConfigurationResponse(ok=True)
 
     def QueryStateAlpha1(self, request, context):
         items = [QueryStateItem(
