@@ -377,6 +377,80 @@ class DaprGrpcClient:
 
         return DaprResponse(call.initial_metadata())
 
+    def publish_actor_event(
+            self,
+            actor_type: str,
+            actor_id: str,
+            pubsub_name: str,
+            topic_name: str,
+            data: Union[bytes, str],
+            publish_metadata: Dict[str, str] = {},
+            metadata: Optional[MetadataTuple] = None,
+            data_content_type: Optional[str] = None) -> DaprResponse:
+        """Publish Actor to a given topic.
+        This publishes an actor event with bytes array or str data to a specified topic and
+        specified pubsub component. The str data is encoded into bytes with default
+        charset of utf-8. Custom metadata can be passed with the metadata field which
+        will be passed on a gRPC metadata.
+
+        The example publishes a byte array event to a topic:
+
+            from dapr.clients import DaprClient
+            with DaprClient() as d:
+                resp = d.publish_event(
+                    actor_type='TYPE_A'
+                    actor_id ='id0001'
+                    pubsub_name='pubsub_1',
+                    topic_name='TOPIC_A',
+                    data=b'message',
+                    publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'},
+                )
+                # resp.headers includes the gRPC initial metadata.
+
+        Args:
+            actor_type (str): the type of the actor that publishes
+            actor_id (str): the id of the actor that publishes
+            pubsub_name (str): the name of the pubsub component
+            topic_name (str): the topic name to publish to
+            data (bytes or str): bytes or str for data
+            publish_metadata (Dict[str, str], optional): Dapr metadata per Pub/Sub message
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
+            data_content_type: (str, optional): content type of the data payload
+
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
+        """
+        if metadata is not None:
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+
+        if not isinstance(data, bytes) and not isinstance(data, str):
+            raise ValueError(f'invalid type for data {type(data)}')
+
+        req_data: bytes
+        if isinstance(data, bytes):
+            req_data = data
+        else:
+            if isinstance(data, str):
+                req_data = data.encode('utf-8')
+
+        content_type = ""
+        if data_content_type:
+            content_type = data_content_type
+        req = api_v1.PublishActorEventRequest(
+            actor_type=actor_type,
+            actor_id=actor_id,
+            pubsub_name=pubsub_name,
+            topic=topic_name,
+            data=req_data,
+            data_content_type=content_type,
+            metadata=publish_metadata)
+
+        # response is google.protobuf.Empty
+        _, call = self._stub.PublishActorEvent.with_call(req, metadata=metadata)
+
+        return DaprResponse(call.initial_metadata())
+
     def get_state(
             self,
             store_name: str,

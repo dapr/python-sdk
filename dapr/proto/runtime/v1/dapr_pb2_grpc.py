@@ -62,6 +62,11 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PublishEventRequest.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
+        self.PublishActorEvent = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/PublishActorEvent',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PublishActorEventRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
         self.InvokeBinding = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/InvokeBinding',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.InvokeBindingRequest.SerializeToString,
@@ -221,6 +226,13 @@ class DaprServicer(object):
 
     def PublishEvent(self, request, context):
         """Publishes events to the specific topic.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PublishActorEvent(self, request, context):
+        """Publishes an event from an actor with a specific topic.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -405,6 +417,11 @@ def add_DaprServicer_to_server(servicer, server):
             'PublishEvent': grpc.unary_unary_rpc_method_handler(
                     servicer.PublishEvent,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PublishEventRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'PublishActorEvent': grpc.unary_unary_rpc_method_handler(
+                    servicer.PublishActorEvent,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PublishActorEventRequest.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
             'InvokeBinding': grpc.unary_unary_rpc_method_handler(
@@ -662,6 +679,23 @@ class Dapr(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/PublishEvent',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PublishEventRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def PublishActorEvent(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/PublishActorEvent',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PublishActorEventRequest.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
