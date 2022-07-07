@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - feature/*
     tags:
       - v*
   pull_request:
@@ -16,7 +17,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      GOVER: 1.16
+      GOVER: 1.18
       GOOS: linux
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
