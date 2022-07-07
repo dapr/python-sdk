@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - master
+      - feature/*
     tags:
       - v*
   pull_request:
     branches:
       - master
       - release-*
+      - feature/*
+  workflow_dispatch:
 
 jobs:
   build:
