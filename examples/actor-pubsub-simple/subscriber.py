@@ -10,31 +10,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ------------------------------------------------------------
+import logging
+from flask_dapr import DaprApp
+from flask import Flask, request
 
 from time import sleep
+import json
 from cloudevents.sdk.event import v1
 from dapr.ext.grpc import App
 from dapr.clients.grpc._response import TopicEventResponse
 from dapr.proto import appcallback_v1
 
-import json
-
 app = App()
-should_retry = True  # To control whether dapr should retry sending a message
 
-
-@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
+@app.subscribe(pubsub_name='pubsub', topic='mytopic')
 def mytopic(event: v1.Event) -> TopicEventResponse:
-    global should_retry
     data = json.loads(event.Data())
+    print(f'Just checking: Actortype: {data["ActorType"]}, ActorID: {data["ActorID"]}')
     print(f'Subscriber received: id={data["id"]}, message="{data["message"]}", '
           f'content_type="{event.content_type}"', flush=True)
+    return "test",200
 
-    if should_retry:
-        should_retry = False  # we only retry once in this example
-        sleep(0.5)  # add some delay to help with ordering of expected logs
-        return TopicEventResponse('retry')
-    return TopicEventResponse('success')
-
-
-app.run(50051)
+if __name__ == '__main__':
+  app.run(50051)

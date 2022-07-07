@@ -22,7 +22,9 @@ with DaprClient() as d:
         id += 1
         req_data = {
             'id': id,
-            'message': 'Publishing for actors'
+            'message': 'Publishing for actors',
+            'ActorType': 'ActorType1',
+            'ActorID': 'ActorIDI'
         }
 
         # Create a typed message with content type and body
@@ -30,7 +32,7 @@ with DaprClient() as d:
             actor_type='actor_type_A',
             actor_id= 'actor_id_1',
             pubsub_name='pubsub',
-            topic_name='TOPIC_A',
+            topic_name='mytopic',
             data=json.dumps(req_data),
             data_content_type='application/json',
         )

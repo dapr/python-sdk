@@ -397,7 +397,7 @@ class DaprGrpcClient:
 
             from dapr.clients import DaprClient
             with DaprClient() as d:
-                resp = d.publish_event(
+                resp = d.publish_actor_event(
                     actor_type='TYPE_A'
                     actor_id ='id0001'
                     pubsub_name='pubsub_1',
@@ -420,6 +420,8 @@ class DaprGrpcClient:
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
+        warn('The Publish Actor Event API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
         if metadata is not None:
             warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
@@ -447,7 +449,7 @@ class DaprGrpcClient:
             metadata=publish_metadata)
 
         # response is google.protobuf.Empty
-        _, call = self._stub.PublishActorEvent.with_call(req, metadata=metadata)
+        _, call = self._stub.PublishActorEventAlpha1.with_call(req, metadata=metadata)
 
         return DaprResponse(call.initial_metadata())
 

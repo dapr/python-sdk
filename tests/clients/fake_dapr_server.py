@@ -86,7 +86,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
-    def PublishActorEvent(self, request, context):
+    def PublishActorEventAlpha1(self, request, context):
         headers = ()
         trailers = ()
         if request.topic:
