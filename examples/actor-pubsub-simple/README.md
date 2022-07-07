@@ -17,7 +17,7 @@ The subscriber will tell dapr to retry delivery of the first message it receives
 <!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 
 ```bash
-pip3 install dapr dapr-ext-grpc
+pip3 install dapr flask_dapr
 ```
 
 ## Run the example
