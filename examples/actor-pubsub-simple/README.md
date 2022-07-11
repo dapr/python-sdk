@@ -45,7 +45,7 @@ sleep: 3
 
 ```bash
 # 1. Start Subscriber (expose gRPC server receiver on port 50051)
-dapr run --app-id python-actor-subscriber --app-protocol http --app-port 5000 -- python3 httpActorSubscribe.py
+dapr run --app-id python-actor-subscriber --app-protocol http --app-port 5000 -- python3 actor_subscriber.py
 ```
 
 <!-- END_STEP -->
@@ -64,7 +64,7 @@ sleep: 6
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-actor-publisher --app-protocol http --app-port 3500 -- python3 httpActorPublish.py
+dapr run --app-id python-actor-publisher --app-protocol http --app-port 3500 -- python3 actor_publisher.py
 ```
 
 <!-- END_STEP -->
