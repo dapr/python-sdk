@@ -1140,12 +1140,27 @@ class GetConfigurationResponse(google.protobuf.message.Message):
     It should be the FULL configuration of specified application which contains all of its configuration items.
     """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    class ItemsEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text
+        @property
+        def value(self) -> dapr.proto.common.v1.common_pb2.ConfigurationItem: ...
+        def __init__(self,
+            *,
+            key: typing.Text = ...,
+            value: typing.Optional[dapr.proto.common.v1.common_pb2.ConfigurationItem] = ...,
+            ) -> None: ...
+        def HasField(self, field_name: typing_extensions.Literal["value",b"value"]) -> builtins.bool: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
     ITEMS_FIELD_NUMBER: builtins.int
     @property
-    def items(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.ConfigurationItem]: ...
+    def items(self) -> google.protobuf.internal.containers.MessageMap[typing.Text, dapr.proto.common.v1.common_pb2.ConfigurationItem]: ...
     def __init__(self,
         *,
-        items: typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.ConfigurationItem]] = ...,
+        items: typing.Optional[typing.Mapping[typing.Text, dapr.proto.common.v1.common_pb2.ConfigurationItem]] = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["items",b"items"]) -> None: ...
 global___GetConfigurationResponse = GetConfigurationResponse
@@ -1213,19 +1228,34 @@ global___UnsubscribeConfigurationRequest = UnsubscribeConfigurationRequest
 
 class SubscribeConfigurationResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    class ItemsEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text
+        @property
+        def value(self) -> dapr.proto.common.v1.common_pb2.ConfigurationItem: ...
+        def __init__(self,
+            *,
+            key: typing.Text = ...,
+            value: typing.Optional[dapr.proto.common.v1.common_pb2.ConfigurationItem] = ...,
+            ) -> None: ...
+        def HasField(self, field_name: typing_extensions.Literal["value",b"value"]) -> builtins.bool: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
     ID_FIELD_NUMBER: builtins.int
     ITEMS_FIELD_NUMBER: builtins.int
     id: typing.Text
     """Subscribe id, used to stop subscription."""
 
     @property
-    def items(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.ConfigurationItem]:
+    def items(self) -> google.protobuf.internal.containers.MessageMap[typing.Text, dapr.proto.common.v1.common_pb2.ConfigurationItem]:
         """The list of items containing configuration values"""
         pass
     def __init__(self,
         *,
         id: typing.Text = ...,
-        items: typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.ConfigurationItem]] = ...,
+        items: typing.Optional[typing.Mapping[typing.Text, dapr.proto.common.v1.common_pb2.ConfigurationItem]] = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["id",b"id","items",b"items"]) -> None: ...
 global___SubscribeConfigurationResponse = SubscribeConfigurationResponse

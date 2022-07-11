@@ -272,13 +272,9 @@ class ConfigurationItem(google.protobuf.message.Message):
             ) -> None: ...
         def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
 
-    KEY_FIELD_NUMBER: builtins.int
     VALUE_FIELD_NUMBER: builtins.int
     VERSION_FIELD_NUMBER: builtins.int
     METADATA_FIELD_NUMBER: builtins.int
-    key: typing.Text
-    """Required. The name of configuration item"""
-
     value: typing.Text
     """Required. The value of configuration item."""
 
@@ -291,10 +287,9 @@ class ConfigurationItem(google.protobuf.message.Message):
         pass
     def __init__(self,
         *,
-        key: typing.Text = ...,
         value: typing.Text = ...,
         version: typing.Text = ...,
         metadata: typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["key",b"key","metadata",b"metadata","value",b"value","version",b"version"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["metadata",b"metadata","value",b"value","version",b"version"]) -> None: ...
 global___ConfigurationItem = ConfigurationItem
