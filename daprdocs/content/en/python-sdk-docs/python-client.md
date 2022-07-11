@@ -187,8 +187,8 @@ async def executeConfiguration():
         while True:
             if configuration != None:
                 items = configuration.get_items()
-                for item in items:
-                    print(f"Subscribe key={item.key} value={item.value} version={item.version}", flush=True)
+                for key, item in items:
+                    print(f"Subscribe key={key} value={item.value} version={item.version}", flush=True)
             else:
                 print("Nothing yet")
         sleep(5)

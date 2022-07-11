@@ -467,36 +467,37 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         resp = dapr.get_configuration(store_name="configurationstore", keys=keys)
         self.assertEqual(len(resp.items), len(keys))
-        self.assertEqual(resp.items[0].key, keys[0])
-        self.assertEqual(resp.items[0].value, value)
-        self.assertEqual(resp.items[0].version, version)
-        self.assertEqual(resp.items[0].metadata, metadata)
+        self.assertIn(keys[0], resp.items)
+        item = resp.items[keys[0]]
+        self.assertEqual(item.value, value)
+        self.assertEqual(item.version, version)
+        self.assertEqual(item.metadata, metadata)
 
         resp = dapr.get_configuration(
             store_name="configurationstore", keys=keys, config_metadata=metadata)
         self.assertEqual(len(resp.items), len(keys))
-        self.assertEqual(resp.items[0].key, keys[0])
-        self.assertEqual(resp.items[0].value, value)
-        self.assertEqual(resp.items[0].version, version)
-        self.assertEqual(resp.items[0].metadata, metadata)
+        self.assertIn(keys[0], resp.items)
+        item = resp.items[keys[0]]
+        self.assertEqual(item.value, value)
+        self.assertEqual(item.version, version)
+        self.assertEqual(item.metadata, metadata)
 
     def test_subscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
 
         def mock_watch(self, stub, store_name, keys, config_metadata):
-            self.items.append(ConfigurationItem(
-                key=keys[0],
+            self.items[keys[0]] = ConfigurationItem(
                 value="test",
-                version="1.7.0"))
+                version="1.7.0")
 
         with patch.object(ConfigurationWatcher, 'watch_configuration', mock_watch):
             loop = asyncio.new_event_loop()
             watcher = loop.run_until_complete(
                 dapr.subscribe_configuration(store_name="configurationstore", keys=["k"]))
             resp = watcher.get_items()
-            self.assertEqual(resp[0].key, "k")
-            self.assertEqual(resp[0].value, "test")
-            self.assertEqual(resp[0].version, "1.7.0")
+            self.assertIn("k", resp)
+            self.assertEqual(resp["k"].value, "test")
+            self.assertEqual(resp["k"].version, "1.7.0")
 
     def test_unsubscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')

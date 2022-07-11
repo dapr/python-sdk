@@ -918,14 +918,12 @@ class DaprGrpcClient:
         req = api_v1.GetConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
         response, call = self._stub.GetConfigurationAlpha1.with_call(req)
-        items = []
-        for item in response.items:
-            items.append(
-                ConfigurationItem(
-                    key=item.key,
-                    value=item.value,
-                    version=item.version,
-                    metadata=item.metadata))
+        items = {}
+        for key, item in response.items:
+            items[key] = ConfigurationItem(
+                value=item.value,
+                version=item.version,
+                metadata=item.metadata)
         return ConfigurationResponse(
             items=items,
             headers=call.initial_metadata())
