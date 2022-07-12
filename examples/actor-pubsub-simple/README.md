@@ -1,9 +1,8 @@
 # Example - Publish Actor to messages with PubSub
 
-This example utilizes a publisher and a subscriber to show the pubsub actor pattern, it also shows `PublishActorEvent`, `OnTopicEvent`, `GetTopicSubscriptions`, and `TopicEventResponse` functionality.
+This example utilizes a publisher and a subscriber to show the pubsub actor pattern, it also shows `PublishActorEvent`, `OnTopicEvent`, and `GetTopicSubscriptions` functionality.
 It creates a publisher and calls the `publish_actor_event` method in the `DaprClient`.
-It will create a gRPC subscriber and bind the `OnTopicEvent` method, which gets triggered after a message is published to the subscribed topic.
-The subscriber will tell dapr to retry delivery of the first message it receives, logging that the message will be retried, and printing it at least once to standard output.
+It will create a http subscriber and receive the cloud event as a JSON, which gets triggered after a message is published to the subscribed topic.
 
 > **Note:** Make sure to use the latest proto bindings
 
@@ -28,24 +27,23 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-  - '== APP == Dapr pub/sub is subscribed to: [{"pubsubname": "pubsub", "topic": "mytopic", "route": "endpoint"}]'
-  - '== APP == Subscriber received ActorID: Actor0'
-  - '== APP == Subscriber received ActorType: fakeActorType'
-  - '== APP == Subscriber received Message: Hello message'
   - '== APP == Subscriber received ActorID: Actor1'
-  - '== APP == Subscriber received ActorType: fakeActorType'
-  - '== APP == Subscriber received Message: Hello message'
+  - '== APP == Subscriber received ActorType: MyActorType'
+  - '== APP == Subscriber received Message: Good morning'
   - '== APP == Subscriber received ActorID: Actor2'
-  - '== APP == Subscriber received ActorType: fakeActorType'
-  - '== APP == Subscriber received Message: Hello message'
+  - '== APP == Subscriber received ActorType: MyActorType'
+  - '== APP == Subscriber received Message: Good day'
+  - '== APP == Subscriber received ActorID: Actor3'
+  - '== APP == Subscriber received ActorType: MyActorType'
+  - '== APP == Subscriber received Message: Good night'
 output_match_mode: substring
 background: true
 sleep: 3 
 -->
 
 ```bash
-# 1. Start Subscriber (expose gRPC server receiver on port 50051)
-dapr run --app-id python-actor-subscriber --app-protocol http --app-port 5000 -- python3 actor_subscriber.py
+# 1. Start Subscriber (expose http server receiver on port 3501)
+dapr run --app-id python-actor-subscriber --app-protocol http --app-port 5000 --dapr-http-port 3501 -- python3 actor_subscriber.py
 ```
 
 <!-- END_STEP -->
@@ -55,16 +53,16 @@ In another terminal/command prompt run:
 <!-- STEP
 name: Run publisher
 expected_stdout_lines:
-  - "== APP == {'message': 'Hello message'}"
-  - "== APP == {'message': 'Hello message'}"
-  - "== APP == {'message': 'Hello message'}"
+  - "== APP == {'id': 1, 'message': 'Good morning'}"
+  - "== APP == {'id': 2, 'message': 'Good day'}"
+  - "== APP == {'id': 3, 'message': 'Good night'}"
 background: true
 sleep: 6
 -->
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-actor-publisher --app-protocol http --app-port 3500 -- python3 actor_publisher.py
+dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=5500 python3 actor_publisher.py
 ```
 
 <!-- END_STEP -->

@@ -11,31 +11,34 @@
 # limitations under the License.
 # ------------------------------------------------------------
 
-from email import message
+import json
 import time
-import logging
-import requests
-import os
 
-logging.basicConfig(level=logging.INFO)
+from dapr.clients import DaprClient
 
-base_url = os.getenv('BASE_URL', 'http://localhost') + ':' + os.getenv(
-                    'DAPR_HTTP_PORT', '3500')
-PUBSUB_NAME = 'pubsub'
-TOPIC = 'mytopic'
-ACTORTYPE = 'fakeActorType'
+greetings = ["morning", "day", "night"]
 
-logging.info('Publishing to baseURL: %s, Pubsub Name: %s, Topic: %s' % (
-            base_url, PUBSUB_NAME, TOPIC))
+with DaprClient() as d:
+    id = 0
+    while id < 3:
+        id += 1
+        req_data = {
+            'id': id,
+            'message': f'Good {greetings[id-1]}'
+        }
 
-for i in range(3):
-    message = {'message': 'Hello message'}
-    actorid = f'Actor{i}'
-    # Publish an event/message using Dapr PubSub via HTTP Post
-    result = requests.post(
-        url='%s/v1.0/actors/%s/%s/publish/%s/%s' % (base_url, ACTORTYPE, actorid, PUBSUB_NAME, TOPIC),
-        json=message
-    )
-    print(message, flush=True)
+        # Create a typed message with content type and body
+        resp = d.publish_actor_event(
+            pubsub_name='pubsub',
+            topic_name='mytopic',
+            actor_id= 'Actor' + str(id),
+            actor_type='MyActorType',
+            data=json.dumps(req_data),
+            data_content_type='application/json',
+        )
 
-    time.sleep(1)
+        # Print the request
+        print(req_data, flush=True)
+
+        time.sleep(1)
+

@@ -11,32 +11,22 @@
 # limitations under the License.
 # ------------------------------------------------------------
 
-import json
 from flask import Flask, request, jsonify
-from cloudevents.http import from_http
-
+from flask_dapr import DaprApp
 
 app = Flask(__name__)
-# Register Dapr pub/sub subscriptions
-@app.route('/dapr/subscribe', methods=['GET'])
-def subscribe():
-  subscriptions = [{
-      'pubsubname': 'pubsub',
-      'topic': 'mytopic',
-      'route': 'endpoint'
-  }]
-  print('Dapr pub/sub is subscribed to: ' + json.dumps(subscriptions))
-  return jsonify(subscriptions)
+dapr = DaprApp(app)
 
-# Dapr subscription in /dapr/subscribe sets up this route
-@app.route('/endpoint', methods=['POST'])
-def event_subscriber():
-  event = from_http(request.headers, request.get_data())
-  print('Subscriber received ActorID: %s' % event._attributes['actorid'], flush=True)
-  print('Subscriber received ActorType: %s' % event._attributes['actortype'], flush=True)
-  print('Subscriber received Message: %s' % event.data['message'], flush=True)
-  return json.dumps({'success': True}), 200, {
-      'ContentType': 'application/json'}
+@dapr.subscribe(pubsub='pubsub', topic='mytopic')
+def event_handler():
+  body = request.get_json()
+  print('Subscriber received ActorID: %s' % body["actorid"], flush=True)
+  print('Subscriber received ActorType: %s' % body["actortype"], flush=True)
+  print('Subscriber received Message: %s' % body["data"]["message"], flush=True)
+  return jsonify({'success': True})
+
+if __name__ == '__main__':
+  app.run(host='0.0.0.0', port=5000)
 
 
-app.run(port=5000)
+#  dapr run --app-id python-actor-subscriber --app-protocol http --app-port 5000 --dapr-http-port 3501 -- python3 actor_subscriber.py
