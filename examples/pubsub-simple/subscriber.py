@@ -22,7 +22,6 @@ import json
 app = App()
 should_retry = True  # To control whether dapr should retry sending a message
 
-
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
 def mytopic(event: v1.Event) -> TopicEventResponse:
     global should_retry
@@ -35,7 +34,6 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
         return TopicEventResponse('retry')
     return TopicEventResponse('success')
 
-
 # == for testing with Redis only ==
 # workaround as redis pubsub does not support wildcards
 # we manually register the distinct topics
@@ -44,7 +42,6 @@ for id in range(4, 7):
         pubsub_name='pubsub', topic=f'topic/{id}'))
 # =================================
 
-
 # this allows subscribing to all events sent to this app - useful for wildcard topics
 @app.subscribe(pubsub_name='pubsub', topic='topic/#', disable_topic_validation=True)
 def mytopic_wildcard(event: v1.Event) -> TopicEventResponse:
@@ -52,6 +49,5 @@ def mytopic_wildcard(event: v1.Event) -> TopicEventResponse:
     print(f'Wildcard-Subscriber received: id={data["id"]}, message="{data["message"]}", '
           f'content_type="{event.content_type}"', flush=True)
     return TopicEventResponse('success')
-
 
 app.run(50051)

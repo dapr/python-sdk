@@ -246,6 +246,61 @@ class DaprGrpcClientTests(unittest.TestCase):
                 data=111,
             )
 
+    def test_publish_actor_event(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        resp = dapr.publish_actor_event(
+            actor_type='typeA',
+            actor_id='id01',
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=b'haha'
+        )
+
+        self.assertEqual(2, len(resp.headers))
+        self.assertEqual(['haha'], resp.headers['hdata'])
+
+    def test_publish_actor_event_with_content_type(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        resp = dapr.publish_actor_event(
+            actor_type='typeA',
+            actor_id='id01',
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=b'{"foo": "bar"}',
+            data_content_type='application/json'
+        )
+
+        self.assertEqual(3, len(resp.headers))
+        self.assertEqual(['{"foo": "bar"}'], resp.headers['hdata'])
+        self.assertEqual(['application/json'], resp.headers['data_content_type'])
+
+    def test_publish_actor_event_with_metadata(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        resp = dapr.publish_actor_event(
+            actor_type='typeA',
+            actor_id='id01',
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=b'{"foo": "bar"}',
+            publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'}
+        )
+
+        print(resp.headers)
+        self.assertEqual(['{"foo": "bar"}'], resp.headers['hdata'])
+        self.assertEqual(['false'], resp.headers['metadata_raw_payload'])
+        self.assertEqual(['100'], resp.headers['metadata_ttl_in_seconds'])
+
+    def test_publish_actor_error(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        with self.assertRaisesRegex(ValueError, "invalid type for data <class 'int'>"):
+            dapr.publish_actor_event(
+                actor_type='typeA',
+                actor_id='id01',
+                pubsub_name='pubsub',
+                topic_name='example',
+                data=111,
+            )
+
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     def test_dapr_api_token_insertion(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')

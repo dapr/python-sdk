@@ -483,6 +483,68 @@ class PublishEventRequest(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["data",b"data","data_content_type",b"data_content_type","metadata",b"metadata","pubsub_name",b"pubsub_name","topic",b"topic"]) -> None: ...
 global___PublishEventRequest = PublishEventRequest
 
+class PublishActorEventRequest(google.protobuf.message.Message):
+    """PublishActorEventRequest is the message to publish event from an actor with data to pubsub topic"""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text
+        value: typing.Text
+        def __init__(self,
+            *,
+            key: typing.Text = ...,
+            value: typing.Text = ...,
+            ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
+    ACTOR_TYPE_FIELD_NUMBER: builtins.int
+    ACTOR_ID_FIELD_NUMBER: builtins.int
+    PUBSUB_NAME_FIELD_NUMBER: builtins.int
+    TOPIC_FIELD_NUMBER: builtins.int
+    DATA_FIELD_NUMBER: builtins.int
+    DATA_CONTENT_TYPE_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    actor_type: typing.Text
+    """The type of the actor"""
+
+    actor_id: typing.Text
+    """The id of the actor"""
+
+    pubsub_name: typing.Text
+    """The name of the pubsub component"""
+
+    topic: typing.Text
+    """The pubsub topic"""
+
+    data: builtins.bytes
+    """The data which will be published to topic."""
+
+    data_content_type: typing.Text
+    """The content type for the data (optional)."""
+
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The metadata passing to pub components
+
+        metadata property:
+        - key : the key of the message.
+        """
+        pass
+    def __init__(self,
+        *,
+        actor_type: typing.Text = ...,
+        actor_id: typing.Text = ...,
+        pubsub_name: typing.Text = ...,
+        topic: typing.Text = ...,
+        data: builtins.bytes = ...,
+        data_content_type: typing.Text = ...,
+        metadata: typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["actor_id",b"actor_id","actor_type",b"actor_type","data",b"data","data_content_type",b"data_content_type","metadata",b"metadata","pubsub_name",b"pubsub_name","topic",b"topic"]) -> None: ...
+global___PublishActorEventRequest = PublishActorEventRequest
+
 class InvokeBindingRequest(google.protobuf.message.Message):
     """InvokeBindingRequest is the message to send data to output bindings"""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor

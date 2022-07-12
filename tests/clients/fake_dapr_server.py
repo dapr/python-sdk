@@ -86,6 +86,27 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
+    def PublishActorEventAlpha1(self, request, context):
+        headers = ()
+        trailers = ()
+        if request.topic:
+            headers = headers + (('htopic', request.topic),)
+            trailers = trailers + (('ttopic', request.topic),)
+        if request.data:
+            headers = headers + (('hdata', request.data), )
+            trailers = trailers + (('hdata', request.data), )
+        if request.data_content_type:
+            headers = headers + (('data_content_type', request.data_content_type), )
+            trailers = trailers + (('data_content_type', request.data_content_type), )
+        if request.metadata['rawPayload']:
+            headers = headers + (('metadata_raw_payload', request.metadata['rawPayload']), )
+        if request.metadata['ttlInSeconds']:
+            headers = headers + (('metadata_ttl_in_seconds', request.metadata['ttlInSeconds']), )
+
+        context.send_initial_metadata(headers)
+        context.set_trailing_metadata(trailers)
+        return empty_pb2.Empty()
+
     def SaveState(self, request, context):
         headers = ()
         trailers = ()
