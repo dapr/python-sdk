@@ -38,7 +38,8 @@ expected_stdout_lines:
   - '== APP == Subscriber received Message: Good night'
 output_match_mode: substring
 background: true
-sleep: 3 
+sleep: 3
+timeout_seconds: 30
 -->
 
 ```bash
