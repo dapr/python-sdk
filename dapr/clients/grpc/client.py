@@ -984,6 +984,42 @@ class DaprGrpcClient:
         response: UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfigurationAlpha1(req)
         return response.ok
 
+    def try_lock(
+            self,
+            store_name: str,
+            resource_id: str,
+            lock_owner: str,
+            expiry_in_seconds: int) -> bool:
+        """
+        TBD
+        """
+        warn('The Distributed Lock API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
+        req = api_v1.TryLockRequest(
+            store_name=store_name,
+            resource_id=resource_id,
+            lock_owner=lock_owner,
+            expiryInSeconds=expiry_in_seconds)
+        response: api_v1.TryLockResponse = self._stub.TryLockAlpha1(req)
+        return response.success
+
+    def unlock(
+            self,
+            store_name: str,
+            resource_id: str,
+            lock_owner: str) -> api_v1.UnlockResponse.Status:
+        """
+        TBD
+        """
+        warn('The Distributed Lock API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
+        req = api_v1.UnlockRequest(
+            store_name=store_name,
+            resource_id=resource_id,
+            lock_owner=lock_owner)
+        response: api_v1.UnlockResponse = self._stub.UnlockAlpha1(req)
+        return response.status
+
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
 
