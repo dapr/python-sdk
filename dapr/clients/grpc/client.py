@@ -50,6 +50,7 @@ from dapr.clients.grpc._response import (
     GetSecretResponse,
     GetBulkSecretResponse,
     InvokeMethodResponse,
+    UnlockResponseStatus,
     StateResponse,
     BulkStatesResponse,
     BulkStateItem,
@@ -990,8 +991,18 @@ class DaprGrpcClient:
             resource_id: str,
             lock_owner: str,
             expiry_in_seconds: int) -> bool:
-        """
-        TBD
+        """Tries to get a lock with an expiry.
+
+            Args:
+                store_name (str): the lock store name, e.g. `redis`.
+                resource_id (str): the lock key. e.g. `order_id_111`.
+                                    It stands for "which resource I want to protect".
+                lock_owner (str):  indicates the identifier of lock owner.
+                expiry_in_seconds (int): The length of time (in seconds) for which this lock
+                    will be held and after which it expires.
+
+            Returns:
+                bool: True if lock acquisition was successful successfully, False otherwise
         """
         warn('The Distributed Lock API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
@@ -1007,9 +1018,19 @@ class DaprGrpcClient:
             self,
             store_name: str,
             resource_id: str,
-            lock_owner: str) -> api_v1.UnlockResponse.Status:
-        """
-        TBD
+            lock_owner: str) -> UnlockResponseStatus:
+        """Unlocks a lock.
+
+            Args:
+                store_name (str): the lock store name, e.g. `redis`.
+                resource_id (str): the lock key. e.g. `order_id_111`.
+                                    It stands for "which resource I want to protect".
+                lock_owner (str):  indicates the identifier of lock owner.
+
+            Returns:
+                :class:`UnlockResponseStatus`: Status of the request,
+                    `UnlockResponseStatus.success` if it was successful of some other
+                    status otherwise.
         """
         warn('The Distributed Lock API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
@@ -1018,7 +1039,8 @@ class DaprGrpcClient:
             resource_id=resource_id,
             lock_owner=lock_owner)
         response: api_v1.UnlockResponse = self._stub.UnlockAlpha1(req)
-        return response.status
+
+        return UnlockResponseStatus(response.status)
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.

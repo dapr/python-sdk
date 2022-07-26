@@ -6,7 +6,13 @@ from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
-from dapr.proto.runtime.v1.dapr_pb2 import QueryStateItem, TryLockRequest, TryLockResponse, UnlockRequest, UnlockResponse
+from dapr.proto.runtime.v1.dapr_pb2 import (
+    QueryStateItem,
+    TryLockRequest,
+    TryLockResponse,
+    UnlockRequest,
+    UnlockResponse,
+)
 
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):

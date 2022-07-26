@@ -744,3 +744,10 @@ class TopicEventResponse(DaprResponse):
     def status(self) -> TopicEventResponseStatus:
         """Gets the status."""
         return self._status
+
+
+class UnlockResponseStatus(Enum):
+    success = api_v1.UnlockResponse.Status.SUCCESS
+    lock_unexist = api_v1.UnlockResponse.Status.LOCK_UNEXIST
+    lock_belong_to_others = api_v1.UnlockResponse.Status.LOCK_BELONG_TO_OTHERS
+    internal_error = api_v1.UnlockResponse.Status.INTERNAL_ERROR
