@@ -568,7 +568,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(UnlockResponseStatus.success, unlock_status)
         # If client tries again it will discover the lock is gone
         unlock_status = dapr.unlock(store_name, resource_id, lock_owner)
-        self.assertEqual(UnlockResponseStatus.lock_unexist, unlock_status)
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_status)
 
     def test_lock_conflict(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
@@ -598,7 +598,40 @@ class DaprGrpcClientTests(unittest.TestCase):
             store_name='lockstore',
             resource_id=str(uuid.uuid4()),
             lock_owner=str(uuid.uuid4()))
-        self.assertEqual(UnlockResponseStatus.lock_unexist, unlock_status)
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_status)
+
+    def test_lock_release_twice_fails_with_context_manager(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Lock parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        first_client_id = str(uuid.uuid4())
+        second_client_id = str(uuid.uuid4())
+        expiry = 60
+
+        with dapr.try_lock(store_name, resource_id, first_client_id, expiry) as first_lock:
+            self.assertTrue(first_lock.success)
+            # If another client tries to acquire the same lock it will fail
+            with dapr.try_lock(store_name, resource_id, second_client_id, expiry) as second_lock:
+                self.assertFalse(second_lock.success)
+        # At this point lock was auto-released
+        # If client tries again it will discover the lock is gone
+        unlock_status = dapr.unlock(store_name, resource_id, first_client_id)
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_status)
+
+    def test_lock_are_not_reentrant(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Lock parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        client_id = str(uuid.uuid4())
+        expiry_in_s = 60
+
+        with dapr.try_lock(store_name, resource_id, client_id, expiry_in_s) as first_attempt:
+            self.assertTrue(first_attempt.success)
+            # If the same client tries to acquire the same lock again it will fail.
+            with dapr.try_lock(store_name, resource_id, client_id, expiry_in_s) as second_attempt:
+                self.assertFalse(second_attempt.success)
 
 
 if __name__ == '__main__':

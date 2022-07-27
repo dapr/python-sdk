@@ -58,7 +58,8 @@ from dapr.clients.grpc._response import (
     ConfigurationItem,
     QueryResponse,
     QueryResponseItem,
-    ConfigurationWatcher
+    ConfigurationWatcher,
+    TryLockResponse,
 )
 
 
@@ -990,8 +991,27 @@ class DaprGrpcClient:
             store_name: str,
             resource_id: str,
             lock_owner: str,
-            expiry_in_seconds: int) -> bool:
+            expiry_in_seconds: int) -> TryLockResponse:
         """Tries to get a lock with an expiry.
+
+            You can use the result of this operation directly on an if statement:
+
+                if client.try_lock(store_name, resource_id, first_client_id, expiry_s):
+                    # lock acquired sucessfully...
+
+            You can also inspect the response's `success` attribute:
+
+                    response = client.try_lock(store_name, resource_id, first_client_id, expiry_s)
+                    if response.success:
+                        # lock acquired sucessfully...
+
+            Finally, you can use this response with an with statement, and have the lock
+            be automatically unlocked after the with-statement scope ends
+
+                with client.try_lock(store_name, resource_id, first_client_id, expiry_s) as lock:
+                    if lock:
+                        # lock acquired sucessfully...
+                # Lock automatically unlocked at this point, no need to call client->unlock(...)
 
             Args:
                 store_name (str): the lock store name, e.g. `redis`.
@@ -1002,7 +1022,7 @@ class DaprGrpcClient:
                     will be held and after which it expires.
 
             Returns:
-                bool: True if lock acquisition was successful successfully, False otherwise
+                :class:`TryLockResponse`: With the result of the try-lock operation.
         """
         warn('The Distributed Lock API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
@@ -1012,7 +1032,12 @@ class DaprGrpcClient:
             lock_owner=lock_owner,
             expiryInSeconds=expiry_in_seconds)
         response: api_v1.TryLockResponse = self._stub.TryLockAlpha1(req)
-        return response.success
+        return TryLockResponse(
+            success=response.success,
+            client=self,
+            store_name=store_name,
+            resource_id=resource_id,
+            lock_owner=lock_owner)
 
     def unlock(
             self,

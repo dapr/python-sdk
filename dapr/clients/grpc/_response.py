@@ -13,9 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import contextlib
+from dataclasses import dataclass
 import threading
 from enum import Enum
-from typing import Dict, Optional, Union, Sequence, List
+from typing import Any, Dict, Optional, Union, Sequence, List
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -748,6 +750,42 @@ class TopicEventResponse(DaprResponse):
 
 class UnlockResponseStatus(Enum):
     success = api_v1.UnlockResponse.Status.SUCCESS
-    lock_unexist = api_v1.UnlockResponse.Status.LOCK_UNEXIST
+    '''The Unlock operation for the referred lock was successful.'''
+
+    lock_does_not_exist = api_v1.UnlockResponse.Status.LOCK_UNEXIST
+    ''''The unlock operation failed: the referred lock does not exist.'''
+
     lock_belong_to_others = api_v1.UnlockResponse.Status.LOCK_BELONG_TO_OTHERS
+    '''The unlock operation failed: the referred lock belongs to another owner.'''
+
     internal_error = api_v1.UnlockResponse.Status.INTERNAL_ERROR
+    '''An internal error happened while handling the Unlock operation'''
+
+
+@dataclass(frozen=True)
+class TryLockResponse(contextlib.AbstractContextManager):
+    '''The response from a of a try_lock operation.'''
+
+    success: bool
+    '''The result of the try_lock operation.'''
+
+    client: Any
+    store_name: str
+    resource_id: str
+    lock_owner: str
+
+    def __bool__(self) -> bool:
+        return self.success
+
+    def __exit__(self, *exc) -> None:
+        ''''Automatically unlocks the lock if this TryLockResponse was used as
+        a ContextManager / `with` statement.
+
+        Notice: we are not checking the result of the unlock operation.
+        If this is something  you care about it might be wiser creating
+        your own ContextManager that logs of otherwise raises exceptions
+        if unlock doesn't return `UnlockResponseStatus.success`.
+        '''
+        if self.success:
+            self.client.unlock(self.store_name, self.resource_id, self.lock_owner)
+        # else: there is no point unlocking a lock we did not acquire.
