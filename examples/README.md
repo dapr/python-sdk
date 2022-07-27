@@ -12,6 +12,7 @@ These examples demonstrate how to use the Dapr Python SDK:
 | [Virtual actors](./demo_actor) | Try Dapr virtual actor features
 | [Secrets](./secret_store) | Get secrets from a defined secret store
 | [Distributed tracing](./w3c-tracing) | Leverage Dapr's built-in tracing support
+| [Distributed lock](./distributed_lock) | Keep your application safe from race conditions by using distrubited locks
 
 ## More information
 
