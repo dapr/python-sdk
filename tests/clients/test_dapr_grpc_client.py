@@ -551,8 +551,8 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         success = dapr.try_lock(store_name, resource_id, lock_owner, expiry_in_seconds)
         self.assertTrue(success)
-        unlock_status = dapr.unlock(store_name, resource_id, lock_owner)
-        self.assertEqual(UnlockResponseStatus.success, unlock_status)
+        unlock_response = dapr.unlock(store_name, resource_id, lock_owner)
+        self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
 
     def test_lock_release_twice_fails(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
@@ -564,11 +564,11 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         success = dapr.try_lock(store_name, resource_id, lock_owner, expiry_in_seconds)
         self.assertTrue(success)
-        unlock_status = dapr.unlock(store_name, resource_id, lock_owner)
-        self.assertEqual(UnlockResponseStatus.success, unlock_status)
+        unlock_response = dapr.unlock(store_name, resource_id, lock_owner)
+        self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
         # If client tries again it will discover the lock is gone
-        unlock_status = dapr.unlock(store_name, resource_id, lock_owner)
-        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_status)
+        unlock_response = dapr.unlock(store_name, resource_id, lock_owner)
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     def test_lock_conflict(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
@@ -586,19 +586,19 @@ class DaprGrpcClientTests(unittest.TestCase):
         success = dapr.try_lock(store_name, resource_id, second_client_id, expiry_in_seconds)
         self.assertFalse(success)
         # Second client is a sneaky fellow and tries to release a lock it doesn't own
-        unlock_status = dapr.unlock(store_name, resource_id, second_client_id)
-        self.assertEqual(UnlockResponseStatus.lock_belong_to_others, unlock_status)
+        unlock_response = dapr.unlock(store_name, resource_id, second_client_id)
+        self.assertEqual(UnlockResponseStatus.lock_belong_to_others, unlock_response.status)
         # First client can stil return the lock as rightful owner
-        unlock_status = dapr.unlock(store_name, resource_id, first_client_id)
-        self.assertEqual(UnlockResponseStatus.success, unlock_status)
+        unlock_response = dapr.unlock(store_name, resource_id, first_client_id)
+        self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
 
     def test_lock_not_previously_acquired(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
-        unlock_status = dapr.unlock(
+        unlock_response = dapr.unlock(
             store_name='lockstore',
             resource_id=str(uuid.uuid4()),
             lock_owner=str(uuid.uuid4()))
-        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_status)
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     def test_lock_release_twice_fails_with_context_manager(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
@@ -616,8 +616,8 @@ class DaprGrpcClientTests(unittest.TestCase):
                 self.assertFalse(second_lock.success)
         # At this point lock was auto-released
         # If client tries again it will discover the lock is gone
-        unlock_status = dapr.unlock(store_name, resource_id, first_client_id)
-        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_status)
+        unlock_response = dapr.unlock(store_name, resource_id, first_client_id)
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     def test_lock_are_not_reentrant(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')

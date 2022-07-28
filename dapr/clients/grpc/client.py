@@ -60,6 +60,7 @@ from dapr.clients.grpc._response import (
     QueryResponseItem,
     ConfigurationWatcher,
     TryLockResponse,
+    UnlockResponse,
 )
 
 
@@ -991,26 +992,27 @@ class DaprGrpcClient:
             store_name: str,
             resource_id: str,
             lock_owner: str,
-            expiry_in_seconds: int) -> TryLockResponse:
+            expiry_in_seconds: int,
+            metadata: Optional[MetadataTuple] = None) -> TryLockResponse:
         """Tries to get a lock with an expiry.
 
             You can use the result of this operation directly on an if statement:
 
                 if client.try_lock(store_name, resource_id, first_client_id, expiry_s):
-                    # lock acquired sucessfully...
+                    # lock acquired successfully...
 
             You can also inspect the response's `success` attribute:
 
                     response = client.try_lock(store_name, resource_id, first_client_id, expiry_s)
                     if response.success:
-                        # lock acquired sucessfully...
+                        # lock acquired successfully...
 
             Finally, you can use this response with an with statement, and have the lock
             be automatically unlocked after the with-statement scope ends
 
                 with client.try_lock(store_name, resource_id, first_client_id, expiry_s) as lock:
                     if lock:
-                        # lock acquired sucessfully...
+                        # lock acquired successfully...
                 # Lock automatically unlocked at this point, no need to call client->unlock(...)
 
             Args:
@@ -1020,30 +1022,36 @@ class DaprGrpcClient:
                 lock_owner (str):  indicates the identifier of lock owner.
                 expiry_in_seconds (int): The length of time (in seconds) for which this lock
                     will be held and after which it expires.
+                metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
             Returns:
                 :class:`TryLockResponse`: With the result of the try-lock operation.
         """
         warn('The Distributed Lock API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
+        if metadata is not None:
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
         req = api_v1.TryLockRequest(
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
             expiryInSeconds=expiry_in_seconds)
-        response: api_v1.TryLockResponse = self._stub.TryLockAlpha1(req)
+        response, call = self._stub.TryLockAlpha1.with_call(req, metadata=metadata)
         return TryLockResponse(
             success=response.success,
             client=self,
             store_name=store_name,
             resource_id=resource_id,
-            lock_owner=lock_owner)
+            lock_owner=lock_owner,
+            headers=call.initial_metadata())
 
     def unlock(
             self,
             store_name: str,
             resource_id: str,
-            lock_owner: str) -> UnlockResponseStatus:
+            lock_owner: str,
+            metadata: Optional[MetadataTuple] = None) -> UnlockResponse:
         """Unlocks a lock.
 
             Args:
@@ -1051,6 +1059,7 @@ class DaprGrpcClient:
                 resource_id (str): the lock key. e.g. `order_id_111`.
                                     It stands for "which resource I want to protect".
                 lock_owner (str):  indicates the identifier of lock owner.
+                metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
             Returns:
                 :class:`UnlockResponseStatus`: Status of the request,
@@ -1059,13 +1068,17 @@ class DaprGrpcClient:
         """
         warn('The Distributed Lock API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
+        if metadata is not None:
+            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
+                 'and this is not needed.', DeprecationWarning, stacklevel=2)
         req = api_v1.UnlockRequest(
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner)
-        response: api_v1.UnlockResponse = self._stub.UnlockAlpha1(req)
+        response, call = self._stub.UnlockAlpha1.with_call(req, metadata=metadata)
 
-        return UnlockResponseStatus(response.status)
+        return UnlockResponse(status=UnlockResponseStatus(response.status),
+                              headers=call.initial_metadata())
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.

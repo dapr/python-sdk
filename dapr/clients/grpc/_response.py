@@ -14,7 +14,6 @@ limitations under the License.
 """
 
 import contextlib
-from dataclasses import dataclass
 import threading
 from enum import Enum
 from typing import Any, Dict, Optional, Union, Sequence, List
@@ -762,20 +761,76 @@ class UnlockResponseStatus(Enum):
     '''An internal error happened while handling the Unlock operation'''
 
 
-@dataclass(frozen=True)
-class TryLockResponse(contextlib.AbstractContextManager):
-    '''The response from a of a try_lock operation.'''
+class UnlockResponse(DaprResponse):
+    '''The response of an unlock operation.
 
-    success: bool
-    '''The result of the try_lock operation.'''
+    This inherits from DaprResponse
 
-    client: Any
-    store_name: str
-    resource_id: str
-    lock_owner: str
+    Attributes:
+        status (UnlockResponseStatus): the status of the unlock operation.
+    '''
+
+    def __init__(
+        self,
+        status: UnlockResponseStatus,
+        headers: MetadataTuple = (),
+    ):
+        """Initializes a UnlockResponse.
+
+        Args:
+            status (UnlockResponseStatus): The status of the response.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super().__init__(headers)
+        self._status = status
+
+    @property
+    def status(self) -> UnlockResponseStatus:
+        """Gets the status."""
+        return self._status
+
+
+class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
+    '''The response of a try_lock operation.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        success (bool): the result of the try_lock operation.
+    '''
+    def __init__(
+        self,
+        success: bool,
+        client: Any,  # Declaring as a DaprClient would create a cyclic dependency
+        store_name: str,
+        resource_id: str,
+        lock_owner: str,
+        headers: MetadataTuple = (),
+    ):
+        """Initializes a TryLockResponse.
+
+        Args:
+            success (bool): the result of the try_lock operation.
+            client (DaprClient): a reference to the dapr client used for the TryLock request.
+            store_name (str): the lock store name used in the TryLock request.
+            resource_id (str): the lock key or identifier used in the TryLock request.
+            lock_owner (str):  the lock owner identifier used in the TryLock request.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super().__init__(headers)
+        self._success = success
+        self._client = client
+        self._store_name = store_name
+        self._resource_id = resource_id
+        self._lock_owner = lock_owner
 
     def __bool__(self) -> bool:
-        return self.success
+        return self._success
+
+    @property
+    def success(self) -> bool:
+        """Gets the response success status."""
+        return self._success
 
     def __exit__(self, *exc) -> None:
         ''''Automatically unlocks the lock if this TryLockResponse was used as
@@ -786,6 +841,6 @@ class TryLockResponse(contextlib.AbstractContextManager):
         your own ContextManager that logs of otherwise raises exceptions
         if unlock doesn't return `UnlockResponseStatus.success`.
         '''
-        if self.success:
-            self.client.unlock(self.store_name, self.resource_id, self.lock_owner)
+        if self._success:
+            self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
         # else: there is no point unlocking a lock we did not acquire.
