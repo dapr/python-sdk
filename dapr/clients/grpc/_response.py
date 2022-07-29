@@ -754,7 +754,7 @@ class UnlockResponseStatus(Enum):
     lock_does_not_exist = api_v1.UnlockResponse.Status.LOCK_UNEXIST
     ''''The unlock operation failed: the referred lock does not exist.'''
 
-    lock_belong_to_others = api_v1.UnlockResponse.Status.LOCK_BELONG_TO_OTHERS
+    lock_belongs_to_others = api_v1.UnlockResponse.Status.LOCK_BELONG_TO_OTHERS
     '''The unlock operation failed: the referred lock belongs to another owner.'''
 
     internal_error = api_v1.UnlockResponse.Status.INTERNAL_ERROR
@@ -793,7 +793,7 @@ class UnlockResponse(DaprResponse):
 class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
     '''The response of a try_lock operation.
 
-    This inherits from DaprResponse
+    This inherits from DaprResponse and AbstractContextManager.
 
     Attributes:
         success (bool): the result of the try_lock operation.
@@ -838,7 +838,7 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
 
         Notice: we are not checking the result of the unlock operation.
         If this is something  you care about it might be wiser creating
-        your own ContextManager that logs of otherwise raises exceptions
+        your own ContextManager that logs or otherwise raises exceptions
         if unlock doesn't return `UnlockResponseStatus.success`.
         '''
         if self._success:
