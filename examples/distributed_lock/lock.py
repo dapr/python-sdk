@@ -29,7 +29,7 @@ def main():
         print('The lock will will expire in %s seconds.' % expiry_in_seconds)
 
         with dapr.try_lock(store_name, resource_id, client_id, expiry_in_seconds) as lock_result:
-            assert(lock_result.success)
+            assert lock_result.success, 'Failed to acquire the lock. Aborting.'
             print('Lock acquired successfully!!!')
 
         # At this point the lock was released - by magic of the `with` clause ;)

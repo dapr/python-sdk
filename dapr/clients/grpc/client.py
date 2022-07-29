@@ -518,7 +518,7 @@ class DaprGrpcClient:
             :class:`QueryStateResponse` gRPC metadata returned from callee,
                 pagination token and results of the query
         """
-        warn('The State Store Query API is an Alpha version and is subject to change.',
+        warn('The State Store Query API is an alpha API and is subject to change.',
              UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -913,7 +913,7 @@ class DaprGrpcClient:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
             and value obtained from the config store
         """
-        warn('The Get Configuration API is an Alpha version and is subject to change.',
+        warn('The Get Configuration API is an alpha API and is subject to change.',
              UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -958,7 +958,7 @@ class DaprGrpcClient:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
             and value obtained from the config store
         """
-        warn('The Subscribe Configuration API is an Alpha version and is subject to change.',
+        warn('The Subscribe Configuration API is an alpha API and is subject to change.',
              UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -980,7 +980,7 @@ class DaprGrpcClient:
             Returns:
                 bool: True if unsubscribed successfully, False otherwise
         """
-        warn('The Unsubscribe Configuration API is an Alpha version and is subject to change.',
+        warn('The Unsubscribe Configuration API is an alpha API and is subject to change.',
              UserWarning, stacklevel=2)
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=key)
         self._stub.UnsubscribeConfigurationAlpha1(req)
@@ -1148,7 +1148,7 @@ class DaprGrpcClient:
 # Data validation helpers
 
 
-def _validateNotBlankString(**kwargs: Dict[str, Optional[str]]):
+def _validateNotBlankString(**kwargs: Optional[str]):
     for field_name, value in kwargs.items():
         if not value or not value.strip():
             raise ValueError(f"{field_name} name cannot be empty or blank")
