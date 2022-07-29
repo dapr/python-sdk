@@ -677,11 +677,6 @@ class DaprGrpcClientTests(unittest.TestCase):
             # client_id
             with self.assertRaises(ValueError):
                 dapr.unlock(store_name, resource_id, invalid_input)
-        # Invalid inputs for expiry_in_s
-        for invalid_input in [None, -1, 0]:
-            with self.assertRaises(ValueError):
-                with dapr.try_lock(store_name, resource_id, client_id, invalid_input) as res:
-                    self.assertTrue(res.success)
 
 
 if __name__ == '__main__':
