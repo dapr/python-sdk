@@ -13,10 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from __future__ import annotations
+
 import contextlib
 import threading
 from enum import Enum
-from typing import Any, Dict, Optional, Union, Sequence, List
+from typing import Dict, Optional, Union, Sequence, List, TYPE_CHECKING
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -36,6 +38,11 @@ import json
 
 from dapr.proto import api_v1
 from dapr.proto import api_service_v1
+
+# Avoid circular import dependency by only importing DaprGrpcClient
+# for type checking
+if TYPE_CHECKING:
+    from dapr.clients.grpc.client import DaprGrpcClient
 
 
 class DaprResponse:
@@ -801,7 +808,7 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
     def __init__(
         self,
         success: bool,
-        client: Any,  # Declaring as a DaprClient would create a cyclic dependency
+        client: DaprGrpcClient,
         store_name: str,
         resource_id: str,
         lock_owner: str,

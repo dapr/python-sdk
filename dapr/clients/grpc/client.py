@@ -992,8 +992,7 @@ class DaprGrpcClient:
             store_name: str,
             resource_id: str,
             lock_owner: str,
-            expiry_in_seconds: int,
-            metadata: Optional[MetadataTuple] = None) -> TryLockResponse:
+            expiry_in_seconds: int) -> TryLockResponse:
         """Tries to get a lock with an expiry.
 
             You can use the result of this operation directly on an `if` statement:
@@ -1022,7 +1021,6 @@ class DaprGrpcClient:
                 lock_owner (str):  indicates the identifier of lock owner.
                 expiry_in_seconds (int): The length of time (in seconds) for which this lock
                     will be held and after which it expires.
-                metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
             Returns:
                 :class:`TryLockResponse`: With the result of the try-lock operation.
@@ -1030,9 +1028,6 @@ class DaprGrpcClient:
         # Warnings and input validation
         warn('The Distributed Lock API is an alpha API and is subject to change.',
              UserWarning, stacklevel=2)
-        if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
         _validateNotBlankString(store_name=store_name,
                                 resource_id=resource_id,
                                 lock_owner=lock_owner)
@@ -1044,7 +1039,7 @@ class DaprGrpcClient:
             resource_id=resource_id,
             lock_owner=lock_owner,
             expiryInSeconds=expiry_in_seconds)
-        response, call = self._stub.TryLockAlpha1.with_call(req, metadata=metadata)
+        response, call = self._stub.TryLockAlpha1.with_call(req)
         return TryLockResponse(
             success=response.success,
             client=self,
@@ -1057,8 +1052,7 @@ class DaprGrpcClient:
             self,
             store_name: str,
             resource_id: str,
-            lock_owner: str,
-            metadata: Optional[MetadataTuple] = None) -> UnlockResponse:
+            lock_owner: str) -> UnlockResponse:
         """Unlocks a lock.
 
             Args:
@@ -1076,9 +1070,6 @@ class DaprGrpcClient:
         # Warnings and input validation
         warn('The Distributed Lock API is an alpha API and is subject to change.',
              UserWarning, stacklevel=2)
-        if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
         _validateNotBlankString(store_name=store_name,
                                 resource_id=resource_id,
                                 lock_owner=lock_owner)
@@ -1087,7 +1078,7 @@ class DaprGrpcClient:
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner)
-        response, call = self._stub.UnlockAlpha1.with_call(req, metadata=metadata)
+        response, call = self._stub.UnlockAlpha1.with_call(req)
 
         return UnlockResponse(status=UnlockResponseStatus(response.status),
                               headers=call.initial_metadata())
