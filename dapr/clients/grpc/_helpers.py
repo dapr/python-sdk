@@ -66,7 +66,7 @@ def to_bytes(data: Union[str, bytes]) -> bytes:
     elif isinstance(data, str):
         return data.encode('utf-8')
     else:
-        raise(f'invalid data type {type(data)}')
+        raise f'invalid data type {type(data)}'
 
 
 def to_str(data: Union[str, bytes]) -> str:
@@ -76,7 +76,7 @@ def to_str(data: Union[str, bytes]) -> str:
     elif isinstance(data, bytes):
         return data.decode('utf-8')
     else:
-        raise(f'invalid data type {type(data)}')
+        raise f'invalid data type {type(data)}'
 
 
 class _ClientCallDetails(

@@ -289,7 +289,8 @@ class TransactionalStateOperation:
             data: Union[bytes, str],
             etag: Optional[str] = None,
             operation_type: TransactionOperationType = TransactionOperationType.upsert):
-        """Initializes TransactionalStateOperation item from :obj:`runtime_v1.TransactionalStateOperation`.
+        """Initializes TransactionalStateOperation item from
+        :obj:`runtime_v1.TransactionalStateOperation`.
 
         Args:
             key (str): state's key.
