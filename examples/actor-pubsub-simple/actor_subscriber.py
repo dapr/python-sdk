@@ -17,7 +17,7 @@ from flask_dapr import DaprApp
 app = Flask(__name__)
 dapr = DaprApp(app)
 
-@dapr.subscribe(pubsub='pubsub', topic='mytopic')
+@dapr.subscribe(pubsub='pubsub', topic='mytopic3')
 def event_handler():
   body = request.get_json()
   print('Subscriber received ActorID: %s' % body["actorid"], flush=True)
@@ -27,6 +27,3 @@ def event_handler():
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=5000)
-
-
-#  dapr run --app-id python-actor-subscriber --app-protocol http --app-port 5000 --dapr-http-port 3501 -- python3 actor_subscriber.py

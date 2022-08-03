@@ -16,7 +16,7 @@ limitations under the License.
 import unittest
 
 from datetime import timedelta
-from dapr.actor.runtime.config import ActorRuntimeConfig, ActorReentrancyConfig, ActorTypeConfig
+from dapr.actor.runtime.config import ActorRuntimeConfig, ActorReentrancyConfig, ActorTypeConfig, PubsubConfig
 
 
 class ActorTypeConfigTests(unittest.TestCase):
@@ -72,6 +72,7 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         self.assertEqual(config._drain_rebalanced_actors, True)
         self.assertEqual(config._reentrancy, None)
         self.assertEqual(config._entities, set())
+        self.assertEqual(config._pubsub, [])
         self.assertEqual(config._entitiesConfig, [])
         self.assertNotIn('reentrancy', config.as_dict().keys())
         self.assertNotIn('remindersStoragePartitions', config.as_dict().keys())
@@ -87,6 +88,7 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         self.assertEqual(config._drain_rebalanced_actors, True)
         self.assertEqual(config._reentrancy, reentrancyConfig)
         self.assertEqual(config._entities, set())
+        self.assertEqual(config._pubsub, [])
         self.assertEqual(config._entitiesConfig, [])
         self.assertEqual(config.as_dict()['reentrancy'], reentrancyConfig.as_dict())
         self.assertEqual(config.as_dict()['reentrancy']['enabled'], True)
@@ -130,6 +132,7 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
         self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
         self.assertEqual(config._drain_rebalanced_actors, True)
+        self.assertEqual(config._pubsub, [])
         self.assertEqual(config._entities, {'actortype1'})
         self.assertEqual(config._entitiesConfig, [])
         self.assertNotIn('remindersStoragePartitions', config.as_dict().keys())
@@ -141,6 +144,7 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
         self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
         self.assertEqual(config._drain_rebalanced_actors, True)
+        self.assertEqual(config._pubsub, [])
         self.assertEqual(config._entities, {'actortype1', 'actortype1'})
         self.assertEqual(config._entitiesConfig, [])
         self.assertNotIn('remindersStoragePartitions', config.as_dict().keys())
@@ -170,6 +174,20 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         self.assertNotIn('reentrancy', config.as_dict().keys())
         self.assertEqual(config._reminders_storage_partitions, 12)
         self.assertEqual(config.as_dict()['remindersStoragePartitions'], 12)
+
+    def test_set_actor_pubsub_config(self):
+        config = ActorRuntimeConfig(pubsub=[PubsubConfig("newPubsubName","newTopic","actorType1","myMethod1","idCustomer")])
+        d = config.as_dict()
+        self.assertEqual(d['entities'], [])
+        self.assertEqual(d['entitiesConfig'], [])
+        self.assertEqual(d['actorScanInterval'], timedelta(seconds=30))
+        self.assertEqual(d['drainOngoingCallTimeout'],timedelta(seconds=60))
+        self.assertEqual(d['drainRebalancedActors'], True)
+        self.assertEqual(d['pubsub'][0]['pubsubName'],"newPubsubName")
+        self.assertEqual(d['pubsub'][0]['topic'],"newTopic")
+        self.assertEqual(d['pubsub'][0]['actorType'],"actorType1")
+        self.assertEqual(d['pubsub'][0]['method'],"myMethod1")
+        self.assertEqual(d['pubsub'][0]['actorIdDataAttribute'],"idCustomer")
 
 
 if __name__ == '__main__':
