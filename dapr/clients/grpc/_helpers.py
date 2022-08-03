@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 from collections import namedtuple
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Optional
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage

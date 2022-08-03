@@ -38,7 +38,12 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 
-from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes, validateNotBlankString
+from dapr.clients.grpc._helpers import (
+    DaprClientInterceptor,
+    MetadataTuple,
+    to_bytes,
+    validateNotBlankString,
+)
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
