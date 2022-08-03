@@ -166,3 +166,12 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         # Call continuation
         response = continuation(new_call_details, request)
         return response
+
+
+# Data validation helpers
+
+
+def validateNotBlankString(**kwargs: Optional[str]):
+    for field_name, value in kwargs.items():
+        if not value or not value.strip():
+            raise ValueError(f"{field_name} name cannot be empty or blank")

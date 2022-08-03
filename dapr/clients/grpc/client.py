@@ -38,7 +38,7 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 
-from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes
+from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes, validateNotBlankString
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
@@ -518,7 +518,7 @@ class DaprGrpcClient:
             :class:`QueryStateResponse` gRPC metadata returned from callee,
                 pagination token and results of the query
         """
-        warn('The State Store Query API is an alpha API and is subject to change.',
+        warn('The State Store Query API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -913,7 +913,7 @@ class DaprGrpcClient:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
             and value obtained from the config store
         """
-        warn('The Get Configuration API is an alpha API and is subject to change.',
+        warn('The Get Configuration API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -958,7 +958,7 @@ class DaprGrpcClient:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
             and value obtained from the config store
         """
-        warn('The Subscribe Configuration API is an alpha API and is subject to change.',
+        warn('The Subscribe Configuration API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
@@ -980,7 +980,7 @@ class DaprGrpcClient:
             Returns:
                 bool: True if unsubscribed successfully, False otherwise
         """
-        warn('The Unsubscribe Configuration API is an alpha API and is subject to change.',
+        warn('The Unsubscribe Configuration API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=key)
         self._stub.UnsubscribeConfigurationAlpha1(req)
@@ -1026,11 +1026,11 @@ class DaprGrpcClient:
                 :class:`TryLockResponse`: With the result of the try-lock operation.
         """
         # Warnings and input validation
-        warn('The Distributed Lock API is an alpha API and is subject to change.',
+        warn('The Distributed Lock API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
-        _validateNotBlankString(store_name=store_name,
-                                resource_id=resource_id,
-                                lock_owner=lock_owner)
+        validateNotBlankString(store_name=store_name,
+                               resource_id=resource_id,
+                               lock_owner=lock_owner)
         if not expiry_in_seconds or expiry_in_seconds < 1:
             raise ValueError("expiry_in_seconds must be a positive number")
         # Actual tryLock invocation
@@ -1068,11 +1068,11 @@ class DaprGrpcClient:
                     status otherwise.
         """
         # Warnings and input validation
-        warn('The Distributed Lock API is an alpha API and is subject to change.',
+        warn('The Distributed Lock API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
-        _validateNotBlankString(store_name=store_name,
-                                resource_id=resource_id,
-                                lock_owner=lock_owner)
+        validateNotBlankString(store_name=store_name,
+                               resource_id=resource_id,
+                               lock_owner=lock_owner)
         # Actual unlocking invocation
         req = api_v1.UnlockRequest(
             store_name=store_name,
@@ -1134,12 +1134,3 @@ class DaprGrpcClient:
         _, call = self._stub.Shutdown.with_call(GrpcEmpty())
 
         return DaprResponse(call.initial_metadata())
-
-
-# Data validation helpers
-
-
-def _validateNotBlankString(**kwargs: Optional[str]):
-    for field_name, value in kwargs.items():
-        if not value or not value.strip():
-            raise ValueError(f"{field_name} name cannot be empty or blank")
