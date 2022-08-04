@@ -31,7 +31,8 @@ from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._response import (
     ConfigurationItem,
-    ConfigurationWatcher
+    ConfigurationWatcher,
+    UnlockResponseStatus,
 )
 
 
@@ -539,6 +540,143 @@ class DaprGrpcClientTests(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             dapr.wait(0.1)
         self.assertTrue('Connection refused' in str(context.exception))
+
+    def test_lock_acquire_success(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Lock parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        lock_owner = str(uuid.uuid4())
+        expiry_in_seconds = 60
+
+        success = dapr.try_lock(store_name, resource_id, lock_owner, expiry_in_seconds)
+        self.assertTrue(success)
+        unlock_response = dapr.unlock(store_name, resource_id, lock_owner)
+        self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
+
+    def test_lock_release_twice_fails(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Lock parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        lock_owner = str(uuid.uuid4())
+        expiry_in_seconds = 60
+
+        success = dapr.try_lock(store_name, resource_id, lock_owner, expiry_in_seconds)
+        self.assertTrue(success)
+        unlock_response = dapr.unlock(store_name, resource_id, lock_owner)
+        self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
+        # If client tries again it will discover the lock is gone
+        unlock_response = dapr.unlock(store_name, resource_id, lock_owner)
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
+
+    def test_lock_conflict(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Lock parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        first_client_id = str(uuid.uuid4())
+        second_client_id = str(uuid.uuid4())
+        expiry_in_seconds = 60
+
+        # First client succeeds
+        success = dapr.try_lock(store_name, resource_id, first_client_id, expiry_in_seconds)
+        self.assertTrue(success)
+        # Second client tries and fails - resource already acquired
+        success = dapr.try_lock(store_name, resource_id, second_client_id, expiry_in_seconds)
+        self.assertFalse(success)
+        # Second client is a sneaky fellow and tries to release a lock it doesn't own
+        unlock_response = dapr.unlock(store_name, resource_id, second_client_id)
+        self.assertEqual(UnlockResponseStatus.lock_belongs_to_others, unlock_response.status)
+        # First client can stil return the lock as rightful owner
+        unlock_response = dapr.unlock(store_name, resource_id, first_client_id)
+        self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
+
+    def test_lock_not_previously_acquired(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        unlock_response = dapr.unlock(
+            store_name='lockstore',
+            resource_id=str(uuid.uuid4()),
+            lock_owner=str(uuid.uuid4()))
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
+
+    def test_lock_release_twice_fails_with_context_manager(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Lock parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        first_client_id = str(uuid.uuid4())
+        second_client_id = str(uuid.uuid4())
+        expiry = 60
+
+        with dapr.try_lock(store_name, resource_id, first_client_id, expiry) as first_lock:
+            self.assertTrue(first_lock.success)
+            # If another client tries to acquire the same lock it will fail
+            with dapr.try_lock(store_name, resource_id, second_client_id, expiry) as second_lock:
+                self.assertFalse(second_lock.success)
+        # At this point lock was auto-released
+        # If client tries again it will discover the lock is gone
+        unlock_response = dapr.unlock(store_name, resource_id, first_client_id)
+        self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
+
+    def test_lock_are_not_reentrant(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Lock parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        client_id = str(uuid.uuid4())
+        expiry_in_s = 60
+
+        with dapr.try_lock(store_name, resource_id, client_id, expiry_in_s) as first_attempt:
+            self.assertTrue(first_attempt.success)
+            # If the same client tries to acquire the same lock again it will fail.
+            with dapr.try_lock(store_name, resource_id, client_id, expiry_in_s) as second_attempt:
+                self.assertFalse(second_attempt.success)
+
+    def test_lock_input_validation(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Sane parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        client_id = str(uuid.uuid4())
+        expiry_in_s = 60
+        # Invalid inputs for string arguments
+        for invalid_input in [None, '', '   ']:
+            # store_name
+            with self.assertRaises(ValueError):
+                with dapr.try_lock(invalid_input, resource_id, client_id, expiry_in_s) as res:
+                    self.assertTrue(res.success)
+            # resource_id
+            with self.assertRaises(ValueError):
+                with dapr.try_lock(store_name, invalid_input, client_id, expiry_in_s) as res:
+                    self.assertTrue(res.success)
+            # client_id
+            with self.assertRaises(ValueError):
+                with dapr.try_lock(store_name, resource_id, invalid_input, expiry_in_s) as res:
+                    self.assertTrue(res.success)
+        # Invalid inputs for expiry_in_s
+        for invalid_input in [None, -1, 0]:
+            with self.assertRaises(ValueError):
+                with dapr.try_lock(store_name, resource_id, client_id, invalid_input) as res:
+                    self.assertTrue(res.success)
+
+    def test_unlock_input_validation(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Sane parameters
+        store_name = 'lockstore'
+        resource_id = str(uuid.uuid4())
+        client_id = str(uuid.uuid4())
+        # Invalid inputs for string arguments
+        for invalid_input in [None, '', '   ']:
+            # store_name
+            with self.assertRaises(ValueError):
+                dapr.unlock(invalid_input, resource_id, client_id)
+            # resource_id
+            with self.assertRaises(ValueError):
+                dapr.unlock(store_name, invalid_input, client_id)
+            # client_id
+            with self.assertRaises(ValueError):
+                dapr.unlock(store_name, resource_id, invalid_input)
 
 
 if __name__ == '__main__':

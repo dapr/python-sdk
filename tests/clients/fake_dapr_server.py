@@ -6,7 +6,13 @@ from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
-from dapr.proto.runtime.v1.dapr_pb2 import QueryStateItem
+from dapr.proto.runtime.v1.dapr_pb2 import (
+    QueryStateItem,
+    TryLockRequest,
+    TryLockResponse,
+    UnlockRequest,
+    UnlockResponse,
+)
 
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
@@ -15,6 +21,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         api_service_v1.add_DaprServicer_to_server(self, self._server)
         self.store = {}
         self.shutdown_received = False
+        self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
 
     def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
@@ -223,6 +230,27 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                 tokenIndex = tokenIndex + len(items)
 
         return api_v1.QueryStateResponse(results=items, token=str(tokenIndex))
+
+    def TryLockAlpha1(self, request: TryLockRequest, context):
+        lock_id = (request.store_name, request.resource_id)
+
+        if lock_id not in self.locks_to_owner:
+            self.locks_to_owner[lock_id] = request.lock_owner
+            return TryLockResponse(success=True)
+        else:
+            # Lock already acquired
+            return TryLockResponse(success=False)
+
+    def UnlockAlpha1(self, request: UnlockRequest, context):
+        lock_id = (request.store_name, request.resource_id)
+
+        if lock_id not in self.locks_to_owner:
+            return UnlockResponse(status=UnlockResponse.Status.LOCK_UNEXIST)
+        elif self.locks_to_owner[lock_id] == request.lock_owner:
+            del self.locks_to_owner[lock_id]
+            return UnlockResponse(status=UnlockResponse.Status.SUCCESS)
+        else:
+            return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONG_TO_OTHERS)
 
     def Shutdown(self, request, context):
         self.shutdown_received = True

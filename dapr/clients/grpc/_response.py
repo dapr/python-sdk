@@ -13,9 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from __future__ import annotations
+
+import contextlib
 import threading
 from enum import Enum
-from typing import Dict, Optional, Union, Sequence, List
+from typing import Dict, Optional, Union, Sequence, List, TYPE_CHECKING
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -35,6 +38,11 @@ import json
 
 from dapr.proto import api_v1
 from dapr.proto import api_service_v1
+
+# Avoid circular import dependency by only importing DaprGrpcClient
+# for type checking
+if TYPE_CHECKING:
+    from dapr.clients.grpc.client import DaprGrpcClient
 
 
 class DaprResponse:
@@ -744,3 +752,102 @@ class TopicEventResponse(DaprResponse):
     def status(self) -> TopicEventResponseStatus:
         """Gets the status."""
         return self._status
+
+
+class UnlockResponseStatus(Enum):
+    success = api_v1.UnlockResponse.Status.SUCCESS
+    '''The Unlock operation for the referred lock was successful.'''
+
+    lock_does_not_exist = api_v1.UnlockResponse.Status.LOCK_UNEXIST
+    ''''The unlock operation failed: the referred lock does not exist.'''
+
+    lock_belongs_to_others = api_v1.UnlockResponse.Status.LOCK_BELONG_TO_OTHERS
+    '''The unlock operation failed: the referred lock belongs to another owner.'''
+
+    internal_error = api_v1.UnlockResponse.Status.INTERNAL_ERROR
+    '''An internal error happened while handling the Unlock operation'''
+
+
+class UnlockResponse(DaprResponse):
+    '''The response of an unlock operation.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        status (UnlockResponseStatus): the status of the unlock operation.
+    '''
+
+    def __init__(
+        self,
+        status: UnlockResponseStatus,
+        headers: MetadataTuple = (),
+    ):
+        """Initializes a UnlockResponse.
+
+        Args:
+            status (UnlockResponseStatus): The status of the response.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super().__init__(headers)
+        self._status = status
+
+    @property
+    def status(self) -> UnlockResponseStatus:
+        """Gets the status."""
+        return self._status
+
+
+class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
+    '''The response of a try_lock operation.
+
+    This inherits from DaprResponse and AbstractContextManager.
+
+    Attributes:
+        success (bool): the result of the try_lock operation.
+    '''
+    def __init__(
+        self,
+        success: bool,
+        client: DaprGrpcClient,
+        store_name: str,
+        resource_id: str,
+        lock_owner: str,
+        headers: MetadataTuple = (),
+    ):
+        """Initializes a TryLockResponse.
+
+        Args:
+            success (bool): the result of the try_lock operation.
+            client (DaprClient): a reference to the dapr client used for the TryLock request.
+            store_name (str): the lock store name used in the TryLock request.
+            resource_id (str): the lock key or identifier used in the TryLock request.
+            lock_owner (str):  the lock owner identifier used in the TryLock request.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super().__init__(headers)
+        self._success = success
+        self._client = client
+        self._store_name = store_name
+        self._resource_id = resource_id
+        self._lock_owner = lock_owner
+
+    def __bool__(self) -> bool:
+        return self._success
+
+    @property
+    def success(self) -> bool:
+        """Gets the response success status."""
+        return self._success
+
+    def __exit__(self, *exc) -> None:
+        ''''Automatically unlocks the lock if this TryLockResponse was used as
+        a ContextManager / `with` statement.
+
+        Notice: we are not checking the result of the unlock operation.
+        If this is something  you care about it might be wiser creating
+        your own ContextManager that logs or otherwise raises exceptions
+        if unlock doesn't return `UnlockResponseStatus.success`.
+        '''
+        if self._success:
+            self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
+        # else: there is no point unlocking a lock we did not acquire.
