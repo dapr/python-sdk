@@ -38,7 +38,12 @@ from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 
-from dapr.clients.grpc._helpers import MetadataTuple, DaprClientInterceptor, to_bytes
+from dapr.clients.grpc._helpers import (
+    DaprClientInterceptor,
+    MetadataTuple,
+    to_bytes,
+    validateNotBlankString,
+)
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
@@ -50,6 +55,7 @@ from dapr.clients.grpc._response import (
     GetSecretResponse,
     GetBulkSecretResponse,
     InvokeMethodResponse,
+    UnlockResponseStatus,
     StateResponse,
     BulkStatesResponse,
     BulkStateItem,
@@ -57,7 +63,9 @@ from dapr.clients.grpc._response import (
     ConfigurationItem,
     QueryResponse,
     QueryResponseItem,
-    ConfigurationWatcher
+    ConfigurationWatcher,
+    TryLockResponse,
+    UnlockResponse,
 )
 
 
@@ -983,6 +991,102 @@ class DaprGrpcClient:
         self._stub.UnsubscribeConfigurationAlpha1(req)
         response: UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfigurationAlpha1(req)
         return response.ok
+
+    def try_lock(
+            self,
+            store_name: str,
+            resource_id: str,
+            lock_owner: str,
+            expiry_in_seconds: int) -> TryLockResponse:
+        """Tries to get a lock with an expiry.
+
+            You can use the result of this operation directly on an `if` statement:
+
+                if client.try_lock(store_name, resource_id, first_client_id, expiry_s):
+                    # lock acquired successfully...
+
+            You can also inspect the response's `success` attribute:
+
+                    response = client.try_lock(store_name, resource_id, first_client_id, expiry_s)
+                    if response.success:
+                        # lock acquired successfully...
+
+            Finally, you can use this response with a `with` statement, and have the lock
+            be automatically unlocked after the with-statement scope ends
+
+                with client.try_lock(store_name, resource_id, first_client_id, expiry_s) as lock:
+                    if lock:
+                        # lock acquired successfully...
+                # Lock automatically unlocked at this point, no need to call client->unlock(...)
+
+            Args:
+                store_name (str): the lock store name, e.g. `redis`.
+                resource_id (str): the lock key. e.g. `order_id_111`.
+                                    It stands for "which resource I want to protect".
+                lock_owner (str):  indicates the identifier of lock owner.
+                expiry_in_seconds (int): The length of time (in seconds) for which this lock
+                    will be held and after which it expires.
+
+            Returns:
+                :class:`TryLockResponse`: With the result of the try-lock operation.
+        """
+        # Warnings and input validation
+        warn('The Distributed Lock API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
+        validateNotBlankString(store_name=store_name,
+                               resource_id=resource_id,
+                               lock_owner=lock_owner)
+        if not expiry_in_seconds or expiry_in_seconds < 1:
+            raise ValueError("expiry_in_seconds must be a positive number")
+        # Actual tryLock invocation
+        req = api_v1.TryLockRequest(
+            store_name=store_name,
+            resource_id=resource_id,
+            lock_owner=lock_owner,
+            expiryInSeconds=expiry_in_seconds)
+        response, call = self._stub.TryLockAlpha1.with_call(req)
+        return TryLockResponse(
+            success=response.success,
+            client=self,
+            store_name=store_name,
+            resource_id=resource_id,
+            lock_owner=lock_owner,
+            headers=call.initial_metadata())
+
+    def unlock(
+            self,
+            store_name: str,
+            resource_id: str,
+            lock_owner: str) -> UnlockResponse:
+        """Unlocks a lock.
+
+            Args:
+                store_name (str): the lock store name, e.g. `redis`.
+                resource_id (str): the lock key. e.g. `order_id_111`.
+                                    It stands for "which resource I want to protect".
+                lock_owner (str):  indicates the identifier of lock owner.
+                metadata (tuple, optional, DEPRECATED): gRPC custom metadata
+
+            Returns:
+                :class:`UnlockResponseStatus`: Status of the request,
+                    `UnlockResponseStatus.success` if it was successful of some other
+                    status otherwise.
+        """
+        # Warnings and input validation
+        warn('The Distributed Lock API is an Alpha version and is subject to change.',
+             UserWarning, stacklevel=2)
+        validateNotBlankString(store_name=store_name,
+                               resource_id=resource_id,
+                               lock_owner=lock_owner)
+        # Actual unlocking invocation
+        req = api_v1.UnlockRequest(
+            store_name=store_name,
+            resource_id=resource_id,
+            lock_owner=lock_owner)
+        response, call = self._stub.UnlockAlpha1.with_call(req)
+
+        return UnlockResponse(status=UnlockResponseStatus(response.status),
+                              headers=call.initial_metadata())
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.

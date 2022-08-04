@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 from collections import namedtuple
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Optional
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -66,7 +66,7 @@ def to_bytes(data: Union[str, bytes]) -> bytes:
     elif isinstance(data, str):
         return data.encode('utf-8')
     else:
-        raise(f'invalid data type {type(data)}')
+        raise f'invalid data type {type(data)}'
 
 
 def to_str(data: Union[str, bytes]) -> str:
@@ -76,7 +76,7 @@ def to_str(data: Union[str, bytes]) -> str:
     elif isinstance(data, bytes):
         return data.decode('utf-8')
     else:
-        raise(f'invalid data type {type(data)}')
+        raise f'invalid data type {type(data)}'
 
 
 class _ClientCallDetails(
@@ -166,3 +166,12 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         # Call continuation
         response = continuation(new_call_details, request)
         return response
+
+
+# Data validation helpers
+
+
+def validateNotBlankString(**kwargs: Optional[str]):
+    for field_name, value in kwargs.items():
+        if not value or not value.strip():
+            raise ValueError(f"{field_name} name cannot be empty or blank")
