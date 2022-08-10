@@ -758,10 +758,10 @@ class UnlockResponseStatus(Enum):
     success = api_v1.UnlockResponse.Status.SUCCESS
     '''The Unlock operation for the referred lock was successful.'''
 
-    lock_does_not_exist = api_v1.UnlockResponse.Status.LOCK_UNEXIST
+    lock_does_not_exist = api_v1.UnlockResponse.Status.LOCK_DOES_NOT_EXIST
     ''''The unlock operation failed: the referred lock does not exist.'''
 
-    lock_belongs_to_others = api_v1.UnlockResponse.Status.LOCK_BELONG_TO_OTHERS
+    lock_belongs_to_others = api_v1.UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS
     '''The unlock operation failed: the referred lock belongs to another owner.'''
 
     internal_error = api_v1.UnlockResponse.Status.INTERNAL_ERROR
