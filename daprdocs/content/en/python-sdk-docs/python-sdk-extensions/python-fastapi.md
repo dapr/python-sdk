@@ -81,6 +81,7 @@ def cloud_event_handler(event_data: CloudEventModel):
     print(event_data)   
 
 # Handle raw events sent without CloudEvents
+# curl -X "POST" http://localhost:3500/v1.0/publish/pubsub/raw_topic?metadata.rawPayload=true -H "Content-Type: application/json" -d '{"body": "345"}'
 @dapr_app.subscribe(pubsub='pubsub', topic='raw_topic')
 def raw_event_handler(event_data: RawEventModel):
     print(event_data)    
