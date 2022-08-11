@@ -245,12 +245,12 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         lock_id = (request.store_name, request.resource_id)
 
         if lock_id not in self.locks_to_owner:
-            return UnlockResponse(status=UnlockResponse.Status.LOCK_UNEXIST)
+            return UnlockResponse(status=UnlockResponse.Status.LOCK_DOES_NOT_EXIST)
         elif self.locks_to_owner[lock_id] == request.lock_owner:
             del self.locks_to_owner[lock_id]
             return UnlockResponse(status=UnlockResponse.Status.SUCCESS)
         else:
-            return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONG_TO_OTHERS)
+            return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS)
 
     def Shutdown(self, request, context):
         self.shutdown_received = True
