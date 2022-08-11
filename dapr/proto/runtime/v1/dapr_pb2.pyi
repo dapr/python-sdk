@@ -1327,15 +1327,15 @@ class UnlockResponse(google.protobuf.message.Message):
     class _StatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[UnlockResponse._Status.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         SUCCESS: UnlockResponse._Status.ValueType  # 0
-        LOCK_UNEXIST: UnlockResponse._Status.ValueType  # 1
-        LOCK_BELONG_TO_OTHERS: UnlockResponse._Status.ValueType  # 2
+        LOCK_DOES_NOT_EXIST: UnlockResponse._Status.ValueType  # 1
+        LOCK_BELONGS_TO_OTHERS: UnlockResponse._Status.ValueType  # 2
         INTERNAL_ERROR: UnlockResponse._Status.ValueType  # 3
     class Status(_Status, metaclass=_StatusEnumTypeWrapper):
         pass
 
     SUCCESS: UnlockResponse.Status.ValueType  # 0
-    LOCK_UNEXIST: UnlockResponse.Status.ValueType  # 1
-    LOCK_BELONG_TO_OTHERS: UnlockResponse.Status.ValueType  # 2
+    LOCK_DOES_NOT_EXIST: UnlockResponse.Status.ValueType  # 1
+    LOCK_BELONGS_TO_OTHERS: UnlockResponse.Status.ValueType  # 2
     INTERNAL_ERROR: UnlockResponse.Status.ValueType  # 3
 
     STATUS_FIELD_NUMBER: builtins.int
