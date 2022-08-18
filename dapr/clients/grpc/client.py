@@ -42,6 +42,7 @@ from dapr.clients.grpc._helpers import (
     DaprClientInterceptor,
     MetadataTuple,
     to_bytes,
+    validateNotNone,
     validateNotBlankString,
 )
 from dapr.clients.grpc._request import (
@@ -54,6 +55,7 @@ from dapr.clients.grpc._response import (
     DaprResponse,
     GetSecretResponse,
     GetBulkSecretResponse,
+    GetMetadataResponse,
     InvokeMethodResponse,
     UnlockResponseStatus,
     StateResponse,
@@ -63,6 +65,7 @@ from dapr.clients.grpc._response import (
     ConfigurationItem,
     QueryResponse,
     QueryResponseItem,
+    RegisteredComponents,
     ConfigurationWatcher,
     TryLockResponse,
     UnlockResponse,
@@ -1119,6 +1122,66 @@ class DaprGrpcClient:
                     if remaining < 0:
                         raise e
                     time.sleep(min(1, remaining))
+
+    def get_metadata(self) -> GetMetadataResponse:
+        """Returns information about the sidecar allowing for runtime
+        discoverability.
+
+        The metadata API returns a list of the components loaded,
+        the activated actors (if present) and attributes with information
+        attached.
+
+        Each loaded component provides its name, type and version and also
+        information about supported features in the form of component
+        capabilities.
+        """
+        _resp, call = self._stub.GetMetadata.with_call(GrpcEmpty())
+        response: api_v1.GetMetadataResponse = _resp  # type alias
+        # Convert to more pythonic formats
+        active_actors_count = {
+            type_count.type: type_count.count
+            for type_count in response.active_actors_count
+        }
+        registered_components = [
+            RegisteredComponents(name=i.name,
+                                 type=i.type,
+                                 version=i.version,
+                                 capabilities=i.capabilities)
+            for i in response.registered_components
+        ]
+        extended_metadata = dict(response.extended_metadata.items())
+
+        return GetMetadataResponse(
+            application_id=response.id,
+            active_actors_count=active_actors_count,
+            registered_components=registered_components,
+            extended_metadata=extended_metadata,
+            headers=call.initial_metadata())
+
+    def set_metadata(self, attributeName: str, attributeValue: str) -> DaprResponse:
+        """Adds a custom (extended) metadata attribute to the Dapr sidecar
+        information stored by the Metadata endpoint.
+
+        The metadata API allows you to store additional attribute information
+        in the format of key-value pairs. These are ephemeral in-memory and
+        are not persisted if a sidecar is reloaded. This information should
+        be added at the time of a sidecar creation, for example, after the
+        application has started.
+
+        Args:
+            attributeName (str): Custom attribute name. This is they key name
+                                 in the key-value pair.
+            attributeValue (str): Custom attribute value we want to store.
+        """
+        # input validation
+        validateNotBlankString(attributeName=attributeName)
+        # Type-checking should catch this but better safe at run-time than sorry.
+        validateNotNone(attributeValue=attributeValue)
+        # Actual invocation
+        req = api_v1.SetMetadataRequest(key=attributeName, value=attributeValue)
+        _, call = self._stub.SetMetadata.with_call(req)
+
+        return DaprResponse(call.initial_metadata())
 
     def shutdown(self) -> DaprResponse:
         """Shutdown the sidecar.
