@@ -1098,7 +1098,7 @@ class DaprGrpcClient:
             from dapr.clients import DaprClient
 
             with DaprClient() as d:
-                d.wait(1000) # waits for 1 second.
+                d.wait(1) # waits for 1 second.
                 # Sidecar is available after this.
 
         Args:
