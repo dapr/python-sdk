@@ -50,11 +50,14 @@ class DaprApp:
             The following sample demonstrates how to use the subscribe method to register an
             event handler for the application on a pub/sub component named `pubsub`.
 
+            >> from fastapi import Body, FastAPI
+            >> from dapr.ext.fastapi import DaprApp
+
             >> app = FastAPI()
             >> dapr_app = DaprApp(app)
             >> @dapr_app.subscribe(pubsub='pubsub', topic='some_topic', route='/some_endpoint')
-            >> def my_event_handler(event_data):
-            >>    pass
+            >> def my_event_handler(event_data = Body()):
+            >>    print(event_data)
 
         Args:
             pubsub: The name of the pub/sub component.
