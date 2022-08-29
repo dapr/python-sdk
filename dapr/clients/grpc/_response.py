@@ -18,7 +18,7 @@ from __future__ import annotations
 import contextlib
 import threading
 from enum import Enum
-from typing import Dict, Optional, Union, Sequence, List
+from typing import Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -642,7 +642,7 @@ class ConfigurationResponse(DaprResponse):
     This inherits from DaprResponse
 
     Attributes:
-        data (Union[bytes, str]): state's data.
+        - items (Mapping[Text, ConfigurationItem]): state's data.
     """
 
     def __init__(
@@ -652,7 +652,7 @@ class ConfigurationResponse(DaprResponse):
         """Initializes ConfigurationResponse from :obj:`runtime_v1.GetConfigurationResponse`.
 
         Args:
-            items (Mapping[Text, ConfigurationItem]): the items retrieved.
+            items (Mapping[str, ConfigurationItem]): the items retrieved.
             headers (Tuple, optional): the headers from Dapr gRPC response.
         """
         super(ConfigurationResponse, self).__init__(headers)
