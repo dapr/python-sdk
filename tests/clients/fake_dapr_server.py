@@ -7,12 +7,17 @@ from google.protobuf import empty_pb2
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
 from dapr.proto.runtime.v1.dapr_pb2 import (
+    ActiveActorsCount,
+    GetMetadataResponse,
     QueryStateItem,
+    RegisteredComponents,
+    SetMetadataRequest,
     TryLockRequest,
     TryLockResponse,
     UnlockRequest,
     UnlockResponse,
 )
+from typing import Dict
 
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
@@ -22,6 +27,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.store = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
+        self.metadata: Dict[str, str] = {}
 
     def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
@@ -251,6 +257,47 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return UnlockResponse(status=UnlockResponse.Status.SUCCESS)
         else:
             return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS)
+
+    def GetMetadata(self, request, context):
+        return GetMetadataResponse(
+            id='myapp',
+            active_actors_count=[
+                ActiveActorsCount(
+                    type="Nichelle Nichols",
+                    count=1,
+                ),
+            ],
+            registered_components=[
+                RegisteredComponents(
+                    name="lockstore",
+                    type="lock.redis",
+                    version="",
+                    # Missing capabilities definition,
+                ),
+                RegisteredComponents(
+                    name="pubsub",
+                    type="pubsub.redis",
+                    version="v1",
+                    capabilities=[]
+                ),
+                RegisteredComponents(
+                    name="statestore",
+                    type="state.redis",
+                    version="v1",
+                    capabilities=[
+                        "ETAG",
+                        "TRANSACTIONAL",
+                        "QUERY_API",
+                        "ACTOR",
+                    ],
+                ),
+            ],
+            extended_metadata=self.metadata,
+        )
+
+    def SetMetadata(self, request: SetMetadataRequest, context):
+        self.metadata[request.key] = request.value
+        return empty_pb2.Empty()
 
     def Shutdown(self, request, context):
         self.shutdown_received = True
