@@ -170,6 +170,11 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
 
 # Data validation helpers
 
+def validateNotNone(**kwargs: Optional[str]):
+    for field_name, value in kwargs.items():
+        if value is None:
+            raise ValueError(f"{field_name} name cannot be None")
+
 
 def validateNotBlankString(**kwargs: Optional[str]):
     for field_name, value in kwargs.items():

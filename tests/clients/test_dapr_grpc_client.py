@@ -679,6 +679,75 @@ class DaprGrpcClientTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 dapr.unlock(store_name, resource_id, invalid_input)
 
+    #
+    # Tests for Metadata API
+    #
+
+    def test_get_metadata(self):
+        with DaprGrpcClient(f'localhost:{self.server_port}') as dapr:
+            response = dapr.get_metadata()
+
+            self.assertIsNotNone(response)
+
+            self.assertEqual(response.application_id, 'myapp')
+
+            actors = response.active_actors_count
+            self.assertIsNotNone(actors)
+            self.assertTrue(len(actors) > 0)
+            for actorType, count in actors.items():
+                # Assert both are non-null and non-empty/zero
+                self.assertTrue(actorType)
+                self.assertTrue(count)
+
+            self.assertIsNotNone(response.registered_components)
+            self.assertTrue(len(response.registered_components) > 0)
+            components = {c.name: c for c in response.registered_components}
+            # common tests for all components
+            for c in components.values():
+                self.assertTrue(c.name)
+                self.assertTrue(c.type)
+                self.assertIsNotNone(c.version)
+                self.assertIsNotNone(c.capabilities)
+            self.assertTrue("ETAG" in components['statestore'].capabilities)
+
+            self.assertIsNotNone(response.extended_metadata)
+
+    def test_set_metadata(self):
+        metadata_key = "test_set_metadata_attempt"
+        with DaprGrpcClient(f'localhost:{self.server_port}') as dapr:
+            for metadata_value in [str(i) for i in range(10)]:
+                dapr.set_metadata(attributeName=metadata_key,
+                                  attributeValue=metadata_value)
+                response = dapr.get_metadata()
+                self.assertIsNotNone(response)
+                self.assertIsNotNone(response.extended_metadata)
+                self.assertEqual(response.extended_metadata[metadata_key],
+                                 metadata_value)
+            # Empty string and blank strings should be accepted just fine
+            # by this API
+            for metadata_value in ['', '    ']:
+                dapr.set_metadata(attributeName=metadata_key,
+                                  attributeValue=metadata_value)
+                response = dapr.get_metadata()
+                self.assertIsNotNone(response)
+                self.assertIsNotNone(response.extended_metadata)
+                self.assertEqual(response.extended_metadata[metadata_key],
+                                 metadata_value)
+
+    def test_set_metadata_input_validation(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        valid_attr_name = 'attribute name'
+        valid_attr_value = 'attribute value'
+        # Invalid inputs for string arguments
+        with DaprGrpcClient(f'localhost:{self.server_port}') as dapr:
+            for invalid_attr_name in [None, '', '   ']:
+                with self.assertRaises(ValueError):
+                    dapr.set_metadata(invalid_attr_name, valid_attr_value)
+            # We are less strict with attribute values - we just cannot accept None
+            for invalid_attr_value in [None]:
+                with self.assertRaises(ValueError):
+                    dapr.set_metadata(valid_attr_name, invalid_attr_value)
+
 
 if __name__ == '__main__':
     unittest.main()

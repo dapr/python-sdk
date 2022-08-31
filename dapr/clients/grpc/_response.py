@@ -18,7 +18,7 @@ from __future__ import annotations
 import contextlib
 import threading
 from enum import Enum
-from typing import Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING
+from typing import Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING, NamedTuple
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -840,3 +840,69 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
         if self._success:
             self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
         # else: there is no point unlocking a lock we did not acquire.
+
+
+class GetMetadataResponse(DaprResponse):
+    '''GetMetadataResponse is a message that is returned on GetMetadata rpc call.'''
+
+    def __init__(
+        self,
+        application_id: str,
+        active_actors_count: Dict[str, int],
+        registered_components: Sequence[RegisteredComponents],
+        extended_metadata: Dict[str, str],
+        headers: MetadataTuple = (),
+    ):
+        '''Initializes GetMetadataResponse.
+
+        Args:
+            application_id (str): The Application ID.
+            active_actors_count (Dict[str, int]): mapping from the type of
+                    registered actors to their number of running instances.
+            registered_components (Sequence[RegisteredComponents]): list of
+                    loaded components metadata.
+            extended_metadata (Dict[str, str]): mapping of custom (extended)
+                    attributes to their respective values.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        '''
+        super().__init__(headers)
+        self._application_id = application_id
+        self._active_actors_count = active_actors_count
+        self._registered_components = registered_components
+        self._extended_metadata = extended_metadata
+
+    @property
+    def application_id(self) -> str:
+        '''The Application ID.'''
+        return self._application_id
+
+    @property
+    def active_actors_count(self) -> Dict[str, int]:
+        '''Mapping from the type of registered actors to their number of running instances.'''
+        return self._active_actors_count
+
+    @property
+    def registered_components(self) -> Sequence[RegisteredComponents]:
+        '''List of loaded components metadata.'''
+        return self._registered_components
+
+    @property
+    def extended_metadata(self) -> Dict[str, str]:
+        '''Mapping of custom (extended) attributes to their respective values.'''
+        return self._extended_metadata
+
+
+class RegisteredComponents(NamedTuple):
+    '''Describes a loaded Dapr component.'''
+
+    name: str
+    '''Name of the component.'''
+
+    type: str
+    '''Component type.'''
+
+    version: str
+    '''Component version.'''
+
+    capabilities: Sequence[str]
+    '''Supported capabilities for this component type and version.'''
