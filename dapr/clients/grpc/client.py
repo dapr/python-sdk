@@ -62,7 +62,6 @@ from dapr.clients.grpc._response import (
     BulkStatesResponse,
     BulkStateItem,
     ConfigurationResponse,
-    ConfigurationItem,
     QueryResponse,
     QueryResponseItem,
     RegisteredComponents,
@@ -929,14 +928,8 @@ class DaprGrpcClient:
         req = api_v1.GetConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
         response, call = self._stub.GetConfigurationAlpha1.with_call(req)
-        items = {}
-        for key, item in response.items:
-            items[key] = ConfigurationItem(
-                value=item.value,
-                version=item.version,
-                metadata=item.metadata)
         return ConfigurationResponse(
-            items=items,
+            items=response.items,
             headers=call.initial_metadata())
 
     async def subscribe_configuration(

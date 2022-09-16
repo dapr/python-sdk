@@ -157,7 +157,7 @@ class TopicSubscriptionTests(unittest.TestCase):
 
     def test_topic_event(self):
         self._servicier.OnTopicEvent(
-            common_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic1'),
+            appcallback_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic1'),
             self.fake_context,
         )
 
@@ -165,7 +165,7 @@ class TopicSubscriptionTests(unittest.TestCase):
 
     def test_topic3_event_called_once(self):
         self._servicier.OnTopicEvent(
-            common_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic3'),
+            appcallback_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic3'),
             self.fake_context,
         )
 
@@ -173,18 +173,18 @@ class TopicSubscriptionTests(unittest.TestCase):
 
     def test_topic3_event_response(self):
         response = self._servicier.OnTopicEvent(
-            common_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic3'),
+            appcallback_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic3'),
             self.fake_context,
         )
-        self.assertIsInstance(response, appcallback_v1.common_v1.TopicEventResponse)
+        self.assertIsInstance(response, appcallback_v1.TopicEventResponse)
         self.assertEqual(
             response.status,
-            appcallback_v1.common_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
+            appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
         )
 
     def test_disable_topic_validation(self):
         self._servicier.OnTopicEvent(
-            common_v1.TopicEventRequest(pubsub_name='pubsub3', topic='should_be_ignored'),
+            appcallback_v1.TopicEventRequest(pubsub_name='pubsub3', topic='should_be_ignored'),
             self.fake_context,
         )
 
@@ -193,7 +193,7 @@ class TopicSubscriptionTests(unittest.TestCase):
     def test_non_registered_topic(self):
         with self.assertRaises(NotImplementedError):
             self._servicier.OnTopicEvent(
-                common_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic_non_existed'),
+                appcallback_v1.TopicEventRequest(pubsub_name='pubsub1', topic='topic_non_existed'),
                 self.fake_context,
             )
 
