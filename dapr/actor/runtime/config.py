@@ -42,6 +42,42 @@ class ActorReentrancyConfig:
         }
 
 
+class PubsubConfig:
+    def __init__(
+            self,
+            pubsubName: str,
+            topic: str,
+            actorType: str,
+            method: str,
+            actorIdDataAttribute: str = ""):
+
+        """Inits :class:`PubsubConfig` to configure Actor pubsub.
+
+        Args:
+            pubsubName (str): The name of the pubsub to subscribe.
+            topic (str): The name of the Topic to subscribe.
+            actorType (str): The actor type that will be called
+            method (str): Method of the actor type that will be requested
+            actorIdDataAttribute (str): Id for existing consumer groups
+        """
+
+        self._pubsubName = pubsubName
+        self._topic = topic
+        self._actorType = actorType
+        self._method = method
+        self._actorIdDataAttribute = actorIdDataAttribute
+
+    def as_dict(self) -> Dict[str, Any]:
+        """Returns PubsubConfig as a dict."""
+        return {
+            'pubsubName': self._pubsubName,
+            'topic': self._topic,
+            'actorType': self._actorType,
+            'method': self._method,
+            'actorIdDataAttribute': self._actorIdDataAttribute
+        }
+
+
 class ActorTypeConfig:
     """Per Actor Type Configuration that configures Actor behavior for a specific Actor Type in
     Dapr Runtime.
@@ -123,6 +159,7 @@ class ActorRuntimeConfig:
             drain_ongoing_call_timeout: Optional[timedelta] = timedelta(minutes=1),
             drain_rebalanced_actors: Optional[bool] = True,
             reentrancy: Optional[ActorReentrancyConfig] = None,
+            pubsub: List[PubsubConfig] = [],
             reminders_storage_partitions: Optional[int] = None,
             actor_type_configs: List[ActorTypeConfig] = []):
         """Inits :class:`ActorRuntimeConfig` to configure actors when dapr runtime starts.
@@ -139,6 +176,8 @@ class ActorRuntimeConfig:
                 to allow a current actor call to complete before trying to deactivate an actor.
             reentrancy (ActorReentrancyConfig): Configure the reentrancy behavior for an actor.
                 If not provided, reentrancy is diabled.
+            pubsub (List[PubsubConfig]): Configure the pubsub data to subscribe.
+                If there is not pubsub configuration, pubsub is empty
             reminders_storage_partitions (int): The number of partitions to use for reminders
                 storage.
             actor_type_configs (List[ActorTypeConfig]): Configure the behavior of specific
@@ -150,6 +189,7 @@ class ActorRuntimeConfig:
         self._drain_ongoing_call_timeout = drain_ongoing_call_timeout
         self._drain_rebalanced_actors = drain_rebalanced_actors
         self._reentrancy = reentrancy
+        self._pubsub: List[PubsubConfig] = pubsub
         self._reminders_storage_partitions = reminders_storage_partitions
         self._entitiesConfig: List[ActorTypeConfig] = actor_type_configs
 
@@ -187,6 +227,10 @@ class ActorRuntimeConfig:
         if self._reminders_storage_partitions:
             configDict.update(
                 {'remindersStoragePartitions': self._reminders_storage_partitions})
+
+        configDict['pubsub'] = []
+        for pubsubConf in self._pubsub:
+            configDict['pubsub'].append(pubsubConf.as_dict())
 
         configDict['entitiesConfig'] = []
         for entityConfig in self._entitiesConfig:
