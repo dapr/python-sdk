@@ -40,8 +40,8 @@ class Rule:
 
 
 class _RegisteredSubscription:
-    def __init__(self, subscription: appcallback_v1.TopicSubscription,
-                 rules: List[Tuple[int, appcallback_v1.TopicRule]]):
+    def __init__(self, subscription: common_v1.TopicSubscription,
+                 rules: List[Tuple[int, common_v1.TopicRule]]):
         self.subscription = subscription
         self.rules = rules
 
@@ -62,7 +62,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._binding_map: Dict[str, BindingCallable] = {}
 
         self._registered_topics_map: Dict[str, _RegisteredSubscription] = {}
-        self._registered_topics: List[appcallback_v1.TopicSubscription] = []
+        self._registered_topics: List[common_v1.TopicSubscription] = []
         self._registered_bindings: List[str] = []
 
     def register_method(self, method: str, cb: InvokeMethodCallable) -> None:
@@ -94,14 +94,14 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._topic_map[pubsub_topic] = cb
 
         registered_topic = self._registered_topics_map.get(topic_key)
-        sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription()
-        rules: List[Tuple[int, appcallback_v1.TopicRule]] = []
+        sub: common_v1.TopicSubscription = common_v1.TopicSubscription()
+        rules: List[Tuple[int, common_v1.TopicRule]] = []
         if not registered_topic:
-            sub = appcallback_v1.TopicSubscription(
+            sub = common_v1.TopicSubscription(
                 pubsub_name=pubsub_name,
                 topic=topic,
                 metadata=metadata,
-                routes=appcallback_v1.TopicRoutes()
+                routes=common_v1.TopicRoutes()
             )
             registered_topic = _RegisteredSubscription(sub, rules)
             self._registered_topics_map[topic_key] = registered_topic
@@ -112,7 +112,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
         if rule:
             path = getattr(cb, '__name__', rule.match)
-            rules.append((rule.priority, appcallback_v1.TopicRule(
+            rules.append((rule.priority, common_v1.TopicRule(
                 match=rule.match, path=path)))
             rules.sort(key=lambda x: x[0])
             rs = [rule for id, rule in rules]

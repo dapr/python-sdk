@@ -15,7 +15,7 @@ from time import sleep
 from cloudevents.sdk.event import v1
 from dapr.ext.grpc import App
 from dapr.clients.grpc._response import TopicEventResponse
-from dapr.proto import appcallback_v1
+from dapr.proto import common_v1
 
 import json
 
@@ -40,7 +40,7 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
 # workaround as redis pubsub does not support wildcards
 # we manually register the distinct topics
 for id in range(4, 7):
-    app._servicer._registered_topics.append(appcallback_v1.TopicSubscription(
+    app._servicer._registered_topics.append(common_v1.TopicSubscription(
         pubsub_name='pubsub', topic=f'topic/{id}'))
 # =================================
 
