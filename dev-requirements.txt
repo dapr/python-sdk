@@ -5,8 +5,8 @@ mypy-protobuf>=2.9
 flake8>=3.7.9 
 aiohttp>=3.6.2
 python-dateutil>=2.8.1
-grpcio>=1.26.0
-grpcio-tools>=1.26.0
+grpcio>=1.49.0
+grpcio-tools>=1.49.0
 protobuf==4.21.6
 six==1.16.0
 tox == 3.25.1
