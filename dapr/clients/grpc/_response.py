@@ -38,7 +38,6 @@ import json
 
 from dapr.proto import api_v1
 from dapr.proto import api_service_v1
-from dapr.proto.runtime.v1.dapr_pb2 import SubscribeConfigurationResponse
 
 # Avoid circular import dependency by only importing DaprGrpcClient
 # for type checking
@@ -685,7 +684,7 @@ class ConfigurationWatcher():
     def _read_subscribe_config(self, stub: api_service_v1.DaprStub,
                                req: api_v1.SubscribeConfigurationRequest):
         try:
-            responses: SubscribeConfigurationResponse = stub.SubscribeConfigurationAlpha1(req)
+            responses = stub.SubscribeConfigurationAlpha1(req)
             for response in responses:
                 for key in response.items:
                     self.items[key] = response.items[key]
