@@ -44,10 +44,11 @@ class App:
         """
         self._servicer = _CallbackServicer()
         if not kwargs:
-            if max_grpc_message_length is None:
-                options = (
+            options = []
+            if max_grpc_message_length is not None:
+                options = [
                     ('grpc.max_send_message_length', max_grpc_message_length),
-                    ('grpc.max_receive_message_length', max_grpc_message_length),)
+                    ('grpc.max_receive_message_length', max_grpc_message_length)]
             self._server = grpc.server(  # type: ignore
                 futures.ThreadPoolExecutor(max_workers=10), options=options)
         else:
