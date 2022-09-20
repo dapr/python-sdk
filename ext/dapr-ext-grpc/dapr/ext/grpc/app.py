@@ -34,17 +34,25 @@ class App:
         app = App()
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, max_grpc_message_length: Optional[int] = None, **kwargs):
         """Inits App object and creates gRPC server.
 
         Args:
+            max_grpc_messsage_length (int, optional): The maximum grpc send and receive
+                message length in bytes. Only used when kwargs are not set.
             kwargs: arguments to grpc.server()
         """
         self._servicer = _CallbackServicer()
         if not kwargs:
-            self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))   # type: ignore
+            options = []
+            if max_grpc_message_length is not None:
+                options = [
+                    ('grpc.max_send_message_length', max_grpc_message_length),
+                    ('grpc.max_receive_message_length', max_grpc_message_length)]
+            self._server = grpc.server(  # type: ignore
+                futures.ThreadPoolExecutor(max_workers=10), options=options)
         else:
-            self._server = grpc.server(**kwargs)   # type: ignore
+            self._server = grpc.server(**kwargs)  # type: ignore
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
 
     def __del__(self):
