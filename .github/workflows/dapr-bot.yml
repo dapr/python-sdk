@@ -20,6 +20,7 @@ jobs:
               "mukundansundar",
               "wcs1only",
               "berndverst",
+              "tmacam",
             ];
             const payload = context.payload;
             const issue = context.issue;
@@ -55,20 +56,32 @@ jobs:
               });
               return;
             }
-            // Pollyfill: register createDispatchEvent because actions/github-script@0.3.0 
-            // does not have createDispatchEvent.
-            github.registerEndpoints({
-              repos: {
-                createDispatchEvent: {
-                  "headers": { "accept": "application/vnd.github.everest-preview+json" },
-                  "method": "POST",
-                  "params": {
-                    "client_payload": { "type": "object" },
-                    "event_type": { "type": "string" },
-                    "owner": { "required": true, "type": "string" },
-                    "repo": { "required": true, "type": "string" }
-                  },
-                  "url": "/repos/:owner/:repo/dispatches"
+            if (isFromPulls && commentBody) {
+              if (commentBody.indexOf("/ok-to-test") == 0) {
+                // Get pull request
+                const pull = await github.pulls.get({
+                  owner: issue.owner,
+                  repo: issue.repo,
+                  pull_number: issue.number
+                });
+                if (pull && pull.data) {
+                  // Get commit id and repo from pull head
+                  const testPayload = {
+                    pull_head_ref: pull.data.head.sha,
+                    pull_head_repo: pull.data.head.repo.full_name,
+                    command: "ok-to-test",
+                    issue: issue,
+                  };
+                  // Fire repository_dispatch event to trigger certification test
+                  await github.repos.createDispatchEvent({
+                    owner: issue.owner,
+                    repo: issue.repo,
+                    event_type: "validate-examples",
+                    "inputs": {
+                      "daprdapr_commit": "master"
+                    },
+                    client_payload: testPayload,
+                  });
                 }
               }
-            });
+            }
