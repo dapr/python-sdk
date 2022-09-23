@@ -13,23 +13,48 @@ on:
       - release-*
       - feature/*
   workflow_dispatch:
+    inputs:
+      daprdapr_commit:
+        description: 'Dapr/Dapr commit to build custom daprd from'
+        required: false
+        default: ''
+      daprcli_commit:
+        description: 'Dapr/CLI commit to build custom dapr CLI from'
+        required: false
+        default: ''
 jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      GOVER: 1.18
+      GOVER: 1.19
       GOOS: linux
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
       DAPR_INSTALL_URL: https://raw.githubusercontent.com/dapr/cli/master/install/install.sh
-      DAPR_CLI_REF:
-      DAPR_REF: 
+      DAPR_CLI_REF: ${{ github.event.inputs.daprcli_commit }}
+      DAPR_REF: ${{ github.event.inputs.daprdapr_commit }}
+      CHECKOUT_REPO: ${{ github.repository }}
+      CHECKOUT_REF: ${{ github.ref }}
+
     strategy:
       fail-fast: false
       matrix:
         python_ver: [3.7, 3.8, 3.9, "3.10"]
     steps:
-      - uses: actions/checkout@v3
+      - name: Parse repository_dispatch payload
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          if [ ${{ github.event.client_payload.command }} = "ok-to-test" ]; then
+            echo "CHECKOUT_REPO=${{ github.event.client_payload.pull_head_repo }}" >> $GITHUB_ENV
+            echo "CHECKOUT_REF=${{ github.event.client_payload.pull_head_ref }}" >> $GITHUB_ENV
+            echo "DAPR_REF=master" >> $GITHUB_ENV
+          fi
+
+      - name: Check out code onto GOPATH
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.CHECKOUT_REPO }}
+          ref: ${{ env.CHECKOUT_REF }}
       - uses: azure/setup-helm@v3.3
       - name: Determine latest Dapr Runtime version
         run: |
