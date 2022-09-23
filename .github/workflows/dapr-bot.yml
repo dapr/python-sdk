@@ -77,9 +77,6 @@ jobs:
                     owner: issue.owner,
                     repo: issue.repo,
                     event_type: "validate-examples",
-                    "inputs": {
-                      "daprdapr_commit": "master"
-                    },
                     client_payload: testPayload,
                   });
                 }
