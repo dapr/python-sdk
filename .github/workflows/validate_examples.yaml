@@ -22,6 +22,8 @@ on:
         description: 'Dapr/CLI commit to build custom dapr CLI from'
         required: false
         default: ''
+  repository_dispatch:
+    types: [validate-examples]
 jobs:
   validate:
     runs-on: ubuntu-latest
