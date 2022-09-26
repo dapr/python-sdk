@@ -6,6 +6,7 @@ from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
+from dapr.proto.common.v1.common_pb2 import ConfigurationItem
 from dapr.proto.runtime.v1.dapr_pb2 import (
     ActiveActorsCount,
     GetMetadataResponse,
@@ -198,9 +199,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.GetBulkSecretResponse(data=resp)
 
     def GetConfigurationAlpha1(self, request, context):
-        items = []
+        items = dict()
         for key in request.keys:
-            items.append({'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}})
+            items[str(key)] = ConfigurationItem(value='value', version='1.5.0')
         return api_v1.GetConfigurationResponse(items=items)
 
     def SubscribeConfigurationAlpha1(self, request, context):
