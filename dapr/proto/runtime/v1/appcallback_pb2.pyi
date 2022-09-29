@@ -226,15 +226,110 @@ class ListTopicSubscriptionsResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
     SUBSCRIPTIONS_FIELD_NUMBER: builtins.int
     @property
-    def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.TopicSubscription]:
+    def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicSubscription]:
         """The list of topics."""
         pass
     def __init__(self,
         *,
-        subscriptions: typing.Optional[typing.Iterable[dapr.proto.common.v1.common_pb2.TopicSubscription]] = ...,
+        subscriptions: typing.Optional[typing.Iterable[global___TopicSubscription]] = ...,
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["subscriptions",b"subscriptions"]) -> None: ...
 global___ListTopicSubscriptionsResponse = ListTopicSubscriptionsResponse
+
+class TopicSubscription(google.protobuf.message.Message):
+    """TopicSubscription represents topic and metadata."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text
+        value: typing.Text
+        def __init__(self,
+            *,
+            key: typing.Text = ...,
+            value: typing.Text = ...,
+            ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
+    PUBSUB_NAME_FIELD_NUMBER: builtins.int
+    TOPIC_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    ROUTES_FIELD_NUMBER: builtins.int
+    DEAD_LETTER_TOPIC_FIELD_NUMBER: builtins.int
+    pubsub_name: typing.Text
+    """Required. The name of the pubsub containing the topic below to subscribe to."""
+
+    topic: typing.Text
+    """Required. The name of topic which will be subscribed"""
+
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[typing.Text, typing.Text]:
+        """The optional properties used for this topic's subscription e.g. session id"""
+        pass
+    @property
+    def routes(self) -> global___TopicRoutes:
+        """The optional routing rules to match against. In the gRPC interface, OnTopicEvent
+        is still invoked but the matching path is sent in the TopicEventRequest.
+        """
+        pass
+    dead_letter_topic: typing.Text
+    """The optional dead letter queue for this topic to send events to."""
+
+    def __init__(self,
+        *,
+        pubsub_name: typing.Text = ...,
+        topic: typing.Text = ...,
+        metadata: typing.Optional[typing.Mapping[typing.Text, typing.Text]] = ...,
+        routes: typing.Optional[global___TopicRoutes] = ...,
+        dead_letter_topic: typing.Text = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["routes",b"routes"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["dead_letter_topic",b"dead_letter_topic","metadata",b"metadata","pubsub_name",b"pubsub_name","routes",b"routes","topic",b"topic"]) -> None: ...
+global___TopicSubscription = TopicSubscription
+
+class TopicRoutes(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    RULES_FIELD_NUMBER: builtins.int
+    DEFAULT_FIELD_NUMBER: builtins.int
+    @property
+    def rules(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicRule]:
+        """The list of rules for this topic."""
+        pass
+    default: typing.Text
+    """The default path for this topic."""
+
+    def __init__(self,
+        *,
+        rules: typing.Optional[typing.Iterable[global___TopicRule]] = ...,
+        default: typing.Text = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["default",b"default","rules",b"rules"]) -> None: ...
+global___TopicRoutes = TopicRoutes
+
+class TopicRule(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    MATCH_FIELD_NUMBER: builtins.int
+    PATH_FIELD_NUMBER: builtins.int
+    match: typing.Text
+    """The optional CEL expression used to match the event.
+    If the match is not specified, then the route is considered
+    the default.
+    """
+
+    path: typing.Text
+    """The path used to identify matches for this subscription.
+    This value is passed in TopicEventRequest and used by OnTopicEvent to "switch"
+    inside the handler.
+    """
+
+    def __init__(self,
+        *,
+        match: typing.Text = ...,
+        path: typing.Text = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["match",b"match","path",b"path"]) -> None: ...
+global___TopicRule = TopicRule
 
 class ListInputBindingsResponse(google.protobuf.message.Message):
     """ListInputBindingsResponse is the message including the list of input bindings."""
