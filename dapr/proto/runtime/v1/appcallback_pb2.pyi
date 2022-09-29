@@ -345,3 +345,12 @@ class ListInputBindingsResponse(google.protobuf.message.Message):
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["bindings",b"bindings"]) -> None: ...
 global___ListInputBindingsResponse = ListInputBindingsResponse
+
+class HealthCheckResponse(google.protobuf.message.Message):
+    """HealthCheckResponse is the message with the response to the health check.
+    This message is currently empty as used as placeholder.
+    """
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    def __init__(self,
+        ) -> None: ...
+global___HealthCheckResponse = HealthCheckResponse
