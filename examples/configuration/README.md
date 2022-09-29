@@ -23,12 +23,13 @@ pip3 install dapr dapr-ext-grpc
 name: Set configuration value
 expected_stdout_lines:
   - "OK"
-timeout_seconds: 10
+timeout_seconds: 5
+sleep: 3
 -->
 
 ```bash
-docker exec dapr_redis redis-cli SET orderId "100||1"
-docker exec dapr_redis redis-cli SET orderId1 "200||2"
+docker exec dapr_redis redis-cli SET orderId1 "100||1"
+docker exec dapr_redis redis-cli SET orderId2 "200||1"
 ```
 
 <!-- END_STEP -->
@@ -45,27 +46,36 @@ To run this example, use the following command:
 <!-- STEP
 name: Run get configuration example
 expected_stdout_lines:
-  - "== APP == Got key=orderId value=100 version=1 metadata={}"
-  - "== APP == Got key=orderId1 value=200 version=2 metadata={}"
-  - "== APP == Subscribe key=orderId value=200 version=2 metadata={}"
+  - "== APP == Got key=orderId1 value=100 version=1 metadata={}"
+  - "== APP == Got key=orderId2 value=200 version=1 metadata={}"
+  - "== APP == Subscribe key=orderId2 value=210 version=2 metadata={}"
   - "== APP == Unsubscribed successfully? True"
-  - "== APP == configurationstore configuration watcher for keys ['orderId', 'orderId1'] stopped."
+  - "== APP == configurationstore configuration watcher for keys ['orderId1', 'orderId2'] stopped."
 background: true
-sleep: 10
-timeout_seconds: 50
+timeout_seconds: 30
+sleep: 3
 -->
 
 ```bash
 dapr run --app-id configexample --components-path components/ -- python3 configuration.py
 ```
+<!-- END_STEP -->
+
+<!-- STEP
+name: Set configuration value
+expected_stdout_lines:
+  - "OK"
+timeout_seconds: 5
+-->
 
 ```bash
-docker exec dapr_redis redis-cli SET orderId "200||2"
+docker exec dapr_redis redis-cli SET orderId2 "210||2"
 ```
 <!-- END_STEP -->
 
 You should be able to see the following output:
 ```
-== APP == Got key=orderId value=100 version=1
-== APP == Subscribe key=orderId value=200 version=2
+== APP == Got key=orderId1 value=100 version=1
+== APP == Got key=orderId2 value=200 version=1
+== APP == Subscribe key=orderId2 value=210 version=2
 ```

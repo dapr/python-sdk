@@ -18,7 +18,7 @@ from __future__ import annotations
 import contextlib
 import threading
 from enum import Enum
-from typing import Dict, Optional, Union, Sequence, List, TYPE_CHECKING, NamedTuple
+from typing import Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING, NamedTuple
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -591,7 +591,6 @@ class ConfigurationItem:
     """A config item from get_configuration API.
 
     Attributes:
-        key (str): config's key.
         value (Union[bytes, str]): config's value.
         version (str): config's version.
         metadata (str): metadata
@@ -599,19 +598,16 @@ class ConfigurationItem:
 
     def __init__(
             self,
-            key: str,
             value: str,
             version: str,
             metadata: Optional[Dict[str, str]] = dict()):
         """Initializes ConfigurationItem item from :obj:`runtime_v1.ConfigurationItem`.
 
         Args:
-            key (str): config's key.
             value (str): config's value.
             version (str): config's version.
             metadata (Optional[Dict[str, str]] = dict()): metadata
         """
-        self._key = key
         self._value = value
         self._version = version
         self._metadata = metadata
@@ -623,11 +619,6 @@ class ConfigurationItem:
     def json(self) -> Dict[str, object]:
         """Gets content as deserialized JSON dictionary."""
         return json.loads(to_str(self._value))
-
-    @property
-    def key(self) -> str:
-        """Gets key."""
-        return self._key
 
     @property
     def value(self) -> str:
@@ -651,31 +642,31 @@ class ConfigurationResponse(DaprResponse):
     This inherits from DaprResponse
 
     Attributes:
-        data (Union[bytes, str]): state's data.
+        - items (Mapping[Text, ConfigurationItem]): state's data.
     """
 
     def __init__(
             self,
-            items: Sequence[ConfigurationItem],
+            items: Mapping[Text, ConfigurationItem],
             headers: MetadataTuple = ()):
         """Initializes ConfigurationResponse from :obj:`runtime_v1.GetConfigurationResponse`.
 
         Args:
-            items (Sequence[ConfigurationItem]): the items retrieved.
+            items (Mapping[str, ConfigurationItem]): the items retrieved.
             headers (Tuple, optional): the headers from Dapr gRPC response.
         """
         super(ConfigurationResponse, self).__init__(headers)
         self._items = items
 
     @property
-    def items(self) -> Sequence[ConfigurationItem]:
+    def items(self) -> Mapping[Text, ConfigurationItem]:
         """Gets the items."""
         return self._items
 
 
 class ConfigurationWatcher():
     def __init__(self):
-        self.items = []
+        self.items: Dict[str, ConfigurationItem] = {}
 
     def get_items(self):
         return self.items
@@ -695,13 +686,8 @@ class ConfigurationWatcher():
         try:
             responses = stub.SubscribeConfigurationAlpha1(req)
             for response in responses:
-                for item in response.items:
-                    self.items.append(
-                        ConfigurationItem(
-                            key=item.key,
-                            value=item.value,
-                            version=item.version,
-                            metadata=item.metadata))
+                for key in response.items:
+                    self.items[key] = response.items[key]
         except Exception:
             print(f"{self.store_name} configuration watcher for keys "
                   f"{self.keys} stopped.")
