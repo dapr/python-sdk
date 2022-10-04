@@ -70,8 +70,8 @@ class DaprHttpClient:
             headers_map.update(trace_headers)
 
         r = None
-        timeout = timeout or self._timeout
-        async with aiohttp.ClientSession(timeout=timeout) as session:
+        client_timeout = aiohttp.ClientTimeout(total=timeout) if timeout else self._timeout
+        async with aiohttp.ClientSession(timeout=client_timeout) as session:
             r = await session.request(
                 method=method,
                 url=url,
