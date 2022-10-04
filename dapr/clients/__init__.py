@@ -93,7 +93,8 @@ class DaprClient(DaprGrpcClient):
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
+            http_querystring: Optional[MetadataTuple] = None,
+            timeout: Optional[int] = None) -> InvokeMethodResponse:
         """Invoke a service method over gRPC or HTTP.
 
         Args:
@@ -104,6 +105,7 @@ class DaprClient(DaprGrpcClient):
             metadata (MetadataTuple, optional): Additional metadata or headers.
             http_verb (str, optional): HTTP verb for the request.
             http_querystring (MetadataTuple, optional): Query parameters.
+            timeout (int, optional): request timeout in seconds.
 
         Returns:
             InvokeMethodResponse: the response from the method invocation.

@@ -55,7 +55,8 @@ class DaprHttpClient:
             self, method: str, url: str,
             data: Optional[bytes],
             headers: Dict[str, Union[bytes, str]] = {},
-            query_params: Optional[Mapping] = None
+            query_params: Optional[Mapping] = None,
+            timeout: Optional[int] = None
     ) -> Tuple[bytes, aiohttp.ClientResponse]:
         headers_map = headers
         if not headers_map.get(CONTENT_TYPE_HEADER):
@@ -69,7 +70,8 @@ class DaprHttpClient:
             headers_map.update(trace_headers)
 
         r = None
-        async with aiohttp.ClientSession(timeout=self._timeout) as session:
+        timeout = timeout or self._timeout
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             r = await session.request(
                 method=method,
                 url=url,
