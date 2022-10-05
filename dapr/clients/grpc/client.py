@@ -166,7 +166,8 @@ class DaprGrpcClient:
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
+            http_querystring: Optional[MetadataTuple] = None,
+            timeout: Optional[int] = None) -> InvokeMethodResponse:
         """Invokes the target service to call method.
 
         This can invoke the specified target service to call method with bytes array data or
@@ -235,6 +236,7 @@ class DaprGrpcClient:
             metadata (tuple, optional, DEPRECATED): gRPC custom metadata
             http_verb (str, optional): http method verb to call HTTP callee application
             http_querystring (tuple, optional): the tuple to represent query string
+            timeout (int, optional): request timeout in seconds
 
         Returns:
             :class:`InvokeMethodResponse` object returned from callee
@@ -260,7 +262,7 @@ class DaprGrpcClient:
                 http_extension=http_ext)
         )
 
-        response, call = self._stub.InvokeService.with_call(req, metadata=metadata)
+        response, call = self._stub.InvokeService.with_call(req, metadata=metadata, timeout=timeout)
 
         resp_data = InvokeMethodResponse(response.data, response.content_type)
         resp_data.headers = call.initial_metadata()  # type: ignore

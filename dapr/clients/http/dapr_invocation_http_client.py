@@ -47,7 +47,8 @@ class DaprInvocationHttpClient:
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
+            http_querystring: Optional[MetadataTuple] = None,
+            timeout: Optional[int] = None) -> InvokeMethodResponse:
         """Invoke a service method over HTTP (async).
 
         Args:
@@ -58,6 +59,7 @@ class DaprInvocationHttpClient:
             metadata (MetadataTuple, optional): Additional headers.
             http_verb (str, optional): HTTP verb for the request.
             http_querystring (MetadataTuple, optional): Query parameters.
+            timeout (int, optional): request timeout in seconds.
 
         Returns:
             InvokeMethodResponse: the response from the method invocation.
@@ -94,7 +96,8 @@ class DaprInvocationHttpClient:
                 headers=headers,
                 url=url,
                 data=body,
-                query_params=query_params)
+                query_params=query_params,
+                timeout=timeout)
 
             resp_data = InvokeMethodResponse(resp_body, r.content_type)
             respHeaders = resp_data.headers
@@ -114,7 +117,8 @@ class DaprInvocationHttpClient:
         content_type: Optional[str] = None,
         metadata: Optional[MetadataTuple] = None,
         http_verb: Optional[str] = None,
-        http_querystring: Optional[MetadataTuple] = None
+        http_querystring: Optional[MetadataTuple] = None,
+        timeout: Optional[int] = None
     ) -> InvokeMethodResponse:
         """Invoke a service method over HTTP (async).
 
@@ -126,6 +130,7 @@ class DaprInvocationHttpClient:
             metadata (MetadataTuple, optional): Additional headers.
             http_verb (str, optional): HTTP verb for the request.
             http_querystring (MetadataTuple, optional): Query parameters.
+            timeout (int, optional): request timeout in seconds.
 
         Returns:
             InvokeMethodResponse: the response from the method invocation.
@@ -144,5 +149,6 @@ class DaprInvocationHttpClient:
             content_type,
             metadata,
             http_verb,
-            http_querystring)
+            http_querystring,
+            timeout)
         return loop.run_until_complete(awaitable)
