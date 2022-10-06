@@ -24,9 +24,6 @@ Run the following commands in a terminal/command-prompt:
 <!-- STEP
 name: Kafka install
 sleep: 30
-expected_stderr_lines:
-  - 'Creating network "invoke-binding_default" with the default driver'
-  - 'Creating invoke-binding_zookeeper_1 ... '
 -->
 
 1. Start the kafka containers using docker-compose 

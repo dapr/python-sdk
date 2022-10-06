@@ -63,7 +63,6 @@ dapr run --app-id invoke-caller --app-protocol grpc --dapr-http-port 3500 python
 expected_stdout_lines: 
   - '✅  app stopped successfully: invoke-caller'
   - '✅  app stopped successfully: invoke-receiver'
-expected_stderr_lines:
 name: Shutdown dapr
 -->
 

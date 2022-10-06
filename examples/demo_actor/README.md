@@ -43,6 +43,8 @@ expected_stdout_lines:
   - '== APP == set_timer to True'
   - '== APP == set_timer is done'
   - "== APP == receive_reminder is called - demo_reminder reminder - b'reminder_state'"
+  - "== APP == clear_my_data"
+timeout_seconds: 60
 -->
 
 1. Run Demo Actor service in new terminal window
@@ -72,6 +74,7 @@ expected_stdout_lines:
    == APP == set_timer is done
    == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetTimer HTTP/1.1" 200 OK
    == APP == receive_reminder is called - demo_reminder reminder - b'reminder_state'
+   == APP == clear_my_data
    ...
    ```
 
@@ -79,7 +82,6 @@ expected_stdout_lines:
 
 <!-- STEP
 name: Actor Client
-background: true
 expected_stdout_lines:
   - '== APP == call actor method via proxy.invoke_method()'
   - "== APP == b'null'"
@@ -93,6 +95,7 @@ expected_stdout_lines:
   - '== APP == waiting for 30 seconds'
   - '== APP == stop reminder'
   - '== APP == stop timer'
+  - '== APP == clear actor state'
 -->
 
 2. Run Demo client in new terminal window
@@ -120,6 +123,7 @@ expected_stdout_lines:
    == APP == waiting for 30 seconds
    == APP == stop reminder
    == APP == stop timer
+   == APP == clear actor state
    ```
 
 <!-- END_STEP -->

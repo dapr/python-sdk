@@ -45,6 +45,7 @@ To run this example, use the following command:
 
 <!-- STEP
 name: Run get configuration example
+match_order: none
 expected_stdout_lines:
   - "== APP == Got key=orderId1 value=100 version=1 metadata={}"
   - "== APP == Got key=orderId2 value=200 version=1 metadata={}"

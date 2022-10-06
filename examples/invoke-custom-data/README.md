@@ -84,7 +84,6 @@ Expected output from receiver:
 <!-- STEP
 expected_stdout_lines: 
   - '✅  app stopped successfully: invoke-receiver'
-expected_stderr_lines:
 name: Shutdown dapr
 -->
 

@@ -22,6 +22,10 @@ class DemoActorInterface(ActorInterface):
     async def set_my_data(self, data: object) -> None:
         ...
 
+    @actormethod(name="ClearMyData")
+    async def clear_my_data(self) -> None:
+        ...
+
     @actormethod(name="SetReminder")
     async def set_reminder(self, enabled: bool) -> None:
         ...
