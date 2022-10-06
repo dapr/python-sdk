@@ -22,6 +22,10 @@ from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
 from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
 from dapr.clients.grpc._response import InvokeMethodResponse
 from dapr.serializers import DefaultJSONSerializer
+from dapr.version import __version__
+
+USER_AGENT_HEADER = 'User-Agent'
+DAPR_USER_AGENT = f'dapr-python-sdk/{__version__}'
 
 
 class DaprInvocationHttpClient:
@@ -69,7 +73,9 @@ class DaprInvocationHttpClient:
         if http_verb is not None:
             verb = http_verb
 
-        headers = {}
+        headers = {
+            USER_AGENT_HEADER: DAPR_USER_AGENT,
+        }
         if metadata is not None:
             for key, value in metadata:
                 headers[key] = value
