@@ -71,7 +71,7 @@ class DaprHttpClient:
         if self._headers_callback is not None:
             trace_headers = self._headers_callback()
             headers_map.update(trace_headers)
-        
+
         headers_map[USER_AGENT_HEADER] = DAPR_USER_AGENT
 
         r = None
