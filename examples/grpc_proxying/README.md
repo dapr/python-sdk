@@ -60,7 +60,6 @@ dapr run --app-id  invoke-caller --dapr-grpc-port 50007 --config config.yaml -- 
 <!-- STEP
 expected_stdout_lines: 
   - '✅  app stopped successfully: invoke-receiver'
-expected_stderr_lines:
 name: Shutdown dapr
 -->
 

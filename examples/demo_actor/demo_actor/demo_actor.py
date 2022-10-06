@@ -52,6 +52,11 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         await self._state_manager.set_state('mydata', data)
         await self._state_manager.save_state()
 
+    async def clear_my_data(self) -> None:
+        print('clear_my_data', flush=True)
+        await self._state_manager.remove_state('mydata')
+        await self._state_manager.save_state()
+
     async def set_reminder(self, enabled) -> None:
         """Enables and disables a reminder.
 
