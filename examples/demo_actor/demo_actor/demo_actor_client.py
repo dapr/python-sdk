@@ -70,5 +70,10 @@ async def main():
     print("stop timer", flush=True)
     await proxy.SetTimer(False)
 
+    # Clear actor state
+    print("clear actor state", flush=True)
+    await proxy.ClearMyData()
+
+
 
 asyncio.run(main())

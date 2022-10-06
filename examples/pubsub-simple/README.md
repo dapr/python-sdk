@@ -72,7 +72,6 @@ dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 pyt
 <!-- STEP
 expected_stdout_lines: 
   - '✅  app stopped successfully: python-subscriber'
-expected_stderr_lines:
 name: Shutdown dapr
 -->
 
