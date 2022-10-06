@@ -73,9 +73,8 @@ class DaprInvocationHttpClient:
         if http_verb is not None:
             verb = http_verb
 
-        headers = {
-            USER_AGENT_HEADER: DAPR_USER_AGENT,
-        }
+        headers = {}
+
         if metadata is not None:
             for key, value in metadata:
                 headers[key] = value
@@ -86,6 +85,8 @@ class DaprInvocationHttpClient:
 
         if content_type is not None:
             headers[CONTENT_TYPE_HEADER] = content_type
+
+        headers[USER_AGENT_HEADER] = DAPR_USER_AGENT
 
         url = f'{self._client.get_api_url()}/invoke/{app_id}/method/{method_name}'
 
