@@ -22,6 +22,10 @@ from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
 from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
 from dapr.clients.grpc._response import InvokeMethodResponse
 from dapr.serializers import DefaultJSONSerializer
+from dapr.version import __version__
+
+USER_AGENT_HEADER = 'User-Agent'
+DAPR_USER_AGENT = f'dapr-python-sdk/{__version__}'
 
 
 class DaprInvocationHttpClient:
@@ -70,6 +74,7 @@ class DaprInvocationHttpClient:
             verb = http_verb
 
         headers = {}
+
         if metadata is not None:
             for key, value in metadata:
                 headers[key] = value
@@ -80,6 +85,8 @@ class DaprInvocationHttpClient:
 
         if content_type is not None:
             headers[CONTENT_TYPE_HEADER] = content_type
+
+        headers[USER_AGENT_HEADER] = DAPR_USER_AGENT
 
         url = f'{self._client.get_api_url()}/invoke/{app_id}/method/{method_name}'
 

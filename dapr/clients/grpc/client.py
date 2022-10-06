@@ -37,6 +37,7 @@ from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
+from dapr.version import __version__
 
 from dapr.clients.grpc._helpers import (
     DaprClientInterceptor,
@@ -112,15 +113,19 @@ class DaprGrpcClient:
             max_grpc_messsage_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
         """
+        useragent = f'dapr-sdk-python/{__version__}'
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
         self._address = address
         if not max_grpc_message_length:
-            self._channel = grpc.insecure_channel(address)   # type: ignore
+            self._channel = grpc.insecure_channel(address, options=[   # type: ignore
+                ('grpc.primary_user_agent', useragent),
+            ])
         else:
             self._channel = grpc.insecure_channel(address, options=[   # type: ignore
                 ('grpc.max_send_message_length', max_grpc_message_length),
                 ('grpc.max_receive_message_length', max_grpc_message_length),
+                ('grpc.primary_user_agent', useragent)
             ])
 
         if settings.DAPR_API_TOKEN:

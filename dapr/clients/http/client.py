@@ -22,9 +22,12 @@ if TYPE_CHECKING:
 from dapr.conf import settings
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
+from dapr.version import __version__
 
 CONTENT_TYPE_HEADER = 'content-type'
 DAPR_API_TOKEN_HEADER = 'dapr-api-token'
+USER_AGENT_HEADER = 'User-Agent'
+DAPR_USER_AGENT = f'dapr-sdk-python/{__version__}'
 
 
 class DaprHttpClient:
@@ -68,6 +71,8 @@ class DaprHttpClient:
         if self._headers_callback is not None:
             trace_headers = self._headers_callback()
             headers_map.update(trace_headers)
+
+        headers_map[USER_AGENT_HEADER] = DAPR_USER_AGENT
 
         r = None
         client_timeout = aiohttp.ClientTimeout(total=timeout) if timeout else self._timeout
