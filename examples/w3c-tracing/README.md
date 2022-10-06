@@ -173,7 +173,6 @@ expected_stdout_lines:
   - '== APP == text/plain'
   - '== APP == SAY'
   - "✅  Exited App successfully"
-expected_stderr_lines:
 background: true
 sleep: 10
 -->
@@ -221,7 +220,6 @@ expected_stdout_lines:
   - '"calllocal/invoke-receiver/sleep"'
   - '"calllocal/invoke-receiver/say"'
   - '"calllocal/invoke-receiver/sleep"'
-expected_stderr_lines:
 name: Curl validate
 -->
 
@@ -261,7 +259,6 @@ Shutdown running dapr apps with Ctl-C or simply run the following:
 <!-- STEP
 expected_stdout_lines: 
   - '✅  app stopped successfully: invoke-receiver'
-expected_stderr_lines:
 name: Shutdown dapr
 -->
 
