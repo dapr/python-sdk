@@ -1,2 +1,2 @@
-dapr-ext-grpc >= 1.8.1
-dapr >= 1.8.1
+dapr-ext-grpc >= 1.8.2rc1
+dapr >= 1.8.2rc1
