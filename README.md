@@ -23,10 +23,6 @@ This includes the following packages:
 * [dapr.ext.fastapi](./ext/dapr-ext-fastapi): FastAPI extension (actor) for Dapr
 * [flask.dapr](./ext/flask_dapr): Flask extension (actor) for Dapr
 
-## Status
-
-> Note: Dapr SDK for python is currently under community development in alpha phase.
-
 ## Getting started
 
 ### Prerequisites
