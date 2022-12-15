@@ -45,7 +45,7 @@ class DefaultJSONSerializer(Serializer):
         elif isinstance(obj, ActorRuntimeConfig):
             dict_obj = obj.as_dict()
 
-        serialized = json.dumps(dict_obj, cls=DaprJSONEncoder, separators=(',', ':'))
+        serialized = json.dumps(dict_obj, cls=DaprJSONEncoder, separators=(',', ':'), ensure_ascii=False)
 
         return serialized.encode('utf-8')
 
