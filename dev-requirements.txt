@@ -16,3 +16,4 @@ opencensus-ext-grpc==0.7.2
 coverage>=5.3
 codecov>=1.4.0
 httpx==0.23.1
+wheel
