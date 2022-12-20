@@ -524,6 +524,153 @@ class PublishEventRequest(google.protobuf.message.Message):
 
 global___PublishEventRequest = PublishEventRequest
 
+class BulkPublishRequest(google.protobuf.message.Message):
+    """BulkPublishRequest is the message to bulk publish events to pubsub topic"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
+    PUBSUB_NAME_FIELD_NUMBER: builtins.int
+    TOPIC_FIELD_NUMBER: builtins.int
+    ENTRIES_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    pubsub_name: builtins.str
+    """The name of the pubsub component"""
+    topic: builtins.str
+    """The pubsub topic"""
+    @property
+    def entries(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___BulkPublishRequestEntry]:
+        """The entries which contain the individual events and associated details to be published"""
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        """The request level metadata passing to to the pubsub components"""
+    def __init__(
+        self,
+        *,
+        pubsub_name: builtins.str = ...,
+        topic: builtins.str = ...,
+        entries: collections.abc.Iterable[global___BulkPublishRequestEntry] | None = ...,
+        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["entries", b"entries", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "topic", b"topic"]) -> None: ...
+
+global___BulkPublishRequest = BulkPublishRequest
+
+class BulkPublishRequestEntry(google.protobuf.message.Message):
+    """BulkPublishRequestEntry is the message containing the event to be bulk published"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
+    ENTRY_ID_FIELD_NUMBER: builtins.int
+    EVENT_FIELD_NUMBER: builtins.int
+    CONTENT_TYPE_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    entry_id: builtins.str
+    """The request scoped unique ID referring to this message. Used to map status in response"""
+    event: builtins.bytes
+    """The event which will be pulished to the topic"""
+    content_type: builtins.str
+    """The content type for the event"""
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        """The event level metadata passing to the pubsub component"""
+    def __init__(
+        self,
+        *,
+        entry_id: builtins.str = ...,
+        event: builtins.bytes = ...,
+        content_type: builtins.str = ...,
+        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["content_type", b"content_type", "entry_id", b"entry_id", "event", b"event", "metadata", b"metadata"]) -> None: ...
+
+global___BulkPublishRequestEntry = BulkPublishRequestEntry
+
+class BulkPublishResponse(google.protobuf.message.Message):
+    """BulkPublishResponse is the message returned from a BulkPublishEvent call"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    STATUSES_FIELD_NUMBER: builtins.int
+    @property
+    def statuses(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___BulkPublishResponseEntry]:
+        """The publish statuses for different events in the BulkPublishEvent call"""
+    def __init__(
+        self,
+        *,
+        statuses: collections.abc.Iterable[global___BulkPublishResponseEntry] | None = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["statuses", b"statuses"]) -> None: ...
+
+global___BulkPublishResponse = BulkPublishResponse
+
+class BulkPublishResponseEntry(google.protobuf.message.Message):
+    """BulkPublishResponseEntry is the message mapping response status for each event in the BulkPublishEvent call"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class _Status:
+        ValueType = typing.NewType("ValueType", builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+
+    class _StatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[BulkPublishResponseEntry._Status.ValueType], builtins.type):  # noqa: F821
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+        SUCCESS: BulkPublishResponseEntry._Status.ValueType  # 0
+        FAILED: BulkPublishResponseEntry._Status.ValueType  # 1
+
+    class Status(_Status, metaclass=_StatusEnumTypeWrapper): ...
+    SUCCESS: BulkPublishResponseEntry.Status.ValueType  # 0
+    FAILED: BulkPublishResponseEntry.Status.ValueType  # 1
+
+    ENTRY_ID_FIELD_NUMBER: builtins.int
+    STATUS_FIELD_NUMBER: builtins.int
+    ERROR_FIELD_NUMBER: builtins.int
+    entry_id: builtins.str
+    """The response scoped unique ID referring to this message"""
+    status: global___BulkPublishResponseEntry.Status.ValueType
+    """The status of event publish"""
+    error: builtins.str
+    """The error message if any on failure"""
+    def __init__(
+        self,
+        *,
+        entry_id: builtins.str = ...,
+        status: global___BulkPublishResponseEntry.Status.ValueType = ...,
+        error: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["entry_id", b"entry_id", "error", b"error", "status", b"status"]) -> None: ...
+
+global___BulkPublishResponseEntry = BulkPublishResponseEntry
+
 class InvokeBindingRequest(google.protobuf.message.Message):
     """InvokeBindingRequest is the message to send data to output bindings"""
 
@@ -1169,6 +1316,7 @@ class GetMetadataResponse(google.protobuf.message.Message):
     ACTIVE_ACTORS_COUNT_FIELD_NUMBER: builtins.int
     REGISTERED_COMPONENTS_FIELD_NUMBER: builtins.int
     EXTENDED_METADATA_FIELD_NUMBER: builtins.int
+    SUBSCRIPTIONS_FIELD_NUMBER: builtins.int
     id: builtins.str
     @property
     def active_actors_count(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ActiveActorsCount]: ...
@@ -1176,6 +1324,8 @@ class GetMetadataResponse(google.protobuf.message.Message):
     def registered_components(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___RegisteredComponents]: ...
     @property
     def extended_metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    @property
+    def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___PubsubSubscription]: ...
     def __init__(
         self,
         *,
@@ -1183,8 +1333,9 @@ class GetMetadataResponse(google.protobuf.message.Message):
         active_actors_count: collections.abc.Iterable[global___ActiveActorsCount] | None = ...,
         registered_components: collections.abc.Iterable[global___RegisteredComponents] | None = ...,
         extended_metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        subscriptions: collections.abc.Iterable[global___PubsubSubscription] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count", b"active_actors_count", "extended_metadata", b"extended_metadata", "id", b"id", "registered_components", b"registered_components"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count", b"active_actors_count", "extended_metadata", b"extended_metadata", "id", b"id", "registered_components", b"registered_components", "subscriptions", b"subscriptions"]) -> None: ...
 
 global___GetMetadataResponse = GetMetadataResponse
 
@@ -1228,6 +1379,82 @@ class RegisteredComponents(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["capabilities", b"capabilities", "name", b"name", "type", b"type", "version", b"version"]) -> None: ...
 
 global___RegisteredComponents = RegisteredComponents
+
+class PubsubSubscription(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
+    PUBSUB_NAME_FIELD_NUMBER: builtins.int
+    TOPIC_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    RULES_FIELD_NUMBER: builtins.int
+    DEAD_LETTER_TOPIC_FIELD_NUMBER: builtins.int
+    pubsub_name: builtins.str
+    topic: builtins.str
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    @property
+    def rules(self) -> global___PubsubSubscriptionRules: ...
+    dead_letter_topic: builtins.str
+    def __init__(
+        self,
+        *,
+        pubsub_name: builtins.str = ...,
+        topic: builtins.str = ...,
+        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        rules: global___PubsubSubscriptionRules | None = ...,
+        dead_letter_topic: builtins.str = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["rules", b"rules"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "rules", b"rules", "topic", b"topic"]) -> None: ...
+
+global___PubsubSubscription = PubsubSubscription
+
+class PubsubSubscriptionRules(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    RULES_FIELD_NUMBER: builtins.int
+    @property
+    def rules(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___PubsubSubscriptionRule]: ...
+    def __init__(
+        self,
+        *,
+        rules: collections.abc.Iterable[global___PubsubSubscriptionRule] | None = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["rules", b"rules"]) -> None: ...
+
+global___PubsubSubscriptionRules = PubsubSubscriptionRules
+
+class PubsubSubscriptionRule(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    MATCH_FIELD_NUMBER: builtins.int
+    PATH_FIELD_NUMBER: builtins.int
+    match: builtins.str
+    path: builtins.str
+    def __init__(
+        self,
+        *,
+        match: builtins.str = ...,
+        path: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["match", b"match", "path", b"path"]) -> None: ...
+
+global___PubsubSubscriptionRule = PubsubSubscriptionRule
 
 class SetMetadataRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -1556,3 +1783,143 @@ class UnlockResponse(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["status", b"status"]) -> None: ...
 
 global___UnlockResponse = UnlockResponse
+
+class WorkflowReference(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    INSTANCE_ID_FIELD_NUMBER: builtins.int
+    instance_id: builtins.str
+    def __init__(
+        self,
+        *,
+        instance_id: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id"]) -> None: ...
+
+global___WorkflowReference = WorkflowReference
+
+class GetWorkflowRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    INSTANCE_ID_FIELD_NUMBER: builtins.int
+    WORKFLOW_TYPE_FIELD_NUMBER: builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
+    instance_id: builtins.str
+    workflow_type: builtins.str
+    workflow_component: builtins.str
+    def __init__(
+        self,
+        *,
+        instance_id: builtins.str = ...,
+        workflow_type: builtins.str = ...,
+        workflow_component: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component", "workflow_type", b"workflow_type"]) -> None: ...
+
+global___GetWorkflowRequest = GetWorkflowRequest
+
+class GetWorkflowResponse(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
+    INSTANCE_ID_FIELD_NUMBER: builtins.int
+    START_TIME_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    instance_id: builtins.str
+    start_time: builtins.int
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def __init__(
+        self,
+        *,
+        instance_id: builtins.str = ...,
+        start_time: builtins.int = ...,
+        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "metadata", b"metadata", "start_time", b"start_time"]) -> None: ...
+
+global___GetWorkflowResponse = GetWorkflowResponse
+
+class StartWorkflowRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class OptionsEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
+    INSTANCE_ID_FIELD_NUMBER: builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
+    WORKFLOW_NAME_FIELD_NUMBER: builtins.int
+    OPTIONS_FIELD_NUMBER: builtins.int
+    INPUT_FIELD_NUMBER: builtins.int
+    instance_id: builtins.str
+    workflow_component: builtins.str
+    workflow_name: builtins.str
+    @property
+    def options(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    @property
+    def input(self) -> google.protobuf.any_pb2.Any: ...
+    def __init__(
+        self,
+        *,
+        instance_id: builtins.str = ...,
+        workflow_component: builtins.str = ...,
+        workflow_name: builtins.str = ...,
+        options: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        input: google.protobuf.any_pb2.Any | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["input", b"input"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["input", b"input", "instance_id", b"instance_id", "options", b"options", "workflow_component", b"workflow_component", "workflow_name", b"workflow_name"]) -> None: ...
+
+global___StartWorkflowRequest = StartWorkflowRequest
+
+class TerminateWorkflowRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    INSTANCE_ID_FIELD_NUMBER: builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
+    instance_id: builtins.str
+    workflow_component: builtins.str
+    def __init__(
+        self,
+        *,
+        instance_id: builtins.str = ...,
+        workflow_component: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
+
+global___TerminateWorkflowRequest = TerminateWorkflowRequest
+
+class TerminateWorkflowResponse(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+global___TerminateWorkflowResponse = TerminateWorkflowResponse

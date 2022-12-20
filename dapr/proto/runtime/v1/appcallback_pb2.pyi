@@ -20,6 +20,7 @@ import google.protobuf.descriptor
 import google.protobuf.internal.containers
 import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
+import google.protobuf.struct_pb2
 import sys
 import typing
 
@@ -46,6 +47,7 @@ class TopicEventRequest(google.protobuf.message.Message):
     TOPIC_FIELD_NUMBER: builtins.int
     PUBSUB_NAME_FIELD_NUMBER: builtins.int
     PATH_FIELD_NUMBER: builtins.int
+    EXTENSIONS_FIELD_NUMBER: builtins.int
     id: builtins.str
     """id identifies the event. Producers MUST ensure that source + id 
     is unique for each distinct event. If a duplicate event is re-sent
@@ -74,6 +76,9 @@ class TopicEventRequest(google.protobuf.message.Message):
     """The matching path from TopicSubscription/routes (if specified) for this event.
     This value is used by OnTopicEvent to "switch" inside the handler.
     """
+    @property
+    def extensions(self) -> google.protobuf.struct_pb2.Struct:
+        """The map of additional custom properties to be sent to the app. These are considered to be cloud event extensions."""
     def __init__(
         self,
         *,
@@ -86,8 +91,10 @@ class TopicEventRequest(google.protobuf.message.Message):
         topic: builtins.str = ...,
         pubsub_name: builtins.str = ...,
         path: builtins.str = ...,
+        extensions: google.protobuf.struct_pb2.Struct | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["data", b"data", "data_content_type", b"data_content_type", "id", b"id", "path", b"path", "pubsub_name", b"pubsub_name", "source", b"source", "spec_version", b"spec_version", "topic", b"topic", "type", b"type"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["extensions", b"extensions"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data", b"data", "data_content_type", b"data_content_type", "extensions", b"extensions", "id", b"id", "path", b"path", "pubsub_name", b"pubsub_name", "source", b"source", "spec_version", b"spec_version", "topic", b"topic", "type", b"type"]) -> None: ...
 
 global___TopicEventRequest = TopicEventRequest
 
@@ -130,6 +137,200 @@ class TopicEventResponse(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["status", b"status"]) -> None: ...
 
 global___TopicEventResponse = TopicEventResponse
+
+class TopicEventCERequest(google.protobuf.message.Message):
+    """TopicEventCERequest message is compatible with CloudEvent spec v1.0"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    ID_FIELD_NUMBER: builtins.int
+    SOURCE_FIELD_NUMBER: builtins.int
+    TYPE_FIELD_NUMBER: builtins.int
+    SPEC_VERSION_FIELD_NUMBER: builtins.int
+    DATA_CONTENT_TYPE_FIELD_NUMBER: builtins.int
+    DATA_FIELD_NUMBER: builtins.int
+    EXTENSIONS_FIELD_NUMBER: builtins.int
+    id: builtins.str
+    """The unique identifier of this cloud event."""
+    source: builtins.str
+    """source identifies the context in which an event happened."""
+    type: builtins.str
+    """The type of event related to the originating occurrence."""
+    spec_version: builtins.str
+    """The version of the CloudEvents specification."""
+    data_content_type: builtins.str
+    """The content type of data value."""
+    data: builtins.bytes
+    """The content of the event."""
+    @property
+    def extensions(self) -> google.protobuf.struct_pb2.Struct:
+        """Custom attributes which includes cloud event extensions."""
+    def __init__(
+        self,
+        *,
+        id: builtins.str = ...,
+        source: builtins.str = ...,
+        type: builtins.str = ...,
+        spec_version: builtins.str = ...,
+        data_content_type: builtins.str = ...,
+        data: builtins.bytes = ...,
+        extensions: google.protobuf.struct_pb2.Struct | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["extensions", b"extensions"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data", b"data", "data_content_type", b"data_content_type", "extensions", b"extensions", "id", b"id", "source", b"source", "spec_version", b"spec_version", "type", b"type"]) -> None: ...
+
+global___TopicEventCERequest = TopicEventCERequest
+
+class TopicEventBulkRequestEntry(google.protobuf.message.Message):
+    """TopicEventBulkRequestEntry represents a single message inside a bulk request"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
+    ENTRY_ID_FIELD_NUMBER: builtins.int
+    BYTES_FIELD_NUMBER: builtins.int
+    CLOUD_EVENT_FIELD_NUMBER: builtins.int
+    CONTENT_TYPE_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    entry_id: builtins.str
+    """Unique identifier for the message."""
+    bytes: builtins.bytes
+    @property
+    def cloud_event(self) -> global___TopicEventCERequest: ...
+    content_type: builtins.str
+    """content type of the event contained."""
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        """The metadata associated with the event."""
+    def __init__(
+        self,
+        *,
+        entry_id: builtins.str = ...,
+        bytes: builtins.bytes = ...,
+        cloud_event: global___TopicEventCERequest | None = ...,
+        content_type: builtins.str = ...,
+        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["bytes", b"bytes", "cloud_event", b"cloud_event", "event", b"event"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["bytes", b"bytes", "cloud_event", b"cloud_event", "content_type", b"content_type", "entry_id", b"entry_id", "event", b"event", "metadata", b"metadata"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["event", b"event"]) -> typing_extensions.Literal["bytes", "cloud_event"] | None: ...
+
+global___TopicEventBulkRequestEntry = TopicEventBulkRequestEntry
+
+class TopicEventBulkRequest(google.protobuf.message.Message):
+    """TopicEventBulkRequest represents request for bulk message"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
+    ID_FIELD_NUMBER: builtins.int
+    ENTRIES_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
+    TOPIC_FIELD_NUMBER: builtins.int
+    PUBSUB_NAME_FIELD_NUMBER: builtins.int
+    TYPE_FIELD_NUMBER: builtins.int
+    PATH_FIELD_NUMBER: builtins.int
+    id: builtins.str
+    """Unique identifier for the bulk request."""
+    @property
+    def entries(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicEventBulkRequestEntry]:
+        """The list of items inside this bulk request."""
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        """The metadata associated with the this bulk request."""
+    topic: builtins.str
+    """The pubsub topic which publisher sent to."""
+    pubsub_name: builtins.str
+    """The name of the pubsub the publisher sent to."""
+    type: builtins.str
+    """The type of event related to the originating occurrence."""
+    path: builtins.str
+    """The matching path from TopicSubscription/routes (if specified) for this event.
+    This value is used by OnTopicEvent to "switch" inside the handler.
+    """
+    def __init__(
+        self,
+        *,
+        id: builtins.str = ...,
+        entries: collections.abc.Iterable[global___TopicEventBulkRequestEntry] | None = ...,
+        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        topic: builtins.str = ...,
+        pubsub_name: builtins.str = ...,
+        type: builtins.str = ...,
+        path: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["entries", b"entries", "id", b"id", "metadata", b"metadata", "path", b"path", "pubsub_name", b"pubsub_name", "topic", b"topic", "type", b"type"]) -> None: ...
+
+global___TopicEventBulkRequest = TopicEventBulkRequest
+
+class TopicEventBulkResponseEntry(google.protobuf.message.Message):
+    """TopicEventBulkResponseEntry Represents single response, as part of TopicEventBulkResponse, to be
+    sent by subscibed App for the corresponding single message during bulk subscribe
+    """
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    ENTRY_ID_FIELD_NUMBER: builtins.int
+    STATUS_FIELD_NUMBER: builtins.int
+    entry_id: builtins.str
+    """Unique identifier associated the message."""
+    status: global___TopicEventResponse.TopicEventResponseStatus.ValueType
+    """The status of the response."""
+    def __init__(
+        self,
+        *,
+        entry_id: builtins.str = ...,
+        status: global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["entry_id", b"entry_id", "status", b"status"]) -> None: ...
+
+global___TopicEventBulkResponseEntry = TopicEventBulkResponseEntry
+
+class TopicEventBulkResponse(google.protobuf.message.Message):
+    """AppBulkResponse is response from app on published message"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    STATUSES_FIELD_NUMBER: builtins.int
+    @property
+    def statuses(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicEventBulkResponseEntry]:
+        """The list of all responses for the bulk request."""
+    def __init__(
+        self,
+        *,
+        statuses: collections.abc.Iterable[global___TopicEventBulkResponseEntry] | None = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["statuses", b"statuses"]) -> None: ...
+
+global___TopicEventBulkResponse = TopicEventBulkResponse
 
 class BindingEventRequest(google.protobuf.message.Message):
     """BindingEventRequest represents input bindings event."""
