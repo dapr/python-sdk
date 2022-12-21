@@ -18,7 +18,7 @@ from dapr.actor.runtime._state_provider import StateProvider
 from dapr.clients.base import DaprActorClientBase
 from dapr.serializers import Serializer
 
-from typing import Callable, TYPE_CHECKING
+from typing import Callable, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from dapr.actor.runtime.actor import Actor
     from dapr.actor.runtime._type_information import ActorTypeInformation
@@ -45,7 +45,7 @@ class ActorRuntimeContext:
             self, actor_type_info: 'ActorTypeInformation',
             message_serializer: Serializer, state_serializer: Serializer,
             actor_client: DaprActorClientBase,
-            actor_factory: Callable[['ActorRuntimeContext', ActorId], 'Actor'] = None):
+            actor_factory: Optional[Callable[['ActorRuntimeContext', ActorId], 'Actor']] = None):
         """Creates :class:`ActorRuntimeContext` object.
 
         Args:
@@ -55,7 +55,8 @@ class ActorRuntimeContext:
                 request and response body.
             state_serializer(:class:`Serializer`): the seralizer for state value.
             actor_client(:class:`DaprActorClientBase`): the actor client used for dapr runtime.
-            actor_factory(Callable): the factory to create Actor object by actor_type_info.
+            actor_factory(Callable, optional): the factory to create Actor object by
+                actor_type_info.
         """
         self._actor_type_info = actor_type_info
         self._actor_factory = actor_factory or self._default_actor_factory
