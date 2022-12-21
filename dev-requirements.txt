@@ -6,7 +6,7 @@ flake8>=3.7.9
 aiohttp>=3.6.2
 python-dateutil>=2.8.1
 grpcio>=1.37.0
-protobuf>=3.17.3,<3.21dev
+protobuf>=3.17.3,<4.22
 six==1.16.0
 tox==4.0.16
 cloudevents>=1.0.0
