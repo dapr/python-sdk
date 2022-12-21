@@ -215,6 +215,7 @@ Zipkin also has an API available. See [Zipkin API](https://zipkin.io/zipkin-api/
 To see traces collected through the API:
 
 <!-- STEP
+match_order: none
 expected_stdout_lines:
   - '"calllocal/invoke-receiver/say"'
   - '"calllocal/invoke-receiver/sleep"'
