@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 from abc import ABC
+from typing import Optional
 
 
 class ActorInterface(ABC):
@@ -35,7 +36,7 @@ class ActorInterface(ABC):
     ...
 
 
-def actormethod(name: str = None):
+def actormethod(name: Optional[str] = None):
     """Decorate actor method to define the method invoked by the remote actor.
 
     This allows users to call the decorated name via the proxy client.
@@ -48,7 +49,7 @@ def actormethod(name: str = None):
                 ...
 
     Args:
-        name (str): the name of actor method.
+        name (str, optional): the name of actor method.
     """
     def wrapper(funcobj):
         funcobj.__actormethod__ = name

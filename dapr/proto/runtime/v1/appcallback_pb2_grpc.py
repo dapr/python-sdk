@@ -283,3 +283,71 @@ class AppCallbackHealthCheck(object):
             dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.HealthCheckResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+
+class AppCallbackAlphaStub(object):
+    """AppCallbackAlpha V1 is an optional extension to AppCallback V1 to opt
+    for Alpha RPCs.
+    """
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.OnBulkTopicEventAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.AppCallbackAlpha/OnBulkTopicEventAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkResponse.FromString,
+                )
+
+
+class AppCallbackAlphaServicer(object):
+    """AppCallbackAlpha V1 is an optional extension to AppCallback V1 to opt
+    for Alpha RPCs.
+    """
+
+    def OnBulkTopicEventAlpha1(self, request, context):
+        """Subscribes bulk events from Pubsub
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_AppCallbackAlphaServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'OnBulkTopicEventAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.OnBulkTopicEventAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'dapr.proto.runtime.v1.AppCallbackAlpha', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+ # This class is part of an EXPERIMENTAL API.
+class AppCallbackAlpha(object):
+    """AppCallbackAlpha V1 is an optional extension to AppCallback V1 to opt
+    for Alpha RPCs.
+    """
+
+    @staticmethod
+    def OnBulkTopicEventAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.AppCallbackAlpha/OnBulkTopicEventAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
