@@ -19,7 +19,7 @@ from setuptools import setup
 
 # Load version in dapr package.
 version_info = {}
-with open('dapr/version.py') as fp:
+with open('dapr/version/version.py') as fp:
     exec(fp.read(), version_info)
 __version__ = version_info['__version__']
 
