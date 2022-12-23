@@ -30,6 +30,9 @@ from dapr.serializers.util import (
 
 
 class DefaultJSONSerializer(Serializer):
+    def __init__(self, ensure_ascii: bool = True) -> None:
+        self.ensure_ascii = ensure_ascii
+
     def serialize(
             self, obj: object,
             custom_hook: Optional[Callable[[object], bytes]] = None) -> bytes:
@@ -49,7 +52,7 @@ class DefaultJSONSerializer(Serializer):
             dict_obj,
             cls=DaprJSONEncoder,
             separators=(',', ':'),
-            ensure_ascii=False
+            ensure_ascii=self.ensure_ascii
         )
 
         return serialized.encode('utf-8')
