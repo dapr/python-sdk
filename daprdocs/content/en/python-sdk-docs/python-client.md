@@ -101,7 +101,7 @@ with DaprClient() as d:
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
-    resp = d.publish_event(pubsub_name='pubsub', topic='TOPIC_A', data='{"message":"Hello World"}')
+    resp = d.publish_event(pubsub_name='pubsub', topic_name='TOPIC_A', data='{"message":"Hello World"}')
 ```
 
 ##### Subscribe to messages
