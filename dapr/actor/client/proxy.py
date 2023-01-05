@@ -31,7 +31,7 @@ class ActorFactoryBase(ABC):
     @abstractmethod
     def create(
             self, actor_type: str, actor_id: ActorId,
-            actor_interface: Type[ActorInterface] = None) -> 'ActorProxy':
+            actor_interface: Optional[Type[ActorInterface]] = None) -> 'ActorProxy':
         ...
 
 
@@ -53,7 +53,7 @@ class ActorProxyFactory(ActorFactoryBase):
 
     def create(
             self, actor_type: str, actor_id: ActorId,
-            actor_interface: Type[ActorInterface] = None) -> 'ActorProxy':
+            actor_interface: Optional[Type[ActorInterface]] = None) -> 'ActorProxy':
         return ActorProxy(
             self._dapr_client, actor_type, actor_id,
             actor_interface, self._message_serializer)
@@ -122,7 +122,7 @@ class ActorProxy:
     def create(
             cls,
             actor_type: str, actor_id: ActorId,
-            actor_interface: Type[ActorInterface] = None,
+            actor_interface: Optional[Type[ActorInterface]] = None,
             actor_proxy_factory: Optional[ActorFactoryBase] = None) -> 'ActorProxy':
         """Creates ActorProxy client to call actor.
 
