@@ -77,6 +77,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             topic: str,
             cb: TopicSubscribeCallable,
             metadata: Optional[Dict[str, str]],
+            dead_letter_topic: Optional[str] = None,
             rule: Optional[Rule] = None,
             disable_topic_validation: Optional[bool] = False) -> None:
         """Registers topic subscription for pubsub."""
@@ -103,6 +104,8 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
                 metadata=metadata,
                 routes=appcallback_v1.TopicRoutes()
             )
+            if dead_letter_topic:
+                sub.dead_letter_topic = dead_letter_topic
             registered_topic = _RegisteredSubscription(sub, rules)
             self._registered_topics_map[topic_key] = registered_topic
             self._registered_topics.append(sub)

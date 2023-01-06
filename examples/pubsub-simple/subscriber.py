@@ -23,7 +23,7 @@ app = App()
 should_retry = True  # To control whether dapr should retry sending a message
 
 
-@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD')
 def mytopic(event: v1.Event) -> TopicEventResponse:
     global should_retry
     data = json.loads(event.Data())
@@ -35,6 +35,12 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
         return TopicEventResponse('retry')
     return TopicEventResponse('success')
 
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A_DEAD')
+def mytopic_dead(event: v1.Event) -> TopicEventResponse:
+    data = json.loads(event.Data())
+    print(f'Dead-Letter Subscriber received: id={data["id"]}, message="{data["message"]}", '
+          f'content_type="{event.content_type}"', flush=True)
+    return TopicEventResponse('success')
 
 # == for testing with Redis only ==
 # workaround as redis pubsub does not support wildcards
@@ -54,4 +60,4 @@ def mytopic_wildcard(event: v1.Event) -> TopicEventResponse:
     return TopicEventResponse('success')
 
 
-app.run(50051)
+app.run(50071)
