@@ -60,4 +60,4 @@ def mytopic_wildcard(event: v1.Event) -> TopicEventResponse:
     return TopicEventResponse('success')
 
 
-app.run(50071)
+app.run(50051)
