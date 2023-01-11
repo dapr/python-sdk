@@ -23,7 +23,7 @@ app = App()
 should_retry = True  # To control whether dapr should retry sending a message
 
 
-@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD')
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
 def mytopic(event: v1.Event) -> TopicEventResponse:
     global should_retry
     data = json.loads(event.Data())
@@ -35,7 +35,13 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
         return TopicEventResponse('retry')
     return TopicEventResponse('success')
 
-@app.subscribe(pubsub_name='pubsub', topic='TOPIC_A_DEAD')
+
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_D', dead_letter_topic='TOPIC_D_DEAD')
+def fail_and_send_to_dead_topic(event: v1.Event) -> TopicEventResponse:
+    return TopicEventResponse('retry')
+
+
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_D_DEAD')
 def mytopic_dead(event: v1.Event) -> TopicEventResponse:
     data = json.loads(event.Data())
     print(f'Dead-Letter Subscriber received: id={data["id"]}, message="{data["message"]}", '
