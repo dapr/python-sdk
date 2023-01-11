@@ -34,6 +34,7 @@ expected_stdout_lines:
   - '== APP == Wildcard-Subscriber received: id=4, message="hello world", content_type="application/json"'
   - '== APP == Wildcard-Subscriber received: id=5, message="hello world", content_type="application/json"'
   - '== APP == Wildcard-Subscriber received: id=6, message="hello world", content_type="application/json"'
+  - '== APP == Dead-Letter Subscriber received: id=7, message="hello world", content_type="application/json"'
 output_match_mode: substring
 background: true
 match_order: none

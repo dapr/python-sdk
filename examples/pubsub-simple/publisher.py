@@ -59,3 +59,15 @@ with DaprClient() as d:
         print(req_data, flush=True)
 
         time.sleep(0.5)
+
+    # This topic will fail - initiate a retry which gets routed to the dead letter topic
+    req_data['id'] = 7
+    resp = d.publish_event(
+        pubsub_name='pubsub',
+        topic_name='TOPIC_D',
+        data=json.dumps(req_data),
+        data_content_type='application/json',
+    )
+
+    # Print the request
+    print(req_data, flush=True)

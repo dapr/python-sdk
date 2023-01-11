@@ -36,6 +36,18 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
     return TopicEventResponse('success')
 
 
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_D', dead_letter_topic='TOPIC_D_DEAD')
+def fail_and_send_to_dead_topic(event: v1.Event) -> TopicEventResponse:
+    return TopicEventResponse('retry')
+
+
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_D_DEAD')
+def mytopic_dead(event: v1.Event) -> TopicEventResponse:
+    data = json.loads(event.Data())
+    print(f'Dead-Letter Subscriber received: id={data["id"]}, message="{data["message"]}", '
+          f'content_type="{event.content_type}"', flush=True)
+    return TopicEventResponse('success')
+
 # == for testing with Redis only ==
 # workaround as redis pubsub does not support wildcards
 # we manually register the distinct topics
