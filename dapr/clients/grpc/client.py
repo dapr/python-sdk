@@ -21,6 +21,7 @@ from urllib.parse import urlencode
 from warnings import warn
 
 from typing import Dict, Optional, Union, Sequence, List
+from typing_extensions import Self
 
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
@@ -147,7 +148,7 @@ class DaprGrpcClient:
     def __del__(self):
         self.close()
 
-    def __enter__(self) -> 'DaprGrpcClient':
+    def __enter__(self) -> Self:  # type: ignore
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
