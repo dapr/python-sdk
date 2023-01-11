@@ -120,6 +120,30 @@ class DaprAppTest(unittest.TestCase):
                 if len(route.tags) > 0:
                     self.fail('Found tags on route that should not have any')
 
+    def test_subscribe_dead_letter(self):
+        dead_letter_topic = "dead-test"
+
+        @self.dapr_app.subscribe(pubsub="pubsub",
+                                 topic="test",
+                                 dead_letter_topic=dead_letter_topic)
+        def event_handler(event_data: Message):
+            return "dead letter test"
+
+        self.assertEqual((self.dapr_app._subscriptions[0]["deadLetterTopic"]), dead_letter_topic)
+
+        response = self.client.get("/dapr/subscribe")
+        self.assertEqual(
+            [{'pubsubname': 'pubsub',
+              'topic': 'test',
+              'route': '/events/pubsub/test',
+              'metadata': {},
+              'deadLetterTopic': dead_letter_topic
+              }], response.json())
+
+        response = self.client.post("/events/pubsub/test", json={"body": "new message"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.text, '"dead letter test"')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -58,6 +58,10 @@ class AppTests(unittest.TestCase):
         def handle_test_event(event: v1.Event) -> None:
             pass
 
+        @self._app.subscribe(pubsub_name='pubsub', topic='topic2', dead_letter_topic='topic2_dead')
+        def handle_dead_letter(event: v1.Event) -> None:
+            pass
+
         subscription_map = self._app._servicer._topic_map
         self.assertIn(
             'AppTests.test_subscribe_decorator.<locals>.handle_default',
@@ -65,3 +69,6 @@ class AppTests(unittest.TestCase):
         self.assertIn(
             'AppTests.test_subscribe_decorator.<locals>.handle_test_event',
             str(subscription_map['pubsub:topic:handle_test_event']))
+        self.assertIn(
+            'AppTests.test_subscribe_decorator.<locals>.handle_dead_letter',
+            str(subscription_map['pubsub:topic2:']))

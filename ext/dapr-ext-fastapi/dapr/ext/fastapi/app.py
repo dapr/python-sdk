@@ -40,7 +40,8 @@ class DaprApp:
                   pubsub: str,
                   topic: str,
                   metadata: Optional[Dict[str, str]] = {},
-                  route: Optional[str] = None):
+                  route: Optional[str] = None,
+                  dead_letter_topic: Optional[str] = None):
         """
         Subscribes to a topic on a pub/sub component.
 
@@ -67,6 +68,7 @@ class DaprApp:
                 The HTTP route to register for the event subscription. By default we'll
                 generate one that matches the pattern /events/{pubsub}/{topic}. You can
                 override this with your own route.
+            dead_letter_topic: The name of the dead letter topic to use for the subscription.
 
         Returns:
             The decorator for the function.
@@ -83,7 +85,8 @@ class DaprApp:
                 "pubsubname": pubsub,
                 "topic": topic,
                 "route": event_handler_route,
-                "metadata": metadata
+                "metadata": metadata,
+                **({"deadLetterTopic": dead_letter_topic} if dead_letter_topic is not None else {})
             })
 
         return decorator
