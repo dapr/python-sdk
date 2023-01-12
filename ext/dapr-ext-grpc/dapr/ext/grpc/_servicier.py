@@ -27,7 +27,6 @@ from dapr.proto.common.v1.common_pb2 import InvokeRequest
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
-from dapr.clients.grpc.client import MetadataTuple
 
 InvokeMethodCallable = Callable[[
     InvokeMethodRequest], Union[str, bytes, InvokeMethodResponse]]
@@ -134,7 +133,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._binding_map[name] = cb
         self._registered_bindings.append(name)
 
-    def OnInvoke(self, request: InvokeRequest, context: grpc.ServicerContext):
+    def OnInvoke(self, request: InvokeRequest, context):
         """Invokes service method with InvokeRequest."""
         if request.method not in self._invoke_method_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
@@ -172,12 +171,12 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         return common_v1.InvokeResponse(
             data=resp_data.proto, content_type=content_type)
 
-    def ListTopicSubscriptions(self, request, context: grpc.ServicerContext):
+    def ListTopicSubscriptions(self, request, context):
         """Lists all topics subscribed by this app."""
         return appcallback_v1.ListTopicSubscriptionsResponse(
             subscriptions=self._registered_topics)
 
-    def OnTopicEvent(self, request: TopicEventRequest, context: grpc.ServicerContext):
+    def OnTopicEvent(self, request: TopicEventRequest, context):
         """Subscribes events from Pubsub."""
         pubsub_topic = request.pubsub_name + DELIMITER + \
             request.topic + DELIMITER + request.path
@@ -195,6 +194,8 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         extensions = dict()
         for k, v in customdata.items():
             extensions[k] = v
+        for k, v in context.invocation_metadata():
+            extensions["_metadata_" + k] = v
 
         event = v1.Event()
         event.SetEventType(request.type)
@@ -202,23 +203,20 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         event.SetSource(request.source)
         event.SetData(request.data)
         event.SetContentType(request.data_content_type)
-        # The DAPR runtime injects the pubsub name and topic as cloud event extension
-        event.SetSubject(extensions['topic'])
+        event.SetSubject(request.topic)
         event.SetExtensions(extensions)
-
-        # TODO: add metadata from context to CE envelope
 
         response = self._topic_map[pubsub_topic](event)
         if isinstance(response, TopicEventResponse):
             return appcallback_v1.TopicEventResponse(status=response.status.value)
         return empty_pb2.Empty()
 
-    def ListInputBindings(self, request, context: grpc.ServicerContext):
+    def ListInputBindings(self, request, context):
         """Lists all input bindings subscribed by this app."""
         return appcallback_v1.ListInputBindingsResponse(
             bindings=self._registered_bindings)
 
-    def OnBindingEvent(self, request: BindingEventRequest, context: grpc.ServicerContext):
+    def OnBindingEvent(self, request: BindingEventRequest, context):
         """Listens events from the input bindings
         User application can save the states or send the events to the output
         bindings optionally by returning BindingEventResponse.
@@ -228,7 +226,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             raise NotImplementedError(
                 f'{request.name} binding not implemented!')
 
-        req = BindingRequest(request.data, request.metadata)
+        req = BindingRequest(request.data, dict(request.metadata))
         req.metadata = context.invocation_metadata()
         self._binding_map[request.name](req)
 

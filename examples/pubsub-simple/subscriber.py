@@ -47,7 +47,9 @@ def mytopic_dead(event: v1.Event) -> TopicEventResponse:
     data = json.loads(event.Data())
     print(f'Dead-Letter Subscriber received: id={data["id"]}, message="{data["message"]}", '
           f'content_type="{event.content_type}"', flush=True)
-    print("Dead-Letter Subscriber. Originally intended topic: " + event.Subject(), flush=True)
+    print("Dead-Letter Subscriber. Received via deadletter topic: " + event.Subject(), flush=True)
+    print("Dead-Letter Subscriber. Originally intended topic: " + event.Extensions()['topic'],
+          flush=True)
     return TopicEventResponse('success')
 
 
