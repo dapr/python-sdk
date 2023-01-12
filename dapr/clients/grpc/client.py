@@ -906,7 +906,7 @@ class DaprGrpcClient:
     def get_configuration(
             self,
             store_name: str,
-            keys: str,
+            keys: List[str],
             config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationResponse:
         """Gets value from a config store with a key
 
