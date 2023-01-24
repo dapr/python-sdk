@@ -8,10 +8,10 @@ python-dateutil>=2.8.1
 grpcio>=1.37.0
 protobuf>=3.17.3,<4.22
 six==1.16.0
-tox==4.3.3
+tox>=4.3.0
 cloudevents>=1.0.0
-opencensus==0.11.0
-opencensus-ext-grpc==0.7.2
+opencensus>=0.11.0
+opencensus-ext-grpc>=0.7.0
 coverage>=5.3
 codecov>=1.4.0
 httpx==0.23.3
