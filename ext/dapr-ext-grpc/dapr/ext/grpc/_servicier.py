@@ -19,8 +19,11 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from google.protobuf import empty_pb2
 from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.struct_pb2 import Struct
 
 from dapr.proto import appcallback_service_v1, common_v1, appcallback_v1
+from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest, BindingEventRequest
+from dapr.proto.common.v1.common_pb2 import InvokeRequest
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
@@ -130,7 +133,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._binding_map[name] = cb
         self._registered_bindings.append(name)
 
-    def OnInvoke(self, request, context):
+    def OnInvoke(self, request: InvokeRequest, context):
         """Invokes service method with InvokeRequest."""
         if request.method not in self._invoke_method_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
@@ -173,7 +176,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         return appcallback_v1.ListTopicSubscriptionsResponse(
             subscriptions=self._registered_topics)
 
-    def OnTopicEvent(self, request, context):
+    def OnTopicEvent(self, request: TopicEventRequest, context):
         """Subscribes events from Pubsub."""
         pubsub_topic = request.pubsub_name + DELIMITER + \
             request.topic + DELIMITER + request.path
@@ -187,14 +190,21 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
                 raise NotImplementedError(
                     f'topic {request.topic} is not implemented!')
 
+        customdata: Struct = request.extensions
+        extensions = dict()
+        for k, v in customdata.items():
+            extensions[k] = v
+        for k, v in context.invocation_metadata():
+            extensions["_metadata_" + k] = v
+
         event = v1.Event()
         event.SetEventType(request.type)
         event.SetEventID(request.id)
         event.SetSource(request.source)
         event.SetData(request.data)
         event.SetContentType(request.data_content_type)
-
-        # TODO: add metadata from context to CE envelope
+        event.SetSubject(request.topic)
+        event.SetExtensions(extensions)
 
         response = self._topic_map[pubsub_topic](event)
         if isinstance(response, TopicEventResponse):
@@ -206,7 +216,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         return appcallback_v1.ListInputBindingsResponse(
             bindings=self._registered_bindings)
 
-    def OnBindingEvent(self, request, context):
+    def OnBindingEvent(self, request: BindingEventRequest, context):
         """Listens events from the input bindings
         User application can save the states or send the events to the output
         bindings optionally by returning BindingEventResponse.
@@ -216,7 +226,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             raise NotImplementedError(
                 f'{request.name} binding not implemented!')
 
-        req = BindingRequest(request.data, request.metadata)
+        req = BindingRequest(request.data, dict(request.metadata))
         req.metadata = context.invocation_metadata()
         self._binding_map[request.name](req)
 

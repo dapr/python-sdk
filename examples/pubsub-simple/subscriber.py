@@ -29,6 +29,7 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
     data = json.loads(event.Data())
     print(f'Subscriber received: id={data["id"]}, message="{data["message"]}", '
           f'content_type="{event.content_type}"', flush=True)
+    # event.Metadata() contains a dictionary of cloud event extensions and publish metadata
     if should_retry:
         should_retry = False  # we only retry once in this example
         sleep(0.5)  # add some delay to help with ordering of expected logs
@@ -46,7 +47,11 @@ def mytopic_dead(event: v1.Event) -> TopicEventResponse:
     data = json.loads(event.Data())
     print(f'Dead-Letter Subscriber received: id={data["id"]}, message="{data["message"]}", '
           f'content_type="{event.content_type}"', flush=True)
+    print("Dead-Letter Subscriber. Received via deadletter topic: " + event.Subject(), flush=True)
+    print("Dead-Letter Subscriber. Originally intended topic: " + event.Extensions()['topic'],
+          flush=True)
     return TopicEventResponse('success')
+
 
 # == for testing with Redis only ==
 # workaround as redis pubsub does not support wildcards

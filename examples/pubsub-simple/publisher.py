@@ -67,6 +67,7 @@ with DaprClient() as d:
         topic_name='TOPIC_D',
         data=json.dumps(req_data),
         data_content_type='application/json',
+        publish_metadata={'custommeta': 'somevalue'}
     )
 
     # Print the request
