@@ -247,6 +247,8 @@ class DaprGrpcClient:
         Returns:
             :class:`InvokeMethodResponse` object returned from callee
         """
+        warn('invoke_method with protocol gRPC is deprecated. Use gRPC proxying instead.',
+             DeprecationWarning, stacklevel=2)
         if metadata is not None:
             warn('metadata argument is deprecated. Dapr already intercepts API token headers '
                  'and this is not needed.', DeprecationWarning, stacklevel=2)
