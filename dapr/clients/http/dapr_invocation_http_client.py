@@ -17,7 +17,6 @@ import asyncio
 
 from typing import Callable, Dict, Optional, Union
 
-from multidict import MultiDict
 from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
 from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
 from dapr.clients.grpc._response import InvokeMethodResponse
@@ -106,13 +105,13 @@ class DaprInvocationHttpClient:
                 query_params=query_params,
                 timeout=timeout)
 
-            resp_data = InvokeMethodResponse(resp_body, r.content_type)
-            respHeaders = resp_data.headers
-            for key in r.headers:
-                respHeaders[key] = r.headers[key]  # type: ignore
+            respHeaders: MetadataTuple = tuple(r.headers.items())
 
-            headerTuples = [(k, v) for k, v in respHeaders.items()]
-            resp_data.headers = headerTuples  # type: ignore
+            resp_data = InvokeMethodResponse(
+                data=resp_body,
+                content_type=r.content_type,
+                headers=respHeaders,
+                status_code=r.status)
             return resp_data
         return await make_request()
 
