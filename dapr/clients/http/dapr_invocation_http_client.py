@@ -16,6 +16,7 @@ limitations under the License.
 import asyncio
 
 from typing import Callable, Dict, Optional, Union
+from multidict import MultiDict
 
 from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
 from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
