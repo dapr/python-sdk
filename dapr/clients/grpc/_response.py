@@ -102,13 +102,15 @@ class InvokeMethodResponse(DaprResponse):
         content (bytes, optional): bytes data if response data is not serialized
             protocol buffer message
         content_type (str, optional): the type of `content`
+        status_code (int, optional): the status code of the response
     """
 
     def __init__(
             self,
             data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
             content_type: Optional[str] = None,
-            headers: MetadataTuple = ()):
+            headers: MetadataTuple = (),
+            status_code: Optional[int] = None):
         """Initializes InvokeMethodReponse from :obj:`common_v1.InvokeResponse`.
 
         Args:
@@ -116,11 +118,12 @@ class InvokeMethodResponse(DaprResponse):
                 from Dapr response
             content_type (str, optional): the content type of the bytes data
             headers (tuple, optional): the headers from Dapr gRPC response
+            status_code (int, optional): the status code of the response
         """
         super(InvokeMethodResponse, self).__init__(headers)
         self._content_type = content_type
-
         self.set_data(data)
+        self._status_code = status_code
 
         # Set content_type to application/json type if content_type
         # is not given and date is bytes or str type.
@@ -212,6 +215,16 @@ class InvokeMethodResponse(DaprResponse):
             self._data.Pack(val)
         else:
             raise ValueError('invalid data type')
+
+    @property
+    def status_code(self) -> Optional[int]:
+        """Gets the response status code attribute."""
+        return self._status_code
+
+    @status_code.setter
+    def status_code(self, val: Optional[int]) -> None:
+        """Sets the response status code."""
+        self._status_code = val
 
     def unpack(self, message: GrpcMessage) -> None:
         """Deserializes the serialized protocol buffer message.

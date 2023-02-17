@@ -20,5 +20,6 @@ with DaprClient() as d:
         # Print the response
         print(resp.content_type, flush=True)
         print(resp.text(), flush=True)
+        print(str(resp.status_code), flush=True)
 
         time.sleep(2)
