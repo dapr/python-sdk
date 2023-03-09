@@ -25,8 +25,5 @@ class Settings:
             env_variable = os.environ.get(setting)
             setattr(self, setting, env_variable or default_value)
 
-    def __getattr__(self, name):
-        return getattr(self, name)
-
 
 settings = Settings()
