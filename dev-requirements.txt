@@ -9,3 +9,5 @@ wheel
 # used in unit test only
 opencensus>=0.11.0
 httpx==0.24.0
+# needed for type checking
+Flask>=1.1
