@@ -861,7 +861,8 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
         if unlock doesn't return `UnlockResponseStatus.success`.
         '''
         if self._success:
-            await self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
+            await self._client.unlock(self._store_name,
+                                      self._resource_id, self._lock_owner)  # type: ignore
         # else: there is no point unlocking a lock we did not acquire.
 
     async def __aenter__(self) -> 'TryLockResponse':

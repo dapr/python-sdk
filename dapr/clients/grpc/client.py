@@ -406,7 +406,7 @@ class DaprGrpcClient:
         """Gets value from a statestore with a key
 
         The example gets value from a statestore:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.get_state(
                     store_name='state_store'
@@ -448,7 +448,7 @@ class DaprGrpcClient:
         """Gets values from a statestore with keys
 
         The example gets value from a statestore:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.get_bulk_state(
                     store_name='state_store',
@@ -503,7 +503,7 @@ class DaprGrpcClient:
         For details on supported queries see https://docs.dapr.io/
 
         This example queries a statestore:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
 
             query = '''
             {
@@ -578,7 +578,7 @@ class DaprGrpcClient:
         metadata can be passed with metadata field.
 
         The example saves states to a statestore:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.save_state(
                     store_name='state_store',
@@ -644,7 +644,7 @@ class DaprGrpcClient:
         This saves a given state item into the statestore specified by store_name.
 
         The example saves states to a statestore:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.save_bulk_state(
                     store_name='state_store',
@@ -699,7 +699,7 @@ class DaprGrpcClient:
         for the GRPC call.
 
         The example saves states to a statestore:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.execute_state_transaction(
                     store_name='state_store',
@@ -759,7 +759,7 @@ class DaprGrpcClient:
         metadata can be passed with metadata field.
 
         The example deletes states from a statestore:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.delete_state(
                     store_name='state_store',
@@ -913,7 +913,7 @@ class DaprGrpcClient:
         """Gets value from a config store with a key
 
         The example gets value from a config store:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.get_configuration(
                     store_name='state_store'
@@ -950,7 +950,7 @@ class DaprGrpcClient:
         """Gets changed value from a config store with a key
 
         The example gets value from a config store:
-            from dapr import DaprClient
+            from dapr.clients import DaprClient
             with DaprClient() as d:
                 resp = d.subscribe_config(
                     store_name='state_store'

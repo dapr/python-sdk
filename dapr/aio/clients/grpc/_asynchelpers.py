@@ -14,84 +14,24 @@ limitations under the License.
 """
 
 from collections import namedtuple
-from typing import Dict, List, Union, Tuple, Optional
+from typing import List, Tuple
 
-from google.protobuf.any_pb2 import Any as GrpcAny
-from google.protobuf.message import Message as GrpcMessage
-from grpc import UnaryUnaryClientInterceptor, ClientCallDetails     # type: ignore
-
-MetadataDict = Dict[str, List[Union[bytes, str]]]
-MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
+from grpc.aio import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
 
 
-def tuple_to_dict(tupledata: MetadataTuple) -> MetadataDict:
-    """Converts tuple to dict.
-
-    Args:
-        tupledata (tuple): tuple storing metadata
-
-    Returns:
-        A dict which is converted from tuple
-    """
-
-    d: MetadataDict = {}
-    for k, v in tupledata:  # type: ignore
-        d.setdefault(k, []).append(v)
-    return d
-
-
-def unpack(data: GrpcAny, message: GrpcMessage) -> None:
-    """Unpack the serialized protocol buffer message.
-
-    Args:
-        data (:obj:`google.protobuf.message.Any`): the serialized protocol buffer message.
-        message (:obj:`google.protobuf.message.Message`): the protocol buffer message object
-            to which the response data is deserialized.
-
-    Raises:
-        ValueError: message is not protocol buffer message object or message's type is not
-            matched with the response data type
-    """
-    if not isinstance(message, GrpcMessage):
-        raise ValueError('output message is not protocol buffer message object')
-    if not data.Is(message.DESCRIPTOR):
-        raise ValueError(f'invalid type. serialized message type: {data.type_url}')
-    data.Unpack(message)
-
-
-def to_bytes(data: Union[str, bytes]) -> bytes:
-    """Convert str data to bytes."""
-    if isinstance(data, bytes):
-        return data
-    elif isinstance(data, str):
-        return data.encode('utf-8')
-    else:
-        raise f'invalid data type {type(data)}'
-
-
-def to_str(data: Union[str, bytes]) -> str:
-    """Convert bytes data to str."""
-    if isinstance(data, str):
-        return data
-    elif isinstance(data, bytes):
-        return data.decode('utf-8')
-    else:
-        raise f'invalid data type {type(data)}'
-
-
-class _ClientCallDetails(
+class _ClientCallDetailsAsync(
         namedtuple(
             '_ClientCallDetails',
-            ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression']),
+            ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready']),
         ClientCallDetails):
     """This is an implementation of the ClientCallDetails interface needed for interceptors.
-    This class takes six named values and inherits the ClientCallDetails from grpc package.
+    This class takes five named values and inherits the ClientCallDetails from grpc package.
     This class encloses the values that describe a RPC to be invoked.
     """
     pass
 
 
-class DaprClientInterceptor(UnaryUnaryClientInterceptor):
+class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
 
@@ -118,7 +58,7 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
 
         self._metadata = metadata
 
-    def _intercept_call(
+    async def _intercept_call(
             self,
             client_call_details: ClientCallDetails) -> ClientCallDetails:
         """Internal intercept_call implementation which adds metadata to grpc metadata in the RPC
@@ -137,13 +77,12 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
             metadata = list(client_call_details.metadata)
         metadata.extend(self._metadata)
 
-        new_call_details = _ClientCallDetails(
+        new_call_details = _ClientCallDetailsAsync(
             client_call_details.method, client_call_details.timeout, metadata,
-            client_call_details.credentials, client_call_details.wait_for_ready,
-            client_call_details.compression)
+            client_call_details.credentials, client_call_details.wait_for_ready)
         return new_call_details
 
-    def intercept_unary_unary(
+    async def intercept_unary_unary(
             self,
             continuation,
             client_call_details,
@@ -162,21 +101,7 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         """
 
         # Pre-process or intercept call
-        new_call_details = self._intercept_call(client_call_details)
+        new_call_details = await self._intercept_call(client_call_details)
         # Call continuation
-        response = continuation(new_call_details, request)
+        response = await continuation(new_call_details, request)
         return response
-
-
-# Data validation helpers
-
-def validateNotNone(**kwargs: Optional[str]):
-    for field_name, value in kwargs.items():
-        if value is None:
-            raise ValueError(f"{field_name} name cannot be None")
-
-
-def validateNotBlankString(**kwargs: Optional[str]):
-    for field_name, value in kwargs.items():
-        if not value or not value.strip():
-            raise ValueError(f"{field_name} name cannot be empty or blank")

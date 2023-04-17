@@ -17,7 +17,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
-from dapr.aio.clients.grpc.client import DaprGrpcClient, MetadataTuple, InvokeMethodResponse
+from dapr.aio.clients.grpc.client import DaprGrpcClientAsync, MetadataTuple, InvokeMethodResponse
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClient
 from dapr.conf import settings
@@ -39,7 +39,7 @@ from grpc.aio import (  # type: ignore
 )
 
 
-class DaprClient(DaprGrpcClient):
+class DaprClient(DaprGrpcClientAsync):
     """The Dapr python-sdk uses gRPC for most operations. The exception being
     service invocation which needs to support HTTP to HTTP invocations. The sdk defaults
     to HTTP but can be overridden with the DAPR_API_METHOD_INVOCATION_PROTOCOL environment

@@ -41,8 +41,8 @@ from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
+from dapr.aio.clients.grpc._asynchelpers import DaprClientInterceptorAsync
 from dapr.clients.grpc._helpers import (
-    AsyncDaprClientInterceptor,
     MetadataTuple,
     to_bytes,
     validateNotNone,
@@ -74,24 +74,24 @@ from dapr.clients.grpc._response import (
 )
 
 
-class DaprGrpcClient:
-    """The convenient layer implementation of Dapr gRPC APIs.
+class DaprGrpcClientAsync:
+    """The async convenient layer implementation of Dapr gRPC APIs.
 
     This provides the wrappers and helpers to allows developers to use Dapr runtime gRPC API
     easily and consistently.
 
     Examples:
 
-        >>> from dapr.clients import DaprClient
+        >>> from dapr.aio.clients import DaprClient
         >>> d = DaprClient()
-        >>> resp = d.invoke_method('callee', 'method', b'data')
+        >>> resp = await d.invoke_method('callee', 'method', b'data')
 
     With context manager and custom message size limit:
 
-        >>> from dapr.clients import DaprClient
+        >>> from dapr.aio.clients import DaprClient
         >>> MAX = 64 * 1024 * 1024 # 64MB
-        >>> with DaprClient(max_message_length=MAX) as d:
-        ...     resp = d.invoke_method('callee', 'method', b'data')
+        >>> async with DaprClient(max_message_length=MAX) as d:
+        ...     resp = await d.invoke_method('callee', 'method', b'data')
     """
 
     def __init__(
@@ -133,7 +133,7 @@ class DaprGrpcClient:
         self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
 
         if settings.DAPR_API_TOKEN:
-            api_token_interceptor = AsyncDaprClientInterceptor([
+            api_token_interceptor = DaprClientInterceptorAsync([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
             self._channel = grpc.aio.insecure_channel(   # type: ignore
                 address, options=options, interceptors=(api_token_interceptor,))
@@ -143,19 +143,19 @@ class DaprGrpcClient:
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
-    def close(self):
+    async def close(self):
         """Closes Dapr runtime gRPC channel."""
         if self._channel:
             self._channel.close()
 
-    def __del__(self):
-        self.close()
+    async def __del__(self):
+        await self.close()
 
-    def __enter__(self) -> Self:  # type: ignore
+    async def __aenter__(self) -> Self:  # type: ignore
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        self.close()
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        await self.close()
 
     def _get_http_extension(
             self, http_verb: str,
@@ -186,10 +186,10 @@ class DaprGrpcClient:
 
         The example calls `callee` service with bytes data, which implements grpc appcallback:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.invoke_method(
+            async with DaprClient() as d:
+                resp = await d.invoke_method(
                     app_id='callee',
                     method_name='method',
                     data=b'message',
@@ -202,12 +202,12 @@ class DaprGrpcClient:
 
         When sending custom protocol buffer message object, it doesn't requires content_type:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
             req_data = dapr_example_v1.CustomRequestMessage(data='custom')
 
-            with DaprClient() as d:
-                resp = d.invoke_method(
+            async with DaprClient() as d:
+                resp = await d.invoke_method(
                     app_id='callee',
                     method_name='method',
                     data=req_data,
@@ -219,10 +219,10 @@ class DaprGrpcClient:
 
         The example calls `callee` service which implements http appcallback:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.invoke_method(
+            async with DaprClient() as d:
+                resp = await d.invoke_method(
                     app_id='callee',
                     method_name='method',
                     data=b'message',
@@ -297,10 +297,10 @@ class DaprGrpcClient:
 
         The example calls output `binding` service with bytes data:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.invoke_binding(
+            async with DaprClient() as d:
+                resp = await d.invoke_binding(
                     binding_name = 'kafkaBinding',
                     operation = 'create',
                     data = b'message',
@@ -352,9 +352,9 @@ class DaprGrpcClient:
 
         The example publishes a byte array event to a topic:
 
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.publish_event(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.publish_event(
                     pubsub_name='pubsub_1',
                     topic_name='TOPIC_A',
                     data=b'message',
@@ -412,9 +412,9 @@ class DaprGrpcClient:
         """Gets value from a statestore with a key
 
         The example gets value from a statestore:
-            from dapr import DaprClient
-            with DaprClient() as d:
-                resp = d.get_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.get_state(
                     store_name='state_store'
                     key='key_1',
                     state={"key": "value"},
@@ -455,9 +455,9 @@ class DaprGrpcClient:
         """Gets values from a statestore with keys
 
         The example gets value from a statestore:
-            from dapr import DaprClient
-            with DaprClient() as d:
-                resp = d.get_bulk_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.get_bulk_state(
                     store_name='state_store',
                     keys=['key_1', key_2],
                     parallelism=2,
@@ -511,7 +511,7 @@ class DaprGrpcClient:
         For details on supported queries see https://docs.dapr.io/
 
         This example queries a statestore:
-            from dapr import DaprClient
+            from dapr.aio.clients import DaprClient
 
             query = '''
             {
@@ -527,8 +527,8 @@ class DaprGrpcClient:
             }
             '''
 
-            with DaprClient() as d:
-                resp = d.query_state(
+            async with DaprClient() as d:
+                resp = await d.query_state(
                     store_name='state_store',
                     query=query,
                     states_metadata={"metakey": "metavalue"},
@@ -587,9 +587,9 @@ class DaprGrpcClient:
         metadata can be passed with metadata field.
 
         The example saves states to a statestore:
-            from dapr import DaprClient
-            with DaprClient() as d:
-                resp = d.save_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.save_state(
                     store_name='state_store',
                     key='key1',
                     value='value1',
@@ -654,9 +654,9 @@ class DaprGrpcClient:
         This saves a given state item into the statestore specified by store_name.
 
         The example saves states to a statestore:
-            from dapr import DaprClient
-            with DaprClient() as d:
-                resp = d.save_bulk_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.save_bulk_state(
                     store_name='state_store',
                     states=[StateItem(key='key1', value='value1'),
                         StateItem(key='key2', value='value2', etag='etag'),],
@@ -710,9 +710,9 @@ class DaprGrpcClient:
         for the GRPC call.
 
         The example saves states to a statestore:
-            from dapr import DaprClient
-            with DaprClient() as d:
-                resp = d.execute_state_transaction(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.execute_state_transaction(
                     store_name='state_store',
                     operations=[
                         TransactionalStateOperation(key=key, data=value),
@@ -771,9 +771,9 @@ class DaprGrpcClient:
         metadata can be passed with metadata field.
 
         The example deletes states from a statestore:
-            from dapr import DaprClient
-            with DaprClient() as d:
-                resp = d.delete_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.delete_state(
                     store_name='state_store',
                     key='key1',
                     etag='etag',
@@ -828,10 +828,10 @@ class DaprGrpcClient:
 
         The example gets a secret from secret store:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.get_secret(
+            async with DaprClient() as d:
+                resp = await d.get_secret(
                     store_name='secretstoreA',
                     key='keyA',
                     secret_metadata={'header1', 'value1'}
@@ -878,10 +878,10 @@ class DaprGrpcClient:
 
         The example gets all secrets from secret store:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.get_bulk_secret(
+            async with DaprClient() as d:
+                resp = await d.get_bulk_secret(
                     store_name='secretstoreA',
                     secret_metadata={'header1', 'value1'}
                 )
@@ -928,9 +928,9 @@ class DaprGrpcClient:
         """Gets value from a config store with a key
 
         The example gets value from a config store:
-            from dapr import DaprClient
-            with DaprClient() as d:
-                resp = d.get_configuration(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.get_configuration(
                     store_name='state_store'
                     keys=['key_1'],
                     config_metadata={"metakey": "metavalue"}
@@ -966,9 +966,9 @@ class DaprGrpcClient:
         """Gets changed value from a config store with a key
 
         The example gets value from a config store:
-            from dapr import DaprClient
-            with DaprClient() as d:
-                resp = d.subscribe_config(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.subscribe_config(
                     store_name='state_store'
                     key='key_1',
                     config_metadata={"metakey": "metavalue"}
@@ -1118,10 +1118,10 @@ class DaprGrpcClient:
 
         The example gets a secret from secret store:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                d.wait(1) # waits for 1 second.
+            async with DaprClient() as d:
+                await d.wait(1) # waits for 1 second.
                 # Sidecar is available after this.
 
         Args:
@@ -1212,10 +1212,10 @@ class DaprGrpcClient:
 
         The example shutdown the sidecar:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.shutdown()
+            async with DaprClient() as d:
+                resp = await d.shutdown()
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
