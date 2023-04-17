@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import time
 import socket
 
@@ -132,7 +133,7 @@ class DaprGrpcClient:
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
-            self._channel = grpc.aio.intercept_channel(   # type: ignore
+            self._channel = grpc.intercept_channel(   # type: ignore
                 self._channel, api_token_interceptor)
         if interceptors:
             self._channel = grpc.intercept_channel(   # type: ignore
@@ -1108,7 +1109,7 @@ class DaprGrpcClient:
         return UnlockResponse(status=UnlockResponseStatus(response.status),
                               headers=await call.initial_metadata())
 
-    def wait(self, timeout_s: float):
+    async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
 
         It checks if sidecar socket is available within the given timeout.
@@ -1138,7 +1139,7 @@ class DaprGrpcClient:
                     remaining = (start + timeout_s) - time.time()
                     if remaining < 0:
                         raise e
-                    time.sleep(min(1, remaining))
+                    asyncio.sleep(min(1, remaining))
 
     async def get_metadata(self) -> GetMetadataResponse:
         """Returns information about the sidecar allowing for runtime

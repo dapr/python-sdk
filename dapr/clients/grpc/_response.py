@@ -851,6 +851,23 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
             self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
         # else: there is no point unlocking a lock we did not acquire.
 
+    async def __aexit__(self, *exc) -> None:
+        ''''Automatically unlocks the lock if this TryLockResponse was used as
+        a ContextManager / `with` statement.
+
+        Notice: we are not checking the result of the unlock operation.
+        If this is something  you care about it might be wiser creating
+        your own ContextManager that logs or otherwise raises exceptions
+        if unlock doesn't return `UnlockResponseStatus.success`.
+        '''
+        if self._success:
+            await self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
+        # else: there is no point unlocking a lock we did not acquire.
+
+    async def __aenter__(self) -> 'TryLockResponse':
+        '''Returns self as the context manager object.'''
+        return self
+
 
 class GetMetadataResponse(DaprResponse):
     '''GetMetadataResponse is a message that is returned on GetMetadata rpc call.'''
