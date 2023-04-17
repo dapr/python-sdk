@@ -17,7 +17,6 @@ import json
 import socket
 import unittest
 import uuid
-import asyncio
 
 from unittest.mock import patch
 

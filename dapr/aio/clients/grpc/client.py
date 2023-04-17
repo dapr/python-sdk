@@ -42,7 +42,7 @@ from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 from dapr.clients.grpc._helpers import (
-    DaprClientInterceptor,
+    AsyncDaprClientInterceptor,
     MetadataTuple,
     to_bytes,
     validateNotNone,
@@ -119,25 +119,27 @@ class DaprGrpcClient:
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
         self._address = address
+        options = []
         if not max_grpc_message_length:
-            self._channel = grpc.aio.insecure_channel(address, options=[   # type: ignore
+            options = [
                 ('grpc.primary_user_agent', useragent),
-            ])
+            ]
         else:
-            self._channel = grpc.aio.insecure_channel(address, options=[   # type: ignore
+            options = [
                 ('grpc.max_send_message_length', max_grpc_message_length),
                 ('grpc.max_receive_message_length', max_grpc_message_length),
                 ('grpc.primary_user_agent', useragent)
-            ])
+            ]
+        self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
 
         if settings.DAPR_API_TOKEN:
-            api_token_interceptor = DaprClientInterceptor([
+            api_token_interceptor = AsyncDaprClientInterceptor([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
-            self._channel = grpc.intercept_channel(   # type: ignore
-                self._channel, api_token_interceptor)
+            self._channel = grpc.aio.insecure_channel(   # type: ignore
+                address, options=options, interceptors=(api_token_interceptor,))
         if interceptors:
-            self._channel = grpc.intercept_channel(   # type: ignore
-                self._channel, *interceptors)
+            self._channel = grpc.aio.insecure_channel(   # type: ignore
+                address, options=options, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
