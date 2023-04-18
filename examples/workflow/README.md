@@ -25,7 +25,7 @@ It uses the default configuration from Dapr init in [self-hosted mode](https://g
 <!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 
 ```bash
-pip3 install dapr dapr-ext-grpc
+pip3 install dapr
 ```
 
 ## Run the example TODO: RRL FIX ALL THIS BELOW

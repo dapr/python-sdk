@@ -3,8 +3,6 @@
 dapr run python3 workflow.py
 """
 
-import grpc
-
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
