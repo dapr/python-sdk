@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright 2021 The Dapr Authors
+Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -851,6 +851,24 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
         if self._success:
             self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
         # else: there is no point unlocking a lock we did not acquire.
+
+    async def __aexit__(self, *exc) -> None:
+        ''''Automatically unlocks the lock if this TryLockResponse was used as
+        a ContextManager / `with` statement.
+
+        Notice: we are not checking the result of the unlock operation.
+        If this is something  you care about it might be wiser creating
+        your own ContextManager that logs or otherwise raises exceptions
+        if unlock doesn't return `UnlockResponseStatus.success`.
+        '''
+        if self._success:
+            await self._client.unlock(self._store_name,   # type: ignore
+                                      self._resource_id, self._lock_owner)
+        # else: there is no point unlocking a lock we did not acquire.
+
+    async def __aenter__(self) -> 'TryLockResponse':
+        '''Returns self as the context manager object.'''
+        return self
 
 
 class GetMetadataResponse(DaprResponse):

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import time
 import socket
 
@@ -26,8 +27,8 @@ from typing_extensions import Self
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 
-import grpc  # type: ignore
-from grpc import (  # type: ignore
+import grpc.aio  # type: ignore
+from grpc.aio import (  # type: ignore
     UnaryUnaryClientInterceptor,
     UnaryStreamClientInterceptor,
     StreamUnaryClientInterceptor,
@@ -40,8 +41,8 @@ from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
+from dapr.aio.clients.grpc._asynchelpers import DaprClientInterceptorAsync
 from dapr.clients.grpc._helpers import (
-    DaprClientInterceptor,
     MetadataTuple,
     to_bytes,
     validateNotNone,
@@ -70,28 +71,27 @@ from dapr.clients.grpc._response import (
     ConfigurationWatcher,
     TryLockResponse,
     UnlockResponse,
-    GetWorkflowResponse
 )
 
 
-class DaprGrpcClient:
-    """The convenient layer implementation of Dapr gRPC APIs.
+class DaprGrpcClientAsync:
+    """The async convenient layer implementation of Dapr gRPC APIs.
 
     This provides the wrappers and helpers to allows developers to use Dapr runtime gRPC API
     easily and consistently.
 
     Examples:
 
-        >>> from dapr.clients import DaprClient
+        >>> from dapr.aio.clients import DaprClient
         >>> d = DaprClient()
-        >>> resp = d.invoke_method('callee', 'method', b'data')
+        >>> resp = await d.invoke_method('callee', 'method', b'data')
 
     With context manager and custom message size limit:
 
-        >>> from dapr.clients import DaprClient
+        >>> from dapr.aio.clients import DaprClient
         >>> MAX = 64 * 1024 * 1024 # 64MB
-        >>> with DaprClient(max_message_length=MAX) as d:
-        ...     resp = d.invoke_method('callee', 'method', b'data')
+        >>> async with DaprClient(max_message_length=MAX) as d:
+        ...     resp = await d.invoke_method('callee', 'method', b'data')
     """
 
     def __init__(
@@ -119,41 +119,43 @@ class DaprGrpcClient:
         if not address:
             address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
         self._address = address
+        options = []
         if not max_grpc_message_length:
-            self._channel = grpc.insecure_channel(address, options=[   # type: ignore
+            options = [
                 ('grpc.primary_user_agent', useragent),
-            ])
+            ]
         else:
-            self._channel = grpc.insecure_channel(address, options=[   # type: ignore
+            options = [
                 ('grpc.max_send_message_length', max_grpc_message_length),
                 ('grpc.max_receive_message_length', max_grpc_message_length),
                 ('grpc.primary_user_agent', useragent)
-            ])
+            ]
+        self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
 
         if settings.DAPR_API_TOKEN:
-            api_token_interceptor = DaprClientInterceptor([
+            api_token_interceptor = DaprClientInterceptorAsync([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
-            self._channel = grpc.intercept_channel(   # type: ignore
-                self._channel, api_token_interceptor)
+            self._channel = grpc.aio.insecure_channel(   # type: ignore
+                address, options=options, interceptors=(api_token_interceptor,))
         if interceptors:
-            self._channel = grpc.intercept_channel(   # type: ignore
-                self._channel, *interceptors)
+            self._channel = grpc.aio.insecure_channel(   # type: ignore
+                address, options=options, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
-    def close(self):
+    async def close(self):
         """Closes Dapr runtime gRPC channel."""
         if self._channel:
             self._channel.close()
 
-    def __del__(self):
-        self.close()
+    async def __del__(self):
+        await self.close()
 
-    def __enter__(self) -> Self:  # type: ignore
+    async def __aenter__(self) -> Self:  # type: ignore
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        self.close()
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        await self.close()
 
     def _get_http_extension(
             self, http_verb: str,
@@ -165,7 +167,7 @@ class DaprGrpcClient:
             http_ext.querystring = urlencode(http_querystring)
         return http_ext
 
-    def invoke_method(
+    async def invoke_method(
             self,
             app_id: str,
             method_name: str,
@@ -184,10 +186,10 @@ class DaprGrpcClient:
 
         The example calls `callee` service with bytes data, which implements grpc appcallback:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.invoke_method(
+            async with DaprClient() as d:
+                resp = await d.invoke_method(
                     app_id='callee',
                     method_name='method',
                     data=b'message',
@@ -200,12 +202,12 @@ class DaprGrpcClient:
 
         When sending custom protocol buffer message object, it doesn't requires content_type:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
             req_data = dapr_example_v1.CustomRequestMessage(data='custom')
 
-            with DaprClient() as d:
-                resp = d.invoke_method(
+            async with DaprClient() as d:
+                resp = await d.invoke_method(
                     app_id='callee',
                     method_name='method',
                     data=req_data,
@@ -217,10 +219,10 @@ class DaprGrpcClient:
 
         The example calls `callee` service which implements http appcallback:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.invoke_method(
+            async with DaprClient() as d:
+                resp = await d.invoke_method(
                     app_id='callee',
                     method_name='method',
                     data=b'message',
@@ -271,13 +273,14 @@ class DaprGrpcClient:
                 http_extension=http_ext)
         )
 
-        response, call = self._stub.InvokeService.with_call(req, metadata=metadata, timeout=timeout)
+        call = self._stub.InvokeService(req, metadata=metadata, timeout=timeout)
+        response = await call
 
         resp_data = InvokeMethodResponse(response.data, response.content_type)
-        resp_data.headers = call.initial_metadata()  # type: ignore
+        resp_data.headers = await call.initial_metadata()  # type: ignore
         return resp_data
 
-    def invoke_binding(
+    async def invoke_binding(
             self,
             binding_name: str,
             operation: str,
@@ -294,10 +297,10 @@ class DaprGrpcClient:
 
         The example calls output `binding` service with bytes data:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.invoke_binding(
+            async with DaprClient() as d:
+                resp = await d.invoke_binding(
                     binding_name = 'kafkaBinding',
                     operation = 'create',
                     data = b'message',
@@ -327,12 +330,13 @@ class DaprGrpcClient:
             operation=operation
         )
 
-        response, call = self._stub.InvokeBinding.with_call(req, metadata=metadata)
+        call = self._stub.InvokeBinding(req, metadata=metadata)
+        response = await call
         return BindingResponse(
             response.data, dict(response.metadata),
-            call.initial_metadata())
+            await call.initial_metadata())
 
-    def publish_event(
+    async def publish_event(
             self,
             pubsub_name: str,
             topic_name: str,
@@ -348,9 +352,9 @@ class DaprGrpcClient:
 
         The example publishes a byte array event to a topic:
 
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.publish_event(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.publish_event(
                     pubsub_name='pubsub_1',
                     topic_name='TOPIC_A',
                     data=b'message',
@@ -393,12 +397,13 @@ class DaprGrpcClient:
             data_content_type=content_type,
             metadata=publish_metadata)
 
+        call = self._stub.PublishEvent(req, metadata=metadata)
         # response is google.protobuf.Empty
-        _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+        await call
 
-        return DaprResponse(call.initial_metadata())
+        return DaprResponse(await call.initial_metadata())
 
-    def get_state(
+    async def get_state(
             self,
             store_name: str,
             key: str,
@@ -407,9 +412,9 @@ class DaprGrpcClient:
         """Gets value from a statestore with a key
 
         The example gets value from a statestore:
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.get_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.get_state(
                     store_name='state_store'
                     key='key_1',
                     state={"key": "value"},
@@ -433,13 +438,14 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
-        response, call = self._stub.GetState.with_call(req, metadata=metadata)
+        call = self._stub.GetState(req, metadata=metadata)
+        response = await call
         return StateResponse(
             data=response.data,
             etag=response.etag,
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def get_bulk_state(
+    async def get_bulk_state(
             self,
             store_name: str,
             keys: Sequence[str],
@@ -449,9 +455,9 @@ class DaprGrpcClient:
         """Gets values from a statestore with keys
 
         The example gets value from a statestore:
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.get_bulk_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.get_bulk_state(
                     store_name='state_store',
                     keys=['key_1', key_2],
                     parallelism=2,
@@ -480,7 +486,8 @@ class DaprGrpcClient:
             keys=keys,
             parallelism=parallelism,
             metadata=states_metadata)
-        response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+        call = self._stub.GetBulkState(req, metadata=metadata)
+        response = await call
 
         items = []
         for item in response.items:
@@ -492,9 +499,9 @@ class DaprGrpcClient:
                     error=item.error))
         return BulkStatesResponse(
             items=items,
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def query_state(
+    async def query_state(
             self,
             store_name: str,
             query: str,
@@ -504,7 +511,7 @@ class DaprGrpcClient:
         For details on supported queries see https://docs.dapr.io/
 
         This example queries a statestore:
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
             query = '''
             {
@@ -520,8 +527,8 @@ class DaprGrpcClient:
             }
             '''
 
-            with DaprClient() as d:
-                resp = d.query_state(
+            async with DaprClient() as d:
+                resp = await d.query_state(
                     store_name='state_store',
                     query=query,
                     states_metadata={"metakey": "metavalue"},
@@ -545,7 +552,8 @@ class DaprGrpcClient:
             store_name=store_name,
             query=query,
             metadata=states_metadata)
-        response, call = self._stub.QueryStateAlpha1.with_call(req)
+        call = self._stub.QueryStateAlpha1(req)
+        response = await call
 
         results = []
         for item in response.results:
@@ -561,9 +569,9 @@ class DaprGrpcClient:
             token=response.token,
             results=results,
             metadata=response.metadata,
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def save_state(
+    async def save_state(
             self,
             store_name: str,
             key: str,
@@ -579,9 +587,9 @@ class DaprGrpcClient:
         metadata can be passed with metadata field.
 
         The example saves states to a statestore:
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.save_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.save_state(
                     store_name='state_store',
                     key='key1',
                     value='value1',
@@ -631,11 +639,12 @@ class DaprGrpcClient:
             metadata=state_metadata)
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
-        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+        call = self._stub.SaveState(req, metadata=metadata)
+        await call
         return DaprResponse(
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def save_bulk_state(
+    async def save_bulk_state(
             self,
             store_name: str,
             states: List[StateItem],
@@ -645,9 +654,9 @@ class DaprGrpcClient:
         This saves a given state item into the statestore specified by store_name.
 
         The example saves states to a statestore:
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.save_bulk_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.save_bulk_state(
                     store_name='state_store',
                     states=[StateItem(key='key1', value='value1'),
                         StateItem(key='key2', value='value2', etag='etag'),],
@@ -683,11 +692,12 @@ class DaprGrpcClient:
             metadata=i.metadata) for i in states]
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=req_states)
-        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+        call = self._stub.SaveState(req, metadata=metadata)
+        await call
         return DaprResponse(
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def execute_state_transaction(
+    async def execute_state_transaction(
             self,
             store_name: str,
             operations: Sequence[TransactionalStateOperation],
@@ -700,9 +710,9 @@ class DaprGrpcClient:
         for the GRPC call.
 
         The example saves states to a statestore:
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.execute_state_transaction(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.execute_state_transaction(
                     store_name='state_store',
                     operations=[
                         TransactionalStateOperation(key=key, data=value),
@@ -741,11 +751,12 @@ class DaprGrpcClient:
             storeName=store_name,
             operations=req_ops,
             metadata=transactional_metadata)
-        _, call = self._stub.ExecuteStateTransaction.with_call(req, metadata=metadata)
+        call = self._stub.ExecuteStateTransaction(req, metadata=metadata)
+        await call
         return DaprResponse(
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def delete_state(
+    async def delete_state(
             self,
             store_name: str,
             key: str,
@@ -760,9 +771,9 @@ class DaprGrpcClient:
         metadata can be passed with metadata field.
 
         The example deletes states from a statestore:
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.delete_state(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.delete_state(
                     store_name='state_store',
                     key='key1',
                     etag='etag',
@@ -797,11 +808,12 @@ class DaprGrpcClient:
         req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
                                         etag=etag_object, options=state_options,
                                         metadata=state_metadata)
-        _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
+        call = self._stub.DeleteState(req, metadata=metadata)
+        await call
         return DaprResponse(
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def get_secret(
+    async def get_secret(
             self,
             store_name: str,
             key: str,
@@ -816,10 +828,10 @@ class DaprGrpcClient:
 
         The example gets a secret from secret store:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.get_secret(
+            async with DaprClient() as d:
+                resp = await d.get_secret(
                     store_name='secretstoreA',
                     key='keyA',
                     secret_metadata={'header1', 'value1'}
@@ -846,13 +858,14 @@ class DaprGrpcClient:
             key=key,
             metadata=secret_metadata)
 
-        response, call = self._stub.GetSecret.with_call(req, metadata=metadata)
+        call = self._stub.GetSecret(req, metadata=metadata)
+        response = await call
 
         return GetSecretResponse(
             secret=response.data,
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def get_bulk_secret(
+    async def get_bulk_secret(
             self,
             store_name: str,
             secret_metadata: Optional[Dict[str, str]] = {},
@@ -865,10 +878,10 @@ class DaprGrpcClient:
 
         The example gets all secrets from secret store:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.get_bulk_secret(
+            async with DaprClient() as d:
+                resp = await d.get_bulk_secret(
                     store_name='secretstoreA',
                     secret_metadata={'header1', 'value1'}
                 )
@@ -892,7 +905,8 @@ class DaprGrpcClient:
             store_name=store_name,
             metadata=secret_metadata)
 
-        response, call = self._stub.GetBulkSecret.with_call(req, metadata=metadata)
+        call = self._stub.GetBulkSecret(req, metadata=metadata)
+        response = await call
 
         secrets_map = {}
         for key in response.data.keys():
@@ -904,9 +918,9 @@ class DaprGrpcClient:
 
         return GetBulkSecretResponse(
             secrets=secrets_map,
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def get_configuration(
+    async def get_configuration(
             self,
             store_name: str,
             keys: List[str],
@@ -914,9 +928,9 @@ class DaprGrpcClient:
         """Gets value from a config store with a key
 
         The example gets value from a config store:
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.get_configuration(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.get_configuration(
                     store_name='state_store'
                     keys=['key_1'],
                     config_metadata={"metakey": "metavalue"}
@@ -938,10 +952,11 @@ class DaprGrpcClient:
             raise ValueError("Config store name cannot be empty to get the configuration")
         req = api_v1.GetConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
-        response, call = self._stub.GetConfigurationAlpha1.with_call(req)
+        call = self._stub.GetConfigurationAlpha1(req)
+        response = await call
         return ConfigurationResponse(
             items=response.items,
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
     async def subscribe_configuration(
             self,
@@ -951,9 +966,9 @@ class DaprGrpcClient:
         """Gets changed value from a config store with a key
 
         The example gets value from a config store:
-            from dapr.clients import DaprClient
-            with DaprClient() as d:
-                resp = d.subscribe_config(
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.subscribe_config(
                     store_name='state_store'
                     key='key_1',
                     config_metadata={"metakey": "metavalue"}
@@ -977,7 +992,7 @@ class DaprGrpcClient:
         configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
         return configWatcher
 
-    def unsubscribe_configuration(
+    async def unsubscribe_configuration(
             self,
             store_name: str,
             key: str) -> bool:
@@ -994,10 +1009,11 @@ class DaprGrpcClient:
              UserWarning, stacklevel=2)
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=key)
         self._stub.UnsubscribeConfigurationAlpha1(req)
-        response: UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfigurationAlpha1(req)
+        call = self._stub.UnsubscribeConfigurationAlpha1(req)
+        response: UnsubscribeConfigurationResponse = await call
         return response.ok
 
-    def try_lock(
+    async def try_lock(
             self,
             store_name: str,
             resource_id: str,
@@ -1049,16 +1065,17 @@ class DaprGrpcClient:
             resource_id=resource_id,
             lock_owner=lock_owner,
             expiryInSeconds=expiry_in_seconds)
-        response, call = self._stub.TryLockAlpha1.with_call(req)
+        call = self._stub.TryLockAlpha1(req)
+        response = await call
         return TryLockResponse(
             success=response.success,
             client=self,
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def unlock(
+    async def unlock(
             self,
             store_name: str,
             resource_id: str,
@@ -1088,247 +1105,23 @@ class DaprGrpcClient:
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner)
-        response, call = self._stub.UnlockAlpha1.with_call(req)
+        call = self._stub.UnlockAlpha1(req)
+        response = await call
 
         return UnlockResponse(status=UnlockResponseStatus(response.status),
-                              headers=call.initial_metadata())
+                              headers=await call.initial_metadata())
 
-    def start_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str,
-            workflow_name: str,
-            input: bytes,
-            workflow_options: dict) -> api_v1.StartWorkflowResponse:
-        """Starts a workflow.
-
-            Args:
-                instance_id (str): the name of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-                workflow_name (str): the name of the workflow that will be executed.
-                input (bytes): the input that the workflow will receive.
-                workflow_options (dict): the key-value options that the workflow will receive.
-
-            Returns:
-                :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
-        """
-        # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component,
-                               workflow_name=workflow_name)
-        # Actual start workflow invocation
-        req = api_v1.StartWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component,
-            workflow_name=workflow_name,
-            options=workflow_options,
-            input=input)
-        response, call = self._stub.StartWorkflowAlpha1.with_call(req)
-
-        return api_v1.StartWorkflowResponse(instance_id=response.instanceID,
-                                            workflow_component = response.workflowComponent,
-                                            workflow_name = response.workflowName)
-
-    # RRL TODO: Clean up return obkect
-    def get_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str,
-            workflow_name: str) -> GetWorkflowResponse:
-        """Gets information on a workflow.
-
-            Args:
-                instance_id (str): the name of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-                workflow_name (str): the name of the workflow that will be executed.
-
-            Returns:
-                :class:`GetWorkflowResponse`: Status of the request,
-                    `UnlockResponseStatus.success` if it was successful of some other
-                    status otherwise.
-        """
-        # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component,
-                               workflow_name=workflow_name)
-        # Actual get workflow invocation
-        req = api_v1.GetWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component,
-            workflow_name=workflow_name)
-        response, call = self._stub.GetWorkflowAlpha1.with_call(req)
-
-        # RRL TODO: Fix this
-        return GetWorkflowResponse(status=GetWorkflowResponse(response.status),
-                                                headers=call.initial_metadata())
-
-    def terminate_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
-        """Terminates a workflow.
-
-            Args:
-                instance_id (str): the name of the workflow instance, e.g.
-                                    `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-
-            Returns:
-                :class:`DaprResponse` gRPC metadata returned from callee
-
-        """
-        # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
-        # Actual terminate workflow invocation
-        req = api_v1.TerminateWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
-        _, call = self._stub.TerminateWorkflowAlpha1.with_call(req)
-
-        return DaprResponse(
-            headers=call.initial_metadata())
-
-    # RRL TODO: Clean up return obkect comments
-    def raise_event(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
-        """Raises an event on a workflow.
-
-            Args:
-                instance_id (str): the name of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-
-            Returns:
-                :class:`DaprResponse` gRPC metadata returned from callee
-        """
-        # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
-        # Actual terminate workflow invocation
-        req = api_v1.TerminateWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
-        _, call = self._stub.TerminateWorkflowAlpha1.with_call(req)
-
-        return DaprResponse(
-            headers=call.initial_metadata())
-
-    def pause_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
-        """Pause a workflow.
-
-            Args:
-                instance_id (str): the name of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-
-        Returns:
-            :class:`DaprResponse` gRPC metadata returned from callee
-
-        """
-        # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
-        # Actual pause workflow invocation
-        req = api_v1.PauseWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
-        _, call = self._stub.PauseWorkflowAlpha1.with_call(req)
-
-        return DaprResponse(
-            headers=call.initial_metadata())
-
-    def resume_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
-        """Resumes a workflow.
-
-            Args:
-                instance_id (str): the name of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-
-            Returns:
-                :class:`DaprResponse` gRPC metadata returned from callee
-        """
-        # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
-        # Actual resume workflow invocation
-        req = api_v1.ResumeWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
-        _, call = self._stub.ResumeWorkflowAlpha1.with_call(req)
-
-        return DaprResponse(
-            headers=call.initial_metadata())
-
-    def purge_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
-        """Purges a workflow.
-
-            Args:
-                instance_id (str): the name of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-
-            Returns:
-                :class:`DaprResponse` gRPC metadata returned from callee
-        """
-        # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
-        # Actual purge workflow invocation
-        req = api_v1.PurgeWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
-        _, call = self._stub.PurgeWorkflowAlpha1.with_call(req)
-
-        return DaprResponse(
-            headers=call.initial_metadata())
-
-    def wait(self, timeout_s: float):
+    async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
 
         It checks if sidecar socket is available within the given timeout.
 
         The example gets a secret from secret store:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                d.wait(1) # waits for 1 second.
+            async with DaprClient() as d:
+                await d.wait(1) # waits for 1 second.
                 # Sidecar is available after this.
 
         Args:
@@ -1348,9 +1141,9 @@ class DaprGrpcClient:
                     remaining = (start + timeout_s) - time.time()
                     if remaining < 0:
                         raise e
-                    time.sleep(min(1, remaining))
+                    asyncio.sleep(min(1, remaining))
 
-    def get_metadata(self) -> GetMetadataResponse:
+    async def get_metadata(self) -> GetMetadataResponse:
         """Returns information about the sidecar allowing for runtime
         discoverability.
 
@@ -1362,7 +1155,8 @@ class DaprGrpcClient:
         information about supported features in the form of component
         capabilities.
         """
-        _resp, call = self._stub.GetMetadata.with_call(GrpcEmpty())
+        call = self._stub.GetMetadata(GrpcEmpty())
+        _resp = await call
         response: api_v1.GetMetadataResponse = _resp  # type alias
         # Convert to more pythonic formats
         active_actors_count = {
@@ -1383,9 +1177,9 @@ class DaprGrpcClient:
             active_actors_count=active_actors_count,
             registered_components=registered_components,
             extended_metadata=extended_metadata,
-            headers=call.initial_metadata())
+            headers=await call.initial_metadata())
 
-    def set_metadata(self, attributeName: str, attributeValue: str) -> DaprResponse:
+    async def set_metadata(self, attributeName: str, attributeValue: str) -> DaprResponse:
         """Adds a custom (extended) metadata attribute to the Dapr sidecar
         information stored by the Metadata endpoint.
 
@@ -1406,26 +1200,28 @@ class DaprGrpcClient:
         validateNotNone(attributeValue=attributeValue)
         # Actual invocation
         req = api_v1.SetMetadataRequest(key=attributeName, value=attributeValue)
-        _, call = self._stub.SetMetadata.with_call(req)
+        call = self._stub.SetMetadata(req)
+        await call
 
-        return DaprResponse(call.initial_metadata())
+        return DaprResponse(await call.initial_metadata())
 
-    def shutdown(self) -> DaprResponse:
+    async def shutdown(self) -> DaprResponse:
         """Shutdown the sidecar.
 
         This will ask the sidecar to gracefully shutdown.
 
         The example shutdown the sidecar:
 
-            from dapr.clients import DaprClient
+            from dapr.aio.clients import DaprClient
 
-            with DaprClient() as d:
-                resp = d.shutdown()
+            async with DaprClient() as d:
+                resp = await d.shutdown()
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
 
-        _, call = self._stub.Shutdown.with_call(GrpcEmpty())
+        call = self._stub.Shutdown(GrpcEmpty())
+        await call
 
-        return DaprResponse(call.initial_metadata())
+        return DaprResponse(await call.initial_metadata())
