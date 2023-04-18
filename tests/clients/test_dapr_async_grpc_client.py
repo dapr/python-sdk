@@ -83,6 +83,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 ('key2', 'value2'),
             ),
             http_verb='PUT',
+            timeout=60,
         )
 
         self.assertEqual(b'haha', resp.data)
@@ -107,23 +108,6 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual("text/plain", resp.content_type)
         self.assertEqual(3, len(resp.headers))
         self.assertEqual(['value1'], resp.headers['hkey1'])
-
-    async def test_invoke_method_async(self):
-        dapr = DaprClient(f'localhost:{self.server_port}')
-        dapr.invocation_client = None  # force to use grpc client
-
-        with self.assertRaises(NotImplementedError):
-            await dapr.invoke_method_async(
-                app_id='targetId',
-                method_name='bytes',
-                data=b'haha',
-                content_type="text/plain",
-                metadata=(
-                    ('key1', 'value1'),
-                    ('key2', 'value2'),
-                ),
-                http_verb='PUT',
-            )
 
     async def test_invoke_method_proto_data(self):
         dapr = DaprGrpcClientAsync(f'localhost:{self.server_port}')

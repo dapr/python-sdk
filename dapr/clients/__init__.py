@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 from typing import Callable, Dict, List, Optional, Union
+from warnings import warn
 
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
@@ -118,7 +119,8 @@ class DaprClient(DaprGrpcClient):
                 content_type=content_type,
                 metadata=metadata,
                 http_verb=http_verb,
-                http_querystring=http_querystring)
+                http_querystring=http_querystring,
+                timeout=timeout)
         else:
             return super().invoke_method(
                 app_id,
@@ -127,7 +129,8 @@ class DaprClient(DaprGrpcClient):
                 content_type=content_type,
                 metadata=metadata,
                 http_verb=http_verb,
-                http_querystring=http_querystring)
+                http_querystring=http_querystring,
+                timeout=timeout)
 
     async def invoke_method_async(
             self,
@@ -137,7 +140,8 @@ class DaprClient(DaprGrpcClient):
             content_type: Optional[str] = None,
             metadata: Optional[MetadataTuple] = None,
             http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None) -> InvokeMethodResponse:
+            http_querystring: Optional[MetadataTuple] = None,
+            timeout: Optional[int] = None) -> InvokeMethodResponse:
         """Invoke a service method over gRPC or HTTP.
 
         Args:
@@ -148,11 +152,14 @@ class DaprClient(DaprGrpcClient):
             metadata (MetadataTuple, optional): Additional metadata or headers.
             http_verb (str, optional): HTTP verb for the request.
             http_querystring (MetadataTuple, optional): Query parameters.
+            timeout (int, optional): Request timeout in seconds.
 
         Returns:
             InvokeMethodResponse: the method invocation response.
         """
         if self.invocation_client:
+            warn('Async invocation is deprecated. Please use `dapr.aio.clients.DaprClient`.',
+                 DeprecationWarning, stacklevel=2)
             return await self.invocation_client.invoke_method_async(
                 app_id,
                 method_name,
@@ -160,7 +167,8 @@ class DaprClient(DaprGrpcClient):
                 content_type=content_type,
                 metadata=metadata,
                 http_verb=http_verb,
-                http_querystring=http_querystring)
+                http_querystring=http_querystring,
+                timeout=timeout)
         else:
             raise NotImplementedError(
-                'invoke_method_async is not implemented for gRPC')
+                'Please use `dapr.aio.clients.DaprClient` for async invocation')
