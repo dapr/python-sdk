@@ -16,6 +16,7 @@ limitations under the License.
 from __future__ import annotations
 
 import contextlib
+import datetime
 import threading
 from enum import Enum
 from typing import Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING, NamedTuple
@@ -900,6 +901,55 @@ class GetMetadataResponse(DaprResponse):
     def extended_metadata(self) -> Dict[str, str]:
         '''Mapping of custom (extended) attributes to their respective values.'''
         return self._extended_metadata
+
+
+# RRL TODO: Add properties and fix init
+class GetWorkflowResponse():
+    '''The response of get_workflow operation.'''
+
+    def __init__(
+        self,
+        instance_id: str,
+        client: DaprGrpcClient,
+        start_time: datetime,
+        workflow_metadata: Dict[str, str] = {},
+        headers: MetadataTuple = (),
+    ):
+        """Initializes a GetWorkflowResponse.
+
+        Args:
+            instance_id (str): the instance ID assocated with this response.
+            client (DaprClient): a reference to the dapr client used for the GetWorkflow request.
+            start_time (datetime): the time at which the workflow started executing.
+            workflow_metadata (Dict[str, str]): metadata sent as a reponse by the workflow.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super().__init__(headers)
+        self.instance_id = instance_id
+        self._client = client
+        self._start_time = start_time
+        self._metadata = workflow_metadata
+
+
+class StartWorkflowResponse():
+    '''The response of start_workflow operation.'''
+
+    def __init__(
+        self,
+        instance_id: str,
+        client: DaprGrpcClient,
+        headers: MetadataTuple = (),
+    ):
+        """Initializes a StartWorkflowResponse.
+
+        Args:
+            instance_id (str): the instance ID assocated with this response.
+            client (DaprClient): a reference to the dapr client used for the GetWorkflow request.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super().__init__(headers)
+        self.instance_id = instance_id
+        self._client = client
 
 
 class RegisteredComponents(NamedTuple):
