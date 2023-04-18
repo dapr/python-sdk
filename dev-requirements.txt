@@ -4,7 +4,6 @@ mypy-protobuf>=2.9
 flake8>=3.7.9
 tox>=4.3.0
 coverage>=5.3
-codecov>=1.4.0
 wheel
 # used in unit test only
 opencensus>=0.11.0
