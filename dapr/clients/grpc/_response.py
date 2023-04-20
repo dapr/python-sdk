@@ -18,7 +18,10 @@ from __future__ import annotations
 import contextlib
 import threading
 from enum import Enum
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING, NamedTuple
+from typing import ( 
+    Callable, Dict, List, Optional, Text, Union, 
+    Sequence, Mapping, TYPE_CHECKING, NamedTuple
+)
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -680,11 +683,11 @@ class ConfigurationResponse(DaprResponse):
 class ConfigurationWatcher():
     def __init__(self):
         self.event: threading.Event = threading.Event()
-        self.id : str = ""
+        self.id: str = ""
 
     def watch_configuration(self, stub: api_service_v1.DaprStub, store_name: str,
                             keys: List[str], config_metadata: Optional[Dict[str, str]] = dict(),
-                            handler: Callable[[Text,ConfigurationResponse], None] = None):
+                            handler: Callable[[Text, ConfigurationResponse], None] = None):
         req = api_v1.SubscribeConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
         thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req, handler))
@@ -700,7 +703,7 @@ class ConfigurationWatcher():
 
     def _read_subscribe_config(self, stub: api_service_v1.DaprStub,
                                req: api_v1.SubscribeConfigurationRequest,
-                               handler: Callable[[Text,ConfigurationResponse], None] = None):
+                               handler: Callable[[Text, ConfigurationResponse], None] = None):
         try:
             responses = stub.SubscribeConfigurationAlpha1(req)
             isFirst = True
@@ -710,7 +713,7 @@ class ConfigurationWatcher():
                     self.event.set()
                     isFirst = False
                 if len(response.items) > 0:
-                    handler(response.id,ConfigurationResponse(response.items))
+                    handler(response.id, ConfigurationResponse(response.items))
         except Exception:
             print(f"{self.store_name} configuration watcher for keys "
                   f"{self.keys} stopped.")

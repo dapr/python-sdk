@@ -489,15 +489,15 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     async def test_subscribe_configuration(self):
         dapr = DaprGrpcClientAsync(f'localhost:{self.server_port}')
 
-        def mock_watch(self, stub, store_name, keys, config_metadata,handler):
+        def mock_watch(self, stub, store_name, keys, config_metadata, handler):
             handler("id", ConfigurationResponse(items={
                 "k": ConfigurationItem(
                     value="test",
                     version="1.7.0")
             }))
             return "id"
-        
-        def handler(id:str, resp:ConfigurationResponse):
+
+        def handler(id: str, resp: ConfigurationResponse):
             self.assertEqual(resp.items["k"].value, "test")
             self.assertEqual(resp.items["k"].version, "1.7.0")
 

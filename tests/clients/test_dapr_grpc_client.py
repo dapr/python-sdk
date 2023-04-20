@@ -111,7 +111,6 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr.invocation_client = None  # force to use grpc client
 
         with self.assertRaises(NotImplementedError):
-            import asyncio
             loop = asyncio.new_event_loop()
             loop.run_until_complete(
                 dapr.invoke_method_async(
@@ -487,7 +486,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_subscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
 
-        def mock_watch(self, stub, store_name, keys, config_metadata,handler):
+        def mock_watch(self, stub, store_name, keys, config_metadata, handler):
             handler("id", ConfigurationResponse(items={
                 "k": ConfigurationItem(
                     value="test",
@@ -495,12 +494,12 @@ class DaprGrpcClientTests(unittest.TestCase):
             }))
             return "id"
 
-        def handler(id:str, resp:ConfigurationResponse):
+        def handler(id: str, resp: ConfigurationResponse):
             self.assertEqual(resp.items["k"].value, "test")
             self.assertEqual(resp.items["k"].version, "1.7.0")
 
         with patch.object(ConfigurationWatcher, 'watch_configuration', mock_watch):
-            _ = dapr.subscribe_configuration(store_name="configurationstore", keys=["k"],handler=handler)
+            _ = dapr.subscribe_configuration(store_name="configurationstore", keys=["k"], handler=handler)
 
     def test_unsubscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
