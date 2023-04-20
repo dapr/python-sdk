@@ -36,7 +36,7 @@ async def executeConfiguration():
 
         # Subscribe to configuration for keys {orderId1,orderId2}.
         id = d.subscribe_configuration(store_name=storeName, keys=keys,
-                                    config_metadata={}, handler=handler)
+                                       handler=handler, config_metadata={})
         print("Subscription ID is", id, flush=True)
         sleep(10)
 

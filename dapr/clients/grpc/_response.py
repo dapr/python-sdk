@@ -686,8 +686,8 @@ class ConfigurationWatcher():
         self.id: str = ""
 
     def watch_configuration(self, stub: api_service_v1.DaprStub, store_name: str,
-                            keys: List[str], config_metadata: Optional[Dict[str, str]] = dict(),
-                            handler: Callable[[Text, ConfigurationResponse], None] = None):
+                            keys: List[str], handler: Callable[[Text, ConfigurationResponse], None],
+                            config_metadata: Optional[Dict[str, str]] = dict()):
         req = api_v1.SubscribeConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
         thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req, handler))
@@ -703,7 +703,7 @@ class ConfigurationWatcher():
 
     def _read_subscribe_config(self, stub: api_service_v1.DaprStub,
                                req: api_v1.SubscribeConfigurationRequest,
-                               handler: Callable[[Text, ConfigurationResponse], None] = None):
+                               handler: Callable[[Text, ConfigurationResponse], None]):
         try:
             responses = stub.SubscribeConfigurationAlpha1(req)
             isFirst = True

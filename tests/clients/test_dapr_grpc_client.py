@@ -486,7 +486,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_subscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
 
-        def mock_watch(self, stub, store_name, keys, config_metadata, handler):
+        def mock_watch(self, stub, store_name, keys, handler, config_metadata):
             handler("id", ConfigurationResponse(items={
                 "k": ConfigurationItem(
                     value="test",
