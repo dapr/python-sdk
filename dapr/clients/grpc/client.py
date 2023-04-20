@@ -963,7 +963,7 @@ class DaprGrpcClient:
         Args:
             store_name (str): the state store name to get from
             keys (str array): the keys of the key-value pairs to be gotten
-            handler(func (key, ConfigurationResponse)): the handler to be called when the config changes
+            handler(func (key, ConfigurationResponse)): the callback function to be called
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
