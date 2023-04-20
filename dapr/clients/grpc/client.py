@@ -930,14 +930,11 @@ class DaprGrpcClient:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
             and value obtained from the config store
         """
-        warn('The Get Configuration API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
         req = api_v1.GetConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
-        response, call = self._stub.GetConfigurationAlpha1.with_call(req)
+        response, call = self._stub.GetConfiguration.with_call(req)
         return ConfigurationResponse(
             items=response.items,
             headers=call.initial_metadata())
@@ -967,11 +964,10 @@ class DaprGrpcClient:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
             and value obtained from the config store
         """
-        warn('The Subscribe Configuration API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
+        
         configWatcher = ConfigurationWatcher()
         configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
         return configWatcher
@@ -989,11 +985,9 @@ class DaprGrpcClient:
             Returns:
                 bool: True if unsubscribed successfully, False otherwise
         """
-        warn('The Unsubscribe Configuration API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=key)
-        self._stub.UnsubscribeConfigurationAlpha1(req)
-        response: UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfigurationAlpha1(req)
+        self._stub.UnsubscribeConfiguration(req)
+        response: UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfiguration(req)
         return response.ok
 
     def try_lock(

@@ -198,13 +198,13 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return api_v1.GetBulkSecretResponse(data=resp)
 
-    def GetConfigurationAlpha1(self, request, context):
+    def GetConfiguration(self, request, context):
         items = dict()
         for key in request.keys:
             items[str(key)] = ConfigurationItem(value='value', version='1.5.0')
         return api_v1.GetConfigurationResponse(items=items)
 
-    def SubscribeConfigurationAlpha1(self, request, context):
+    def SubscribeConfiguration(self, request, context):
         items = []
         for key in request.keys:
             item = {'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}}
@@ -216,7 +216,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         responses.append(response)
         return api_v1.SubscribeConfigurationResponse(responses=responses)
 
-    def UnsubscribeConfigurationAlpha1(self, request, context):
+    def UnsubscribeConfiguration(self, request, context):
         return api_v1.UnsubscribeConfigurationResponse(ok=True)
 
     def QueryStateAlpha1(self, request, context):

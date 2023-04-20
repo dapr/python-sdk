@@ -38,7 +38,6 @@ from grpc.aio import (  # type: ignore
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
-from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 from dapr.aio.clients.grpc._asynchelpers import DaprClientInterceptorAsync
@@ -148,7 +147,7 @@ class DaprGrpcClientAsync:
         if self._channel:
             self._channel.close()
 
-    async def __del__(self):
+    async def __adel__(self):
         await self.close()
 
     async def __aenter__(self) -> Self:  # type: ignore
@@ -925,7 +924,7 @@ class DaprGrpcClientAsync:
             store_name: str,
             keys: List[str],
             config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationResponse:
-        """Gets value from a config store with a key
+        """Gets values from a config store with keys
 
         The example gets value from a config store:
             from dapr.aio.clients import DaprClient
@@ -938,21 +937,19 @@ class DaprGrpcClientAsync:
 
         Args:
             store_name (str): the state store name to get from
-            keys (str): the keys of the key-value pairs to be gotten
+            keys (List(str)): the keys of the key-value pairs to be gotten
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
             and value obtained from the config store
         """
-        warn('The Get Configuration API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
+
         req = api_v1.GetConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
-        call = self._stub.GetConfigurationAlpha1(req)
+        call = self._stub.GetConfiguration(req)
         response = await call
         return ConfigurationResponse(
             items=response.items,
@@ -963,31 +960,29 @@ class DaprGrpcClientAsync:
             store_name: str,
             keys: List[str],
             config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationWatcher:
-        """Gets changed value from a config store with a key
+        """Gets changed values from a config store with keys
 
         The example gets value from a config store:
             from dapr.aio.clients import DaprClient
             async with DaprClient() as d:
                 resp = await d.subscribe_config(
                     store_name='state_store'
-                    key='key_1',
+                    key=['key_1'],
                     config_metadata={"metakey": "metavalue"}
                 )
 
         Args:
             store_name (str): the state store name to get from
-            keys (str array): the keys of the key-value pairs to be gotten
+            keys (List[str]): the keys of the key-value pairs to be gotten
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
             :class:`ConfigurationResponse` gRPC metadata returned from callee
-            and value obtained from the config store
+            and values obtained from the config store
         """
-        warn('The Subscribe Configuration API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
+
         configWatcher = ConfigurationWatcher()
         configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
         return configWatcher
@@ -1005,12 +1000,8 @@ class DaprGrpcClientAsync:
             Returns:
                 bool: True if unsubscribed successfully, False otherwise
         """
-        warn('The Unsubscribe Configuration API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=key)
-        self._stub.UnsubscribeConfigurationAlpha1(req)
-        call = self._stub.UnsubscribeConfigurationAlpha1(req)
-        response: UnsubscribeConfigurationResponse = await call
+        response = await self._stub.UnsubscribeConfiguration(req)
         return response.ok
 
     async def try_lock(
