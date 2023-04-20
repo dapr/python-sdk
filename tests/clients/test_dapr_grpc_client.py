@@ -31,6 +31,7 @@ from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._response import (
     ConfigurationItem,
+    ConfigurationResponse,
     ConfigurationWatcher,
     UnlockResponseStatus,
 )
@@ -486,23 +487,24 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_subscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
 
-        def mock_watch(self, stub, store_name, keys, config_metadata):
-            self.items[keys[0]] = ConfigurationItem(
-                value="test",
-                version="1.7.0")
+        def mock_watch(self, stub, store_name, keys, config_metadata,handler):
+            handler("id", ConfigurationResponse(items={
+                "k": ConfigurationItem(
+                    value="test",
+                    version="1.7.0")
+            }))
+            return "id"
+
+        def handler(id:str, resp:ConfigurationResponse):
+            self.assertEqual(resp.items["k"].value, "test")
+            self.assertEqual(resp.items["k"].version, "1.7.0")
 
         with patch.object(ConfigurationWatcher, 'watch_configuration', mock_watch):
-            loop = asyncio.new_event_loop()
-            watcher = loop.run_until_complete(
-                dapr.subscribe_configuration(store_name="configurationstore", keys=["k"]))
-            resp = watcher.get_items()
-            self.assertIn("k", resp)
-            self.assertEqual(resp["k"].value, "test")
-            self.assertEqual(resp["k"].version, "1.7.0")
+            _ = dapr.subscribe_configuration(store_name="configurationstore", keys=["k"],handler=handler)
 
     def test_unsubscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
-        res = dapr.unsubscribe_configuration(store_name="configurationstore", key="k")
+        res = dapr.unsubscribe_configuration(store_name="configurationstore", id="k")
         self.assertTrue(res)
 
     def test_query_state(self):

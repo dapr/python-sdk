@@ -21,7 +21,7 @@ from urllib.parse import urlencode
 
 from warnings import warn
 
-from typing import Dict, Optional, Union, Sequence, List
+from typing import Callable, Dict, Optional, Text, Union, Sequence, List
 from typing_extensions import Self
 
 from google.protobuf.message import Message as GrpcMessage
@@ -962,7 +962,8 @@ class DaprGrpcClientAsync:
             self,
             store_name: str,
             keys: List[str],
-            config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationWatcher:
+            config_metadata: Optional[Dict[str, str]] = dict(),
+            handler: Callable[[Text,ConfigurationResponse], None] = None) -> Text:
         """Gets changed value from a config store with a key
 
         The example gets value from a config store:
@@ -989,13 +990,13 @@ class DaprGrpcClientAsync:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
         configWatcher = ConfigurationWatcher()
-        configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
-        return configWatcher
+        id = configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata, handler)
+        return id
 
     async def unsubscribe_configuration(
             self,
             store_name: str,
-            key: str) -> bool:
+            id: str) -> bool:
         """Unsubscribes from configuration changes.
 
             Args:
@@ -1007,8 +1008,7 @@ class DaprGrpcClientAsync:
         """
         warn('The Unsubscribe Configuration API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
-        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=key)
-        self._stub.UnsubscribeConfigurationAlpha1(req)
+        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
         call = self._stub.UnsubscribeConfigurationAlpha1(req)
         response: UnsubscribeConfigurationResponse = await call
         return response.ok

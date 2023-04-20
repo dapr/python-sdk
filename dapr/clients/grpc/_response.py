@@ -18,7 +18,7 @@ from __future__ import annotations
 import contextlib
 import threading
 from enum import Enum
-from typing import Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING, NamedTuple
+from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING, NamedTuple
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -679,28 +679,38 @@ class ConfigurationResponse(DaprResponse):
 
 class ConfigurationWatcher():
     def __init__(self):
-        self.items: Dict[str, ConfigurationItem] = {}
-
-    def get_items(self):
-        return self.items
+        self.event: threading.Event = threading.Event()
+        self.id : str = ""
 
     def watch_configuration(self, stub: api_service_v1.DaprStub, store_name: str,
-                            keys: List[str], config_metadata: Optional[Dict[str, str]] = dict()):
+                            keys: List[str], config_metadata: Optional[Dict[str, str]] = dict(),
+                            handler: Callable[[Text,ConfigurationResponse], None] = None):
         req = api_v1.SubscribeConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
-        thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req))
+        thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req, handler))
         thread.daemon = True
         thread.start()
         self.keys = keys
         self.store_name = store_name
+        check = self.event.wait(timeout=5)
+        if not check:
+            print(f"Unable to get configuration id for keys {self.keys}")
+            return None
+        return self.id
 
     def _read_subscribe_config(self, stub: api_service_v1.DaprStub,
-                               req: api_v1.SubscribeConfigurationRequest):
+                               req: api_v1.SubscribeConfigurationRequest,
+                               handler: Callable[[Text,ConfigurationResponse], None] = None):
         try:
             responses = stub.SubscribeConfigurationAlpha1(req)
+            isFirst = True
             for response in responses:
-                for key in response.items:
-                    self.items[key] = response.items[key]
+                if isFirst:
+                    self.id = response.id
+                    self.event.set()
+                    isFirst = False
+                if len(response.items) > 0:
+                    handler(response.id,ConfigurationResponse(response.items))
         except Exception:
             print(f"{self.store_name} configuration watcher for keys "
                   f"{self.keys} stopped.")
