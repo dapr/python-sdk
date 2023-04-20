@@ -499,7 +499,8 @@ class DaprGrpcClientTests(unittest.TestCase):
             self.assertEqual(resp.items["k"].version, "1.7.0")
 
         with patch.object(ConfigurationWatcher, 'watch_configuration', mock_watch):
-            _ = dapr.subscribe_configuration(store_name="configurationstore", keys=["k"], handler=handler)
+            dapr.subscribe_configuration(store_name="configurationstore",
+                                         keys=["k"], handler=handler)
 
     def test_unsubscribe_configuration(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')

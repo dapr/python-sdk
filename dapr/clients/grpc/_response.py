@@ -18,8 +18,8 @@ from __future__ import annotations
 import contextlib
 import threading
 from enum import Enum
-from typing import ( 
-    Callable, Dict, List, Optional, Text, Union, 
+from typing import (
+    Callable, Dict, List, Optional, Text, Union,
     Sequence, Mapping, TYPE_CHECKING, NamedTuple
 )
 
