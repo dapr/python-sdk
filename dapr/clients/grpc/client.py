@@ -1041,7 +1041,7 @@ class DaprGrpcClient:
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
-            expiryInSeconds=expiry_in_seconds)
+            expiry_in_seconds=expiry_in_seconds)
         response, call = self._stub.TryLockAlpha1.with_call(req)
         return TryLockResponse(
             success=response.success,

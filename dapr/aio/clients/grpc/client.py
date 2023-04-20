@@ -1055,7 +1055,7 @@ class DaprGrpcClientAsync:
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
-            expiryInSeconds=expiry_in_seconds)
+            expiry_in_seconds=expiry_in_seconds)
         call = self._stub.TryLockAlpha1(req)
         response = await call
         return TryLockResponse(
