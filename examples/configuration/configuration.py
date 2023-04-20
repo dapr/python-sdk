@@ -10,9 +10,10 @@ from dapr.clients.grpc._response import ConfigurationWatcher, ConfigurationRespo
 configuration: ConfigurationWatcher = ConfigurationWatcher()
 
 def handler(id: str, resp: ConfigurationResponse):
-    print("Got configuration update", flush=True)
-    print("id: ", id, flush=True)
-    print("items: ", resp.items, flush=True)
+    for key in resp.items:
+        print(f"Subscribe key={key} value={resp.items[key].value} "
+              f"version={resp.items[key].version} "
+              f"metadata={resp.items[key].metadata}", flush=True)
 
 async def executeConfiguration():
     with DaprClient() as d:
@@ -35,7 +36,7 @@ async def executeConfiguration():
 
         # Subscribe to configuration for keys {orderId1,orderId2}.
         id = d.subscribe_configuration(store_name=storeName, keys=keys,
-                                                        config_metadata={},handler=handler)
+                                    config_metadata={}, handler=handler)
         print("Subscription ID is", id, flush=True)
         sleep(10)
 
