@@ -4,17 +4,9 @@ dapr run --app-id configexample --components-path components/ -- python3 configu
 
 import asyncio
 from time import sleep
-# from dapr.clients import DaprClient
-# from dapr.clients.grpc._response import ConfigurationWatcher
-import sys
-sys.path.insert(0,'/Users/shivamkumar/codes/dapr/python-sdk/')
-# sys.path.insert(0,'/Users/shivamkumar/codes/dapr/python-sdk/dapr/clients/grpc')
-for p in sys.path:
-    print(p)
-# from base import DaprActorClientBase
-# import DaprClient
 from dapr.clients import DaprClient
-from dapr.clients.grpc._response import ConfigurationWatcher,ConfigurationResponse
+from dapr.clients.grpc._response import ConfigurationWatcher, ConfigurationResponse
+
 configuration: ConfigurationWatcher = ConfigurationWatcher()
 
 def handler(id: str, resp: ConfigurationResponse):
