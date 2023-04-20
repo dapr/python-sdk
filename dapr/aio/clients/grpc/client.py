@@ -972,17 +972,18 @@ class DaprGrpcClientAsync:
                 resp = await d.subscribe_config(
                     store_name='state_store'
                     key='key_1',
+                    handler=handler,
                     config_metadata={"metakey": "metavalue"}
                 )
 
         Args:
             store_name (str): the state store name to get from
             keys (str array): the keys of the key-value pairs to be gotten
+            handler(func (key, ConfigurationResponse)): the handler to be called when the config changes
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
-            :class:`ConfigurationResponse` gRPC metadata returned from callee
-            and value obtained from the config store
+            id (str): subscription id, which can be used to unsubscribe later
         """
         warn('The Subscribe Configuration API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
@@ -1002,7 +1003,7 @@ class DaprGrpcClientAsync:
 
             Args:
                 store_name (str): the state store name to unsubscribe from
-                key (str): the key of the key-value pair to unsubscribe from
+                id (str): the subscription id to unsubscribe
 
             Returns:
                 bool: True if unsubscribed successfully, False otherwise
