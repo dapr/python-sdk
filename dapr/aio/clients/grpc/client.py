@@ -21,7 +21,7 @@ from urllib.parse import urlencode
 
 from warnings import warn
 
-from typing import Dict, Optional, Union, Sequence, List
+from typing import Callable, Dict, Optional, Text, Union, Sequence, List
 from typing_extensions import Self
 
 from google.protobuf.message import Message as GrpcMessage
@@ -962,7 +962,8 @@ class DaprGrpcClientAsync:
             self,
             store_name: str,
             keys: List[str],
-            config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationWatcher:
+            handler: Callable[[Text, ConfigurationResponse], None],
+            config_metadata: Optional[Dict[str, str]] = dict()) -> Text:
         """Gets changed value from a config store with a key
 
         The example gets value from a config store:
@@ -971,17 +972,18 @@ class DaprGrpcClientAsync:
                 resp = await d.subscribe_config(
                     store_name='state_store'
                     key='key_1',
+                    handler=handler,
                     config_metadata={"metakey": "metavalue"}
                 )
 
         Args:
             store_name (str): the state store name to get from
             keys (str array): the keys of the key-value pairs to be gotten
+            handler(func (key, ConfigurationResponse)): the callback function to be called
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
-            :class:`ConfigurationResponse` gRPC metadata returned from callee
-            and value obtained from the config store
+            id (str): subscription id, which can be used to unsubscribe later
         """
         warn('The Subscribe Configuration API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
@@ -989,26 +991,26 @@ class DaprGrpcClientAsync:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
         configWatcher = ConfigurationWatcher()
-        configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
-        return configWatcher
+        id = configWatcher.watch_configuration(self._stub, store_name, keys,
+                                               handler, config_metadata)
+        return id
 
     async def unsubscribe_configuration(
             self,
             store_name: str,
-            key: str) -> bool:
+            id: str) -> bool:
         """Unsubscribes from configuration changes.
 
             Args:
                 store_name (str): the state store name to unsubscribe from
-                key (str): the key of the key-value pair to unsubscribe from
+                id (str): the subscription id to unsubscribe
 
             Returns:
                 bool: True if unsubscribed successfully, False otherwise
         """
         warn('The Unsubscribe Configuration API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
-        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=key)
-        self._stub.UnsubscribeConfigurationAlpha1(req)
+        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
         call = self._stub.UnsubscribeConfigurationAlpha1(req)
         response: UnsubscribeConfigurationResponse = await call
         return response.ok
