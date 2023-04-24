@@ -147,9 +147,6 @@ class DaprGrpcClientAsync:
         if self._channel:
             self._channel.close()
 
-    async def __adel__(self):
-        await self.close()
-
     async def __aenter__(self) -> Self:  # type: ignore
         return self
 
