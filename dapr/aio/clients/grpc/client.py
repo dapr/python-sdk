@@ -937,7 +937,7 @@ class DaprGrpcClientAsync:
 
         Args:
             store_name (str): the state store name to get from
-            keys (List(str)): the keys of the key-value pairs to be gotten
+            keys (List[str]): the keys of the key-value pairs to be gotten
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
         Returns:
@@ -968,7 +968,7 @@ class DaprGrpcClientAsync:
             async with DaprClient() as d:
                 resp = await d.subscribe_config(
                     store_name='state_store'
-                    key='key_1',
+                    key=['key_1'],
                     handler=handler,
                     config_metadata={"metakey": "metavalue"}
                 )
@@ -1003,11 +1003,8 @@ class DaprGrpcClientAsync:
             Returns:
                 bool: True if unsubscribed successfully, False otherwise
         """
-        warn('The Unsubscribe Configuration API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
-        call = self._stub.UnsubscribeConfigurationAlpha1(req)
-        response: UnsubscribeConfigurationResponse = await call
+        response = await self._stub.UnsubscribeConfiguration(req)
         return response.ok
 
     async def try_lock(
