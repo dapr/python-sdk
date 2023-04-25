@@ -1,0 +1,1 @@
+dapr-ext-workflow==1.5.0
