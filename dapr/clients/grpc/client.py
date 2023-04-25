@@ -950,9 +950,9 @@ class DaprGrpcClient:
         The example gets value from a config store:
             from dapr.clients import DaprClient
             with DaprClient() as d:
-                resp = d.subscribe_config(
+                resp = d.subscribe_configuration(
                     store_name='state_store'
-                    key=['key_1'],
+                    keys=['key_1'],
                     handler=handler,
                     config_metadata={"metakey": "metavalue"}
                 )

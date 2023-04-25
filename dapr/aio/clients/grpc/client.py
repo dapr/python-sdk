@@ -38,6 +38,7 @@ from grpc.aio import (  # type: ignore
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
+from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 from dapr.aio.clients.grpc._asynchelpers import DaprClientInterceptorAsync
@@ -963,9 +964,9 @@ class DaprGrpcClientAsync:
         The example gets value from a config store:
             from dapr.aio.clients import DaprClient
             async with DaprClient() as d:
-                resp = await d.subscribe_config(
+                resp = await d.subscribe_configuration(
                     store_name='state_store'
-                    key=['key_1'],
+                    keys=['key_1'],
                     handler=handler,
                     config_metadata={"metakey": "metavalue"}
                 )
@@ -1001,7 +1002,7 @@ class DaprGrpcClientAsync:
                 bool: True if unsubscribed successfully, False otherwise
         """
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
-        response = await self._stub.UnsubscribeConfiguration(req)
+        response: UnsubscribeConfigurationResponse = await self._stub.UnsubscribeConfiguration(req)
         return response.ok
 
     async def try_lock(
