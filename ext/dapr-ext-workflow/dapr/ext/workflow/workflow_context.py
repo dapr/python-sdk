@@ -11,6 +11,7 @@ T = TypeVar('T')
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
+
 class WorkflowContext(ABC):
 
     @property
@@ -103,8 +104,8 @@ class WorkflowContext(ABC):
 
     @abstractmethod
     def call_child_workflow(self, orchestrator: Workflow[TInput, TOutput], *,
-                              input: Union[TInput, None] = None,
-                              instance_id: Union[str, None] = None) -> task.Task[TOutput]:
+                            input: Union[TInput, None] = None,
+                            instance_id: Union[str, None] = None) -> task.Task[TOutput]:
         """Schedule child-workflow function for execution.
 
         Parameters
@@ -123,6 +124,7 @@ class WorkflowContext(ABC):
             A Durable Task that completes when the called child-workflow completes or fails.
         """
         pass
+
 
 # Workflows are generators that yield tasks and receive/return any type
 Workflow = Callable[[WorkflowContext, TInput], Union[Generator[task.Task, Any, Any], TOutput]]

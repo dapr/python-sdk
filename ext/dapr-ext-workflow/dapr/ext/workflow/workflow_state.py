@@ -1,6 +1,6 @@
-from typing import Union
 from durabletask import client
 from enum import Enum
+
 
 class WorkflowStatus(Enum):
     UNKNOWN = 0
@@ -11,6 +11,7 @@ class WorkflowStatus(Enum):
     PENDING = 5
     SUSPENDED = 6
 
+
 class WorkflowState:
     __ignore__ = "class mro new init setattr getattr getattribute"
 
@@ -20,23 +21,6 @@ class WorkflowState:
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
         return getattr(self._obj, name)
-
-    # create proxies for wrapped object's double-underscore attributes
-    class __metaclass__(type):
-        def __init__(cls, name, bases, dct):
-
-            def make_proxy(name):
-                def proxy(self, *args):
-                    return getattr(self._obj, name)
-                return proxy
-
-            type.__init__(cls, name, bases, dct)
-            if cls.__wraps__: # type: ignore
-                ignore = set("__%s__" % n for n in cls.__ignore__.split()) # type: ignore
-                for name in dir(cls.__wraps__): # type: ignore
-                    if name.startswith("__"):
-                        if name not in ignore and name not in dct:
-                            setattr(cls, name, property(make_proxy(name)))
 
     @property
     def runtime_status(self) -> WorkflowStatus:

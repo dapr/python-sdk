@@ -8,6 +8,7 @@ T = TypeVar('T')
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
+
 class WorkflowRuntimeOptions:
 
     def __init__(self):
@@ -15,7 +16,7 @@ class WorkflowRuntimeOptions:
 
     def register_workflow(self, fn: Workflow[TInput, TInput]):
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: TInput):
-            """Responsible to call Workflow function in orchestrationWrapper"""            
+            """Responsible to call Workflow function in orchestrationWrapper"""
             daprWfContext = DaprWorkflowContext(ctx)
             return fn(daprWfContext, inp)
 
