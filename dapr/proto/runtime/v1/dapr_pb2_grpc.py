@@ -184,38 +184,38 @@ class DaprStub(object):
                 )
         self.SubtleGetKeyAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/SubtleGetKeyAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyAlpha1Request.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyAlpha1Response.FromString,
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyResponse.FromString,
                 )
         self.SubtleEncryptAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/SubtleEncryptAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptAlpha1Request.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptAlpha1Response.FromString,
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptResponse.FromString,
                 )
         self.SubtleDecryptAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/SubtleDecryptAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptAlpha1Request.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptAlpha1Response.FromString,
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptResponse.FromString,
                 )
         self.SubtleWrapKeyAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/SubtleWrapKeyAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyAlpha1Request.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyAlpha1Response.FromString,
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyResponse.FromString,
                 )
         self.SubtleUnwrapKeyAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/SubtleUnwrapKeyAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyAlpha1Request.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyAlpha1Response.FromString,
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyResponse.FromString,
                 )
         self.SubtleSignAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/SubtleSignAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignAlpha1Request.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignAlpha1Response.FromString,
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignResponse.FromString,
                 )
         self.SubtleVerifyAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/SubtleVerifyAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyAlpha1Request.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyAlpha1Response.FromString,
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyResponse.FromString,
                 )
         self.StartWorkflowAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/StartWorkflowAlpha1',
@@ -593,27 +593,6 @@ class DaprServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def PauseWorkflowAlpha1(self, request, context):
-        """Pause Workflow
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def ResumeWorkflowAlpha1(self, request, context):
-        """Resume Workflow
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def RaiseEventWorkflowAlpha1(self, request, context):
-        """Raise Event for a Workflow
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def Shutdown(self, request, context):
         """Shutdown the sidecar
         """
@@ -791,38 +770,38 @@ def add_DaprServicer_to_server(servicer, server):
             ),
             'SubtleGetKeyAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.SubtleGetKeyAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyAlpha1Request.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyAlpha1Response.SerializeToString,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyResponse.SerializeToString,
             ),
             'SubtleEncryptAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.SubtleEncryptAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptAlpha1Request.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptAlpha1Response.SerializeToString,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptResponse.SerializeToString,
             ),
             'SubtleDecryptAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.SubtleDecryptAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptAlpha1Request.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptAlpha1Response.SerializeToString,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptResponse.SerializeToString,
             ),
             'SubtleWrapKeyAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.SubtleWrapKeyAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyAlpha1Request.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyAlpha1Response.SerializeToString,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyResponse.SerializeToString,
             ),
             'SubtleUnwrapKeyAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.SubtleUnwrapKeyAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyAlpha1Request.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyAlpha1Response.SerializeToString,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyResponse.SerializeToString,
             ),
             'SubtleSignAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.SubtleSignAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignAlpha1Request.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignAlpha1Response.SerializeToString,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignResponse.SerializeToString,
             ),
             'SubtleVerifyAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.SubtleVerifyAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyAlpha1Request.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyAlpha1Response.SerializeToString,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyResponse.SerializeToString,
             ),
             'StartWorkflowAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.StartWorkflowAlpha1,
@@ -1448,8 +1427,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/SubtleGetKeyAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyAlpha1Request.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyAlpha1Response.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleGetKeyResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1465,8 +1444,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/SubtleEncryptAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptAlpha1Request.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptAlpha1Response.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleEncryptResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1482,8 +1461,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/SubtleDecryptAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptAlpha1Request.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptAlpha1Response.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleDecryptResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1499,8 +1478,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/SubtleWrapKeyAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyAlpha1Request.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyAlpha1Response.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleWrapKeyResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1516,8 +1495,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/SubtleUnwrapKeyAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyAlpha1Request.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyAlpha1Response.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleUnwrapKeyResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1533,8 +1512,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/SubtleSignAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignAlpha1Request.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignAlpha1Response.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleSignResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1550,8 +1529,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/SubtleVerifyAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyAlpha1Request.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyAlpha1Response.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubtleVerifyResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1618,8 +1597,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/TerminateWorkflowAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.WorkflowActivityRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.WorkflowActivityResponse.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TerminateWorkflowRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1635,8 +1614,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/PauseWorkflowAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.WorkflowActivityRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.WorkflowActivityResponse.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PauseWorkflowRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1652,8 +1631,8 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/ResumeWorkflowAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.WorkflowActivityRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.WorkflowActivityResponse.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ResumeWorkflowRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1670,7 +1649,7 @@ class Dapr(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/RaiseEventWorkflowAlpha1',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RaiseEventWorkflowRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RaiseEventWorkflowResponse.FromString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

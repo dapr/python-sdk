@@ -14,10 +14,11 @@ _sym_db = _symbol_database.Default()
 
 from google.protobuf import any_pb2 as google_dot_protobuf_dot_any__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
+from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n dapr/proto/runtime/v1/dapr.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequest\"\xf5\x01\n\x0fGetStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12H\n\x0b\x63onsistency\x18\x03 \x01(\x0e\x32\x33.dapr.proto.common.v1.StateOptions.StateConsistency\x12\x46\n\x08metadata\x18\x04 \x03(\x0b\x32\x34.dapr.proto.runtime.v1.GetStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc9\x01\n\x13GetBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12\x13\n\x0bparallelism\x18\x03 \x01(\x05\x12J\n\x08metadata\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.GetBulkStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"K\n\x14GetBulkStateResponse\x12\x33\n\x05items\x18\x01 \x03(\x0b\x32$.dapr.proto.runtime.v1.BulkStateItem\"\xbe\x01\n\rBulkStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\x12\x44\n\x08metadata\x18\x05 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.BulkStateItem.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa8\x01\n\x10GetStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x90\x02\n\x12\x44\x65leteStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12(\n\x04\x65tag\x18\x03 \x01(\x0b\x32\x1a.dapr.proto.common.v1.Etag\x12\x33\n\x07options\x18\x04 \x01(\x0b\x32\".dapr.proto.common.v1.StateOptions\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.DeleteStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"]\n\x16\x44\x65leteBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"W\n\x10SaveStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\xbc\x01\n\x11QueryStateRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\r\n\x05query\x18\x02 \x01(\t\x12H\n\x08metadata\x18\x03 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"H\n\x0eQueryStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"\xd7\x01\n\x12QueryStateResponse\x12\x36\n\x07results\x18\x01 \x03(\x0b\x32%.dapr.proto.runtime.v1.QueryStateItem\x12\r\n\x05token\x18\x02 \x01(\t\x12I\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xdf\x01\n\x13PublishEventRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x19\n\x11\x64\x61ta_content_type\x18\x04 \x01(\t\x12J\n\x08metadata\x18\x05 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.PublishEventRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xf5\x01\n\x12\x42ulkPublishRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12?\n\x07\x65ntries\x18\x03 \x03(\x0b\x32..dapr.proto.runtime.v1.BulkPublishRequestEntry\x12I\n\x08metadata\x18\x04 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.BulkPublishRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xd1\x01\n\x17\x42ulkPublishRequestEntry\x12\x10\n\x08\x65ntry_id\x18\x01 \x01(\t\x12\r\n\x05\x65vent\x18\x02 \x01(\x0c\x12\x14\n\x0c\x63ontent_type\x18\x03 \x01(\t\x12N\n\x08metadata\x18\x04 \x03(\x0b\x32<.dapr.proto.runtime.v1.BulkPublishRequestEntry.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"c\n\x13\x42ulkPublishResponse\x12L\n\rfailedEntries\x18\x01 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.BulkPublishResponseFailedEntry\"A\n\x1e\x42ulkPublishResponseFailedEntry\x12\x10\n\x08\x65ntry_id\x18\x01 \x01(\t\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\xc3\x01\n\x14InvokeBindingRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12K\n\x08metadata\x18\x03 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry\x12\x11\n\toperation\x18\x04 \x01(\t\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa4\x01\n\x15InvokeBindingResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12L\n\x08metadata\x18\x02 \x03(\x0b\x32:.dapr.proto.runtime.v1.InvokeBindingResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb8\x01\n\x10GetSecretRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x0b\n\x03key\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x82\x01\n\x11GetSecretResponse\x12@\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.GetSecretResponse.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb3\x01\n\x14GetBulkSecretRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12K\n\x08metadata\x18\x02 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.GetBulkSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x85\x01\n\x0eSecretResponse\x12\x43\n\x07secrets\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.SecretResponse.SecretsEntry\x1a.\n\x0cSecretsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb1\x01\n\x15GetBulkSecretResponse\x12\x44\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.GetBulkSecretResponse.DataEntry\x1aR\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x34\n\x05value\x18\x02 \x01(\x0b\x32%.dapr.proto.runtime.v1.SecretResponse:\x02\x38\x01\"f\n\x1bTransactionalStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x30\n\x07request\x18\x02 \x01(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\x83\x02\n\x1e\x45xecuteStateTransactionRequest\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12\x46\n\noperations\x18\x02 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.TransactionalStateOperation\x12U\n\x08metadata\x18\x03 \x03(\x0b\x32\x43.dapr.proto.runtime.v1.ExecuteStateTransactionRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9e\x01\n\x19RegisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x10\n\x08\x63\x61llback\x18\x06 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\x12\x0b\n\x03ttl\x18\x08 \x01(\t\"Q\n\x1bUnregisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"\x8f\x01\n\x1cRegisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x06 \x01(\x0c\x12\x0b\n\x03ttl\x18\x07 \x01(\t\"T\n\x1eUnregisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"f\n\x1aRenameActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x10\n\x08old_name\x18\x03 \x01(\t\x12\x10\n\x08new_name\x18\x04 \x01(\t\"I\n\x14GetActorStateRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0b\n\x03key\x18\x03 \x01(\t\"%\n\x15GetActorStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x98\x01\n#ExecuteActorStateTransactionRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12K\n\noperations\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.TransactionalActorStateOperation\"\xf5\x01\n TransactionalActorStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12#\n\x05value\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x12W\n\x08metadata\x18\x04 \x03(\x0b\x32\x45.dapr.proto.runtime.v1.TransactionalActorStateOperation.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xd4\x01\n\x12InvokeActorRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0e\n\x06method\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.InvokeActorRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"#\n\x13InvokeActorResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x8c\x03\n\x13GetMetadataResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\x45\n\x13\x61\x63tive_actors_count\x18\x02 \x03(\x0b\x32(.dapr.proto.runtime.v1.ActiveActorsCount\x12J\n\x15registered_components\x18\x03 \x03(\x0b\x32+.dapr.proto.runtime.v1.RegisteredComponents\x12[\n\x11\x65xtended_metadata\x18\x04 \x03(\x0b\x32@.dapr.proto.runtime.v1.GetMetadataResponse.ExtendedMetadataEntry\x12@\n\rsubscriptions\x18\x05 \x03(\x0b\x32).dapr.proto.runtime.v1.PubsubSubscription\x1a\x37\n\x15\x45xtendedMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"0\n\x11\x41\x63tiveActorsCount\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\"Y\n\x14RegisteredComponents\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x14\n\x0c\x63\x61pabilities\x18\x04 \x03(\t\"\x8e\x02\n\x12PubsubSubscription\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12I\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.PubsubSubscription.MetadataEntry\x12=\n\x05rules\x18\x04 \x01(\x0b\x32..dapr.proto.runtime.v1.PubsubSubscriptionRules\x12\x19\n\x11\x64\x65\x61\x64_letter_topic\x18\x05 \x01(\t\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"W\n\x17PubsubSubscriptionRules\x12<\n\x05rules\x18\x01 \x03(\x0b\x32-.dapr.proto.runtime.v1.PubsubSubscriptionRule\"5\n\x16PubsubSubscriptionRule\x12\r\n\x05match\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"0\n\x12SetMetadataRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\xbc\x01\n\x17GetConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12N\n\x08metadata\x18\x03 \x03(\x0b\x32<.dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbc\x01\n\x18GetConfigurationResponse\x12I\n\x05items\x18\x01 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetConfigurationResponse.ItemsEntry\x1aU\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem:\x02\x38\x01\"\xc8\x01\n\x1dSubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12T\n\x08metadata\x18\x03 \x03(\x0b\x32\x42.dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"A\n\x1fUnsubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\t\"\xd4\x01\n\x1eSubscribeConfigurationResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12O\n\x05items\x18\x02 \x03(\x0b\x32@.dapr.proto.runtime.v1.SubscribeConfigurationResponse.ItemsEntry\x1aU\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem:\x02\x38\x01\"?\n UnsubscribeConfigurationResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x9b\x01\n\x0eTryLockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\x12*\n\x11\x65xpiry_in_seconds\x18\x04 \x01(\x05R\x0f\x65xpiryInSeconds\"\"\n\x0fTryLockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"n\n\rUnlockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\"\xae\x01\n\x0eUnlockResponse\x12<\n\x06status\x18\x01 \x01(\x0e\x32,.dapr.proto.runtime.v1.UnlockResponse.Status\"^\n\x06Status\x12\x0b\n\x07SUCCESS\x10\x00\x12\x17\n\x13LOCK_DOES_NOT_EXIST\x10\x01\x12\x1a\n\x16LOCK_BELONGS_TO_OTHERS\x10\x02\x12\x12\n\x0eINTERNAL_ERROR\x10\x03\"\xbc\x01\n\x19SubtleGetKeyAlpha1Request\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0c\n\x04name\x18\x02 \x01(\t\x12J\n\x06\x66ormat\x18\x03 \x01(\x0e\x32:.dapr.proto.runtime.v1.SubtleGetKeyAlpha1Request.KeyFormat\"\x1e\n\tKeyFormat\x12\x07\n\x03PEM\x10\x00\x12\x08\n\x04JSON\x10\x01\"I\n\x1aSubtleGetKeyAlpha1Response\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1d\n\npublic_key\x18\x02 \x01(\tR\tpublicKey\"\xbc\x01\n\x1aSubtleEncryptAlpha1Request\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x11\n\tplaintext\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x06 \x01(\x0cR\x0e\x61ssociatedData\">\n\x1bSubtleEncryptAlpha1Response\x12\x12\n\nciphertext\x18\x01 \x01(\x0c\x12\x0b\n\x03tag\x18\x02 \x01(\x0c\"\xca\x01\n\x1aSubtleDecryptAlpha1Request\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x12\n\nciphertext\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\x0b\n\x03tag\x18\x06 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x07 \x01(\x0cR\x0e\x61ssociatedData\"0\n\x1bSubtleDecryptAlpha1Response\x12\x11\n\tplaintext\x18\x01 \x01(\x0c\"\xce\x01\n\x1aSubtleWrapKeyAlpha1Request\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12#\n\rplaintext_key\x18\x02 \x01(\x0cR\x0cplaintextKey\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x06 \x01(\x0cR\x0e\x61ssociatedData\"K\n\x1bSubtleWrapKeyAlpha1Response\x12\x1f\n\x0bwrapped_key\x18\x01 \x01(\x0cR\nwrappedKey\x12\x0b\n\x03tag\x18\x02 \x01(\x0c\"\xd9\x01\n\x1cSubtleUnwrapKeyAlpha1Request\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x1f\n\x0bwrapped_key\x18\x02 \x01(\x0cR\nwrappedKey\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\x0b\n\x03tag\x18\x06 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x07 \x01(\x0cR\x0e\x61ssociatedData\"D\n\x1dSubtleUnwrapKeyAlpha1Response\x12#\n\rplaintext_key\x18\x01 \x01(\x0cR\x0cplaintextKey\"~\n\x17SubtleSignAlpha1Request\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0e\n\x06\x64igest\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\"-\n\x18SubtleSignAlpha1Response\x12\x11\n\tsignature\x18\x01 \x01(\x0c\"\x93\x01\n\x19SubtleVerifyAlpha1Request\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0e\n\x06\x64igest\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\x11\n\tsignature\x18\x05 \x01(\x0c\"+\n\x1aSubtleVerifyAlpha1Response\x12\r\n\x05valid\x18\x01 \x01(\x08\"4\n\x11WorkflowReference\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceId\"\x89\x01\n\x12GetWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceId\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12#\n\rworkflow_name\x18\x03 \x01(\tR\x0cworkflowName\"\xbb\x01\n\x13GetWorkflowResponse\x12\x13\n\x0binstance_id\x18\x01 \x01(\t\x12\x12\n\nstart_time\x18\x02 \x01(\x03\x12J\n\x08metadata\x18\x03 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.GetWorkflowResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x95\x02\n\x14StartWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceId\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12#\n\rworkflow_name\x18\x03 \x01(\tR\x0cworkflowName\x12I\n\x07options\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.StartWorkflowRequest.OptionsEntry\x12\r\n\x05input\x18\x05 \x01(\x0c\x1a.\n\x0cOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"i\n\x17WorkflowActivityRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceId\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x1a\n\x18WorkflowActivityResponse\"\x99\x01\n\x19RaiseEventWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceId\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1d\n\nevent_name\x18\x03 \x01(\tR\teventName\x12\r\n\x05input\x18\x04 \x01(\x0c\"\x1c\n\x1aRaiseEventWorkflowResponse2\xff&\n\x04\x44\x61pr\x12\x64\n\rInvokeService\x12+.dapr.proto.runtime.v1.InvokeServiceRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12]\n\x08GetState\x12&.dapr.proto.runtime.v1.GetStateRequest\x1a\'.dapr.proto.runtime.v1.GetStateResponse\"\x00\x12i\n\x0cGetBulkState\x12*.dapr.proto.runtime.v1.GetBulkStateRequest\x1a+.dapr.proto.runtime.v1.GetBulkStateResponse\"\x00\x12N\n\tSaveState\x12\'.dapr.proto.runtime.v1.SaveStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12i\n\x10QueryStateAlpha1\x12(.dapr.proto.runtime.v1.QueryStateRequest\x1a).dapr.proto.runtime.v1.QueryStateResponse\"\x00\x12R\n\x0b\x44\x65leteState\x12).dapr.proto.runtime.v1.DeleteStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12Z\n\x0f\x44\x65leteBulkState\x12-.dapr.proto.runtime.v1.DeleteBulkStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17\x45xecuteStateTransaction\x12\x35.dapr.proto.runtime.v1.ExecuteStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12T\n\x0cPublishEvent\x12*.dapr.proto.runtime.v1.PublishEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12q\n\x16\x42ulkPublishEventAlpha1\x12).dapr.proto.runtime.v1.BulkPublishRequest\x1a*.dapr.proto.runtime.v1.BulkPublishResponse\"\x00\x12l\n\rInvokeBinding\x12+.dapr.proto.runtime.v1.InvokeBindingRequest\x1a,.dapr.proto.runtime.v1.InvokeBindingResponse\"\x00\x12`\n\tGetSecret\x12\'.dapr.proto.runtime.v1.GetSecretRequest\x1a(.dapr.proto.runtime.v1.GetSecretResponse\"\x00\x12l\n\rGetBulkSecret\x12+.dapr.proto.runtime.v1.GetBulkSecretRequest\x1a,.dapr.proto.runtime.v1.GetBulkSecretResponse\"\x00\x12`\n\x12RegisterActorTimer\x12\x30.dapr.proto.runtime.v1.RegisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x14UnregisterActorTimer\x12\x32.dapr.proto.runtime.v1.UnregisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x15RegisterActorReminder\x12\x33.dapr.proto.runtime.v1.RegisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17UnregisterActorReminder\x12\x35.dapr.proto.runtime.v1.UnregisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x62\n\x13RenameActorReminder\x12\x31.dapr.proto.runtime.v1.RenameActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n\rGetActorState\x12+.dapr.proto.runtime.v1.GetActorStateRequest\x1a,.dapr.proto.runtime.v1.GetActorStateResponse\"\x00\x12t\n\x1c\x45xecuteActorStateTransaction\x12:.dapr.proto.runtime.v1.ExecuteActorStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x0bInvokeActor\x12).dapr.proto.runtime.v1.InvokeActorRequest\x1a*.dapr.proto.runtime.v1.InvokeActorResponse\"\x00\x12{\n\x16GetConfigurationAlpha1\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12u\n\x10GetConfiguration\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12\x8f\x01\n\x1cSubscribeConfigurationAlpha1\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12\x89\x01\n\x16SubscribeConfiguration\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12\x93\x01\n\x1eUnsubscribeConfigurationAlpha1\x12\x36.dapr.proto.runtime.v1.UnsubscribeConfigurationRequest\x1a\x37.dapr.proto.runtime.v1.UnsubscribeConfigurationResponse\"\x00\x12\x8d\x01\n\x18UnsubscribeConfiguration\x12\x36.dapr.proto.runtime.v1.UnsubscribeConfigurationRequest\x1a\x37.dapr.proto.runtime.v1.UnsubscribeConfigurationResponse\"\x00\x12`\n\rTryLockAlpha1\x12%.dapr.proto.runtime.v1.TryLockRequest\x1a&.dapr.proto.runtime.v1.TryLockResponse\"\x00\x12]\n\x0cUnlockAlpha1\x12$.dapr.proto.runtime.v1.UnlockRequest\x1a%.dapr.proto.runtime.v1.UnlockResponse\"\x00\x12S\n\x0bGetMetadata\x12\x16.google.protobuf.Empty\x1a*.dapr.proto.runtime.v1.GetMetadataResponse\"\x00\x12R\n\x0bSetMetadata\x12).dapr.proto.runtime.v1.SetMetadataRequest\x1a\x16.google.protobuf.Empty\"\x00\x12y\n\x12SubtleGetKeyAlpha1\x12\x30.dapr.proto.runtime.v1.SubtleGetKeyAlpha1Request\x1a\x31.dapr.proto.runtime.v1.SubtleGetKeyAlpha1Response\x12|\n\x13SubtleEncryptAlpha1\x12\x31.dapr.proto.runtime.v1.SubtleEncryptAlpha1Request\x1a\x32.dapr.proto.runtime.v1.SubtleEncryptAlpha1Response\x12|\n\x13SubtleDecryptAlpha1\x12\x31.dapr.proto.runtime.v1.SubtleDecryptAlpha1Request\x1a\x32.dapr.proto.runtime.v1.SubtleDecryptAlpha1Response\x12|\n\x13SubtleWrapKeyAlpha1\x12\x31.dapr.proto.runtime.v1.SubtleWrapKeyAlpha1Request\x1a\x32.dapr.proto.runtime.v1.SubtleWrapKeyAlpha1Response\x12\x82\x01\n\x15SubtleUnwrapKeyAlpha1\x12\x33.dapr.proto.runtime.v1.SubtleUnwrapKeyAlpha1Request\x1a\x34.dapr.proto.runtime.v1.SubtleUnwrapKeyAlpha1Response\x12s\n\x10SubtleSignAlpha1\x12..dapr.proto.runtime.v1.SubtleSignAlpha1Request\x1a/.dapr.proto.runtime.v1.SubtleSignAlpha1Response\x12y\n\x12SubtleVerifyAlpha1\x12\x30.dapr.proto.runtime.v1.SubtleVerifyAlpha1Request\x1a\x31.dapr.proto.runtime.v1.SubtleVerifyAlpha1Response\x12n\n\x13StartWorkflowAlpha1\x12+.dapr.proto.runtime.v1.StartWorkflowRequest\x1a(.dapr.proto.runtime.v1.WorkflowReference\"\x00\x12l\n\x11GetWorkflowAlpha1\x12).dapr.proto.runtime.v1.GetWorkflowRequest\x1a*.dapr.proto.runtime.v1.GetWorkflowResponse\"\x00\x12|\n\x17TerminateWorkflowAlpha1\x12..dapr.proto.runtime.v1.WorkflowActivityRequest\x1a/.dapr.proto.runtime.v1.WorkflowActivityResponse\"\x00\x12x\n\x13PauseWorkflowAlpha1\x12..dapr.proto.runtime.v1.WorkflowActivityRequest\x1a/.dapr.proto.runtime.v1.WorkflowActivityResponse\"\x00\x12y\n\x14ResumeWorkflowAlpha1\x12..dapr.proto.runtime.v1.WorkflowActivityRequest\x1a/.dapr.proto.runtime.v1.WorkflowActivityResponse\"\x00\x12\x81\x01\n\x18RaiseEventWorkflowAlpha1\x12\x30.dapr.proto.runtime.v1.RaiseEventWorkflowRequest\x1a\x31.dapr.proto.runtime.v1.RaiseEventWorkflowResponse\"\x00\x12<\n\x08Shutdown\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n dapr/proto/runtime/v1/dapr.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequest\"\xf5\x01\n\x0fGetStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12H\n\x0b\x63onsistency\x18\x03 \x01(\x0e\x32\x33.dapr.proto.common.v1.StateOptions.StateConsistency\x12\x46\n\x08metadata\x18\x04 \x03(\x0b\x32\x34.dapr.proto.runtime.v1.GetStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc9\x01\n\x13GetBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12\x13\n\x0bparallelism\x18\x03 \x01(\x05\x12J\n\x08metadata\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.GetBulkStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"K\n\x14GetBulkStateResponse\x12\x33\n\x05items\x18\x01 \x03(\x0b\x32$.dapr.proto.runtime.v1.BulkStateItem\"\xbe\x01\n\rBulkStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\x12\x44\n\x08metadata\x18\x05 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.BulkStateItem.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa8\x01\n\x10GetStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x90\x02\n\x12\x44\x65leteStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12(\n\x04\x65tag\x18\x03 \x01(\x0b\x32\x1a.dapr.proto.common.v1.Etag\x12\x33\n\x07options\x18\x04 \x01(\x0b\x32\".dapr.proto.common.v1.StateOptions\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.DeleteStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"]\n\x16\x44\x65leteBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"W\n\x10SaveStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\xbc\x01\n\x11QueryStateRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\r\n\x05query\x18\x02 \x01(\t\x12H\n\x08metadata\x18\x03 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"H\n\x0eQueryStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"\xd7\x01\n\x12QueryStateResponse\x12\x36\n\x07results\x18\x01 \x03(\x0b\x32%.dapr.proto.runtime.v1.QueryStateItem\x12\r\n\x05token\x18\x02 \x01(\t\x12I\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xdf\x01\n\x13PublishEventRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x19\n\x11\x64\x61ta_content_type\x18\x04 \x01(\t\x12J\n\x08metadata\x18\x05 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.PublishEventRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xf5\x01\n\x12\x42ulkPublishRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12?\n\x07\x65ntries\x18\x03 \x03(\x0b\x32..dapr.proto.runtime.v1.BulkPublishRequestEntry\x12I\n\x08metadata\x18\x04 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.BulkPublishRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xd1\x01\n\x17\x42ulkPublishRequestEntry\x12\x10\n\x08\x65ntry_id\x18\x01 \x01(\t\x12\r\n\x05\x65vent\x18\x02 \x01(\x0c\x12\x14\n\x0c\x63ontent_type\x18\x03 \x01(\t\x12N\n\x08metadata\x18\x04 \x03(\x0b\x32<.dapr.proto.runtime.v1.BulkPublishRequestEntry.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"c\n\x13\x42ulkPublishResponse\x12L\n\rfailedEntries\x18\x01 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.BulkPublishResponseFailedEntry\"A\n\x1e\x42ulkPublishResponseFailedEntry\x12\x10\n\x08\x65ntry_id\x18\x01 \x01(\t\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\xc3\x01\n\x14InvokeBindingRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12K\n\x08metadata\x18\x03 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry\x12\x11\n\toperation\x18\x04 \x01(\t\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa4\x01\n\x15InvokeBindingResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12L\n\x08metadata\x18\x02 \x03(\x0b\x32:.dapr.proto.runtime.v1.InvokeBindingResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb8\x01\n\x10GetSecretRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x0b\n\x03key\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x82\x01\n\x11GetSecretResponse\x12@\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.GetSecretResponse.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb3\x01\n\x14GetBulkSecretRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12K\n\x08metadata\x18\x02 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.GetBulkSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x85\x01\n\x0eSecretResponse\x12\x43\n\x07secrets\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.SecretResponse.SecretsEntry\x1a.\n\x0cSecretsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb1\x01\n\x15GetBulkSecretResponse\x12\x44\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.GetBulkSecretResponse.DataEntry\x1aR\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x34\n\x05value\x18\x02 \x01(\x0b\x32%.dapr.proto.runtime.v1.SecretResponse:\x02\x38\x01\"f\n\x1bTransactionalStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x30\n\x07request\x18\x02 \x01(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\x83\x02\n\x1e\x45xecuteStateTransactionRequest\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12\x46\n\noperations\x18\x02 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.TransactionalStateOperation\x12U\n\x08metadata\x18\x03 \x03(\x0b\x32\x43.dapr.proto.runtime.v1.ExecuteStateTransactionRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9e\x01\n\x19RegisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x10\n\x08\x63\x61llback\x18\x06 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\x12\x0b\n\x03ttl\x18\x08 \x01(\t\"Q\n\x1bUnregisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"\x8f\x01\n\x1cRegisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x06 \x01(\x0c\x12\x0b\n\x03ttl\x18\x07 \x01(\t\"T\n\x1eUnregisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"f\n\x1aRenameActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x10\n\x08old_name\x18\x03 \x01(\t\x12\x10\n\x08new_name\x18\x04 \x01(\t\"I\n\x14GetActorStateRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0b\n\x03key\x18\x03 \x01(\t\"%\n\x15GetActorStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x98\x01\n#ExecuteActorStateTransactionRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12K\n\noperations\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.TransactionalActorStateOperation\"\xf5\x01\n TransactionalActorStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12#\n\x05value\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x12W\n\x08metadata\x18\x04 \x03(\x0b\x32\x45.dapr.proto.runtime.v1.TransactionalActorStateOperation.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xd4\x01\n\x12InvokeActorRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0e\n\x06method\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.InvokeActorRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"#\n\x13InvokeActorResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x8c\x03\n\x13GetMetadataResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\x45\n\x13\x61\x63tive_actors_count\x18\x02 \x03(\x0b\x32(.dapr.proto.runtime.v1.ActiveActorsCount\x12J\n\x15registered_components\x18\x03 \x03(\x0b\x32+.dapr.proto.runtime.v1.RegisteredComponents\x12[\n\x11\x65xtended_metadata\x18\x04 \x03(\x0b\x32@.dapr.proto.runtime.v1.GetMetadataResponse.ExtendedMetadataEntry\x12@\n\rsubscriptions\x18\x05 \x03(\x0b\x32).dapr.proto.runtime.v1.PubsubSubscription\x1a\x37\n\x15\x45xtendedMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"0\n\x11\x41\x63tiveActorsCount\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\"Y\n\x14RegisteredComponents\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x14\n\x0c\x63\x61pabilities\x18\x04 \x03(\t\"\x8e\x02\n\x12PubsubSubscription\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12I\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.PubsubSubscription.MetadataEntry\x12=\n\x05rules\x18\x04 \x01(\x0b\x32..dapr.proto.runtime.v1.PubsubSubscriptionRules\x12\x19\n\x11\x64\x65\x61\x64_letter_topic\x18\x05 \x01(\t\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"W\n\x17PubsubSubscriptionRules\x12<\n\x05rules\x18\x01 \x03(\x0b\x32-.dapr.proto.runtime.v1.PubsubSubscriptionRule\"5\n\x16PubsubSubscriptionRule\x12\r\n\x05match\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"0\n\x12SetMetadataRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\xbc\x01\n\x17GetConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12N\n\x08metadata\x18\x03 \x03(\x0b\x32<.dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbc\x01\n\x18GetConfigurationResponse\x12I\n\x05items\x18\x01 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetConfigurationResponse.ItemsEntry\x1aU\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem:\x02\x38\x01\"\xc8\x01\n\x1dSubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12T\n\x08metadata\x18\x03 \x03(\x0b\x32\x42.dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"A\n\x1fUnsubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\t\"\xd4\x01\n\x1eSubscribeConfigurationResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12O\n\x05items\x18\x02 \x03(\x0b\x32@.dapr.proto.runtime.v1.SubscribeConfigurationResponse.ItemsEntry\x1aU\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem:\x02\x38\x01\"?\n UnsubscribeConfigurationResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x9b\x01\n\x0eTryLockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\x12*\n\x11\x65xpiry_in_seconds\x18\x04 \x01(\x05R\x0f\x65xpiryInSeconds\"\"\n\x0fTryLockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"n\n\rUnlockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\"\xae\x01\n\x0eUnlockResponse\x12<\n\x06status\x18\x01 \x01(\x0e\x32,.dapr.proto.runtime.v1.UnlockResponse.Status\"^\n\x06Status\x12\x0b\n\x07SUCCESS\x10\x00\x12\x17\n\x13LOCK_DOES_NOT_EXIST\x10\x01\x12\x1a\n\x16LOCK_BELONGS_TO_OTHERS\x10\x02\x12\x12\n\x0eINTERNAL_ERROR\x10\x03\"\xb0\x01\n\x13SubtleGetKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x44\n\x06\x66ormat\x18\x03 \x01(\x0e\x32\x34.dapr.proto.runtime.v1.SubtleGetKeyRequest.KeyFormat\"\x1e\n\tKeyFormat\x12\x07\n\x03PEM\x10\x00\x12\x08\n\x04JSON\x10\x01\"C\n\x14SubtleGetKeyResponse\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1d\n\npublic_key\x18\x02 \x01(\tR\tpublicKey\"\xb6\x01\n\x14SubtleEncryptRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x11\n\tplaintext\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x06 \x01(\x0cR\x0e\x61ssociatedData\"8\n\x15SubtleEncryptResponse\x12\x12\n\nciphertext\x18\x01 \x01(\x0c\x12\x0b\n\x03tag\x18\x02 \x01(\x0c\"\xc4\x01\n\x14SubtleDecryptRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x12\n\nciphertext\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\x0b\n\x03tag\x18\x06 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x07 \x01(\x0cR\x0e\x61ssociatedData\"*\n\x15SubtleDecryptResponse\x12\x11\n\tplaintext\x18\x01 \x01(\x0c\"\xc8\x01\n\x14SubtleWrapKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12#\n\rplaintext_key\x18\x02 \x01(\x0cR\x0cplaintextKey\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x06 \x01(\x0cR\x0e\x61ssociatedData\"E\n\x15SubtleWrapKeyResponse\x12\x1f\n\x0bwrapped_key\x18\x01 \x01(\x0cR\nwrappedKey\x12\x0b\n\x03tag\x18\x02 \x01(\x0c\"\xd3\x01\n\x16SubtleUnwrapKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x1f\n\x0bwrapped_key\x18\x02 \x01(\x0cR\nwrappedKey\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\x0b\n\x03tag\x18\x06 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x07 \x01(\x0cR\x0e\x61ssociatedData\">\n\x17SubtleUnwrapKeyResponse\x12#\n\rplaintext_key\x18\x01 \x01(\x0cR\x0cplaintextKey\"x\n\x11SubtleSignRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0e\n\x06\x64igest\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\"\'\n\x12SubtleSignResponse\x12\x11\n\tsignature\x18\x01 \x01(\x0c\"\x8d\x01\n\x13SubtleVerifyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0e\n\x06\x64igest\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\x11\n\tsignature\x18\x05 \x01(\x0c\"%\n\x14SubtleVerifyResponse\x12\r\n\x05valid\x18\x01 \x01(\x08\"\x85\x01\n\x0e\x45ncryptRequest\x12=\n\x07options\x18\x01 \x01(\x0b\x32,.dapr.proto.runtime.v1.EncryptRequestOptions\x12\x34\n\x07payload\x18\x02 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"\xfe\x01\n\x15\x45ncryptRequestOptions\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x19\n\x08key_name\x18\x02 \x01(\tR\x07keyName\x12\x1a\n\x12key_wrap_algorithm\x18\x03 \x01(\t\x12\x1e\n\x16\x64\x61ta_encryption_cipher\x18\n \x01(\t\x12\x37\n\x18omit_decryption_key_name\x18\x0b \x01(\x08R\x15omitDecryptionKeyName\x12.\n\x13\x64\x65\x63ryption_key_name\x18\x0c \x01(\tR\x11\x64\x65\x63ryptionKeyName\"G\n\x0f\x45ncryptResponse\x12\x34\n\x07payload\x18\x01 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"\x85\x01\n\x0e\x44\x65\x63ryptRequest\x12=\n\x07options\x18\x01 \x01(\x0b\x32,.dapr.proto.runtime.v1.DecryptRequestOptions\x12\x34\n\x07payload\x18\x02 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"Y\n\x15\x44\x65\x63ryptRequestOptions\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x19\n\x08key_name\x18\x0c \x01(\tR\x07keyName\"G\n\x0f\x44\x65\x63ryptResponse\x12\x34\n\x07payload\x18\x01 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"d\n\x12GetWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x84\x03\n\x13GetWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12#\n\rworkflow_name\x18\x02 \x01(\tR\x0cworkflowName\x12\x39\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x42\n\x0flast_updated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\rlastUpdatedAt\x12%\n\x0eruntime_status\x18\x05 \x01(\tR\rruntimeStatus\x12N\n\nproperties\x18\x06 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetWorkflowResponse.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x95\x02\n\x14StartWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12#\n\rworkflow_name\x18\x03 \x01(\tR\x0cworkflowName\x12I\n\x07options\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.StartWorkflowRequest.OptionsEntry\x12\r\n\x05input\x18\x05 \x01(\x0c\x1a.\n\x0cOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"8\n\x15StartWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\"j\n\x18TerminateWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"f\n\x14PauseWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"g\n\x15ResumeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x9e\x01\n\x19RaiseEventWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1d\n\nevent_name\x18\x03 \x01(\tR\teventName\x12\x12\n\nevent_data\x18\x04 \x01(\x0c\"f\n\x14PurgeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent2\xe9\'\n\x04\x44\x61pr\x12\x64\n\rInvokeService\x12+.dapr.proto.runtime.v1.InvokeServiceRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12]\n\x08GetState\x12&.dapr.proto.runtime.v1.GetStateRequest\x1a\'.dapr.proto.runtime.v1.GetStateResponse\"\x00\x12i\n\x0cGetBulkState\x12*.dapr.proto.runtime.v1.GetBulkStateRequest\x1a+.dapr.proto.runtime.v1.GetBulkStateResponse\"\x00\x12N\n\tSaveState\x12\'.dapr.proto.runtime.v1.SaveStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12i\n\x10QueryStateAlpha1\x12(.dapr.proto.runtime.v1.QueryStateRequest\x1a).dapr.proto.runtime.v1.QueryStateResponse\"\x00\x12R\n\x0b\x44\x65leteState\x12).dapr.proto.runtime.v1.DeleteStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12Z\n\x0f\x44\x65leteBulkState\x12-.dapr.proto.runtime.v1.DeleteBulkStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17\x45xecuteStateTransaction\x12\x35.dapr.proto.runtime.v1.ExecuteStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12T\n\x0cPublishEvent\x12*.dapr.proto.runtime.v1.PublishEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12q\n\x16\x42ulkPublishEventAlpha1\x12).dapr.proto.runtime.v1.BulkPublishRequest\x1a*.dapr.proto.runtime.v1.BulkPublishResponse\"\x00\x12l\n\rInvokeBinding\x12+.dapr.proto.runtime.v1.InvokeBindingRequest\x1a,.dapr.proto.runtime.v1.InvokeBindingResponse\"\x00\x12`\n\tGetSecret\x12\'.dapr.proto.runtime.v1.GetSecretRequest\x1a(.dapr.proto.runtime.v1.GetSecretResponse\"\x00\x12l\n\rGetBulkSecret\x12+.dapr.proto.runtime.v1.GetBulkSecretRequest\x1a,.dapr.proto.runtime.v1.GetBulkSecretResponse\"\x00\x12`\n\x12RegisterActorTimer\x12\x30.dapr.proto.runtime.v1.RegisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x14UnregisterActorTimer\x12\x32.dapr.proto.runtime.v1.UnregisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x15RegisterActorReminder\x12\x33.dapr.proto.runtime.v1.RegisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17UnregisterActorReminder\x12\x35.dapr.proto.runtime.v1.UnregisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x62\n\x13RenameActorReminder\x12\x31.dapr.proto.runtime.v1.RenameActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n\rGetActorState\x12+.dapr.proto.runtime.v1.GetActorStateRequest\x1a,.dapr.proto.runtime.v1.GetActorStateResponse\"\x00\x12t\n\x1c\x45xecuteActorStateTransaction\x12:.dapr.proto.runtime.v1.ExecuteActorStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x0bInvokeActor\x12).dapr.proto.runtime.v1.InvokeActorRequest\x1a*.dapr.proto.runtime.v1.InvokeActorResponse\"\x00\x12{\n\x16GetConfigurationAlpha1\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12u\n\x10GetConfiguration\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12\x8f\x01\n\x1cSubscribeConfigurationAlpha1\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12\x89\x01\n\x16SubscribeConfiguration\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12\x93\x01\n\x1eUnsubscribeConfigurationAlpha1\x12\x36.dapr.proto.runtime.v1.UnsubscribeConfigurationRequest\x1a\x37.dapr.proto.runtime.v1.UnsubscribeConfigurationResponse\"\x00\x12\x8d\x01\n\x18UnsubscribeConfiguration\x12\x36.dapr.proto.runtime.v1.UnsubscribeConfigurationRequest\x1a\x37.dapr.proto.runtime.v1.UnsubscribeConfigurationResponse\"\x00\x12`\n\rTryLockAlpha1\x12%.dapr.proto.runtime.v1.TryLockRequest\x1a&.dapr.proto.runtime.v1.TryLockResponse\"\x00\x12]\n\x0cUnlockAlpha1\x12$.dapr.proto.runtime.v1.UnlockRequest\x1a%.dapr.proto.runtime.v1.UnlockResponse\"\x00\x12\x62\n\rEncryptAlpha1\x12%.dapr.proto.runtime.v1.EncryptRequest\x1a&.dapr.proto.runtime.v1.EncryptResponse(\x01\x30\x01\x12\x62\n\rDecryptAlpha1\x12%.dapr.proto.runtime.v1.DecryptRequest\x1a&.dapr.proto.runtime.v1.DecryptResponse(\x01\x30\x01\x12S\n\x0bGetMetadata\x12\x16.google.protobuf.Empty\x1a*.dapr.proto.runtime.v1.GetMetadataResponse\"\x00\x12R\n\x0bSetMetadata\x12).dapr.proto.runtime.v1.SetMetadataRequest\x1a\x16.google.protobuf.Empty\"\x00\x12m\n\x12SubtleGetKeyAlpha1\x12*.dapr.proto.runtime.v1.SubtleGetKeyRequest\x1a+.dapr.proto.runtime.v1.SubtleGetKeyResponse\x12p\n\x13SubtleEncryptAlpha1\x12+.dapr.proto.runtime.v1.SubtleEncryptRequest\x1a,.dapr.proto.runtime.v1.SubtleEncryptResponse\x12p\n\x13SubtleDecryptAlpha1\x12+.dapr.proto.runtime.v1.SubtleDecryptRequest\x1a,.dapr.proto.runtime.v1.SubtleDecryptResponse\x12p\n\x13SubtleWrapKeyAlpha1\x12+.dapr.proto.runtime.v1.SubtleWrapKeyRequest\x1a,.dapr.proto.runtime.v1.SubtleWrapKeyResponse\x12v\n\x15SubtleUnwrapKeyAlpha1\x12-.dapr.proto.runtime.v1.SubtleUnwrapKeyRequest\x1a..dapr.proto.runtime.v1.SubtleUnwrapKeyResponse\x12g\n\x10SubtleSignAlpha1\x12(.dapr.proto.runtime.v1.SubtleSignRequest\x1a).dapr.proto.runtime.v1.SubtleSignResponse\x12m\n\x12SubtleVerifyAlpha1\x12*.dapr.proto.runtime.v1.SubtleVerifyRequest\x1a+.dapr.proto.runtime.v1.SubtleVerifyResponse\x12r\n\x13StartWorkflowAlpha1\x12+.dapr.proto.runtime.v1.StartWorkflowRequest\x1a,.dapr.proto.runtime.v1.StartWorkflowResponse\"\x00\x12l\n\x11GetWorkflowAlpha1\x12).dapr.proto.runtime.v1.GetWorkflowRequest\x1a*.dapr.proto.runtime.v1.GetWorkflowResponse\"\x00\x12\\\n\x13PurgeWorkflowAlpha1\x12+.dapr.proto.runtime.v1.PurgeWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x17TerminateWorkflowAlpha1\x12/.dapr.proto.runtime.v1.TerminateWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n\x13PauseWorkflowAlpha1\x12+.dapr.proto.runtime.v1.PauseWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12^\n\x14ResumeWorkflowAlpha1\x12,.dapr.proto.runtime.v1.ResumeWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x18RaiseEventWorkflowAlpha1\x12\x30.dapr.proto.runtime.v1.RaiseEventWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x08Shutdown\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
 
 
 
@@ -101,20 +102,26 @@ _TRYLOCKREQUEST = DESCRIPTOR.message_types_by_name['TryLockRequest']
 _TRYLOCKRESPONSE = DESCRIPTOR.message_types_by_name['TryLockResponse']
 _UNLOCKREQUEST = DESCRIPTOR.message_types_by_name['UnlockRequest']
 _UNLOCKRESPONSE = DESCRIPTOR.message_types_by_name['UnlockResponse']
-_SUBTLEGETKEYALPHA1REQUEST = DESCRIPTOR.message_types_by_name['SubtleGetKeyAlpha1Request']
-_SUBTLEGETKEYALPHA1RESPONSE = DESCRIPTOR.message_types_by_name['SubtleGetKeyAlpha1Response']
-_SUBTLEENCRYPTALPHA1REQUEST = DESCRIPTOR.message_types_by_name['SubtleEncryptAlpha1Request']
-_SUBTLEENCRYPTALPHA1RESPONSE = DESCRIPTOR.message_types_by_name['SubtleEncryptAlpha1Response']
-_SUBTLEDECRYPTALPHA1REQUEST = DESCRIPTOR.message_types_by_name['SubtleDecryptAlpha1Request']
-_SUBTLEDECRYPTALPHA1RESPONSE = DESCRIPTOR.message_types_by_name['SubtleDecryptAlpha1Response']
-_SUBTLEWRAPKEYALPHA1REQUEST = DESCRIPTOR.message_types_by_name['SubtleWrapKeyAlpha1Request']
-_SUBTLEWRAPKEYALPHA1RESPONSE = DESCRIPTOR.message_types_by_name['SubtleWrapKeyAlpha1Response']
-_SUBTLEUNWRAPKEYALPHA1REQUEST = DESCRIPTOR.message_types_by_name['SubtleUnwrapKeyAlpha1Request']
-_SUBTLEUNWRAPKEYALPHA1RESPONSE = DESCRIPTOR.message_types_by_name['SubtleUnwrapKeyAlpha1Response']
-_SUBTLESIGNALPHA1REQUEST = DESCRIPTOR.message_types_by_name['SubtleSignAlpha1Request']
-_SUBTLESIGNALPHA1RESPONSE = DESCRIPTOR.message_types_by_name['SubtleSignAlpha1Response']
-_SUBTLEVERIFYALPHA1REQUEST = DESCRIPTOR.message_types_by_name['SubtleVerifyAlpha1Request']
-_SUBTLEVERIFYALPHA1RESPONSE = DESCRIPTOR.message_types_by_name['SubtleVerifyAlpha1Response']
+_SUBTLEGETKEYREQUEST = DESCRIPTOR.message_types_by_name['SubtleGetKeyRequest']
+_SUBTLEGETKEYRESPONSE = DESCRIPTOR.message_types_by_name['SubtleGetKeyResponse']
+_SUBTLEENCRYPTREQUEST = DESCRIPTOR.message_types_by_name['SubtleEncryptRequest']
+_SUBTLEENCRYPTRESPONSE = DESCRIPTOR.message_types_by_name['SubtleEncryptResponse']
+_SUBTLEDECRYPTREQUEST = DESCRIPTOR.message_types_by_name['SubtleDecryptRequest']
+_SUBTLEDECRYPTRESPONSE = DESCRIPTOR.message_types_by_name['SubtleDecryptResponse']
+_SUBTLEWRAPKEYREQUEST = DESCRIPTOR.message_types_by_name['SubtleWrapKeyRequest']
+_SUBTLEWRAPKEYRESPONSE = DESCRIPTOR.message_types_by_name['SubtleWrapKeyResponse']
+_SUBTLEUNWRAPKEYREQUEST = DESCRIPTOR.message_types_by_name['SubtleUnwrapKeyRequest']
+_SUBTLEUNWRAPKEYRESPONSE = DESCRIPTOR.message_types_by_name['SubtleUnwrapKeyResponse']
+_SUBTLESIGNREQUEST = DESCRIPTOR.message_types_by_name['SubtleSignRequest']
+_SUBTLESIGNRESPONSE = DESCRIPTOR.message_types_by_name['SubtleSignResponse']
+_SUBTLEVERIFYREQUEST = DESCRIPTOR.message_types_by_name['SubtleVerifyRequest']
+_SUBTLEVERIFYRESPONSE = DESCRIPTOR.message_types_by_name['SubtleVerifyResponse']
+_ENCRYPTREQUEST = DESCRIPTOR.message_types_by_name['EncryptRequest']
+_ENCRYPTREQUESTOPTIONS = DESCRIPTOR.message_types_by_name['EncryptRequestOptions']
+_ENCRYPTRESPONSE = DESCRIPTOR.message_types_by_name['EncryptResponse']
+_DECRYPTREQUEST = DESCRIPTOR.message_types_by_name['DecryptRequest']
+_DECRYPTREQUESTOPTIONS = DESCRIPTOR.message_types_by_name['DecryptRequestOptions']
+_DECRYPTRESPONSE = DESCRIPTOR.message_types_by_name['DecryptResponse']
 _GETWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['GetWorkflowRequest']
 _GETWORKFLOWRESPONSE = DESCRIPTOR.message_types_by_name['GetWorkflowResponse']
 _GETWORKFLOWRESPONSE_PROPERTIESENTRY = _GETWORKFLOWRESPONSE.nested_types_by_name['PropertiesEntry']
@@ -125,10 +132,9 @@ _TERMINATEWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['TerminateWorkflowR
 _PAUSEWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['PauseWorkflowRequest']
 _RESUMEWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['ResumeWorkflowRequest']
 _RAISEEVENTWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['RaiseEventWorkflowRequest']
-_RAISEEVENTWORKFLOWRESPONSE = DESCRIPTOR.message_types_by_name['RaiseEventWorkflowResponse']
 _PURGEWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['PurgeWorkflowRequest']
 _UNLOCKRESPONSE_STATUS = _UNLOCKRESPONSE.enum_types_by_name['Status']
-_SUBTLEGETKEYALPHA1REQUEST_KEYFORMAT = _SUBTLEGETKEYALPHA1REQUEST.enum_types_by_name['KeyFormat']
+_SUBTLEGETKEYREQUEST_KEYFORMAT = _SUBTLEGETKEYREQUEST.enum_types_by_name['KeyFormat']
 InvokeServiceRequest = _reflection.GeneratedProtocolMessageType('InvokeServiceRequest', (_message.Message,), {
   'DESCRIPTOR' : _INVOKESERVICEREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
@@ -715,103 +721,145 @@ UnlockResponse = _reflection.GeneratedProtocolMessageType('UnlockResponse', (_me
   })
 _sym_db.RegisterMessage(UnlockResponse)
 
-SubtleGetKeyAlpha1Request = _reflection.GeneratedProtocolMessageType('SubtleGetKeyAlpha1Request', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEGETKEYALPHA1REQUEST,
+SubtleGetKeyRequest = _reflection.GeneratedProtocolMessageType('SubtleGetKeyRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEGETKEYREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleGetKeyAlpha1Request)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleGetKeyRequest)
   })
-_sym_db.RegisterMessage(SubtleGetKeyAlpha1Request)
+_sym_db.RegisterMessage(SubtleGetKeyRequest)
 
-SubtleGetKeyAlpha1Response = _reflection.GeneratedProtocolMessageType('SubtleGetKeyAlpha1Response', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEGETKEYALPHA1RESPONSE,
+SubtleGetKeyResponse = _reflection.GeneratedProtocolMessageType('SubtleGetKeyResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEGETKEYRESPONSE,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleGetKeyAlpha1Response)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleGetKeyResponse)
   })
-_sym_db.RegisterMessage(SubtleGetKeyAlpha1Response)
+_sym_db.RegisterMessage(SubtleGetKeyResponse)
 
-SubtleEncryptAlpha1Request = _reflection.GeneratedProtocolMessageType('SubtleEncryptAlpha1Request', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEENCRYPTALPHA1REQUEST,
+SubtleEncryptRequest = _reflection.GeneratedProtocolMessageType('SubtleEncryptRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEENCRYPTREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleEncryptAlpha1Request)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleEncryptRequest)
   })
-_sym_db.RegisterMessage(SubtleEncryptAlpha1Request)
+_sym_db.RegisterMessage(SubtleEncryptRequest)
 
-SubtleEncryptAlpha1Response = _reflection.GeneratedProtocolMessageType('SubtleEncryptAlpha1Response', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEENCRYPTALPHA1RESPONSE,
+SubtleEncryptResponse = _reflection.GeneratedProtocolMessageType('SubtleEncryptResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEENCRYPTRESPONSE,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleEncryptAlpha1Response)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleEncryptResponse)
   })
-_sym_db.RegisterMessage(SubtleEncryptAlpha1Response)
+_sym_db.RegisterMessage(SubtleEncryptResponse)
 
-SubtleDecryptAlpha1Request = _reflection.GeneratedProtocolMessageType('SubtleDecryptAlpha1Request', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEDECRYPTALPHA1REQUEST,
+SubtleDecryptRequest = _reflection.GeneratedProtocolMessageType('SubtleDecryptRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEDECRYPTREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleDecryptAlpha1Request)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleDecryptRequest)
   })
-_sym_db.RegisterMessage(SubtleDecryptAlpha1Request)
+_sym_db.RegisterMessage(SubtleDecryptRequest)
 
-SubtleDecryptAlpha1Response = _reflection.GeneratedProtocolMessageType('SubtleDecryptAlpha1Response', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEDECRYPTALPHA1RESPONSE,
+SubtleDecryptResponse = _reflection.GeneratedProtocolMessageType('SubtleDecryptResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEDECRYPTRESPONSE,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleDecryptAlpha1Response)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleDecryptResponse)
   })
-_sym_db.RegisterMessage(SubtleDecryptAlpha1Response)
+_sym_db.RegisterMessage(SubtleDecryptResponse)
 
-SubtleWrapKeyAlpha1Request = _reflection.GeneratedProtocolMessageType('SubtleWrapKeyAlpha1Request', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEWRAPKEYALPHA1REQUEST,
+SubtleWrapKeyRequest = _reflection.GeneratedProtocolMessageType('SubtleWrapKeyRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEWRAPKEYREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleWrapKeyAlpha1Request)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleWrapKeyRequest)
   })
-_sym_db.RegisterMessage(SubtleWrapKeyAlpha1Request)
+_sym_db.RegisterMessage(SubtleWrapKeyRequest)
 
-SubtleWrapKeyAlpha1Response = _reflection.GeneratedProtocolMessageType('SubtleWrapKeyAlpha1Response', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEWRAPKEYALPHA1RESPONSE,
+SubtleWrapKeyResponse = _reflection.GeneratedProtocolMessageType('SubtleWrapKeyResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEWRAPKEYRESPONSE,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleWrapKeyAlpha1Response)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleWrapKeyResponse)
   })
-_sym_db.RegisterMessage(SubtleWrapKeyAlpha1Response)
+_sym_db.RegisterMessage(SubtleWrapKeyResponse)
 
-SubtleUnwrapKeyAlpha1Request = _reflection.GeneratedProtocolMessageType('SubtleUnwrapKeyAlpha1Request', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEUNWRAPKEYALPHA1REQUEST,
+SubtleUnwrapKeyRequest = _reflection.GeneratedProtocolMessageType('SubtleUnwrapKeyRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEUNWRAPKEYREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleUnwrapKeyAlpha1Request)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleUnwrapKeyRequest)
   })
-_sym_db.RegisterMessage(SubtleUnwrapKeyAlpha1Request)
+_sym_db.RegisterMessage(SubtleUnwrapKeyRequest)
 
-SubtleUnwrapKeyAlpha1Response = _reflection.GeneratedProtocolMessageType('SubtleUnwrapKeyAlpha1Response', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEUNWRAPKEYALPHA1RESPONSE,
+SubtleUnwrapKeyResponse = _reflection.GeneratedProtocolMessageType('SubtleUnwrapKeyResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEUNWRAPKEYRESPONSE,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleUnwrapKeyAlpha1Response)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleUnwrapKeyResponse)
   })
-_sym_db.RegisterMessage(SubtleUnwrapKeyAlpha1Response)
+_sym_db.RegisterMessage(SubtleUnwrapKeyResponse)
 
-SubtleSignAlpha1Request = _reflection.GeneratedProtocolMessageType('SubtleSignAlpha1Request', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLESIGNALPHA1REQUEST,
+SubtleSignRequest = _reflection.GeneratedProtocolMessageType('SubtleSignRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLESIGNREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleSignAlpha1Request)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleSignRequest)
   })
-_sym_db.RegisterMessage(SubtleSignAlpha1Request)
+_sym_db.RegisterMessage(SubtleSignRequest)
 
-SubtleSignAlpha1Response = _reflection.GeneratedProtocolMessageType('SubtleSignAlpha1Response', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLESIGNALPHA1RESPONSE,
+SubtleSignResponse = _reflection.GeneratedProtocolMessageType('SubtleSignResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLESIGNRESPONSE,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleSignAlpha1Response)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleSignResponse)
   })
-_sym_db.RegisterMessage(SubtleSignAlpha1Response)
+_sym_db.RegisterMessage(SubtleSignResponse)
 
-SubtleVerifyAlpha1Request = _reflection.GeneratedProtocolMessageType('SubtleVerifyAlpha1Request', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEVERIFYALPHA1REQUEST,
+SubtleVerifyRequest = _reflection.GeneratedProtocolMessageType('SubtleVerifyRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEVERIFYREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleVerifyAlpha1Request)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleVerifyRequest)
   })
-_sym_db.RegisterMessage(SubtleVerifyAlpha1Request)
+_sym_db.RegisterMessage(SubtleVerifyRequest)
 
-SubtleVerifyAlpha1Response = _reflection.GeneratedProtocolMessageType('SubtleVerifyAlpha1Response', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEVERIFYALPHA1RESPONSE,
+SubtleVerifyResponse = _reflection.GeneratedProtocolMessageType('SubtleVerifyResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SUBTLEVERIFYRESPONSE,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleVerifyAlpha1Response)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleVerifyResponse)
   })
-_sym_db.RegisterMessage(SubtleVerifyAlpha1Response)
+_sym_db.RegisterMessage(SubtleVerifyResponse)
+
+EncryptRequest = _reflection.GeneratedProtocolMessageType('EncryptRequest', (_message.Message,), {
+  'DESCRIPTOR' : _ENCRYPTREQUEST,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.EncryptRequest)
+  })
+_sym_db.RegisterMessage(EncryptRequest)
+
+EncryptRequestOptions = _reflection.GeneratedProtocolMessageType('EncryptRequestOptions', (_message.Message,), {
+  'DESCRIPTOR' : _ENCRYPTREQUESTOPTIONS,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.EncryptRequestOptions)
+  })
+_sym_db.RegisterMessage(EncryptRequestOptions)
+
+EncryptResponse = _reflection.GeneratedProtocolMessageType('EncryptResponse', (_message.Message,), {
+  'DESCRIPTOR' : _ENCRYPTRESPONSE,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.EncryptResponse)
+  })
+_sym_db.RegisterMessage(EncryptResponse)
+
+DecryptRequest = _reflection.GeneratedProtocolMessageType('DecryptRequest', (_message.Message,), {
+  'DESCRIPTOR' : _DECRYPTREQUEST,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DecryptRequest)
+  })
+_sym_db.RegisterMessage(DecryptRequest)
+
+DecryptRequestOptions = _reflection.GeneratedProtocolMessageType('DecryptRequestOptions', (_message.Message,), {
+  'DESCRIPTOR' : _DECRYPTREQUESTOPTIONS,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DecryptRequestOptions)
+  })
+_sym_db.RegisterMessage(DecryptRequestOptions)
+
+DecryptResponse = _reflection.GeneratedProtocolMessageType('DecryptResponse', (_message.Message,), {
+  'DESCRIPTOR' : _DECRYPTRESPONSE,
+  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DecryptResponse)
+  })
+_sym_db.RegisterMessage(DecryptResponse)
 
 GetWorkflowRequest = _reflection.GeneratedProtocolMessageType('GetWorkflowRequest', (_message.Message,), {
   'DESCRIPTOR' : _GETWORKFLOWREQUEST,
@@ -860,7 +908,7 @@ _sym_db.RegisterMessage(StartWorkflowResponse)
 TerminateWorkflowRequest = _reflection.GeneratedProtocolMessageType('TerminateWorkflowRequest', (_message.Message,), {
   'DESCRIPTOR' : _TERMINATEWORKFLOWREQUEST,
   '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.RaiseEventWorkflowRequest)
+  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TerminateWorkflowRequest)
   })
 _sym_db.RegisterMessage(TerminateWorkflowRequest)
 
@@ -953,212 +1001,232 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _GETWORKFLOWRESPONSE_PROPERTIESENTRY._serialized_options = b'8\001'
   _STARTWORKFLOWREQUEST_OPTIONSENTRY._options = None
   _STARTWORKFLOWREQUEST_OPTIONSENTRY._serialized_options = b'8\001'
-  _INVOKESERVICEREQUEST._serialized_start=150
-  _INVOKESERVICEREQUEST._serialized_end=238
-  _GETSTATEREQUEST._serialized_start=241
-  _GETSTATEREQUEST._serialized_end=486
-  _GETSTATEREQUEST_METADATAENTRY._serialized_start=439
-  _GETSTATEREQUEST_METADATAENTRY._serialized_end=486
-  _GETBULKSTATEREQUEST._serialized_start=489
-  _GETBULKSTATEREQUEST._serialized_end=690
-  _GETBULKSTATEREQUEST_METADATAENTRY._serialized_start=439
-  _GETBULKSTATEREQUEST_METADATAENTRY._serialized_end=486
-  _GETBULKSTATERESPONSE._serialized_start=692
-  _GETBULKSTATERESPONSE._serialized_end=767
-  _BULKSTATEITEM._serialized_start=770
-  _BULKSTATEITEM._serialized_end=960
-  _BULKSTATEITEM_METADATAENTRY._serialized_start=439
-  _BULKSTATEITEM_METADATAENTRY._serialized_end=486
-  _GETSTATERESPONSE._serialized_start=963
-  _GETSTATERESPONSE._serialized_end=1131
-  _GETSTATERESPONSE_METADATAENTRY._serialized_start=439
-  _GETSTATERESPONSE_METADATAENTRY._serialized_end=486
-  _DELETESTATEREQUEST._serialized_start=1134
-  _DELETESTATEREQUEST._serialized_end=1406
-  _DELETESTATEREQUEST_METADATAENTRY._serialized_start=439
-  _DELETESTATEREQUEST_METADATAENTRY._serialized_end=486
-  _DELETEBULKSTATEREQUEST._serialized_start=1408
-  _DELETEBULKSTATEREQUEST._serialized_end=1501
-  _SAVESTATEREQUEST._serialized_start=1503
-  _SAVESTATEREQUEST._serialized_end=1590
-  _QUERYSTATEREQUEST._serialized_start=1593
-  _QUERYSTATEREQUEST._serialized_end=1781
-  _QUERYSTATEREQUEST_METADATAENTRY._serialized_start=439
-  _QUERYSTATEREQUEST_METADATAENTRY._serialized_end=486
-  _QUERYSTATEITEM._serialized_start=1783
-  _QUERYSTATEITEM._serialized_end=1855
-  _QUERYSTATERESPONSE._serialized_start=1858
-  _QUERYSTATERESPONSE._serialized_end=2073
-  _QUERYSTATERESPONSE_METADATAENTRY._serialized_start=439
-  _QUERYSTATERESPONSE_METADATAENTRY._serialized_end=486
-  _PUBLISHEVENTREQUEST._serialized_start=2076
-  _PUBLISHEVENTREQUEST._serialized_end=2299
-  _PUBLISHEVENTREQUEST_METADATAENTRY._serialized_start=439
-  _PUBLISHEVENTREQUEST_METADATAENTRY._serialized_end=486
-  _BULKPUBLISHREQUEST._serialized_start=2302
-  _BULKPUBLISHREQUEST._serialized_end=2547
-  _BULKPUBLISHREQUEST_METADATAENTRY._serialized_start=439
-  _BULKPUBLISHREQUEST_METADATAENTRY._serialized_end=486
-  _BULKPUBLISHREQUESTENTRY._serialized_start=2550
-  _BULKPUBLISHREQUESTENTRY._serialized_end=2759
-  _BULKPUBLISHREQUESTENTRY_METADATAENTRY._serialized_start=439
-  _BULKPUBLISHREQUESTENTRY_METADATAENTRY._serialized_end=486
-  _BULKPUBLISHRESPONSE._serialized_start=2761
-  _BULKPUBLISHRESPONSE._serialized_end=2860
-  _BULKPUBLISHRESPONSEFAILEDENTRY._serialized_start=2862
-  _BULKPUBLISHRESPONSEFAILEDENTRY._serialized_end=2927
-  _INVOKEBINDINGREQUEST._serialized_start=2930
-  _INVOKEBINDINGREQUEST._serialized_end=3125
-  _INVOKEBINDINGREQUEST_METADATAENTRY._serialized_start=439
-  _INVOKEBINDINGREQUEST_METADATAENTRY._serialized_end=486
-  _INVOKEBINDINGRESPONSE._serialized_start=3128
-  _INVOKEBINDINGRESPONSE._serialized_end=3292
-  _INVOKEBINDINGRESPONSE_METADATAENTRY._serialized_start=439
-  _INVOKEBINDINGRESPONSE_METADATAENTRY._serialized_end=486
-  _GETSECRETREQUEST._serialized_start=3295
-  _GETSECRETREQUEST._serialized_end=3479
-  _GETSECRETREQUEST_METADATAENTRY._serialized_start=439
-  _GETSECRETREQUEST_METADATAENTRY._serialized_end=486
-  _GETSECRETRESPONSE._serialized_start=3482
-  _GETSECRETRESPONSE._serialized_end=3612
-  _GETSECRETRESPONSE_DATAENTRY._serialized_start=3569
-  _GETSECRETRESPONSE_DATAENTRY._serialized_end=3612
-  _GETBULKSECRETREQUEST._serialized_start=3615
-  _GETBULKSECRETREQUEST._serialized_end=3794
-  _GETBULKSECRETREQUEST_METADATAENTRY._serialized_start=439
-  _GETBULKSECRETREQUEST_METADATAENTRY._serialized_end=486
-  _SECRETRESPONSE._serialized_start=3797
-  _SECRETRESPONSE._serialized_end=3930
-  _SECRETRESPONSE_SECRETSENTRY._serialized_start=3884
-  _SECRETRESPONSE_SECRETSENTRY._serialized_end=3930
-  _GETBULKSECRETRESPONSE._serialized_start=3933
-  _GETBULKSECRETRESPONSE._serialized_end=4110
-  _GETBULKSECRETRESPONSE_DATAENTRY._serialized_start=4028
-  _GETBULKSECRETRESPONSE_DATAENTRY._serialized_end=4110
-  _TRANSACTIONALSTATEOPERATION._serialized_start=4112
-  _TRANSACTIONALSTATEOPERATION._serialized_end=4214
-  _EXECUTESTATETRANSACTIONREQUEST._serialized_start=4217
-  _EXECUTESTATETRANSACTIONREQUEST._serialized_end=4476
-  _EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY._serialized_start=439
-  _EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY._serialized_end=486
-  _REGISTERACTORTIMERREQUEST._serialized_start=4479
-  _REGISTERACTORTIMERREQUEST._serialized_end=4637
-  _UNREGISTERACTORTIMERREQUEST._serialized_start=4639
-  _UNREGISTERACTORTIMERREQUEST._serialized_end=4720
-  _REGISTERACTORREMINDERREQUEST._serialized_start=4723
-  _REGISTERACTORREMINDERREQUEST._serialized_end=4866
-  _UNREGISTERACTORREMINDERREQUEST._serialized_start=4868
-  _UNREGISTERACTORREMINDERREQUEST._serialized_end=4952
-  _RENAMEACTORREMINDERREQUEST._serialized_start=4954
-  _RENAMEACTORREMINDERREQUEST._serialized_end=5056
-  _GETACTORSTATEREQUEST._serialized_start=5058
-  _GETACTORSTATEREQUEST._serialized_end=5131
-  _GETACTORSTATERESPONSE._serialized_start=5133
-  _GETACTORSTATERESPONSE._serialized_end=5170
-  _EXECUTEACTORSTATETRANSACTIONREQUEST._serialized_start=5173
-  _EXECUTEACTORSTATETRANSACTIONREQUEST._serialized_end=5325
-  _TRANSACTIONALACTORSTATEOPERATION._serialized_start=5328
-  _TRANSACTIONALACTORSTATEOPERATION._serialized_end=5573
-  _TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY._serialized_start=439
-  _TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY._serialized_end=486
-  _INVOKEACTORREQUEST._serialized_start=5576
-  _INVOKEACTORREQUEST._serialized_end=5788
-  _INVOKEACTORREQUEST_METADATAENTRY._serialized_start=439
-  _INVOKEACTORREQUEST_METADATAENTRY._serialized_end=486
-  _INVOKEACTORRESPONSE._serialized_start=5790
-  _INVOKEACTORRESPONSE._serialized_end=5825
-  _GETMETADATARESPONSE._serialized_start=5828
-  _GETMETADATARESPONSE._serialized_end=6224
-  _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY._serialized_start=6169
-  _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY._serialized_end=6224
-  _ACTIVEACTORSCOUNT._serialized_start=6226
-  _ACTIVEACTORSCOUNT._serialized_end=6274
-  _REGISTEREDCOMPONENTS._serialized_start=6276
-  _REGISTEREDCOMPONENTS._serialized_end=6365
-  _PUBSUBSUBSCRIPTION._serialized_start=6368
-  _PUBSUBSUBSCRIPTION._serialized_end=6638
-  _PUBSUBSUBSCRIPTION_METADATAENTRY._serialized_start=439
-  _PUBSUBSUBSCRIPTION_METADATAENTRY._serialized_end=486
-  _PUBSUBSUBSCRIPTIONRULES._serialized_start=6640
-  _PUBSUBSUBSCRIPTIONRULES._serialized_end=6727
-  _PUBSUBSUBSCRIPTIONRULE._serialized_start=6729
-  _PUBSUBSUBSCRIPTIONRULE._serialized_end=6782
-  _SETMETADATAREQUEST._serialized_start=6784
-  _SETMETADATAREQUEST._serialized_end=6832
-  _GETCONFIGURATIONREQUEST._serialized_start=6835
-  _GETCONFIGURATIONREQUEST._serialized_end=7023
-  _GETCONFIGURATIONREQUEST_METADATAENTRY._serialized_start=439
-  _GETCONFIGURATIONREQUEST_METADATAENTRY._serialized_end=486
-  _GETCONFIGURATIONRESPONSE._serialized_start=7026
-  _GETCONFIGURATIONRESPONSE._serialized_end=7214
-  _GETCONFIGURATIONRESPONSE_ITEMSENTRY._serialized_start=7129
-  _GETCONFIGURATIONRESPONSE_ITEMSENTRY._serialized_end=7214
-  _SUBSCRIBECONFIGURATIONREQUEST._serialized_start=7217
-  _SUBSCRIBECONFIGURATIONREQUEST._serialized_end=7417
-  _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY._serialized_start=439
-  _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY._serialized_end=486
-  _UNSUBSCRIBECONFIGURATIONREQUEST._serialized_start=7419
-  _UNSUBSCRIBECONFIGURATIONREQUEST._serialized_end=7484
-  _SUBSCRIBECONFIGURATIONRESPONSE._serialized_start=7487
-  _SUBSCRIBECONFIGURATIONRESPONSE._serialized_end=7699
-  _SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY._serialized_start=7129
-  _SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY._serialized_end=7214
-  _UNSUBSCRIBECONFIGURATIONRESPONSE._serialized_start=7701
-  _UNSUBSCRIBECONFIGURATIONRESPONSE._serialized_end=7764
-  _TRYLOCKREQUEST._serialized_start=7767
-  _TRYLOCKREQUEST._serialized_end=7922
-  _TRYLOCKRESPONSE._serialized_start=7924
-  _TRYLOCKRESPONSE._serialized_end=7958
-  _UNLOCKREQUEST._serialized_start=7960
-  _UNLOCKREQUEST._serialized_end=8070
-  _UNLOCKRESPONSE._serialized_start=8073
-  _UNLOCKRESPONSE._serialized_end=8247
-  _UNLOCKRESPONSE_STATUS._serialized_start=8153
-  _UNLOCKRESPONSE_STATUS._serialized_end=8247
-  _SUBTLEGETKEYALPHA1REQUEST._serialized_start=8250
-  _SUBTLEGETKEYALPHA1REQUEST._serialized_end=8438
-  _SUBTLEGETKEYALPHA1REQUEST_KEYFORMAT._serialized_start=8408
-  _SUBTLEGETKEYALPHA1REQUEST_KEYFORMAT._serialized_end=8438
-  _SUBTLEGETKEYALPHA1RESPONSE._serialized_start=8440
-  _SUBTLEGETKEYALPHA1RESPONSE._serialized_end=8513
-  _SUBTLEENCRYPTALPHA1REQUEST._serialized_start=8516
-  _SUBTLEENCRYPTALPHA1REQUEST._serialized_end=8704
-  _SUBTLEENCRYPTALPHA1RESPONSE._serialized_start=8706
-  _SUBTLEENCRYPTALPHA1RESPONSE._serialized_end=8768
-  _SUBTLEDECRYPTALPHA1REQUEST._serialized_start=8771
-  _SUBTLEDECRYPTALPHA1REQUEST._serialized_end=8973
-  _SUBTLEDECRYPTALPHA1RESPONSE._serialized_start=8975
-  _SUBTLEDECRYPTALPHA1RESPONSE._serialized_end=9023
-  _SUBTLEWRAPKEYALPHA1REQUEST._serialized_start=9026
-  _SUBTLEWRAPKEYALPHA1REQUEST._serialized_end=9232
-  _SUBTLEWRAPKEYALPHA1RESPONSE._serialized_start=9234
-  _SUBTLEWRAPKEYALPHA1RESPONSE._serialized_end=9309
-  _SUBTLEUNWRAPKEYALPHA1REQUEST._serialized_start=9312
-  _SUBTLEUNWRAPKEYALPHA1REQUEST._serialized_end=9529
-  _SUBTLEUNWRAPKEYALPHA1RESPONSE._serialized_start=9531
-  _SUBTLEUNWRAPKEYALPHA1RESPONSE._serialized_end=9599
-  _SUBTLESIGNALPHA1REQUEST._serialized_start=9601
-  _SUBTLESIGNALPHA1REQUEST._serialized_end=9727
-  _SUBTLESIGNALPHA1RESPONSE._serialized_start=9729
-  _SUBTLESIGNALPHA1RESPONSE._serialized_end=9774
-  _SUBTLEVERIFYALPHA1REQUEST._serialized_start=9777
-  _SUBTLEVERIFYALPHA1REQUEST._serialized_end=9924
-  _SUBTLEVERIFYALPHA1RESPONSE._serialized_start=9926
-  _SUBTLEVERIFYALPHA1RESPONSE._serialized_end=9969
-  _GETWORKFLOWREQUEST._serialized_start=10026
-  _GETWORKFLOWREQUEST._serialized_end=10163
-  _GETWORKFLOWRESPONSE._serialized_start=10166
-  _GETWORKFLOWRESPONSE._serialized_end=10353
-  _GETWORKFLOWRESPONSE_PROPERTIESENTRY._serialized_start=439
-  _GETWORKFLOWRESPONSE_PROPERTIESENTRY._serialized_end=486
-  _STARTWORKFLOWREQUEST._serialized_start=10356
-  _STARTWORKFLOWREQUEST._serialized_end=10633
-  _STARTWORKFLOWREQUEST_OPTIONSENTRY._serialized_start=10587
-  _STARTWORKFLOWREQUEST_OPTIONSENTRY._serialized_end=10633
-  _RAISEEVENTWORKFLOWREQUEST._serialized_start=10771
-  _RAISEEVENTWORKFLOWREQUEST._serialized_end=10924
-  _RAISEEVENTWORKFLOWRESPONSE._serialized_start=10926
-  _RAISEEVENTWORKFLOWRESPONSE._serialized_end=10954
-  _DAPR._serialized_start=10957
-  _DAPR._serialized_end=15948
+  _INVOKESERVICEREQUEST._serialized_start=183
+  _INVOKESERVICEREQUEST._serialized_end=271
+  _GETSTATEREQUEST._serialized_start=274
+  _GETSTATEREQUEST._serialized_end=519
+  _GETSTATEREQUEST_METADATAENTRY._serialized_start=472
+  _GETSTATEREQUEST_METADATAENTRY._serialized_end=519
+  _GETBULKSTATEREQUEST._serialized_start=522
+  _GETBULKSTATEREQUEST._serialized_end=723
+  _GETBULKSTATEREQUEST_METADATAENTRY._serialized_start=472
+  _GETBULKSTATEREQUEST_METADATAENTRY._serialized_end=519
+  _GETBULKSTATERESPONSE._serialized_start=725
+  _GETBULKSTATERESPONSE._serialized_end=800
+  _BULKSTATEITEM._serialized_start=803
+  _BULKSTATEITEM._serialized_end=993
+  _BULKSTATEITEM_METADATAENTRY._serialized_start=472
+  _BULKSTATEITEM_METADATAENTRY._serialized_end=519
+  _GETSTATERESPONSE._serialized_start=996
+  _GETSTATERESPONSE._serialized_end=1164
+  _GETSTATERESPONSE_METADATAENTRY._serialized_start=472
+  _GETSTATERESPONSE_METADATAENTRY._serialized_end=519
+  _DELETESTATEREQUEST._serialized_start=1167
+  _DELETESTATEREQUEST._serialized_end=1439
+  _DELETESTATEREQUEST_METADATAENTRY._serialized_start=472
+  _DELETESTATEREQUEST_METADATAENTRY._serialized_end=519
+  _DELETEBULKSTATEREQUEST._serialized_start=1441
+  _DELETEBULKSTATEREQUEST._serialized_end=1534
+  _SAVESTATEREQUEST._serialized_start=1536
+  _SAVESTATEREQUEST._serialized_end=1623
+  _QUERYSTATEREQUEST._serialized_start=1626
+  _QUERYSTATEREQUEST._serialized_end=1814
+  _QUERYSTATEREQUEST_METADATAENTRY._serialized_start=472
+  _QUERYSTATEREQUEST_METADATAENTRY._serialized_end=519
+  _QUERYSTATEITEM._serialized_start=1816
+  _QUERYSTATEITEM._serialized_end=1888
+  _QUERYSTATERESPONSE._serialized_start=1891
+  _QUERYSTATERESPONSE._serialized_end=2106
+  _QUERYSTATERESPONSE_METADATAENTRY._serialized_start=472
+  _QUERYSTATERESPONSE_METADATAENTRY._serialized_end=519
+  _PUBLISHEVENTREQUEST._serialized_start=2109
+  _PUBLISHEVENTREQUEST._serialized_end=2332
+  _PUBLISHEVENTREQUEST_METADATAENTRY._serialized_start=472
+  _PUBLISHEVENTREQUEST_METADATAENTRY._serialized_end=519
+  _BULKPUBLISHREQUEST._serialized_start=2335
+  _BULKPUBLISHREQUEST._serialized_end=2580
+  _BULKPUBLISHREQUEST_METADATAENTRY._serialized_start=472
+  _BULKPUBLISHREQUEST_METADATAENTRY._serialized_end=519
+  _BULKPUBLISHREQUESTENTRY._serialized_start=2583
+  _BULKPUBLISHREQUESTENTRY._serialized_end=2792
+  _BULKPUBLISHREQUESTENTRY_METADATAENTRY._serialized_start=472
+  _BULKPUBLISHREQUESTENTRY_METADATAENTRY._serialized_end=519
+  _BULKPUBLISHRESPONSE._serialized_start=2794
+  _BULKPUBLISHRESPONSE._serialized_end=2893
+  _BULKPUBLISHRESPONSEFAILEDENTRY._serialized_start=2895
+  _BULKPUBLISHRESPONSEFAILEDENTRY._serialized_end=2960
+  _INVOKEBINDINGREQUEST._serialized_start=2963
+  _INVOKEBINDINGREQUEST._serialized_end=3158
+  _INVOKEBINDINGREQUEST_METADATAENTRY._serialized_start=472
+  _INVOKEBINDINGREQUEST_METADATAENTRY._serialized_end=519
+  _INVOKEBINDINGRESPONSE._serialized_start=3161
+  _INVOKEBINDINGRESPONSE._serialized_end=3325
+  _INVOKEBINDINGRESPONSE_METADATAENTRY._serialized_start=472
+  _INVOKEBINDINGRESPONSE_METADATAENTRY._serialized_end=519
+  _GETSECRETREQUEST._serialized_start=3328
+  _GETSECRETREQUEST._serialized_end=3512
+  _GETSECRETREQUEST_METADATAENTRY._serialized_start=472
+  _GETSECRETREQUEST_METADATAENTRY._serialized_end=519
+  _GETSECRETRESPONSE._serialized_start=3515
+  _GETSECRETRESPONSE._serialized_end=3645
+  _GETSECRETRESPONSE_DATAENTRY._serialized_start=3602
+  _GETSECRETRESPONSE_DATAENTRY._serialized_end=3645
+  _GETBULKSECRETREQUEST._serialized_start=3648
+  _GETBULKSECRETREQUEST._serialized_end=3827
+  _GETBULKSECRETREQUEST_METADATAENTRY._serialized_start=472
+  _GETBULKSECRETREQUEST_METADATAENTRY._serialized_end=519
+  _SECRETRESPONSE._serialized_start=3830
+  _SECRETRESPONSE._serialized_end=3963
+  _SECRETRESPONSE_SECRETSENTRY._serialized_start=3917
+  _SECRETRESPONSE_SECRETSENTRY._serialized_end=3963
+  _GETBULKSECRETRESPONSE._serialized_start=3966
+  _GETBULKSECRETRESPONSE._serialized_end=4143
+  _GETBULKSECRETRESPONSE_DATAENTRY._serialized_start=4061
+  _GETBULKSECRETRESPONSE_DATAENTRY._serialized_end=4143
+  _TRANSACTIONALSTATEOPERATION._serialized_start=4145
+  _TRANSACTIONALSTATEOPERATION._serialized_end=4247
+  _EXECUTESTATETRANSACTIONREQUEST._serialized_start=4250
+  _EXECUTESTATETRANSACTIONREQUEST._serialized_end=4509
+  _EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY._serialized_start=472
+  _EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY._serialized_end=519
+  _REGISTERACTORTIMERREQUEST._serialized_start=4512
+  _REGISTERACTORTIMERREQUEST._serialized_end=4670
+  _UNREGISTERACTORTIMERREQUEST._serialized_start=4672
+  _UNREGISTERACTORTIMERREQUEST._serialized_end=4753
+  _REGISTERACTORREMINDERREQUEST._serialized_start=4756
+  _REGISTERACTORREMINDERREQUEST._serialized_end=4899
+  _UNREGISTERACTORREMINDERREQUEST._serialized_start=4901
+  _UNREGISTERACTORREMINDERREQUEST._serialized_end=4985
+  _RENAMEACTORREMINDERREQUEST._serialized_start=4987
+  _RENAMEACTORREMINDERREQUEST._serialized_end=5089
+  _GETACTORSTATEREQUEST._serialized_start=5091
+  _GETACTORSTATEREQUEST._serialized_end=5164
+  _GETACTORSTATERESPONSE._serialized_start=5166
+  _GETACTORSTATERESPONSE._serialized_end=5203
+  _EXECUTEACTORSTATETRANSACTIONREQUEST._serialized_start=5206
+  _EXECUTEACTORSTATETRANSACTIONREQUEST._serialized_end=5358
+  _TRANSACTIONALACTORSTATEOPERATION._serialized_start=5361
+  _TRANSACTIONALACTORSTATEOPERATION._serialized_end=5606
+  _TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY._serialized_start=472
+  _TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY._serialized_end=519
+  _INVOKEACTORREQUEST._serialized_start=5609
+  _INVOKEACTORREQUEST._serialized_end=5821
+  _INVOKEACTORREQUEST_METADATAENTRY._serialized_start=472
+  _INVOKEACTORREQUEST_METADATAENTRY._serialized_end=519
+  _INVOKEACTORRESPONSE._serialized_start=5823
+  _INVOKEACTORRESPONSE._serialized_end=5858
+  _GETMETADATARESPONSE._serialized_start=5861
+  _GETMETADATARESPONSE._serialized_end=6257
+  _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY._serialized_start=6202
+  _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY._serialized_end=6257
+  _ACTIVEACTORSCOUNT._serialized_start=6259
+  _ACTIVEACTORSCOUNT._serialized_end=6307
+  _REGISTEREDCOMPONENTS._serialized_start=6309
+  _REGISTEREDCOMPONENTS._serialized_end=6398
+  _PUBSUBSUBSCRIPTION._serialized_start=6401
+  _PUBSUBSUBSCRIPTION._serialized_end=6671
+  _PUBSUBSUBSCRIPTION_METADATAENTRY._serialized_start=472
+  _PUBSUBSUBSCRIPTION_METADATAENTRY._serialized_end=519
+  _PUBSUBSUBSCRIPTIONRULES._serialized_start=6673
+  _PUBSUBSUBSCRIPTIONRULES._serialized_end=6760
+  _PUBSUBSUBSCRIPTIONRULE._serialized_start=6762
+  _PUBSUBSUBSCRIPTIONRULE._serialized_end=6815
+  _SETMETADATAREQUEST._serialized_start=6817
+  _SETMETADATAREQUEST._serialized_end=6865
+  _GETCONFIGURATIONREQUEST._serialized_start=6868
+  _GETCONFIGURATIONREQUEST._serialized_end=7056
+  _GETCONFIGURATIONREQUEST_METADATAENTRY._serialized_start=472
+  _GETCONFIGURATIONREQUEST_METADATAENTRY._serialized_end=519
+  _GETCONFIGURATIONRESPONSE._serialized_start=7059
+  _GETCONFIGURATIONRESPONSE._serialized_end=7247
+  _GETCONFIGURATIONRESPONSE_ITEMSENTRY._serialized_start=7162
+  _GETCONFIGURATIONRESPONSE_ITEMSENTRY._serialized_end=7247
+  _SUBSCRIBECONFIGURATIONREQUEST._serialized_start=7250
+  _SUBSCRIBECONFIGURATIONREQUEST._serialized_end=7450
+  _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY._serialized_start=472
+  _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY._serialized_end=519
+  _UNSUBSCRIBECONFIGURATIONREQUEST._serialized_start=7452
+  _UNSUBSCRIBECONFIGURATIONREQUEST._serialized_end=7517
+  _SUBSCRIBECONFIGURATIONRESPONSE._serialized_start=7520
+  _SUBSCRIBECONFIGURATIONRESPONSE._serialized_end=7732
+  _SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY._serialized_start=7162
+  _SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY._serialized_end=7247
+  _UNSUBSCRIBECONFIGURATIONRESPONSE._serialized_start=7734
+  _UNSUBSCRIBECONFIGURATIONRESPONSE._serialized_end=7797
+  _TRYLOCKREQUEST._serialized_start=7800
+  _TRYLOCKREQUEST._serialized_end=7955
+  _TRYLOCKRESPONSE._serialized_start=7957
+  _TRYLOCKRESPONSE._serialized_end=7991
+  _UNLOCKREQUEST._serialized_start=7993
+  _UNLOCKREQUEST._serialized_end=8103
+  _UNLOCKRESPONSE._serialized_start=8106
+  _UNLOCKRESPONSE._serialized_end=8280
+  _UNLOCKRESPONSE_STATUS._serialized_start=8186
+  _UNLOCKRESPONSE_STATUS._serialized_end=8280
+  _SUBTLEGETKEYREQUEST._serialized_start=8283
+  _SUBTLEGETKEYREQUEST._serialized_end=8459
+  _SUBTLEGETKEYREQUEST_KEYFORMAT._serialized_start=8429
+  _SUBTLEGETKEYREQUEST_KEYFORMAT._serialized_end=8459
+  _SUBTLEGETKEYRESPONSE._serialized_start=8461
+  _SUBTLEGETKEYRESPONSE._serialized_end=8528
+  _SUBTLEENCRYPTREQUEST._serialized_start=8531
+  _SUBTLEENCRYPTREQUEST._serialized_end=8713
+  _SUBTLEENCRYPTRESPONSE._serialized_start=8715
+  _SUBTLEENCRYPTRESPONSE._serialized_end=8771
+  _SUBTLEDECRYPTREQUEST._serialized_start=8774
+  _SUBTLEDECRYPTREQUEST._serialized_end=8970
+  _SUBTLEDECRYPTRESPONSE._serialized_start=8972
+  _SUBTLEDECRYPTRESPONSE._serialized_end=9014
+  _SUBTLEWRAPKEYREQUEST._serialized_start=9017
+  _SUBTLEWRAPKEYREQUEST._serialized_end=9217
+  _SUBTLEWRAPKEYRESPONSE._serialized_start=9219
+  _SUBTLEWRAPKEYRESPONSE._serialized_end=9288
+  _SUBTLEUNWRAPKEYREQUEST._serialized_start=9291
+  _SUBTLEUNWRAPKEYREQUEST._serialized_end=9502
+  _SUBTLEUNWRAPKEYRESPONSE._serialized_start=9504
+  _SUBTLEUNWRAPKEYRESPONSE._serialized_end=9566
+  _SUBTLESIGNREQUEST._serialized_start=9568
+  _SUBTLESIGNREQUEST._serialized_end=9688
+  _SUBTLESIGNRESPONSE._serialized_start=9690
+  _SUBTLESIGNRESPONSE._serialized_end=9729
+  _SUBTLEVERIFYREQUEST._serialized_start=9732
+  _SUBTLEVERIFYREQUEST._serialized_end=9873
+  _SUBTLEVERIFYRESPONSE._serialized_start=9875
+  _SUBTLEVERIFYRESPONSE._serialized_end=9912
+  _ENCRYPTREQUEST._serialized_start=9915
+  _ENCRYPTREQUEST._serialized_end=10048
+  _ENCRYPTREQUESTOPTIONS._serialized_start=10051
+  _ENCRYPTREQUESTOPTIONS._serialized_end=10305
+  _ENCRYPTRESPONSE._serialized_start=10307
+  _ENCRYPTRESPONSE._serialized_end=10378
+  _DECRYPTREQUEST._serialized_start=10381
+  _DECRYPTREQUEST._serialized_end=10514
+  _DECRYPTREQUESTOPTIONS._serialized_start=10516
+  _DECRYPTREQUESTOPTIONS._serialized_end=10605
+  _DECRYPTRESPONSE._serialized_start=10607
+  _DECRYPTRESPONSE._serialized_end=10678
+  _GETWORKFLOWREQUEST._serialized_start=10680
+  _GETWORKFLOWREQUEST._serialized_end=10780
+  _GETWORKFLOWRESPONSE._serialized_start=10783
+  _GETWORKFLOWRESPONSE._serialized_end=11171
+  _GETWORKFLOWRESPONSE_PROPERTIESENTRY._serialized_start=11122
+  _GETWORKFLOWRESPONSE_PROPERTIESENTRY._serialized_end=11171
+  _STARTWORKFLOWREQUEST._serialized_start=11174
+  _STARTWORKFLOWREQUEST._serialized_end=11451
+  _STARTWORKFLOWREQUEST_OPTIONSENTRY._serialized_start=11405
+  _STARTWORKFLOWREQUEST_OPTIONSENTRY._serialized_end=11451
+  _STARTWORKFLOWRESPONSE._serialized_start=11453
+  _STARTWORKFLOWRESPONSE._serialized_end=11509
+  _TERMINATEWORKFLOWREQUEST._serialized_start=11511
+  _TERMINATEWORKFLOWREQUEST._serialized_end=11617
+  _PAUSEWORKFLOWREQUEST._serialized_start=11619
+  _PAUSEWORKFLOWREQUEST._serialized_end=11721
+  _RESUMEWORKFLOWREQUEST._serialized_start=11723
+  _RESUMEWORKFLOWREQUEST._serialized_end=11826
+  _RAISEEVENTWORKFLOWREQUEST._serialized_start=11829
+  _RAISEEVENTWORKFLOWREQUEST._serialized_end=11987
+  _PURGEWORKFLOWREQUEST._serialized_start=11989
+  _PURGEWORKFLOWREQUEST._serialized_end=12091
+  _DAPR._serialized_start=12094
+  _DAPR._serialized_end=17191
 # @@protoc_insertion_point(module_scope)
