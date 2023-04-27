@@ -52,11 +52,11 @@ class WorkflowClient:
         return WorkflowState(state) if state else None
 
     def raise_workflow_event(self, instance_id: str, event_name: str, *,
-                                  data: Union[Any, None] = None):
+                             data: Union[Any, None] = None):
         return self._obj.raise_orchestration_event(instance_id, event_name, data=data)
-        
+
     def terminate_workflow(self, instance_id: str, *,
-                                output: Union[Any, None] = None):
+                           output: Union[Any, None] = None):
         return self._obj.terminate_orchestration(instance_id, output=output)
 
     def pause_workflow(self, instance_id: str):
@@ -64,4 +64,3 @@ class WorkflowClient:
 
     def resume_workflow(self, instance_id: str):
         return self._obj.resume_orchestration(instance_id)
-        

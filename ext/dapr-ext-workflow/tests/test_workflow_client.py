@@ -13,6 +13,7 @@ mock_suspend_result = "suspend001"
 mock_resume_result = "resume001"
 mockInstanceId = "instance001"
 
+
 class FakeTaskHubGrpcClient:
 
     def schedule_new_orchestration(self, workflow, input, instance_id, start_at):
@@ -22,15 +23,17 @@ class FakeTaskHubGrpcClient:
         return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.PENDING)
 
     def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout):
-        return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.RUNNING)
+        return self._inner_get_orchestration_state(instance_id,
+                                                   client.OrchestrationStatus.RUNNING)
 
     def wait_for_orchestration_completion(self, instance_id, fetch_payloads, timeout):
-        return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.COMPLETED)
-    
+        return self._inner_get_orchestration_state(instance_id,
+                                                   client.OrchestrationStatus.COMPLETED)
+
     def raise_orchestration_event(self, instance_id: str, event_name: str, *,
                                   data: Union[Any, None] = None):
         return mock_raise_event_result
-        
+
     def terminate_orchestration(self, instance_id: str, *,
                                 output: Union[Any, None] = None):
         return mock_terminate_result
@@ -39,10 +42,10 @@ class FakeTaskHubGrpcClient:
         return mock_suspend_result
 
     def resume_orchestration(self, instance_id: str):
-        return mock_resume_result    
-    
+        return mock_resume_result
+
     def _inner_get_orchestration_state(self, instance_id, state: client.OrchestrationStatus):
-        return client.OrchestrationState(instance_id=instance_id,name="",
+        return client.OrchestrationState(instance_id=instance_id, name="",
                                          runtime_status=state,
                                          created_at=datetime.now(),
                                          last_updated_at=datetime.now(),
@@ -58,27 +61,35 @@ class WorkflowClientTest(unittest.TestCase):
         print(f'{input}')
 
     def test_client_functions(self):
-        with mock.patch('durabletask.client.TaskHubGrpcClient', return_value = FakeTaskHubGrpcClient()):
+        with mock.patch('durabletask.client.TaskHubGrpcClient',
+                        return_value=FakeTaskHubGrpcClient()):
             wfClient = WorkflowClient()
-            actual_schedule_result = wfClient.schedule_new_workflow(workflow=self.mock_client_wf, input='Hi Chef!')
+            actual_schedule_result = wfClient.schedule_new_workflow(workflow=self.mock_client_wf,
+                                                                    input='Hi Chef!')
             assert actual_schedule_result == mock_schedule_result
 
-            actual_get_result = wfClient.get_workflow_state(instance_id=mockInstanceId, fetch_payloads=True)
+            actual_get_result = wfClient.get_workflow_state(instance_id=mockInstanceId,
+                                                            fetch_payloads=True)
             assert actual_get_result.runtime_status.name == "PENDING"
             assert actual_get_result.instance_id == mockInstanceId
 
-            actual_wait_start_result = wfClient.wait_for_workflow_start(instance_id=mockInstanceId, timeout=30)
+            actual_wait_start_result = wfClient.wait_for_workflow_start(instance_id=mockInstanceId,
+                                                                        timeout=30)
             assert actual_wait_start_result.runtime_status.name == "RUNNING"
             assert actual_wait_start_result.instance_id == mockInstanceId
 
-            actual_wait_completion_result = wfClient.wait_for_workflow_completion(instance_id=mockInstanceId, timeout=30)
+            actual_wait_completion_result = wfClient.wait_for_workflow_completion(
+                instance_id=mockInstanceId, timeout=30)
             assert actual_wait_completion_result.runtime_status.name == "COMPLETED"
             assert actual_wait_completion_result.instance_id == mockInstanceId
 
-            actual_raise_event_result = wfClient.raise_workflow_event(instance_id=mockInstanceId, event_name="test_event", data="test_data")
+            actual_raise_event_result = wfClient.raise_workflow_event(instance_id=mockInstanceId,
+                                                                      event_name="test_event",
+                                                                      data="test_data")
             assert actual_raise_event_result == mock_raise_event_result
 
-            actual_terminate_result = wfClient.terminate_workflow(instance_id=mockInstanceId, output="test_output")
+            actual_terminate_result = wfClient.terminate_workflow(instance_id=mockInstanceId,
+                                                                  output="test_output")
             assert actual_terminate_result == mock_terminate_result
 
             actual_suspend_result = wfClient.pause_workflow(instance_id=mockInstanceId)
@@ -86,5 +97,3 @@ class WorkflowClientTest(unittest.TestCase):
 
             actual_resume_result = wfClient.resume_workflow(instance_id=mockInstanceId)
             assert actual_resume_result == mock_resume_result
-
-    
