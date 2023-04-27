@@ -16,7 +16,6 @@ limitations under the License.
 from __future__ import annotations
 
 import contextlib
-import datetime
 import threading
 from enum import Enum
 from typing import Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING, NamedTuple
@@ -927,26 +926,35 @@ class GetWorkflowResponse():
 
     def __init__(
         self,
-        instance_id: str,
         client: DaprGrpcClient,
-        start_time: datetime,
-        workflow_metadata: Dict[str, str] = {},
+        instance_id: str,
+        workflow_name: str,
+        created_at: str,
+        last_updated_at: str,
+        runtime_status: str,
+        properties: Dict[str, str] = {},
         headers: MetadataTuple = (),
     ):
         """Initializes a GetWorkflowResponse.
 
         Args:
-            instance_id (str): the instance ID assocated with this response.
             client (DaprClient): a reference to the dapr client used for the GetWorkflow request.
-            start_time (datetime): the time at which the workflow started executing.
-            workflow_metadata (Dict[str, str]): metadata sent as a reponse by the workflow.
+            instance_id (str): the instance ID assocated with this response.
+            workflow_name (str): the name of the workflow that was started.
+            created_at (str): the time at which the workflow started executing.
+            last_updated_at (str): the time at which the workflow was last updated.
+            runtime_status (str): the current runtime status of the workflow.
+            properties (Dict[str, str]): properties sent as a reponse by the workflow.
             headers (Tuple, optional): the headers from Dapr gRPC response.
         """
         super().__init__(headers)
-        self.instance_id = instance_id
         self._client = client
-        self._start_time = start_time
-        self._metadata = workflow_metadata
+        self._instance_id = instance_id
+        self._workflow_name = workflow_name
+        self._created_at = created_at
+        self._last_updated_at = last_updated_at
+        self._runtime_status = runtime_status
+        self._properties = properties
 
 
 class StartWorkflowResponse():

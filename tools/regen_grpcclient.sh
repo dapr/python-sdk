@@ -38,7 +38,7 @@ downloadFile() {
     FILE_PATH="${PROTO_PATH}/${PKG_NAME}/v1"
 
     # URL for proto file
-    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
+    PROTO_URL="https://raw.githubusercontent.com/RyanLettieri/dapr/workflow-purge/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
 
     mkdir -p "${FILE_PATH}"
 

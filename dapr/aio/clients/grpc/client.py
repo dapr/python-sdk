@@ -71,8 +71,6 @@ from dapr.clients.grpc._response import (
     ConfigurationWatcher,
     TryLockResponse,
     UnlockResponse,
-    StartWorkflowResponse,
-    GetWorkflowResponse,
 )
 
 
@@ -1148,22 +1146,22 @@ class DaprGrpcClientAsync:
         response, call = self._stub.StartWorkflowAlpha1.with_call(req)
 
         return api_v1.StartWorkflowResponse(instance_id=response.instanceID,
-                                            workflow_component = response.workflowComponent,
-                                            workflow_name = response.workflowName)
+                                            workflow_component=response.workflowComponent,
+                                            workflow_name=response.workflowName)
 
     # RRL TODO: Clean up return obkect
     async def get_workflow(
             self,
             instance_id: str,
-            workflow_component: str,
-            workflow_name: str) -> GetWorkflowResponse:
+            workflow_component: str) -> api_v1.GetWorkflowResponse:
         """Gets information on a workflow.
+
             Args:
                 instance_id (str): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
-                workflow_name (str): the name of the workflow that will be executed.
+
             Returns:
                 :class:`GetWorkflowResponse`: Status of the request,
                     `UnlockResponseStatus.success` if it was successful of some other
@@ -1173,18 +1171,19 @@ class DaprGrpcClientAsync:
         warn('The Workflow API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component,
-                               workflow_name=workflow_name)
+                               workflow_component=workflow_component)
         # Actual get workflow invocation
         req = api_v1.GetWorkflowRequest(
             instance_id=instance_id,
-            workflow_component=workflow_component,
-            workflow_name=workflow_name)
+            workflow_component=workflow_component)
         response, call = self._stub.GetWorkflowAlpha1.with_call(req)
 
         # RRL TODO: Fix this
-        return GetWorkflowResponse(status=GetWorkflowResponse(response.status),
-                                                headers=call.initial_metadata())
+        return api_v1.GetWorkflowResponse(instance_id=instance_id,
+                                          workflow_name=response.workflow_name,
+                                          created_at=response.created_at,
+                                          last_updated_at=response.last_updated_at,
+                                          runtime_status=response.runtime_status)
 
     async def terminate_workflow(
             self,
