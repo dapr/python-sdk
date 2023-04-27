@@ -1792,9 +1792,416 @@ class UnlockResponse(google.protobuf.message.Message):
 
 global___UnlockResponse = UnlockResponse
 
-class SubtleGetKeyRequest(google.protobuf.message.Message):
-    """SubtleGetKeyRequest is the request object for SubtleGetKeyAlpha1."""
+class SubtleGetKeyAlpha1Request(google.protobuf.message.Message):
+    """SubtleGetKeyAlpha1Request is the request object for SubtleGetKeyAlpha1."""
 
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class _KeyFormat:
+        ValueType = typing.NewType("ValueType", builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+
+    class _KeyFormatEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[SubtleGetKeyAlpha1Request._KeyFormat.ValueType], builtins.type):  # noqa: F821
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+        PEM: SubtleGetKeyAlpha1Request._KeyFormat.ValueType  # 0
+        """PEM (PKIX) (default)"""
+        JSON: SubtleGetKeyAlpha1Request._KeyFormat.ValueType  # 1
+        """JSON (JSON Web Key) as string"""
+
+    class KeyFormat(_KeyFormat, metaclass=_KeyFormatEnumTypeWrapper): ...
+    PEM: SubtleGetKeyAlpha1Request.KeyFormat.ValueType  # 0
+    """PEM (PKIX) (default)"""
+    JSON: SubtleGetKeyAlpha1Request.KeyFormat.ValueType  # 1
+    """JSON (JSON Web Key) as string"""
+
+    COMPONENT_NAME_FIELD_NUMBER: builtins.int
+    NAME_FIELD_NUMBER: builtins.int
+    FORMAT_FIELD_NUMBER: builtins.int
+    component_name: builtins.str
+    """Name of the component"""
+    name: builtins.str
+    """Name (or name/version) of the key to use in the key vault"""
+    format: global___SubtleGetKeyAlpha1Request.KeyFormat.ValueType
+    """Response format"""
+    def __init__(
+        self,
+        *,
+        component_name: builtins.str = ...,
+        name: builtins.str = ...,
+        format: global___SubtleGetKeyAlpha1Request.KeyFormat.ValueType = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["component_name", b"component_name", "format", b"format", "name", b"name"]) -> None: ...
+
+global___SubtleGetKeyAlpha1Request = SubtleGetKeyAlpha1Request
+
+class SubtleGetKeyAlpha1Response(google.protobuf.message.Message):
+    """SubtleGetKeyAlpha1Response is the response for SubtleGetKeyAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    NAME_FIELD_NUMBER: builtins.int
+    PUBLIC_KEY_FIELD_NUMBER: builtins.int
+    name: builtins.str
+    """Name (or name/version) of the key.
+    This is returned as response too in case there is a version.
+    """
+    public_key: builtins.str
+    """Public key, encoded in the requested format"""
+    def __init__(
+        self,
+        *,
+        name: builtins.str = ...,
+        public_key: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["name", b"name", "public_key", b"public_key"]) -> None: ...
+
+global___SubtleGetKeyAlpha1Response = SubtleGetKeyAlpha1Response
+
+class SubtleEncryptAlpha1Request(google.protobuf.message.Message):
+    """SubtleEncryptAlpha1Request is the request for SubtleEncryptAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    COMPONENT_NAME_FIELD_NUMBER: builtins.int
+    PLAINTEXT_FIELD_NUMBER: builtins.int
+    ALGORITHM_FIELD_NUMBER: builtins.int
+    KEY_NAME_FIELD_NUMBER: builtins.int
+    NONCE_FIELD_NUMBER: builtins.int
+    ASSOCIATED_DATA_FIELD_NUMBER: builtins.int
+    component_name: builtins.str
+    """Name of the component"""
+    plaintext: builtins.bytes
+    """Message to encrypt."""
+    algorithm: builtins.str
+    """Algorithm to use, as in the JWA standard."""
+    key_name: builtins.str
+    """Name (or name/version) of the key."""
+    nonce: builtins.bytes
+    """Nonce / initialization vector.
+    Ignored with asymmetric ciphers.
+    """
+    associated_data: builtins.bytes
+    """Associated Data when using AEAD ciphers (optional)."""
+    def __init__(
+        self,
+        *,
+        component_name: builtins.str = ...,
+        plaintext: builtins.bytes = ...,
+        algorithm: builtins.str = ...,
+        key_name: builtins.str = ...,
+        nonce: builtins.bytes = ...,
+        associated_data: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "plaintext", b"plaintext"]) -> None: ...
+
+global___SubtleEncryptAlpha1Request = SubtleEncryptAlpha1Request
+
+class SubtleEncryptAlpha1Response(google.protobuf.message.Message):
+    """SubtleEncryptAlpha1Response is the response for SubtleEncryptAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    CIPHERTEXT_FIELD_NUMBER: builtins.int
+    TAG_FIELD_NUMBER: builtins.int
+    ciphertext: builtins.bytes
+    """Encrypted ciphertext."""
+    tag: builtins.bytes
+    """Authentication tag.
+    This is nil when not using an authenticated cipher.
+    """
+    def __init__(
+        self,
+        *,
+        ciphertext: builtins.bytes = ...,
+        tag: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["ciphertext", b"ciphertext", "tag", b"tag"]) -> None: ...
+
+global___SubtleEncryptAlpha1Response = SubtleEncryptAlpha1Response
+
+class SubtleDecryptAlpha1Request(google.protobuf.message.Message):
+    """SubtleDecryptAlpha1Request is the request for SubtleDecryptAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    COMPONENT_NAME_FIELD_NUMBER: builtins.int
+    CIPHERTEXT_FIELD_NUMBER: builtins.int
+    ALGORITHM_FIELD_NUMBER: builtins.int
+    KEY_NAME_FIELD_NUMBER: builtins.int
+    NONCE_FIELD_NUMBER: builtins.int
+    TAG_FIELD_NUMBER: builtins.int
+    ASSOCIATED_DATA_FIELD_NUMBER: builtins.int
+    component_name: builtins.str
+    """Name of the component"""
+    ciphertext: builtins.bytes
+    """Message to decrypt."""
+    algorithm: builtins.str
+    """Algorithm to use, as in the JWA standard."""
+    key_name: builtins.str
+    """Name (or name/version) of the key."""
+    nonce: builtins.bytes
+    """Nonce / initialization vector.
+    Ignored with asymmetric ciphers.
+    """
+    tag: builtins.bytes
+    """Authentication tag.
+    This is nil when not using an authenticated cipher.
+    """
+    associated_data: builtins.bytes
+    """Associated Data when using AEAD ciphers (optional)."""
+    def __init__(
+        self,
+        *,
+        component_name: builtins.str = ...,
+        ciphertext: builtins.bytes = ...,
+        algorithm: builtins.str = ...,
+        key_name: builtins.str = ...,
+        nonce: builtins.bytes = ...,
+        tag: builtins.bytes = ...,
+        associated_data: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "ciphertext", b"ciphertext", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "tag", b"tag"]) -> None: ...
+
+global___SubtleDecryptAlpha1Request = SubtleDecryptAlpha1Request
+
+class SubtleDecryptAlpha1Response(google.protobuf.message.Message):
+    """SubtleDecryptAlpha1Response is the response for SubtleDecryptAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    PLAINTEXT_FIELD_NUMBER: builtins.int
+    plaintext: builtins.bytes
+    """Decrypted plaintext."""
+    def __init__(
+        self,
+        *,
+        plaintext: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["plaintext", b"plaintext"]) -> None: ...
+
+global___SubtleDecryptAlpha1Response = SubtleDecryptAlpha1Response
+
+class SubtleWrapKeyAlpha1Request(google.protobuf.message.Message):
+    """SubtleWrapKeyAlpha1Request is the request for SubtleWrapKeyAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    COMPONENT_NAME_FIELD_NUMBER: builtins.int
+    PLAINTEXT_KEY_FIELD_NUMBER: builtins.int
+    ALGORITHM_FIELD_NUMBER: builtins.int
+    KEY_NAME_FIELD_NUMBER: builtins.int
+    NONCE_FIELD_NUMBER: builtins.int
+    ASSOCIATED_DATA_FIELD_NUMBER: builtins.int
+    component_name: builtins.str
+    """Name of the component"""
+    plaintext_key: builtins.bytes
+    """Key to wrap"""
+    algorithm: builtins.str
+    """Algorithm to use, as in the JWA standard."""
+    key_name: builtins.str
+    """Name (or name/version) of the key."""
+    nonce: builtins.bytes
+    """Nonce / initialization vector.
+    Ignored with asymmetric ciphers.
+    """
+    associated_data: builtins.bytes
+    """Associated Data when using AEAD ciphers (optional)."""
+    def __init__(
+        self,
+        *,
+        component_name: builtins.str = ...,
+        plaintext_key: builtins.bytes = ...,
+        algorithm: builtins.str = ...,
+        key_name: builtins.str = ...,
+        nonce: builtins.bytes = ...,
+        associated_data: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "plaintext_key", b"plaintext_key"]) -> None: ...
+
+global___SubtleWrapKeyAlpha1Request = SubtleWrapKeyAlpha1Request
+
+class SubtleWrapKeyAlpha1Response(google.protobuf.message.Message):
+    """SubtleWrapKeyAlpha1Response is the response for SubtleWrapKeyAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    WRAPPED_KEY_FIELD_NUMBER: builtins.int
+    TAG_FIELD_NUMBER: builtins.int
+    wrapped_key: builtins.bytes
+    """Wrapped key."""
+    tag: builtins.bytes
+    """Authentication tag.
+    This is nil when not using an authenticated cipher.
+    """
+    def __init__(
+        self,
+        *,
+        wrapped_key: builtins.bytes = ...,
+        tag: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["tag", b"tag", "wrapped_key", b"wrapped_key"]) -> None: ...
+
+global___SubtleWrapKeyAlpha1Response = SubtleWrapKeyAlpha1Response
+
+class SubtleUnwrapKeyAlpha1Request(google.protobuf.message.Message):
+    """SubtleUnwrapKeyAlpha1Request is the request for SubtleUnwrapKeyAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    COMPONENT_NAME_FIELD_NUMBER: builtins.int
+    WRAPPED_KEY_FIELD_NUMBER: builtins.int
+    ALGORITHM_FIELD_NUMBER: builtins.int
+    KEY_NAME_FIELD_NUMBER: builtins.int
+    NONCE_FIELD_NUMBER: builtins.int
+    TAG_FIELD_NUMBER: builtins.int
+    ASSOCIATED_DATA_FIELD_NUMBER: builtins.int
+    component_name: builtins.str
+    """Name of the component"""
+    wrapped_key: builtins.bytes
+    """Wrapped key."""
+    algorithm: builtins.str
+    """Algorithm to use, as in the JWA standard."""
+    key_name: builtins.str
+    """Name (or name/version) of the key."""
+    nonce: builtins.bytes
+    """Nonce / initialization vector.
+    Ignored with asymmetric ciphers.
+    """
+    tag: builtins.bytes
+    """Authentication tag.
+    This is nil when not using an authenticated cipher.
+    """
+    associated_data: builtins.bytes
+    """Associated Data when using AEAD ciphers (optional)."""
+    def __init__(
+        self,
+        *,
+        component_name: builtins.str = ...,
+        wrapped_key: builtins.bytes = ...,
+        algorithm: builtins.str = ...,
+        key_name: builtins.str = ...,
+        nonce: builtins.bytes = ...,
+        tag: builtins.bytes = ...,
+        associated_data: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "tag", b"tag", "wrapped_key", b"wrapped_key"]) -> None: ...
+
+global___SubtleUnwrapKeyAlpha1Request = SubtleUnwrapKeyAlpha1Request
+
+class SubtleUnwrapKeyAlpha1Response(google.protobuf.message.Message):
+    """SubtleUnwrapKeyAlpha1Response is the response for SubtleUnwrapKeyAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    PLAINTEXT_KEY_FIELD_NUMBER: builtins.int
+    plaintext_key: builtins.bytes
+    """Key in plaintext"""
+    def __init__(
+        self,
+        *,
+        plaintext_key: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["plaintext_key", b"plaintext_key"]) -> None: ...
+
+global___SubtleUnwrapKeyAlpha1Response = SubtleUnwrapKeyAlpha1Response
+
+class SubtleSignAlpha1Request(google.protobuf.message.Message):
+    """SubtleSignAlpha1Request is the request for SubtleSignAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    COMPONENT_NAME_FIELD_NUMBER: builtins.int
+    DIGEST_FIELD_NUMBER: builtins.int
+    ALGORITHM_FIELD_NUMBER: builtins.int
+    KEY_NAME_FIELD_NUMBER: builtins.int
+    component_name: builtins.str
+    """Name of the component"""
+    digest: builtins.bytes
+    """Digest to sign."""
+    algorithm: builtins.str
+    """Algorithm to use, as in the JWA standard."""
+    key_name: builtins.str
+    """Name (or name/version) of the key."""
+    def __init__(
+        self,
+        *,
+        component_name: builtins.str = ...,
+        digest: builtins.bytes = ...,
+        algorithm: builtins.str = ...,
+        key_name: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["algorithm", b"algorithm", "component_name", b"component_name", "digest", b"digest", "key_name", b"key_name"]) -> None: ...
+
+global___SubtleSignAlpha1Request = SubtleSignAlpha1Request
+
+class SubtleSignAlpha1Response(google.protobuf.message.Message):
+    """SubtleSignAlpha1Response is the response for SubtleSignAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    SIGNATURE_FIELD_NUMBER: builtins.int
+    signature: builtins.bytes
+    """The signature that was computed"""
+    def __init__(
+        self,
+        *,
+        signature: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["signature", b"signature"]) -> None: ...
+
+global___SubtleSignAlpha1Response = SubtleSignAlpha1Response
+
+class SubtleVerifyAlpha1Request(google.protobuf.message.Message):
+    """SubtleVerifyAlpha1Request is the request for SubtleVerifyAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    COMPONENT_NAME_FIELD_NUMBER: builtins.int
+    DIGEST_FIELD_NUMBER: builtins.int
+    ALGORITHM_FIELD_NUMBER: builtins.int
+    KEY_NAME_FIELD_NUMBER: builtins.int
+    SIGNATURE_FIELD_NUMBER: builtins.int
+    component_name: builtins.str
+    """Name of the component"""
+    digest: builtins.bytes
+    """Digest of the message."""
+    algorithm: builtins.str
+    """Algorithm to use, as in the JWA standard."""
+    key_name: builtins.str
+    """Name (or name/version) of the key."""
+    signature: builtins.bytes
+    """Signature to verify."""
+    def __init__(
+        self,
+        *,
+        component_name: builtins.str = ...,
+        digest: builtins.bytes = ...,
+        algorithm: builtins.str = ...,
+        key_name: builtins.str = ...,
+        signature: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["algorithm", b"algorithm", "component_name", b"component_name", "digest", b"digest", "key_name", b"key_name", "signature", b"signature"]) -> None: ...
+
+global___SubtleVerifyAlpha1Request = SubtleVerifyAlpha1Request
+
+class SubtleVerifyAlpha1Response(google.protobuf.message.Message):
+    """SubtleVerifyAlpha1Response is the response for SubtleVerifyAlpha1."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    VALID_FIELD_NUMBER: builtins.int
+    valid: builtins.bool
+    """True if the signature is valid."""
+    def __init__(
+        self,
+        *,
+        valid: builtins.bool = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["valid", b"valid"]) -> None: ...
+
+global___SubtleVerifyAlpha1Response = SubtleVerifyAlpha1Response
+
+class WorkflowReference(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     class _KeyFormat:
@@ -2364,6 +2771,7 @@ class GetWorkflowRequest(google.protobuf.message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
+    WORKFLOW_NAME_FIELD_NUMBER: builtins.int
     instance_id: builtins.str
     """ID of the workflow instance to query."""
     workflow_component: builtins.str
@@ -2373,6 +2781,7 @@ class GetWorkflowRequest(google.protobuf.message.Message):
         *,
         instance_id: builtins.str = ...,
         workflow_component: builtins.str = ...,
+        workflow_name: builtins.str = ...,
     ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
 
@@ -2519,7 +2928,42 @@ class TerminateWorkflowRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
 
-global___TerminateWorkflowRequest = TerminateWorkflowRequest
+class WorkflowActivityResponse(google.protobuf.message.Message):
+    """Empty"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+global___WorkflowActivityResponse = WorkflowActivityResponse
+
+class RaiseEventWorkflowRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    INSTANCE_ID_FIELD_NUMBER: builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
+    EVENT_NAME_FIELD_NUMBER: builtins.int
+    INPUT_FIELD_NUMBER: builtins.int
+    instance_id: builtins.str
+    workflow_component: builtins.str
+    event_name: builtins.str
+    input: builtins.bytes
+    def __init__(
+        self,
+        *,
+        instance_id: builtins.str = ...,
+        workflow_component: builtins.str = ...,
+        event_name: builtins.str = ...,
+        input: builtins.bytes = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["event_name", b"event_name", "input", b"input", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
+
+global___RaiseEventWorkflowRequest = RaiseEventWorkflowRequest
+
+class RaiseEventWorkflowResponse(google.protobuf.message.Message):
+    """Empty"""
 
 class PauseWorkflowRequest(google.protobuf.message.Message):
     """PauseWorkflowRequest is the request for PauseWorkflowAlpha1."""
