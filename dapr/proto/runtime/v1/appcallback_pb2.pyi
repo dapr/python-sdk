@@ -474,6 +474,7 @@ class TopicSubscription(google.protobuf.message.Message):
     METADATA_FIELD_NUMBER: builtins.int
     ROUTES_FIELD_NUMBER: builtins.int
     DEAD_LETTER_TOPIC_FIELD_NUMBER: builtins.int
+    BULK_SUBSCRIBE_FIELD_NUMBER: builtins.int
     pubsub_name: builtins.str
     """Required. The name of the pubsub containing the topic below to subscribe to."""
     topic: builtins.str
@@ -488,6 +489,9 @@ class TopicSubscription(google.protobuf.message.Message):
         """
     dead_letter_topic: builtins.str
     """The optional dead letter queue for this topic to send events to."""
+    @property
+    def bulk_subscribe(self) -> global___BulkSubscribeConfig:
+        """The optional bulk subscribe settings for this topic."""
     def __init__(
         self,
         *,
@@ -496,9 +500,10 @@ class TopicSubscription(google.protobuf.message.Message):
         metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         routes: global___TopicRoutes | None = ...,
         dead_letter_topic: builtins.str = ...,
+        bulk_subscribe: global___BulkSubscribeConfig | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["routes", b"routes"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "routes", b"routes", "topic", b"topic"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["bulk_subscribe", b"bulk_subscribe", "routes", b"routes"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["bulk_subscribe", b"bulk_subscribe", "dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "routes", b"routes", "topic", b"topic"]) -> None: ...
 
 global___TopicSubscription = TopicSubscription
 
@@ -546,6 +551,31 @@ class TopicRule(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["match", b"match", "path", b"path"]) -> None: ...
 
 global___TopicRule = TopicRule
+
+class BulkSubscribeConfig(google.protobuf.message.Message):
+    """BulkSubscribeConfig is the message to pass settings for bulk subscribe"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    ENABLED_FIELD_NUMBER: builtins.int
+    MAX_MESSAGES_COUNT_FIELD_NUMBER: builtins.int
+    MAX_AWAIT_DURATION_MS_FIELD_NUMBER: builtins.int
+    enabled: builtins.bool
+    """Required. Flag to enable/disable bulk subscribe"""
+    max_messages_count: builtins.int
+    """Optional. Max number of messages to be sent in a single bulk request"""
+    max_await_duration_ms: builtins.int
+    """Optional. Max duration to wait for messages to be sent in a single bulk request"""
+    def __init__(
+        self,
+        *,
+        enabled: builtins.bool = ...,
+        max_messages_count: builtins.int = ...,
+        max_await_duration_ms: builtins.int = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["enabled", b"enabled", "max_await_duration_ms", b"max_await_duration_ms", "max_messages_count", b"max_messages_count"]) -> None: ...
+
+global___BulkSubscribeConfig = BulkSubscribeConfig
 
 class ListInputBindingsResponse(google.protobuf.message.Message):
     """ListInputBindingsResponse is the message including the list of input bindings."""
