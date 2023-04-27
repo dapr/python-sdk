@@ -16,7 +16,6 @@ class WorkflowActivityContext():
         self._obj = obj
 
     def workflow_id(self) -> str:
-
         return self._obj.orchestration_id
 
     def task_id(self) -> int:

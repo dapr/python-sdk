@@ -36,10 +36,7 @@ class DaprWorkflowContext(WorkflowContext):
 
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
                       input: TInput = None) -> task.Task[TOutput]:
-        def act(ctx: task.ActivityContext, inp: TInput):
-            daprActContext = WorkflowActivityContext(ctx)
-            return activity(daprActContext, inp)
-        return self._obj.call_named_activity(name=activity.__name__, activity=act, input=input)
+        return self._obj.call_activity(activity=activity.__name__, input=input)
 
     def call_child_workflow(self, workflow: Workflow, *,
                             input: Union[TInput, None],

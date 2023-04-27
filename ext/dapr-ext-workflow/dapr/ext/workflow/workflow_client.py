@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import TypeVar, Union
+from typing import Any, TypeVar, Union
 from dapr.conf import settings
 
 from durabletask import client
@@ -24,10 +24,9 @@ class WorkflowClient:
 
     def schedule_new_workflow(self, workflow: Workflow, *,
                               input: Union[TInput, None] = None,
-                              version: Union[str, None] = None,
                               instance_id: Union[str, None] = None,
                               start_at: Union[datetime, None] = None) -> str:
-        return self._obj.schedule_new_orchestration(workflow.__name__, version=version,
+        return self._obj.schedule_new_orchestration(workflow.__name__,
                                                     input=input, instance_id=instance_id,
                                                     start_at=start_at)
 
@@ -51,3 +50,18 @@ class WorkflowClient:
                                                             fetch_payloads=fetch_payloads,
                                                             timeout=timeout)
         return WorkflowState(state) if state else None
+
+    def raise_workflow_event(self, instance_id: str, event_name: str, *,
+                                  data: Union[Any, None] = None):
+        return self._obj.raise_orchestration_event(instance_id, event_name, data=data)
+        
+    def terminate_workflow(self, instance_id: str, *,
+                                output: Union[Any, None] = None):
+        return self._obj.terminate_orchestration(instance_id, output=output)
+
+    def pause_workflow(self, instance_id: str):
+        return self._obj.suspend_orchestration(instance_id)
+
+    def resume_workflow(self, instance_id: str):
+        return self._obj.resume_orchestration(instance_id)
+        
