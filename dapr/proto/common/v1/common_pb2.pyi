@@ -108,7 +108,7 @@ class InvokeRequest(google.protobuf.message.Message):
     """Required. method is a method name which will be invoked by caller."""
     @property
     def data(self) -> google.protobuf.any_pb2.Any:
-        """Required. Bytes value or Protobuf message which caller sent.
+        """Required in unary RPCs. Bytes value or Protobuf message which caller sent.
         Dapr treats Any.value as bytes type if Any.type_url is unset.
         """
     content_type: builtins.str
@@ -150,7 +150,7 @@ class InvokeResponse(google.protobuf.message.Message):
     CONTENT_TYPE_FIELD_NUMBER: builtins.int
     @property
     def data(self) -> google.protobuf.any_pb2.Any:
-        """Required. The content body of InvokeService response."""
+        """Required in unary RPCs. The content body of InvokeService response."""
     content_type: builtins.str
     """Required. The type of data content."""
     def __init__(
@@ -163,6 +163,33 @@ class InvokeResponse(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["content_type", b"content_type", "data", b"data"]) -> None: ...
 
 global___InvokeResponse = InvokeResponse
+
+class StreamPayload(google.protobuf.message.Message):
+    """Chunk of data sent in a streaming request or response.
+    This is used in requests including InternalInvokeRequestStream.
+    """
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    DATA_FIELD_NUMBER: builtins.int
+    SEQ_FIELD_NUMBER: builtins.int
+    data: builtins.bytes
+    """Data sent in the chunk.
+    The amount of data included in each chunk is up to the discretion of the sender, and can be empty.
+    Additionally, the amount of data doesn't need to be fixed and subsequent messages can send more, or less, data.
+    Receivers must not make assumptions about the number of bytes they'll receive in each chunk.
+    """
+    seq: builtins.int
+    """Sequence number. This is a counter that starts from 0 and increments by 1 on each chunk sent."""
+    def __init__(
+        self,
+        *,
+        data: builtins.bytes = ...,
+        seq: builtins.int = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data", b"data", "seq", b"seq"]) -> None: ...
+
+global___StreamPayload = StreamPayload
 
 class StateItem(google.protobuf.message.Message):
     """StateItem represents state key, value, and additional options to save state."""
