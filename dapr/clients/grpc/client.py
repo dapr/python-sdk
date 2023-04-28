@@ -1157,10 +1157,10 @@ class DaprGrpcClient:
 
         # RRL TODO: Fix this
         return GetWorkflowResponse(instance_id=instance_id,
-                                          workflow_name=response.workflow_name,
-                                          created_at=response.created_at,
-                                          last_updated_at=response.last_updated_at,
-                                          runtime_status=response.runtime_status)
+                                   workflow_name=response.workflow_name,
+                                   created_at=response.created_at,
+                                   last_updated_at=response.last_updated_at,
+                                   runtime_status=response.runtime_status)
 
     def terminate_workflow(
             self,
