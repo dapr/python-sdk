@@ -70,6 +70,8 @@ from dapr.clients.grpc._response import (
     ConfigurationWatcher,
     TryLockResponse,
     UnlockResponse,
+    GetWorkflowResponse,
+    StartWorkflowResponse,
 )
 
 
@@ -1094,7 +1096,7 @@ class DaprGrpcClient:
             workflow_component: str,
             workflow_name: str,
             input: bytes,
-            workflow_options: dict) -> api_v1.StartWorkflowResponse:
+            workflow_options: dict) -> StartWorkflowResponse:
         """Starts a workflow.
 
             Args:
@@ -1124,13 +1126,13 @@ class DaprGrpcClient:
             input=input)
         response, call = self._stub.StartWorkflowAlpha1.with_call(req)
 
-        return api_v1.StartWorkflowResponse(instance_id=response.instanceID)
+        return StartWorkflowResponse(instance_id=response.instanceID)
 
     # RRL TODO: Clean up return obkect
     def get_workflow(
             self,
             instance_id: str,
-            workflow_component: str) -> api_v1.GetWorkflowResponse:
+            workflow_component: str) -> GetWorkflowResponse:
         """Gets information on a workflow.
 
             Args:
@@ -1154,7 +1156,7 @@ class DaprGrpcClient:
         response, call = self._stub.GetWorkflowAlpha1.with_call(req)
 
         # RRL TODO: Fix this
-        return api_v1.GetWorkflowResponse(instance_id=instance_id,
+        return GetWorkflowResponse(instance_id=instance_id,
                                           workflow_name=response.workflow_name,
                                           created_at=response.created_at,
                                           last_updated_at=response.last_updated_at,

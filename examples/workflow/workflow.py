@@ -13,7 +13,6 @@ with DaprClient() as d:
     inventoryItem = "Computer"
     ammount = "1"
 
-
     # Wait for sidecar to be up within 5 seconds.
     d.wait(5)
 
@@ -26,4 +25,3 @@ with DaprClient() as d:
     getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent, workflow_name=workflowName)
 
     print(f"Get response from {workflowName}: {getResponse}")
-

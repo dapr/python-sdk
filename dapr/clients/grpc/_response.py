@@ -939,29 +939,23 @@ class GetWorkflowResponse():
 
     def __init__(
         self,
-        client: DaprGrpcClient,
         instance_id: str,
         workflow_name: str,
         created_at: str,
         last_updated_at: str,
         runtime_status: str,
         properties: Dict[str, str] = {},
-        headers: MetadataTuple = (),
     ):
         """Initializes a GetWorkflowResponse.
 
         Args:
-            client (DaprClient): a reference to the dapr client used for the GetWorkflow request.
             instance_id (str): the instance ID assocated with this response.
             workflow_name (str): the name of the workflow that was started.
             created_at (str): the time at which the workflow started executing.
             last_updated_at (str): the time at which the workflow was last updated.
             runtime_status (str): the current runtime status of the workflow.
             properties (Dict[str, str]): properties sent as a reponse by the workflow.
-            headers (Tuple, optional): the headers from Dapr gRPC response.
         """
-        super().__init__(headers)
-        self._client = client
         self._instance_id = instance_id
         self._workflow_name = workflow_name
         self._created_at = created_at
@@ -976,19 +970,13 @@ class StartWorkflowResponse():
     def __init__(
         self,
         instance_id: str,
-        client: DaprGrpcClient,
-        headers: MetadataTuple = (),
     ):
         """Initializes a StartWorkflowResponse.
 
         Args:
             instance_id (str): the instance ID assocated with this response.
-            client (DaprClient): a reference to the dapr client used for the GetWorkflow request.
-            headers (Tuple, optional): the headers from Dapr gRPC response.
         """
-        super().__init__(headers)
         self.instance_id = instance_id
-        self._client = client
 
 
 class RegisteredComponents(NamedTuple):
