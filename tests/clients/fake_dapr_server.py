@@ -17,6 +17,14 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
     TryLockResponse,
     UnlockRequest,
     UnlockResponse,
+    StartWorkflowRequest,
+    StartWorkflowResponse,
+    GetWorkflowRequest,
+    GetWorkflowResponse,
+    PauseWorkflowRequest,
+    ResumeWorkflowRequest,
+    TerminateWorkflowRequest,
+    PurgeWorkflowRequest,
 )
 from typing import Dict
 
@@ -28,6 +36,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.store = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
+        self.running_workflows = {}
         self.metadata: Dict[str, str] = {}
 
     def start(self, port: int = 8080):
@@ -258,6 +267,66 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return UnlockResponse(status=UnlockResponse.Status.SUCCESS)
         else:
             return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS)
+
+    def StartWorkflowAlpha1(self, request: StartWorkflowRequest, context):
+        instance_id = (request.instance_id)
+
+        if instance_id not in self.running_workflows:
+            self.running_workflows[instance_id] = "RUNNING"
+            return StartWorkflowResponse(instance_id=instance_id)
+        else:
+            # workflow already running
+            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+
+    def GetWorkflowAlpha1(self, request: GetWorkflowRequest, context):
+        instance_id = (request.instance_id)
+
+        if instance_id in self.running_workflows:
+            return GetWorkflowResponse(instance_id=instance_id,
+                                       runtime_status=self.running_workflows[instance_id])
+        else:
+            # workflow non-existent
+            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+
+    def PauseWorkflowAlpha1(self, request: PauseWorkflowRequest, context):
+        instance_id = (request.instance_id)
+
+        if instance_id in self.running_workflows:
+            self.running_workflows[instance_id] = "SUSPENDED"
+            return True
+        else:
+            # workflow non-existent
+            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+
+    def ResumeWorkflowAlpha1(self, request: ResumeWorkflowRequest, context):
+        instance_id = (request.instance_id)
+
+        if instance_id in self.running_workflows:
+            self.running_workflows[instance_id] = "RUNNING"
+            return True
+        else:
+            # workflow non-existent
+            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+
+    def TerminateWorkflowAlpha1(self, request: TerminateWorkflowRequest, context):
+        instance_id = (request.instance_id)
+
+        if instance_id in self.running_workflows:
+            self.running_workflows[instance_id] = "TERMINATED"
+            return True
+        else:
+            # workflow non-existent
+            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+
+    def PurgeWorkflowAlpha1(self, request: PurgeWorkflowRequest, context):
+        instance_id = (request.instance_id)
+
+        if instance_id in self.running_workflows:
+            del self.running_workflows[instance_id]
+            return True
+        else:
+            # workflow non-existent
+            return False  # RRL TODO: Determine how to return an error or value of FALSE here
 
     def GetMetadata(self, request, context):
         return GetMetadataResponse(

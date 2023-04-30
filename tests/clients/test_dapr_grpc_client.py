@@ -691,7 +691,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         workflow_name = 'testWorkflow'
         instance_id = str(uuid.uuid4())
         workflow_component = "dapr"
-        input = 60  # This will probably change to be an applicable input for a different workflow
+        input = "paperclips"  # This will change to be an applicable input for a different workflow
         # Start the workflow
         return_id = dapr.start_workflow(workflow_name, instance_id, workflow_component, None, input)
         self.assertEqual(instance_id, return_id)
