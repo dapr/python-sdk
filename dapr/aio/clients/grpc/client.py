@@ -1137,7 +1137,7 @@ class DaprGrpcClientAsync:
             input=input)
         response, call = self._stub.StartWorkflowAlpha1.with_call(req)
 
-        return api_v1.StartWorkflowResponse(instance_id=response.instanceID,
+        return api_v1.StartWorkflowResponse(instance_id=response.instance_id,
                                             workflow_component=response.workflowComponent,
                                             workflow_name=response.workflowName)
 

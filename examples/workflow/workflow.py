@@ -8,7 +8,7 @@ from dapr.clients import DaprClient
 with DaprClient() as d:
     workflowName = 'OrderProcessingWorkflow'
     workflowComponent = 'dapr'
-    instanceId = bytes('testInstance')
+    instanceId = 'testInstance'
 
     inventoryItem = "Computer"
     ammount = "1"

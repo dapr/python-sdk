@@ -1126,7 +1126,7 @@ class DaprGrpcClient:
             input=input)
         response, call = self._stub.StartWorkflowAlpha1.with_call(req)
 
-        return StartWorkflowResponse(instance_id=response.instanceID)
+        return StartWorkflowResponse(instance_id=response.instance_id)
 
     # RRL TODO: Clean up return obkect
     def get_workflow(

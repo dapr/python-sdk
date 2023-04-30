@@ -956,12 +956,12 @@ class GetWorkflowResponse():
             runtime_status (str): the current runtime status of the workflow.
             properties (Dict[str, str]): properties sent as a reponse by the workflow.
         """
-        self._instance_id = instance_id
-        self._workflow_name = workflow_name
-        self._created_at = created_at
-        self._last_updated_at = last_updated_at
-        self._runtime_status = runtime_status
-        self._properties = properties
+        self.instance_id = instance_id
+        self.workflow_name = workflow_name
+        self.created_at = created_at
+        self.last_updated_at = last_updated_at
+        self.runtime_status = runtime_status
+        self.properties = properties
 
 
 class StartWorkflowResponse():

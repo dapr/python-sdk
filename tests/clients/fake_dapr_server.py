@@ -293,40 +293,40 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         if instance_id in self.running_workflows:
             self.running_workflows[instance_id] = "SUSPENDED"
-            return True
+            return empty_pb2.Empty()
         else:
             # workflow non-existent
-            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+            return empty_pb2.Empty()  # RRL TODO: Determine how to return an error or FALSE here
 
     def ResumeWorkflowAlpha1(self, request: ResumeWorkflowRequest, context):
         instance_id = (request.instance_id)
 
         if instance_id in self.running_workflows:
             self.running_workflows[instance_id] = "RUNNING"
-            return True
+            return empty_pb2.Empty()
         else:
             # workflow non-existent
-            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+            return empty_pb2.Empty()  # RRL TODO: Determine how to return an error or FALSE here
 
     def TerminateWorkflowAlpha1(self, request: TerminateWorkflowRequest, context):
         instance_id = (request.instance_id)
 
         if instance_id in self.running_workflows:
             self.running_workflows[instance_id] = "TERMINATED"
-            return True
+            return empty_pb2.Empty()
         else:
             # workflow non-existent
-            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+            return empty_pb2.Empty()  # RRL TODO: Determine how to return an error or FALSE here
 
     def PurgeWorkflowAlpha1(self, request: PurgeWorkflowRequest, context):
         instance_id = (request.instance_id)
 
         if instance_id in self.running_workflows:
             del self.running_workflows[instance_id]
-            return True
+            return empty_pb2.Empty()
         else:
             # workflow non-existent
-            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+            return empty_pb2.Empty()  # RRL TODO: Determine how to return an error or FALSE here
 
     def GetMetadata(self, request, context):
         return GetMetadataResponse(
