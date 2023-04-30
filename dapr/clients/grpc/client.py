@@ -1095,7 +1095,7 @@ class DaprGrpcClient:
             instance_id: str,
             workflow_component: str,
             workflow_name: str,
-            input: object,
+            input: bytes,
             workflow_options: dict) -> StartWorkflowResponse:
         """Starts a workflow.
 
