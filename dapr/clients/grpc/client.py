@@ -1096,7 +1096,7 @@ class DaprGrpcClient:
             workflow_component: str,
             workflow_name: str,
             input: bytes,
-            workflow_options: dict) -> StartWorkflowResponse:
+            workflow_options: Optional[Dict[str, str]] = dict()) -> StartWorkflowResponse:
         """Starts a workflow.
 
             Args:
@@ -1128,7 +1128,6 @@ class DaprGrpcClient:
 
         return StartWorkflowResponse(instance_id=response.instance_id)
 
-    # RRL TODO: Clean up return obkect
     def get_workflow(
             self,
             instance_id: str,
@@ -1155,7 +1154,6 @@ class DaprGrpcClient:
             workflow_component=workflow_component)
         response, call = self._stub.GetWorkflowAlpha1.with_call(req)
 
-        # RRL TODO: Fix this
         return GetWorkflowResponse(instance_id=instance_id,
                                    workflow_name=response.workflow_name,
                                    created_at=response.created_at,
@@ -1192,7 +1190,6 @@ class DaprGrpcClient:
         return DaprResponse(
             headers=call.initial_metadata())
 
-    # RRL TODO: Clean up return obkect comments
     def raise_event(
             self,
             instance_id: str,

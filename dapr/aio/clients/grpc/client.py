@@ -71,6 +71,8 @@ from dapr.clients.grpc._response import (
     ConfigurationWatcher,
     TryLockResponse,
     UnlockResponse,
+    GetWorkflowResponse,
+    StartWorkflowResponse,
 )
 
 
@@ -1109,8 +1111,9 @@ class DaprGrpcClientAsync:
             workflow_component: str,
             workflow_name: str,
             input: bytes,
-            workflow_options: dict) -> api_v1.StartWorkflowResponse:
+            workflow_options: Optional[Dict[str, str]] = dict()) -> StartWorkflowResponse:
         """Starts a workflow.
+
             Args:
                 instance_id (str): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
@@ -1119,6 +1122,7 @@ class DaprGrpcClientAsync:
                 workflow_name (str): the name of the workflow that will be executed.
                 input (bytes): the input that the workflow will receive.
                 workflow_options (dict): the key-value options that the workflow will receive.
+
             Returns:
                 :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
         """
@@ -1137,15 +1141,12 @@ class DaprGrpcClientAsync:
             input=input)
         response, call = self._stub.StartWorkflowAlpha1.with_call(req)
 
-        return api_v1.StartWorkflowResponse(instance_id=response.instance_id,
-                                            workflow_component=response.workflowComponent,
-                                            workflow_name=response.workflowName)
+        return StartWorkflowResponse(instance_id=response.instance_id)
 
-    # RRL TODO: Clean up return obkect
     async def get_workflow(
             self,
             instance_id: str,
-            workflow_component: str) -> api_v1.GetWorkflowResponse:
+            workflow_component: str) -> GetWorkflowResponse:
         """Gets information on a workflow.
 
             Args:
@@ -1155,9 +1156,7 @@ class DaprGrpcClientAsync:
                                     that will run the workflow. e.g. `dapr`.
 
             Returns:
-                :class:`GetWorkflowResponse`: Status of the request,
-                    `UnlockResponseStatus.success` if it was successful of some other
-                    status otherwise.
+                :class:`GetWorkflowResponse`: Instance ID associated with the started workflow
         """
         # Warnings and input validation
         warn('The Workflow API is an Alpha version and is subject to change.',
@@ -1170,25 +1169,27 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component)
         response, call = self._stub.GetWorkflowAlpha1.with_call(req)
 
-        # RRL TODO: Fix this
-        return api_v1.GetWorkflowResponse(instance_id=instance_id,
-                                          workflow_name=response.workflow_name,
-                                          created_at=response.created_at,
-                                          last_updated_at=response.last_updated_at,
-                                          runtime_status=response.runtime_status)
+        return GetWorkflowResponse(instance_id=instance_id,
+                                   workflow_name=response.workflow_name,
+                                   created_at=response.created_at,
+                                   last_updated_at=response.last_updated_at,
+                                   runtime_status=response.runtime_status)
 
     async def terminate_workflow(
             self,
             instance_id: str,
             workflow_component: str) -> DaprResponse:
         """Terminates a workflow.
+
             Args:
                 instance_id (str): the name of the workflow instance, e.g.
                                     `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
+
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee
+
         """
         # Warnings and input validation
         warn('The Workflow API is an Alpha version and is subject to change.',
@@ -1207,17 +1208,15 @@ class DaprGrpcClientAsync:
     async def raise_event(
             self,
             instance_id: str,
-            workflow_component: str,
-            event_name: str,
-            event_data: bytes) -> DaprResponse:
+            workflow_component: str) -> DaprResponse:
         """Raises an event on a workflow.
+
             Args:
                 instance_id (str): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
-                event_name (str): the name of the event being raised`.
-                event_data (bytes): the input data for the event being raised`.
+
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """
@@ -1226,13 +1225,11 @@ class DaprGrpcClientAsync:
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
-        # Actual Raise Event workflow invocation
-        req = api_v1.RaiseEventWorkflowRequest(
+        # Actual terminate workflow invocation
+        req = api_v1.TerminateWorkflowRequest(
             instance_id=instance_id,
-            workflow_component=workflow_component,
-            event_name=event_name,
-            event_data=event_data)
-        _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
+            workflow_component=workflow_component)
+        _, call = self._stub.TerminateWorkflowAlpha1.with_call(req)
 
         return DaprResponse(
             headers=call.initial_metadata())
@@ -1242,13 +1239,16 @@ class DaprGrpcClientAsync:
             instance_id: str,
             workflow_component: str) -> DaprResponse:
         """Pause a workflow.
+
             Args:
                 instance_id (str): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
+
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
+
         """
         # Warnings and input validation
         warn('The Workflow API is an Alpha version and is subject to change.',
@@ -1269,11 +1269,13 @@ class DaprGrpcClientAsync:
             instance_id: str,
             workflow_component: str) -> DaprResponse:
         """Resumes a workflow.
+
             Args:
                 instance_id (str): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
+
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """
@@ -1296,11 +1298,13 @@ class DaprGrpcClientAsync:
             instance_id: str,
             workflow_component: str) -> DaprResponse:
         """Purges a workflow.
+
             Args:
                 instance_id (str): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
+
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """

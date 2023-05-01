@@ -18,7 +18,7 @@ with DaprClient() as d:
 
     # Start the workflow TODO: change the input
     d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
-                     workflow_name=workflowName, input=None)
+                     workflow_name=workflowName, input=None, workflow_options={})
     
     print(f"Attempting to start {workflowName}")
 
