@@ -1114,8 +1114,7 @@ class DaprGrpcClient:
         # Warnings and input validation
         warn('The Workflow API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component,
+        validateNotBlankString(workflow_component=workflow_component,
                                workflow_name=workflow_name)
         # Actual start workflow invocation
         req = api_v1.StartWorkflowRequest(
@@ -1152,6 +1151,7 @@ class DaprGrpcClient:
         req = api_v1.GetWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component)
+
         response, call = self._stub.GetWorkflowAlpha1.with_call(req)
 
         return GetWorkflowResponse(instance_id=instance_id,
@@ -1193,7 +1193,9 @@ class DaprGrpcClient:
     def raise_event(
             self,
             instance_id: str,
-            workflow_component: str) -> DaprResponse:
+            workflow_component: str,
+            event_name: str,
+            event_data: bytes) -> DaprResponse:
         """Raises an event on a workflow.
 
             Args:
@@ -1201,6 +1203,9 @@ class DaprGrpcClient:
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
+                event_name (str): the name of the event to be raised on
+                                    the workflow.
+                event_data (bytes): the input to the event.
 
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee
@@ -1209,12 +1214,15 @@ class DaprGrpcClient:
         warn('The Workflow API is an Alpha version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
+                               workflow_component=workflow_component,
+                               event_name=event_name)
         # Actual terminate workflow invocation
-        req = api_v1.TerminateWorkflowRequest(
+        req = api_v1.RaiseEventWorkflowRequest(
             instance_id=instance_id,
-            workflow_component=workflow_component)
-        _, call = self._stub.TerminateWorkflowAlpha1.with_call(req)
+            workflow_component=workflow_component,
+            event_name=event_name,
+            event_data=event_data)
+        _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
 
         return DaprResponse(
             headers=call.initial_metadata())

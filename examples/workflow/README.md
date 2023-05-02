@@ -28,18 +28,17 @@ It uses the default configuration from Dapr init in [self-hosted mode](https://g
 pip3 install dapr
 ```
 
-## Run the example TODO: RRL FIX ALL THIS BELOW
-
 To run this example, the following code can be utilized:
 
 <!-- STEP
 name: Run state store example
 expected_stdout_lines:
-  - "== APP == Attempting to start OrderProcessingWorkflow"
-  - "== APP == Get response from OrderProcessingWorkflow after start call: RUNNING"
-  - "== APP == Get response from OrderProcessingWorkflow after pause call: SUSPENDED"
-  - "== APP == Get response from OrderProcessingWorkflow after resume call: RUNNING"
-  - "== APP == Get response from OrderProcessingWorkflow after terminate call: TERMINATED"
+  - "== APP == Attempting to start PlaceOrder"
+  - "== APP == Get response from PlaceOrder after start call: RUNNING"
+  - "== APP == Get response from PlaceOrder after pause call: SUSPENDED"
+  - "== APP == Get response from PlaceOrder after resume call: RUNNING"
+  - "== APP == Get response from PlaceOrder after terminate call: TERMINATED"
+  - "== APP == Get response from PlaceOrder after purge call: None"
 timeout_seconds: 5
 -->
 
@@ -51,13 +50,14 @@ dapr run -- python3 workflow.py
 The output should be as follows:
 
 ```
-== APP == Get response from OrderProcessingWorkflow after start call: RUNNING
+== APP == Get response from PlaceOrder after start call: RUNNING
 
-== APP == Get response from OrderProcessingWorkflow after pause call: SUSPENDED
+== APP == Get response from PlaceOrder after pause call: SUSPENDED
 
-== APP == Get response from OrderProcessingWorkflow after resume call: RUNNING
+== APP == Get response from PlaceOrder after resume call: RUNNING
 
-== APP == Get response from OrderProcessingWorkflow after terminate call: TERMINATED
+== APP == Get response from PlaceOrder after terminate call: TERMINATED
 
+== APP == Get response from PlaceOrder after purge call: None
 ```
 
