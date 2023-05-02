@@ -25,7 +25,7 @@ with DaprClient() as d:
 
     sleep(5)
 
-    # Start the workflow TODO: change the input
+    # Start the workflow
     start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
                      workflow_name=workflowName, input=encoded_data, workflow_options=workflowOptions)
     
@@ -37,13 +37,13 @@ with DaprClient() as d:
 
     print(f"Get response from {workflowName} after start call: {getResponse.runtime_status}")
 
-    # d.pause_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+    d.pause_workflow(instance_id=instanceId, workflow_component=workflowComponent)
 
     getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
 
     print(f"Get response from {workflowName} after pause call: {getResponse.runtime_status}")
 
-    # d.resume_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+    d.resume_workflow(instance_id=instanceId, workflow_component=workflowComponent)
 
     getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
 

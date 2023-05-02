@@ -43,13 +43,6 @@ expected_stdout_lines:
 timeout_seconds: 5
 -->
 
-
-
-
-
-
-
-
 ```bash
 dapr run -- python3 workflow.py
 ```
