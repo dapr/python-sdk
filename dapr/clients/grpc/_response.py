@@ -933,6 +933,52 @@ class GetMetadataResponse(DaprResponse):
         return self._extended_metadata
 
 
+# RRL TODO: Add properties and fix init
+class GetWorkflowResponse():
+    '''The response of get_workflow operation.'''
+
+    def __init__(
+        self,
+        instance_id: str,
+        workflow_name: str,
+        created_at: str,
+        last_updated_at: str,
+        runtime_status: str,
+        properties: Dict[str, str] = {},
+    ):
+        """Initializes a GetWorkflowResponse.
+
+        Args:
+            instance_id (str): the instance ID assocated with this response.
+            workflow_name (str): the name of the workflow that was started.
+            created_at (str): the time at which the workflow started executing.
+            last_updated_at (str): the time at which the workflow was last updated.
+            runtime_status (str): the current runtime status of the workflow.
+            properties (Dict[str, str]): properties sent as a reponse by the workflow.
+        """
+        self.instance_id = instance_id
+        self.workflow_name = workflow_name
+        self.created_at = created_at
+        self.last_updated_at = last_updated_at
+        self.runtime_status = runtime_status
+        self.properties = properties
+
+
+class StartWorkflowResponse():
+    '''The response of start_workflow operation.'''
+
+    def __init__(
+        self,
+        instance_id: str,
+    ):
+        """Initializes a StartWorkflowResponse.
+
+        Args:
+            instance_id (str): the instance ID assocated with this response.
+        """
+        self.instance_id = instance_id
+
+
 class RegisteredComponents(NamedTuple):
     '''Describes a loaded Dapr component.'''
 

@@ -682,6 +682,54 @@ class DaprGrpcClientTests(unittest.TestCase):
                 dapr.unlock(store_name, resource_id, invalid_input)
 
     #
+    # Tests for workflow
+    #
+
+    def test_workflow(self):
+        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        # Sane parameters
+        workflow_name = 'testWorkflow'
+        instance_id = str(uuid.uuid4())
+        workflow_component = "dapr"
+        input = "paperclips"
+        # Start the workflow
+        start_response = dapr.start_workflow(instance_id, workflow_name, workflow_component,
+                                             input.encode('utf-8'), None)
+        self.assertEqual(instance_id, start_response.instance_id)
+
+        # Get info on the workflow to check that it is running
+        get_response = dapr.get_workflow(instance_id, workflow_component)
+        self.assertEqual("RUNNING", get_response.runtime_status)
+
+        # Pause the workflow
+        dapr.pause_workflow(instance_id, workflow_component)
+
+        # Get info on the workflow to check that it is paused
+        get_response = dapr.get_workflow(instance_id, workflow_component)
+        self.assertEqual("SUSPENDED", get_response.runtime_status)
+
+        # Resume the workflow
+        dapr.resume_workflow(instance_id, workflow_component)
+
+        # Get info on the workflow to check that it is resumed
+        get_response = dapr.get_workflow(instance_id, workflow_component)
+        self.assertEqual("RUNNING", get_response.runtime_status)
+
+        # Raise an event on the workflow. TODO: Figure out how to check/verify this
+
+        # Terminate the workflow
+        dapr.terminate_workflow(instance_id, workflow_component)
+
+        # Get info on the workflow to check that it is terminated
+        get_response = dapr.get_workflow(instance_id, workflow_component)
+        self.assertEqual("TERMINATED", get_response.runtime_status)
+
+        # Purge the workflow
+        dapr.purge_workflow(instance_id, workflow_component)
+
+        # Get information on the workflow to ensure that it has been purged
+
+    #
     # Tests for Metadata API
     #
 
