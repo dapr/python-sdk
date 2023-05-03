@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright 2021 The Dapr Authors
+Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -18,7 +18,10 @@ from __future__ import annotations
 import contextlib
 import threading
 from enum import Enum
-from typing import Dict, Optional, Text, Union, Sequence, List, Mapping, TYPE_CHECKING, NamedTuple
+from typing import (
+    Callable, Dict, List, Optional, Text, Union,
+    Sequence, Mapping, TYPE_CHECKING, NamedTuple
+)
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -679,28 +682,38 @@ class ConfigurationResponse(DaprResponse):
 
 class ConfigurationWatcher():
     def __init__(self):
-        self.items: Dict[str, ConfigurationItem] = {}
-
-    def get_items(self):
-        return self.items
+        self.event: threading.Event = threading.Event()
+        self.id: str = ""
 
     def watch_configuration(self, stub: api_service_v1.DaprStub, store_name: str,
-                            keys: List[str], config_metadata: Optional[Dict[str, str]] = dict()):
+                            keys: List[str], handler: Callable[[Text, ConfigurationResponse], None],
+                            config_metadata: Optional[Dict[str, str]] = dict()):
         req = api_v1.SubscribeConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
-        thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req))
+        thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req, handler))
         thread.daemon = True
         thread.start()
         self.keys = keys
         self.store_name = store_name
+        check = self.event.wait(timeout=5)
+        if not check:
+            print(f"Unable to get configuration id for keys {self.keys}")
+            return None
+        return self.id
 
     def _read_subscribe_config(self, stub: api_service_v1.DaprStub,
-                               req: api_v1.SubscribeConfigurationRequest):
+                               req: api_v1.SubscribeConfigurationRequest,
+                               handler: Callable[[Text, ConfigurationResponse], None]):
         try:
             responses = stub.SubscribeConfigurationAlpha1(req)
+            isFirst = True
             for response in responses:
-                for key in response.items:
-                    self.items[key] = response.items[key]
+                if isFirst:
+                    self.id = response.id
+                    self.event.set()
+                    isFirst = False
+                if len(response.items) > 0:
+                    handler(response.id, ConfigurationResponse(response.items))
         except Exception:
             print(f"{self.store_name} configuration watcher for keys "
                   f"{self.keys} stopped.")
@@ -850,6 +863,24 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
         if self._success:
             self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
         # else: there is no point unlocking a lock we did not acquire.
+
+    async def __aexit__(self, *exc) -> None:
+        ''''Automatically unlocks the lock if this TryLockResponse was used as
+        a ContextManager / `with` statement.
+
+        Notice: we are not checking the result of the unlock operation.
+        If this is something  you care about it might be wiser creating
+        your own ContextManager that logs or otherwise raises exceptions
+        if unlock doesn't return `UnlockResponseStatus.success`.
+        '''
+        if self._success:
+            await self._client.unlock(self._store_name,   # type: ignore
+                                      self._resource_id, self._lock_owner)
+        # else: there is no point unlocking a lock we did not acquire.
+
+    async def __aenter__(self) -> 'TryLockResponse':
+        '''Returns self as the context manager object.'''
+        return self
 
 
 class GetMetadataResponse(DaprResponse):

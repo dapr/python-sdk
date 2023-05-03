@@ -5,10 +5,15 @@ dapr run --app-id configexample --components-path components/ -- python3 configu
 import asyncio
 from time import sleep
 from dapr.clients import DaprClient
-from dapr.clients.grpc._response import ConfigurationWatcher
+from dapr.clients.grpc._response import ConfigurationWatcher, ConfigurationResponse
 
 configuration: ConfigurationWatcher = ConfigurationWatcher()
 
+def handler(id: str, resp: ConfigurationResponse):
+    for key in resp.items:
+        print(f"Subscribe key={key} value={resp.items[key].value} "
+              f"version={resp.items[key].version} "
+              f"metadata={resp.items[key].metadata}", flush=True)
 
 async def executeConfiguration():
     with DaprClient() as d:
@@ -29,23 +34,14 @@ async def executeConfiguration():
                   f"version={configuration.items[key].version} "
                   f"metadata={configuration.items[key].metadata}", flush=True)
 
-        # Subscribe to configuration by key.
-        configuration = await d.subscribe_configuration(store_name=storeName, keys=keys,
-                                                        config_metadata={})
-        for x in range(5):
-            if configuration is not None:
-                print("Got configuration update", flush=True)
-                items = configuration.get_items()
-                for key in items:
-                    print(f"Subscribe key={key} value={items[key].value} "
-                          f"version={items[key].version} "
-                          f"metadata={items[key].metadata}", flush=True)
-            else:
-                print("Nothing yet")
-            sleep(3)
+        # Subscribe to configuration for keys {orderId1,orderId2}.
+        id = d.subscribe_configuration(store_name=storeName, keys=keys,
+                                       handler=handler, config_metadata={})
+        print("Subscription ID is", id, flush=True)
+        sleep(10)
 
         # Unsubscribe from configuration
-        isSuccess = d.unsubscribe_configuration(store_name=storeName, key=keys[1])
+        isSuccess = d.unsubscribe_configuration(store_name=storeName, id=id)
         print(f"Unsubscribed successfully? {isSuccess}", flush=True)
 
 asyncio.run(executeConfiguration())
