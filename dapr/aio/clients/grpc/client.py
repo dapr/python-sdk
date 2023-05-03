@@ -1121,7 +1121,8 @@ class DaprGrpcClientAsync:
                                     that will run the workflow. e.g. `dapr`.
                 workflow_name (str): the name of the workflow that will be executed.
                 input (bytes): the input that the workflow will receive.
-                workflow_options (dict): the key-value options that the workflow will receive.
+                workflow_options (dict, optional): the key-value options that the workflow
+                                    will receive.
 
             Returns:
                 :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
@@ -1169,11 +1170,6 @@ class DaprGrpcClientAsync:
             instance_id=instance_id,
             workflow_component=workflow_component)
         response, call = self._stub.GetWorkflowAlpha1.with_call(req)
-        try:
-            response, call = self._stub.GetWorkflowAlpha1.with_call(req)
-        except grpc.RpcError:
-            # RRL TODO: If workflow does not exist, should give a no such instance error
-            warn('The Workflow does not exist.', UserWarning, stacklevel=2)
 
         return GetWorkflowResponse(instance_id=instance_id,
                                    workflow_name=response.workflow_name,
