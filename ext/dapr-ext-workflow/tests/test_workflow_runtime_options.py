@@ -5,8 +5,8 @@ from unittest import mock
 from dapr.ext.workflow.workflow_runtime_options import WorkflowRuntimeOptions
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 
-listOrchestrators: List[str] = list[str]()
-listActivities: List[str] = list[str]()
+listOrchestrators: List[str] = []
+listActivities: List[str] = []
 
 
 class FakeTaskHubGrpcWorker:
