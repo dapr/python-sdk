@@ -26,6 +26,8 @@ class Settings:
             setattr(self, setting, env_variable or default_value)
 
     def __getattr__(self, name):
+        if name not in dir(global_settings):
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return getattr(self, name)
 
 
