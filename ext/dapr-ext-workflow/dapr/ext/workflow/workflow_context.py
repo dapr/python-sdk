@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+
+"""
+Copyright 2023 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -13,6 +28,9 @@ TOutput = TypeVar('TOutput')
 
 
 class WorkflowContext(ABC):
+    """Context object used by workflow implementations to perform actions such as scheduling activities, durable timers, waiting for
+       external events, and for getting basic information about the current workflow instance.
+    """
 
     @property
     @abstractmethod
@@ -125,6 +143,34 @@ class WorkflowContext(ABC):
         """
         pass
 
+    @abstractmethod
+    def wait_for_external_event(self, name: str) -> task.Task:
+        """Wait asynchronously for an event to be raised with the name `name`.
+
+        Parameters
+        ----------
+        name : str
+            The event name of the event that the task is waiting for.
+
+        Returns
+        -------
+        Task[TOutput]
+            A Durable Task that completes when the event is received.
+        """
+        pass
+
+    @abstractmethod
+    def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
+        """Continue the orchestration execution as a new instance.
+
+        Parameters
+        ----------
+        new_input : Any
+            The new input to use for the new orchestration instance.
+        save_events : bool
+            A flag indicating whether to add any unprocessed external events in the new orchestration history.
+        """
+        pass
 
 # Workflows are generators that yield tasks and receive/return any type
 Workflow = Callable[[WorkflowContext, TInput], Union[Generator[task.Task, Any, Any], TOutput]]
