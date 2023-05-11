@@ -25,6 +25,7 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
     ResumeWorkflowRequest,
     TerminateWorkflowRequest,
     PurgeWorkflowRequest,
+    RaiseEventWorkflowRequest,
 )
 from typing import Dict
 
@@ -36,7 +37,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.store = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
-        self.running_workflows = {}
+        self.workflow_status = {}
         self.metadata: Dict[str, str] = {}
 
     def start(self, port: int = 8080):
@@ -271,62 +272,72 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def StartWorkflowAlpha1(self, request: StartWorkflowRequest, context):
         instance_id = (request.instance_id)
 
-        if instance_id not in self.running_workflows:
-            self.running_workflows[instance_id] = "RUNNING"
+        if instance_id not in self.workflow_status:
+            self.workflow_status[instance_id] = "RUNNING"
             return StartWorkflowResponse(instance_id=instance_id)
         else:
             # workflow already running
-            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+            raise Exception("Unable to start insance of the workflow")
 
     def GetWorkflowAlpha1(self, request: GetWorkflowRequest, context):
         instance_id = (request.instance_id)
 
-        if instance_id in self.running_workflows:
+        if instance_id in self.workflow_status:
             return GetWorkflowResponse(instance_id=instance_id,
-                                       runtime_status=self.running_workflows[instance_id])
+                                       runtime_status=self.workflow_status[instance_id])
         else:
             # workflow non-existent
-            return False  # RRL TODO: Determine how to return an error or value of FALSE here
+            raise Exception("Workflow instance does not exist")
 
     def PauseWorkflowAlpha1(self, request: PauseWorkflowRequest, context):
         instance_id = (request.instance_id)
 
-        if instance_id in self.running_workflows:
-            self.running_workflows[instance_id] = "SUSPENDED"
+        if instance_id in self.workflow_status:
+            self.workflow_status[instance_id] = "SUSPENDED"
             return empty_pb2.Empty()
         else:
             # workflow non-existent
-            return empty_pb2.Empty()  # RRL TODO: Determine how to return an error or FALSE here
+            raise Exception("Workflow instance could not be paused")
 
     def ResumeWorkflowAlpha1(self, request: ResumeWorkflowRequest, context):
         instance_id = (request.instance_id)
 
-        if instance_id in self.running_workflows:
-            self.running_workflows[instance_id] = "RUNNING"
+        if instance_id in self.workflow_status:
+            self.workflow_status[instance_id] = "RUNNING"
             return empty_pb2.Empty()
         else:
             # workflow non-existent
-            return empty_pb2.Empty()  # RRL TODO: Determine how to return an error or FALSE here
+            raise Exception("Workflow instance could not be resumed")
 
     def TerminateWorkflowAlpha1(self, request: TerminateWorkflowRequest, context):
         instance_id = (request.instance_id)
 
-        if instance_id in self.running_workflows:
-            self.running_workflows[instance_id] = "TERMINATED"
+        if instance_id in self.workflow_status:
+            self.workflow_status[instance_id] = "TERMINATED"
             return empty_pb2.Empty()
         else:
             # workflow non-existent
-            return empty_pb2.Empty()  # RRL TODO: Determine how to return an error or FALSE here
+            raise Exception("Workflow instance could not be terminated")
 
     def PurgeWorkflowAlpha1(self, request: PurgeWorkflowRequest, context):
         instance_id = (request.instance_id)
 
-        if instance_id in self.running_workflows:
-            del self.running_workflows[instance_id]
+        if instance_id in self.workflow_status:
+            del self.workflow_status[instance_id]
             return empty_pb2.Empty()
         else:
             # workflow non-existent
-            return empty_pb2.Empty()  # RRL TODO: Determine how to return an error or FALSE here
+            raise Exception("Workflow instance could not be purged")
+
+    def RaiseWorkflowEventAlpha1(self, request: RaiseEventWorkflowRequest, context):
+        instance_id = (request.instance_id)
+
+        if instance_id in self.workflow_status:
+            self.workflow_status[instance_id] = "RUNNING"
+            return empty_pb2.Empty()
+        else:
+            # workflow already running
+            raise Exception("Unable to raise event on workflow instance")
 
     def GetMetadata(self, request, context):
         return GetMetadataResponse(

@@ -15,7 +15,7 @@ from time import sleep
 import json
 
 with DaprClient() as d:
-    instanceId = "RRLINSTANCEID35"
+    instanceId = "exampleInstanceID"
     workflowComponent = "dapr"
     workflowName = "PlaceOrder"
     workflowOptions = dict()

@@ -35,6 +35,7 @@ from grpc.aio import (  # type: ignore
     StreamStreamClientInterceptor
 )
 
+from dapr.clients.exceptions import DaprInternalError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
@@ -1107,20 +1108,20 @@ class DaprGrpcClientAsync:
 
     async def start_workflow(
             self,
-            instance_id: str,
             workflow_component: str,
             workflow_name: str,
             input: bytes,
+            instance_id: Optional[str] = "",
             workflow_options: Optional[Dict[str, str]] = dict()) -> StartWorkflowResponse:
         """Starts a workflow.
 
             Args:
-                instance_id (str): the name of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
                 workflow_name (str): the name of the workflow that will be executed.
                 input (bytes): the input that the workflow will receive.
+                instance_id (Optional[str]): the name of the workflow instance,
+                                    e.g. `order_processing_workflow-103784`.
                 workflow_options (dict, optional): the key-value options that the workflow
                                     will receive.
 
@@ -1141,9 +1142,12 @@ class DaprGrpcClientAsync:
             options=workflow_options,
             input=input)
 
-        response, call = self._stub.StartWorkflowAlpha1.with_call(req)
-
-        return StartWorkflowResponse(instance_id=response.instance_id)
+        try:
+            response, call = self._stub.StartWorkflowAlpha1.with_call(req)
+            return StartWorkflowResponse(instance_id=response.instance_id)
+        except grpc.RpcError as err:
+            workflow_err = DaprInternalError(err.details())
+            raise workflow_err
 
     async def get_workflow(
             self,
@@ -1171,11 +1175,16 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component)
         response, call = self._stub.GetWorkflowAlpha1.with_call(req)
 
-        return GetWorkflowResponse(instance_id=instance_id,
-                                   workflow_name=response.workflow_name,
-                                   created_at=response.created_at,
-                                   last_updated_at=response.last_updated_at,
-                                   runtime_status=response.runtime_status)
+        try:
+            response, call = self._stub.GetWorkflowAlpha1.with_call(req)
+            return GetWorkflowResponse(instance_id=instance_id,
+                                       workflow_name=response.workflow_name,
+                                       created_at=response.created_at,
+                                       last_updated_at=response.last_updated_at,
+                                       runtime_status=response.runtime_status)
+        except grpc.RpcError as err:
+            workflow_err = DaprInternalError(err.details())
+            raise workflow_err
 
     async def terminate_workflow(
             self,
@@ -1202,10 +1211,14 @@ class DaprGrpcClientAsync:
         req = api_v1.TerminateWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component)
-        _, call = self._stub.TerminateWorkflowAlpha1.with_call(req)
 
-        return DaprResponse(
-            headers=call.initial_metadata())
+        try:
+            _, call = self._stub.TerminateWorkflowAlpha1.with_call(req)
+            return DaprResponse(
+                headers=call.initial_metadata())
+        except grpc.RpcError as err:
+            workflow_err = DaprInternalError(err.details())
+            raise workflow_err
 
     async def raise_event(
             self,
@@ -1241,8 +1254,13 @@ class DaprGrpcClientAsync:
             event_data=event_data)
         _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
 
-        return DaprResponse(
-            headers=call.initial_metadata())
+        try:
+            _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
+            return DaprResponse(
+                headers=call.initial_metadata())
+        except grpc.RpcError as err:
+            workflow_err = DaprInternalError(err.details())
+            raise workflow_err
 
     async def pause_workflow(
             self,
@@ -1271,8 +1289,14 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component)
         _, call = self._stub.PauseWorkflowAlpha1.with_call(req)
 
-        return DaprResponse(
-            headers=call.initial_metadata())
+        try:
+            _, call = self._stub.PauseWorkflowAlpha1.with_call(req)
+
+            return DaprResponse(
+                headers=call.initial_metadata())
+        except grpc.RpcError as err:
+            workflow_err = DaprInternalError(err.details())
+            raise workflow_err
 
     async def resume_workflow(
             self,
@@ -1300,8 +1324,14 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component)
         _, call = self._stub.ResumeWorkflowAlpha1.with_call(req)
 
-        return DaprResponse(
-            headers=call.initial_metadata())
+        try:
+            _, call = self._stub.ResumeWorkflowAlpha1.with_call(req)
+
+            return DaprResponse(
+                headers=call.initial_metadata())
+        except grpc.RpcError as err:
+            workflow_err = DaprInternalError(err.details())
+            raise workflow_err
 
     async def purge_workflow(
             self,
@@ -1329,8 +1359,15 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component)
         _, call = self._stub.PurgeWorkflowAlpha1.with_call(req)
 
-        return DaprResponse(
-            headers=call.initial_metadata())
+        try:
+            _, call = self._stub.PurgeWorkflowAlpha1.with_call(req)
+
+            return DaprResponse(
+                headers=call.initial_metadata())
+
+        except grpc.RpcError as err:
+            workflow_err = DaprInternalError(err.details())
+            raise workflow_err
 
     async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
