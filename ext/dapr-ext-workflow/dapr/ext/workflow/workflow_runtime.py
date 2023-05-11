@@ -23,6 +23,7 @@ T = TypeVar('T')
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
+
 class WorkflowRuntime:
     """WorkflowRuntime is the entry point for registering workflows and activities.
     """
@@ -37,7 +38,6 @@ class WorkflowRuntime:
             return fn(daprWfContext, inp)
 
         self._worker._registry.add_named_orchestrator(fn.__name__, orchestrationWrapper)
-
 
     def register_activity(self, fn: Activity):
         """Registers a workflow activity as a function that takes

@@ -28,8 +28,9 @@ TOutput = TypeVar('TOutput')
 
 
 class WorkflowContext(ABC):
-    """Context object used by workflow implementations to perform actions such as scheduling activities, durable timers, waiting for
-       external events, and for getting basic information about the current workflow instance.
+    """Context object used by workflow implementations to perform actions such as scheduling
+       activities, durable timers, waiting for external events, and for getting basic information
+       about the current workflow instance.
     """
 
     @property
@@ -168,9 +169,11 @@ class WorkflowContext(ABC):
         new_input : Any
             The new input to use for the new orchestration instance.
         save_events : bool
-            A flag indicating whether to add any unprocessed external events in the new orchestration history.
+            A flag indicating whether to add any unprocessed external events in the new
+            orchestration history.
         """
         pass
+
 
 # Workflows are generators that yield tasks and receive/return any type
 Workflow = Callable[[WorkflowContext, TInput], Union[Generator[task.Task, Any, Any], TOutput]]
