@@ -38,8 +38,8 @@ class WorkflowActivityContextTest(unittest.TestCase):
             fake_act_ctx = task.ActivityContext(orchestration_id=mock_orchestration_id,
                                                 task_id=mock_task)
             act_ctx = WorkflowActivityContext(fake_act_ctx)
-            actual_orchestration_id = act_ctx.workflow_id()
+            actual_orchestration_id = act_ctx.workflow_id
             assert actual_orchestration_id == mock_orchestration_id
 
-            actual_task_id = act_ctx.task_id()
+            actual_task_id = act_ctx.task_id
             assert actual_task_id == mock_task

@@ -1,5 +1,5 @@
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime
-from dapr.ext.workflow.dapr_workflow_client import WorkflowClient
+from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 
@@ -16,11 +16,11 @@ def hello_world_wf(ctx: DaprWorkflowContext, input):
 
 def hello_act(ctx: WorkflowActivityContext, input):
     print(f'{input}!', flush=True)
-# }:{settings.DAPR_GRPC_PORT
+    
 daprRuntime = WorkflowRuntime()
 daprRuntime.register_workflow(hello_world_wf)
 daprRuntime.register_activity(hello_act)
-daprRuntime.run()
+daprRuntime.start()
 
 host = settings.DAPR_RUNTIME_HOST
 if host is None:
@@ -29,7 +29,7 @@ port = settings.DAPR_GRPC_PORT
 if port is None:
     port = "4001"
 
-client = WorkflowClient(host, port)
+client = DaprWorkflowClient(host, port)
 print("==========Steps to prepare tea:==========")
 id = client.schedule_new_workflow(hello_world_wf, input='Hi Chef!')
 status = client.wait_for_workflow_completion(id, timeout=30)
