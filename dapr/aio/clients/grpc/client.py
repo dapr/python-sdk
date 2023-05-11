@@ -1148,8 +1148,7 @@ class DaprGrpcClientAsync:
             response, call = self._stub.StartWorkflowAlpha1.with_call(req)
             return StartWorkflowResponse(instance_id=response.instance_id)
         except grpc.aio.AioRpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     async def get_workflow(
             self,
@@ -1185,8 +1184,7 @@ class DaprGrpcClientAsync:
                                        last_updated_at=response.last_updated_at,
                                        runtime_status=response.runtime_status)
         except grpc.aio.AioRpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     async def terminate_workflow(
             self,
@@ -1219,8 +1217,7 @@ class DaprGrpcClientAsync:
             return DaprResponse(
                 headers=call.initial_metadata())
         except grpc.aio.AioRpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     async def raise_event(
             self,
@@ -1248,12 +1245,13 @@ class DaprGrpcClientAsync:
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component,
                                event_name=event_name)
-        # Actual terminate workflow invocation
+        encoded_data = json.dumps(event_data).encode("UTF-8")
+        # Actual workflow raise event invocation
         req = api_v1.raise_event(
             instance_id=instance_id,
             workflow_component=workflow_component,
             event_name=event_name,
-            event_data=event_data)
+            event_data=encoded_data)
         _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
 
         try:
@@ -1261,8 +1259,7 @@ class DaprGrpcClientAsync:
             return DaprResponse(
                 headers=call.initial_metadata())
         except grpc.aio.AioRpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     async def pause_workflow(
             self,
@@ -1297,8 +1294,7 @@ class DaprGrpcClientAsync:
             return DaprResponse(
                 headers=call.initial_metadata())
         except grpc.aio.AioRpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     async def resume_workflow(
             self,
@@ -1332,8 +1328,7 @@ class DaprGrpcClientAsync:
             return DaprResponse(
                 headers=call.initial_metadata())
         except grpc.aio.AioRpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     async def purge_workflow(
             self,
@@ -1368,8 +1363,7 @@ class DaprGrpcClientAsync:
                 headers=call.initial_metadata())
 
         except grpc.aio.AioRpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.

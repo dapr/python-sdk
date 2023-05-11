@@ -39,6 +39,7 @@ expected_stdout_lines:
   - "== APP == Get response from PlaceOrder after resume call: RUNNING"
   - "== APP == Get response from PlaceOrder after terminate call: TERMINATED"
   - "== APP == Get response from PlaceOrder after purge call: None"
+  - "== APP == Instance Successfully Purged"
 timeout_seconds: 5
 -->
 
@@ -57,6 +58,8 @@ The output should be as follows:
 == APP == Get response from PlaceOrder after resume call: RUNNING
 
 == APP == Get response from PlaceOrder after terminate call: TERMINATED
+
+== APP == Instance Successfully Purged
 
 ```
 

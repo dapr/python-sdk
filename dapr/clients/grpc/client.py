@@ -1132,8 +1132,7 @@ class DaprGrpcClient:
             response, call = self._stub.StartWorkflowAlpha1.with_call(req)
             return StartWorkflowResponse(instance_id=response.instance_id)
         except RpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     def get_workflow(
             self,
@@ -1168,8 +1167,7 @@ class DaprGrpcClient:
                                        last_updated_at=response.last_updated_at,
                                        runtime_status=response.runtime_status)
         except RpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     def terminate_workflow(
             self,
@@ -1202,8 +1200,7 @@ class DaprGrpcClient:
             return DaprResponse(
                 headers=call.initial_metadata())
         except RpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     def raise_event(
             self,
@@ -1231,20 +1228,20 @@ class DaprGrpcClient:
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component,
                                event_name=event_name)
-        # Actual terminate workflow invocation
+        encoded_data = json.dumps(event_data).encode("UTF-8")
+        # Actual workflow raise event invocation
         req = api_v1.RaiseEventWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component,
             event_name=event_name,
-            event_data=event_data)
+            event_data=encoded_data)
 
         try:
             _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
             return DaprResponse(
                 headers=call.initial_metadata())
         except RpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     def pause_workflow(
             self,
@@ -1278,8 +1275,7 @@ class DaprGrpcClient:
             return DaprResponse(
                 headers=call.initial_metadata())
         except RpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     def resume_workflow(
             self,
@@ -1312,8 +1308,7 @@ class DaprGrpcClient:
             return DaprResponse(
                 headers=call.initial_metadata())
         except RpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     def purge_workflow(
             self,
@@ -1347,8 +1342,7 @@ class DaprGrpcClient:
                 headers=call.initial_metadata())
 
         except RpcError as err:
-            workflow_err = DaprInternalError(err.details())
-            raise workflow_err
+            raise DaprInternalError(err.details())
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
