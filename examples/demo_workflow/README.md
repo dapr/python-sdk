@@ -21,15 +21,6 @@ pip3 install -r demo_workflow/requirements.txt
 
 <!-- END_STEP -->
 
-## Run in self-hosted mode
-
-<!-- STEP
-name: Workflow Service
-background: true
-sleep: 5
-timeout_seconds: 60
--->
-
 1. Run Demo Workflow service in new terminal window
 
 
