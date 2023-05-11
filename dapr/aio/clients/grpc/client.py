@@ -16,6 +16,7 @@ limitations under the License.
 import asyncio
 import time
 import socket
+import json
 
 from urllib.parse import urlencode
 
@@ -1134,18 +1135,19 @@ class DaprGrpcClientAsync:
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component,
                                workflow_name=workflow_name)
+        encoded_data = json.dumps(input).encode("UTF-8")
         # Actual start workflow invocation
         req = api_v1.StartWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component,
             workflow_name=workflow_name,
             options=workflow_options,
-            input=input)
+            input=encoded_data)
 
         try:
             response, call = self._stub.StartWorkflowAlpha1.with_call(req)
             return StartWorkflowResponse(instance_id=response.instance_id)
-        except grpc.RpcError as err:
+        except grpc.aio.AioRpcError as err:
             workflow_err = DaprInternalError(err.details())
             raise workflow_err
 
@@ -1182,7 +1184,7 @@ class DaprGrpcClientAsync:
                                        created_at=response.created_at,
                                        last_updated_at=response.last_updated_at,
                                        runtime_status=response.runtime_status)
-        except grpc.RpcError as err:
+        except grpc.aio.AioRpcError as err:
             workflow_err = DaprInternalError(err.details())
             raise workflow_err
 
@@ -1216,7 +1218,7 @@ class DaprGrpcClientAsync:
             _, call = self._stub.TerminateWorkflowAlpha1.with_call(req)
             return DaprResponse(
                 headers=call.initial_metadata())
-        except grpc.RpcError as err:
+        except grpc.aio.AioRpcError as err:
             workflow_err = DaprInternalError(err.details())
             raise workflow_err
 
@@ -1258,7 +1260,7 @@ class DaprGrpcClientAsync:
             _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
             return DaprResponse(
                 headers=call.initial_metadata())
-        except grpc.RpcError as err:
+        except grpc.aio.AioRpcError as err:
             workflow_err = DaprInternalError(err.details())
             raise workflow_err
 
@@ -1294,7 +1296,7 @@ class DaprGrpcClientAsync:
 
             return DaprResponse(
                 headers=call.initial_metadata())
-        except grpc.RpcError as err:
+        except grpc.aio.AioRpcError as err:
             workflow_err = DaprInternalError(err.details())
             raise workflow_err
 
@@ -1329,7 +1331,7 @@ class DaprGrpcClientAsync:
 
             return DaprResponse(
                 headers=call.initial_metadata())
-        except grpc.RpcError as err:
+        except grpc.aio.AioRpcError as err:
             workflow_err = DaprInternalError(err.details())
             raise workflow_err
 
@@ -1365,7 +1367,7 @@ class DaprGrpcClientAsync:
             return DaprResponse(
                 headers=call.initial_metadata())
 
-        except grpc.RpcError as err:
+        except grpc.aio.AioRpcError as err:
             workflow_err = DaprInternalError(err.details())
             raise workflow_err
 

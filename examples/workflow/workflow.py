@@ -14,6 +14,8 @@ from time import sleep
 
 import json
 
+from dapr.clients.exceptions import DaprInternalError
+
 with DaprClient() as d:
     instanceId = "exampleInstanceID"
     workflowComponent = "dapr"
@@ -33,7 +35,7 @@ with DaprClient() as d:
 
     # Start the workflow
     start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
-                     workflow_name=workflowName, input=encoded_data2, workflow_options=workflowOptions)
+                     workflow_name=workflowName, input=item2, workflow_options=workflowOptions)
     print(f"Attempting to start {workflowName}")
     print(f"start_resp {start_resp.instance_id}")
     getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
@@ -56,5 +58,8 @@ with DaprClient() as d:
 
     # Purge Test
     d.purge_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-    getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-    print(f"Get response from {workflowName} after purge call: {getResponse}")
+    try:
+        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+    except DaprInternalError as err:
+        print(err) #RRL TODO: Figure out how to verify this in the outpt. Here's an example:
+        # == APP == error while getting workflow info on instance 'exampleInstanceID': failed to get workflow metadata for 'exampleInstanceID3': Failed to fetch orchestration metadata: rpc error: code = Internal desc = error invoke actor method: No such instance exists

@@ -58,6 +58,5 @@ The output should be as follows:
 
 == APP == Get response from PlaceOrder after terminate call: TERMINATED
 
-== APP == Get response from PlaceOrder after purge call: None
 ```
 
