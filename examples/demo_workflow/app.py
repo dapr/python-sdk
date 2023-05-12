@@ -47,4 +47,3 @@ id = client.schedule_new_workflow(hello_world_wf, input='Hi Chef!')
 status = client.wait_for_workflow_completion(id, timeout=30)
 print("  Preparation of tea is ", status.runtime_status.name)
 daprRuntime.shutdown()
-
