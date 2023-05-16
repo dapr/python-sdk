@@ -35,10 +35,10 @@ def hello_act(ctx: WorkflowActivityContext, input):
     counter += input
     print(f'New counter value is: {counter}!', flush=True)
 
-daprOptions = WorkflowRuntime()
-daprOptions.register_workflow(hello_world_wf)
-daprOptions.register_activity(hello_act)
-daprOptions.start()
+workflowRuntime = WorkflowRuntime()
+workflowRuntime.register_workflow(hello_world_wf)
+workflowRuntime.register_activity(hello_act)
+workflowRuntime.start()
 
 host = settings.DAPR_RUNTIME_HOST
 if host is None:
@@ -60,4 +60,4 @@ sleep(1)
 assert counter == 1111
 status = client.wait_for_workflow_completion(id, timeout=6000)
 assert status.runtime_status.name == "COMPLETED"
-daprOptions.shutdown()
+workflowRuntime.shutdown()
