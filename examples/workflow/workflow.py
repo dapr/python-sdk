@@ -8,11 +8,7 @@ dapr run python3 workflow.py
 
 from dapr.clients import DaprClient
 
-from dapr.clients.grpc._helpers import to_bytes
-
 from time import sleep
-
-import json
 
 from dapr.clients.exceptions import DaprInternalError
 
@@ -24,7 +20,7 @@ with DaprClient() as d:
     workflowOptions["task_queue"] =  "testQueue"
     inventoryItem = ("Computers", 5, 10)
     item2 = "paperclips"
-    eventName = "testEvent"
+    eventName = "ChangePurchaseItem"
     eventData = "eventData"
     nonExistentIDError = "No such instance exists"
     # Wait for sidecar to be up within 5 seconds.
@@ -74,11 +70,11 @@ with DaprClient() as d:
     print(f"Get response from {workflowName} after start call: {getResponse.runtime_status}")
 
     # Raise event
-    d.raise_event(instance_id=instanceId, workflow_component=workflowComponent,
+    d.raise_workflow_event(instance_id=instanceId, workflow_component=workflowComponent,
                   event_name=eventName, event_data=eventData)
     
     # Sleep so that the workflow can finish 
     sleep(5)
     getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-    outputString = getResponse.properties["dapr.workflow.output"]
+    outputString = getResponse.properties
     print(f"Output from workflow: {outputString}")

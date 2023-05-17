@@ -38,6 +38,7 @@ from grpc.aio import (  # type: ignore
 
 from dapr.clients.exceptions import DaprInternalError
 from dapr.clients.grpc._state import StateOptions, StateItem
+from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -1174,15 +1175,15 @@ class DaprGrpcClientAsync:
         req = api_v1.GetWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component)
-        response, call = self._stub.GetWorkflowAlpha1.with_call(req)
 
         try:
-            response, call = self._stub.GetWorkflowAlpha1.with_call(req)
+            resp, call = self._stub.GetWorkflowAlpha1.with_call(req)
             return GetWorkflowResponse(instance_id=instance_id,
-                                       workflow_name=response.workflow_name,
-                                       created_at=response.created_at,
-                                       last_updated_at=response.last_updated_at,
-                                       runtime_status=response.runtime_status)
+                                       workflow_name=resp.workflow_name,
+                                       created_at=resp.created_at,
+                                       last_updated_at=resp.last_updated_at,
+                                       runtime_status=getWorkflowRuntimeStatus(resp.runtime_status),
+                                       properties=resp.properties)
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
@@ -1219,7 +1220,7 @@ class DaprGrpcClientAsync:
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
-    async def raise_event(
+    async def raise_workflow_event(
             self,
             instance_id: str,
             workflow_component: str,
@@ -1247,7 +1248,7 @@ class DaprGrpcClientAsync:
                                event_name=event_name)
         encoded_data = json.dumps(event_data).encode("UTF-8")
         # Actual workflow raise event invocation
-        req = api_v1.raise_event(
+        req = api_v1.raise_workflow_event(
             instance_id=instance_id,
             workflow_component=workflow_component,
             event_name=event_name,

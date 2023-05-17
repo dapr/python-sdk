@@ -933,7 +933,6 @@ class GetMetadataResponse(DaprResponse):
         return self._extended_metadata
 
 
-# RRL TODO: Add properties and fix init
 class GetWorkflowResponse():
     '''The response of get_workflow operation.'''
 

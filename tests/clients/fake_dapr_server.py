@@ -7,6 +7,7 @@ from google.protobuf import empty_pb2
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
+from dapr.clients.grpc._response import WorkflowRuntimeStatus
 from dapr.proto.runtime.v1.dapr_pb2 import (
     ActiveActorsCount,
     GetMetadataResponse,
@@ -273,7 +274,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         instance_id = (request.instance_id)
 
         if instance_id not in self.workflow_status:
-            self.workflow_status[instance_id] = "RUNNING"
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
             return StartWorkflowResponse(instance_id=instance_id)
         else:
             # workflow already running
@@ -293,7 +294,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         instance_id = (request.instance_id)
 
         if instance_id in self.workflow_status:
-            self.workflow_status[instance_id] = "SUSPENDED"
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.SUSPENDED
             return empty_pb2.Empty()
         else:
             # workflow non-existent
@@ -303,7 +304,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         instance_id = (request.instance_id)
 
         if instance_id in self.workflow_status:
-            self.workflow_status[instance_id] = "RUNNING"
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
             return empty_pb2.Empty()
         else:
             # workflow non-existent
@@ -313,7 +314,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         instance_id = (request.instance_id)
 
         if instance_id in self.workflow_status:
-            self.workflow_status[instance_id] = "TERMINATED"
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.TERMINATED
             return empty_pb2.Empty()
         else:
             # workflow non-existent
@@ -333,7 +334,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         instance_id = (request.instance_id)
 
         if instance_id in self.workflow_status:
-            self.workflow_status[instance_id] = "RUNNING"
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
             return empty_pb2.Empty()
         else:
             # workflow already running

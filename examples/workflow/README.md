@@ -34,11 +34,10 @@ To run this example, the following code can be utilized:
 name: Run state store example
 expected_stdout_lines:
   - "== APP == Attempting to start PlaceOrder"
-  - "== APP == Get response from PlaceOrder after start call: RUNNING"
-  - "== APP == Get response from PlaceOrder after pause call: SUSPENDED"
-  - "== APP == Get response from PlaceOrder after resume call: RUNNING"
-  - "== APP == Get response from PlaceOrder after terminate call: TERMINATED"
-  - "== APP == Get response from PlaceOrder after purge call: None"
+  - "== APP == Get response from PlaceOrder after start call: Running"
+  - "== APP == Get response from PlaceOrder after pause call: Suspended"
+  - "== APP == Get response from PlaceOrder after resume call: Running"
+  - "== APP == Get response from PlaceOrder after terminate call: Terminated"
   - "== APP == Instance Successfully Purged"
 timeout_seconds: 5
 -->
@@ -51,13 +50,13 @@ dapr run -- python3 workflow.py
 The output should be as follows:
 
 ```
-== APP == Get response from PlaceOrder after start call: RUNNING
+== APP == Get response from PlaceOrder after start call: Running
 
-== APP == Get response from PlaceOrder after pause call: SUSPENDED
+== APP == Get response from PlaceOrder after pause call: Suspended
 
-== APP == Get response from PlaceOrder after resume call: RUNNING
+== APP == Get response from PlaceOrder after resume call: Running
 
-== APP == Get response from PlaceOrder after terminate call: TERMINATED
+== APP == Get response from PlaceOrder after terminate call: Terminated
 
 == APP == Instance Successfully Purged
 

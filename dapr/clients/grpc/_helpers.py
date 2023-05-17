@@ -15,7 +15,7 @@ limitations under the License.
 
 from collections import namedtuple
 from typing import Dict, List, Union, Tuple, Optional
-
+from enum import Enum
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 from grpc import UnaryUnaryClientInterceptor, ClientCallDetails     # type: ignore
@@ -180,3 +180,19 @@ def validateNotBlankString(**kwargs: Optional[str]):
     for field_name, value in kwargs.items():
         if not value or not value.strip():
             raise ValueError(f"{field_name} name cannot be empty or blank")
+
+
+class WorkflowRuntimeStatus(Enum):
+    UNKNOWN = "Unknown"
+    RUNNING = "Running"
+    COMPLETED = "Completed"
+    FAILED = "Failed"
+    TERMINATED = "Terminated"
+    PENDING = "Pending"
+    SUSPENDED = "Suspended"
+
+
+# Will return the enum entry if it is present, otherwise returns "unknown"
+def getWorkflowRuntimeStatus(inputString):
+    return next((value.value for value in WorkflowRuntimeStatus
+                 if value.value.lower() == inputString.lower()), WorkflowRuntimeStatus.UNKNOWN)
