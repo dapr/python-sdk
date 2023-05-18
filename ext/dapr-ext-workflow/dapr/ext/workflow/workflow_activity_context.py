@@ -26,23 +26,21 @@ TOutput = TypeVar('TOutput')
 class WorkflowActivityContext():
     """Defines properties and methods for task activity context objects."""
 
-    __ignore__ = "class mro new init setattr getattr getattribute"
-
-    def __init__(self, obj: task.ActivityContext):
-        self._obj = obj
+    def __init__(self, ctx: task.ActivityContext):
+        self.__obj = ctx
 
     @property
     def workflow_id(self) -> str:
         """Gets the unique ID of the current workflow instance"""
-        return self._obj.orchestration_id
+        return self.__obj.orchestration_id
 
     @property
     def task_id(self) -> int:
         """Gets the unique ID of the current workflow task"""
-        return self._obj.task_id
+        return self.__obj.task_id
 
     def get_inner_context(self) -> task.ActivityContext:
-        return self._obj
+        return self.__obj
 
 
 # Activities are simple functions that can be scheduled by workflows

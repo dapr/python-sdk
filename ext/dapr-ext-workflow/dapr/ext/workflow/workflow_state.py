@@ -29,28 +29,27 @@ class WorkflowStatus(Enum):
 
 class WorkflowState:
     """Represents a snapshot of a workflow instance's current state, including runtime status."""
-    __ignore__ = "class mro new init setattr getattr getattribute"
 
-    def __init__(self, obj: client.OrchestrationState):
-        self._obj = obj
+    def __init__(self, state: client.OrchestrationState):
+        self.__obj = state
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
-        return getattr(self._obj, name)
+        return getattr(self.__obj, name)
 
     @property
     def runtime_status(self) -> WorkflowStatus:
-        if self._obj.runtime_status == client.OrchestrationStatus.RUNNING:
+        if self.__obj.runtime_status == client.OrchestrationStatus.RUNNING:
             return WorkflowStatus.RUNNING
-        elif self._obj.runtime_status == client.OrchestrationStatus.COMPLETED:
+        elif self.__obj.runtime_status == client.OrchestrationStatus.COMPLETED:
             return WorkflowStatus.COMPLETED
-        elif self._obj.runtime_status == client.OrchestrationStatus.FAILED:
+        elif self.__obj.runtime_status == client.OrchestrationStatus.FAILED:
             return WorkflowStatus.FAILED
-        elif self._obj.runtime_status == client.OrchestrationStatus.TERMINATED:
+        elif self.__obj.runtime_status == client.OrchestrationStatus.TERMINATED:
             return WorkflowStatus.TERMINATED
-        elif self._obj.runtime_status == client.OrchestrationStatus.PENDING:
+        elif self.__obj.runtime_status == client.OrchestrationStatus.PENDING:
             return WorkflowStatus.PENDING
-        elif self._obj.runtime_status == client.OrchestrationStatus.SUSPENDED:
+        elif self.__obj.runtime_status == client.OrchestrationStatus.SUSPENDED:
             return WorkflowStatus.SUSPENDED
         else:
             return WorkflowStatus.UNKNOWN

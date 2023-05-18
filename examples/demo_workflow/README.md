@@ -11,15 +11,24 @@ This document describes how to register a workflow and activities inside it and 
 
 You can install dapr SDK package using pip command:
 
-<!-- STEP 
+<!-- STEP
 name: Install requirements
 -->
 
 ```sh
 pip3 install -r demo_workflow/requirements.txt
 
-pip3 install dapr
+```
 
+<!-- END_STEP -->
+
+<!-- STEP
+## Running this example
+-->
+
+To run this example, the following code can be utilized:
+
+```sh
 dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 4001 --components-path components --placement-host-address localhost:50005 -- python3 app.py
 ```
 

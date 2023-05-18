@@ -29,7 +29,7 @@ class WorkflowRuntime:
     """
 
     def __init__(self):
-        self._worker = worker.TaskHubGrpcWorker()
+        self.__worker = worker.TaskHubGrpcWorker()
 
     def register_workflow(self, fn: Workflow[TInput, TInput]):
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: TInput):
@@ -37,7 +37,7 @@ class WorkflowRuntime:
             daprWfContext = DaprWorkflowContext(ctx)
             return fn(daprWfContext, inp)
 
-        self._worker._registry.add_named_orchestrator(fn.__name__, orchestrationWrapper)
+        self.__worker._registry.add_named_orchestrator(fn.__name__, orchestrationWrapper)
 
     def register_activity(self, fn: Activity):
         """Registers a workflow activity as a function that takes
@@ -48,12 +48,12 @@ class WorkflowRuntime:
             wfActivityContext = WorkflowActivityContext(ctx)
             return fn(wfActivityContext, inp)
 
-        self._worker._registry.add_named_activity(fn.__name__, activityWrapper)
+        self.__worker._registry.add_named_activity(fn.__name__, activityWrapper)
 
     def start(self):
         """Starts the listening for work items on a background thread."""
-        self._worker.start()
+        self.__worker.start()
 
     def shutdown(self):
         """Stops the listening for work items on a background thread."""
-        self._worker.stop()
+        self.__worker.stop()

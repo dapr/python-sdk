@@ -28,33 +28,31 @@ TOutput = TypeVar('TOutput')
 class DaprWorkflowContext(WorkflowContext):
     """DaprWorkflowContext that provides proxy access to internal OrchestrationContext instance."""
 
-    __ignore__ = "class mro new init setattr getattr getattribute"
-
-    def __init__(self, obj: task.OrchestrationContext):
-        self._obj = obj
+    def __init__(self, ctx: task.OrchestrationContext):
+        self.__obj = ctx
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
-        return getattr(self._obj, name)
+        return getattr(self.__obj, name)
 
     @property
     def instance_id(self) -> str:
-        return self._obj.instance_id
+        return self.__obj.instance_id
 
     @property
     def current_utc_datetime(self) -> datetime:
-        return self._obj.current_utc_datetime
+        return self.__obj.current_utc_datetime
 
     @property
     def is_replaying(self) -> bool:
-        return self._obj.is_replaying
+        return self.__obj.is_replaying
 
     def create_timer(self, fire_at: datetime) -> task.Task:
-        return self._obj.create_timer(fire_at)
+        return self.__obj.create_timer(fire_at)
 
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
                       input: TInput = None) -> task.Task[TOutput]:
-        return self._obj.call_activity(activity=activity.__name__, input=input)
+        return self.__obj.call_activity(activity=activity.__name__, input=input)
 
     def call_child_workflow(self, workflow: Workflow, *,
                             input: Union[TInput, None],
@@ -62,10 +60,10 @@ class DaprWorkflowContext(WorkflowContext):
         def wf(ctx: task.OrchestrationContext, inp: TInput):
             daprWfContext = DaprWorkflowContext(ctx)
             return workflow(daprWfContext, inp)
-        return self._obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
+        return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
 
     def wait_for_external_event(self, name: str) -> task.Task:
-        return self._obj.wait_for_external_event(name)
+        return self.__obj.wait_for_external_event(name)
 
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
-        self._obj.continue_as_new(new_input, save_events=save_events)
+        self.__obj.continue_as_new(new_input, save_events=save_events)

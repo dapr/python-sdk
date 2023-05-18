@@ -41,14 +41,14 @@ class DaprWorkflowClient:
             host = settings.DAPR_RUNTIME_HOST
         if not host or len(host) == 0 or len(host.strip()) == 0:
             host = "localhost"
-        if port is None:
-            port = settings.DAPR_GRPC_PORT
-        if port is None:
+        port = port or settings.DAPR_GRPC_PORT
+        if not port :
             raise ValueError("Port cannot be empty, please set DAPR_GRPC_PORT environment variable")
         address = f"{host}:{port}"
-        self._obj = client.TaskHubGrpcClient(host_address=address)
+        self.__obj = client.TaskHubGrpcClient(host_address=address)
 
-    def schedule_new_workflow(self, workflow: Workflow, *,
+    def schedule_new_workflow(self,
+                              workflow: Workflow, *,
                               input: Union[TInput, None] = None,
                               instance_id: Union[str, None] = None,
                               start_at: Union[datetime, None] = None) -> str:
@@ -67,7 +67,7 @@ class DaprWorkflowClient:
         Returns:
             The ID of the scheduled workflow instance.
         """
-        return self._obj.schedule_new_orchestration(workflow.__name__,
+        return self.__obj.schedule_new_orchestration(workflow.__name__,
                                                     input=input, instance_id=instance_id,
                                                     start_at=start_at)
 
@@ -85,12 +85,12 @@ class DaprWorkflowClient:
             exist.
 
         """
-        state = self._obj.get_orchestration_state(instance_id, fetch_payloads=fetch_payloads)
+        state = self.__obj.get_orchestration_state(instance_id, fetch_payloads=fetch_payloads)
         return WorkflowState(state) if state else None
 
     def wait_for_workflow_start(self, instance_id: str, *,
                                 fetch_payloads: bool = False,
-                                timeout: int = 60) -> Union[WorkflowState, None]:
+                                timeout_in_seconds: int = 60) -> Union[WorkflowState, None]:
         """Waits for a workflow to start running and returns a WorkflowState object that contains
            metadata about the started workflow.
 
@@ -102,21 +102,21 @@ class DaprWorkflowClient:
             instance_id: The unique ID of the workflow instance to wait for.
             fetch_payloads: If true, fetches the input, output payloads and custom status for
             the workflow instance. Defaults to false.
-            timeout: The maximum time to wait for the workflow instance to start running.
+            timeout_in_seconds: The maximum time to wait for the workflow instance to start running.
             Defaults to 60 seconds.
 
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
             If the specified workflow isn't found, the WorkflowState.Exists value will be false.
         """
-        state = self._obj.wait_for_orchestration_start(instance_id,
+        state = self.__obj.wait_for_orchestration_start(instance_id,
                                                        fetch_payloads=fetch_payloads,
-                                                       timeout=timeout)
+                                                       timeout=timeout_in_seconds)
         return WorkflowState(state) if state else None
 
     def wait_for_workflow_completion(self, instance_id: str, *,
                                      fetch_payloads: bool = True,
-                                     timeout: int = 60) -> Union[WorkflowState, None]:
+                                     timeout_in_seconds: int = 60) -> Union[WorkflowState, None]:
         """Waits for a workflow to complete and returns a WorkflowState object that contains
            metadata about the started instance.
 
@@ -136,15 +136,15 @@ class DaprWorkflowClient:
             instance_id: The unique ID of the workflow instance to wait for.
             fetch_payloads: If true, fetches the input, output payloads and custom status
             for the workflow instance. Defaults to true.
-            timeout: The maximum time to wait for the workflow instance to complete.
+            timeout_in_seconds: The maximum time in seconds to wait for the workflow instance to complete.
             Defaults to 60 seconds.
 
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
         """
-        state = self._obj.wait_for_orchestration_completion(instance_id,
+        state = self.__obj.wait_for_orchestration_completion(instance_id,
                                                             fetch_payloads=fetch_payloads,
-                                                            timeout=timeout)
+                                                            timeout=timeout_in_seconds)
         return WorkflowState(state) if state else None
 
     def raise_workflow_event(self, instance_id: str, event_name: str, *,
@@ -170,7 +170,7 @@ class DaprWorkflowClient:
             eventName: The name of the event. Event names are case-insensitive.
             data: The serializable data payload to include with the event.
         """
-        return self._obj.raise_orchestration_event(instance_id, event_name, data=data)
+        return self.__obj.raise_orchestration_event(instance_id, event_name, data=data)
 
     def terminate_workflow(self, instance_id: str, *,
                            output: Union[Any, None] = None):
@@ -192,7 +192,7 @@ class DaprWorkflowClient:
             instance_id: The ID of the workflow instance to terminate.
             output: The optional output to set for the terminated workflow instance.
        """
-        return self._obj.terminate_orchestration(instance_id, output=output)
+        return self.__obj.terminate_orchestration(instance_id, output=output)
 
     def pause_workflow(self, instance_id: str):
         """Suspends a workflow instance, halting processing of it until resume_workflow is used to
@@ -201,7 +201,7 @@ class DaprWorkflowClient:
         Args:
             instance_id: The instance ID of the workflow to suspend.
         """
-        return self._obj.suspend_orchestration(instance_id)
+        return self.__obj.suspend_orchestration(instance_id)
 
     def resume_workflow(self, instance_id: str):
         """Resumes a workflow instance that was suspended via pause_workflow.
@@ -209,4 +209,4 @@ class DaprWorkflowClient:
         Args:
             instance_id: The instance ID of the workflow to resume.
         """
-        return self._obj.resume_orchestration(instance_id)
+        return self.__obj.resume_orchestration(instance_id)

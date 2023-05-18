@@ -11,10 +11,7 @@
 # limitations under the License.
 
 from time import sleep
-from dapr.ext.workflow.workflow_runtime import WorkflowRuntime
-from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow import WorkflowRuntime, DaprWorkflowClient, DaprWorkflowContext, WorkflowActivityContext
 
 from dapr.conf import Settings
 
@@ -35,29 +32,33 @@ def hello_act(ctx: WorkflowActivityContext, input):
     counter += input
     print(f'New counter value is: {counter}!', flush=True)
 
-workflowRuntime = WorkflowRuntime()
-workflowRuntime.register_workflow(hello_world_wf)
-workflowRuntime.register_activity(hello_act)
-workflowRuntime.start()
+def main():
+    workflowRuntime = WorkflowRuntime()
+    workflowRuntime.register_workflow(hello_world_wf)
+    workflowRuntime.register_activity(hello_act)
+    workflowRuntime.start()
 
-host = settings.DAPR_RUNTIME_HOST
-if host is None:
-    host = "localhost"
-port = settings.DAPR_GRPC_PORT
-if port is None:
-    port = "4001"
+    host = settings.DAPR_RUNTIME_HOST
+    if host is None:
+        host = "localhost"
+    port = settings.DAPR_GRPC_PORT
+    if port is None:
+        port = "4001"
 
-client = DaprWorkflowClient(host, port)
-print("==========Start Counter Increase as per Input:==========")
-id = client.schedule_new_workflow(hello_world_wf, input='Hi Chef!')
-# Sleep for a while to let the workflow run
-sleep(1)
-assert counter == 11
-sleep(10)
-client.raise_workflow_event(id, "event1")
-# Sleep for a while to let the workflow run
-sleep(1)
-assert counter == 1111
-status = client.wait_for_workflow_completion(id, timeout=6000)
-assert status.runtime_status.name == "COMPLETED"
-workflowRuntime.shutdown()
+    workflow_client = DaprWorkflowClient(host, port)
+    print("==========Start Counter Increase as per Input:==========")
+    _id = workflow_client.schedule_new_workflow(hello_world_wf, input='Hi Counter!')
+    # Sleep for a while to let the workflow run
+    sleep(1)
+    assert counter == 11
+    sleep(10)
+    workflow_client.raise_workflow_event(_id, "event1")
+    # Sleep for a while to let the workflow run
+    sleep(1)
+    assert counter == 1111
+    status = workflow_client.wait_for_workflow_completion(_id, timeout_in_seconds=6000)
+    assert status.runtime_status.name == "COMPLETED"
+    workflowRuntime.shutdown()
+
+if __name__ == '__main__':
+    main()
