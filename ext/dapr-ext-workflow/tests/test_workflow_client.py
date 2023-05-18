@@ -37,11 +37,11 @@ class FakeTaskHubGrpcClient:
     def get_orchestration_state(self, instance_id, fetch_payloads):
         return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.PENDING)
 
-    def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout):
+    def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout_in_seconds):
         return self._inner_get_orchestration_state(instance_id,
                                                    client.OrchestrationStatus.RUNNING)
 
-    def wait_for_orchestration_completion(self, instance_id, fetch_payloads, timeout):
+    def wait_for_orchestration_completion(self, instance_id, fetch_payloads, timeout_in_seconds):
         return self._inner_get_orchestration_state(instance_id,
                                                    client.OrchestrationStatus.COMPLETED)
 
@@ -89,12 +89,12 @@ class WorkflowClientTest(unittest.TestCase):
             assert actual_get_result.instance_id == mockInstanceId
 
             actual_wait_start_result = wfClient.wait_for_workflow_start(instance_id=mockInstanceId,
-                                                                        timeout=30)
+                                                                        timeout_in_seconds=30)
             assert actual_wait_start_result.runtime_status.name == "RUNNING"
             assert actual_wait_start_result.instance_id == mockInstanceId
 
             actual_wait_completion_result = wfClient.wait_for_workflow_completion(
-                instance_id=mockInstanceId, timeout=30)
+                instance_id=mockInstanceId, timeout_in_seconds=30)
             assert actual_wait_completion_result.runtime_status.name == "COMPLETED"
             assert actual_wait_completion_result.instance_id == mockInstanceId
 
