@@ -37,11 +37,11 @@ class FakeTaskHubGrpcClient:
     def get_orchestration_state(self, instance_id, fetch_payloads):
         return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.PENDING)
 
-    def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout_in_seconds):
+    def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout):
         return self._inner_get_orchestration_state(instance_id,
                                                    client.OrchestrationStatus.RUNNING)
 
-    def wait_for_orchestration_completion(self, instance_id, fetch_payloads, timeout_in_seconds):
+    def wait_for_orchestration_completion(self, instance_id, fetch_payloads, timeout):
         return self._inner_get_orchestration_state(instance_id,
                                                    client.OrchestrationStatus.COMPLETED)
 
