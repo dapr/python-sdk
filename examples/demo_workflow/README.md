@@ -18,15 +18,16 @@ name: Install requirements
 ```sh
 pip3 install -r demo_workflow/requirements.txt
 
+pip3 install dapr
+
+dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 4001 --components-path components --placement-host-address localhost:50005 -- python3 app.py
 ```
 
 <!-- END_STEP -->
 
 <!-- STEP
-## Running this example
+name: Run test
 -->
-
-To run this example, the following code can be utilized:
 
 ```sh
 dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 4001 --components-path components --placement-host-address localhost:50005 -- python3 app.py

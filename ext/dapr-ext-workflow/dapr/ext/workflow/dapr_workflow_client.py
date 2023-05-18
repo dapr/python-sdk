@@ -42,7 +42,7 @@ class DaprWorkflowClient:
         if not host or len(host) == 0 or len(host.strip()) == 0:
             host = "localhost"
         port = port or settings.DAPR_GRPC_PORT
-        if not port :
+        if not port:
             raise ValueError("Port cannot be empty, please set DAPR_GRPC_PORT environment variable")
         address = f"{host}:{port}"
         self.__obj = client.TaskHubGrpcClient(host_address=address)
@@ -68,8 +68,8 @@ class DaprWorkflowClient:
             The ID of the scheduled workflow instance.
         """
         return self.__obj.schedule_new_orchestration(workflow.__name__,
-                                                    input=input, instance_id=instance_id,
-                                                    start_at=start_at)
+                                                     input=input, instance_id=instance_id,
+                                                     start_at=start_at)
 
     def get_workflow_state(self, instance_id: str, *,
                            fetch_payloads: bool = True) -> Union[WorkflowState, None]:
@@ -110,8 +110,8 @@ class DaprWorkflowClient:
             If the specified workflow isn't found, the WorkflowState.Exists value will be false.
         """
         state = self.__obj.wait_for_orchestration_start(instance_id,
-                                                       fetch_payloads=fetch_payloads,
-                                                       timeout=timeout_in_seconds)
+                                                        fetch_payloads=fetch_payloads,
+                                                        timeout=timeout_in_seconds)
         return WorkflowState(state) if state else None
 
     def wait_for_workflow_completion(self, instance_id: str, *,
@@ -136,15 +136,15 @@ class DaprWorkflowClient:
             instance_id: The unique ID of the workflow instance to wait for.
             fetch_payloads: If true, fetches the input, output payloads and custom status
             for the workflow instance. Defaults to true.
-            timeout_in_seconds: The maximum time in seconds to wait for the workflow instance to complete.
-            Defaults to 60 seconds.
+            timeout_in_seconds: The maximum time in seconds to wait for the workflow instance to
+            complete. Defaults to 60 seconds.
 
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
         """
         state = self.__obj.wait_for_orchestration_completion(instance_id,
-                                                            fetch_payloads=fetch_payloads,
-                                                            timeout=timeout_in_seconds)
+                                                             fetch_payloads=fetch_payloads,
+                                                             timeout=timeout_in_seconds)
         return WorkflowState(state) if state else None
 
     def raise_workflow_event(self, instance_id: str, event_name: str, *,
