@@ -129,36 +129,7 @@ def mytopic_important(event: v1.Event) -> None:
           ' content_type="{event.content_type}"',flush=True)
 ```
 
-#### Bulk publish messages
-
-```python
-import requests
-import json
-
-base_url = "http://localhost:3500/v1.0-alpha1/publish/bulk/{}/{}"
-pubsub_name = "pubsub"
-topic_name = "TOPIC_A"
-payload = [
-  {
-    "entryId": "ae6bf7c6-4af2-11ed-b878-0242ac120002",
-    "event": "first text message",
-    "contentType": "text/plain"
-  },
-  {
-    "entryId": "b1f40bd6-4af2-11ed-b878-0242ac120002",
-    "event": {
-      "message": "second JSON message"
-    },
-    "contentType": "application/json"
-  }
-]
-
-response = requests.post(base_url.format(pubsub_name, topic_name), json=payload)
-print(response.status_code)
-```
-
 - For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
-- Learn more about the bulk pub/sub: [Publish and subscribe to bulk messages]({{< ref pubsub-bulk.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/pubsub-simple) for code samples and instructions to try out pub/sub.
 
 
