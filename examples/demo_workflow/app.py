@@ -12,7 +12,6 @@
 
 from time import sleep
 from dapr.ext.workflow import WorkflowRuntime, DaprWorkflowClient, DaprWorkflowContext, WorkflowActivityContext
-
 from dapr.conf import Settings
 
 settings = Settings()
