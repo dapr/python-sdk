@@ -63,7 +63,7 @@ The output should be as follows:
 == APP ==   registered_components:
 == APP ==     name=lockstore type=lock.redis version= capabilities=[]
 == APP ==     name=pubsub type=pubsub.redis version=v1 capabilities=[]
-== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'QUERY_API', 'TRANSACTIONAL']
+== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'TRANSACTIONAL']
 == APP == We will update our custom label value and check it was persisted
 == APP == We added a custom label named [is-this-our-metadata-example]
 == APP == Its old value was [yes] but now it is [You bet it is!]
