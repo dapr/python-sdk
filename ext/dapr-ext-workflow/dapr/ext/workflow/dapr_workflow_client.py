@@ -42,8 +42,6 @@ class DaprWorkflowClient:
         if not host or len(host) == 0 or len(host.strip()) == 0:
             host = "localhost"
         port = port or settings.DAPR_GRPC_PORT
-        if not port:
-            raise ValueError("Port cannot be empty, please set DAPR_GRPC_PORT environment variable")
         address = f"{host}:{port}"
         self.__obj = client.TaskHubGrpcClient(host_address=address)
 
