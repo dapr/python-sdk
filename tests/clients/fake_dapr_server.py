@@ -369,7 +369,6 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                     capabilities=[
                         "ETAG",
                         "TRANSACTIONAL",
-                        "QUERY_API",
                         "ACTOR",
                     ],
                 ),
