@@ -33,8 +33,8 @@ class DaprWorkflowClient:
        This is an alternative to the general purpose Dapr client. It uses a gRPC connection to send
        commands directly to the workflow engine, bypassing the Dapr API layer.
 
-       This client is intended to be used by workflow applications, not by general purpose
-       applications.
+       This client is intended to be used by workflow application, not by general purpose
+       application.
     """
     def __init__(self, host: Union[str, None] = None, port: Union[str, None] = None):
         if host is None:
