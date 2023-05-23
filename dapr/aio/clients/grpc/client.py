@@ -1146,7 +1146,7 @@ class DaprGrpcClientAsync:
             input=encoded_data)
 
         try:
-            response, call = self._stub.StartWorkflowAlpha1.with_call(req)
+            response, _ = self._stub.StartWorkflowAlpha1.with_call(req)
             return StartWorkflowResponse(instance_id=response.instance_id)
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
@@ -1158,7 +1158,7 @@ class DaprGrpcClientAsync:
         """Gets information on a workflow.
 
             Args:
-                instance_id (str): the name of the workflow instance,
+                instance_id (str): the ID of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
@@ -1177,7 +1177,7 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component)
 
         try:
-            resp, call = self._stub.GetWorkflowAlpha1.with_call(req)
+            resp, _ = self._stub.GetWorkflowAlpha1.with_call(req)
             return GetWorkflowResponse(instance_id=instance_id,
                                        workflow_name=resp.workflow_name,
                                        created_at=resp.created_at,
@@ -1194,7 +1194,7 @@ class DaprGrpcClientAsync:
         """Terminates a workflow.
 
             Args:
-                instance_id (str): the name of the workflow instance, e.g.
+                instance_id (str): the ID of the workflow instance, e.g.
                                     `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
@@ -1229,7 +1229,7 @@ class DaprGrpcClientAsync:
         """Raises an event on a workflow.
 
             Args:
-                instance_id (str): the name of the workflow instance,
+                instance_id (str): the ID of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
@@ -1253,7 +1253,6 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component,
             event_name=event_name,
             event_data=encoded_data)
-        _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
 
         try:
             _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
@@ -1269,7 +1268,7 @@ class DaprGrpcClientAsync:
         """Pause a workflow.
 
             Args:
-                instance_id (str): the name of the workflow instance,
+                instance_id (str): the ID of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
@@ -1287,7 +1286,6 @@ class DaprGrpcClientAsync:
         req = api_v1.PauseWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component)
-        _, call = self._stub.PauseWorkflowAlpha1.with_call(req)
 
         try:
             _, call = self._stub.PauseWorkflowAlpha1.with_call(req)
@@ -1304,7 +1302,7 @@ class DaprGrpcClientAsync:
         """Resumes a workflow.
 
             Args:
-                instance_id (str): the name of the workflow instance,
+                instance_id (str): the ID of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
@@ -1321,7 +1319,6 @@ class DaprGrpcClientAsync:
         req = api_v1.ResumeWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component)
-        _, call = self._stub.ResumeWorkflowAlpha1.with_call(req)
 
         try:
             _, call = self._stub.ResumeWorkflowAlpha1.with_call(req)
@@ -1338,7 +1335,7 @@ class DaprGrpcClientAsync:
         """Purges a workflow.
 
             Args:
-                instance_id (str): the name of the workflow instance,
+                instance_id (str): the ID of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
@@ -1355,7 +1352,6 @@ class DaprGrpcClientAsync:
         req = api_v1.PurgeWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component)
-        _, call = self._stub.PurgeWorkflowAlpha1.with_call(req)
 
         try:
             _, call = self._stub.PurgeWorkflowAlpha1.with_call(req)

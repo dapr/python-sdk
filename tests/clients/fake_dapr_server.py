@@ -271,7 +271,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS)
 
     def StartWorkflowAlpha1(self, request: StartWorkflowRequest, context):
-        instance_id = (request.instance_id)
+        instance_id = request.instance_id
 
         if instance_id not in self.workflow_status:
             self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
@@ -281,7 +281,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             raise Exception("Unable to start insance of the workflow")
 
     def GetWorkflowAlpha1(self, request: GetWorkflowRequest, context):
-        instance_id = (request.instance_id)
+        instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
             return GetWorkflowResponse(instance_id=instance_id,
@@ -291,7 +291,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             raise Exception("Workflow instance does not exist")
 
     def PauseWorkflowAlpha1(self, request: PauseWorkflowRequest, context):
-        instance_id = (request.instance_id)
+        instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
             self.workflow_status[instance_id] = WorkflowRuntimeStatus.SUSPENDED
@@ -301,7 +301,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             raise Exception("Workflow instance could not be paused")
 
     def ResumeWorkflowAlpha1(self, request: ResumeWorkflowRequest, context):
-        instance_id = (request.instance_id)
+        instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
             self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
@@ -311,7 +311,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             raise Exception("Workflow instance could not be resumed")
 
     def TerminateWorkflowAlpha1(self, request: TerminateWorkflowRequest, context):
-        instance_id = (request.instance_id)
+        instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
             self.workflow_status[instance_id] = WorkflowRuntimeStatus.TERMINATED
@@ -321,7 +321,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             raise Exception("Workflow instance could not be terminated")
 
     def PurgeWorkflowAlpha1(self, request: PurgeWorkflowRequest, context):
-        instance_id = (request.instance_id)
+        instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
             del self.workflow_status[instance_id]
@@ -331,7 +331,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             raise Exception("Workflow instance could not be purged")
 
     def RaiseWorkflowEventAlpha1(self, request: RaiseEventWorkflowRequest, context):
-        instance_id = (request.instance_id)
+        instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
             self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING

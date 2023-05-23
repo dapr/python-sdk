@@ -697,7 +697,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         event_data = "cars"
         # Start the workflow
         start_response = dapr.start_workflow(instance_id, workflow_name, workflow_component,
-                                             input.encode('utf-8'), None)
+                                             input, None)
         self.assertEqual(instance_id, start_response.instance_id)
 
         # Get info on the workflow to check that it is running
