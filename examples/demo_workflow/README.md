@@ -31,6 +31,7 @@ pip3 install -r demo_workflow/requirements.txt
 <!-- STEP
 name: Running this example
 expected_stdout_lines:
+  - "== APP == Hi Counter!"
   - "== APP == New counter value is: 1!"
   - "== APP == Get response from hello_world_wf after start call: Running"
   - "== APP == New counter value is: 11!"
@@ -53,6 +54,7 @@ dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 4001 --component
 
 You should be able to see the following output:
 ```
+== APP == Hi Counter!
 == APP == New counter value is: 1!
 == APP == Get response from hello_world_wf after start call: Running
 == APP == New counter value is: 11!

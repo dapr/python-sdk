@@ -19,7 +19,7 @@ from dapr.clients.exceptions import DaprInternalError
 settings = Settings()
 
 counter = 0
-instanceId = "example4IDe1"
+instanceId = "exampleInstanceID"
 workflowComponent = "dapr"
 workflowName = "hello_world_wf"
 inputData = "Hi Counter!"
@@ -56,7 +56,7 @@ def main():
         if port is None:
             port = "4001"
 
-        workflow_client = DaprWorkflowClient(host, port)
+
 
         print("==========Start Counter Increase as per Input:==========")
         start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
