@@ -8,7 +8,7 @@ It demonstrates the following APIs:
 - **raise_event**: Raise an event on a workflow
 - **pause_workflow**: Pauses or suspends a workflow instance that can later be resumed
 - **resume_workflow**: Resumes a paused workflow instance
-- **purge_workflow**: Removes all metadata related to a specific workflow instance
+- **purge_workflow**: Removes all metadata related to a specific workflow instance from the state store
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)

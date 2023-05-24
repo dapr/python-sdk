@@ -194,5 +194,7 @@ class WorkflowRuntimeStatus(Enum):
 
 # Will return the enum entry if it is present, otherwise returns "unknown"
 def getWorkflowRuntimeStatus(inputString):
-    return next((value.value for value in WorkflowRuntimeStatus
-                 if value.value.lower() == inputString.lower()), WorkflowRuntimeStatus.UNKNOWN)
+    try:
+        return WorkflowRuntimeStatus[inputString].value
+    except KeyError:
+        return WorkflowRuntimeStatus.UNKNOWN

@@ -34,6 +34,7 @@ from dapr.clients.grpc._helpers import (
     to_str,
     tuple_to_dict,
     unpack,
+    WorkflowRuntimeStatus,
 )
 from dapr.proto import appcallback_v1
 
@@ -942,7 +943,7 @@ class GetWorkflowResponse():
         workflow_name: str,
         created_at: str,
         last_updated_at: str,
-        runtime_status: str,
+        runtime_status: WorkflowRuntimeStatus,
         properties: Dict[str, str] = {},
     ):
         """Initializes a GetWorkflowResponse.
@@ -952,7 +953,7 @@ class GetWorkflowResponse():
             workflow_name (str): the name of the workflow that was started.
             created_at (str): the time at which the workflow started executing.
             last_updated_at (str): the time at which the workflow was last updated.
-            runtime_status (str): the current runtime status of the workflow.
+            runtime_status (WorkflowRuntimeStatus): the current runtime status of the workflow.
             properties (Dict[str, str]): properties sent as a reponse by the workflow.
         """
         self.instance_id = instance_id

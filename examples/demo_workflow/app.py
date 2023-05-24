@@ -19,7 +19,7 @@ from dapr.clients.exceptions import DaprInternalError
 settings = Settings()
 
 counter = 0
-instanceId = "exampleInstanceID"
+instanceId = "exampleInstanceIDs"
 workflowComponent = "dapr"
 workflowName = "hello_world_wf"
 inputData = "Hi Counter!"
