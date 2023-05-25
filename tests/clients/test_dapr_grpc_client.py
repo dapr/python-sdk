@@ -696,8 +696,11 @@ class DaprGrpcClientTests(unittest.TestCase):
         input = "paperclips"
         event_data = "cars"
         # Start the workflow
-        start_response = dapr.start_workflow(instance_id, workflow_name, workflow_component,
-                                             input, None)
+        start_response = dapr.start_workflow(instance_id=instance_id, 
+                                             workflow_name=workflow_name,
+                                             workflow_component=workflow_component,
+                                             input=input,
+                                             workflow_options=None)
         self.assertEqual(instance_id, start_response.instance_id)
 
         # Get info on the workflow to check that it is running
