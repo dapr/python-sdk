@@ -696,7 +696,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         input = "paperclips"
         event_data = "cars"
         # Start the workflow
-        start_response = dapr.start_workflow(instance_id=instance_id, 
+        start_response = dapr.start_workflow(instance_id=instance_id,
                                              workflow_name=workflow_name,
                                              workflow_component=workflow_component,
                                              input=input,
