@@ -16,7 +16,8 @@ limitations under the License.
 from __future__ import annotations
 from datetime import datetime
 from typing import Any, TypeVar, Union
-from dapr.conf import settings
+
+from dapr.ext.workflow.util import getAddress
 
 from durabletask import client
 from dapr.ext.workflow.workflow_state import WorkflowState
@@ -37,12 +38,7 @@ class DaprWorkflowClient:
        application.
     """
     def __init__(self, host: Union[str, None] = None, port: Union[str, None] = None):
-        if host is None:
-            host = settings.DAPR_RUNTIME_HOST
-        if not host or len(host) == 0 or len(host.strip()) == 0:
-            host = "localhost"
-        port = port or settings.DAPR_GRPC_PORT
-        address = f"{host}:{port}"
+        address = getAddress(host, port)
         self.__obj = client.TaskHubGrpcClient(host_address=address)
 
     def schedule_new_workflow(self,

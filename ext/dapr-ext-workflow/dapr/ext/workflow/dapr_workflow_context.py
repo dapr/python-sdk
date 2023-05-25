@@ -13,7 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Callable, TypeVar, Union
+from abc import abstractmethod
+from typing import Any, Callable, List, TypeVar, Union
 from durabletask import task
 from datetime import datetime
 from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
@@ -67,3 +68,75 @@ class DaprWorkflowContext(WorkflowContext):
 
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
         self.__obj.continue_as_new(new_input, save_events=save_events)
+
+class CompositeTask(task.Task[T]):
+    """A task that is composed of other tasks."""
+    _tasks: List[task.Task]
+
+    def __init__(self, tasks: List[task.Task]):
+        super().__init__()
+        self._tasks = tasks
+        self._completed_tasks = 0
+        self._failed_tasks = 0
+        for task in tasks:
+            task._parent = self # type: ignore
+            if task.is_complete:
+                self.on_child_completed(task)
+
+    def get_tasks(self) -> List[task.Task]:
+        return self._tasks
+
+    @abstractmethod
+    def on_child_completed(self, task: task.Task[T]):
+        pass
+
+
+class WhenAllTask(CompositeTask[List[T]]):
+    """A task that completes when all of its child tasks complete."""
+
+    def __init__(self, tasks: List[task.Task[T]]):
+        super().__init__(tasks)
+        self._completed_tasks = 0
+        self._failed_tasks = 0
+
+    @property
+    def pending_tasks(self) -> int:
+        """Returns the number of tasks that have not yet completed."""
+        return len(self._tasks) - self._completed_tasks
+
+    def on_child_completed(self, task: task.Task[T]):
+        if self.is_complete:
+            raise ValueError('The task has already completed.')
+        self._completed_tasks += 1
+        if task.is_failed and self._exception is None:
+            self._exception = task.get_exception()
+            self._is_complete = True
+        if self._completed_tasks == len(self._tasks):
+            # The order of the result MUST match the order of the tasks provided to the constructor.
+            self._result = [task.get_result() for task in self._tasks]
+            self._is_complete = True
+
+    def get_completed_tasks(self) -> int:
+        return self._completed_tasks
+
+
+class WhenAnyTask(CompositeTask[task.Task]):
+    """A task that completes when any of its child tasks complete."""
+
+    def __init__(self, tasks: List[task.Task]):
+        super().__init__(tasks)
+
+    def on_child_completed(self, task: task.Task):
+        # The first task to complete is the result of the WhenAnyTask.
+        if not self.is_complete:
+            self._is_complete = True
+            self._result = task
+
+
+def when_all(tasks: List[task.Task[T]]) -> WhenAllTask[T]:
+    """Returns a task that completes when all of the provided tasks complete or when one of the tasks fail."""
+    return WhenAllTask(tasks)
+
+def when_any(tasks: List[task.Task]) -> WhenAnyTask:
+    """Returns a task that completes when any of the provided tasks complete or fail."""
+    return WhenAnyTask(tasks)
