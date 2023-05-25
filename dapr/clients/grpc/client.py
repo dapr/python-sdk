@@ -1098,8 +1098,8 @@ class DaprGrpcClient:
             self,
             workflow_component: str,
             workflow_name: str,
-            input: any,
-            instance_id: Optional[str] = "",
+            input: Optional[bytes],
+            instance_id: str = "",
             workflow_options: Optional[Dict[str, str]] = dict()) -> StartWorkflowResponse:
         """Starts a workflow.
 
@@ -1107,8 +1107,8 @@ class DaprGrpcClient:
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
                 workflow_name (str): the name of the workflow that will be executed.
-                input (any): the input that the workflow will receive.
-                instance_id (Optional[str]): the name of the workflow instance,
+                input (Optional[bytes]): the input that the workflow will receive.
+                instance_id (str): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_options (Optional[Dict[str, str]]): the key-value options
                                     that the workflow will receive.
@@ -1210,7 +1210,7 @@ class DaprGrpcClient:
             instance_id: str,
             workflow_component: str,
             event_name: str,
-            event_data: any) -> DaprResponse:
+            event_data: Optional[bytes]) -> DaprResponse:
         """Raises an event on a workflow.
 
             Args:
@@ -1220,7 +1220,7 @@ class DaprGrpcClient:
                                     that will run the workflow. e.g. `dapr`.
                 event_name (str): the name of the event to be raised on
                                     the workflow.
-                event_data (any): the input to the event.
+                event_data (Optional[bytes]): the input to the event.
 
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee

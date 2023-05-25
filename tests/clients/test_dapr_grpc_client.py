@@ -718,8 +718,10 @@ class DaprGrpcClientTests(unittest.TestCase):
         get_response = dapr.get_workflow(instance_id, workflow_component)
         self.assertEqual(WorkflowRuntimeStatus.RUNNING, get_response.runtime_status)
 
-        # Raise an event on the workflow. TODO: Figure out how to check/verify this
+        # Raise an event on the workflow.
         dapr.raise_workflow_event(instance_id, workflow_component, event_name, event_data)
+        get_response = dapr.get_workflow(instance_id, workflow_component)
+        self.assertEqual(event_data, get_response.properties[event_name])
 
         # Terminate the workflow
         dapr.terminate_workflow(instance_id, workflow_component)

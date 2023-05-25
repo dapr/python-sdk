@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import contextlib
 import threading
+from datetime import datetime
 from enum import Enum
 from typing import (
     Callable, Dict, List, Optional, Text, Union,
@@ -941,7 +942,7 @@ class GetWorkflowResponse():
         self,
         instance_id: str,
         workflow_name: str,
-        created_at: str,
+        created_at: datetime,
         last_updated_at: str,
         runtime_status: WorkflowRuntimeStatus,
         properties: Dict[str, str] = {},
@@ -951,8 +952,8 @@ class GetWorkflowResponse():
         Args:
             instance_id (str): the instance ID assocated with this response.
             workflow_name (str): the name of the workflow that was started.
-            created_at (str): the time at which the workflow started executing.
-            last_updated_at (str): the time at which the workflow was last updated.
+            created_at (datetime): the time at which the workflow started executing.
+            last_updated_at (datetime): the time at which the workflow was last updated.
             runtime_status (WorkflowRuntimeStatus): the current runtime status of the workflow.
             properties (Dict[str, str]): properties sent as a reponse by the workflow.
         """

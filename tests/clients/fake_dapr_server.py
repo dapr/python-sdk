@@ -39,6 +39,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
         self.workflow_status = {}
+        self.workflow_options: Dict[Dict[str]] = dict()
         self.metadata: Dict[str, str] = {}
 
     def start(self, port: int = 8080):
@@ -285,7 +286,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         if instance_id in self.workflow_status:
             return GetWorkflowResponse(instance_id=instance_id,
-                                       runtime_status=self.workflow_status[instance_id])
+                                       runtime_status=self.workflow_status[instance_id],
+                                       properties=self.workflow_options[instance_id])
         else:
             # workflow non-existent
             raise Exception("Workflow instance does not exist")
@@ -335,6 +337,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         if instance_id in self.workflow_status:
             self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
+            self.workflow_options[instance_id][request.event_name] = request.event_data
             return empty_pb2.Empty()
         else:
             # workflow already running
