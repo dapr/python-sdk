@@ -19,7 +19,7 @@ from dapr.conf import settings
 
 def getAddress(host: Union[str, None] = None, port: Union[str, None] = None) -> str:
     if host is None:
-            host = settings.DAPR_RUNTIME_HOST
+        host = settings.DAPR_RUNTIME_HOST
     if not host or len(host) == 0 or len(host.strip()) == 0:
         host = "localhost"
     port = port or settings.DAPR_GRPC_PORT

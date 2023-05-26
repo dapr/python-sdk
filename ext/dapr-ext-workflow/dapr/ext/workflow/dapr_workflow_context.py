@@ -69,6 +69,7 @@ class DaprWorkflowContext(WorkflowContext):
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
         self.__obj.continue_as_new(new_input, save_events=save_events)
 
+
 class CompositeTask(task.Task[T]):
     """A task that is composed of other tasks."""
     _tasks: List[task.Task]
@@ -78,10 +79,10 @@ class CompositeTask(task.Task[T]):
         self._tasks = tasks
         self._completed_tasks = 0
         self._failed_tasks = 0
-        for task in tasks:
-            task._parent = self # type: ignore
-            if task.is_complete:
-                self.on_child_completed(task)
+        for _task in tasks:
+            _task._parent = self  # type: ignore
+            if _task.is_complete:
+                self.on_child_completed(_task)
 
     def get_tasks(self) -> List[task.Task]:
         return self._tasks
@@ -134,8 +135,10 @@ class WhenAnyTask(CompositeTask[task.Task]):
 
 
 def when_all(tasks: List[task.Task[T]]) -> WhenAllTask[T]:
-    """Returns a task that completes when all of the provided tasks complete or when one of the tasks fail."""
+    """Returns a task that completes when all of the provided tasks complete or when one of the
+    tasks fail."""
     return WhenAllTask(tasks)
+
 
 def when_any(tasks: List[task.Task]) -> WhenAnyTask:
     """Returns a task that completes when any of the provided tasks complete or fail."""
