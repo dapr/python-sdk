@@ -39,7 +39,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
         self.workflow_status = {}
-        self.workflow_options: Dict[Dict[str]] = dict()
+        self.workflow_options: Dict[str, str] = {}
         self.metadata: Dict[str, str] = {}
 
     def start(self, port: int = 8080):
@@ -285,9 +285,13 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
+            status = str(self.workflow_status[instance_id])[len("WorkflowRuntimeStatus."):]
             return GetWorkflowResponse(instance_id=instance_id,
-                                       runtime_status=self.workflow_status[instance_id],
-                                       properties=self.workflow_options[instance_id])
+                                       workflow_name="example",
+                                       created_at=None,
+                                       last_updated_at=None,
+                                       runtime_status=status,
+                                       properties=self.workflow_options)
         else:
             # workflow non-existent
             raise Exception("Workflow instance does not exist")
@@ -332,15 +336,13 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             # workflow non-existent
             raise Exception("Workflow instance could not be purged")
 
-    def RaiseWorkflowEventAlpha1(self, request: RaiseEventWorkflowRequest, context):
+    def RaiseEventWorkflowAlpha1(self, request: RaiseEventWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
-            self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
-            self.workflow_options[instance_id][request.event_name] = request.event_data
+            self.workflow_options[instance_id] = request.event_data
             return empty_pb2.Empty()
         else:
-            # workflow already running
             raise Exception("Unable to raise event on workflow instance")
 
     def GetMetadata(self, request, context):

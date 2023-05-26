@@ -11,7 +11,7 @@
 # limitations under the License.
 
 from time import sleep
-from dapr.ext.workflow import WorkflowRuntime, DaprWorkflowClient, DaprWorkflowContext, WorkflowActivityContext
+from dapr.ext.workflow import WorkflowRuntime, DaprWorkflowContext, WorkflowActivityContext
 from dapr.conf import Settings
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
@@ -19,7 +19,7 @@ from dapr.clients.exceptions import DaprInternalError
 settings = Settings()
 
 counter = 0
-instanceId = "exampleInstanceID"
+instanceId = "exampleInstanceI1D"
 workflowComponent = "dapr"
 workflowName = "hello_world_wf"
 inputData = "Hi Counter!"
@@ -48,15 +48,6 @@ def main():
         workflowRuntime.register_workflow(hello_world_wf)
         workflowRuntime.register_activity(hello_act)
         workflowRuntime.start()
-
-        host = settings.DAPR_RUNTIME_HOST
-        if host is None:
-            host = "localhost"
-        port = settings.DAPR_GRPC_PORT
-        if port is None:
-            port = "4001"
-
-
 
         print("==========Start Counter Increase as per Input:==========")
         start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,

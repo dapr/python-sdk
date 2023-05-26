@@ -23,7 +23,7 @@ from warnings import warn
 
 from typing import Callable, Dict, Optional, Text, Union, Sequence, List
 from typing_extensions import Self
-
+from datetime import datetime
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 
@@ -1163,6 +1163,10 @@ class DaprGrpcClient:
 
         try:
             resp, _ = self._stub.GetWorkflowAlpha1.with_call(req)
+            if resp.created_at is None:
+                resp.created_at = datetime.now()
+            if resp.last_updated_at is None:
+                resp.last_updated_at = datetime.now()
             return GetWorkflowResponse(instance_id=instance_id,
                                        workflow_name=resp.workflow_name,
                                        created_at=resp.created_at,

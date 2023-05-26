@@ -18,6 +18,7 @@ import time
 import socket
 import json
 
+from datetime import datetime
 from urllib.parse import urlencode
 
 from warnings import warn
@@ -1178,6 +1179,10 @@ class DaprGrpcClientAsync:
 
         try:
             resp, _ = self._stub.GetWorkflowAlpha1.with_call(req)
+            if resp.created_at is None:
+                resp.created_at = datetime.now
+            if resp.last_updated_at is None:
+                resp.last_updated_at = datetime.now
             return GetWorkflowResponse(instance_id=instance_id,
                                        workflow_name=resp.workflow_name,
                                        created_at=resp.created_at,

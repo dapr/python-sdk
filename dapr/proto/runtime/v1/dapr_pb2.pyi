@@ -1325,6 +1325,7 @@ class GetMetadataResponse(google.protobuf.message.Message):
     REGISTERED_COMPONENTS_FIELD_NUMBER: builtins.int
     EXTENDED_METADATA_FIELD_NUMBER: builtins.int
     SUBSCRIPTIONS_FIELD_NUMBER: builtins.int
+    HTTP_ENDPOINTS_FIELD_NUMBER: builtins.int
     id: builtins.str
     @property
     def active_actors_count(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ActiveActorsCount]: ...
@@ -1334,6 +1335,8 @@ class GetMetadataResponse(google.protobuf.message.Message):
     def extended_metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     @property
     def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___PubsubSubscription]: ...
+    @property
+    def http_endpoints(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___MetadataHTTPEndpoint]: ...
     def __init__(
         self,
         *,
@@ -1342,8 +1345,9 @@ class GetMetadataResponse(google.protobuf.message.Message):
         registered_components: collections.abc.Iterable[global___RegisteredComponents] | None = ...,
         extended_metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         subscriptions: collections.abc.Iterable[global___PubsubSubscription] | None = ...,
+        http_endpoints: collections.abc.Iterable[global___MetadataHTTPEndpoint] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count", b"active_actors_count", "extended_metadata", b"extended_metadata", "id", b"id", "registered_components", b"registered_components", "subscriptions", b"subscriptions"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count", b"active_actors_count", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "subscriptions", b"subscriptions"]) -> None: ...
 
 global___GetMetadataResponse = GetMetadataResponse
 
@@ -1387,6 +1391,20 @@ class RegisteredComponents(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["capabilities", b"capabilities", "name", b"name", "type", b"type", "version", b"version"]) -> None: ...
 
 global___RegisteredComponents = RegisteredComponents
+
+class MetadataHTTPEndpoint(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    NAME_FIELD_NUMBER: builtins.int
+    name: builtins.str
+    def __init__(
+        self,
+        *,
+        name: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["name", b"name"]) -> None: ...
+
+global___MetadataHTTPEndpoint = MetadataHTTPEndpoint
 
 class PubsubSubscription(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
