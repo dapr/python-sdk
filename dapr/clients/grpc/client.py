@@ -21,7 +21,7 @@ from urllib.parse import urlencode
 
 from warnings import warn
 
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List
+from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any
 from typing_extensions import Self
 from datetime import datetime
 from google.protobuf.message import Message as GrpcMessage
@@ -1098,7 +1098,7 @@ class DaprGrpcClient:
             self,
             workflow_component: str,
             workflow_name: str,
-            input: Optional[bytes],
+            input: Union[Any, bytes, None] = None,
             instance_id: str = "",
             workflow_options: Optional[Dict[str, str]] = dict()) -> StartWorkflowResponse:
         """Starts a workflow.
@@ -1107,7 +1107,7 @@ class DaprGrpcClient:
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
                 workflow_name (str): the name of the workflow that will be executed.
-                input (Optional[bytes]): the input that the workflow will receive.
+                input (Union[Any, bytes, None]): the input that the workflow will receive.
                 instance_id (str): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_options (Optional[Dict[str, str]]): the key-value options
@@ -1131,7 +1131,7 @@ class DaprGrpcClient:
             input=encoded_data)
 
         try:
-            response, _ = self._stub.StartWorkflowAlpha1.with_call(req)
+            response = self._stub.StartWorkflowAlpha1(req)
             return StartWorkflowResponse(instance_id=response.instance_id)
         except RpcError as err:
             raise DaprInternalError(err.details())
@@ -1162,7 +1162,7 @@ class DaprGrpcClient:
             workflow_component=workflow_component)
 
         try:
-            resp, _ = self._stub.GetWorkflowAlpha1.with_call(req)
+            resp = self._stub.GetWorkflowAlpha1(req)
             if resp.created_at is None:
                 resp.created_at = datetime.now()
             if resp.last_updated_at is None:
@@ -1224,7 +1224,7 @@ class DaprGrpcClient:
                                     that will run the workflow. e.g. `dapr`.
                 event_name (str): the name of the event to be raised on
                                     the workflow.
-                event_data (Optional[bytes]): the input to the event.
+                event_data (bytes): the input to the event.
 
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee
@@ -1235,7 +1235,9 @@ class DaprGrpcClient:
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component,
                                event_name=event_name)
-        encoded_data = json.dumps(event_data).encode("UTF-8")
+        encoded_data = bytes([])
+        if event_data is not None:
+            encoded_data = json.dumps(event_data).encode("UTF-8")
         # Actual workflow raise event invocation
         req = api_v1.RaiseEventWorkflowRequest(
             instance_id=instance_id,
