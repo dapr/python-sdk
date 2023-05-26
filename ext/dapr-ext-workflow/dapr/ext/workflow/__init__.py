@@ -16,7 +16,7 @@ limitations under the License.
 # Import your main classes here
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 
 __all__ = [
@@ -24,4 +24,6 @@ __all__ = [
     'DaprWorkflowClient',
     'DaprWorkflowContext',
     'WorkflowActivityContext',
+    'when_all',
+    'when_any'
 ]
