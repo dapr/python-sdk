@@ -1178,7 +1178,7 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component)
 
         try:
-            resp  = self._stub.GetWorkflowAlpha1(req)
+            resp = self._stub.GetWorkflowAlpha1(req)
             if resp.created_at is None:
                 resp.created_at = datetime.now
             if resp.last_updated_at is None:
