@@ -58,9 +58,6 @@ def main():
         sleep(1)
         assert counter == 11
 
-        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        print(f"Get response from {workflowName} after start call: {getResponse.runtime_status}")
-        
         # Pause Test
         d.pause_workflow(instance_id=instanceId, workflow_component=workflowComponent)
         getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
