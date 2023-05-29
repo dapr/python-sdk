@@ -34,6 +34,7 @@ expected_stdout_lines:
   - "== APP == Hi Counter!"
   - "== APP == New counter value is: 1!"
   - "== APP == New counter value is: 11!"
+  - "== APP == Get response from hello_world_wf after resume call: Running"
   - "== APP == Get response from hello_world_wf after pause call: Suspended"
   - "== APP == Get response from hello_world_wf after resume call: Running"
   - "== APP == New counter value is: 111!"
@@ -55,8 +56,8 @@ You should be able to see the following output:
 ```
 == APP == Hi Counter!
 == APP == New counter value is: 1!
-== APP == Get response from hello_world_wf after start call: Running
 == APP == New counter value is: 11!
+== APP == Get response from hello_world_wf after start call: Running
 == APP == Get response from hello_world_wf after pause call: Suspended
 == APP == Get response from hello_world_wf after resume call: Running
 == APP == New counter value is: 111!

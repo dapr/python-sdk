@@ -54,13 +54,13 @@ def main():
                         workflow_name=workflowName, input=inputData, workflow_options=workflowOptions)
         print(f"start_resp {start_resp.instance_id}")
 
-        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        print(f"Get response from {workflowName} after start call: {getResponse.runtime_status}")
-
         # Sleep for a while to let the workflow run
         sleep(1)
         assert counter == 11
 
+        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        print(f"Get response from {workflowName} after start call: {getResponse.runtime_status}")
+        
         # Pause Test
         d.pause_workflow(instance_id=instanceId, workflow_component=workflowComponent)
         getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
