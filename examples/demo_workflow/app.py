@@ -19,7 +19,7 @@ from dapr.clients.exceptions import DaprInternalError
 settings = Settings()
 
 counter = 0
-instanceId = "exampleInstanceI1D"
+instanceId = "exampleInstanceID"
 workflowComponent = "dapr"
 workflowName = "hello_world_wf"
 inputData = "Hi Counter!"
@@ -95,6 +95,7 @@ def main():
 
         # Terminate Test
         d.terminate_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        sleep(1)
         getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
         print(f"Get response from {workflowName} after terminate call: {getResponse.runtime_status}")
 
