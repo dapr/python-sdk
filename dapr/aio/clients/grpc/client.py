@@ -1115,7 +1115,7 @@ class DaprGrpcClientAsync:
             workflow_component: str,
             workflow_name: str,
             input: Union[Any, bytes, None] = None,
-            instance_id: str = "",
+            instance_id: Optional[str] = None,
             workflow_options: Optional[Dict[str, str]] = dict()) -> StartWorkflowResponse:
         """Starts a workflow.
 
@@ -1239,7 +1239,7 @@ class DaprGrpcClientAsync:
             instance_id: str,
             workflow_component: str,
             event_name: str,
-            event_data: Optional[bytes] = None) -> DaprResponse:
+            event_data: Union[Any, bytes, None] = None) -> DaprResponse:
         """Raises an event on a workflow.
 
             Args:
@@ -1249,7 +1249,7 @@ class DaprGrpcClientAsync:
                                     that will run the workflow. e.g. `dapr`.
                 event_name (str): the name of the event to be raised on
                                     the workflow.
-                event_data (Optional[bytes]): the input to the event.
+                event_data (Union[Any, bytes, None]): the input to the event.
 
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee
@@ -1260,9 +1260,13 @@ class DaprGrpcClientAsync:
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component,
                                event_name=event_name)
-        encoded_data = bytes([])
-        if event_data is not None:
-            encoded_data = json.dumps(event_data).encode("UTF-8")
+        if isinstance(input, bytes):
+            encoded_data = event_data
+        else:
+            if event_data is not None:
+                encoded_data = json.dumps(event_data).encode("utf-8")
+            else:
+                encoded_data = bytes([])
         # Actual workflow raise event invocation
         req = api_v1.raise_workflow_event(
             instance_id=instance_id,
