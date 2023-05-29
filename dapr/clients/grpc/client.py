@@ -16,6 +16,7 @@ limitations under the License.
 import time
 import socket
 import json
+import uuid
 
 from urllib.parse import urlencode
 
@@ -1099,7 +1100,7 @@ class DaprGrpcClient:
             workflow_component: str,
             workflow_name: str,
             input: Union[Any, bytes, None] = None,
-            instance_id: str = "",
+            instance_id: Optional[str] = None,
             workflow_options: Optional[Dict[str, str]] = dict()) -> StartWorkflowResponse:
         """Starts a workflow.
 
@@ -1121,7 +1122,15 @@ class DaprGrpcClient:
              UserWarning, stacklevel=2)
         validateNotBlankString(workflow_component=workflow_component,
                                workflow_name=workflow_name)
-        encoded_data = json.dumps(input).encode("UTF-8")
+
+        if instance_id is None:
+            instance_id = str(uuid.uuid4())
+
+        if isinstance(input, bytes):
+            encoded_data = input
+        else:
+            encoded_data = json.dumps(input).encode("utf-8") if input is not None else bytes([])
+
         # Actual start workflow invocation
         req = api_v1.StartWorkflowRequest(
             instance_id=instance_id,
@@ -1214,7 +1223,7 @@ class DaprGrpcClient:
             instance_id: str,
             workflow_component: str,
             event_name: str,
-            event_data: Optional[bytes]) -> DaprResponse:
+            event_data: Optional[bytes] = None) -> DaprResponse:
         """Raises an event on a workflow.
 
             Args:
