@@ -1116,7 +1116,8 @@ class DaprGrpcClientAsync:
             workflow_name: str,
             input: Union[Any, bytes, None] = None,
             instance_id: Optional[str] = None,
-            workflow_options: Optional[Dict[str, str]] = dict()) -> StartWorkflowResponse:
+            workflow_options: Optional[Dict[str, str]] = dict(),
+            send_raw_bytes: bool = False) -> StartWorkflowResponse:
         """Starts a workflow.
 
             Args:
@@ -1128,6 +1129,8 @@ class DaprGrpcClientAsync:
                                     e.g. `order_processing_workflow-103784`.
                 workflow_options (Optional[Dict[str, str]]): the key-value options
                                     that the workflow will receive.
+                send_raw_bytes (bool) if true, no serialization will be performed on the input
+                                    bytes
 
             Returns:
                 :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
@@ -1142,10 +1145,18 @@ class DaprGrpcClientAsync:
         if instance_id is None:
             instance_id = str(uuid.uuid4())
 
-        if isinstance(input, bytes):
+        if isinstance(input, bytes) and send_raw_bytes:
             encoded_data = input
         else:
-            encoded_data = json.dumps(input).encode("utf-8") if input is not None else bytes([])
+            try:
+                if input is not None:
+                    encoded_data = json.dumps(input).encode("utf-8")
+                else:
+                    encoded_data = bytes([])
+            except TypeError:
+                raise DaprInternalError("Json Data is not serializable")
+            except ValueError as e:
+                raise DaprInternalError(f"Json serialization error: {e}")
 
         # Actual start workflow invocation
         req = api_v1.StartWorkflowRequest(
@@ -1239,7 +1250,8 @@ class DaprGrpcClientAsync:
             instance_id: str,
             workflow_component: str,
             event_name: str,
-            event_data: Union[Any, bytes, None] = None) -> DaprResponse:
+            event_data: Union[Any, bytes, None] = None,
+            send_raw_bytes: bool = False) -> DaprResponse:
         """Raises an event on a workflow.
 
             Args:
@@ -1250,6 +1262,8 @@ class DaprGrpcClientAsync:
                 event_name (str): the name of the event to be raised on
                                     the workflow.
                 event_data (Union[Any, bytes, None]): the input to the event.
+                send_raw_bytes (bool) if true, no serialization will be performed on the input
+                                    bytes
 
             Returns:
                 :class:`DaprResponse` gRPC metadata returned from callee
@@ -1260,10 +1274,19 @@ class DaprGrpcClientAsync:
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component,
                                event_name=event_name)
-        if isinstance(input, bytes):
+        if isinstance(event_data, bytes) and send_raw_bytes:
             encoded_data = event_data
         else:
             if event_data is not None:
+                try:
+                    if event_data is not None:
+                        encoded_data = json.dumps(event_data).encode("utf-8")
+                    else:
+                        event_data = bytes([])
+                except TypeError:
+                    raise DaprInternalError("Json Data is not serializable")
+                except ValueError as e:
+                    raise DaprInternalError(f"Json serialization error: {e}")
                 encoded_data = json.dumps(event_data).encode("utf-8")
             else:
                 encoded_data = bytes([])
