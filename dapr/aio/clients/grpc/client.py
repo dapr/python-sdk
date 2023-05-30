@@ -1114,7 +1114,7 @@ class DaprGrpcClientAsync:
             self,
             workflow_component: str,
             workflow_name: str,
-            input: Union[Any, bytes, None] = None,
+            input: Optional[Union[Any, bytes]] = None,
             instance_id: Optional[str] = None,
             workflow_options: Optional[Dict[str, str]] = dict(),
             send_raw_bytes: bool = False) -> StartWorkflowResponse:
@@ -1124,7 +1124,7 @@ class DaprGrpcClientAsync:
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
                 workflow_name (str): the name of the workflow that will be executed.
-                input (Union[Any, bytes, None]): the input that the workflow will receive.
+                input (Optional[Union[Any, bytes]]): the input that the workflow will receive.
                                                  The input value will be serialized to JSON
                                                  by default. Use the send_raw_bytes param
                                                  to send unencoded binary input.
