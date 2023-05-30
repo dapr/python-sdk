@@ -1110,6 +1110,9 @@ class DaprGrpcClient:
                                     that will run the workflow. e.g. `dapr`.
                 workflow_name (str): the name of the workflow that will be executed.
                 input (Union[Any, bytes, None]): the input that the workflow will receive.
+                                                 The input value will be serialized to JSON
+                                                 by default. Use the send_raw_bytes param
+                                                 to send unencoded binary input.
                 instance_id (Optional[str]): the name of the workflow instance,
                                     e.g. `order_processing_workflow-103784`.
                 workflow_options (Optional[Dict[str, str]]): the key-value options
@@ -1241,8 +1244,10 @@ class DaprGrpcClient:
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
-                event_name (str): the name of the event to be raised on
-                                    the workflow.
+                event_data (Optional[Union[Any, bytes]]): the input that the workflow will receive.
+                                                 The input value will be serialized to JSON
+                                                 by default. Use the send_raw_bytes param
+                                                 to send unencoded binary input.
                 event_data (Optional[Union[Any, bytes]]): the input to the event.
                 send_raw_bytes (bool) if true, no serialization will be performed on the input
                                     bytes
