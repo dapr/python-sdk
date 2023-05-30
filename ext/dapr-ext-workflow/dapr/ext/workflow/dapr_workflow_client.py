@@ -15,13 +15,13 @@ limitations under the License.
 
 from __future__ import annotations
 from datetime import datetime
-from typing import Any, TypeVar, Union
-
-from dapr.ext.workflow.util import getAddress
+from typing import Any, Optional, TypeVar
 
 from durabletask import client
+
 from dapr.ext.workflow.workflow_state import WorkflowState
 from dapr.ext.workflow.workflow_context import Workflow
+from dapr.ext.workflow.util import getAddress
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -37,15 +37,15 @@ class DaprWorkflowClient:
        This client is intended to be used by workflow application, not by general purpose
        application.
     """
-    def __init__(self, host: Union[str, None] = None, port: Union[str, None] = None):
+    def __init__(self, host: Optional[str] = None, port: Optional[str] = None):
         address = getAddress(host, port)
         self.__obj = client.TaskHubGrpcClient(host_address=address)
 
     def schedule_new_workflow(self,
                               workflow: Workflow, *,
-                              input: Union[TInput, None] = None,
-                              instance_id: Union[str, None] = None,
-                              start_at: Union[datetime, None] = None) -> str:
+                              input: Optional[TInput] = None,
+                              instance_id: Optional[str] = None,
+                              start_at: Optional[datetime] = None) -> str:
         """Schedules a new workflow instance for execution.
 
         Args:
@@ -66,7 +66,7 @@ class DaprWorkflowClient:
                                                      start_at=start_at)
 
     def get_workflow_state(self, instance_id: str, *,
-                           fetch_payloads: bool = True) -> Union[WorkflowState, None]:
+                           fetch_payloads: bool = True) -> Optional[WorkflowState]:
         """Fetches runtime state for the specified workflow instance.
 
         Args:
@@ -84,7 +84,7 @@ class DaprWorkflowClient:
 
     def wait_for_workflow_start(self, instance_id: str, *,
                                 fetch_payloads: bool = False,
-                                timeout_in_seconds: int = 60) -> Union[WorkflowState, None]:
+                                timeout_in_seconds: int = 60) -> Optional[WorkflowState]:
         """Waits for a workflow to start running and returns a WorkflowState object that contains
            metadata about the started workflow.
 
@@ -110,7 +110,7 @@ class DaprWorkflowClient:
 
     def wait_for_workflow_completion(self, instance_id: str, *,
                                      fetch_payloads: bool = True,
-                                     timeout_in_seconds: int = 60) -> Union[WorkflowState, None]:
+                                     timeout_in_seconds: int = 60) -> Optional[WorkflowState]:
         """Waits for a workflow to complete and returns a WorkflowState object that contains
            metadata about the started instance.
 
@@ -142,7 +142,7 @@ class DaprWorkflowClient:
         return WorkflowState(state) if state else None
 
     def raise_workflow_event(self, instance_id: str, event_name: str, *,
-                             data: Union[Any, None] = None):
+                             data: Optional[Any] = None):
         """Sends an event notification message to a waiting workflow instance.
            In order to handle the event, the target workflow instance must be waiting for an
            event named value of "eventName" param using the wait_for_external_event API.
@@ -167,7 +167,7 @@ class DaprWorkflowClient:
         return self.__obj.raise_orchestration_event(instance_id, event_name, data=data)
 
     def terminate_workflow(self, instance_id: str, *,
-                           output: Union[Any, None] = None):
+                           output: Optional[Any] = None):
         """Terminates a running workflow instance and updates its runtime status to
            WorkflowRuntimeStatus.Terminated This method internally enqueues a "terminate" message in
            the task hub. When the task hub worker processes this message, it will update the runtime

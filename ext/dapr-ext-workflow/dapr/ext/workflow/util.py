@@ -13,11 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Union
+from typing import Optional
+
 from dapr.conf import settings
 
 
-def getAddress(host: Union[str, None] = None, port: Union[str, None] = None) -> str:
+def getAddress(host: Optional[str] = None, port: Optional[str] = None) -> str:
     if host is None:
         host = settings.DAPR_RUNTIME_HOST
     if not host or len(host) == 0 or len(host.strip()) == 0:

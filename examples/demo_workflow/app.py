@@ -33,11 +33,7 @@ def hello_act(ctx: WorkflowActivityContext, input):
 
 def main():
     host = settings.DAPR_RUNTIME_HOST
-    if host is None:
-        host = "localhost"
     port = settings.DAPR_GRPC_PORT
-    if port is None:
-        port = "4001"
     workflowRuntime = WorkflowRuntime(host, port)
     workflowRuntime.register_workflow(hello_world_wf)
     workflowRuntime.register_activity(hello_act)
