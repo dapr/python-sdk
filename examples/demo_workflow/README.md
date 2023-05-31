@@ -1,7 +1,14 @@
 # Example - Dapr Workflow Authoring
 
 This document describes how to register a workflow and activities inside it and start running it.
-
+It demonstrates the following APIs:
+- **start_workflow**: Start an instance of a workflow
+- **get_workflow**: Get information on a single workflow
+- **terminate_workflow**: Terminate or stop a particular instance of a workflow
+- **raise_event**: Raise an event on a workflow
+- **pause_workflow**: Pauses or suspends a workflow instance that can later be resumed
+- **resume_workflow**: Resumes a paused workflow instance
+- **purge_workflow**: Removes all metadata related to a specific workflow instance from the state store
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
@@ -24,10 +31,15 @@ pip3 install -r demo_workflow/requirements.txt
 <!-- STEP
 name: Running this example
 expected_stdout_lines:
+  - "== APP == Hi Counter!"
   - "== APP == New counter value is: 1!"
   - "== APP == New counter value is: 11!"
+  - "== APP == Get response from hello_world_wf after pause call: Suspended"
+  - "== APP == Get response from hello_world_wf after resume call: Running"
   - "== APP == New counter value is: 111!"
   - "== APP == New counter value is: 1111!"
+  - "== APP == Instance Successfully Purged"
+  - "== APP == Get response from hello_world_wf after terminate call: Terminated"
 background: true
 timeout_seconds: 30
 sleep: 15
@@ -41,8 +53,13 @@ dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 50001 --componen
 
 You should be able to see the following output:
 ```
+== APP == Hi Counter!
 == APP == New counter value is: 1!
 == APP == New counter value is: 11!
+== APP == Get response from hello_world_wf after pause call: Suspended
+== APP == Get response from hello_world_wf after resume call: Running
 == APP == New counter value is: 111!
 == APP == New counter value is: 1111!
+== APP == Instance Successfully Purged
+== APP == Get response from hello_world_wf after terminate call: Terminated
 ```
