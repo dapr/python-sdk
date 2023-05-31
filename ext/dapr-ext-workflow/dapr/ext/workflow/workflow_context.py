@@ -14,10 +14,10 @@ limitations under the License.
 """
 
 from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Callable, Generator, TypeVar, Union
+from typing import Any, Callable, Generator, Optional, TypeVar, Union
+
 from durabletask import task
 
 from dapr.ext.workflow.workflow_activity_context import Activity
@@ -102,7 +102,7 @@ class WorkflowContext(ABC):
 
     @abstractmethod
     def call_activity(self, activity: Activity[TInput, TOutput], *,
-                      input: Union[TInput, None] = None) -> task.Task[TOutput]:
+                      input: Optional[TInput] = None) -> task.Task[TOutput]:
         """Schedule an activity for execution.
 
         Parameters
@@ -123,8 +123,8 @@ class WorkflowContext(ABC):
 
     @abstractmethod
     def call_child_workflow(self, orchestrator: Workflow[TInput, TOutput], *,
-                            input: Union[TInput, None] = None,
-                            instance_id: Union[str, None] = None) -> task.Task[TOutput]:
+                            input: Optional[TInput] = None,
+                            instance_id: Optional[str] = None) -> task.Task[TOutput]:
         """Schedule child-workflow function for execution.
 
         Parameters

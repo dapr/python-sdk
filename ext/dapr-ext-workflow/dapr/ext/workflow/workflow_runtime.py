@@ -13,11 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import TypeVar
+from typing import Optional, TypeVar
+
 from durabletask import worker, task
+
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
+from dapr.ext.workflow.util import getAddress
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -28,8 +31,9 @@ class WorkflowRuntime:
     """WorkflowRuntime is the entry point for registering workflows and activities.
     """
 
-    def __init__(self):
-        self.__worker = worker.TaskHubGrpcWorker()
+    def __init__(self, host: Optional[str] = None, port: Optional[str] = None):
+        address = getAddress(host, port)
+        self.__worker = worker.TaskHubGrpcWorker(host_address=address)
 
     def register_workflow(self, fn: Workflow[TInput, TInput]):
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: TInput):

@@ -13,17 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-# Import your main classes here
-from dapr.ext.workflow.workflow_runtime import WorkflowRuntime
-from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
-from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from typing import Optional
 
-__all__ = [
-    'WorkflowRuntime',
-    'DaprWorkflowClient',
-    'DaprWorkflowContext',
-    'WorkflowActivityContext',
-    'when_all',
-    'when_any'
-]
+from dapr.conf import settings
+
+
+def getAddress(host: Optional[str] = None, port: Optional[str] = None) -> str:
+    host = host or settings.DAPR_RUNTIME_HOST
+    port = port or settings.DAPR_GRPC_PORT
+    address = f"{host}:{port}"
+    return address

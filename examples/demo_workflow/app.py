@@ -32,17 +32,12 @@ def hello_act(ctx: WorkflowActivityContext, input):
     print(f'New counter value is: {counter}!', flush=True)
 
 def main():
-    workflowRuntime = WorkflowRuntime()
+    host = settings.DAPR_RUNTIME_HOST
+    port = settings.DAPR_GRPC_PORT
+    workflowRuntime = WorkflowRuntime(host, port)
     workflowRuntime.register_workflow(hello_world_wf)
     workflowRuntime.register_activity(hello_act)
     workflowRuntime.start()
-
-    host = settings.DAPR_RUNTIME_HOST
-    if host is None:
-        host = "localhost"
-    port = settings.DAPR_GRPC_PORT
-    if port is None:
-        port = "4001"
 
     workflow_client = DaprWorkflowClient(host, port)
     print("==========Start Counter Increase as per Input:==========")

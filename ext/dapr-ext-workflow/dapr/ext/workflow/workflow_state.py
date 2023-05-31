@@ -13,8 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from durabletask import client
 from enum import Enum
+
+from durabletask import client
 
 
 class WorkflowStatus(Enum):

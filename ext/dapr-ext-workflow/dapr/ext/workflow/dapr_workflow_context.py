@@ -13,11 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Callable, TypeVar, Union
-from durabletask import task
+from typing import Any, Callable, List, Optional, TypeVar
 from datetime import datetime
-from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
 
+from durabletask import task
+
+from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 
 T = TypeVar('T')
@@ -55,8 +56,8 @@ class DaprWorkflowContext(WorkflowContext):
         return self.__obj.call_activity(activity=activity.__name__, input=input)
 
     def call_child_workflow(self, workflow: Workflow, *,
-                            input: Union[TInput, None],
-                            instance_id: Union[str, None]) -> task.Task[TOutput]:
+                            input: Optional[TInput],
+                            instance_id: Optional[str]) -> task.Task[TOutput]:
         def wf(ctx: task.OrchestrationContext, inp: TInput):
             daprWfContext = DaprWorkflowContext(ctx)
             return workflow(daprWfContext, inp)
@@ -67,3 +68,14 @@ class DaprWorkflowContext(WorkflowContext):
 
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
         self.__obj.continue_as_new(new_input, save_events=save_events)
+
+
+def when_all(tasks: List[task.Task[T]]) -> task.WhenAllTask[T]:
+    """Returns a task that completes when all of the provided tasks complete or when one of the
+    tasks fail."""
+    return task.when_all(tasks)
+
+
+def when_any(tasks: List[task.Task]) -> task.WhenAnyTask:
+    """Returns a task that completes when any of the provided tasks complete or fail."""
+    return task.when_any(tasks)
