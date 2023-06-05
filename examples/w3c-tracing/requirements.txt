@@ -1,5 +1,5 @@
-dapr-ext-grpc >= 1.10.0rc1
-dapr >= 1.10.0rc1
+dapr-ext-grpc >= 1.10.0
+dapr >= 1.10.0
 opencensus == 0.9.0
 opencensus-ext-grpc == 0.7.2
 opencensus-ext-zipkin == 0.2.2
