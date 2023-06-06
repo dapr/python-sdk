@@ -13,12 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import unittest
+from typing import Optional
+
+from dapr.conf import settings
 
 
-class WorkflowTests(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def test_something(self):
-        self.assertTrue(True)
+def getAddress(host: Optional[str] = None, port: Optional[str] = None) -> str:
+    host = host or settings.DAPR_RUNTIME_HOST
+    port = port or settings.DAPR_GRPC_PORT
+    address = f"{host}:{port}"
+    return address

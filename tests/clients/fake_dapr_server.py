@@ -7,6 +7,7 @@ from google.protobuf import empty_pb2
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
+from dapr.clients.grpc._response import WorkflowRuntimeStatus
 from dapr.proto.runtime.v1.dapr_pb2 import (
     ActiveActorsCount,
     GetMetadataResponse,
@@ -17,6 +18,15 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
     TryLockResponse,
     UnlockRequest,
     UnlockResponse,
+    StartWorkflowRequest,
+    StartWorkflowResponse,
+    GetWorkflowRequest,
+    GetWorkflowResponse,
+    PauseWorkflowRequest,
+    ResumeWorkflowRequest,
+    TerminateWorkflowRequest,
+    PurgeWorkflowRequest,
+    RaiseEventWorkflowRequest,
 )
 from typing import Dict
 
@@ -28,6 +38,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.store = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
+        self.workflow_status = {}
+        self.workflow_options: Dict[str, str] = {}
         self.metadata: Dict[str, str] = {}
 
     def start(self, port: int = 8080):
@@ -259,6 +271,80 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         else:
             return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS)
 
+    def StartWorkflowAlpha1(self, request: StartWorkflowRequest, context):
+        instance_id = request.instance_id
+
+        if instance_id not in self.workflow_status:
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
+            return StartWorkflowResponse(instance_id=instance_id)
+        else:
+            # workflow already running
+            raise Exception("Unable to start insance of the workflow")
+
+    def GetWorkflowAlpha1(self, request: GetWorkflowRequest, context):
+        instance_id = request.instance_id
+
+        if instance_id in self.workflow_status:
+            status = str(self.workflow_status[instance_id])[len("WorkflowRuntimeStatus."):]
+            return GetWorkflowResponse(instance_id=instance_id,
+                                       workflow_name="example",
+                                       created_at=None,
+                                       last_updated_at=None,
+                                       runtime_status=status,
+                                       properties=self.workflow_options)
+        else:
+            # workflow non-existent
+            raise Exception("Workflow instance does not exist")
+
+    def PauseWorkflowAlpha1(self, request: PauseWorkflowRequest, context):
+        instance_id = request.instance_id
+
+        if instance_id in self.workflow_status:
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.SUSPENDED
+            return empty_pb2.Empty()
+        else:
+            # workflow non-existent
+            raise Exception("Workflow instance could not be paused")
+
+    def ResumeWorkflowAlpha1(self, request: ResumeWorkflowRequest, context):
+        instance_id = request.instance_id
+
+        if instance_id in self.workflow_status:
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
+            return empty_pb2.Empty()
+        else:
+            # workflow non-existent
+            raise Exception("Workflow instance could not be resumed")
+
+    def TerminateWorkflowAlpha1(self, request: TerminateWorkflowRequest, context):
+        instance_id = request.instance_id
+
+        if instance_id in self.workflow_status:
+            self.workflow_status[instance_id] = WorkflowRuntimeStatus.TERMINATED
+            return empty_pb2.Empty()
+        else:
+            # workflow non-existent
+            raise Exception("Workflow instance could not be terminated")
+
+    def PurgeWorkflowAlpha1(self, request: PurgeWorkflowRequest, context):
+        instance_id = request.instance_id
+
+        if instance_id in self.workflow_status:
+            del self.workflow_status[instance_id]
+            return empty_pb2.Empty()
+        else:
+            # workflow non-existent
+            raise Exception("Workflow instance could not be purged")
+
+    def RaiseEventWorkflowAlpha1(self, request: RaiseEventWorkflowRequest, context):
+        instance_id = request.instance_id
+
+        if instance_id in self.workflow_status:
+            self.workflow_options[instance_id] = request.event_data
+            return empty_pb2.Empty()
+        else:
+            raise Exception("Unable to raise event on workflow instance")
+
     def GetMetadata(self, request, context):
         return GetMetadataResponse(
             id='myapp',
@@ -288,7 +374,6 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                     capabilities=[
                         "ETAG",
                         "TRANSACTIONAL",
-                        "QUERY_API",
                         "ACTOR",
                     ],
                 ),
