@@ -129,8 +129,9 @@ def mytopic_important(event: v1.Event) -> None:
           ' content_type="{event.content_type}"',flush=True)
 ```
 
-- For a full list of state operations visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/pubsub-simple) for code samples and instructions to try out pub/sub
+- For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/pubsub-simple) for code samples and instructions to try out pub/sub.
+
 
 ### Interact with output bindings
 
@@ -196,7 +197,40 @@ async def executeConfiguration():
 asyncio.run(executeConfiguration())
 ```
 
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/configuration) for code samples and instructions to try out state management
+- Learn more about managing configurations via the [How-To: Manage configuration]({{< ref howto-manage-configuration.md >}}) guide.
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/configuration) for code samples and instructions to try out configuration
+
+### Distributed Lock
+
+```python
+from dapr.clients import DaprClient
+
+def main():
+    # Lock parameters
+    store_name = 'lockstore'  # as defined in components/lockstore.yaml
+    resource_id = 'example-lock-resource'
+    client_id = 'example-client-id'
+    expiry_in_seconds = 60
+
+    with DaprClient() as dapr:
+        print('Will try to acquire a lock from lock store named [%s]' % store_name)
+        print('The lock is for a resource named [%s]' % resource_id)
+        print('The client identifier is [%s]' % client_id)
+        print('The lock will will expire in %s seconds.' % expiry_in_seconds)
+
+        with dapr.try_lock(store_name, resource_id, client_id, expiry_in_seconds) as lock_result:
+            assert lock_result.success, 'Failed to acquire the lock. Aborting.'
+            print('Lock acquired successfully!!!')
+
+        # At this point the lock was released - by magic of the `with` clause ;)
+        unlock_result = dapr.unlock(store_name, resource_id, client_id)
+        print('We already released the lock so unlocking will not work.')
+        print('We tried to unlock it anyway and got back [%s]' % unlock_result.status)
+```
+
+- Learn more about using a distributed lock: [How-To: Use a lock]({{< ref howto-use-distributed-lock.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/blob/master/examples/distributed_lock) for code samples and instructions to try out distributed lock.
+
 
 ### Workflow
 
