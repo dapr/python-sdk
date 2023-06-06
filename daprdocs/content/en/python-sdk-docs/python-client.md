@@ -310,5 +310,11 @@ def main():
         workflowRuntime.shutdown()
 ```
 
+- Learn more about authoring and managing workflows: 
+  - [How-To: Author a workflow]({{< ref howto-author-workflow.md >}}).
+  - [How-To: Manage a workflow]({{< ref howto-manage-workflow.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/blob/master/examples/demo_workflow/app.py) for code samples and instructions to try out Dapr Workflow.
+
+
 ## Related links
 - [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples)

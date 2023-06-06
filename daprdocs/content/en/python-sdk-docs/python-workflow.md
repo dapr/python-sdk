@@ -27,10 +27,10 @@ In the Python example project:
 
 ## Set up the environment
 
-If it's not already installed, run the following command to install the Dapr Python SDK.
+If it's not already installed, run the following command to install the requirements for running workflows with the Dapr Python SDK.
 
 ```bash
-pip3 install dapr
+pip3 install -r demo_workflow/requirements.txt
 ```
 
 Clone the [Python SDK repo].
@@ -42,7 +42,7 @@ git clone https://github.com/dapr/python-sdk.git
 From the Python SDK root directory, navigate to the Dapr Workflow example.
 
 ```bash
-cd examples/workflow
+cd examples/demo_workflow
 ```
 
 ## Run the application locally
@@ -50,7 +50,7 @@ cd examples/workflow
 To run the Dapr application, you need to start the Python program and a Dapr sidecar. In the terminal, start the sidecar.
 
 ```bash
-dapr run -- python3 workflow.py
+dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 50001 --resources-path components --placement-host-address localhost:50005 -- python3 app.py
 ```
 
 > **Note:** Since Python3.exe is not defined in Windows, you may need to use `python workflow.py` instead of `python3 workflow.py`.
