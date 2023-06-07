@@ -6,7 +6,7 @@ weight: 30000
 description: How to get up and running with workflows using the Dapr Python SDK
 ---
 
-Let’s create a Dapr workflow and invoke it using the console. In the [provided hello world workflow example](https://github.com/dapr/python-sdk/tree/master/examples/demo_workflow), the console prompts provide directions on how to both purchase and restock items. In this guide, you will:
+Let’s create a Dapr workflow and invoke it using the console. With the [provided hello world workflow example](https://github.com/dapr/python-sdk/tree/master/examples/demo_workflow), you will:
 
 - Run a [Python console application using `DaprClient`](https://github.com/dapr/python-sdk/blob/master/examples/demo_workflow/app.py)
 - Utilize the Python workflow SDK and API calls to start, pause, resume, terminate, and purge workflow instances
