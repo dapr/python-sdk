@@ -6,17 +6,17 @@ weight: 30000
 description: How to get up and running with workflows using the Dapr Python SDK
 ---
 
-Let’s create a Dapr workflow and invoke it using the console. In the [provided order processing workflow example](todo), the console prompts provide directions on how to both purchase and restock items. In this guide, you will:
+Let’s create a Dapr workflow and invoke it using the console. In the [provided hello world workflow example](https://github.com/dapr/python-sdk/tree/master/examples/demo_workflow), the console prompts provide directions on how to both purchase and restock items. In this guide, you will:
 
-- Create a Python console application using `DaprClient` ([workflow.py](https://github.com/dapr/python-sdk/examples/workflow))
-- Utilize the Python workflow SDK and API calls to start and query workflow instances
+- Run a [Python console application using `DaprClient`](https://github.com/dapr/python-sdk/blob/master/examples/demo_workflow/app.py)
+- Utilize the Python workflow SDK and API calls to start, pause, resume, terminate, and purge workflow instances
 
 This example uses the default configuration from `dapr init` in [self-hosted mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-self-hosted).
 
-In the Python example project:
-- The `workflow.py` file contains the setup of the app, including the registration of the workflow and workflow activities. 
-- The workflow definition is found in the `todo` directory. 
-- The workflow activity definitions are found in the `todo` directory.
+In the Python example project, the `app.py` file contains the setup of the app, including:
+- The workflow definition 
+- The workflow activity definitions
+- The registration of the workflow and workflow activities 
 
 ## Prerequisites
 - [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
@@ -27,7 +27,7 @@ In the Python example project:
 
 ## Set up the environment
 
-If it's not already installed, run the following command to install the requirements for running workflows with the Dapr Python SDK.
+Run the following command to install the requirements for running this workflow sample with the Dapr Python SDK.
 
 ```bash
 pip3 install -r demo_workflow/requirements.txt
@@ -47,100 +47,135 @@ cd examples/demo_workflow
 
 ## Run the application locally
 
-To run the Dapr application, you need to start the Python program and a Dapr sidecar. In the terminal, start the sidecar.
+To run the Dapr application, you need to start the Python program and a Dapr sidecar. In the terminal, run:
 
 ```bash
 dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 50001 --resources-path components --placement-host-address localhost:50005 -- python3 app.py
 ```
 
-> **Note:** Since Python3.exe is not defined in Windows, you may need to use `python workflow.py` instead of `python3 workflow.py`.
+> **Note:** Since Python3.exe is not defined in Windows, you may need to use `python app.py` instead of `python3 app.py`.
 
 
-## Start a workflow
-
-To start a workflow, you have two options:
-
-1. Follow the directions from the console prompts.
-1. Use the workflow API and send a request to Dapr directly. 
-
-This guide focuses on the workflow API option. 
-
-{{% alert title="Note" color="primary" %}}
-  - You can find the commands below in the `todo` file.
-  - The body of the curl request is the purchase order information used as the input of the workflow. 
-  - The "1234" in the commands represents the unique identifier for the workflow and can be replaced with any identifier of your choosing.
-{{% /alert %}}
-
-Run the following command to start a workflow. 
-
-{{< tabs "Linux/MacOS" "Windows">}}
-
-{{% codetab %}}
-
-```bash
-todo
-```
-
-{{% /codetab %}}
-
-{{% codetab %}}
-
-```powershell
-todo
-```
-
-{{% /codetab %}}
-
-{{< /tabs >}}
-
-If successful, you should see a response like the following: 
-
-```json
-todo
-```
-
-Send an HTTP request to get the status of the workflow that was started:
-
-```bash
-todo
-```
-
-The workflow is designed to take several seconds to complete. If the workflow hasn't completed when you issue the HTTP request, you'll see the following JSON response (formatted for readability) with workflow status as `RUNNING`:
-
-```json
-todo
-```
-
-Once the workflow has completed running, you should see the following output, indicating that it has reached the `COMPLETED` status:
-
-```json
-todo
-```
-
-When the workflow has completed, the stdout of the workflow app should look like:
-
-```log
-todo
-```
-
-
-## Error Handling
-
-The Dapr Python SDK will pass through errors that it receives from the Dapr runtime. In the case of an ETag mismatch, the Dapr runtime will return `StatusCode.ABORTED`.
-
-**Example**
+**Expected output**
 
 ```
-== APP == State store has successfully saved value_1 with key_1 as key
-== APP == Cannot save due to bad etag. ErrorCode=StatusCode.ABORTED
-== APP == State store has successfully saved value_2 with key_2 as key
-== APP == State store has successfully saved value_3 with key_3 as key
-== APP == Cannot save bulk due to bad etags. ErrorCode=StatusCode.ABORTED
-== APP == Got value=b'value_1' eTag=1
-== APP == Got items with etags: [(b'value_1_updated', '2'), (b'value_2', '2')]
-== APP == Got value after delete: b''
+== APP == ==========Start Counter Increase as per Input:==========
+
+== APP == start_resp exampleInstanceID
+
+== APP == Hi Counter!
+== APP == New counter value is: 1!
+
+== APP == Hi Counter!
+== APP == New counter value is: 11!
+
+== APP == Hi Counter!
+== APP == Hi Counter!
+== APP == Get response from hello_world_wf after pause call: Suspended
+
+== APP == Hi Counter!
+== APP == Get response from hello_world_wf after resume call: Running
+
+== APP == Hi Counter!
+== APP == New counter value is: 111!
+
+== APP == Hi Counter!
+== APP == Instance Successfully Purged
+
+== APP == start_resp exampleInstanceID
+
+== APP == Hi Counter!
+== APP == New counter value is: 1112!
+
+== APP == Hi Counter!
+== APP == New counter value is: 1122!
+
+== APP == Get response from hello_world_wf after terminate call: Terminated
+== APP == Instance Successfully Purged
+```
+
+## What happened?
+
+When you ran `dapr run`, the Dapr client:
+1. Registered the workflow (`hello_world_wf`) and its actvity (`hello_act`)
+1. Started the workflow engine
+
+```python
+def main():
+    with DaprClient() as d:
+        host = settings.DAPR_RUNTIME_HOST
+        port = settings.DAPR_GRPC_PORT
+        workflowRuntime = WorkflowRuntime(host, port)
+        workflowRuntime = WorkflowRuntime()
+        workflowRuntime.register_workflow(hello_world_wf)
+        workflowRuntime.register_activity(hello_act)
+        workflowRuntime.start()
+
+        print("==========Start Counter Increase as per Input:==========")
+        start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
+                        workflow_name=workflowName, input=inputData, workflow_options=workflowOptions)
+        print(f"start_resp {start_resp.instance_id}")
+```
+
+Dapr then paused and resumed the workflow:
+
+```python
+       # Pause
+        d.pause_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        print(f"Get response from {workflowName} after pause call: {getResponse.runtime_status}")
+
+        # Resume
+        d.resume_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        print(f"Get response from {workflowName} after resume call: {getResponse.runtime_status}")
+```
+
+Once the workflow resumed, Dapr raised a workflow event and printed the new counter value:
+
+```python
+        # Raise event
+        d.raise_workflow_event(instance_id=instanceId, workflow_component=workflowComponent,
+                    event_name=eventName, event_data=eventData)
+```
+
+To clear out the workflow state from your state store, Dapr purged the workflow:
+
+```python
+        # Purge
+        d.purge_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        try:
+            getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        except DaprInternalError as err:
+            if nonExistentIDError in err._message:
+                print("Instance Successfully Purged")
+```
+
+The sample then demonstrated terminating a workflow by:
+- Starting a new workflow using the same `instanceId` as the purged workflow.
+- Terminating the workflow and purging before shutting down the workflow.
+
+```python
+        # Kick off another workflow
+        start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
+                        workflow_name=workflowName, input=inputData, workflow_options=workflowOptions)
+        print(f"start_resp {start_resp.instance_id}")
+
+        # Terminate
+        d.terminate_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        sleep(1)
+        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        print(f"Get response from {workflowName} after terminate call: {getResponse.runtime_status}")
+
+        # Purge
+        d.purge_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        try:
+            getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
+        except DaprInternalError as err:
+            if nonExistentIDError in err._message:
+                print("Instance Successfully Purged")
 ```
 
 ## Next steps
-- [Learn more about Dapr workflow]({{< ref workflow-overview.md >}})
+- [Learn more about Dapr workflow]({{< ref workflow >}})
 - [Workflow API reference]({{< ref workflow_api.md >}})
