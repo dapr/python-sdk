@@ -13,4 +13,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__version__ = "1.9.0rc1.dev"
+__version__ = "1.10.0rc1.dev"
