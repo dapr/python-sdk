@@ -123,7 +123,8 @@ class DaprGrpcClient:
         """
         useragent = f'dapr-sdk-python/{__version__}'
         if not address:
-            address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+            address = f'''{settings.DAPR_GRPC_ENDPOINT if settings.DAPR_GRPC_ENDPOINT
+                         else settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}'''
         self._address = address
         if not max_grpc_message_length:
             self._channel = grpc.insecure_channel(address, options=[   # type: ignore
