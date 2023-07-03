@@ -16,7 +16,7 @@ class DaprHandler(BaseHTTPRequestHandler):
             time.sleep(self.server.sleep_time)
         self.received_verb = verb
         self.server.request_headers = self.headers
-        self.server.request_body = self.rfile.read()
+        self.server.request_body += self.rfile.read(-1)
 
         self.send_response(self.server.response_code)
         for key, value in self.server.response_header_list:
