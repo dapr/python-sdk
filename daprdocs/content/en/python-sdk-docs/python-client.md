@@ -8,12 +8,13 @@ description: How to get up and running with the Dapr Python SDK
 
 The Dapr client package allows you to interact with other Dapr applications from a Python application.
 
-## Pre-requisites
+## Prerequisites
 
 - [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
 - Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
 - [Python 3.7+](https://www.python.org/downloads/) installed
-- [Dapr Python module]({{< ref "python#install-the0dapr-module" >}}) installed
+- [Dapr Python module]({{< ref "python#installation" >}}) installed
+
 
 ## Import the client package
 
