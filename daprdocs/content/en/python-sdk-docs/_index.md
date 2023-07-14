@@ -66,11 +66,13 @@ Walk through the Python quickstarts, tutorials, and examples to see Dapr in acti
 
 ## Available packages
 
+### Main SDK
+
 <div class="card-deck">
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>Client</b></h5>
-      <p class="card-text">Write Python applications to interact with a Dapr sidecar and other Dapr applications.</p>
+      <p class="card-text">Write Python applications to interact with a Dapr sidecar and other Dapr applications, including stateful virtual actors in Python</p>
       <a href="{{< ref python-client >}}" class="stretched-link"></a>
     </div>
   </div>
@@ -81,10 +83,29 @@ Walk through the Python quickstarts, tutorials, and examples to see Dapr in acti
       <a href="{{< ref python-actor >}}" class="stretched-link"></a>
     </div>
   </div>
+</div>
+
+### SDK extensions
+
+<div class="card-deck">
   <div class="card">
     <div class="card-body">
-      <h5 class="card-title"><b>Extensions</b></h5>
-      <p class="card-text">Add Dapr capabilities to other Python frameworks using the gRPC extension, the FastAPI extension, or the Flask extension.</p>
+      <h5 class="card-title"><b>gRPC</b></h5>
+      <p class="card-text">Create Dapr services with the gRPC server extension module</p>
+      <a href="{{< ref python-grpc >}}" class="stretched-link"></a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title"><b>FastAPI</b></h5>
+      <p class="card-text">Integrate with Dapr Python virtual actors and pub/sub using the Dapr FastAPI extension module.</p>
+      <a href="{{< ref python-fastapi >}}" class="stretched-link"></a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title"><b>Flask</b></h5>
+      <p class="card-text">Integrate with Dapr Python virtual actors using the Dapr Flask extension module.</p>
       <a href="{{< ref python-sdk-extensions >}}" class="stretched-link"></a>
     </div>
   </div>
@@ -96,6 +117,8 @@ Walk through the Python quickstarts, tutorials, and examples to see Dapr in acti
     </div>
   </div>
 </div>
+
+
 
 ## More information
 
