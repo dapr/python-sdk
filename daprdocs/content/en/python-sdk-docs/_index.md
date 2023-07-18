@@ -100,7 +100,7 @@ SDK extensions mainly work as utilities for receiving pub/sub events, programati
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>Workflow</b></h5>
-      <p class="card-text">Create and manage workflows that work with other Dapr APIs in Python.</p>
+      <p class="card-text">Author workflows that work with other Dapr APIs in Python.</p>
       <a href="{{< ref python-workflow >}}" class="stretched-link"></a>
     </div>
   </div>
