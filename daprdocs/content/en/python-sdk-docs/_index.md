@@ -44,10 +44,6 @@ pip install dapr-dev
 
 ## Available packages
 
-Once you've installed the main Python SDK, you can:
-- Import additional packages as part of the main SDK package
-- Install extensions on top of the main Python SDK
-
 ### SDK imports
 
 Python SDK imports are included with the main SDK install, but need to be imported when used. The most common imports provided by the Dapr Python SDK are:

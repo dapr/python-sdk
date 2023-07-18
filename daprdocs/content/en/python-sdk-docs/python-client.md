@@ -19,7 +19,7 @@ The Dapr client package allows you to interact with other Dapr applications from
 
 ## Import the client package
 
-The Dapr package contains the `DaprClient`, which is used to create and use a client.
+The `dapr` package contains the `DaprClient`, which is used to create and use a client.
 
 ```python
 from dapr.clients import DaprClient
