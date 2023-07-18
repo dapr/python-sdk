@@ -5,6 +5,11 @@ linkTitle: "Python"
 weight: 1000
 description: Python SDK packages for developing Dapr applications
 no_list: true
+cascade:
+  github_repo: https://github.com/dapr/python-sdk
+  github_subdir: daprdocs/content/en/python-sdk-docs
+  path_base_for_github_subdir: content/en/developing-applications/sdks/python/
+  github_branch: master
 ---
 
 Dapr offers a variety of subpackages to help with the development of Python applications. Using them you can create Python clients, servers, and virtual actors with Dapr.
