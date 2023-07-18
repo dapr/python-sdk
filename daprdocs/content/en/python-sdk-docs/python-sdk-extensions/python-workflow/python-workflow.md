@@ -26,7 +26,7 @@ In the Python example project, the `app.py` file contains the setup of the app, 
 - [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
 - Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
 - [Python 3.7+](https://www.python.org/downloads/) installed
-- [Dapr Python module]({{< ref "python#install-the0dapr-module" >}}) installed
+- [Dapr Python package]({{< ref "python#installation" >}}) and the [workflow extension](https://github.com/dapr/python-sdk/tree/master/ext/dapr-ext-workflow#installation) installed
 - Verify you're using the latest proto bindings
 
 ## Set up the environment

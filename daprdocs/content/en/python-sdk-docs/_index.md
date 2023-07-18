@@ -7,7 +7,7 @@ description: Python SDK packages for developing Dapr applications
 no_list: true
 ---
 
-Dapr offers a variety of packages to help with the development of Python applications. Using them you can create Python clients, servers, and virtual actors with Dapr.
+Dapr offers a variety of subpackages to help with the development of Python applications. Using them you can create Python clients, servers, and virtual actors with Dapr.
 
 ## Prerequisites
 
@@ -42,11 +42,11 @@ pip install dapr-dev
 {{< /tabs >}}
 
 
-## Available packages
+## Available subpackages
 
 ### SDK imports
 
-Python SDK imports are included with the main SDK install, but need to be imported when used. The most common imports provided by the Dapr Python SDK are:
+Python SDK imports are subpackages included with the main SDK install, but need to be imported when used. The most common imports provided by the Dapr Python SDK are:
 
 <div class="card-deck">
   <div class="card">
@@ -75,21 +75,21 @@ SDK extensions mainly work as utilities for receiving pub/sub events, programati
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>gRPC</b></h5>
-      <p class="card-text">Create Dapr services with the gRPC server extension module</p>
+      <p class="card-text">Create Dapr services with the gRPC server extension.</p>
       <a href="{{< ref python-grpc >}}" class="stretched-link"></a>
     </div>
   </div>
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>FastAPI</b></h5>
-      <p class="card-text">Integrate with Dapr Python virtual actors and pub/sub using the Dapr FastAPI extension module.</p>
+      <p class="card-text">Integrate with Dapr Python virtual actors and pub/sub using the Dapr FastAPI extension.</p>
       <a href="{{< ref python-fastapi >}}" class="stretched-link"></a>
     </div>
   </div>
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>Flask</b></h5>
-      <p class="card-text">Integrate with Dapr Python virtual actors using the Dapr Flask extension module.</p>
+      <p class="card-text">Integrate with Dapr Python virtual actors using the Dapr Flask extension.</p>
       <a href="{{< ref python-sdk-extensions >}}" class="stretched-link"></a>
     </div>
   </div>
