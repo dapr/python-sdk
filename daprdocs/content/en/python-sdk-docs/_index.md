@@ -36,7 +36,6 @@ pip install dapr
 {{% codetab %}}
 <!--dev-->
 > **Note:** The development package will contain features and behavior that will be compatible with the pre-release version of the Dapr runtime. Make sure to uninstall any stable versions of the Python SDK before installing the dapr-dev package.
-{{% /alert %}}
 
 ```bash
 pip install dapr-dev
