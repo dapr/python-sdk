@@ -15,7 +15,7 @@ The Dapr client package allows you to interact with other Dapr applications from
 
 ## Prerequisites
 
-[Install the Dapr Python package]({{< ref "python-sdk-docs/_index.md" >}}) before getting started.
+[Install the Dapr Python package]({{< ref "python#installation" >}}) before getting started.
 
 ## Import the client package
 
