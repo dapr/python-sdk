@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 from enum import Enum
+import json
 
 from durabletask import client
 
@@ -54,3 +55,19 @@ class WorkflowState:
             return WorkflowStatus.SUSPENDED
         else:
             return WorkflowStatus.UNKNOWN
+
+    def __str__(self) -> str:
+        return json.dumps(self.to_json(), indent=4, sort_keys=True, default=str)
+
+    def to_json(self):
+        return {
+            'instance_id': self.__obj.instance_id,
+            'name': self.__obj.name,
+            'runtime_status': self.__obj.runtime_status.name,
+            'created_at': self.__obj.created_at,
+            'last_updated_at': self.__obj.last_updated_at,
+            'serialized_input': self.__obj.serialized_input,
+            'serialized_output': self.__obj.serialized_output,
+            'serialized_custom_status': self.__obj.serialized_custom_status,
+            'failure_details': self.__obj.failure_details
+        }
