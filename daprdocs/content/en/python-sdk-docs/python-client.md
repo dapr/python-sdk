@@ -8,16 +8,18 @@ description: How to get up and running with the Dapr Python SDK
 
 The Dapr client package allows you to interact with other Dapr applications from a Python application.
 
-## Pre-requisites
+{{% alert title="Note" color="primary" %}}
+ If you haven't already, [try out one of the quickstarts]({{< ref quickstarts >}}) for a quick walk-through on how to use the Dapr Python SDK with an API building block.
 
-- [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
-- Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
-- [Python 3.7+](https://www.python.org/downloads/) installed
-- [Dapr Python module]({{< ref "python#install-the0dapr-module" >}}) installed
+{{% /alert %}}
+
+## Prerequisites
+
+[Install the Dapr Python package]({{< ref "python#installation" >}}) before getting started.
 
 ## Import the client package
 
-The dapr package contains the `DaprClient` which will be used to create and use a client.
+The `dapr` package contains the `DaprClient`, which is used to create and use a client.
 
 ```python
 from dapr.clients import DaprClient
@@ -42,7 +44,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on service invocation visit [How-To: Invoke a service]({{< ref howto-invoke-discover-services.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-simple) for code samples and instructions to try out service invocation
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-simple) for code samples and instructions to try out service invocation.
 
 ### Save & get application state
 
@@ -61,7 +63,7 @@ with DaprClient() as d:
 ```
 
 - For a full list of state operations visit [How-To: Get & save state]({{< ref howto-get-save-state.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store) for code samples and instructions to try out state management
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store) for code samples and instructions to try out state management.
 
 ### Query application state (Alpha)
 
@@ -95,7 +97,7 @@ with DaprClient() as d:
 
 ### Publish & subscribe to messages
 
-##### Publish messages
+#### Publish messages
 
 ```python
 from dapr.clients import DaprClient
@@ -104,7 +106,7 @@ with DaprClient() as d:
     resp = d.publish_event(pubsub_name='pubsub', topic_name='TOPIC_A', data='{"message":"Hello World"}')
 ```
 
-##### Subscribe to messages
+#### Subscribe to messages
 
 ```python
 from cloudevents.sdk.event import v1
@@ -143,7 +145,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on output bindings visit [How-To: Use bindings]({{< ref howto-bindings.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-binding) for code samples and instructions to try out output bindings
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-binding) for code samples and instructions to try out output bindings.
 
 ### Retrieve secrets
 
@@ -157,7 +159,9 @@ with DaprClient() as d:
 - For a full guide on secrets visit [How-To: Retrieve secrets]({{< ref howto-secrets.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/secret_store) for code samples and instructions to try out retrieving secrets
 
-### Get configuration
+### Configuration
+
+#### Get configuration
 
 ```python
 from dapr.clients import DaprClient
@@ -167,7 +171,7 @@ with DaprClient() as d:
     configuration = d.get_configuration(store_name='configurationstore', keys=['orderId'], config_metadata={})
 ```
 
-### Subscribe to configuration
+#### Subscribe to configuration
 
 ```python
 import asyncio
@@ -198,7 +202,7 @@ asyncio.run(executeConfiguration())
 ```
 
 - Learn more about managing configurations via the [How-To: Manage configuration]({{< ref howto-manage-configuration.md >}}) guide.
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/configuration) for code samples and instructions to try out configuration
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/configuration) for code samples and instructions to try out configuration.
 
 ### Distributed Lock
 
@@ -316,4 +320,4 @@ def main():
 
 
 ## Related links
-- [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples)
+[Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples)

@@ -27,7 +27,7 @@ workflowOptions = dict()
 workflowOptions["task_queue"] =  "testQueue"
 eventName = "event1"
 eventData = "eventData"
-nonExistentIDError = "No such instance exists"
+nonExistentIDError = "no such instance exists"
 
 def hello_world_wf(ctx: DaprWorkflowContext, input):
     print(f'{input}')
