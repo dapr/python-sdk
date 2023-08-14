@@ -35,10 +35,12 @@ class WorkflowRuntime:
         address = getAddress(host, port)
         self.__worker = worker.TaskHubGrpcWorker(host_address=address)
 
-    def register_workflow(self, fn: Workflow[TInput, TInput]):
-        def orchestrationWrapper(ctx: task.OrchestrationContext, inp: TInput):
+    def register_workflow(self, fn: Workflow):
+        def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
             daprWfContext = DaprWorkflowContext(ctx)
+            if inp is None:
+                return fn(daprWfContext)
             return fn(daprWfContext, inp)
 
         self.__worker._registry.add_named_orchestrator(fn.__name__, orchestrationWrapper)
@@ -47,9 +49,11 @@ class WorkflowRuntime:
         """Registers a workflow activity as a function that takes
            a specified input type and returns a specified output type.
         """
-        def activityWrapper(ctx: task.ActivityContext, inp: TInput):
+        def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
             wfActivityContext = WorkflowActivityContext(ctx)
+            if inp is None:
+                return fn(wfActivityContext)
             return fn(wfActivityContext, inp)
 
         self.__worker._registry.add_named_activity(fn.__name__, activityWrapper)
