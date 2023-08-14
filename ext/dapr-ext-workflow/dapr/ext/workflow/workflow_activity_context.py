@@ -44,4 +44,4 @@ class WorkflowActivityContext():
 
 
 # Activities are simple functions that can be scheduled by workflows
-Activity = Callable[[WorkflowActivityContext, TInput], TOutput]
+Activity = Callable[..., TOutput]
