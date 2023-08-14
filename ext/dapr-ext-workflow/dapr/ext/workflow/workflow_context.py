@@ -101,7 +101,7 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def call_activity(self, activity: Activity[TInput, TOutput], *,
+    def call_activity(self, activity: Activity[TOutput], *,
                       input: Optional[TInput] = None) -> task.Task[TOutput]:
         """Schedule an activity for execution.
 
@@ -122,7 +122,7 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def call_child_workflow(self, orchestrator: Workflow[TInput, TOutput], *,
+    def call_child_workflow(self, orchestrator: Workflow[TOutput], *,
                             input: Optional[TInput] = None,
                             instance_id: Optional[str] = None) -> task.Task[TOutput]:
         """Schedule child-workflow function for execution.
@@ -176,4 +176,4 @@ class WorkflowContext(ABC):
 
 
 # Workflows are generators that yield tasks and receive/return any type
-Workflow = Callable[[WorkflowContext, TInput], Union[Generator[task.Task, Any, Any], TOutput]]
+Workflow = Callable[..., Union[Generator[task.Task, Any, Any], TOutput]]
