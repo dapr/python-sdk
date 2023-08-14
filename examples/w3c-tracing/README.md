@@ -15,7 +15,7 @@ This sample uses the Client provided in Dapr's Python SDK invoking a remote meth
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.7+](https://www.python.org/downloads/)
+- [Install Python 3.8+](https://www.python.org/downloads/)
 
 ### Install dependencies
 
