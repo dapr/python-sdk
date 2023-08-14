@@ -18,7 +18,7 @@ Dapr offers a variety of subpackages to help with the development of Python appl
 
 - [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
 - Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
-- [Python 3.7+](https://www.python.org/downloads/) installed
+- [Python 3.8+](https://www.python.org/downloads/) installed
 
 ## Installation
 
