@@ -17,7 +17,6 @@ import json
 import socket
 import unittest
 import uuid
-import sys
 
 from unittest.mock import patch
 
@@ -35,9 +34,6 @@ from dapr.clients.grpc._response import (
     ConfigurationResponse,
     UnlockResponseStatus,
 )
-
-if (sys.version_info.major, sys.version_info.minor) < (3, 8):
-    raise unittest.SkipTest()
 
 
 class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
