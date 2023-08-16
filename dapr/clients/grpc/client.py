@@ -134,7 +134,10 @@ class DaprGrpcClient:
             ]
 
         if not address:
-            address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+            if not settings.DAPR_GRPC_ENDPOINT:
+                address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+            else:
+                address = settings.DAPR_GRPC_ENDPOINT
 
         self.parse_endpoint(address)
 
@@ -163,7 +166,7 @@ class DaprGrpcClient:
         addr_list = addr.split("://")
 
         if len(addr_list) == 2:
-            # A scheme was specified
+            # A scheme was explicitly specified
             self._scheme = addr_list[0]
             if self._scheme == "https":
                 self._port = 443
@@ -171,6 +174,7 @@ class DaprGrpcClient:
 
         addr_list = addr.split(":")
         if len(addr_list) == 2:
+            # A port was explicitly specified
             self._port = int(addr_list[1])
             addr = addr_list[0]
 

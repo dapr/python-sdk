@@ -123,21 +123,31 @@ class DaprGrpcClientAsync:
                 message length in bytes.
         """
         useragent = f'dapr-sdk-python/{__version__}'
-        if not address:
-            address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
-        self._address = address
-        options = []
         if not max_grpc_message_length:
-            options = [
+            options = [  # type: ignore
                 ('grpc.primary_user_agent', useragent),
             ]
         else:
-            options = [
+            options = [  # type: ignore
                 ('grpc.max_send_message_length', max_grpc_message_length),
                 ('grpc.max_receive_message_length', max_grpc_message_length),
                 ('grpc.primary_user_agent', useragent)
             ]
-        self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
+        if not address:
+            if not settings.DAPR_GRPC_ENDPOINT:
+                address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+            else:
+                address = settings.DAPR_GRPC_ENDPOINT
+        self.parse_endpoint(address)
+
+
+        if self._scheme == "https":
+            self._channel = grpc.aio.secure_channel(f"{self._hostname}:{self._port}",
+                                                credentials=grpc.ssl_channel_credentials(),
+                                                options=options)
+        else:
+            self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
+
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptorAsync([
@@ -149,6 +159,27 @@ class DaprGrpcClientAsync:
                 address, options=options, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
+
+    def parse_endpoint(self, addr: str) -> None:
+        self._scheme = "http"
+        self._port = 80
+
+        addr_list = addr.split("://")
+
+        if len(addr_list) == 2:
+            # A scheme was explicitly specified
+            self._scheme = addr_list[0]
+            if self._scheme == "https":
+                self._port = 443
+            addr = addr_list[1]
+
+        addr_list = addr.split(":")
+        if len(addr_list) == 2:
+            # A port was explicitly specified
+            self._port = int(addr_list[1])
+            addr = addr_list[0]
+
+        self._hostname = addr
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
