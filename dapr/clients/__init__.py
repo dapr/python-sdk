@@ -57,7 +57,7 @@ class DaprClient(DaprGrpcClient):
                 StreamStreamClientInterceptor]]] = None,
             http_timeout_seconds: Optional[int] = None,
             max_grpc_message_length: Optional[int] = None):
-        """Connects to Dapr Runtime and via gRPC and HTTP.
+        """Connects to Dapr Runtime via gRPC and HTTP.
 
         Args:
             address (str, optional): Dapr Runtime gRPC endpoint address.
