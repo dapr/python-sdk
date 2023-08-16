@@ -139,7 +139,8 @@ class DaprGrpcClient:
         self.parse_endpoint(address)
 
         if self._scheme == "https":
-            self._channel = grpc.secure_channel(f"{self._hostname}:{self._port}", credentials=grpc.ssl_channel_credentials(),
+            self._channel = grpc.secure_channel(f"{self._hostname}:{self._port}",
+                                                credentials=grpc.ssl_channel_credentials(),
                                                 options=options)
         else:
             self._channel = grpc.insecure_channel(address, options=options)
@@ -174,8 +175,6 @@ class DaprGrpcClient:
             addr = addr_list[0]
 
         self._hostname = addr
-
-
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
