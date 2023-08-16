@@ -61,13 +61,13 @@ class DaprClient(DaprGrpcClient):
 
         Args:
             address (str, optional): Dapr Runtime gRPC endpoint address.
-            headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
+            headers_callback (lambda: Dict[str, str], optional): Generates header for each request.
             interceptors (list of UnaryUnaryClientInterceptor or
                 UnaryStreamClientInterceptor or
                 StreamUnaryClientInterceptor or
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
             http_timeout_seconds (int): specify a timeout for http connections
-            max_grpc_messsage_length (int, optional): The maximum grpc send and receive
+            max_grpc_message_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
         """
         super().__init__(address, interceptors, max_grpc_message_length)
@@ -99,9 +99,9 @@ class DaprClient(DaprGrpcClient):
         """Invoke a service method over gRPC or HTTP.
 
         Args:
-            app_id (str): Application Id.
+            app_id (str): Application ID.
             method_name (str): Method to be invoked.
-            data (bytes or str or GrpcMessage, optional): Data for requet's body.
+            data (bytes or str or GrpcMessage, optional): Data for request's body.
             content_type (str, optional): Content type of the data.
             metadata (MetadataTuple, optional): Additional metadata or headers.
             http_verb (str, optional): HTTP verb for the request.
@@ -145,9 +145,9 @@ class DaprClient(DaprGrpcClient):
         """Invoke a service method over gRPC or HTTP.
 
         Args:
-            app_id (str): Application Id.
+            app_id (str): Application ID.
             method_name (str): Method to be invoked.
-            data (bytes or str or GrpcMessage, optional): Data for requet's body.
+            data (bytes or str or GrpcMessage, optional): Data for request's body.
             content_type (str, optional): Content type of the data.
             metadata (MetadataTuple, optional): Additional metadata or headers.
             http_verb (str, optional): HTTP verb for the request.
