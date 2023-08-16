@@ -142,6 +142,7 @@ class DaprGrpcClient:
         if self._scheme == "https":
             self._channel = grpc.secure_channel(f"{self._hostname}:{self._port}",
                                                 credentials=grpc.ssl_channel_credentials(),
+
                                                 options=options)
         else:
             self._channel = grpc.insecure_channel(address, options=options)
@@ -156,6 +157,28 @@ class DaprGrpcClient:
                 self._channel, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
+
+    def parse_endpoint(self, addr: str) -> None:
+        self._scheme = "http"
+        self._port = 80
+
+        addr_list = addr.split("://")
+
+        if len(addr_list) == 2:
+            # A scheme was specified
+            self._scheme = addr_list[0]
+            if self._scheme == "https":
+                self._port = 443
+            addr = addr_list[1]
+
+        addr_list = addr.split(":")
+        if len(addr_list) == 2:
+            self._port = int(addr_list[1])
+            addr = addr_list[0]
+
+        self._hostname = addr
+
+
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
@@ -1432,6 +1455,7 @@ class DaprGrpcClient:
                         raise e
                     time.sleep(min(1, remaining))
 
+    # ---
     def get_metadata(self) -> GetMetadataResponse:
         """Returns information about the sidecar allowing for runtime
         discoverability.
