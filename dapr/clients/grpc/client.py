@@ -182,6 +182,7 @@ class DaprGrpcClient:
         if http_querystring is not None and len(http_querystring):
             http_ext.querystring = urlencode(http_querystring)
         return http_ext
+
     def _parse_endpoint(self, addr: str) -> None:
         self._scheme = "http"
         self._port = 80
@@ -198,12 +199,13 @@ class DaprGrpcClient:
         addr_list = addr.split(":")
         if len(addr_list) == 2:
             # A port was explicitly specified
-            addr_list = addr.split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
-            addr = addr_list[0]
-            self._port = int(addr_list[1])
+            self._hostname = addr_list[0]
+            addr_list = addr_list[1].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
+            self._port = int(addr_list[0])
+        else:
+            addr_list = addr_list[0].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
+            self._hostname = addr_list[0]
 
-        self._hostname = addr
-        #
     def invoke_method(
             self,
             app_id: str,

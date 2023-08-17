@@ -199,10 +199,12 @@ class DaprGrpcClientAsync:
         addr_list = addr.split(":")
         if len(addr_list) == 2:
             # A port was explicitly specified
-            self._port = int(addr_list[1])
-            addr = addr_list[0]
-
-        self._hostname = addr
+            self._hostname = addr_list[0]
+            addr_list = addr_list[1].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
+            self._port = int(addr_list[0])
+        else:
+            addr_list = addr_list[0].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
+            self._hostname = addr_list[0]
 
     async def invoke_method(
             self,
@@ -1458,14 +1460,12 @@ class DaprGrpcClientAsync:
             timeout_s (float): timeout in seconds
         """
 
-        host_port_str = self._address.split(":")
-        host_port = (host_port_str[0], int(host_port_str[1]))
         start = time.time()
         while True:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout_s)
                 try:
-                    s.connect(host_port)
+                    s.connect((self._hostname, self._port))
                     return
                 except Exception as e:
                     remaining = (start + timeout_s) - time.time()
