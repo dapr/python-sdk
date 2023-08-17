@@ -25,7 +25,7 @@ from dapr.clients import DaprClient
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
-from dapr.clients.grpc._helpers import to_bytes
+from dapr.clients.grpc._helpers import (to_bytes, parse_endpoint)
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._response import (
@@ -72,7 +72,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     @patch.object(settings, "DAPR_RUNTIME_HOST", "domain1.com")
     @patch.object(settings, "DAPR_GRPC_PORT", "5000")
-    def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
+    def test_init_with_argument_and_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
         dapr = DaprGrpcClient("https://domain2.com:5002")
         self.assertEqual("domain2.com", dapr._hostname)
         self.assertEqual(5002, dapr._port)
@@ -233,6 +233,9 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_parse_endpoint(self):
         testcases = [
+            {"endpoint": ":5000", "scheme": "http", "host": "localhost", "port": 5000},
+            {"endpoint": ":5000/v1/dapr", "scheme": "http", "host": "localhost", "port": 5000},
+
             {"endpoint": "127.0.0.1", "scheme": "http", "host": "127.0.0.1", "port": 80},
             {"endpoint": "127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 80},
             {"endpoint": "127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1", "port": 5000},
@@ -259,19 +262,18 @@ class DaprGrpcClientTests(unittest.TestCase):
             {"endpoint": "https://domain.com:5000", "scheme": "https", "host": "domain.com", "port": 5000},
 
             {"endpoint": "http://domain.com/v1/dapr", "scheme": "http", "host": "domain.com", "port": 80},
-            {"endpoint": "https://domain.com/v1/dapr", "scheme": "https", "host": "domain.com", "port": 443},
-
             {"endpoint": "http://domain.com:5000/v1/dapr", "scheme": "http", "host": "domain.com", "port": 5000},
+
+            {"endpoint": "https://domain.com/v1/dapr", "scheme": "https", "host": "domain.com", "port": 443},
             {"endpoint": "https://domain.com:5000/v1/dapr", "scheme": "https", "host": "domain.com", "port": 5000},
         ]
 
         for testcase in testcases:
-            dapr = DaprGrpcClient()
-            dapr._parse_endpoint(testcase["endpoint"])
+            o = parse_endpoint(testcase["endpoint"])
 
-            self.assertEqual(testcase["scheme"], dapr._scheme)
-            self.assertEqual(testcase["host"], dapr._hostname)
-            self.assertEqual(testcase["port"], dapr._port)
+            self.assertEqual(testcase["scheme"], o[0])
+            self.assertEqual(testcase["host"], o[1])
+            self.assertEqual(testcase["port"], o[2])
 
     def test_publish_event(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
