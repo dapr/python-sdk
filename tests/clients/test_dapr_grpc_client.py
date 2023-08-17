@@ -47,6 +47,37 @@ class DaprGrpcClientTests(unittest.TestCase):
     def tearDown(self):
         self._fake_dapr_server.stop()
 
+    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
+    def test_init_with_DAPR_GRPC_ENDPOINT(self):
+        dapr = DaprGrpcClient()
+        self.assertEqual("domain1.com", dapr._hostname)
+        self.assertEqual(5000, dapr._port)
+        self.assertEqual("https", dapr._scheme)
+
+    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
+    def test_init_with_DAPR_GRPC_ENDPOINT_and_argument(self):
+        dapr = DaprGrpcClient("https://domain2.com:5002")
+        self.assertEqual("domain2.com", dapr._hostname)
+        self.assertEqual(5002, dapr._port)
+        self.assertEqual('https', dapr._scheme)
+
+    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
+    @patch.object(settings, "DAPR_RUNTIME_HOST", "domain2.com")
+    @patch.object(settings, "DAPR_GRPC_PORT", "5002")
+    def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
+        dapr = DaprGrpcClient()
+        self.assertEqual("domain1.com", dapr._hostname)
+        self.assertEqual(5000, dapr._port)
+        self.assertEqual('https', dapr._scheme)
+
+    @patch.object(settings, "DAPR_RUNTIME_HOST", "domain1.com")
+    @patch.object(settings, "DAPR_GRPC_PORT", "5000")
+    def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
+        dapr = DaprGrpcClient("https://domain2.com:5002")
+        self.assertEqual("domain2.com", dapr._hostname)
+        self.assertEqual(5002, dapr._port)
+        self.assertEqual('https', dapr._scheme)
+
     def test_http_extension(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')
 
@@ -232,7 +263,6 @@ class DaprGrpcClientTests(unittest.TestCase):
 
             {"endpoint": "http://domain.com:5000/v1/dapr", "scheme": "http", "host": "domain.com", "port": 5000},
             {"endpoint": "https://domain.com:5000/v1/dapr", "scheme": "https", "host": "domain.com", "port": 5000},
-
         ]
 
         for testcase in testcases:
