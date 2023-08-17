@@ -16,6 +16,7 @@ limitations under the License.
 import aiohttp
 
 from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
@@ -49,10 +50,13 @@ class DaprHttpClient:
         self._headers_callback = headers_callback
 
     def get_api_url(self) -> str:
-        return 'http://{}:{}/{}'.format(
-            settings.DAPR_RUNTIME_HOST,
-            settings.DAPR_HTTP_PORT,
-            settings.DAPR_API_VERSION)
+        if not settings.DAPR_HTTP_ENDPOINT:
+            return 'http://{}:{}/{}'.format(
+                settings.DAPR_RUNTIME_HOST,
+                settings.DAPR_HTTP_PORT,
+                settings.DAPR_API_VERSION)
+
+        return settings.DAPR_GRPC_ENDPOINT
 
     async def send_bytes(
             self, method: str, url: str,
