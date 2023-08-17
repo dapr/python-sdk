@@ -102,14 +102,14 @@ class DaprGrpcClientAsync:
     """
 
     def __init__(
-        self,
-        address: Optional[str] = None,
-        interceptors: Optional[List[Union[
-            UnaryUnaryClientInterceptor,
-            UnaryStreamClientInterceptor,
-            StreamUnaryClientInterceptor,
-            StreamStreamClientInterceptor]]] = None,
-        max_grpc_message_length: Optional[int] = None
+            self,
+            address: Optional[str] = None,
+            interceptors: Optional[List[Union[
+                UnaryUnaryClientInterceptor,
+                UnaryStreamClientInterceptor,
+                StreamUnaryClientInterceptor,
+                StreamStreamClientInterceptor]]] = None,
+            max_grpc_message_length: Optional[int] = None
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -133,29 +133,26 @@ class DaprGrpcClientAsync:
                 ('grpc.max_receive_message_length', max_grpc_message_length),
                 ('grpc.primary_user_agent', useragent)
             ]
-        if not address:
-            if not settings.DAPR_GRPC_ENDPOINT:
-                address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
-            else:
-                address = settings.DAPR_GRPC_ENDPOINT
-        self._parse_endpoint(address)
 
+        if not address:
+            address = settings.DAPR_GRPC_ENDPOINT or f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+
+        self._parse_endpoint(address)
 
         if self._scheme == "https":
             self._channel = grpc.aio.secure_channel(f"{self._hostname}:{self._port}",
-                                                credentials=grpc.ssl_channel_credentials(),
-                                                options=options)
+                                                    credentials=grpc.ssl_channel_credentials(),
+                                                    options=options)
         else:
             self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
-
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptorAsync([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
-            self._channel = grpc.aio.insecure_channel(   # type: ignore
+            self._channel = grpc.aio.insecure_channel(  # type: ignore
                 address, options=options, interceptors=(api_token_interceptor,))
         if interceptors:
-            self._channel = grpc.aio.insecure_channel(   # type: ignore
+            self._channel = grpc.aio.insecure_channel(  # type: ignore
                 address, options=options, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
@@ -171,7 +168,6 @@ class DaprGrpcClientAsync:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-
     def _get_http_extension(
             self, http_verb: str,
             http_querystring: Optional[MetadataTuple] = None
@@ -181,7 +177,6 @@ class DaprGrpcClientAsync:
         if http_querystring is not None and len(http_querystring):
             http_ext.querystring = urlencode(http_querystring)
         return http_ext
-
 
     def _parse_endpoint(self, addr: str) -> None:
         self._scheme = "http"
