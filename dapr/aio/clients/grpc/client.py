@@ -40,7 +40,7 @@ from grpc.aio import (  # type: ignore
 
 from dapr.clients.exceptions import DaprInternalError
 from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
+from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus, parse_endpoint
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -137,7 +137,7 @@ class DaprGrpcClientAsync:
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
 
-        self._parse_endpoint(address)
+        self._scheme, self._hostname, self._port = parse_endpoint(address)
 
         if self._scheme == "https":
             self._channel = grpc.aio.secure_channel(f"{self._hostname}:{self._port}",
@@ -177,29 +177,6 @@ class DaprGrpcClientAsync:
         if http_querystring is not None and len(http_querystring):
             http_ext.querystring = urlencode(http_querystring)
         return http_ext
-
-    def _parse_endpoint(self, addr: str) -> None:
-        self._scheme = "http"
-        self._port = 80
-
-        addr_list = addr.split("://")
-
-        if len(addr_list) == 2:
-            # A scheme was explicitly specified
-            self._scheme = addr_list[0]
-            if self._scheme == "https":
-                self._port = 443
-            addr = addr_list[1]
-
-        addr_list = addr.split(":")
-        if len(addr_list) == 2:
-            # A port was explicitly specified
-            self._hostname = addr_list[0]
-            addr_list = addr_list[1].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
-            self._port = int(addr_list[0])
-        else:
-            addr_list = addr_list[0].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
-            self._hostname = addr_list[0]
 
     async def invoke_method(
             self,

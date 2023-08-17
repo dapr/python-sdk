@@ -18,7 +18,7 @@ from typing import Dict, List, Union, Tuple, Optional
 from enum import Enum
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
-from grpc import UnaryUnaryClientInterceptor, ClientCallDetails     # type: ignore
+from grpc import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
@@ -79,11 +79,39 @@ def to_str(data: Union[str, bytes]) -> str:
         raise f'invalid data type {type(data)}'
 
 
+def parse_endpoint(addr: str) -> Tuple[str, str, int]:
+    scheme = "http"
+    hostname = "localhost"
+    port = 80
+
+    addr_list = addr.split("://")
+
+    if len(addr_list) == 2:
+        # A scheme was explicitly specified
+        scheme = addr_list[0]
+        if scheme == "https":
+            port = 443
+        addr = addr_list[1]
+
+    addr_list = addr.split(":")
+    if len(addr_list) == 2:
+        # A port was explicitly specified
+        if len(addr_list[0]) > 0:
+            hostname = addr_list[0]
+        addr_list = addr_list[1].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
+        port = int(addr_list[0])
+    else:
+        addr_list = addr_list[0].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
+        hostname = addr_list[0]
+
+    return scheme, hostname, port
+
+
 class _ClientCallDetails(
-        namedtuple(
-            '_ClientCallDetails',
-            ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression']),
-        ClientCallDetails):
+    namedtuple(
+        '_ClientCallDetails',
+        ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression']),
+    ClientCallDetails):
     """This is an implementation of the ClientCallDetails interface needed for interceptors.
     This class takes six named values and inherits the ClientCallDetails from grpc package.
     This class encloses the values that describe a RPC to be invoked.
