@@ -138,7 +138,7 @@ class DaprGrpcClientAsync:
                 address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
             else:
                 address = settings.DAPR_GRPC_ENDPOINT
-        self.parse_endpoint(address)
+        self._parse_endpoint(address)
 
 
         if self._scheme == "https":
@@ -160,7 +160,30 @@ class DaprGrpcClientAsync:
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
-    def parse_endpoint(self, addr: str) -> None:
+    async def close(self):
+        """Closes Dapr runtime gRPC channel."""
+        if self._channel:
+            self._channel.close()
+
+    async def __aenter__(self) -> Self:  # type: ignore
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        await self.close()
+
+
+    def _get_http_extension(
+            self, http_verb: str,
+            http_querystring: Optional[MetadataTuple] = None
+    ) -> common_v1.HTTPExtension:  # type: ignore
+        verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
+        http_ext = common_v1.HTTPExtension(verb=verb)
+        if http_querystring is not None and len(http_querystring):
+            http_ext.querystring = urlencode(http_querystring)
+        return http_ext
+
+
+    def _parse_endpoint(self, addr: str) -> None:
         self._scheme = "http"
         self._port = 80
 
@@ -180,27 +203,6 @@ class DaprGrpcClientAsync:
             addr = addr_list[0]
 
         self._hostname = addr
-
-    async def close(self):
-        """Closes Dapr runtime gRPC channel."""
-        if self._channel:
-            self._channel.close()
-
-    async def __aenter__(self) -> Self:  # type: ignore
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-        await self.close()
-
-    def _get_http_extension(
-            self, http_verb: str,
-            http_querystring: Optional[MetadataTuple] = None
-    ) -> common_v1.HTTPExtension:  # type: ignore
-        verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
-        http_ext = common_v1.HTTPExtension(verb=verb)
-        if http_querystring is not None and len(http_querystring):
-            http_ext.querystring = urlencode(http_querystring)
-        return http_ext
 
     async def invoke_method(
             self,
