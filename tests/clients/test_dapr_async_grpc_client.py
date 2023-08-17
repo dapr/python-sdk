@@ -46,6 +46,37 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     def tearDown(self):
         self._fake_dapr_server.stop()
 
+    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
+    def test_init_with_DAPR_GRPC_ENDPOINT(self):
+        dapr = DaprGrpcClientAsync()
+        self.assertEqual("domain1.com", dapr._hostname)
+        self.assertEqual(5000, dapr._port)
+        self.assertEqual("https", dapr._scheme)
+
+    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
+    def test_init_with_DAPR_GRPC_ENDPOINT_and_argument(self):
+        dapr = DaprGrpcClientAsync("https://domain2.com:5002")
+        self.assertEqual("domain2.com", dapr._hostname)
+        self.assertEqual(5002, dapr._port)
+        self.assertEqual('https', dapr._scheme)
+
+    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
+    @patch.object(settings, "DAPR_RUNTIME_HOST", "domain2.com")
+    @patch.object(settings, "DAPR_GRPC_PORT", "5002")
+    def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
+        dapr = DaprGrpcClientAsync()
+        self.assertEqual("domain1.com", dapr._hostname)
+        self.assertEqual(5000, dapr._port)
+        self.assertEqual('https', dapr._scheme)
+
+    @patch.object(settings, "DAPR_RUNTIME_HOST", "domain1.com")
+    @patch.object(settings, "DAPR_GRPC_PORT", "5000")
+    def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
+        dapr = DaprGrpcClientAsync("https://domain2.com:5002")
+        self.assertEqual("domain2.com", dapr._hostname)
+        self.assertEqual(5002, dapr._port)
+        self.assertEqual('https', dapr._scheme)
+
     async def test_http_extension(self):
         dapr = DaprGrpcClientAsync(f'localhost:{self.server_port}')
 
@@ -201,6 +232,25 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
     def test_parse_endpoint(self):
         testcases = [
+            {"endpoint": "127.0.0.1", "scheme": "http", "host": "127.0.0.1", "port": 80},
+            {"endpoint": "127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 80},
+            {"endpoint": "127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1", "port": 5000},
+            {"endpoint": "127.0.0.1:5000/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 5000},
+
+            {"endpoint": "http://127.0.0.1", "scheme": "http", "host": "127.0.0.1", "port": 80},
+            {"endpoint": "http://127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 80},
+            {"endpoint": "http://127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1", "port": 5000},
+            {"endpoint": "http://127.0.0.1:5000/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 5000},
+
+            {"endpoint": "https://127.0.0.1", "scheme": "https", "host": "127.0.0.1", "port": 443},
+            {"endpoint": "https://127.0.0.1/v1/dapr", "scheme": "https", "host": "127.0.0.1", "port": 443},
+            {"endpoint": "https://127.0.0.1:5000", "scheme": "https", "host": "127.0.0.1", "port": 5000},
+            {"endpoint": "https://127.0.0.1:5000/v1/dapr", "scheme": "https", "host": "127.0.0.1", "port": 5000},
+
+            {"endpoint": "domain.com", "scheme": "http", "host": "domain.com", "port": 80},
+            {"endpoint": "domain.com/v1/grpc", "scheme": "http", "host": "domain.com", "port": 80},
+            {"endpoint": "domain.com:5000", "scheme": "http", "host": "domain.com", "port": 5000},
+
             {"endpoint": "http://domain.com", "scheme": "http", "host": "domain.com", "port": 80},
             {"endpoint": "http://domain.com:5000", "scheme": "http", "host": "domain.com", "port": 5000},
 
@@ -213,6 +263,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             {"endpoint": "http://domain.com:5000/v1/dapr", "scheme": "http", "host": "domain.com", "port": 5000},
             {"endpoint": "https://domain.com:5000/v1/dapr", "scheme": "https", "host": "domain.com", "port": 5000},
         ]
+
         for testcase in testcases:
             dapr = DaprGrpcClientAsync()
             dapr._parse_endpoint(testcase["endpoint"])
@@ -658,7 +709,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(first_attempt.success)
             # If the same client tries to acquire the same lock again it will fail.
             async with await dapr.try_lock(store_name, resource_id, client_id, expiry_in_s
-                                           )as second_attempt:
+                                           ) as second_attempt:
                 self.assertFalse(second_attempt.success)
 
     async def test_lock_input_validation(self):
