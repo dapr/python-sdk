@@ -134,10 +134,7 @@ class DaprGrpcClient:
             ]
 
         if not address:
-            if not settings.DAPR_GRPC_ENDPOINT:
-                address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
-            else:
-                address = settings.DAPR_GRPC_ENDPOINT
+            address = settings.DAPR_GRPC_ENDPOINT or f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
 
         self._parse_endpoint(address)
 
