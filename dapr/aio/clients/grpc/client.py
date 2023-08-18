@@ -124,11 +124,11 @@ class DaprGrpcClientAsync:
         """
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
-            options = [  # type: ignore
+            options = [
                 ('grpc.primary_user_agent', useragent),
             ]
         else:
-            options = [  # type: ignore
+            options = [
                 ('grpc.max_send_message_length', max_grpc_message_length),
                 ('grpc.max_receive_message_length', max_grpc_message_length),
                 ('grpc.primary_user_agent', useragent)
