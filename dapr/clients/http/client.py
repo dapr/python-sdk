@@ -17,6 +17,8 @@ import aiohttp
 
 from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
 
+from dapr.clients.grpc._helpers import parse_endpoint
+
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
@@ -50,10 +52,14 @@ class DaprHttpClient:
         self._headers_callback = headers_callback
 
     def get_api_url(self) -> str:
-        return settings.DAPR_HTTP_ENDPOINT or 'http://{}:{}/{}'.format(
-                settings.DAPR_RUNTIME_HOST,
-                settings.DAPR_HTTP_PORT,
-                settings.DAPR_API_VERSION)
+        if settings.DAPR_HTTP_ENDPOINT:
+            scheme, host, port = parse_endpoint(settings.DAPR_HTTP_ENDPOINT)
+        else:
+            scheme = 'http'
+            host = settings.DAPR_RUNTIME_HOST
+            port = settings.DAPR_HTTP_PORT
+
+        return f'{scheme}://{host}:{port}/{settings.DAPR_API_VERSION}'
 
     async def send_bytes(
             self, method: str, url: str,
