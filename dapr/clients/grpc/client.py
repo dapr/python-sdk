@@ -181,7 +181,6 @@ class DaprGrpcClient:
             http_ext.querystring = urlencode(http_querystring)
         return http_ext
 
-
     def invoke_method(
             self,
             app_id: str,
