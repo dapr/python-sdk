@@ -102,14 +102,14 @@ class DaprGrpcClientAsync:
     """
 
     def __init__(
-            self,
-            address: Optional[str] = None,
-            interceptors: Optional[List[Union[
-                UnaryUnaryClientInterceptor,
-                UnaryStreamClientInterceptor,
-                StreamUnaryClientInterceptor,
-                StreamStreamClientInterceptor]]] = None,
-            max_grpc_message_length: Optional[int] = None
+        self,
+        address: Optional[str] = None,
+        interceptors: Optional[List[Union[
+            UnaryUnaryClientInterceptor,
+            UnaryStreamClientInterceptor,
+            StreamUnaryClientInterceptor,
+            StreamStreamClientInterceptor]]] = None,
+        max_grpc_message_length: Optional[int] = None
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
