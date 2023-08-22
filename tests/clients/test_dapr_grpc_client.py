@@ -233,23 +233,23 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_parse_endpoint(self):
         testcases = [
-            # {"endpoint": ":5000", "scheme": "http", "host": "localhost", "port": 5000},
-            # {"endpoint": ":5000/v1/dapr", "scheme": "http", "host": "localhost", "port": 5000},
-            #
-            # {"endpoint": "127.0.0.1", "scheme": "http", "host": "127.0.0.1", "port": 80},
-            # {"endpoint": "127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 80},
-            # {"endpoint": "127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1", "port": 5000},
-            # {"endpoint": "127.0.0.1:5000/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 5000},
-            #
-            # {"endpoint": "http://127.0.0.1", "scheme": "http", "host": "127.0.0.1", "port": 80},
-            # {"endpoint": "http://127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 80},
-            # {"endpoint": "http://127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1", "port": 5000},
-            # {"endpoint": "http://127.0.0.1:5000/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 5000},
-            #
-            # {"endpoint": "https://127.0.0.1", "scheme": "https", "host": "127.0.0.1", "port": 443},
-            # {"endpoint": "https://127.0.0.1/v1/dapr", "scheme": "https", "host": "127.0.0.1", "port": 443},
-            # {"endpoint": "https://127.0.0.1:5000", "scheme": "https", "host": "127.0.0.1", "port": 5000},
-            # {"endpoint": "https://127.0.0.1:5000/v1/dapr", "scheme": "https", "host": "127.0.0.1", "port": 5000},
+            {"endpoint": ":5000", "scheme": "http", "host": "localhost", "port": 5000},
+            {"endpoint": ":5000/v1/dapr", "scheme": "http", "host": "localhost", "port": 5000},
+
+            {"endpoint": "127.0.0.1", "scheme": "http", "host": "127.0.0.1", "port": 80},
+            {"endpoint": "127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 80},
+            {"endpoint": "127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1", "port": 5000},
+            {"endpoint": "127.0.0.1:5000/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 5000},
+
+            {"endpoint": "http://127.0.0.1", "scheme": "http", "host": "127.0.0.1", "port": 80},
+            {"endpoint": "http://127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 80},
+            {"endpoint": "http://127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1", "port": 5000},
+            {"endpoint": "http://127.0.0.1:5000/v1/dapr", "scheme": "http", "host": "127.0.0.1", "port": 5000},
+
+            {"endpoint": "https://127.0.0.1", "scheme": "https", "host": "127.0.0.1", "port": 443},
+            {"endpoint": "https://127.0.0.1/v1/dapr", "scheme": "https", "host": "127.0.0.1", "port": 443},
+            {"endpoint": "https://127.0.0.1:5000", "scheme": "https", "host": "127.0.0.1", "port": 5000},
+            {"endpoint": "https://127.0.0.1:5000/v1/dapr", "scheme": "https", "host": "127.0.0.1", "port": 5000},
 
             {"endpoint": "http://[2001:db8:1f70::999:de8:7648:6e8]", "scheme": "http", "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 80},
             {"endpoint": "http://[2001:db8:1f70::999:de8:7648:6e8]/v1/dapr", "scheme": "http", "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 80},
