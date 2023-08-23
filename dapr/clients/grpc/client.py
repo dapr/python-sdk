@@ -49,10 +49,10 @@ from dapr.clients.grpc._helpers import (
     DaprClientInterceptor,
     MetadataTuple,
     to_bytes,
-    parse_endpoint,
     validateNotNone,
     validateNotBlankString,
 )
+from dapr.conf.helpers import parse_endpoint
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
