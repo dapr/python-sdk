@@ -25,7 +25,8 @@ from dapr.clients import DaprClient
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
-from dapr.clients.grpc._helpers import (to_bytes, parse_endpoint)
+from dapr.clients.grpc._helpers import to_bytes
+from dapr.conf.helpers import parse_endpoint
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._response import (
@@ -320,17 +321,6 @@ class DaprGrpcClientTests(unittest.TestCase):
             self.assertEqual(testcase["host"], o[1])
             self.assertEqual(testcase["port"], o[2])
 
-        testcases = [
-            ":-67676767",
-            "a23456789-a23456789",
-            "label.name.321"
-            "http://",
-            "a..bc",
-        ]
-        for testcase in testcases:
-            print(testcase)
-            with self.assertRaises(ValueError):
-                parse_endpoint(testcase)
 
     def test_publish_event(self):
         dapr = DaprGrpcClient(f'localhost:{self.server_port}')

@@ -12,8 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import ipaddress
-import re
 from collections import namedtuple
 from typing import Dict, List, Union, Tuple, Optional
 from enum import Enum
@@ -78,87 +76,6 @@ def to_str(data: Union[str, bytes]) -> str:
         return data.decode('utf-8')
     else:
         raise f'invalid data type {type(data)}'
-
-
-def parse_endpoint(address: str) -> Tuple[str, str, int]:
-    scheme = "http"
-    fqdn = "localhost"
-    port = 80
-    addr = address
-
-    addr_list = address.split("://")
-
-    if len(addr_list) == 2:
-        # A scheme was explicitly specified
-        scheme = addr_list[0]
-        if scheme == "https":
-            port = 443
-        addr = addr_list[1]
-
-    addr_list = addr.split(":")
-    if len(addr_list) == 2:
-        # A port was explicitly specified
-        if len(addr_list[0]) > 0:
-            fqdn = addr_list[0]
-        addr_list = addr_list[1].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
-        port = addr_list[0]
-    elif len(addr_list) == 1:
-        # No port was specified
-        addr_list = addr_list[0].split("/")  # Account for Endpoints of the type :3500/v1.0/invoke
-        fqdn = addr_list[0]
-    else:
-        # IPv6 address
-        addr_list = addr.split("]:")
-        if len(addr_list) == 2:
-            # A port was explicitly specified
-            fqdn = addr_list[0]
-            fqdn = fqdn.replace("[", "")
-
-            addr_list = addr_list[1].split("/")
-            port = addr_list[0]
-        elif len(addr_list) == 1:
-            # No port was specified
-            addr_list = addr_list[0].split("/")
-            fqdn = addr_list[0]
-            fqdn = fqdn.replace("[", "")
-            fqdn = fqdn.replace("]", "")
-        else:
-            raise ValueError(f"Invalid address: {address}")
-
-    try:
-        port = int(port)
-    except ValueError:
-        raise ValueError(f"invalid port: {port}")
-
-    if not _is_valid_port(port):
-        raise ValueError(f"invalid port: {port}")
-
-    if not _is_valid_scheme(scheme):
-        raise ValueError(f"invalid scheme: Only http and https are supported: {port}")
-
-    if not _is_valid_fqdn(fqdn) and not is_valid_ip(fqdn):
-        raise ValueError(f"invalid fqdn or ip: {fqdn}")
-
-    return scheme, fqdn, port
-
-
-def is_valid_ip(url: str) -> bool:
-    try:
-        ipaddress.ip_address(url)
-    except:
-        return False
-    return True
-
-def _is_valid_scheme(scheme: str) -> bool:
-    allowed_schemes = ["http", "https"]
-    return scheme in allowed_schemes
-
-
-def _is_valid_port(port: int) -> bool:
-    return port > 0 and port < 65536
-
-def _is_valid_fqdn(fqdn: str) -> bool:
-    return re.match(r"(?=^.{1,254}$)(^(?:(?!\d+\.|-)[a-zA-Z0-9_\-]{1,63}(?<!-)\.?)+(?:[a-zA-Z]{2,})$)", fqdn) is not None
 
 
 class _ClientCallDetails(

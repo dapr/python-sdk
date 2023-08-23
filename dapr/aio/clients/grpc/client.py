@@ -40,7 +40,8 @@ from grpc.aio import (  # type: ignore
 
 from dapr.clients.exceptions import DaprInternalError
 from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus, parse_endpoint
+from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
+from dapr.conf.helpers import parse_endpoint
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
