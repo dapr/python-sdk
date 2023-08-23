@@ -47,7 +47,7 @@ sleep: 5
 2. Start Receiver (expose gRPC server receiver on port 50051) 
 
 ```bash
-dapr run --app-id receiver --app-protocol grpc --app-port 50051 --components-path ./components python3 invoke-input-binding.py
+dapr run --app-id receiver --app-protocol grpc --app-port 50051 --resources-path ./components python3 invoke-input-binding.py
 ```
 
 <!-- END_STEP -->
@@ -67,7 +67,7 @@ sleep: 5
 -->
 
 ```bash
-dapr run --app-id publisher --app-protocol grpc --components-path ./components python3 invoke-output-binding.py
+dapr run --app-id publisher --app-protocol grpc --resources-path ./components python3 invoke-output-binding.py
 ```
 
 <!-- END_STEP -->

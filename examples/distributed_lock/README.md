@@ -40,7 +40,7 @@ timeout_seconds: 5
 -->
 
 ```bash
-dapr run --app-id=locksapp --app-protocol grpc --components-path components/ python3 lock.py
+dapr run --app-id=locksapp --app-protocol grpc --resources-path components/ python3 lock.py
 ```
 <!-- END_STEP -->
 
