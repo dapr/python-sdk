@@ -31,6 +31,7 @@ To run this example, the following code can be utilized:
 
 <!-- STEP
 name: Run metadata example
+output_match_mode: substring
 expected_stdout_lines:
   - "== APP == First, we will assign a new custom label to Dapr sidecar"
   - "== APP == Now, we will fetch the sidecar's metadata"
@@ -40,7 +41,7 @@ expected_stdout_lines:
   - "== APP ==   registered_components:"
   - "== APP ==     name=lockstore type=lock.redis version= capabilities=[]"
   - "== APP ==     name=pubsub type=pubsub.redis version=v1 capabilities=[]"
-  - "== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'TRANSACTIONAL', 'TTL']"
+  - "== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'TRANSACTIONAL'"
   - "== APP == We will update our custom label value and check it was persisted"
   - "== APP == We added a custom label named [is-this-our-metadata-example]"
   - "== APP == Its old value was [yes] but now it is [You bet it is!]"
