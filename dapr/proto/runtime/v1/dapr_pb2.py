@@ -4,9 +4,8 @@
 """Generated protocol buffer code."""
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
-from google.protobuf import message as _message
-from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
+from google.protobuf.internal import builder as _builder
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -18,937 +17,11 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n dapr/proto/runtime/v1/dapr.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequest\"\xf5\x01\n\x0fGetStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12H\n\x0b\x63onsistency\x18\x03 \x01(\x0e\x32\x33.dapr.proto.common.v1.StateOptions.StateConsistency\x12\x46\n\x08metadata\x18\x04 \x03(\x0b\x32\x34.dapr.proto.runtime.v1.GetStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc9\x01\n\x13GetBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12\x13\n\x0bparallelism\x18\x03 \x01(\x05\x12J\n\x08metadata\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.GetBulkStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"K\n\x14GetBulkStateResponse\x12\x33\n\x05items\x18\x01 \x03(\x0b\x32$.dapr.proto.runtime.v1.BulkStateItem\"\xbe\x01\n\rBulkStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\x12\x44\n\x08metadata\x18\x05 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.BulkStateItem.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa8\x01\n\x10GetStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x90\x02\n\x12\x44\x65leteStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12(\n\x04\x65tag\x18\x03 \x01(\x0b\x32\x1a.dapr.proto.common.v1.Etag\x12\x33\n\x07options\x18\x04 \x01(\x0b\x32\".dapr.proto.common.v1.StateOptions\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.DeleteStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"]\n\x16\x44\x65leteBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"W\n\x10SaveStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\xbc\x01\n\x11QueryStateRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\r\n\x05query\x18\x02 \x01(\t\x12H\n\x08metadata\x18\x03 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"H\n\x0eQueryStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"\xd7\x01\n\x12QueryStateResponse\x12\x36\n\x07results\x18\x01 \x03(\x0b\x32%.dapr.proto.runtime.v1.QueryStateItem\x12\r\n\x05token\x18\x02 \x01(\t\x12I\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xdf\x01\n\x13PublishEventRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x19\n\x11\x64\x61ta_content_type\x18\x04 \x01(\t\x12J\n\x08metadata\x18\x05 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.PublishEventRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xf5\x01\n\x12\x42ulkPublishRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12?\n\x07\x65ntries\x18\x03 \x03(\x0b\x32..dapr.proto.runtime.v1.BulkPublishRequestEntry\x12I\n\x08metadata\x18\x04 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.BulkPublishRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xd1\x01\n\x17\x42ulkPublishRequestEntry\x12\x10\n\x08\x65ntry_id\x18\x01 \x01(\t\x12\r\n\x05\x65vent\x18\x02 \x01(\x0c\x12\x14\n\x0c\x63ontent_type\x18\x03 \x01(\t\x12N\n\x08metadata\x18\x04 \x03(\x0b\x32<.dapr.proto.runtime.v1.BulkPublishRequestEntry.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"c\n\x13\x42ulkPublishResponse\x12L\n\rfailedEntries\x18\x01 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.BulkPublishResponseFailedEntry\"A\n\x1e\x42ulkPublishResponseFailedEntry\x12\x10\n\x08\x65ntry_id\x18\x01 \x01(\t\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\xc3\x01\n\x14InvokeBindingRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12K\n\x08metadata\x18\x03 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry\x12\x11\n\toperation\x18\x04 \x01(\t\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa4\x01\n\x15InvokeBindingResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12L\n\x08metadata\x18\x02 \x03(\x0b\x32:.dapr.proto.runtime.v1.InvokeBindingResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb8\x01\n\x10GetSecretRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x0b\n\x03key\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x82\x01\n\x11GetSecretResponse\x12@\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.GetSecretResponse.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb3\x01\n\x14GetBulkSecretRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12K\n\x08metadata\x18\x02 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.GetBulkSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x85\x01\n\x0eSecretResponse\x12\x43\n\x07secrets\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.SecretResponse.SecretsEntry\x1a.\n\x0cSecretsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb1\x01\n\x15GetBulkSecretResponse\x12\x44\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.GetBulkSecretResponse.DataEntry\x1aR\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x34\n\x05value\x18\x02 \x01(\x0b\x32%.dapr.proto.runtime.v1.SecretResponse:\x02\x38\x01\"f\n\x1bTransactionalStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x30\n\x07request\x18\x02 \x01(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\x83\x02\n\x1e\x45xecuteStateTransactionRequest\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12\x46\n\noperations\x18\x02 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.TransactionalStateOperation\x12U\n\x08metadata\x18\x03 \x03(\x0b\x32\x43.dapr.proto.runtime.v1.ExecuteStateTransactionRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9e\x01\n\x19RegisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x10\n\x08\x63\x61llback\x18\x06 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\x12\x0b\n\x03ttl\x18\x08 \x01(\t\"Q\n\x1bUnregisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"\x8f\x01\n\x1cRegisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x06 \x01(\x0c\x12\x0b\n\x03ttl\x18\x07 \x01(\t\"T\n\x1eUnregisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"f\n\x1aRenameActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x10\n\x08old_name\x18\x03 \x01(\t\x12\x10\n\x08new_name\x18\x04 \x01(\t\"I\n\x14GetActorStateRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0b\n\x03key\x18\x03 \x01(\t\"%\n\x15GetActorStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x98\x01\n#ExecuteActorStateTransactionRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12K\n\noperations\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.TransactionalActorStateOperation\"\xf5\x01\n TransactionalActorStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12#\n\x05value\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x12W\n\x08metadata\x18\x04 \x03(\x0b\x32\x45.dapr.proto.runtime.v1.TransactionalActorStateOperation.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xd4\x01\n\x12InvokeActorRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0e\n\x06method\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.InvokeActorRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"#\n\x13InvokeActorResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x8d\x04\n\x13GetMetadataResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12M\n\x13\x61\x63tive_actors_count\x18\x02 \x03(\x0b\x32(.dapr.proto.runtime.v1.ActiveActorsCountR\x06\x61\x63tors\x12V\n\x15registered_components\x18\x03 \x03(\x0b\x32+.dapr.proto.runtime.v1.RegisteredComponentsR\ncomponents\x12\x65\n\x11\x65xtended_metadata\x18\x04 \x03(\x0b\x32@.dapr.proto.runtime.v1.GetMetadataResponse.ExtendedMetadataEntryR\x08\x65xtended\x12O\n\rsubscriptions\x18\x05 \x03(\x0b\x32).dapr.proto.runtime.v1.PubsubSubscriptionR\rsubscriptions\x12R\n\x0ehttp_endpoints\x18\x06 \x03(\x0b\x32+.dapr.proto.runtime.v1.MetadataHTTPEndpointR\rhttpEndpoints\x1a\x37\n\x15\x45xtendedMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"0\n\x11\x41\x63tiveActorsCount\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\"Y\n\x14RegisteredComponents\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x14\n\x0c\x63\x61pabilities\x18\x04 \x03(\t\"*\n\x14MetadataHTTPEndpoint\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\"\xc3\x02\n\x12PubsubSubscription\x12\x1f\n\x0bpubsub_name\x18\x01 \x01(\tR\npubsubname\x12\x14\n\x05topic\x18\x02 \x01(\tR\x05topic\x12S\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.PubsubSubscription.MetadataEntryR\x08metadata\x12\x44\n\x05rules\x18\x04 \x01(\x0b\x32..dapr.proto.runtime.v1.PubsubSubscriptionRulesR\x05rules\x12*\n\x11\x64\x65\x61\x64_letter_topic\x18\x05 \x01(\tR\x0f\x64\x65\x61\x64LetterTopic\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"W\n\x17PubsubSubscriptionRules\x12<\n\x05rules\x18\x01 \x03(\x0b\x32-.dapr.proto.runtime.v1.PubsubSubscriptionRule\"5\n\x16PubsubSubscriptionRule\x12\r\n\x05match\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"0\n\x12SetMetadataRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\xbc\x01\n\x17GetConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12N\n\x08metadata\x18\x03 \x03(\x0b\x32<.dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbc\x01\n\x18GetConfigurationResponse\x12I\n\x05items\x18\x01 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetConfigurationResponse.ItemsEntry\x1aU\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem:\x02\x38\x01\"\xc8\x01\n\x1dSubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12T\n\x08metadata\x18\x03 \x03(\x0b\x32\x42.dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"A\n\x1fUnsubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\t\"\xd4\x01\n\x1eSubscribeConfigurationResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12O\n\x05items\x18\x02 \x03(\x0b\x32@.dapr.proto.runtime.v1.SubscribeConfigurationResponse.ItemsEntry\x1aU\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem:\x02\x38\x01\"?\n UnsubscribeConfigurationResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x9b\x01\n\x0eTryLockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\x12*\n\x11\x65xpiry_in_seconds\x18\x04 \x01(\x05R\x0f\x65xpiryInSeconds\"\"\n\x0fTryLockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"n\n\rUnlockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\"\xae\x01\n\x0eUnlockResponse\x12<\n\x06status\x18\x01 \x01(\x0e\x32,.dapr.proto.runtime.v1.UnlockResponse.Status\"^\n\x06Status\x12\x0b\n\x07SUCCESS\x10\x00\x12\x17\n\x13LOCK_DOES_NOT_EXIST\x10\x01\x12\x1a\n\x16LOCK_BELONGS_TO_OTHERS\x10\x02\x12\x12\n\x0eINTERNAL_ERROR\x10\x03\"\xb0\x01\n\x13SubtleGetKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x44\n\x06\x66ormat\x18\x03 \x01(\x0e\x32\x34.dapr.proto.runtime.v1.SubtleGetKeyRequest.KeyFormat\"\x1e\n\tKeyFormat\x12\x07\n\x03PEM\x10\x00\x12\x08\n\x04JSON\x10\x01\"C\n\x14SubtleGetKeyResponse\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1d\n\npublic_key\x18\x02 \x01(\tR\tpublicKey\"\xb6\x01\n\x14SubtleEncryptRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x11\n\tplaintext\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x06 \x01(\x0cR\x0e\x61ssociatedData\"8\n\x15SubtleEncryptResponse\x12\x12\n\nciphertext\x18\x01 \x01(\x0c\x12\x0b\n\x03tag\x18\x02 \x01(\x0c\"\xc4\x01\n\x14SubtleDecryptRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x12\n\nciphertext\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\x0b\n\x03tag\x18\x06 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x07 \x01(\x0cR\x0e\x61ssociatedData\"*\n\x15SubtleDecryptResponse\x12\x11\n\tplaintext\x18\x01 \x01(\x0c\"\xc8\x01\n\x14SubtleWrapKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12#\n\rplaintext_key\x18\x02 \x01(\x0cR\x0cplaintextKey\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x06 \x01(\x0cR\x0e\x61ssociatedData\"E\n\x15SubtleWrapKeyResponse\x12\x1f\n\x0bwrapped_key\x18\x01 \x01(\x0cR\nwrappedKey\x12\x0b\n\x03tag\x18\x02 \x01(\x0c\"\xd3\x01\n\x16SubtleUnwrapKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x1f\n\x0bwrapped_key\x18\x02 \x01(\x0cR\nwrappedKey\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\x0b\n\x03tag\x18\x06 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x07 \x01(\x0cR\x0e\x61ssociatedData\">\n\x17SubtleUnwrapKeyResponse\x12#\n\rplaintext_key\x18\x01 \x01(\x0cR\x0cplaintextKey\"x\n\x11SubtleSignRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0e\n\x06\x64igest\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\"\'\n\x12SubtleSignResponse\x12\x11\n\tsignature\x18\x01 \x01(\x0c\"\x8d\x01\n\x13SubtleVerifyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0e\n\x06\x64igest\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\x11\n\tsignature\x18\x05 \x01(\x0c\"%\n\x14SubtleVerifyResponse\x12\r\n\x05valid\x18\x01 \x01(\x08\"\x85\x01\n\x0e\x45ncryptRequest\x12=\n\x07options\x18\x01 \x01(\x0b\x32,.dapr.proto.runtime.v1.EncryptRequestOptions\x12\x34\n\x07payload\x18\x02 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"\xfe\x01\n\x15\x45ncryptRequestOptions\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x19\n\x08key_name\x18\x02 \x01(\tR\x07keyName\x12\x1a\n\x12key_wrap_algorithm\x18\x03 \x01(\t\x12\x1e\n\x16\x64\x61ta_encryption_cipher\x18\n \x01(\t\x12\x37\n\x18omit_decryption_key_name\x18\x0b \x01(\x08R\x15omitDecryptionKeyName\x12.\n\x13\x64\x65\x63ryption_key_name\x18\x0c \x01(\tR\x11\x64\x65\x63ryptionKeyName\"G\n\x0f\x45ncryptResponse\x12\x34\n\x07payload\x18\x01 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"\x85\x01\n\x0e\x44\x65\x63ryptRequest\x12=\n\x07options\x18\x01 \x01(\x0b\x32,.dapr.proto.runtime.v1.DecryptRequestOptions\x12\x34\n\x07payload\x18\x02 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"Y\n\x15\x44\x65\x63ryptRequestOptions\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x19\n\x08key_name\x18\x0c \x01(\tR\x07keyName\"G\n\x0f\x44\x65\x63ryptResponse\x12\x34\n\x07payload\x18\x01 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"d\n\x12GetWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x84\x03\n\x13GetWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12#\n\rworkflow_name\x18\x02 \x01(\tR\x0cworkflowName\x12\x39\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x42\n\x0flast_updated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\rlastUpdatedAt\x12%\n\x0eruntime_status\x18\x05 \x01(\tR\rruntimeStatus\x12N\n\nproperties\x18\x06 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetWorkflowResponse.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x95\x02\n\x14StartWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12#\n\rworkflow_name\x18\x03 \x01(\tR\x0cworkflowName\x12I\n\x07options\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.StartWorkflowRequest.OptionsEntry\x12\r\n\x05input\x18\x05 \x01(\x0c\x1a.\n\x0cOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"8\n\x15StartWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\"j\n\x18TerminateWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"f\n\x14PauseWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"g\n\x15ResumeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x9e\x01\n\x19RaiseEventWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1d\n\nevent_name\x18\x03 \x01(\tR\teventName\x12\x12\n\nevent_data\x18\x04 \x01(\x0c\"f\n\x14PurgeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent2\xe9\'\n\x04\x44\x61pr\x12\x64\n\rInvokeService\x12+.dapr.proto.runtime.v1.InvokeServiceRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12]\n\x08GetState\x12&.dapr.proto.runtime.v1.GetStateRequest\x1a\'.dapr.proto.runtime.v1.GetStateResponse\"\x00\x12i\n\x0cGetBulkState\x12*.dapr.proto.runtime.v1.GetBulkStateRequest\x1a+.dapr.proto.runtime.v1.GetBulkStateResponse\"\x00\x12N\n\tSaveState\x12\'.dapr.proto.runtime.v1.SaveStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12i\n\x10QueryStateAlpha1\x12(.dapr.proto.runtime.v1.QueryStateRequest\x1a).dapr.proto.runtime.v1.QueryStateResponse\"\x00\x12R\n\x0b\x44\x65leteState\x12).dapr.proto.runtime.v1.DeleteStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12Z\n\x0f\x44\x65leteBulkState\x12-.dapr.proto.runtime.v1.DeleteBulkStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17\x45xecuteStateTransaction\x12\x35.dapr.proto.runtime.v1.ExecuteStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12T\n\x0cPublishEvent\x12*.dapr.proto.runtime.v1.PublishEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12q\n\x16\x42ulkPublishEventAlpha1\x12).dapr.proto.runtime.v1.BulkPublishRequest\x1a*.dapr.proto.runtime.v1.BulkPublishResponse\"\x00\x12l\n\rInvokeBinding\x12+.dapr.proto.runtime.v1.InvokeBindingRequest\x1a,.dapr.proto.runtime.v1.InvokeBindingResponse\"\x00\x12`\n\tGetSecret\x12\'.dapr.proto.runtime.v1.GetSecretRequest\x1a(.dapr.proto.runtime.v1.GetSecretResponse\"\x00\x12l\n\rGetBulkSecret\x12+.dapr.proto.runtime.v1.GetBulkSecretRequest\x1a,.dapr.proto.runtime.v1.GetBulkSecretResponse\"\x00\x12`\n\x12RegisterActorTimer\x12\x30.dapr.proto.runtime.v1.RegisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x14UnregisterActorTimer\x12\x32.dapr.proto.runtime.v1.UnregisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x15RegisterActorReminder\x12\x33.dapr.proto.runtime.v1.RegisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17UnregisterActorReminder\x12\x35.dapr.proto.runtime.v1.UnregisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x62\n\x13RenameActorReminder\x12\x31.dapr.proto.runtime.v1.RenameActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n\rGetActorState\x12+.dapr.proto.runtime.v1.GetActorStateRequest\x1a,.dapr.proto.runtime.v1.GetActorStateResponse\"\x00\x12t\n\x1c\x45xecuteActorStateTransaction\x12:.dapr.proto.runtime.v1.ExecuteActorStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x0bInvokeActor\x12).dapr.proto.runtime.v1.InvokeActorRequest\x1a*.dapr.proto.runtime.v1.InvokeActorResponse\"\x00\x12{\n\x16GetConfigurationAlpha1\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12u\n\x10GetConfiguration\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12\x8f\x01\n\x1cSubscribeConfigurationAlpha1\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12\x89\x01\n\x16SubscribeConfiguration\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12\x93\x01\n\x1eUnsubscribeConfigurationAlpha1\x12\x36.dapr.proto.runtime.v1.UnsubscribeConfigurationRequest\x1a\x37.dapr.proto.runtime.v1.UnsubscribeConfigurationResponse\"\x00\x12\x8d\x01\n\x18UnsubscribeConfiguration\x12\x36.dapr.proto.runtime.v1.UnsubscribeConfigurationRequest\x1a\x37.dapr.proto.runtime.v1.UnsubscribeConfigurationResponse\"\x00\x12`\n\rTryLockAlpha1\x12%.dapr.proto.runtime.v1.TryLockRequest\x1a&.dapr.proto.runtime.v1.TryLockResponse\"\x00\x12]\n\x0cUnlockAlpha1\x12$.dapr.proto.runtime.v1.UnlockRequest\x1a%.dapr.proto.runtime.v1.UnlockResponse\"\x00\x12\x62\n\rEncryptAlpha1\x12%.dapr.proto.runtime.v1.EncryptRequest\x1a&.dapr.proto.runtime.v1.EncryptResponse(\x01\x30\x01\x12\x62\n\rDecryptAlpha1\x12%.dapr.proto.runtime.v1.DecryptRequest\x1a&.dapr.proto.runtime.v1.DecryptResponse(\x01\x30\x01\x12S\n\x0bGetMetadata\x12\x16.google.protobuf.Empty\x1a*.dapr.proto.runtime.v1.GetMetadataResponse\"\x00\x12R\n\x0bSetMetadata\x12).dapr.proto.runtime.v1.SetMetadataRequest\x1a\x16.google.protobuf.Empty\"\x00\x12m\n\x12SubtleGetKeyAlpha1\x12*.dapr.proto.runtime.v1.SubtleGetKeyRequest\x1a+.dapr.proto.runtime.v1.SubtleGetKeyResponse\x12p\n\x13SubtleEncryptAlpha1\x12+.dapr.proto.runtime.v1.SubtleEncryptRequest\x1a,.dapr.proto.runtime.v1.SubtleEncryptResponse\x12p\n\x13SubtleDecryptAlpha1\x12+.dapr.proto.runtime.v1.SubtleDecryptRequest\x1a,.dapr.proto.runtime.v1.SubtleDecryptResponse\x12p\n\x13SubtleWrapKeyAlpha1\x12+.dapr.proto.runtime.v1.SubtleWrapKeyRequest\x1a,.dapr.proto.runtime.v1.SubtleWrapKeyResponse\x12v\n\x15SubtleUnwrapKeyAlpha1\x12-.dapr.proto.runtime.v1.SubtleUnwrapKeyRequest\x1a..dapr.proto.runtime.v1.SubtleUnwrapKeyResponse\x12g\n\x10SubtleSignAlpha1\x12(.dapr.proto.runtime.v1.SubtleSignRequest\x1a).dapr.proto.runtime.v1.SubtleSignResponse\x12m\n\x12SubtleVerifyAlpha1\x12*.dapr.proto.runtime.v1.SubtleVerifyRequest\x1a+.dapr.proto.runtime.v1.SubtleVerifyResponse\x12r\n\x13StartWorkflowAlpha1\x12+.dapr.proto.runtime.v1.StartWorkflowRequest\x1a,.dapr.proto.runtime.v1.StartWorkflowResponse\"\x00\x12l\n\x11GetWorkflowAlpha1\x12).dapr.proto.runtime.v1.GetWorkflowRequest\x1a*.dapr.proto.runtime.v1.GetWorkflowResponse\"\x00\x12\\\n\x13PurgeWorkflowAlpha1\x12+.dapr.proto.runtime.v1.PurgeWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x17TerminateWorkflowAlpha1\x12/.dapr.proto.runtime.v1.TerminateWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n\x13PauseWorkflowAlpha1\x12+.dapr.proto.runtime.v1.PauseWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12^\n\x14ResumeWorkflowAlpha1\x12,.dapr.proto.runtime.v1.ResumeWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x18RaiseEventWorkflowAlpha1\x12\x30.dapr.proto.runtime.v1.RaiseEventWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x08Shutdown\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
-
-
-
-_INVOKESERVICEREQUEST = DESCRIPTOR.message_types_by_name['InvokeServiceRequest']
-_GETSTATEREQUEST = DESCRIPTOR.message_types_by_name['GetStateRequest']
-_GETSTATEREQUEST_METADATAENTRY = _GETSTATEREQUEST.nested_types_by_name['MetadataEntry']
-_GETBULKSTATEREQUEST = DESCRIPTOR.message_types_by_name['GetBulkStateRequest']
-_GETBULKSTATEREQUEST_METADATAENTRY = _GETBULKSTATEREQUEST.nested_types_by_name['MetadataEntry']
-_GETBULKSTATERESPONSE = DESCRIPTOR.message_types_by_name['GetBulkStateResponse']
-_BULKSTATEITEM = DESCRIPTOR.message_types_by_name['BulkStateItem']
-_BULKSTATEITEM_METADATAENTRY = _BULKSTATEITEM.nested_types_by_name['MetadataEntry']
-_GETSTATERESPONSE = DESCRIPTOR.message_types_by_name['GetStateResponse']
-_GETSTATERESPONSE_METADATAENTRY = _GETSTATERESPONSE.nested_types_by_name['MetadataEntry']
-_DELETESTATEREQUEST = DESCRIPTOR.message_types_by_name['DeleteStateRequest']
-_DELETESTATEREQUEST_METADATAENTRY = _DELETESTATEREQUEST.nested_types_by_name['MetadataEntry']
-_DELETEBULKSTATEREQUEST = DESCRIPTOR.message_types_by_name['DeleteBulkStateRequest']
-_SAVESTATEREQUEST = DESCRIPTOR.message_types_by_name['SaveStateRequest']
-_QUERYSTATEREQUEST = DESCRIPTOR.message_types_by_name['QueryStateRequest']
-_QUERYSTATEREQUEST_METADATAENTRY = _QUERYSTATEREQUEST.nested_types_by_name['MetadataEntry']
-_QUERYSTATEITEM = DESCRIPTOR.message_types_by_name['QueryStateItem']
-_QUERYSTATERESPONSE = DESCRIPTOR.message_types_by_name['QueryStateResponse']
-_QUERYSTATERESPONSE_METADATAENTRY = _QUERYSTATERESPONSE.nested_types_by_name['MetadataEntry']
-_PUBLISHEVENTREQUEST = DESCRIPTOR.message_types_by_name['PublishEventRequest']
-_PUBLISHEVENTREQUEST_METADATAENTRY = _PUBLISHEVENTREQUEST.nested_types_by_name['MetadataEntry']
-_BULKPUBLISHREQUEST = DESCRIPTOR.message_types_by_name['BulkPublishRequest']
-_BULKPUBLISHREQUEST_METADATAENTRY = _BULKPUBLISHREQUEST.nested_types_by_name['MetadataEntry']
-_BULKPUBLISHREQUESTENTRY = DESCRIPTOR.message_types_by_name['BulkPublishRequestEntry']
-_BULKPUBLISHREQUESTENTRY_METADATAENTRY = _BULKPUBLISHREQUESTENTRY.nested_types_by_name['MetadataEntry']
-_BULKPUBLISHRESPONSE = DESCRIPTOR.message_types_by_name['BulkPublishResponse']
-_BULKPUBLISHRESPONSEFAILEDENTRY = DESCRIPTOR.message_types_by_name['BulkPublishResponseFailedEntry']
-_INVOKEBINDINGREQUEST = DESCRIPTOR.message_types_by_name['InvokeBindingRequest']
-_INVOKEBINDINGREQUEST_METADATAENTRY = _INVOKEBINDINGREQUEST.nested_types_by_name['MetadataEntry']
-_INVOKEBINDINGRESPONSE = DESCRIPTOR.message_types_by_name['InvokeBindingResponse']
-_INVOKEBINDINGRESPONSE_METADATAENTRY = _INVOKEBINDINGRESPONSE.nested_types_by_name['MetadataEntry']
-_GETSECRETREQUEST = DESCRIPTOR.message_types_by_name['GetSecretRequest']
-_GETSECRETREQUEST_METADATAENTRY = _GETSECRETREQUEST.nested_types_by_name['MetadataEntry']
-_GETSECRETRESPONSE = DESCRIPTOR.message_types_by_name['GetSecretResponse']
-_GETSECRETRESPONSE_DATAENTRY = _GETSECRETRESPONSE.nested_types_by_name['DataEntry']
-_GETBULKSECRETREQUEST = DESCRIPTOR.message_types_by_name['GetBulkSecretRequest']
-_GETBULKSECRETREQUEST_METADATAENTRY = _GETBULKSECRETREQUEST.nested_types_by_name['MetadataEntry']
-_SECRETRESPONSE = DESCRIPTOR.message_types_by_name['SecretResponse']
-_SECRETRESPONSE_SECRETSENTRY = _SECRETRESPONSE.nested_types_by_name['SecretsEntry']
-_GETBULKSECRETRESPONSE = DESCRIPTOR.message_types_by_name['GetBulkSecretResponse']
-_GETBULKSECRETRESPONSE_DATAENTRY = _GETBULKSECRETRESPONSE.nested_types_by_name['DataEntry']
-_TRANSACTIONALSTATEOPERATION = DESCRIPTOR.message_types_by_name['TransactionalStateOperation']
-_EXECUTESTATETRANSACTIONREQUEST = DESCRIPTOR.message_types_by_name['ExecuteStateTransactionRequest']
-_EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY = _EXECUTESTATETRANSACTIONREQUEST.nested_types_by_name['MetadataEntry']
-_REGISTERACTORTIMERREQUEST = DESCRIPTOR.message_types_by_name['RegisterActorTimerRequest']
-_UNREGISTERACTORTIMERREQUEST = DESCRIPTOR.message_types_by_name['UnregisterActorTimerRequest']
-_REGISTERACTORREMINDERREQUEST = DESCRIPTOR.message_types_by_name['RegisterActorReminderRequest']
-_UNREGISTERACTORREMINDERREQUEST = DESCRIPTOR.message_types_by_name['UnregisterActorReminderRequest']
-_RENAMEACTORREMINDERREQUEST = DESCRIPTOR.message_types_by_name['RenameActorReminderRequest']
-_GETACTORSTATEREQUEST = DESCRIPTOR.message_types_by_name['GetActorStateRequest']
-_GETACTORSTATERESPONSE = DESCRIPTOR.message_types_by_name['GetActorStateResponse']
-_EXECUTEACTORSTATETRANSACTIONREQUEST = DESCRIPTOR.message_types_by_name['ExecuteActorStateTransactionRequest']
-_TRANSACTIONALACTORSTATEOPERATION = DESCRIPTOR.message_types_by_name['TransactionalActorStateOperation']
-_TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY = _TRANSACTIONALACTORSTATEOPERATION.nested_types_by_name['MetadataEntry']
-_INVOKEACTORREQUEST = DESCRIPTOR.message_types_by_name['InvokeActorRequest']
-_INVOKEACTORREQUEST_METADATAENTRY = _INVOKEACTORREQUEST.nested_types_by_name['MetadataEntry']
-_INVOKEACTORRESPONSE = DESCRIPTOR.message_types_by_name['InvokeActorResponse']
-_GETMETADATARESPONSE = DESCRIPTOR.message_types_by_name['GetMetadataResponse']
-_GETMETADATARESPONSE_EXTENDEDMETADATAENTRY = _GETMETADATARESPONSE.nested_types_by_name['ExtendedMetadataEntry']
-_ACTIVEACTORSCOUNT = DESCRIPTOR.message_types_by_name['ActiveActorsCount']
-_REGISTEREDCOMPONENTS = DESCRIPTOR.message_types_by_name['RegisteredComponents']
-_METADATAHTTPENDPOINT = DESCRIPTOR.message_types_by_name['MetadataHTTPEndpoint']
-_PUBSUBSUBSCRIPTION = DESCRIPTOR.message_types_by_name['PubsubSubscription']
-_PUBSUBSUBSCRIPTION_METADATAENTRY = _PUBSUBSUBSCRIPTION.nested_types_by_name['MetadataEntry']
-_PUBSUBSUBSCRIPTIONRULES = DESCRIPTOR.message_types_by_name['PubsubSubscriptionRules']
-_PUBSUBSUBSCRIPTIONRULE = DESCRIPTOR.message_types_by_name['PubsubSubscriptionRule']
-_SETMETADATAREQUEST = DESCRIPTOR.message_types_by_name['SetMetadataRequest']
-_GETCONFIGURATIONREQUEST = DESCRIPTOR.message_types_by_name['GetConfigurationRequest']
-_GETCONFIGURATIONREQUEST_METADATAENTRY = _GETCONFIGURATIONREQUEST.nested_types_by_name['MetadataEntry']
-_GETCONFIGURATIONRESPONSE = DESCRIPTOR.message_types_by_name['GetConfigurationResponse']
-_GETCONFIGURATIONRESPONSE_ITEMSENTRY = _GETCONFIGURATIONRESPONSE.nested_types_by_name['ItemsEntry']
-_SUBSCRIBECONFIGURATIONREQUEST = DESCRIPTOR.message_types_by_name['SubscribeConfigurationRequest']
-_SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY = _SUBSCRIBECONFIGURATIONREQUEST.nested_types_by_name['MetadataEntry']
-_UNSUBSCRIBECONFIGURATIONREQUEST = DESCRIPTOR.message_types_by_name['UnsubscribeConfigurationRequest']
-_SUBSCRIBECONFIGURATIONRESPONSE = DESCRIPTOR.message_types_by_name['SubscribeConfigurationResponse']
-_SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY = _SUBSCRIBECONFIGURATIONRESPONSE.nested_types_by_name['ItemsEntry']
-_UNSUBSCRIBECONFIGURATIONRESPONSE = DESCRIPTOR.message_types_by_name['UnsubscribeConfigurationResponse']
-_TRYLOCKREQUEST = DESCRIPTOR.message_types_by_name['TryLockRequest']
-_TRYLOCKRESPONSE = DESCRIPTOR.message_types_by_name['TryLockResponse']
-_UNLOCKREQUEST = DESCRIPTOR.message_types_by_name['UnlockRequest']
-_UNLOCKRESPONSE = DESCRIPTOR.message_types_by_name['UnlockResponse']
-_SUBTLEGETKEYREQUEST = DESCRIPTOR.message_types_by_name['SubtleGetKeyRequest']
-_SUBTLEGETKEYRESPONSE = DESCRIPTOR.message_types_by_name['SubtleGetKeyResponse']
-_SUBTLEENCRYPTREQUEST = DESCRIPTOR.message_types_by_name['SubtleEncryptRequest']
-_SUBTLEENCRYPTRESPONSE = DESCRIPTOR.message_types_by_name['SubtleEncryptResponse']
-_SUBTLEDECRYPTREQUEST = DESCRIPTOR.message_types_by_name['SubtleDecryptRequest']
-_SUBTLEDECRYPTRESPONSE = DESCRIPTOR.message_types_by_name['SubtleDecryptResponse']
-_SUBTLEWRAPKEYREQUEST = DESCRIPTOR.message_types_by_name['SubtleWrapKeyRequest']
-_SUBTLEWRAPKEYRESPONSE = DESCRIPTOR.message_types_by_name['SubtleWrapKeyResponse']
-_SUBTLEUNWRAPKEYREQUEST = DESCRIPTOR.message_types_by_name['SubtleUnwrapKeyRequest']
-_SUBTLEUNWRAPKEYRESPONSE = DESCRIPTOR.message_types_by_name['SubtleUnwrapKeyResponse']
-_SUBTLESIGNREQUEST = DESCRIPTOR.message_types_by_name['SubtleSignRequest']
-_SUBTLESIGNRESPONSE = DESCRIPTOR.message_types_by_name['SubtleSignResponse']
-_SUBTLEVERIFYREQUEST = DESCRIPTOR.message_types_by_name['SubtleVerifyRequest']
-_SUBTLEVERIFYRESPONSE = DESCRIPTOR.message_types_by_name['SubtleVerifyResponse']
-_ENCRYPTREQUEST = DESCRIPTOR.message_types_by_name['EncryptRequest']
-_ENCRYPTREQUESTOPTIONS = DESCRIPTOR.message_types_by_name['EncryptRequestOptions']
-_ENCRYPTRESPONSE = DESCRIPTOR.message_types_by_name['EncryptResponse']
-_DECRYPTREQUEST = DESCRIPTOR.message_types_by_name['DecryptRequest']
-_DECRYPTREQUESTOPTIONS = DESCRIPTOR.message_types_by_name['DecryptRequestOptions']
-_DECRYPTRESPONSE = DESCRIPTOR.message_types_by_name['DecryptResponse']
-_GETWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['GetWorkflowRequest']
-_GETWORKFLOWRESPONSE = DESCRIPTOR.message_types_by_name['GetWorkflowResponse']
-_GETWORKFLOWRESPONSE_PROPERTIESENTRY = _GETWORKFLOWRESPONSE.nested_types_by_name['PropertiesEntry']
-_STARTWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['StartWorkflowRequest']
-_STARTWORKFLOWREQUEST_OPTIONSENTRY = _STARTWORKFLOWREQUEST.nested_types_by_name['OptionsEntry']
-_STARTWORKFLOWRESPONSE = DESCRIPTOR.message_types_by_name['StartWorkflowResponse']
-_TERMINATEWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['TerminateWorkflowRequest']
-_PAUSEWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['PauseWorkflowRequest']
-_RESUMEWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['ResumeWorkflowRequest']
-_RAISEEVENTWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['RaiseEventWorkflowRequest']
-_PURGEWORKFLOWREQUEST = DESCRIPTOR.message_types_by_name['PurgeWorkflowRequest']
-_UNLOCKRESPONSE_STATUS = _UNLOCKRESPONSE.enum_types_by_name['Status']
-_SUBTLEGETKEYREQUEST_KEYFORMAT = _SUBTLEGETKEYREQUEST.enum_types_by_name['KeyFormat']
-InvokeServiceRequest = _reflection.GeneratedProtocolMessageType('InvokeServiceRequest', (_message.Message,), {
-  'DESCRIPTOR' : _INVOKESERVICEREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.InvokeServiceRequest)
-  })
-_sym_db.RegisterMessage(InvokeServiceRequest)
-
-GetStateRequest = _reflection.GeneratedProtocolMessageType('GetStateRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETSTATEREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetStateRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETSTATEREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetStateRequest)
-  })
-_sym_db.RegisterMessage(GetStateRequest)
-_sym_db.RegisterMessage(GetStateRequest.MetadataEntry)
-
-GetBulkStateRequest = _reflection.GeneratedProtocolMessageType('GetBulkStateRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETBULKSTATEREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetBulkStateRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETBULKSTATEREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetBulkStateRequest)
-  })
-_sym_db.RegisterMessage(GetBulkStateRequest)
-_sym_db.RegisterMessage(GetBulkStateRequest.MetadataEntry)
-
-GetBulkStateResponse = _reflection.GeneratedProtocolMessageType('GetBulkStateResponse', (_message.Message,), {
-  'DESCRIPTOR' : _GETBULKSTATERESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetBulkStateResponse)
-  })
-_sym_db.RegisterMessage(GetBulkStateResponse)
-
-BulkStateItem = _reflection.GeneratedProtocolMessageType('BulkStateItem', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _BULKSTATEITEM_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.BulkStateItem.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _BULKSTATEITEM,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.BulkStateItem)
-  })
-_sym_db.RegisterMessage(BulkStateItem)
-_sym_db.RegisterMessage(BulkStateItem.MetadataEntry)
-
-GetStateResponse = _reflection.GeneratedProtocolMessageType('GetStateResponse', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETSTATERESPONSE_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetStateResponse.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETSTATERESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetStateResponse)
-  })
-_sym_db.RegisterMessage(GetStateResponse)
-_sym_db.RegisterMessage(GetStateResponse.MetadataEntry)
-
-DeleteStateRequest = _reflection.GeneratedProtocolMessageType('DeleteStateRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _DELETESTATEREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DeleteStateRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _DELETESTATEREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DeleteStateRequest)
-  })
-_sym_db.RegisterMessage(DeleteStateRequest)
-_sym_db.RegisterMessage(DeleteStateRequest.MetadataEntry)
-
-DeleteBulkStateRequest = _reflection.GeneratedProtocolMessageType('DeleteBulkStateRequest', (_message.Message,), {
-  'DESCRIPTOR' : _DELETEBULKSTATEREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DeleteBulkStateRequest)
-  })
-_sym_db.RegisterMessage(DeleteBulkStateRequest)
-
-SaveStateRequest = _reflection.GeneratedProtocolMessageType('SaveStateRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SAVESTATEREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SaveStateRequest)
-  })
-_sym_db.RegisterMessage(SaveStateRequest)
-
-QueryStateRequest = _reflection.GeneratedProtocolMessageType('QueryStateRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _QUERYSTATEREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _QUERYSTATEREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateRequest)
-  })
-_sym_db.RegisterMessage(QueryStateRequest)
-_sym_db.RegisterMessage(QueryStateRequest.MetadataEntry)
-
-QueryStateItem = _reflection.GeneratedProtocolMessageType('QueryStateItem', (_message.Message,), {
-  'DESCRIPTOR' : _QUERYSTATEITEM,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateItem)
-  })
-_sym_db.RegisterMessage(QueryStateItem)
-
-QueryStateResponse = _reflection.GeneratedProtocolMessageType('QueryStateResponse', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _QUERYSTATERESPONSE_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _QUERYSTATERESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.QueryStateResponse)
-  })
-_sym_db.RegisterMessage(QueryStateResponse)
-_sym_db.RegisterMessage(QueryStateResponse.MetadataEntry)
-
-PublishEventRequest = _reflection.GeneratedProtocolMessageType('PublishEventRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _PUBLISHEVENTREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.PublishEventRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _PUBLISHEVENTREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.PublishEventRequest)
-  })
-_sym_db.RegisterMessage(PublishEventRequest)
-_sym_db.RegisterMessage(PublishEventRequest.MetadataEntry)
-
-BulkPublishRequest = _reflection.GeneratedProtocolMessageType('BulkPublishRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _BULKPUBLISHREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.BulkPublishRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _BULKPUBLISHREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.BulkPublishRequest)
-  })
-_sym_db.RegisterMessage(BulkPublishRequest)
-_sym_db.RegisterMessage(BulkPublishRequest.MetadataEntry)
-
-BulkPublishRequestEntry = _reflection.GeneratedProtocolMessageType('BulkPublishRequestEntry', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _BULKPUBLISHREQUESTENTRY_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.BulkPublishRequestEntry.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _BULKPUBLISHREQUESTENTRY,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.BulkPublishRequestEntry)
-  })
-_sym_db.RegisterMessage(BulkPublishRequestEntry)
-_sym_db.RegisterMessage(BulkPublishRequestEntry.MetadataEntry)
-
-BulkPublishResponse = _reflection.GeneratedProtocolMessageType('BulkPublishResponse', (_message.Message,), {
-  'DESCRIPTOR' : _BULKPUBLISHRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.BulkPublishResponse)
-  })
-_sym_db.RegisterMessage(BulkPublishResponse)
-
-BulkPublishResponseFailedEntry = _reflection.GeneratedProtocolMessageType('BulkPublishResponseFailedEntry', (_message.Message,), {
-  'DESCRIPTOR' : _BULKPUBLISHRESPONSEFAILEDENTRY,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.BulkPublishResponseFailedEntry)
-  })
-_sym_db.RegisterMessage(BulkPublishResponseFailedEntry)
-
-InvokeBindingRequest = _reflection.GeneratedProtocolMessageType('InvokeBindingRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _INVOKEBINDINGREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _INVOKEBINDINGREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.InvokeBindingRequest)
-  })
-_sym_db.RegisterMessage(InvokeBindingRequest)
-_sym_db.RegisterMessage(InvokeBindingRequest.MetadataEntry)
-
-InvokeBindingResponse = _reflection.GeneratedProtocolMessageType('InvokeBindingResponse', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _INVOKEBINDINGRESPONSE_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.InvokeBindingResponse.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _INVOKEBINDINGRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.InvokeBindingResponse)
-  })
-_sym_db.RegisterMessage(InvokeBindingResponse)
-_sym_db.RegisterMessage(InvokeBindingResponse.MetadataEntry)
-
-GetSecretRequest = _reflection.GeneratedProtocolMessageType('GetSecretRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETSECRETREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETSECRETREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetSecretRequest)
-  })
-_sym_db.RegisterMessage(GetSecretRequest)
-_sym_db.RegisterMessage(GetSecretRequest.MetadataEntry)
-
-GetSecretResponse = _reflection.GeneratedProtocolMessageType('GetSecretResponse', (_message.Message,), {
-
-  'DataEntry' : _reflection.GeneratedProtocolMessageType('DataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETSECRETRESPONSE_DATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetSecretResponse.DataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETSECRETRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetSecretResponse)
-  })
-_sym_db.RegisterMessage(GetSecretResponse)
-_sym_db.RegisterMessage(GetSecretResponse.DataEntry)
-
-GetBulkSecretRequest = _reflection.GeneratedProtocolMessageType('GetBulkSecretRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETBULKSECRETREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetBulkSecretRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETBULKSECRETREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetBulkSecretRequest)
-  })
-_sym_db.RegisterMessage(GetBulkSecretRequest)
-_sym_db.RegisterMessage(GetBulkSecretRequest.MetadataEntry)
-
-SecretResponse = _reflection.GeneratedProtocolMessageType('SecretResponse', (_message.Message,), {
-
-  'SecretsEntry' : _reflection.GeneratedProtocolMessageType('SecretsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _SECRETRESPONSE_SECRETSENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SecretResponse.SecretsEntry)
-    })
-  ,
-  'DESCRIPTOR' : _SECRETRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SecretResponse)
-  })
-_sym_db.RegisterMessage(SecretResponse)
-_sym_db.RegisterMessage(SecretResponse.SecretsEntry)
-
-GetBulkSecretResponse = _reflection.GeneratedProtocolMessageType('GetBulkSecretResponse', (_message.Message,), {
-
-  'DataEntry' : _reflection.GeneratedProtocolMessageType('DataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETBULKSECRETRESPONSE_DATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetBulkSecretResponse.DataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETBULKSECRETRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetBulkSecretResponse)
-  })
-_sym_db.RegisterMessage(GetBulkSecretResponse)
-_sym_db.RegisterMessage(GetBulkSecretResponse.DataEntry)
-
-TransactionalStateOperation = _reflection.GeneratedProtocolMessageType('TransactionalStateOperation', (_message.Message,), {
-  'DESCRIPTOR' : _TRANSACTIONALSTATEOPERATION,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TransactionalStateOperation)
-  })
-_sym_db.RegisterMessage(TransactionalStateOperation)
-
-ExecuteStateTransactionRequest = _reflection.GeneratedProtocolMessageType('ExecuteStateTransactionRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.ExecuteStateTransactionRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _EXECUTESTATETRANSACTIONREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.ExecuteStateTransactionRequest)
-  })
-_sym_db.RegisterMessage(ExecuteStateTransactionRequest)
-_sym_db.RegisterMessage(ExecuteStateTransactionRequest.MetadataEntry)
-
-RegisterActorTimerRequest = _reflection.GeneratedProtocolMessageType('RegisterActorTimerRequest', (_message.Message,), {
-  'DESCRIPTOR' : _REGISTERACTORTIMERREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.RegisterActorTimerRequest)
-  })
-_sym_db.RegisterMessage(RegisterActorTimerRequest)
-
-UnregisterActorTimerRequest = _reflection.GeneratedProtocolMessageType('UnregisterActorTimerRequest', (_message.Message,), {
-  'DESCRIPTOR' : _UNREGISTERACTORTIMERREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.UnregisterActorTimerRequest)
-  })
-_sym_db.RegisterMessage(UnregisterActorTimerRequest)
-
-RegisterActorReminderRequest = _reflection.GeneratedProtocolMessageType('RegisterActorReminderRequest', (_message.Message,), {
-  'DESCRIPTOR' : _REGISTERACTORREMINDERREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.RegisterActorReminderRequest)
-  })
-_sym_db.RegisterMessage(RegisterActorReminderRequest)
-
-UnregisterActorReminderRequest = _reflection.GeneratedProtocolMessageType('UnregisterActorReminderRequest', (_message.Message,), {
-  'DESCRIPTOR' : _UNREGISTERACTORREMINDERREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.UnregisterActorReminderRequest)
-  })
-_sym_db.RegisterMessage(UnregisterActorReminderRequest)
-
-RenameActorReminderRequest = _reflection.GeneratedProtocolMessageType('RenameActorReminderRequest', (_message.Message,), {
-  'DESCRIPTOR' : _RENAMEACTORREMINDERREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.RenameActorReminderRequest)
-  })
-_sym_db.RegisterMessage(RenameActorReminderRequest)
-
-GetActorStateRequest = _reflection.GeneratedProtocolMessageType('GetActorStateRequest', (_message.Message,), {
-  'DESCRIPTOR' : _GETACTORSTATEREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetActorStateRequest)
-  })
-_sym_db.RegisterMessage(GetActorStateRequest)
-
-GetActorStateResponse = _reflection.GeneratedProtocolMessageType('GetActorStateResponse', (_message.Message,), {
-  'DESCRIPTOR' : _GETACTORSTATERESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetActorStateResponse)
-  })
-_sym_db.RegisterMessage(GetActorStateResponse)
-
-ExecuteActorStateTransactionRequest = _reflection.GeneratedProtocolMessageType('ExecuteActorStateTransactionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _EXECUTEACTORSTATETRANSACTIONREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.ExecuteActorStateTransactionRequest)
-  })
-_sym_db.RegisterMessage(ExecuteActorStateTransactionRequest)
-
-TransactionalActorStateOperation = _reflection.GeneratedProtocolMessageType('TransactionalActorStateOperation', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TransactionalActorStateOperation.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _TRANSACTIONALACTORSTATEOPERATION,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TransactionalActorStateOperation)
-  })
-_sym_db.RegisterMessage(TransactionalActorStateOperation)
-_sym_db.RegisterMessage(TransactionalActorStateOperation.MetadataEntry)
-
-InvokeActorRequest = _reflection.GeneratedProtocolMessageType('InvokeActorRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _INVOKEACTORREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.InvokeActorRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _INVOKEACTORREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.InvokeActorRequest)
-  })
-_sym_db.RegisterMessage(InvokeActorRequest)
-_sym_db.RegisterMessage(InvokeActorRequest.MetadataEntry)
-
-InvokeActorResponse = _reflection.GeneratedProtocolMessageType('InvokeActorResponse', (_message.Message,), {
-  'DESCRIPTOR' : _INVOKEACTORRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.InvokeActorResponse)
-  })
-_sym_db.RegisterMessage(InvokeActorResponse)
-
-GetMetadataResponse = _reflection.GeneratedProtocolMessageType('GetMetadataResponse', (_message.Message,), {
-
-  'ExtendedMetadataEntry' : _reflection.GeneratedProtocolMessageType('ExtendedMetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetMetadataResponse.ExtendedMetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETMETADATARESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetMetadataResponse)
-  })
-_sym_db.RegisterMessage(GetMetadataResponse)
-_sym_db.RegisterMessage(GetMetadataResponse.ExtendedMetadataEntry)
-
-ActiveActorsCount = _reflection.GeneratedProtocolMessageType('ActiveActorsCount', (_message.Message,), {
-  'DESCRIPTOR' : _ACTIVEACTORSCOUNT,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.ActiveActorsCount)
-  })
-_sym_db.RegisterMessage(ActiveActorsCount)
-
-RegisteredComponents = _reflection.GeneratedProtocolMessageType('RegisteredComponents', (_message.Message,), {
-  'DESCRIPTOR' : _REGISTEREDCOMPONENTS,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.RegisteredComponents)
-  })
-_sym_db.RegisterMessage(RegisteredComponents)
-
-MetadataHTTPEndpoint = _reflection.GeneratedProtocolMessageType('MetadataHTTPEndpoint', (_message.Message,), {
-  'DESCRIPTOR' : _METADATAHTTPENDPOINT,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.MetadataHTTPEndpoint)
-  })
-_sym_db.RegisterMessage(MetadataHTTPEndpoint)
-
-PubsubSubscription = _reflection.GeneratedProtocolMessageType('PubsubSubscription', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _PUBSUBSUBSCRIPTION_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.PubsubSubscription.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _PUBSUBSUBSCRIPTION,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.PubsubSubscription)
-  })
-_sym_db.RegisterMessage(PubsubSubscription)
-_sym_db.RegisterMessage(PubsubSubscription.MetadataEntry)
-
-PubsubSubscriptionRules = _reflection.GeneratedProtocolMessageType('PubsubSubscriptionRules', (_message.Message,), {
-  'DESCRIPTOR' : _PUBSUBSUBSCRIPTIONRULES,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.PubsubSubscriptionRules)
-  })
-_sym_db.RegisterMessage(PubsubSubscriptionRules)
-
-PubsubSubscriptionRule = _reflection.GeneratedProtocolMessageType('PubsubSubscriptionRule', (_message.Message,), {
-  'DESCRIPTOR' : _PUBSUBSUBSCRIPTIONRULE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.PubsubSubscriptionRule)
-  })
-_sym_db.RegisterMessage(PubsubSubscriptionRule)
-
-SetMetadataRequest = _reflection.GeneratedProtocolMessageType('SetMetadataRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SETMETADATAREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SetMetadataRequest)
-  })
-_sym_db.RegisterMessage(SetMetadataRequest)
-
-GetConfigurationRequest = _reflection.GeneratedProtocolMessageType('GetConfigurationRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETCONFIGURATIONREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETCONFIGURATIONREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetConfigurationRequest)
-  })
-_sym_db.RegisterMessage(GetConfigurationRequest)
-_sym_db.RegisterMessage(GetConfigurationRequest.MetadataEntry)
-
-GetConfigurationResponse = _reflection.GeneratedProtocolMessageType('GetConfigurationResponse', (_message.Message,), {
-
-  'ItemsEntry' : _reflection.GeneratedProtocolMessageType('ItemsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETCONFIGURATIONRESPONSE_ITEMSENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetConfigurationResponse.ItemsEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETCONFIGURATIONRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetConfigurationResponse)
-  })
-_sym_db.RegisterMessage(GetConfigurationResponse)
-_sym_db.RegisterMessage(GetConfigurationResponse.ItemsEntry)
-
-SubscribeConfigurationRequest = _reflection.GeneratedProtocolMessageType('SubscribeConfigurationRequest', (_message.Message,), {
-
-  'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
-    'DESCRIPTOR' : _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry)
-    })
-  ,
-  'DESCRIPTOR' : _SUBSCRIBECONFIGURATIONREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubscribeConfigurationRequest)
-  })
-_sym_db.RegisterMessage(SubscribeConfigurationRequest)
-_sym_db.RegisterMessage(SubscribeConfigurationRequest.MetadataEntry)
-
-UnsubscribeConfigurationRequest = _reflection.GeneratedProtocolMessageType('UnsubscribeConfigurationRequest', (_message.Message,), {
-  'DESCRIPTOR' : _UNSUBSCRIBECONFIGURATIONREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.UnsubscribeConfigurationRequest)
-  })
-_sym_db.RegisterMessage(UnsubscribeConfigurationRequest)
-
-SubscribeConfigurationResponse = _reflection.GeneratedProtocolMessageType('SubscribeConfigurationResponse', (_message.Message,), {
-
-  'ItemsEntry' : _reflection.GeneratedProtocolMessageType('ItemsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubscribeConfigurationResponse.ItemsEntry)
-    })
-  ,
-  'DESCRIPTOR' : _SUBSCRIBECONFIGURATIONRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubscribeConfigurationResponse)
-  })
-_sym_db.RegisterMessage(SubscribeConfigurationResponse)
-_sym_db.RegisterMessage(SubscribeConfigurationResponse.ItemsEntry)
-
-UnsubscribeConfigurationResponse = _reflection.GeneratedProtocolMessageType('UnsubscribeConfigurationResponse', (_message.Message,), {
-  'DESCRIPTOR' : _UNSUBSCRIBECONFIGURATIONRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.UnsubscribeConfigurationResponse)
-  })
-_sym_db.RegisterMessage(UnsubscribeConfigurationResponse)
-
-TryLockRequest = _reflection.GeneratedProtocolMessageType('TryLockRequest', (_message.Message,), {
-  'DESCRIPTOR' : _TRYLOCKREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TryLockRequest)
-  })
-_sym_db.RegisterMessage(TryLockRequest)
-
-TryLockResponse = _reflection.GeneratedProtocolMessageType('TryLockResponse', (_message.Message,), {
-  'DESCRIPTOR' : _TRYLOCKRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TryLockResponse)
-  })
-_sym_db.RegisterMessage(TryLockResponse)
-
-UnlockRequest = _reflection.GeneratedProtocolMessageType('UnlockRequest', (_message.Message,), {
-  'DESCRIPTOR' : _UNLOCKREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.UnlockRequest)
-  })
-_sym_db.RegisterMessage(UnlockRequest)
-
-UnlockResponse = _reflection.GeneratedProtocolMessageType('UnlockResponse', (_message.Message,), {
-  'DESCRIPTOR' : _UNLOCKRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.UnlockResponse)
-  })
-_sym_db.RegisterMessage(UnlockResponse)
-
-SubtleGetKeyRequest = _reflection.GeneratedProtocolMessageType('SubtleGetKeyRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEGETKEYREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleGetKeyRequest)
-  })
-_sym_db.RegisterMessage(SubtleGetKeyRequest)
-
-SubtleGetKeyResponse = _reflection.GeneratedProtocolMessageType('SubtleGetKeyResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEGETKEYRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleGetKeyResponse)
-  })
-_sym_db.RegisterMessage(SubtleGetKeyResponse)
-
-SubtleEncryptRequest = _reflection.GeneratedProtocolMessageType('SubtleEncryptRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEENCRYPTREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleEncryptRequest)
-  })
-_sym_db.RegisterMessage(SubtleEncryptRequest)
-
-SubtleEncryptResponse = _reflection.GeneratedProtocolMessageType('SubtleEncryptResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEENCRYPTRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleEncryptResponse)
-  })
-_sym_db.RegisterMessage(SubtleEncryptResponse)
-
-SubtleDecryptRequest = _reflection.GeneratedProtocolMessageType('SubtleDecryptRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEDECRYPTREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleDecryptRequest)
-  })
-_sym_db.RegisterMessage(SubtleDecryptRequest)
-
-SubtleDecryptResponse = _reflection.GeneratedProtocolMessageType('SubtleDecryptResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEDECRYPTRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleDecryptResponse)
-  })
-_sym_db.RegisterMessage(SubtleDecryptResponse)
-
-SubtleWrapKeyRequest = _reflection.GeneratedProtocolMessageType('SubtleWrapKeyRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEWRAPKEYREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleWrapKeyRequest)
-  })
-_sym_db.RegisterMessage(SubtleWrapKeyRequest)
-
-SubtleWrapKeyResponse = _reflection.GeneratedProtocolMessageType('SubtleWrapKeyResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEWRAPKEYRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleWrapKeyResponse)
-  })
-_sym_db.RegisterMessage(SubtleWrapKeyResponse)
-
-SubtleUnwrapKeyRequest = _reflection.GeneratedProtocolMessageType('SubtleUnwrapKeyRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEUNWRAPKEYREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleUnwrapKeyRequest)
-  })
-_sym_db.RegisterMessage(SubtleUnwrapKeyRequest)
-
-SubtleUnwrapKeyResponse = _reflection.GeneratedProtocolMessageType('SubtleUnwrapKeyResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEUNWRAPKEYRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleUnwrapKeyResponse)
-  })
-_sym_db.RegisterMessage(SubtleUnwrapKeyResponse)
-
-SubtleSignRequest = _reflection.GeneratedProtocolMessageType('SubtleSignRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLESIGNREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleSignRequest)
-  })
-_sym_db.RegisterMessage(SubtleSignRequest)
-
-SubtleSignResponse = _reflection.GeneratedProtocolMessageType('SubtleSignResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLESIGNRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleSignResponse)
-  })
-_sym_db.RegisterMessage(SubtleSignResponse)
-
-SubtleVerifyRequest = _reflection.GeneratedProtocolMessageType('SubtleVerifyRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEVERIFYREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleVerifyRequest)
-  })
-_sym_db.RegisterMessage(SubtleVerifyRequest)
-
-SubtleVerifyResponse = _reflection.GeneratedProtocolMessageType('SubtleVerifyResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SUBTLEVERIFYRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.SubtleVerifyResponse)
-  })
-_sym_db.RegisterMessage(SubtleVerifyResponse)
-
-EncryptRequest = _reflection.GeneratedProtocolMessageType('EncryptRequest', (_message.Message,), {
-  'DESCRIPTOR' : _ENCRYPTREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.EncryptRequest)
-  })
-_sym_db.RegisterMessage(EncryptRequest)
-
-EncryptRequestOptions = _reflection.GeneratedProtocolMessageType('EncryptRequestOptions', (_message.Message,), {
-  'DESCRIPTOR' : _ENCRYPTREQUESTOPTIONS,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.EncryptRequestOptions)
-  })
-_sym_db.RegisterMessage(EncryptRequestOptions)
-
-EncryptResponse = _reflection.GeneratedProtocolMessageType('EncryptResponse', (_message.Message,), {
-  'DESCRIPTOR' : _ENCRYPTRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.EncryptResponse)
-  })
-_sym_db.RegisterMessage(EncryptResponse)
-
-DecryptRequest = _reflection.GeneratedProtocolMessageType('DecryptRequest', (_message.Message,), {
-  'DESCRIPTOR' : _DECRYPTREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DecryptRequest)
-  })
-_sym_db.RegisterMessage(DecryptRequest)
-
-DecryptRequestOptions = _reflection.GeneratedProtocolMessageType('DecryptRequestOptions', (_message.Message,), {
-  'DESCRIPTOR' : _DECRYPTREQUESTOPTIONS,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DecryptRequestOptions)
-  })
-_sym_db.RegisterMessage(DecryptRequestOptions)
-
-DecryptResponse = _reflection.GeneratedProtocolMessageType('DecryptResponse', (_message.Message,), {
-  'DESCRIPTOR' : _DECRYPTRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.DecryptResponse)
-  })
-_sym_db.RegisterMessage(DecryptResponse)
-
-GetWorkflowRequest = _reflection.GeneratedProtocolMessageType('GetWorkflowRequest', (_message.Message,), {
-  'DESCRIPTOR' : _GETWORKFLOWREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetWorkflowRequest)
-  })
-_sym_db.RegisterMessage(GetWorkflowRequest)
-
-GetWorkflowResponse = _reflection.GeneratedProtocolMessageType('GetWorkflowResponse', (_message.Message,), {
-
-  'PropertiesEntry' : _reflection.GeneratedProtocolMessageType('PropertiesEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETWORKFLOWRESPONSE_PROPERTIESENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetWorkflowResponse.PropertiesEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GETWORKFLOWRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.GetWorkflowResponse)
-  })
-_sym_db.RegisterMessage(GetWorkflowResponse)
-_sym_db.RegisterMessage(GetWorkflowResponse.PropertiesEntry)
-
-StartWorkflowRequest = _reflection.GeneratedProtocolMessageType('StartWorkflowRequest', (_message.Message,), {
-
-  'OptionsEntry' : _reflection.GeneratedProtocolMessageType('OptionsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _STARTWORKFLOWREQUEST_OPTIONSENTRY,
-    '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-    # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.StartWorkflowRequest.OptionsEntry)
-    })
-  ,
-  'DESCRIPTOR' : _STARTWORKFLOWREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.StartWorkflowRequest)
-  })
-_sym_db.RegisterMessage(StartWorkflowRequest)
-_sym_db.RegisterMessage(StartWorkflowRequest.OptionsEntry)
-
-StartWorkflowResponse = _reflection.GeneratedProtocolMessageType('StartWorkflowResponse', (_message.Message,), {
-  'DESCRIPTOR' : _STARTWORKFLOWRESPONSE,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.StartWorkflowResponse)
-  })
-_sym_db.RegisterMessage(StartWorkflowResponse)
-
-TerminateWorkflowRequest = _reflection.GeneratedProtocolMessageType('TerminateWorkflowRequest', (_message.Message,), {
-  'DESCRIPTOR' : _TERMINATEWORKFLOWREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.TerminateWorkflowRequest)
-  })
-_sym_db.RegisterMessage(TerminateWorkflowRequest)
-
-PauseWorkflowRequest = _reflection.GeneratedProtocolMessageType('PauseWorkflowRequest', (_message.Message,), {
-  'DESCRIPTOR' : _PAUSEWORKFLOWREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.PauseWorkflowRequest)
-  })
-_sym_db.RegisterMessage(PauseWorkflowRequest)
-
-ResumeWorkflowRequest = _reflection.GeneratedProtocolMessageType('ResumeWorkflowRequest', (_message.Message,), {
-  'DESCRIPTOR' : _RESUMEWORKFLOWREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.ResumeWorkflowRequest)
-  })
-_sym_db.RegisterMessage(ResumeWorkflowRequest)
-
-RaiseEventWorkflowRequest = _reflection.GeneratedProtocolMessageType('RaiseEventWorkflowRequest', (_message.Message,), {
-  'DESCRIPTOR' : _RAISEEVENTWORKFLOWREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.RaiseEventWorkflowRequest)
-  })
-_sym_db.RegisterMessage(RaiseEventWorkflowRequest)
-
-PurgeWorkflowRequest = _reflection.GeneratedProtocolMessageType('PurgeWorkflowRequest', (_message.Message,), {
-  'DESCRIPTOR' : _PURGEWORKFLOWREQUEST,
-  '__module__' : 'dapr.proto.runtime.v1.dapr_pb2'
-  # @@protoc_insertion_point(class_scope:dapr.proto.runtime.v1.PurgeWorkflowRequest)
-  })
-_sym_db.RegisterMessage(PurgeWorkflowRequest)
-
-_DAPR = DESCRIPTOR.services_by_name['Dapr']
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n dapr/proto/runtime/v1/dapr.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequest\"\xf5\x01\n\x0fGetStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12H\n\x0b\x63onsistency\x18\x03 \x01(\x0e\x32\x33.dapr.proto.common.v1.StateOptions.StateConsistency\x12\x46\n\x08metadata\x18\x04 \x03(\x0b\x32\x34.dapr.proto.runtime.v1.GetStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xc9\x01\n\x13GetBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12\x13\n\x0bparallelism\x18\x03 \x01(\x05\x12J\n\x08metadata\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.GetBulkStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"K\n\x14GetBulkStateResponse\x12\x33\n\x05items\x18\x01 \x03(\x0b\x32$.dapr.proto.runtime.v1.BulkStateItem\"\xbe\x01\n\rBulkStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\x12\x44\n\x08metadata\x18\x05 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.BulkStateItem.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa8\x01\n\x10GetStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x90\x02\n\x12\x44\x65leteStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12(\n\x04\x65tag\x18\x03 \x01(\x0b\x32\x1a.dapr.proto.common.v1.Etag\x12\x33\n\x07options\x18\x04 \x01(\x0b\x32\".dapr.proto.common.v1.StateOptions\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.DeleteStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"]\n\x16\x44\x65leteBulkStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"W\n\x10SaveStateRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12/\n\x06states\x18\x02 \x03(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\xbc\x01\n\x11QueryStateRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\r\n\x05query\x18\x02 \x01(\t\x12H\n\x08metadata\x18\x03 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.QueryStateRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"H\n\x0eQueryStateItem\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0c\n\x04\x65tag\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"\xd7\x01\n\x12QueryStateResponse\x12\x36\n\x07results\x18\x01 \x03(\x0b\x32%.dapr.proto.runtime.v1.QueryStateItem\x12\r\n\x05token\x18\x02 \x01(\t\x12I\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.QueryStateResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xdf\x01\n\x13PublishEventRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x19\n\x11\x64\x61ta_content_type\x18\x04 \x01(\t\x12J\n\x08metadata\x18\x05 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.PublishEventRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xf5\x01\n\x12\x42ulkPublishRequest\x12\x13\n\x0bpubsub_name\x18\x01 \x01(\t\x12\r\n\x05topic\x18\x02 \x01(\t\x12?\n\x07\x65ntries\x18\x03 \x03(\x0b\x32..dapr.proto.runtime.v1.BulkPublishRequestEntry\x12I\n\x08metadata\x18\x04 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.BulkPublishRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xd1\x01\n\x17\x42ulkPublishRequestEntry\x12\x10\n\x08\x65ntry_id\x18\x01 \x01(\t\x12\r\n\x05\x65vent\x18\x02 \x01(\x0c\x12\x14\n\x0c\x63ontent_type\x18\x03 \x01(\t\x12N\n\x08metadata\x18\x04 \x03(\x0b\x32<.dapr.proto.runtime.v1.BulkPublishRequestEntry.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"c\n\x13\x42ulkPublishResponse\x12L\n\rfailedEntries\x18\x01 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.BulkPublishResponseFailedEntry\"A\n\x1e\x42ulkPublishResponseFailedEntry\x12\x10\n\x08\x65ntry_id\x18\x01 \x01(\t\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\xc3\x01\n\x14InvokeBindingRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12K\n\x08metadata\x18\x03 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.InvokeBindingRequest.MetadataEntry\x12\x11\n\toperation\x18\x04 \x01(\t\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xa4\x01\n\x15InvokeBindingResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12L\n\x08metadata\x18\x02 \x03(\x0b\x32:.dapr.proto.runtime.v1.InvokeBindingResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb8\x01\n\x10GetSecretRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x0b\n\x03key\x18\x02 \x01(\t\x12G\n\x08metadata\x18\x03 \x03(\x0b\x32\x35.dapr.proto.runtime.v1.GetSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x82\x01\n\x11GetSecretResponse\x12@\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.GetSecretResponse.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb3\x01\n\x14GetBulkSecretRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12K\n\x08metadata\x18\x02 \x03(\x0b\x32\x39.dapr.proto.runtime.v1.GetBulkSecretRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x85\x01\n\x0eSecretResponse\x12\x43\n\x07secrets\x18\x01 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.SecretResponse.SecretsEntry\x1a.\n\x0cSecretsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xb1\x01\n\x15GetBulkSecretResponse\x12\x44\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x36.dapr.proto.runtime.v1.GetBulkSecretResponse.DataEntry\x1aR\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x34\n\x05value\x18\x02 \x01(\x0b\x32%.dapr.proto.runtime.v1.SecretResponse:\x02\x38\x01\"f\n\x1bTransactionalStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x30\n\x07request\x18\x02 \x01(\x0b\x32\x1f.dapr.proto.common.v1.StateItem\"\x83\x02\n\x1e\x45xecuteStateTransactionRequest\x12\x11\n\tstoreName\x18\x01 \x01(\t\x12\x46\n\noperations\x18\x02 \x03(\x0b\x32\x32.dapr.proto.runtime.v1.TransactionalStateOperation\x12U\n\x08metadata\x18\x03 \x03(\x0b\x32\x43.dapr.proto.runtime.v1.ExecuteStateTransactionRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9e\x01\n\x19RegisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x10\n\x08\x63\x61llback\x18\x06 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\x12\x0b\n\x03ttl\x18\x08 \x01(\t\"Q\n\x1bUnregisterActorTimerRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"\x8f\x01\n\x1cRegisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x0e\n\x06period\x18\x05 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x06 \x01(\x0c\x12\x0b\n\x03ttl\x18\x07 \x01(\t\"T\n\x1eUnregisterActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\"f\n\x1aRenameActorReminderRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x10\n\x08old_name\x18\x03 \x01(\t\x12\x10\n\x08new_name\x18\x04 \x01(\t\"I\n\x14GetActorStateRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0b\n\x03key\x18\x03 \x01(\t\"%\n\x15GetActorStateResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x98\x01\n#ExecuteActorStateTransactionRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12K\n\noperations\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.TransactionalActorStateOperation\"\xf5\x01\n TransactionalActorStateOperation\x12\x15\n\roperationType\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12#\n\x05value\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x12W\n\x08metadata\x18\x04 \x03(\x0b\x32\x45.dapr.proto.runtime.v1.TransactionalActorStateOperation.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xd4\x01\n\x12InvokeActorRequest\x12\x12\n\nactor_type\x18\x01 \x01(\t\x12\x10\n\x08\x61\x63tor_id\x18\x02 \x01(\t\x12\x0e\n\x06method\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\x12I\n\x08metadata\x18\x05 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.InvokeActorRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"#\n\x13InvokeActorResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\xcd\x05\n\x13GetMetadataResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12M\n\x13\x61\x63tive_actors_count\x18\x02 \x03(\x0b\x32(.dapr.proto.runtime.v1.ActiveActorsCountR\x06\x61\x63tors\x12V\n\x15registered_components\x18\x03 \x03(\x0b\x32+.dapr.proto.runtime.v1.RegisteredComponentsR\ncomponents\x12\x65\n\x11\x65xtended_metadata\x18\x04 \x03(\x0b\x32@.dapr.proto.runtime.v1.GetMetadataResponse.ExtendedMetadataEntryR\x08\x65xtended\x12O\n\rsubscriptions\x18\x05 \x03(\x0b\x32).dapr.proto.runtime.v1.PubsubSubscriptionR\rsubscriptions\x12R\n\x0ehttp_endpoints\x18\x06 \x03(\x0b\x32+.dapr.proto.runtime.v1.MetadataHTTPEndpointR\rhttpEndpoints\x12j\n\x19\x61pp_connection_properties\x18\x07 \x01(\x0b\x32..dapr.proto.runtime.v1.AppConnectionPropertiesR\x17\x61ppConnectionProperties\x12\'\n\x0fruntime_version\x18\x08 \x01(\tR\x0eruntimeVersion\x12)\n\x10\x65nabled_features\x18\t \x03(\tR\x0f\x65nabledFeatures\x1a\x37\n\x15\x45xtendedMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"0\n\x11\x41\x63tiveActorsCount\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\"Y\n\x14RegisteredComponents\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x14\n\x0c\x63\x61pabilities\x18\x04 \x03(\t\"*\n\x14MetadataHTTPEndpoint\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\"\xd1\x01\n\x17\x41ppConnectionProperties\x12\x0c\n\x04port\x18\x01 \x01(\x05\x12\x10\n\x08protocol\x18\x02 \x01(\t\x12\'\n\x0f\x63hannel_address\x18\x03 \x01(\tR\x0e\x63hannelAddress\x12\'\n\x0fmax_concurrency\x18\x04 \x01(\x05R\x0emaxConcurrency\x12\x44\n\x06health\x18\x05 \x01(\x0b\x32\x34.dapr.proto.runtime.v1.AppConnectionHealthProperties\"\xdc\x01\n\x1d\x41ppConnectionHealthProperties\x12*\n\x11health_check_path\x18\x01 \x01(\tR\x0fhealthCheckPath\x12\x32\n\x15health_probe_interval\x18\x02 \x01(\tR\x13healthProbeInterval\x12\x30\n\x14health_probe_timeout\x18\x03 \x01(\tR\x12healthProbeTimeout\x12)\n\x10health_threshold\x18\x04 \x01(\x05R\x0fhealthThreshold\"\xc3\x02\n\x12PubsubSubscription\x12\x1f\n\x0bpubsub_name\x18\x01 \x01(\tR\npubsubname\x12\x14\n\x05topic\x18\x02 \x01(\tR\x05topic\x12S\n\x08metadata\x18\x03 \x03(\x0b\x32\x37.dapr.proto.runtime.v1.PubsubSubscription.MetadataEntryR\x08metadata\x12\x44\n\x05rules\x18\x04 \x01(\x0b\x32..dapr.proto.runtime.v1.PubsubSubscriptionRulesR\x05rules\x12*\n\x11\x64\x65\x61\x64_letter_topic\x18\x05 \x01(\tR\x0f\x64\x65\x61\x64LetterTopic\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"W\n\x17PubsubSubscriptionRules\x12<\n\x05rules\x18\x01 \x03(\x0b\x32-.dapr.proto.runtime.v1.PubsubSubscriptionRule\"5\n\x16PubsubSubscriptionRule\x12\r\n\x05match\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"0\n\x12SetMetadataRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\xbc\x01\n\x17GetConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12N\n\x08metadata\x18\x03 \x03(\x0b\x32<.dapr.proto.runtime.v1.GetConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbc\x01\n\x18GetConfigurationResponse\x12I\n\x05items\x18\x01 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetConfigurationResponse.ItemsEntry\x1aU\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem:\x02\x38\x01\"\xc8\x01\n\x1dSubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\x0c\n\x04keys\x18\x02 \x03(\t\x12T\n\x08metadata\x18\x03 \x03(\x0b\x32\x42.dapr.proto.runtime.v1.SubscribeConfigurationRequest.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"A\n\x1fUnsubscribeConfigurationRequest\x12\x12\n\nstore_name\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\t\"\xd4\x01\n\x1eSubscribeConfigurationResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12O\n\x05items\x18\x02 \x03(\x0b\x32@.dapr.proto.runtime.v1.SubscribeConfigurationResponse.ItemsEntry\x1aU\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dapr.proto.common.v1.ConfigurationItem:\x02\x38\x01\"?\n UnsubscribeConfigurationResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x9b\x01\n\x0eTryLockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\x12*\n\x11\x65xpiry_in_seconds\x18\x04 \x01(\x05R\x0f\x65xpiryInSeconds\"\"\n\x0fTryLockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"n\n\rUnlockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\"\xae\x01\n\x0eUnlockResponse\x12<\n\x06status\x18\x01 \x01(\x0e\x32,.dapr.proto.runtime.v1.UnlockResponse.Status\"^\n\x06Status\x12\x0b\n\x07SUCCESS\x10\x00\x12\x17\n\x13LOCK_DOES_NOT_EXIST\x10\x01\x12\x1a\n\x16LOCK_BELONGS_TO_OTHERS\x10\x02\x12\x12\n\x0eINTERNAL_ERROR\x10\x03\"\xb0\x01\n\x13SubtleGetKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x44\n\x06\x66ormat\x18\x03 \x01(\x0e\x32\x34.dapr.proto.runtime.v1.SubtleGetKeyRequest.KeyFormat\"\x1e\n\tKeyFormat\x12\x07\n\x03PEM\x10\x00\x12\x08\n\x04JSON\x10\x01\"C\n\x14SubtleGetKeyResponse\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1d\n\npublic_key\x18\x02 \x01(\tR\tpublicKey\"\xb6\x01\n\x14SubtleEncryptRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x11\n\tplaintext\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x06 \x01(\x0cR\x0e\x61ssociatedData\"8\n\x15SubtleEncryptResponse\x12\x12\n\nciphertext\x18\x01 \x01(\x0c\x12\x0b\n\x03tag\x18\x02 \x01(\x0c\"\xc4\x01\n\x14SubtleDecryptRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x12\n\nciphertext\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\x0b\n\x03tag\x18\x06 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x07 \x01(\x0cR\x0e\x61ssociatedData\"*\n\x15SubtleDecryptResponse\x12\x11\n\tplaintext\x18\x01 \x01(\x0c\"\xc8\x01\n\x14SubtleWrapKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12#\n\rplaintext_key\x18\x02 \x01(\x0cR\x0cplaintextKey\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x06 \x01(\x0cR\x0e\x61ssociatedData\"E\n\x15SubtleWrapKeyResponse\x12\x1f\n\x0bwrapped_key\x18\x01 \x01(\x0cR\nwrappedKey\x12\x0b\n\x03tag\x18\x02 \x01(\x0c\"\xd3\x01\n\x16SubtleUnwrapKeyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x1f\n\x0bwrapped_key\x18\x02 \x01(\x0cR\nwrappedKey\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\r\n\x05nonce\x18\x05 \x01(\x0c\x12\x0b\n\x03tag\x18\x06 \x01(\x0c\x12\'\n\x0f\x61ssociated_data\x18\x07 \x01(\x0cR\x0e\x61ssociatedData\">\n\x17SubtleUnwrapKeyResponse\x12#\n\rplaintext_key\x18\x01 \x01(\x0cR\x0cplaintextKey\"x\n\x11SubtleSignRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0e\n\x06\x64igest\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\"\'\n\x12SubtleSignResponse\x12\x11\n\tsignature\x18\x01 \x01(\x0c\"\x8d\x01\n\x13SubtleVerifyRequest\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x0e\n\x06\x64igest\x18\x02 \x01(\x0c\x12\x11\n\talgorithm\x18\x03 \x01(\t\x12\x19\n\x08key_name\x18\x04 \x01(\tR\x07keyName\x12\x11\n\tsignature\x18\x05 \x01(\x0c\"%\n\x14SubtleVerifyResponse\x12\r\n\x05valid\x18\x01 \x01(\x08\"\x85\x01\n\x0e\x45ncryptRequest\x12=\n\x07options\x18\x01 \x01(\x0b\x32,.dapr.proto.runtime.v1.EncryptRequestOptions\x12\x34\n\x07payload\x18\x02 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"\xfe\x01\n\x15\x45ncryptRequestOptions\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x19\n\x08key_name\x18\x02 \x01(\tR\x07keyName\x12\x1a\n\x12key_wrap_algorithm\x18\x03 \x01(\t\x12\x1e\n\x16\x64\x61ta_encryption_cipher\x18\n \x01(\t\x12\x37\n\x18omit_decryption_key_name\x18\x0b \x01(\x08R\x15omitDecryptionKeyName\x12.\n\x13\x64\x65\x63ryption_key_name\x18\x0c \x01(\tR\x11\x64\x65\x63ryptionKeyName\"G\n\x0f\x45ncryptResponse\x12\x34\n\x07payload\x18\x01 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"\x85\x01\n\x0e\x44\x65\x63ryptRequest\x12=\n\x07options\x18\x01 \x01(\x0b\x32,.dapr.proto.runtime.v1.DecryptRequestOptions\x12\x34\n\x07payload\x18\x02 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"Y\n\x15\x44\x65\x63ryptRequestOptions\x12%\n\x0e\x63omponent_name\x18\x01 \x01(\tR\rcomponentName\x12\x19\n\x08key_name\x18\x0c \x01(\tR\x07keyName\"G\n\x0f\x44\x65\x63ryptResponse\x12\x34\n\x07payload\x18\x01 \x01(\x0b\x32#.dapr.proto.common.v1.StreamPayload\"d\n\x12GetWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x84\x03\n\x13GetWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12#\n\rworkflow_name\x18\x02 \x01(\tR\x0cworkflowName\x12\x39\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x42\n\x0flast_updated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\rlastUpdatedAt\x12%\n\x0eruntime_status\x18\x05 \x01(\tR\rruntimeStatus\x12N\n\nproperties\x18\x06 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetWorkflowResponse.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x95\x02\n\x14StartWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12#\n\rworkflow_name\x18\x03 \x01(\tR\x0cworkflowName\x12I\n\x07options\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.StartWorkflowRequest.OptionsEntry\x12\r\n\x05input\x18\x05 \x01(\x0c\x1a.\n\x0cOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"8\n\x15StartWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\"j\n\x18TerminateWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"f\n\x14PauseWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"g\n\x15ResumeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x9e\x01\n\x19RaiseEventWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1d\n\nevent_name\x18\x03 \x01(\tR\teventName\x12\x12\n\nevent_data\x18\x04 \x01(\x0c\"f\n\x14PurgeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent2\xe9\'\n\x04\x44\x61pr\x12\x64\n\rInvokeService\x12+.dapr.proto.runtime.v1.InvokeServiceRequest\x1a$.dapr.proto.common.v1.InvokeResponse\"\x00\x12]\n\x08GetState\x12&.dapr.proto.runtime.v1.GetStateRequest\x1a\'.dapr.proto.runtime.v1.GetStateResponse\"\x00\x12i\n\x0cGetBulkState\x12*.dapr.proto.runtime.v1.GetBulkStateRequest\x1a+.dapr.proto.runtime.v1.GetBulkStateResponse\"\x00\x12N\n\tSaveState\x12\'.dapr.proto.runtime.v1.SaveStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12i\n\x10QueryStateAlpha1\x12(.dapr.proto.runtime.v1.QueryStateRequest\x1a).dapr.proto.runtime.v1.QueryStateResponse\"\x00\x12R\n\x0b\x44\x65leteState\x12).dapr.proto.runtime.v1.DeleteStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12Z\n\x0f\x44\x65leteBulkState\x12-.dapr.proto.runtime.v1.DeleteBulkStateRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17\x45xecuteStateTransaction\x12\x35.dapr.proto.runtime.v1.ExecuteStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12T\n\x0cPublishEvent\x12*.dapr.proto.runtime.v1.PublishEventRequest\x1a\x16.google.protobuf.Empty\"\x00\x12q\n\x16\x42ulkPublishEventAlpha1\x12).dapr.proto.runtime.v1.BulkPublishRequest\x1a*.dapr.proto.runtime.v1.BulkPublishResponse\"\x00\x12l\n\rInvokeBinding\x12+.dapr.proto.runtime.v1.InvokeBindingRequest\x1a,.dapr.proto.runtime.v1.InvokeBindingResponse\"\x00\x12`\n\tGetSecret\x12\'.dapr.proto.runtime.v1.GetSecretRequest\x1a(.dapr.proto.runtime.v1.GetSecretResponse\"\x00\x12l\n\rGetBulkSecret\x12+.dapr.proto.runtime.v1.GetBulkSecretRequest\x1a,.dapr.proto.runtime.v1.GetBulkSecretResponse\"\x00\x12`\n\x12RegisterActorTimer\x12\x30.dapr.proto.runtime.v1.RegisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x14UnregisterActorTimer\x12\x32.dapr.proto.runtime.v1.UnregisterActorTimerRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x15RegisterActorReminder\x12\x33.dapr.proto.runtime.v1.RegisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12j\n\x17UnregisterActorReminder\x12\x35.dapr.proto.runtime.v1.UnregisterActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x62\n\x13RenameActorReminder\x12\x31.dapr.proto.runtime.v1.RenameActorReminderRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n\rGetActorState\x12+.dapr.proto.runtime.v1.GetActorStateRequest\x1a,.dapr.proto.runtime.v1.GetActorStateResponse\"\x00\x12t\n\x1c\x45xecuteActorStateTransaction\x12:.dapr.proto.runtime.v1.ExecuteActorStateTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x0bInvokeActor\x12).dapr.proto.runtime.v1.InvokeActorRequest\x1a*.dapr.proto.runtime.v1.InvokeActorResponse\"\x00\x12{\n\x16GetConfigurationAlpha1\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12u\n\x10GetConfiguration\x12..dapr.proto.runtime.v1.GetConfigurationRequest\x1a/.dapr.proto.runtime.v1.GetConfigurationResponse\"\x00\x12\x8f\x01\n\x1cSubscribeConfigurationAlpha1\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12\x89\x01\n\x16SubscribeConfiguration\x12\x34.dapr.proto.runtime.v1.SubscribeConfigurationRequest\x1a\x35.dapr.proto.runtime.v1.SubscribeConfigurationResponse\"\x00\x30\x01\x12\x93\x01\n\x1eUnsubscribeConfigurationAlpha1\x12\x36.dapr.proto.runtime.v1.UnsubscribeConfigurationRequest\x1a\x37.dapr.proto.runtime.v1.UnsubscribeConfigurationResponse\"\x00\x12\x8d\x01\n\x18UnsubscribeConfiguration\x12\x36.dapr.proto.runtime.v1.UnsubscribeConfigurationRequest\x1a\x37.dapr.proto.runtime.v1.UnsubscribeConfigurationResponse\"\x00\x12`\n\rTryLockAlpha1\x12%.dapr.proto.runtime.v1.TryLockRequest\x1a&.dapr.proto.runtime.v1.TryLockResponse\"\x00\x12]\n\x0cUnlockAlpha1\x12$.dapr.proto.runtime.v1.UnlockRequest\x1a%.dapr.proto.runtime.v1.UnlockResponse\"\x00\x12\x62\n\rEncryptAlpha1\x12%.dapr.proto.runtime.v1.EncryptRequest\x1a&.dapr.proto.runtime.v1.EncryptResponse(\x01\x30\x01\x12\x62\n\rDecryptAlpha1\x12%.dapr.proto.runtime.v1.DecryptRequest\x1a&.dapr.proto.runtime.v1.DecryptResponse(\x01\x30\x01\x12S\n\x0bGetMetadata\x12\x16.google.protobuf.Empty\x1a*.dapr.proto.runtime.v1.GetMetadataResponse\"\x00\x12R\n\x0bSetMetadata\x12).dapr.proto.runtime.v1.SetMetadataRequest\x1a\x16.google.protobuf.Empty\"\x00\x12m\n\x12SubtleGetKeyAlpha1\x12*.dapr.proto.runtime.v1.SubtleGetKeyRequest\x1a+.dapr.proto.runtime.v1.SubtleGetKeyResponse\x12p\n\x13SubtleEncryptAlpha1\x12+.dapr.proto.runtime.v1.SubtleEncryptRequest\x1a,.dapr.proto.runtime.v1.SubtleEncryptResponse\x12p\n\x13SubtleDecryptAlpha1\x12+.dapr.proto.runtime.v1.SubtleDecryptRequest\x1a,.dapr.proto.runtime.v1.SubtleDecryptResponse\x12p\n\x13SubtleWrapKeyAlpha1\x12+.dapr.proto.runtime.v1.SubtleWrapKeyRequest\x1a,.dapr.proto.runtime.v1.SubtleWrapKeyResponse\x12v\n\x15SubtleUnwrapKeyAlpha1\x12-.dapr.proto.runtime.v1.SubtleUnwrapKeyRequest\x1a..dapr.proto.runtime.v1.SubtleUnwrapKeyResponse\x12g\n\x10SubtleSignAlpha1\x12(.dapr.proto.runtime.v1.SubtleSignRequest\x1a).dapr.proto.runtime.v1.SubtleSignResponse\x12m\n\x12SubtleVerifyAlpha1\x12*.dapr.proto.runtime.v1.SubtleVerifyRequest\x1a+.dapr.proto.runtime.v1.SubtleVerifyResponse\x12r\n\x13StartWorkflowAlpha1\x12+.dapr.proto.runtime.v1.StartWorkflowRequest\x1a,.dapr.proto.runtime.v1.StartWorkflowResponse\"\x00\x12l\n\x11GetWorkflowAlpha1\x12).dapr.proto.runtime.v1.GetWorkflowRequest\x1a*.dapr.proto.runtime.v1.GetWorkflowResponse\"\x00\x12\\\n\x13PurgeWorkflowAlpha1\x12+.dapr.proto.runtime.v1.PurgeWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x64\n\x17TerminateWorkflowAlpha1\x12/.dapr.proto.runtime.v1.TerminateWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n\x13PauseWorkflowAlpha1\x12+.dapr.proto.runtime.v1.PauseWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12^\n\x14ResumeWorkflowAlpha1\x12,.dapr.proto.runtime.v1.ResumeWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x66\n\x18RaiseEventWorkflowAlpha1\x12\x30.dapr.proto.runtime.v1.RaiseEventWorkflowRequest\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x08Shutdown\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
+
+_globals = globals()
+_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'dapr.proto.runtime.v1.dapr_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
@@ -1009,234 +82,238 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _GETWORKFLOWRESPONSE_PROPERTIESENTRY._serialized_options = b'8\001'
   _STARTWORKFLOWREQUEST_OPTIONSENTRY._options = None
   _STARTWORKFLOWREQUEST_OPTIONSENTRY._serialized_options = b'8\001'
-  _INVOKESERVICEREQUEST._serialized_start=183
-  _INVOKESERVICEREQUEST._serialized_end=271
-  _GETSTATEREQUEST._serialized_start=274
-  _GETSTATEREQUEST._serialized_end=519
-  _GETSTATEREQUEST_METADATAENTRY._serialized_start=472
-  _GETSTATEREQUEST_METADATAENTRY._serialized_end=519
-  _GETBULKSTATEREQUEST._serialized_start=522
-  _GETBULKSTATEREQUEST._serialized_end=723
-  _GETBULKSTATEREQUEST_METADATAENTRY._serialized_start=472
-  _GETBULKSTATEREQUEST_METADATAENTRY._serialized_end=519
-  _GETBULKSTATERESPONSE._serialized_start=725
-  _GETBULKSTATERESPONSE._serialized_end=800
-  _BULKSTATEITEM._serialized_start=803
-  _BULKSTATEITEM._serialized_end=993
-  _BULKSTATEITEM_METADATAENTRY._serialized_start=472
-  _BULKSTATEITEM_METADATAENTRY._serialized_end=519
-  _GETSTATERESPONSE._serialized_start=996
-  _GETSTATERESPONSE._serialized_end=1164
-  _GETSTATERESPONSE_METADATAENTRY._serialized_start=472
-  _GETSTATERESPONSE_METADATAENTRY._serialized_end=519
-  _DELETESTATEREQUEST._serialized_start=1167
-  _DELETESTATEREQUEST._serialized_end=1439
-  _DELETESTATEREQUEST_METADATAENTRY._serialized_start=472
-  _DELETESTATEREQUEST_METADATAENTRY._serialized_end=519
-  _DELETEBULKSTATEREQUEST._serialized_start=1441
-  _DELETEBULKSTATEREQUEST._serialized_end=1534
-  _SAVESTATEREQUEST._serialized_start=1536
-  _SAVESTATEREQUEST._serialized_end=1623
-  _QUERYSTATEREQUEST._serialized_start=1626
-  _QUERYSTATEREQUEST._serialized_end=1814
-  _QUERYSTATEREQUEST_METADATAENTRY._serialized_start=472
-  _QUERYSTATEREQUEST_METADATAENTRY._serialized_end=519
-  _QUERYSTATEITEM._serialized_start=1816
-  _QUERYSTATEITEM._serialized_end=1888
-  _QUERYSTATERESPONSE._serialized_start=1891
-  _QUERYSTATERESPONSE._serialized_end=2106
-  _QUERYSTATERESPONSE_METADATAENTRY._serialized_start=472
-  _QUERYSTATERESPONSE_METADATAENTRY._serialized_end=519
-  _PUBLISHEVENTREQUEST._serialized_start=2109
-  _PUBLISHEVENTREQUEST._serialized_end=2332
-  _PUBLISHEVENTREQUEST_METADATAENTRY._serialized_start=472
-  _PUBLISHEVENTREQUEST_METADATAENTRY._serialized_end=519
-  _BULKPUBLISHREQUEST._serialized_start=2335
-  _BULKPUBLISHREQUEST._serialized_end=2580
-  _BULKPUBLISHREQUEST_METADATAENTRY._serialized_start=472
-  _BULKPUBLISHREQUEST_METADATAENTRY._serialized_end=519
-  _BULKPUBLISHREQUESTENTRY._serialized_start=2583
-  _BULKPUBLISHREQUESTENTRY._serialized_end=2792
-  _BULKPUBLISHREQUESTENTRY_METADATAENTRY._serialized_start=472
-  _BULKPUBLISHREQUESTENTRY_METADATAENTRY._serialized_end=519
-  _BULKPUBLISHRESPONSE._serialized_start=2794
-  _BULKPUBLISHRESPONSE._serialized_end=2893
-  _BULKPUBLISHRESPONSEFAILEDENTRY._serialized_start=2895
-  _BULKPUBLISHRESPONSEFAILEDENTRY._serialized_end=2960
-  _INVOKEBINDINGREQUEST._serialized_start=2963
-  _INVOKEBINDINGREQUEST._serialized_end=3158
-  _INVOKEBINDINGREQUEST_METADATAENTRY._serialized_start=472
-  _INVOKEBINDINGREQUEST_METADATAENTRY._serialized_end=519
-  _INVOKEBINDINGRESPONSE._serialized_start=3161
-  _INVOKEBINDINGRESPONSE._serialized_end=3325
-  _INVOKEBINDINGRESPONSE_METADATAENTRY._serialized_start=472
-  _INVOKEBINDINGRESPONSE_METADATAENTRY._serialized_end=519
-  _GETSECRETREQUEST._serialized_start=3328
-  _GETSECRETREQUEST._serialized_end=3512
-  _GETSECRETREQUEST_METADATAENTRY._serialized_start=472
-  _GETSECRETREQUEST_METADATAENTRY._serialized_end=519
-  _GETSECRETRESPONSE._serialized_start=3515
-  _GETSECRETRESPONSE._serialized_end=3645
-  _GETSECRETRESPONSE_DATAENTRY._serialized_start=3602
-  _GETSECRETRESPONSE_DATAENTRY._serialized_end=3645
-  _GETBULKSECRETREQUEST._serialized_start=3648
-  _GETBULKSECRETREQUEST._serialized_end=3827
-  _GETBULKSECRETREQUEST_METADATAENTRY._serialized_start=472
-  _GETBULKSECRETREQUEST_METADATAENTRY._serialized_end=519
-  _SECRETRESPONSE._serialized_start=3830
-  _SECRETRESPONSE._serialized_end=3963
-  _SECRETRESPONSE_SECRETSENTRY._serialized_start=3917
-  _SECRETRESPONSE_SECRETSENTRY._serialized_end=3963
-  _GETBULKSECRETRESPONSE._serialized_start=3966
-  _GETBULKSECRETRESPONSE._serialized_end=4143
-  _GETBULKSECRETRESPONSE_DATAENTRY._serialized_start=4061
-  _GETBULKSECRETRESPONSE_DATAENTRY._serialized_end=4143
-  _TRANSACTIONALSTATEOPERATION._serialized_start=4145
-  _TRANSACTIONALSTATEOPERATION._serialized_end=4247
-  _EXECUTESTATETRANSACTIONREQUEST._serialized_start=4250
-  _EXECUTESTATETRANSACTIONREQUEST._serialized_end=4509
-  _EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY._serialized_start=472
-  _EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY._serialized_end=519
-  _REGISTERACTORTIMERREQUEST._serialized_start=4512
-  _REGISTERACTORTIMERREQUEST._serialized_end=4670
-  _UNREGISTERACTORTIMERREQUEST._serialized_start=4672
-  _UNREGISTERACTORTIMERREQUEST._serialized_end=4753
-  _REGISTERACTORREMINDERREQUEST._serialized_start=4756
-  _REGISTERACTORREMINDERREQUEST._serialized_end=4899
-  _UNREGISTERACTORREMINDERREQUEST._serialized_start=4901
-  _UNREGISTERACTORREMINDERREQUEST._serialized_end=4985
-  _RENAMEACTORREMINDERREQUEST._serialized_start=4987
-  _RENAMEACTORREMINDERREQUEST._serialized_end=5089
-  _GETACTORSTATEREQUEST._serialized_start=5091
-  _GETACTORSTATEREQUEST._serialized_end=5164
-  _GETACTORSTATERESPONSE._serialized_start=5166
-  _GETACTORSTATERESPONSE._serialized_end=5203
-  _EXECUTEACTORSTATETRANSACTIONREQUEST._serialized_start=5206
-  _EXECUTEACTORSTATETRANSACTIONREQUEST._serialized_end=5358
-  _TRANSACTIONALACTORSTATEOPERATION._serialized_start=5361
-  _TRANSACTIONALACTORSTATEOPERATION._serialized_end=5606
-  _TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY._serialized_start=472
-  _TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY._serialized_end=519
-  _INVOKEACTORREQUEST._serialized_start=5609
-  _INVOKEACTORREQUEST._serialized_end=5821
-  _INVOKEACTORREQUEST_METADATAENTRY._serialized_start=472
-  _INVOKEACTORREQUEST_METADATAENTRY._serialized_end=519
-  _INVOKEACTORRESPONSE._serialized_start=5823
-  _INVOKEACTORRESPONSE._serialized_end=5858
-  _GETMETADATARESPONSE._serialized_start=5861
-  _GETMETADATARESPONSE._serialized_end=6386
-  _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY._serialized_start=6331
-  _GETMETADATARESPONSE_EXTENDEDMETADATAENTRY._serialized_end=6386
-  _ACTIVEACTORSCOUNT._serialized_start=6388
-  _ACTIVEACTORSCOUNT._serialized_end=6436
-  _REGISTEREDCOMPONENTS._serialized_start=6438
-  _REGISTEREDCOMPONENTS._serialized_end=6527
-  _METADATAHTTPENDPOINT._serialized_start=6529
-  _METADATAHTTPENDPOINT._serialized_end=6571
-  _PUBSUBSUBSCRIPTION._serialized_start=6574
-  _PUBSUBSUBSCRIPTION._serialized_end=6897
-  _PUBSUBSUBSCRIPTION_METADATAENTRY._serialized_start=472
-  _PUBSUBSUBSCRIPTION_METADATAENTRY._serialized_end=519
-  _PUBSUBSUBSCRIPTIONRULES._serialized_start=6899
-  _PUBSUBSUBSCRIPTIONRULES._serialized_end=6986
-  _PUBSUBSUBSCRIPTIONRULE._serialized_start=6988
-  _PUBSUBSUBSCRIPTIONRULE._serialized_end=7041
-  _SETMETADATAREQUEST._serialized_start=7043
-  _SETMETADATAREQUEST._serialized_end=7091
-  _GETCONFIGURATIONREQUEST._serialized_start=7094
-  _GETCONFIGURATIONREQUEST._serialized_end=7282
-  _GETCONFIGURATIONREQUEST_METADATAENTRY._serialized_start=472
-  _GETCONFIGURATIONREQUEST_METADATAENTRY._serialized_end=519
-  _GETCONFIGURATIONRESPONSE._serialized_start=7285
-  _GETCONFIGURATIONRESPONSE._serialized_end=7473
-  _GETCONFIGURATIONRESPONSE_ITEMSENTRY._serialized_start=7388
-  _GETCONFIGURATIONRESPONSE_ITEMSENTRY._serialized_end=7473
-  _SUBSCRIBECONFIGURATIONREQUEST._serialized_start=7476
-  _SUBSCRIBECONFIGURATIONREQUEST._serialized_end=7676
-  _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY._serialized_start=472
-  _SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY._serialized_end=519
-  _UNSUBSCRIBECONFIGURATIONREQUEST._serialized_start=7678
-  _UNSUBSCRIBECONFIGURATIONREQUEST._serialized_end=7743
-  _SUBSCRIBECONFIGURATIONRESPONSE._serialized_start=7746
-  _SUBSCRIBECONFIGURATIONRESPONSE._serialized_end=7958
-  _SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY._serialized_start=7388
-  _SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY._serialized_end=7473
-  _UNSUBSCRIBECONFIGURATIONRESPONSE._serialized_start=7960
-  _UNSUBSCRIBECONFIGURATIONRESPONSE._serialized_end=8023
-  _TRYLOCKREQUEST._serialized_start=8026
-  _TRYLOCKREQUEST._serialized_end=8181
-  _TRYLOCKRESPONSE._serialized_start=8183
-  _TRYLOCKRESPONSE._serialized_end=8217
-  _UNLOCKREQUEST._serialized_start=8219
-  _UNLOCKREQUEST._serialized_end=8329
-  _UNLOCKRESPONSE._serialized_start=8332
-  _UNLOCKRESPONSE._serialized_end=8506
-  _UNLOCKRESPONSE_STATUS._serialized_start=8412
-  _UNLOCKRESPONSE_STATUS._serialized_end=8506
-  _SUBTLEGETKEYREQUEST._serialized_start=8509
-  _SUBTLEGETKEYREQUEST._serialized_end=8685
-  _SUBTLEGETKEYREQUEST_KEYFORMAT._serialized_start=8655
-  _SUBTLEGETKEYREQUEST_KEYFORMAT._serialized_end=8685
-  _SUBTLEGETKEYRESPONSE._serialized_start=8687
-  _SUBTLEGETKEYRESPONSE._serialized_end=8754
-  _SUBTLEENCRYPTREQUEST._serialized_start=8757
-  _SUBTLEENCRYPTREQUEST._serialized_end=8939
-  _SUBTLEENCRYPTRESPONSE._serialized_start=8941
-  _SUBTLEENCRYPTRESPONSE._serialized_end=8997
-  _SUBTLEDECRYPTREQUEST._serialized_start=9000
-  _SUBTLEDECRYPTREQUEST._serialized_end=9196
-  _SUBTLEDECRYPTRESPONSE._serialized_start=9198
-  _SUBTLEDECRYPTRESPONSE._serialized_end=9240
-  _SUBTLEWRAPKEYREQUEST._serialized_start=9243
-  _SUBTLEWRAPKEYREQUEST._serialized_end=9443
-  _SUBTLEWRAPKEYRESPONSE._serialized_start=9445
-  _SUBTLEWRAPKEYRESPONSE._serialized_end=9514
-  _SUBTLEUNWRAPKEYREQUEST._serialized_start=9517
-  _SUBTLEUNWRAPKEYREQUEST._serialized_end=9728
-  _SUBTLEUNWRAPKEYRESPONSE._serialized_start=9730
-  _SUBTLEUNWRAPKEYRESPONSE._serialized_end=9792
-  _SUBTLESIGNREQUEST._serialized_start=9794
-  _SUBTLESIGNREQUEST._serialized_end=9914
-  _SUBTLESIGNRESPONSE._serialized_start=9916
-  _SUBTLESIGNRESPONSE._serialized_end=9955
-  _SUBTLEVERIFYREQUEST._serialized_start=9958
-  _SUBTLEVERIFYREQUEST._serialized_end=10099
-  _SUBTLEVERIFYRESPONSE._serialized_start=10101
-  _SUBTLEVERIFYRESPONSE._serialized_end=10138
-  _ENCRYPTREQUEST._serialized_start=10141
-  _ENCRYPTREQUEST._serialized_end=10274
-  _ENCRYPTREQUESTOPTIONS._serialized_start=10277
-  _ENCRYPTREQUESTOPTIONS._serialized_end=10531
-  _ENCRYPTRESPONSE._serialized_start=10533
-  _ENCRYPTRESPONSE._serialized_end=10604
-  _DECRYPTREQUEST._serialized_start=10607
-  _DECRYPTREQUEST._serialized_end=10740
-  _DECRYPTREQUESTOPTIONS._serialized_start=10742
-  _DECRYPTREQUESTOPTIONS._serialized_end=10831
-  _DECRYPTRESPONSE._serialized_start=10833
-  _DECRYPTRESPONSE._serialized_end=10904
-  _GETWORKFLOWREQUEST._serialized_start=10906
-  _GETWORKFLOWREQUEST._serialized_end=11006
-  _GETWORKFLOWRESPONSE._serialized_start=11009
-  _GETWORKFLOWRESPONSE._serialized_end=11397
-  _GETWORKFLOWRESPONSE_PROPERTIESENTRY._serialized_start=11348
-  _GETWORKFLOWRESPONSE_PROPERTIESENTRY._serialized_end=11397
-  _STARTWORKFLOWREQUEST._serialized_start=11400
-  _STARTWORKFLOWREQUEST._serialized_end=11677
-  _STARTWORKFLOWREQUEST_OPTIONSENTRY._serialized_start=11631
-  _STARTWORKFLOWREQUEST_OPTIONSENTRY._serialized_end=11677
-  _STARTWORKFLOWRESPONSE._serialized_start=11679
-  _STARTWORKFLOWRESPONSE._serialized_end=11735
-  _TERMINATEWORKFLOWREQUEST._serialized_start=11737
-  _TERMINATEWORKFLOWREQUEST._serialized_end=11843
-  _PAUSEWORKFLOWREQUEST._serialized_start=11845
-  _PAUSEWORKFLOWREQUEST._serialized_end=11947
-  _RESUMEWORKFLOWREQUEST._serialized_start=11949
-  _RESUMEWORKFLOWREQUEST._serialized_end=12052
-  _RAISEEVENTWORKFLOWREQUEST._serialized_start=12055
-  _RAISEEVENTWORKFLOWREQUEST._serialized_end=12213
-  _PURGEWORKFLOWREQUEST._serialized_start=12215
-  _PURGEWORKFLOWREQUEST._serialized_end=12317
-  _DAPR._serialized_start=12320
-  _DAPR._serialized_end=17417
+  _globals['_INVOKESERVICEREQUEST']._serialized_start=183
+  _globals['_INVOKESERVICEREQUEST']._serialized_end=271
+  _globals['_GETSTATEREQUEST']._serialized_start=274
+  _globals['_GETSTATEREQUEST']._serialized_end=519
+  _globals['_GETSTATEREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_GETSTATEREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_GETBULKSTATEREQUEST']._serialized_start=522
+  _globals['_GETBULKSTATEREQUEST']._serialized_end=723
+  _globals['_GETBULKSTATEREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_GETBULKSTATEREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_GETBULKSTATERESPONSE']._serialized_start=725
+  _globals['_GETBULKSTATERESPONSE']._serialized_end=800
+  _globals['_BULKSTATEITEM']._serialized_start=803
+  _globals['_BULKSTATEITEM']._serialized_end=993
+  _globals['_BULKSTATEITEM_METADATAENTRY']._serialized_start=472
+  _globals['_BULKSTATEITEM_METADATAENTRY']._serialized_end=519
+  _globals['_GETSTATERESPONSE']._serialized_start=996
+  _globals['_GETSTATERESPONSE']._serialized_end=1164
+  _globals['_GETSTATERESPONSE_METADATAENTRY']._serialized_start=472
+  _globals['_GETSTATERESPONSE_METADATAENTRY']._serialized_end=519
+  _globals['_DELETESTATEREQUEST']._serialized_start=1167
+  _globals['_DELETESTATEREQUEST']._serialized_end=1439
+  _globals['_DELETESTATEREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_DELETESTATEREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_DELETEBULKSTATEREQUEST']._serialized_start=1441
+  _globals['_DELETEBULKSTATEREQUEST']._serialized_end=1534
+  _globals['_SAVESTATEREQUEST']._serialized_start=1536
+  _globals['_SAVESTATEREQUEST']._serialized_end=1623
+  _globals['_QUERYSTATEREQUEST']._serialized_start=1626
+  _globals['_QUERYSTATEREQUEST']._serialized_end=1814
+  _globals['_QUERYSTATEREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_QUERYSTATEREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_QUERYSTATEITEM']._serialized_start=1816
+  _globals['_QUERYSTATEITEM']._serialized_end=1888
+  _globals['_QUERYSTATERESPONSE']._serialized_start=1891
+  _globals['_QUERYSTATERESPONSE']._serialized_end=2106
+  _globals['_QUERYSTATERESPONSE_METADATAENTRY']._serialized_start=472
+  _globals['_QUERYSTATERESPONSE_METADATAENTRY']._serialized_end=519
+  _globals['_PUBLISHEVENTREQUEST']._serialized_start=2109
+  _globals['_PUBLISHEVENTREQUEST']._serialized_end=2332
+  _globals['_PUBLISHEVENTREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_PUBLISHEVENTREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_BULKPUBLISHREQUEST']._serialized_start=2335
+  _globals['_BULKPUBLISHREQUEST']._serialized_end=2580
+  _globals['_BULKPUBLISHREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_BULKPUBLISHREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_BULKPUBLISHREQUESTENTRY']._serialized_start=2583
+  _globals['_BULKPUBLISHREQUESTENTRY']._serialized_end=2792
+  _globals['_BULKPUBLISHREQUESTENTRY_METADATAENTRY']._serialized_start=472
+  _globals['_BULKPUBLISHREQUESTENTRY_METADATAENTRY']._serialized_end=519
+  _globals['_BULKPUBLISHRESPONSE']._serialized_start=2794
+  _globals['_BULKPUBLISHRESPONSE']._serialized_end=2893
+  _globals['_BULKPUBLISHRESPONSEFAILEDENTRY']._serialized_start=2895
+  _globals['_BULKPUBLISHRESPONSEFAILEDENTRY']._serialized_end=2960
+  _globals['_INVOKEBINDINGREQUEST']._serialized_start=2963
+  _globals['_INVOKEBINDINGREQUEST']._serialized_end=3158
+  _globals['_INVOKEBINDINGREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_INVOKEBINDINGREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_INVOKEBINDINGRESPONSE']._serialized_start=3161
+  _globals['_INVOKEBINDINGRESPONSE']._serialized_end=3325
+  _globals['_INVOKEBINDINGRESPONSE_METADATAENTRY']._serialized_start=472
+  _globals['_INVOKEBINDINGRESPONSE_METADATAENTRY']._serialized_end=519
+  _globals['_GETSECRETREQUEST']._serialized_start=3328
+  _globals['_GETSECRETREQUEST']._serialized_end=3512
+  _globals['_GETSECRETREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_GETSECRETREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_GETSECRETRESPONSE']._serialized_start=3515
+  _globals['_GETSECRETRESPONSE']._serialized_end=3645
+  _globals['_GETSECRETRESPONSE_DATAENTRY']._serialized_start=3602
+  _globals['_GETSECRETRESPONSE_DATAENTRY']._serialized_end=3645
+  _globals['_GETBULKSECRETREQUEST']._serialized_start=3648
+  _globals['_GETBULKSECRETREQUEST']._serialized_end=3827
+  _globals['_GETBULKSECRETREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_GETBULKSECRETREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_SECRETRESPONSE']._serialized_start=3830
+  _globals['_SECRETRESPONSE']._serialized_end=3963
+  _globals['_SECRETRESPONSE_SECRETSENTRY']._serialized_start=3917
+  _globals['_SECRETRESPONSE_SECRETSENTRY']._serialized_end=3963
+  _globals['_GETBULKSECRETRESPONSE']._serialized_start=3966
+  _globals['_GETBULKSECRETRESPONSE']._serialized_end=4143
+  _globals['_GETBULKSECRETRESPONSE_DATAENTRY']._serialized_start=4061
+  _globals['_GETBULKSECRETRESPONSE_DATAENTRY']._serialized_end=4143
+  _globals['_TRANSACTIONALSTATEOPERATION']._serialized_start=4145
+  _globals['_TRANSACTIONALSTATEOPERATION']._serialized_end=4247
+  _globals['_EXECUTESTATETRANSACTIONREQUEST']._serialized_start=4250
+  _globals['_EXECUTESTATETRANSACTIONREQUEST']._serialized_end=4509
+  _globals['_EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_EXECUTESTATETRANSACTIONREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_REGISTERACTORTIMERREQUEST']._serialized_start=4512
+  _globals['_REGISTERACTORTIMERREQUEST']._serialized_end=4670
+  _globals['_UNREGISTERACTORTIMERREQUEST']._serialized_start=4672
+  _globals['_UNREGISTERACTORTIMERREQUEST']._serialized_end=4753
+  _globals['_REGISTERACTORREMINDERREQUEST']._serialized_start=4756
+  _globals['_REGISTERACTORREMINDERREQUEST']._serialized_end=4899
+  _globals['_UNREGISTERACTORREMINDERREQUEST']._serialized_start=4901
+  _globals['_UNREGISTERACTORREMINDERREQUEST']._serialized_end=4985
+  _globals['_RENAMEACTORREMINDERREQUEST']._serialized_start=4987
+  _globals['_RENAMEACTORREMINDERREQUEST']._serialized_end=5089
+  _globals['_GETACTORSTATEREQUEST']._serialized_start=5091
+  _globals['_GETACTORSTATEREQUEST']._serialized_end=5164
+  _globals['_GETACTORSTATERESPONSE']._serialized_start=5166
+  _globals['_GETACTORSTATERESPONSE']._serialized_end=5203
+  _globals['_EXECUTEACTORSTATETRANSACTIONREQUEST']._serialized_start=5206
+  _globals['_EXECUTEACTORSTATETRANSACTIONREQUEST']._serialized_end=5358
+  _globals['_TRANSACTIONALACTORSTATEOPERATION']._serialized_start=5361
+  _globals['_TRANSACTIONALACTORSTATEOPERATION']._serialized_end=5606
+  _globals['_TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY']._serialized_start=472
+  _globals['_TRANSACTIONALACTORSTATEOPERATION_METADATAENTRY']._serialized_end=519
+  _globals['_INVOKEACTORREQUEST']._serialized_start=5609
+  _globals['_INVOKEACTORREQUEST']._serialized_end=5821
+  _globals['_INVOKEACTORREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_INVOKEACTORREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_INVOKEACTORRESPONSE']._serialized_start=5823
+  _globals['_INVOKEACTORRESPONSE']._serialized_end=5858
+  _globals['_GETMETADATARESPONSE']._serialized_start=5861
+  _globals['_GETMETADATARESPONSE']._serialized_end=6578
+  _globals['_GETMETADATARESPONSE_EXTENDEDMETADATAENTRY']._serialized_start=6523
+  _globals['_GETMETADATARESPONSE_EXTENDEDMETADATAENTRY']._serialized_end=6578
+  _globals['_ACTIVEACTORSCOUNT']._serialized_start=6580
+  _globals['_ACTIVEACTORSCOUNT']._serialized_end=6628
+  _globals['_REGISTEREDCOMPONENTS']._serialized_start=6630
+  _globals['_REGISTEREDCOMPONENTS']._serialized_end=6719
+  _globals['_METADATAHTTPENDPOINT']._serialized_start=6721
+  _globals['_METADATAHTTPENDPOINT']._serialized_end=6763
+  _globals['_APPCONNECTIONPROPERTIES']._serialized_start=6766
+  _globals['_APPCONNECTIONPROPERTIES']._serialized_end=6975
+  _globals['_APPCONNECTIONHEALTHPROPERTIES']._serialized_start=6978
+  _globals['_APPCONNECTIONHEALTHPROPERTIES']._serialized_end=7198
+  _globals['_PUBSUBSUBSCRIPTION']._serialized_start=7201
+  _globals['_PUBSUBSUBSCRIPTION']._serialized_end=7524
+  _globals['_PUBSUBSUBSCRIPTION_METADATAENTRY']._serialized_start=472
+  _globals['_PUBSUBSUBSCRIPTION_METADATAENTRY']._serialized_end=519
+  _globals['_PUBSUBSUBSCRIPTIONRULES']._serialized_start=7526
+  _globals['_PUBSUBSUBSCRIPTIONRULES']._serialized_end=7613
+  _globals['_PUBSUBSUBSCRIPTIONRULE']._serialized_start=7615
+  _globals['_PUBSUBSUBSCRIPTIONRULE']._serialized_end=7668
+  _globals['_SETMETADATAREQUEST']._serialized_start=7670
+  _globals['_SETMETADATAREQUEST']._serialized_end=7718
+  _globals['_GETCONFIGURATIONREQUEST']._serialized_start=7721
+  _globals['_GETCONFIGURATIONREQUEST']._serialized_end=7909
+  _globals['_GETCONFIGURATIONREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_GETCONFIGURATIONREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_GETCONFIGURATIONRESPONSE']._serialized_start=7912
+  _globals['_GETCONFIGURATIONRESPONSE']._serialized_end=8100
+  _globals['_GETCONFIGURATIONRESPONSE_ITEMSENTRY']._serialized_start=8015
+  _globals['_GETCONFIGURATIONRESPONSE_ITEMSENTRY']._serialized_end=8100
+  _globals['_SUBSCRIBECONFIGURATIONREQUEST']._serialized_start=8103
+  _globals['_SUBSCRIBECONFIGURATIONREQUEST']._serialized_end=8303
+  _globals['_SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY']._serialized_start=472
+  _globals['_SUBSCRIBECONFIGURATIONREQUEST_METADATAENTRY']._serialized_end=519
+  _globals['_UNSUBSCRIBECONFIGURATIONREQUEST']._serialized_start=8305
+  _globals['_UNSUBSCRIBECONFIGURATIONREQUEST']._serialized_end=8370
+  _globals['_SUBSCRIBECONFIGURATIONRESPONSE']._serialized_start=8373
+  _globals['_SUBSCRIBECONFIGURATIONRESPONSE']._serialized_end=8585
+  _globals['_SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY']._serialized_start=8015
+  _globals['_SUBSCRIBECONFIGURATIONRESPONSE_ITEMSENTRY']._serialized_end=8100
+  _globals['_UNSUBSCRIBECONFIGURATIONRESPONSE']._serialized_start=8587
+  _globals['_UNSUBSCRIBECONFIGURATIONRESPONSE']._serialized_end=8650
+  _globals['_TRYLOCKREQUEST']._serialized_start=8653
+  _globals['_TRYLOCKREQUEST']._serialized_end=8808
+  _globals['_TRYLOCKRESPONSE']._serialized_start=8810
+  _globals['_TRYLOCKRESPONSE']._serialized_end=8844
+  _globals['_UNLOCKREQUEST']._serialized_start=8846
+  _globals['_UNLOCKREQUEST']._serialized_end=8956
+  _globals['_UNLOCKRESPONSE']._serialized_start=8959
+  _globals['_UNLOCKRESPONSE']._serialized_end=9133
+  _globals['_UNLOCKRESPONSE_STATUS']._serialized_start=9039
+  _globals['_UNLOCKRESPONSE_STATUS']._serialized_end=9133
+  _globals['_SUBTLEGETKEYREQUEST']._serialized_start=9136
+  _globals['_SUBTLEGETKEYREQUEST']._serialized_end=9312
+  _globals['_SUBTLEGETKEYREQUEST_KEYFORMAT']._serialized_start=9282
+  _globals['_SUBTLEGETKEYREQUEST_KEYFORMAT']._serialized_end=9312
+  _globals['_SUBTLEGETKEYRESPONSE']._serialized_start=9314
+  _globals['_SUBTLEGETKEYRESPONSE']._serialized_end=9381
+  _globals['_SUBTLEENCRYPTREQUEST']._serialized_start=9384
+  _globals['_SUBTLEENCRYPTREQUEST']._serialized_end=9566
+  _globals['_SUBTLEENCRYPTRESPONSE']._serialized_start=9568
+  _globals['_SUBTLEENCRYPTRESPONSE']._serialized_end=9624
+  _globals['_SUBTLEDECRYPTREQUEST']._serialized_start=9627
+  _globals['_SUBTLEDECRYPTREQUEST']._serialized_end=9823
+  _globals['_SUBTLEDECRYPTRESPONSE']._serialized_start=9825
+  _globals['_SUBTLEDECRYPTRESPONSE']._serialized_end=9867
+  _globals['_SUBTLEWRAPKEYREQUEST']._serialized_start=9870
+  _globals['_SUBTLEWRAPKEYREQUEST']._serialized_end=10070
+  _globals['_SUBTLEWRAPKEYRESPONSE']._serialized_start=10072
+  _globals['_SUBTLEWRAPKEYRESPONSE']._serialized_end=10141
+  _globals['_SUBTLEUNWRAPKEYREQUEST']._serialized_start=10144
+  _globals['_SUBTLEUNWRAPKEYREQUEST']._serialized_end=10355
+  _globals['_SUBTLEUNWRAPKEYRESPONSE']._serialized_start=10357
+  _globals['_SUBTLEUNWRAPKEYRESPONSE']._serialized_end=10419
+  _globals['_SUBTLESIGNREQUEST']._serialized_start=10421
+  _globals['_SUBTLESIGNREQUEST']._serialized_end=10541
+  _globals['_SUBTLESIGNRESPONSE']._serialized_start=10543
+  _globals['_SUBTLESIGNRESPONSE']._serialized_end=10582
+  _globals['_SUBTLEVERIFYREQUEST']._serialized_start=10585
+  _globals['_SUBTLEVERIFYREQUEST']._serialized_end=10726
+  _globals['_SUBTLEVERIFYRESPONSE']._serialized_start=10728
+  _globals['_SUBTLEVERIFYRESPONSE']._serialized_end=10765
+  _globals['_ENCRYPTREQUEST']._serialized_start=10768
+  _globals['_ENCRYPTREQUEST']._serialized_end=10901
+  _globals['_ENCRYPTREQUESTOPTIONS']._serialized_start=10904
+  _globals['_ENCRYPTREQUESTOPTIONS']._serialized_end=11158
+  _globals['_ENCRYPTRESPONSE']._serialized_start=11160
+  _globals['_ENCRYPTRESPONSE']._serialized_end=11231
+  _globals['_DECRYPTREQUEST']._serialized_start=11234
+  _globals['_DECRYPTREQUEST']._serialized_end=11367
+  _globals['_DECRYPTREQUESTOPTIONS']._serialized_start=11369
+  _globals['_DECRYPTREQUESTOPTIONS']._serialized_end=11458
+  _globals['_DECRYPTRESPONSE']._serialized_start=11460
+  _globals['_DECRYPTRESPONSE']._serialized_end=11531
+  _globals['_GETWORKFLOWREQUEST']._serialized_start=11533
+  _globals['_GETWORKFLOWREQUEST']._serialized_end=11633
+  _globals['_GETWORKFLOWRESPONSE']._serialized_start=11636
+  _globals['_GETWORKFLOWRESPONSE']._serialized_end=12024
+  _globals['_GETWORKFLOWRESPONSE_PROPERTIESENTRY']._serialized_start=11975
+  _globals['_GETWORKFLOWRESPONSE_PROPERTIESENTRY']._serialized_end=12024
+  _globals['_STARTWORKFLOWREQUEST']._serialized_start=12027
+  _globals['_STARTWORKFLOWREQUEST']._serialized_end=12304
+  _globals['_STARTWORKFLOWREQUEST_OPTIONSENTRY']._serialized_start=12258
+  _globals['_STARTWORKFLOWREQUEST_OPTIONSENTRY']._serialized_end=12304
+  _globals['_STARTWORKFLOWRESPONSE']._serialized_start=12306
+  _globals['_STARTWORKFLOWRESPONSE']._serialized_end=12362
+  _globals['_TERMINATEWORKFLOWREQUEST']._serialized_start=12364
+  _globals['_TERMINATEWORKFLOWREQUEST']._serialized_end=12470
+  _globals['_PAUSEWORKFLOWREQUEST']._serialized_start=12472
+  _globals['_PAUSEWORKFLOWREQUEST']._serialized_end=12574
+  _globals['_RESUMEWORKFLOWREQUEST']._serialized_start=12576
+  _globals['_RESUMEWORKFLOWREQUEST']._serialized_end=12679
+  _globals['_RAISEEVENTWORKFLOWREQUEST']._serialized_start=12682
+  _globals['_RAISEEVENTWORKFLOWREQUEST']._serialized_end=12840
+  _globals['_PURGEWORKFLOWREQUEST']._serialized_start=12842
+  _globals['_PURGEWORKFLOWREQUEST']._serialized_end=12944
+  _globals['_DAPR']._serialized_start=12947
+  _globals['_DAPR']._serialized_end=18044
 # @@protoc_insertion_point(module_scope)
