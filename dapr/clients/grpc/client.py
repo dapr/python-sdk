@@ -1432,7 +1432,6 @@ class DaprGrpcClient:
                         raise e
                     time.sleep(min(1, remaining))
 
-    # ---
     def get_metadata(self) -> GetMetadataResponse:
         """Returns information about the sidecar allowing for runtime
         discoverability.
