@@ -1,3 +1,5 @@
+import os
+
 import grpc
 import json
 
@@ -29,9 +31,13 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
     RaiseEventWorkflowRequest,
 )
 from typing import Dict
-
+from OpenSSL import crypto, SSL
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
+    PRIVATE_KEY_PATH = os.path.join(os.path.dirname(__file__), 'private.key')
+    CERTIFICATE_CHAIN_PATH = os.path.join(os.path.dirname(__file__), 'selfsigned.pem')
+
+
     def __init__(self):
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         api_service_v1.add_DaprServicer_to_server(self, self._server)
@@ -45,6 +51,53 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
         self._server.start()
+
+    def start_secure(self, port: int = 4443):
+
+        self.cert_gen(key_file=self.PRIVATE_KEY_PATH, cert_file=self.CERTIFICATE_CHAIN_PATH)
+
+        with open(self.PRIVATE_KEY_PATH, 'rb') as private_key_file:
+            private_key_content = private_key_file.read()
+
+        with open(self.CERTIFICATE_CHAIN_PATH, 'rb') as certificate_chain_file:
+            certificate_chain_content = certificate_chain_file.read()
+
+        credentials = grpc.ssl_server_credentials([(private_key_content, certificate_chain_content)])
+
+        self._server.add_secure_port(f'[::]:{port}', credentials)
+        self._server.start()
+
+    def cert_gen(
+            self,
+            organization_name="Dapr",
+            validity_start_in_seconds=0,
+            validity_end_in_seconds=24 * 60 * 60,
+            key_file="private.key",
+            cert_file="selfsigned.crt"):
+        # can look at generated file using openssl:
+        # openssl x509 -inform pem -in selfsigned.crt -noout -text
+        # create a key pair
+        k = crypto.PKey()
+        k.generate_key(crypto.TYPE_RSA, 4096)
+        # create a self-signed cert
+        cert = crypto.X509()
+        cert.get_subject().O = organization_name
+        cert.gmtime_adj_notBefore(validity_start_in_seconds)
+        cert.gmtime_adj_notAfter(validity_end_in_seconds)
+        cert.set_issuer(cert.get_subject())
+        cert.set_pubkey(k)
+        cert.sign(k, 'sha512')
+        with open(cert_file, "wt") as f:
+            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
+        with open(key_file, "wt") as f:
+            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+
+    def clean_up_certs(self):
+        if os.path.exists(self.PRIVATE_KEY_PATH):
+            os.remove(self.PRIVATE_KEY_PATH)
+
+        if os.path.exists(self.CERTIFICATE_CHAIN_PATH):
+            os.remove(self.CERTIFICATE_CHAIN_PATH)
 
     def stop(self):
         self._server.stop(None)

@@ -158,28 +158,6 @@ class DaprGrpcClient:
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
-    def parse_endpoint(self, addr: str) -> None:
-        self._scheme = "http"
-        self._port = 80
-
-        addr_list = addr.split("://")
-
-        if len(addr_list) == 2:
-            # A scheme was specified
-            self._scheme = addr_list[0]
-            if self._scheme == "https":
-                self._port = 443
-            addr = addr_list[1]
-
-        addr_list = addr.split(":")
-        if len(addr_list) == 2:
-            self._port = int(addr_list[1])
-            addr = addr_list[0]
-
-        self._hostname = addr
-
-
-
     def close(self):
         """Closes Dapr runtime gRPC channel."""
         if self._channel:
