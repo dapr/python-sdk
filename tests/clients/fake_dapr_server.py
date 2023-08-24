@@ -31,7 +31,7 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
     RaiseEventWorkflowRequest,
 )
 from typing import Dict
-from OpenSSL import crypto, SSL
+from OpenSSL import crypto
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
     PRIVATE_KEY_PATH = os.path.join(os.path.dirname(__file__), 'private.key')
@@ -56,11 +56,13 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         self.cert_gen(key_file=self.PRIVATE_KEY_PATH, cert_file=self.CERTIFICATE_CHAIN_PATH)
 
-        with open(self.PRIVATE_KEY_PATH, 'rb') as private_key_file:
-            private_key_content = private_key_file.read()
+        private_key_file = open(self.PRIVATE_KEY_PATH, "rb")
+        private_key_content = private_key_file.read()
+        private_key_file.close()
 
-        with open(self.CERTIFICATE_CHAIN_PATH, 'rb') as certificate_chain_file:
-            certificate_chain_content = certificate_chain_file.read()
+        certificate_chain_file = open(self.CERTIFICATE_CHAIN_PATH, 'rb')
+        certificate_chain_content = certificate_chain_file.read()
+        certificate_chain_file.close()
 
         credentials = grpc.ssl_server_credentials([(private_key_content, certificate_chain_content)])
 
@@ -82,15 +84,21 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         # create a self-signed cert
         cert = crypto.X509()
         cert.get_subject().O = organization_name
+        cert.get_subject().CN = "localhost"
         cert.gmtime_adj_notBefore(validity_start_in_seconds)
         cert.gmtime_adj_notAfter(validity_end_in_seconds)
         cert.set_issuer(cert.get_subject())
         cert.set_pubkey(k)
         cert.sign(k, 'sha512')
-        with open(cert_file, "wt") as f:
-            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
-        with open(key_file, "wt") as f:
-            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+
+        f_cert = open(cert_file, "wt")
+        f_cert.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
+        f_cert.close()
+
+
+        f_key = open(key_file, "wt")
+        f_key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+        f_key.close()
 
     def clean_up_certs(self):
         if os.path.exists(self.PRIVATE_KEY_PATH):

@@ -141,7 +141,7 @@ class DaprGrpcClient:
 
         if self._scheme == "https":
             self._channel = grpc.secure_channel(f"{self._hostname}:{self._port}",
-                                                credentials=grpc.ssl_channel_credentials(),
+                                                self.get_credentials(),
 
                                                 options=options)
         else:
@@ -157,6 +157,9 @@ class DaprGrpcClient:
                 self._channel, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
+
+    def get_credentials(self):
+        return grpc.ssl_channel_credentials()
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
