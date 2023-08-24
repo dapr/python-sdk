@@ -21,6 +21,7 @@ from .fake_dapr_server import FakeDaprSidecar
 
 class DaprSecureGrpcClientTests(DaprGrpcClientTests):
     server_port = 443
+    scheme = 'https'
 
     def setUp(self):
         self._fake_dapr_server = FakeDaprSidecar()
