@@ -136,7 +136,8 @@ class DaprGrpcClientAsync:
             ]
 
         if not address:
-            address = settings.DAPR_GRPC_ENDPOINT or f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+            address = settings.DAPR_GRPC_ENDPOINT or (f"{settings.DAPR_RUNTIME_HOST}:"
+                                                      f"{settings.DAPR_GRPC_PORT}")
 
         self._scheme, self._hostname, self._port = parse_endpoint(address)
 
@@ -330,8 +331,8 @@ class DaprGrpcClientAsync:
             :class:`InvokeBindingResponse` object returned from binding
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata argument is deprecated. Dapr already intercepts API token '
+                 'headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req_data = BindingRequest(data, binding_metadata)
 

@@ -13,10 +13,10 @@ def create_certificates():
 
     # create a self-signed cert
     cert = crypto.X509()
-    cert.get_subject().O = "Dapr"
-    cert.get_subject().CN = "localhost"
+    cert.get_subject().organizationName = "Dapr"
+    cert.get_subject().commonName = "localhost"
     cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(24*60*60)
+    cert.gmtime_adj_notAfter(24 * 60 * 60)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
     cert.sign(k, 'sha512')

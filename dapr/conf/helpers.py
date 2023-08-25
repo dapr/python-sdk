@@ -21,11 +21,13 @@ def parse_endpoint(address: str) -> Tuple[str, str, int]:
         # A port was explicitly specified
         if len(addr_list[0]) > 0:
             fqdn = addr_list[0]
-        addr_list = addr_list[1].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
-        port = addr_list[0]
+        # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
+        addr_list = addr_list[1].split("/")
+        port = addr_list[0]     # type: ignore
     elif len(addr_list) == 1:
         # No port was specified
-        addr_list = addr_list[0].split("/")  # Account for Endpoints of the type :3500/v1.0/invoke
+        # Account for Endpoints of the type :3500/v1.0/invoke
+        addr_list = addr_list[0].split("/")
         fqdn = addr_list[0]
     else:
         # IPv6 address
@@ -36,7 +38,7 @@ def parse_endpoint(address: str) -> Tuple[str, str, int]:
             fqdn = fqdn.replace("[", "")
 
             addr_list = addr_list[1].split("/")
-            port = addr_list[0]
+            port = addr_list[0]     # type: ignore
         elif len(addr_list) == 1:
             # No port was specified
             addr_list = addr_list[0].split("/")

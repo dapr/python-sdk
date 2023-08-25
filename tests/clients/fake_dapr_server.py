@@ -1,5 +1,3 @@
-import os
-
 import grpc
 import json
 
@@ -32,12 +30,11 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
 )
 from typing import Dict
 
-from tests.clients.certs import create_certificates, delete_certificates, PRIVATE_KEY_PATH, CERTIFICATE_CHAIN_PATH
+from tests.clients.certs import create_certificates, delete_certificates, PRIVATE_KEY_PATH, \
+    CERTIFICATE_CHAIN_PATH
 
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
-
-
 
     def __init__(self):
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -65,7 +62,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         certificate_chain_content = certificate_chain_file.read()
         certificate_chain_file.close()
 
-        credentials = grpc.ssl_server_credentials([(private_key_content, certificate_chain_content)])
+        credentials = grpc.ssl_server_credentials(
+            [(private_key_content, certificate_chain_content)])
 
         self._server.add_secure_port(f'[::]:{port}', credentials)
         self._server.start()
