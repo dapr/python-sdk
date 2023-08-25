@@ -46,8 +46,7 @@ class DaprSecureGrpcClientTests(DaprGrpcClientTests):
         self._fake_dapr_server.start_secure(self.server_port)
 
     def tearDown(self):
-        self._fake_dapr_server.clean_up_certs()
-        self._fake_dapr_server.stop()
+        self._fake_dapr_server.stop_secure()
 
     @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
     def test_init_with_DAPR_GRPC_ENDPOINT(self):
