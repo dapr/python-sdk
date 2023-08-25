@@ -159,6 +159,8 @@ class DaprGrpcClient:
         self._stub = api_service_v1.DaprStub(self._channel)
 
     def get_credentials(self):
+        # This method is used (overwritten) from tests
+        # to return credentials for self-signed certificates
         return grpc.ssl_channel_credentials()
 
     def close(self):
