@@ -124,28 +124,29 @@ class DaprGrpcClient:
         """
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
-            options = [  # type: ignore
+            options = [
                 ('grpc.primary_user_agent', useragent),
             ]
         else:
-            options = [  # type: ignore
-                ('grpc.max_send_message_length', max_grpc_message_length),
-                ('grpc.max_receive_message_length', max_grpc_message_length),
+            options = [
+                ('grpc.max_send_message_length', max_grpc_message_length),      # type: ignore
+                ('grpc.max_receive_message_length', max_grpc_message_length),   # type: ignore
                 ('grpc.primary_user_agent', useragent)
             ]
 
         if not address:
-            address = settings.DAPR_GRPC_ENDPOINT or f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
+            address = settings.DAPR_GRPC_ENDPOINT or (f"{settings.DAPR_RUNTIME_HOST}:"
+                                                      f"{settings.DAPR_GRPC_PORT}")
 
         self._scheme, self._hostname, self._port = parse_endpoint(address)
 
         if self._scheme == "https":
-            self._channel = grpc.secure_channel(f"{self._hostname}:{self._port}",
+            self._channel = grpc.secure_channel(f"{self._hostname}:{self._port}",  # type: ignore
                                                 self.get_credentials(),
 
                                                 options=options)
         else:
-            self._channel = grpc.insecure_channel(address, options=options)
+            self._channel = grpc.insecure_channel(address, options=options)     # type: ignore
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor([
@@ -161,7 +162,7 @@ class DaprGrpcClient:
     def get_credentials(self):
         # This method is used (overwritten) from tests
         # to return credentials for self-signed certificates
-        return grpc.ssl_channel_credentials()
+        return grpc.ssl_channel_credentials()   # type: ignore
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""

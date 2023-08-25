@@ -71,7 +71,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
     @patch.object(settings, "DAPR_RUNTIME_HOST", "domain1.com")
     @patch.object(settings, "DAPR_GRPC_PORT", "5000")
-    def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
+    def test_init_with_argument_and_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
         dapr = DaprGrpcClientAsync("https://domain2.com:5002")
         self.assertEqual("domain2.com", dapr._hostname)
         self.assertEqual(5002, dapr._port)

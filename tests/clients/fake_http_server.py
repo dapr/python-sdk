@@ -4,7 +4,8 @@ from ssl import PROTOCOL_TLS_SERVER, SSLContext
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from tests.clients.certs import CERTIFICATE_CHAIN_PATH, PRIVATE_KEY_PATH, create_certificates, delete_certificates
+from tests.clients.certs import CERTIFICATE_CHAIN_PATH, PRIVATE_KEY_PATH, create_certificates, \
+    delete_certificates
 
 
 class DaprHandler(BaseHTTPRequestHandler):

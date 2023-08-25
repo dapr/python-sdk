@@ -78,60 +78,11 @@ def to_str(data: Union[str, bytes]) -> str:
         raise f'invalid data type {type(data)}'
 
 
-def parse_endpoint(address: str) -> Tuple[str, str, int]:
-    scheme = "http"
-    hostname = "localhost"
-    port = 80
-    addr = address
-
-    addr_list = address.split("://")
-
-    if len(addr_list) == 2:
-        # A scheme was explicitly specified
-        scheme = addr_list[0]
-        if scheme == "https":
-            port = 443
-        addr = addr_list[1]
-
-    addr_list = addr.split(":")
-    if len(addr_list) == 2:
-        # A port was explicitly specified
-        if len(addr_list[0]) > 0:
-            hostname = addr_list[0]
-        addr_list = addr_list[1].split("/")  # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
-        port = int(addr_list[0])
-    elif len(addr_list) == 1:
-        # No port was specified
-        addr_list = addr_list[0].split("/")  # Account for Endpoints of the type :3500/v1.0/invoke
-        hostname = addr_list[0]
-    else:
-        # IPv6 address
-        addr_list = addr.split("]:")
-        if len(addr_list) == 2:
-            # A port was explicitly specified
-            hostname = addr_list[0]
-            hostname = hostname.replace("[", "")
-
-            addr_list = addr_list[1].split("/")
-            port = int(addr_list[0])
-        elif len(addr_list) == 1:
-            # No port was specified
-            addr_list = addr_list[0].split("/")
-            hostname = addr_list[0]
-            hostname = hostname.replace("[", "")
-            hostname = hostname.replace("]", "")
-        else:
-            raise ValueError(f"Invalid address: {address}")
-
-
-    return scheme, hostname, port
-
-
 class _ClientCallDetails(
-    namedtuple(
-        '_ClientCallDetails',
-        ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression']),
-    ClientCallDetails):
+        namedtuple(
+            '_ClientCallDetails',
+            ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression']),
+        ClientCallDetails):
     """This is an implementation of the ClientCallDetails interface needed for interceptors.
     This class takes six named values and inherits the ClientCallDetails from grpc package.
     This class encloses the values that describe a RPC to be invoked.
