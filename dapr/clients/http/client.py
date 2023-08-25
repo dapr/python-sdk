@@ -80,12 +80,15 @@ class DaprHttpClient:
 
         r = None
         client_timeout = aiohttp.ClientTimeout(total=timeout) if timeout else self._timeout
+        sslcontext = self.get_ssl_context()
+
         async with aiohttp.ClientSession(timeout=client_timeout) as session:
             r = await session.request(
                 method=method,
                 url=url,
                 data=data,
                 headers=headers_map,
+                ssl=sslcontext,
                 params=query_params)
 
             if r.status >= 200 and r.status < 300:
@@ -109,3 +112,8 @@ class DaprHttpClient:
             return DaprInternalError(message, error_code)
 
         return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}')
+
+    def get_ssl_context(self):
+        # This method is used (overwritten) from tests
+        # to return context for self-signed certificates
+        return None
