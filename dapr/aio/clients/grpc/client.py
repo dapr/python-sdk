@@ -143,7 +143,7 @@ class DaprGrpcClientAsync:
 
         if self._scheme == "https":
             self._channel = grpc.aio.secure_channel(f"{self._hostname}:{self._port}",
-                                                    credentials=grpc.ssl_channel_credentials(),
+                                                    credentials=self.get_credentials(),
                                                     options=options)
         else:
             self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
@@ -158,6 +158,9 @@ class DaprGrpcClientAsync:
                 address, options=options, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
+
+    def get_credentials(self):
+        return grpc.ssl_channel_credentials()
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
