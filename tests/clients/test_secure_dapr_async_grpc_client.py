@@ -13,27 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import json
 import os
-import socket
 import unittest
-import uuid
 
 from unittest.mock import patch
 
 import grpc
 
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
-from dapr.aio.clients import DaprClient
-from dapr.proto import common_v1
 from tests.clients.test_dapr_async_grpc_client import DaprGrpcClientAsyncTests
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
-from dapr.clients.grpc._helpers import to_bytes
-from dapr.clients.grpc._request import TransactionalStateOperation
-from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
-from dapr.clients.grpc._response import (ConfigurationItem, ConfigurationWatcher,
-                                         ConfigurationResponse, UnlockResponseStatus, )
 
 
 # Used temporarily, so we can trust self-signed certificates in unit tests

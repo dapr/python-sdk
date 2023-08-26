@@ -20,13 +20,13 @@ from .certs import CERTIFICATE_CHAIN_PATH
 from .fake_http_server import FakeHttpServer
 from dapr.conf import settings
 from dapr.clients import DaprClient
-from opencensus.trace.tracer import Tracer  # type: ignore
 
 from .test_http_service_invocation_client import DaprInvocationHttpClientTests
 
 
 def replacement_get_ssl_context(a):
-    return ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, capath=CERTIFICATE_CHAIN_PATH)
+    return ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH,
+                                      capath=CERTIFICATE_CHAIN_PATH)
 
 
 DaprHttpClient.get_ssl_context = replacement_get_ssl_context
