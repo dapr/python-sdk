@@ -25,6 +25,38 @@ The `dapr` package contains the `DaprClient`, which is used to create and use a 
 from dapr.clients import DaprClient
 ```
 
+## Initialising the client
+You can initialise a Dapr client in multiple ways:
+
+#### Default values:
+When you initialise the client without any parameters it will use the default values for a Dapr 
+sidecar instance (`127.0.0.1:50001`).
+```python
+from dapr.clients import DaprClient
+
+with DaprClient() as d:
+    # use the client
+```
+
+#### Specifying an endpoint on initialisation:  
+When passed as an argument in the constructor, the endpoint takes precedence over any configuration or environment variable.
+
+```python
+from dapr.clients import DaprClient
+
+with DaprClient("https://mydomain:4443") as d:
+    # use the client
+```  
+
+#### Specifying the endpoint in an environment variable:  
+You can use the standardised `DAPR_GRPC_ENDPOINT` and/or `DAPR_HTTP_ENDPOINT` environment variables to
+specify the endpoint. When these environment variables are set, the client can be initialised 
+without any arguments.
+
+The legacy environment variables `DAPR_RUNTIME_HOST` and `DAPR_HTTP_PORT` and `DAPR_GRPC_PORT` are 
+also supported, but `DAPR_GRPC_ENDPOINT` and `DAPR_HTTP_ENDPOINT` take precedence.
+
+
 ## Building blocks
 
 The Python SDK allows you to interface with all of the [Dapr building blocks]({{< ref building-blocks >}}).
