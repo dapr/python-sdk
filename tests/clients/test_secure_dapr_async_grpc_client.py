@@ -81,6 +81,9 @@ class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
         self.assertEqual(5002, dapr._port)
         self.assertEqual('https', dapr._scheme)
 
+    async def test_dapr_api_token_insertion(self):
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -52,15 +52,17 @@ class FakeHttpServer(Thread):
 
     def __init__(self, secure=False):
         super().__init__()
-        port = 4443 if secure else 8080
-        self.server = HTTPServer(('localhost', port), DaprHandler)
+        self.secure = secure
 
-        if secure:
-            create_certificates()
+        self.port = 4443 if secure else 8080
+        self.server = HTTPServer(('localhost', self.port), DaprHandler)
+
+        if self.secure:
+            create_certificates("http")
             ssl_context = SSLContext(PROTOCOL_TLS_SERVER)
-            ssl_context.load_cert_chain(CERTIFICATE_CHAIN_PATH,
-                                        PRIVATE_KEY_PATH)
+            ssl_context.load_cert_chain(CERTIFICATE_CHAIN_PATH, PRIVATE_KEY_PATH)
             self.server.socket = ssl_context.wrap_socket(self.server.socket, server_side=True)
+
         self.server.response_body = b''
         self.server.response_code = 200
         self.server.response_header_list = []
@@ -80,10 +82,8 @@ class FakeHttpServer(Thread):
         self.server.shutdown()
         self.server.socket.close()
         self.join()
-
-    def shutdown_secure_server(self):
-        self.shutdown_server()
-        delete_certificates()
+        if self.secure:
+            delete_certificates()
 
     def request_path(self):
         return self.server.path

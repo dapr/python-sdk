@@ -79,7 +79,8 @@ class DaprClient(DaprGrpcClient):
             if http_timeout_seconds is None:
                 http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
             self.invocation_client = DaprInvocationHttpClient(headers_callback=headers_callback,
-                                                              timeout=http_timeout_seconds)
+                                                              timeout=http_timeout_seconds,
+                                                              address=address)
         elif invocation_protocol == 'GRPC':
             pass
         else:

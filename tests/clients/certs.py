@@ -6,7 +6,7 @@ PRIVATE_KEY_PATH = os.path.join(os.path.dirname(__file__), 'private.key')
 CERTIFICATE_CHAIN_PATH = os.path.join(os.path.dirname(__file__), 'selfsigned.pem')
 
 
-def create_certificates():
+def create_certificates(server_type='grpc'):
     # create a key pair
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 4096)
@@ -19,6 +19,10 @@ def create_certificates():
     cert.gmtime_adj_notAfter(24 * 60 * 60)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
+
+    if server_type == 'http':
+        cert.add_extensions([crypto.X509Extension(b"subjectAltName", False, b"DNS:localhost")])
+
     cert.sign(k, 'sha512')
 
     f_cert = open(CERTIFICATE_CHAIN_PATH, "wt")
