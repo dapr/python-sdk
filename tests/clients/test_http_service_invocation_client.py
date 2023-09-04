@@ -15,6 +15,7 @@ limitations under the License.
 
 import json
 import unittest
+from unittest.mock import patch
 
 from .fake_http_server import FakeHttpServer
 from asyncio import TimeoutError
@@ -42,6 +43,27 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.server.shutdown_server()
         settings.DAPR_API_TOKEN = None
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
+
+
+    def test_get_api_url_default(self):
+        client = DaprClient()
+        self.assertEqual(
+            'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST,
+                                            settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION),
+            client.invocation_client._client.get_api_url())
+
+    def test_get_api_url_endpoint_as_argument(self):
+        client = DaprClient("http://localhost:5000")
+        self.assertEqual(
+            'http://localhost:5000/{}'.format(settings.DAPR_API_VERSION),
+            client.invocation_client._client.get_api_url())
+
+    @patch.object(settings, "DAPR_HTTP_ENDPOINT", "https://domain1.com:5000")
+    def test_get_api_url_endpoint_as_env_variable(self):
+        client = DaprClient()
+        self.assertEqual(
+            'https://domain1.com:5000/{}'.format(settings.DAPR_API_VERSION),
+            client.invocation_client._client.get_api_url())
 
     def test_basic_invoke(self):
         self.server.set_response(b"STRING_BODY")
