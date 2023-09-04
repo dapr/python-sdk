@@ -52,6 +52,7 @@ from dapr.clients.grpc._helpers import (
     validateNotNone,
     validateNotBlankString,
 )
+from dapr.conf.helpers import parse_endpoint
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
@@ -101,14 +102,14 @@ class DaprGrpcClient:
     """
 
     def __init__(
-        self,
-        address: Optional[str] = None,
-        interceptors: Optional[List[Union[
-            UnaryUnaryClientInterceptor,
-            UnaryStreamClientInterceptor,
-            StreamUnaryClientInterceptor,
-            StreamStreamClientInterceptor]]] = None,
-        max_grpc_message_length: Optional[int] = None
+            self,
+            address: Optional[str] = None,
+            interceptors: Optional[List[Union[
+                UnaryUnaryClientInterceptor,
+                UnaryStreamClientInterceptor,
+                StreamUnaryClientInterceptor,
+                StreamStreamClientInterceptor]]] = None,
+            max_grpc_message_length: Optional[int] = None
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -122,30 +123,46 @@ class DaprGrpcClient:
                 message length in bytes.
         """
         useragent = f'dapr-sdk-python/{__version__}'
-        if not address:
-            address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
-        self._address = address
         if not max_grpc_message_length:
-            self._channel = grpc.insecure_channel(address, options=[   # type: ignore
+            options = [
                 ('grpc.primary_user_agent', useragent),
-            ])
+            ]
         else:
-            self._channel = grpc.insecure_channel(address, options=[   # type: ignore
-                ('grpc.max_send_message_length', max_grpc_message_length),
-                ('grpc.max_receive_message_length', max_grpc_message_length),
+            options = [
+                ('grpc.max_send_message_length', max_grpc_message_length),      # type: ignore
+                ('grpc.max_receive_message_length', max_grpc_message_length),   # type: ignore
                 ('grpc.primary_user_agent', useragent)
-            ])
+            ]
+
+        if not address:
+            address = settings.DAPR_GRPC_ENDPOINT or (f"{settings.DAPR_RUNTIME_HOST}:"
+                                                      f"{settings.DAPR_GRPC_PORT}")
+
+        self._scheme, self._hostname, self._port = parse_endpoint(address)
+
+        if self._scheme == "https":
+            self._channel = grpc.secure_channel(f"{self._hostname}:{self._port}",  # type: ignore
+                                                self.get_credentials(),
+
+                                                options=options)
+        else:
+            self._channel = grpc.insecure_channel(address, options=options)     # type: ignore
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
-            self._channel = grpc.intercept_channel(   # type: ignore
+            self._channel = grpc.intercept_channel(  # type: ignore
                 self._channel, api_token_interceptor)
         if interceptors:
-            self._channel = grpc.intercept_channel(   # type: ignore
+            self._channel = grpc.intercept_channel(  # type: ignore
                 self._channel, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
+
+    def get_credentials(self):
+        # This method is used (overwritten) from tests
+        # to return credentials for self-signed certificates
+        return grpc.ssl_channel_credentials()   # type: ignore
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
@@ -1409,15 +1426,12 @@ class DaprGrpcClient:
         Args:
             timeout_s (float): timeout in seconds
         """
-
-        host_port_str = self._address.split(":")
-        host_port = (host_port_str[0], int(host_port_str[1]))
         start = time.time()
         while True:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout_s)
                 try:
-                    s.connect(host_port)
+                    s.connect((self._hostname, self._port))
                     return
                 except Exception as e:
                     remaining = (start + timeout_s) - time.time()
@@ -1425,6 +1439,7 @@ class DaprGrpcClient:
                         raise e
                     time.sleep(min(1, remaining))
 
+    # ---
     def get_metadata(self) -> GetMetadataResponse:
         """Returns information about the sidecar allowing for runtime
         discoverability.
