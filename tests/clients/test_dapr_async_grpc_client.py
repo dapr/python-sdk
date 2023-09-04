@@ -539,7 +539,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind(('', 0))
             port = s.getsockname()[1]
-        dapr = DaprGrpcClientAsync(f'localhost:{port}')
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{port}')
         with self.assertRaises(Exception) as context:
             await dapr.wait(0.1)
         self.assertTrue('Connection refused' in str(context.exception))
