@@ -38,7 +38,7 @@ DaprGrpcClient.get_credentials = replacement_get_credentials_func
 
 
 class DaprSecureGrpcClientTests(DaprGrpcClientTests):
-    server_port = 443
+    server_port = 4443
     scheme = 'https://'
 
     def setUp(self):
