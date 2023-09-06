@@ -20,6 +20,8 @@ from .fake_http_server import FakeHttpServer
 from dapr.conf import settings
 from dapr.clients import DaprClient
 from dapr.proto import common_v1
+from asyncio import TimeoutError
+
 
 from opencensus.trace.tracer import Tracer  # type: ignore
 from opencensus.trace import print_exporter, samplers
