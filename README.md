@@ -98,7 +98,7 @@ tox -e flake8
 5. Run unit-test
 
 ```bash
-tox -e py37
+tox -e py311
 ```
 
 6. Run type check
