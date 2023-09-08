@@ -41,6 +41,7 @@ from grpc.aio import (  # type: ignore
 from dapr.clients.exceptions import DaprInternalError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
+from dapr.conf.helpers import parse_endpoint
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -123,10 +124,6 @@ class DaprGrpcClientAsync:
                 message length in bytes.
         """
         useragent = f'dapr-sdk-python/{__version__}'
-        if not address:
-            address = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
-        self._address = address
-        options = []
         if not max_grpc_message_length:
             options = [
                 ('grpc.primary_user_agent', useragent),
@@ -137,18 +134,33 @@ class DaprGrpcClientAsync:
                 ('grpc.max_receive_message_length', max_grpc_message_length),
                 ('grpc.primary_user_agent', useragent)
             ]
-        self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
+
+        if not address:
+            address = settings.DAPR_GRPC_ENDPOINT or (f"{settings.DAPR_RUNTIME_HOST}:"
+                                                      f"{settings.DAPR_GRPC_PORT}")
+
+        self._scheme, self._hostname, self._port = parse_endpoint(address)
+
+        if self._scheme == "https":
+            self._channel = grpc.aio.secure_channel(f"{self._hostname}:{self._port}",
+                                                    credentials=self.get_credentials(),
+                                                    options=options)
+        else:
+            self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptorAsync([
                 ('dapr-api-token', settings.DAPR_API_TOKEN), ])
-            self._channel = grpc.aio.insecure_channel(   # type: ignore
+            self._channel = grpc.aio.insecure_channel(  # type: ignore
                 address, options=options, interceptors=(api_token_interceptor,))
         if interceptors:
-            self._channel = grpc.aio.insecure_channel(   # type: ignore
+            self._channel = grpc.aio.insecure_channel(  # type: ignore
                 address, options=options, *interceptors)
 
         self._stub = api_service_v1.DaprStub(self._channel)
+
+    def get_credentials(self):
+        return grpc.ssl_channel_credentials()
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
@@ -322,8 +334,8 @@ class DaprGrpcClientAsync:
             :class:`InvokeBindingResponse` object returned from binding
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata argument is deprecated. Dapr already intercepts API token '
+                 'headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req_data = BindingRequest(data, binding_metadata)
 
@@ -1425,14 +1437,12 @@ class DaprGrpcClientAsync:
             timeout_s (float): timeout in seconds
         """
 
-        host_port_str = self._address.split(":")
-        host_port = (host_port_str[0], int(host_port_str[1]))
         start = time.time()
         while True:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout_s)
                 try:
-                    s.connect(host_port)
+                    s.connect((self._hostname, self._port))
                     return
                 except Exception as e:
                     remaining = (start + timeout_s) - time.time()

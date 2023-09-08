@@ -12,13 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
 from collections import namedtuple
 from typing import Dict, List, Union, Tuple, Optional
 from enum import Enum
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
-from grpc import UnaryUnaryClientInterceptor, ClientCallDetails     # type: ignore
+from grpc import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]

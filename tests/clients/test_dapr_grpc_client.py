@@ -39,6 +39,7 @@ from dapr.clients.grpc._response import (
 
 class DaprGrpcClientTests(unittest.TestCase):
     server_port = 8080
+    scheme = ''
 
     def setUp(self):
         self._fake_dapr_server = FakeDaprSidecar()
@@ -48,7 +49,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self._fake_dapr_server.stop()
 
     def test_http_extension(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
 
         # Test POST verb without querystring
         ext = dapr._get_http_extension('POST')
@@ -70,7 +71,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual("query1=string1&query2=string2&query1=string+3", ext.querystring)
 
     def test_invoke_method_bytes_data(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.invoke_method(
             app_id='targetId',
             method_name='bytes',
@@ -89,7 +90,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['value1'], resp.headers['hkey1'])
 
     def test_invoke_method_no_data(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.invoke_method(
             app_id='targetId',
             method_name='bytes',
@@ -107,7 +108,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['value1'], resp.headers['hkey1'])
 
     def test_invoke_method_async(self):
-        dapr = DaprClient(f'localhost:{self.server_port}')
+        dapr = DaprClient(f'{self.scheme}localhost:{self.server_port}')
         dapr.invocation_client = None  # force to use grpc client
 
         with self.assertRaises(NotImplementedError):
@@ -127,7 +128,7 @@ class DaprGrpcClientTests(unittest.TestCase):
             )
 
     def test_invoke_method_proto_data(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         req = common_v1.StateItem(key='test')
         resp = dapr.invoke_method(
             app_id='targetId',
@@ -149,7 +150,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual('test', new_resp.key)
 
     def test_invoke_binding_bytes_data(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.invoke_binding(
             binding_name='binding',
             operation='create',
@@ -166,7 +167,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['value1'], resp.headers['hkey1'])
 
     def test_invoke_binding_no_metadata(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.invoke_binding(
             binding_name='binding',
             operation='create',
@@ -178,7 +179,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(0, len(resp.headers))
 
     def test_invoke_binding_no_data(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.invoke_binding(
             binding_name='binding',
             operation='create',
@@ -189,7 +190,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(0, len(resp.headers))
 
     def test_invoke_binding_no_create(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.invoke_binding(
             binding_name='binding',
             operation='delete',
@@ -201,7 +202,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(0, len(resp.headers))
 
     def test_publish_event(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.publish_event(
             pubsub_name='pubsub',
             topic_name='example',
@@ -212,7 +213,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['haha'], resp.headers['hdata'])
 
     def test_publish_event_with_content_type(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.publish_event(
             pubsub_name='pubsub',
             topic_name='example',
@@ -225,7 +226,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['application/json'], resp.headers['data_content_type'])
 
     def test_publish_event_with_metadata(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.publish_event(
             pubsub_name='pubsub',
             topic_name='example',
@@ -239,7 +240,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['100'], resp.headers['metadata_ttl_in_seconds'])
 
     def test_publish_error(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         with self.assertRaisesRegex(ValueError, "invalid type for data <class 'int'>"):
             dapr.publish_event(
                 pubsub_name='pubsub',
@@ -249,7 +250,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     def test_dapr_api_token_insertion(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.invoke_method(
             app_id='targetId',
             method_name='bytes',
@@ -268,7 +269,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
 
     def test_get_save_delete_state(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         key = "key_1"
         value = "value_1"
         options = StateOptions(
@@ -313,7 +314,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertTrue('delete failed' in str(context.exception))
 
     def test_get_save_state_etag_none(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
 
         value = 'test'
         no_etag_key = 'no_etag'
@@ -340,7 +341,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.etag, "")
 
     def test_transaction_then_get_states(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
 
         key = str(uuid.uuid4())
         value = str(uuid.uuid4())
@@ -374,7 +375,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
     def test_save_then_get_states(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
 
         key = str(uuid.uuid4())
         value = str(uuid.uuid4())
@@ -410,7 +411,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
     def test_get_secret(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         key1 = 'key_1'
         resp = dapr.get_secret(
             store_name='store_1',
@@ -426,7 +427,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual({key1: "val"}, resp._secret)
 
     def test_get_secret_metadata_absent(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         key1 = 'key_1'
         resp = dapr.get_secret(
             store_name='store_1',
@@ -438,7 +439,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual({key1: "val"}, resp._secret)
 
     def test_get_bulk_secret(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.get_bulk_secret(
             store_name='store_1',
             metadata=(
@@ -452,7 +453,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual({"keya": {"keyb": "val"}}, resp._secrets)
 
     def test_get_bulk_secret_metadata_absent(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         resp = dapr.get_bulk_secret(store_name='store_1')
 
         self.assertEqual(1, len(resp.headers))
@@ -460,7 +461,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual({"keya": {"keyb": "val"}}, resp._secrets)
 
     def test_get_configuration(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         keys = ["k", "k1"]
         value = "value"
         version = "1.5.0"
@@ -484,7 +485,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(item.metadata, metadata)
 
     def test_subscribe_configuration(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
 
         def mock_watch(self, stub, store_name, keys, handler, config_metadata):
             handler("id", ConfigurationResponse(items={
@@ -503,12 +504,12 @@ class DaprGrpcClientTests(unittest.TestCase):
                                          keys=["k"], handler=handler)
 
     def test_unsubscribe_configuration(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         res = dapr.unsubscribe_configuration(store_name="configurationstore", id="k")
         self.assertTrue(res)
 
     def test_query_state(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
 
         resp = dapr.query_state(
             store_name="statestore",
@@ -525,12 +526,12 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(len(resp.results), 3)
 
     def test_shutdown(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         dapr.shutdown()
         self.assertTrue(self._fake_dapr_server.shutdown_received)
 
     def test_wait_ok(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         dapr.wait(0.1)
 
     def test_wait_timeout(self):
@@ -545,7 +546,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertTrue('Connection refused' in str(context.exception))
 
     def test_lock_acquire_success(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
         store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
@@ -558,7 +559,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
 
     def test_lock_release_twice_fails(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
         store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
@@ -574,7 +575,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     def test_lock_conflict(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
         store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
@@ -596,7 +597,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
 
     def test_lock_not_previously_acquired(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         unlock_response = dapr.unlock(
             store_name='lockstore',
             resource_id=str(uuid.uuid4()),
@@ -604,7 +605,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     def test_lock_release_twice_fails_with_context_manager(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
         store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
@@ -623,7 +624,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     def test_lock_are_not_reentrant(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
         store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
@@ -637,7 +638,7 @@ class DaprGrpcClientTests(unittest.TestCase):
                 self.assertFalse(second_attempt.success)
 
     def test_lock_input_validation(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         # Sane parameters
         store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
@@ -664,7 +665,7 @@ class DaprGrpcClientTests(unittest.TestCase):
                     self.assertTrue(res.success)
 
     def test_unlock_input_validation(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         # Sane parameters
         store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
@@ -686,7 +687,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     #
 
     def test_workflow(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         # Sane parameters
         workflow_name = "test_workflow"
         event_name = "eventName"
@@ -748,7 +749,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     #
 
     def test_get_metadata(self):
-        with DaprGrpcClient(f'localhost:{self.server_port}') as dapr:
+        with DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}') as dapr:
             response = dapr.get_metadata()
 
             self.assertIsNotNone(response)
@@ -778,7 +779,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_set_metadata(self):
         metadata_key = "test_set_metadata_attempt"
-        with DaprGrpcClient(f'localhost:{self.server_port}') as dapr:
+        with DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}') as dapr:
             for metadata_value in [str(i) for i in range(10)]:
                 dapr.set_metadata(attributeName=metadata_key,
                                   attributeValue=metadata_value)
@@ -799,11 +800,11 @@ class DaprGrpcClientTests(unittest.TestCase):
                                  metadata_value)
 
     def test_set_metadata_input_validation(self):
-        dapr = DaprGrpcClient(f'localhost:{self.server_port}')
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
         valid_attr_name = 'attribute name'
         valid_attr_value = 'attribute value'
         # Invalid inputs for string arguments
-        with DaprGrpcClient(f'localhost:{self.server_port}') as dapr:
+        with DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}') as dapr:
             for invalid_attr_name in [None, '', '   ']:
                 with self.assertRaises(ValueError):
                     dapr.set_metadata(invalid_attr_name, valid_attr_value)

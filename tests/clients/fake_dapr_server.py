@@ -30,8 +30,12 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
 )
 from typing import Dict
 
+from tests.clients.certs import create_certificates, delete_certificates, PRIVATE_KEY_PATH, \
+    CERTIFICATE_CHAIN_PATH
+
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
+
     def __init__(self):
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         api_service_v1.add_DaprServicer_to_server(self, self._server)
@@ -46,8 +50,30 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._server.add_insecure_port(f'[::]:{port}')
         self._server.start()
 
+    def start_secure(self, port: int = 4443):
+
+        create_certificates()
+
+        private_key_file = open(PRIVATE_KEY_PATH, "rb")
+        private_key_content = private_key_file.read()
+        private_key_file.close()
+
+        certificate_chain_file = open(CERTIFICATE_CHAIN_PATH, 'rb')
+        certificate_chain_content = certificate_chain_file.read()
+        certificate_chain_file.close()
+
+        credentials = grpc.ssl_server_credentials(
+            [(private_key_content, certificate_chain_content)])
+
+        self._server.add_secure_port(f'[::]:{port}', credentials)
+        self._server.start()
+
     def stop(self):
         self._server.stop(None)
+
+    def stop_secure(self):
+        self._server.stop(None)
+        delete_certificates()
 
     def InvokeService(self, request, context) -> common_v1.InvokeResponse:
         headers = ()

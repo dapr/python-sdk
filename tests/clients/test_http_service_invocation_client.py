@@ -15,6 +15,7 @@ limitations under the License.
 
 import json
 import unittest
+from unittest.mock import patch
 
 from .fake_http_server import FakeHttpServer
 from asyncio import TimeoutError
@@ -22,7 +23,7 @@ from dapr.conf import settings
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
 from dapr.proto import common_v1
-from opencensus.trace.tracer import Tracer   # type: ignore
+from opencensus.trace.tracer import Tracer  # type: ignore
 from opencensus.trace import print_exporter, samplers
 
 
@@ -42,6 +43,24 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.server.shutdown_server()
         settings.DAPR_API_TOKEN = None
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
+
+    def test_get_api_url_default(self):
+        client = DaprClient()
+        self.assertEqual(
+            'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT,
+                                     settings.DAPR_API_VERSION),
+            client.invocation_client._client.get_api_url())
+
+    def test_get_api_url_endpoint_as_argument(self):
+        client = DaprClient("http://localhost:5000")
+        self.assertEqual('http://localhost:5000/{}'.format(settings.DAPR_API_VERSION),
+                         client.invocation_client._client.get_api_url())
+
+    @patch.object(settings, "DAPR_HTTP_ENDPOINT", "https://domain1.com:5000")
+    def test_get_api_url_endpoint_as_env_variable(self):
+        client = DaprClient()
+        self.assertEqual('https://domain1.com:5000/{}'.format(settings.DAPR_API_VERSION),
+                         client.invocation_client._client.get_api_url())
 
     def test_basic_invoke(self):
         self.server.set_response(b"STRING_BODY")
@@ -82,28 +101,20 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
 
     def test_invoke_GET_with_query_params(self):
         self.server.set_response(b"STRING_BODY")
-        query_params = (('key1', 'value1'),
-                        ('key2', 'value2'))
+        query_params = (('key1', 'value1'), ('key2', 'value2'))
 
-        response = self.client.invoke_method(
-            self.app_id,
-            self.method_name,
-            '',
-            http_querystring=query_params)
+        response = self.client.invoke_method(self.app_id, self.method_name, '',
+                                             http_querystring=query_params)
 
         self.assertEqual(b"STRING_BODY", response.data)
         self.assertEqual(f"{self.invoke_url}?key1=value1&key2=value2", self.server.request_path())
 
     def test_invoke_GET_with_duplicate_query_params(self):
         self.server.set_response(b"STRING_BODY")
-        query_params = (('key1', 'value1'),
-                        ('key1', 'value2'))
+        query_params = (('key1', 'value1'), ('key1', 'value2'))
 
-        response = self.client.invoke_method(
-            self.app_id,
-            self.method_name,
-            '',
-            http_querystring=query_params)
+        response = self.client.invoke_method(self.app_id, self.method_name, '',
+                                             http_querystring=query_params)
 
         self.assertEqual(b"STRING_BODY", response.data)
         self.assertEqual(f"{self.invoke_url}?key1=value1&key1=value2", self.server.request_path())
@@ -113,11 +124,9 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
 
         sample_object = {'foo': ['val1', 'val2']}
 
-        response = self.client.invoke_method(
-            self.app_id,
-            self.method_name,
-            json.dumps(sample_object),
-            content_type='application/json')
+        response = self.client.invoke_method(self.app_id, self.method_name,
+                                             json.dumps(sample_object),
+                                             content_type='application/json')
 
         self.assertEqual(b"STRING_BODY", response.data)
         self.assertEqual(b'{"foo": ["val1", "val2"]}', self.server.get_request_body())
@@ -127,12 +136,7 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.server.reply_header('Content-Type', 'application/x-protobuf')
 
         req = common_v1.StateItem(key='test')
-        resp = self.client.invoke_method(
-            self.app_id,
-            self.method_name,
-            http_verb='PUT',
-            data=req
-        )
+        resp = self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT', data=req)
 
         self.assertEqual(b"\x0a\x04test", self.server.get_request_body())
         # unpack to new protobuf object
@@ -145,14 +149,8 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.server.set_response(b"FOO")
 
         req = common_v1.StateItem(key='test')
-        resp = self.client.invoke_method(
-            self.app_id,
-            self.method_name,
-            http_verb='PUT',
-            data=req,
-            metadata=(('header1', 'value1'),
-                      ('header2', 'value2'))
-        )
+        resp = self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT', data=req,
+                                         metadata=(('header1', 'value1'), ('header2', 'value2')))
 
         request_headers = self.server.get_request_headers()
 
@@ -166,14 +164,8 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.server.reply_header('Content-Type', 'application/x-protobuf; gzip')
 
         req = common_v1.StateItem(key='test')
-        resp = self.client.invoke_method(
-            self.app_id,
-            self.method_name,
-            http_verb='PUT',
-            data=req,
-            metadata=(('header1', 'value1'),
-                      ('header2', 'value2'))
-        )
+        resp = self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT', data=req,
+                                         metadata=(('header1', 'value1'), ('header2', 'value2')))
         self.assertEqual(b"\x0a\x04test", self.server.get_request_body())
         # unpack to new protobuf object
         new_resp = common_v1.StateItem()
@@ -185,14 +177,8 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.server.reply_header('Content-Type', 'apPlicaTion/x-protobuf; gzip')
 
         req = common_v1.StateItem(key='test')
-        resp = self.client.invoke_method(
-            self.app_id,
-            self.method_name,
-            http_verb='PUT',
-            data=req,
-            metadata=(('header1', 'value1'),
-                      ('header2', 'value2'))
-        )
+        resp = self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT', data=req,
+                                         metadata=(('header1', 'value1'), ('header2', 'value2')))
 
         self.assertEqual(b"\x0a\x04test", self.server.get_request_body())
         # unpack to new protobuf object
@@ -207,12 +193,7 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         expected_msg = "('Something bad happend', 'ERR_DIRECT_INVOKE')"
 
         with self.assertRaises(DaprInternalError) as ctx:
-            self.client.invoke_method(
-                self.app_id,
-                self.method_name,
-                http_verb='PUT',
-                data='FOO',
-            )
+            self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT', data='FOO', )
         self.assertEqual(expected_msg, str(ctx.exception))
 
     def test_invoke_method_non_dapr_error(self):
@@ -222,12 +203,7 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         expected_msg = "Unknown Dapr Error. HTTP status code: 500"
 
         with self.assertRaises(DaprInternalError) as ctx:
-            self.client.invoke_method(
-                self.app_id,
-                self.method_name,
-                http_verb='PUT',
-                data='FOO',
-            )
+            self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT', data='FOO', )
         self.assertEqual(expected_msg, str(ctx.exception))
 
     def test_generic_client_unknown_protocol(self):
@@ -255,12 +231,7 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         settings.DAPR_API_TOKEN = 'c29saSBkZW8gZ2xvcmlhCg=='
 
         req = common_v1.StateItem(key='test')
-        resp = self.client.invoke_method(
-            self.app_id,
-            self.method_name,
-            http_verb='PUT',
-            data=req,
-        )
+        resp = self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT', data=req, )
 
         request_headers = self.server.get_request_headers()
 
@@ -276,12 +247,8 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
 
         with tracer.span(name="test"):
             req = common_v1.StateItem(key='test')
-            resp = self.client.invoke_method(
-                self.app_id,
-                self.method_name,
-                http_verb='PUT',
-                data=req,
-            )
+            resp = self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT',
+                                             data=req, )
 
         request_headers = self.server.get_request_headers()
 
