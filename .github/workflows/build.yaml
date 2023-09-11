@@ -22,7 +22,7 @@ jobs:
       matrix:
         python_ver: [3.8, 3.9, "3.10", "3.11"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python_ver }}
       uses: actions/setup-python@v4
       with:
@@ -49,7 +49,7 @@ jobs:
     env:
       TWINE_USERNAME: "__token__"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python 3.9
       uses: actions/setup-python@v4
       with:

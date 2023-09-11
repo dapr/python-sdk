@@ -53,7 +53,7 @@ jobs:
           fi
 
       - name: Check out code onto GOPATH
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ env.CHECKOUT_REPO }}
           ref: ${{ env.CHECKOUT_REF }}
@@ -84,14 +84,14 @@ jobs:
         with:
           go-version: ${{ env.GOVER }}
       - name: Checkout Dapr CLI repo to override dapr command.
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         if: env.DAPR_CLI_REF != ''
         with:
           repository: dapr/cli
           ref: ${{ env.DAPR_CLI_REF }}
           path: cli
       - name: Checkout Dapr repo to override daprd.
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         if: env.DAPR_REF != ''
         with:
           repository: dapr/dapr
