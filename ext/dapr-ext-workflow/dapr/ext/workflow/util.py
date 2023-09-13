@@ -17,6 +17,7 @@ from typing import Optional
 
 from dapr.conf import settings
 
+DAPR_API_TOKEN_HEADER = 'dapr-api-token'
 
 def getAddress(host: Optional[str] = None, port: Optional[str] = None) -> str:
     host = host or settings.DAPR_RUNTIME_HOST
