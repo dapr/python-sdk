@@ -13,6 +13,7 @@
 import threading
 from dataclasses import asdict, dataclass
 from datetime import timedelta
+import time
 
 from dapr.clients import DaprClient
 import dapr.ext.workflow as wf
@@ -59,7 +60,7 @@ def purchase_order_workflow(ctx: wf.DaprWorkflowContext, order: Order):
 
 
 def send_approval_request(_, order: Order) -> None:
-    print(f'*** Sending approval request for order: {order}')
+    print(f'*** Requesting approval from user for order: {order}')
 
 
 def place_order(_, order: Order) -> None:
@@ -91,6 +92,8 @@ if __name__ == "__main__":
         input=order)
 
     def prompt_for_approval():
+        # Give the workflow time to start up and notify the user
+        time.sleep(2)
         input("Press [ENTER] to approve the order...\n")
         with DaprClient() as d:
             d.raise_workflow_event(

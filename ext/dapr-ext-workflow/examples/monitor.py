@@ -60,7 +60,11 @@ if __name__ == '__main__':
 
     wf_client = wf.DaprWorkflowClient()
     job_id = "job1"
-    status = wf_client.get_workflow_state(job_id)
+    status = None
+    try:
+        status = wf_client.get_workflow_state(job_id)
+    except Exception:
+        pass
     if not status or status.runtime_status.name != 'RUNNING':
         instance_id = wf_client.schedule_new_workflow(
             workflow=status_monitor_workflow,

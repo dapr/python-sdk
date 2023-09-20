@@ -62,5 +62,6 @@ if __name__ == '__main__':
         input=42)
     print(f'Workflow started. Instance ID: {instance_id}')
     state = wf_client.wait_for_workflow_completion(instance_id)
+    print(f'Workflow completed! Status: {state.runtime_status}')
 
     workflowRuntime.shutdown()
