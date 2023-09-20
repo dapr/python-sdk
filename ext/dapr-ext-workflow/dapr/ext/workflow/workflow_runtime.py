@@ -13,14 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Optional, TypeVar, Dict
+from typing import Optional, TypeVar
 
 from durabletask import worker, task
 
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
-from dapr.ext.workflow.util import getAddress, DAPR_API_TOKEN_HEADER
+from dapr.ext.workflow.util import getAddress
+from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 
 T = TypeVar('T')
@@ -32,15 +33,14 @@ class WorkflowRuntime:
     """WorkflowRuntime is the entry point for registering workflows and activities.
     """
 
-    def __init__(self, host: Optional[str] = None, port: Optional[str] = None, apiToken: Optional[str] = None):
-        metadata = []
-        if apiToken is not None:
-            metadata = ((DAPR_API_TOKEN_HEADER, apiToken),)
-        elif settings.DAPR_API_TOKEN:
+    def __init__(self, host: Optional[str] = None, port: Optional[str] = None):
+        metadata = tuple()
+        if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         address = getAddress(host, port)
 
         self.__worker = worker.TaskHubGrpcWorker(host_address=address, metadata=metadata)
+
     def register_workflow(self, fn: Workflow):
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
