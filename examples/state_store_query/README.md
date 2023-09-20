@@ -9,7 +9,7 @@ It demonstrates the following APIs:
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.7+](https://www.python.org/downloads/)
+- [Install Python 3.8+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -46,7 +46,7 @@ timeout_seconds: 10
 
 ```bash
 # Import the example dataset
-dapr run --app-id demo --dapr-http-port 3500 --components-path components -- curl -X POST -H "Content-Type: application/json" -d @dataset.json http://localhost:3500/v1.0/state/statestore
+dapr run --app-id demo --dapr-http-port 3500 --resources-path components -- curl -X POST -H "Content-Type: application/json" -d @dataset.json http://localhost:3500/v1.0/state/statestore
 ```
 <!-- END_STEP -->
 
@@ -68,7 +68,7 @@ timeout_seconds: 5
 -->
 
 ```bash
-dapr run --app-id queryexample --components-path components/ -- python3 state_store_query.py
+dapr run --app-id queryexample --resources-path components/ -- python3 state_store_query.py
 ```
 <!-- END_STEP -->
 

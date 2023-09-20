@@ -9,7 +9,7 @@ This example also illustrates the use of access control for secrets.
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.7+](https://www.python.org/downloads/)
+- [Install Python 3.8+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -40,7 +40,7 @@ timeout_seconds: 2
 -->
 
 ```bash
-dapr run --app-id=secretsapp --app-protocol grpc --components-path components/ python3 example.py
+dapr run --app-id=secretsapp --app-protocol grpc --resources-path components/ python3 example.py
 ```
 
 <!-- END_STEP -->
@@ -87,7 +87,7 @@ timeout_seconds: 2
 -->
 
 ```bash
-dapr run --app-id=secretsapp --app-protocol grpc --config config.yaml --components-path components/ python3 example.py
+dapr run --app-id=secretsapp --app-protocol grpc --config config.yaml --resources-path components/ python3 example.py
 ```
 
 <!-- END_STEP -->

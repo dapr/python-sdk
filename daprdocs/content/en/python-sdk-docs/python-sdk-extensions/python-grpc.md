@@ -2,15 +2,15 @@
 type: docs
 title: "Getting started with the Dapr Python gRPC service extension"
 linkTitle: "gRPC"
-weight: 20000
-description: How to get up and running with the Dapr Python gRPC extension package
+weight: 100000
+description: How to get up and running with the Dapr Python gRPC extension
 ---
 
-The Dapr Python SDK provides a built in gRPC server extension module, `dapr.ext.grpc`, for creating Dapr services.
+The Dapr Python SDK provides a built in gRPC server extension, `dapr.ext.grpc`, for creating Dapr services.
 
 ## Installation
 
-You can download and install the Dapr gRPC server extension module with:
+You can download and install the Dapr gRPC server extension with:
 
 {{< tabs Stable Development>}}
 
@@ -22,7 +22,7 @@ pip install dapr-ext-grpc
 
 {{% codetab %}}
 {{% alert title="Note" color="warning" %}}
-The development package will contain features and behavior that will be compatible with the pre-release version of the Dapr runtime. Make sure to uninstall any stable versions of the Python SDK extension before installing the dapr-dev package.
+The development package will contain features and behavior that will be compatible with the pre-release version of the Dapr runtime. Make sure to uninstall any stable versions of the Python SDK extension before installing the `dapr-dev` package.
 {{% /alert %}}
 
 ```bash

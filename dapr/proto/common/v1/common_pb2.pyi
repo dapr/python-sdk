@@ -30,6 +30,7 @@ else:
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
+@typing_extensions.final
 class HTTPExtension(google.protobuf.message.Message):
     """HTTPExtension includes HTTP verb and querystring
     when Dapr runtime delivers HTTP content.
@@ -92,6 +93,7 @@ class HTTPExtension(google.protobuf.message.Message):
 
 global___HTTPExtension = HTTPExtension
 
+@typing_extensions.final
 class InvokeRequest(google.protobuf.message.Message):
     """InvokeRequest is the message to invoke a method with the data.
     This message is used in InvokeService of Dapr gRPC Service and OnInvoke
@@ -137,6 +139,7 @@ class InvokeRequest(google.protobuf.message.Message):
 
 global___InvokeRequest = InvokeRequest
 
+@typing_extensions.final
 class InvokeResponse(google.protobuf.message.Message):
     """InvokeResponse is the response message including data and its content type
     from app callback.
@@ -164,6 +167,7 @@ class InvokeResponse(google.protobuf.message.Message):
 
 global___InvokeResponse = InvokeResponse
 
+@typing_extensions.final
 class StreamPayload(google.protobuf.message.Message):
     """Chunk of data sent in a streaming request or response.
     This is used in requests including InternalInvokeRequestStream.
@@ -191,11 +195,13 @@ class StreamPayload(google.protobuf.message.Message):
 
 global___StreamPayload = StreamPayload
 
+@typing_extensions.final
 class StateItem(google.protobuf.message.Message):
     """StateItem represents state key, value, and additional options to save state."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -245,6 +251,7 @@ class StateItem(google.protobuf.message.Message):
 
 global___StateItem = StateItem
 
+@typing_extensions.final
 class Etag(google.protobuf.message.Message):
     """Etag represents a state item version"""
 
@@ -262,6 +269,7 @@ class Etag(google.protobuf.message.Message):
 
 global___Etag = Etag
 
+@typing_extensions.final
 class StateOptions(google.protobuf.message.Message):
     """StateOptions configures concurrency and consistency for state operations"""
 
@@ -315,11 +323,13 @@ class StateOptions(google.protobuf.message.Message):
 
 global___StateOptions = StateOptions
 
+@typing_extensions.final
 class ConfigurationItem(google.protobuf.message.Message):
     """ConfigurationItem represents all the configuration with its name(key)."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 

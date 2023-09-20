@@ -12,7 +12,7 @@ It demonstrates the following APIs:
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.7+](https://www.python.org/downloads/)
+- [Install Python 3.8+](https://www.python.org/downloads/)
 
 ### Install requirements
 
@@ -46,7 +46,7 @@ sleep: 15
 -->
 
 ```sh
-dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 50001 --components-path components --placement-host-address localhost:50005 -- python3 app.py
+dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 50001 --resources-path components --placement-host-address localhost:50005 -- python3 app.py
 ```
 
 <!-- END_STEP -->

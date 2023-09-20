@@ -8,20 +8,59 @@ description: How to get up and running with the Dapr Python SDK
 
 The Dapr client package allows you to interact with other Dapr applications from a Python application.
 
-## Pre-requisites
+{{% alert title="Note" color="primary" %}}
+ If you haven't already, [try out one of the quickstarts]({{< ref quickstarts >}}) for a quick walk-through on how to use the Dapr Python SDK with an API building block.
 
-- [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
-- Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
-- [Python 3.7+](https://www.python.org/downloads/) installed
-- [Dapr Python module]({{< ref "python#install-the0dapr-module" >}}) installed
+{{% /alert %}}
+
+## Prerequisites
+
+[Install the Dapr Python package]({{< ref "python#installation" >}}) before getting started.
 
 ## Import the client package
 
-The dapr package contains the `DaprClient` which will be used to create and use a client.
+The `dapr` package contains the `DaprClient`, which is used to create and use a client.
 
 ```python
 from dapr.clients import DaprClient
 ```
+
+## Initialising the client
+You can initialise a Dapr client in multiple ways:
+
+#### Default values:
+When you initialise the client without any parameters it will use the default values for a Dapr 
+sidecar instance (`127.0.0.1:50001`).
+```python
+from dapr.clients import DaprClient
+
+with DaprClient() as d:
+    # use the client
+```
+
+#### Specifying an endpoint on initialisation:  
+When passed as an argument in the constructor, the endpoint takes precedence over any configuration or environment variable.
+
+```python
+from dapr.clients import DaprClient
+
+with DaprClient("https://mydomain:4443") as d:
+    # use the client
+```  
+
+#### Specifying an endpoint in an environment variable:  
+You can use the standardised `DAPR_GRPC_ENDPOINT` and/or `DAPR_HTTP_ENDPOINT` environment variables to
+specify the endpoint. When these environment variables are set, the client can be initialised 
+without any arguments.
+
+```bash
+export DAPR_GRPC_ENDPOINT="https://mydomain:50051"
+export DAPR_HTTP_ENDPOINT="https://mydomain:443"
+```
+
+The legacy environment variables `DAPR_RUNTIME_HOST`, `DAPR_HTTP_PORT` and `DAPR_GRPC_PORT` are 
+also supported, but `DAPR_GRPC_ENDPOINT` and `DAPR_HTTP_ENDPOINT` take precedence.
+
 
 ## Building blocks
 
@@ -42,7 +81,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on service invocation visit [How-To: Invoke a service]({{< ref howto-invoke-discover-services.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-simple) for code samples and instructions to try out service invocation
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-simple) for code samples and instructions to try out service invocation.
 
 ### Save & get application state
 
@@ -61,7 +100,7 @@ with DaprClient() as d:
 ```
 
 - For a full list of state operations visit [How-To: Get & save state]({{< ref howto-get-save-state.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store) for code samples and instructions to try out state management
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store) for code samples and instructions to try out state management.
 
 ### Query application state (Alpha)
 
@@ -95,7 +134,7 @@ with DaprClient() as d:
 
 ### Publish & subscribe to messages
 
-##### Publish messages
+#### Publish messages
 
 ```python
 from dapr.clients import DaprClient
@@ -104,7 +143,7 @@ with DaprClient() as d:
     resp = d.publish_event(pubsub_name='pubsub', topic_name='TOPIC_A', data='{"message":"Hello World"}')
 ```
 
-##### Subscribe to messages
+#### Subscribe to messages
 
 ```python
 from cloudevents.sdk.event import v1
@@ -143,7 +182,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on output bindings visit [How-To: Use bindings]({{< ref howto-bindings.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-binding) for code samples and instructions to try out output bindings
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-binding) for code samples and instructions to try out output bindings.
 
 ### Retrieve secrets
 
@@ -157,7 +196,9 @@ with DaprClient() as d:
 - For a full guide on secrets visit [How-To: Retrieve secrets]({{< ref howto-secrets.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/secret_store) for code samples and instructions to try out retrieving secrets
 
-### Get configuration
+### Configuration
+
+#### Get configuration
 
 ```python
 from dapr.clients import DaprClient
@@ -167,7 +208,7 @@ with DaprClient() as d:
     configuration = d.get_configuration(store_name='configurationstore', keys=['orderId'], config_metadata={})
 ```
 
-### Subscribe to configuration
+#### Subscribe to configuration
 
 ```python
 import asyncio
@@ -198,7 +239,7 @@ asyncio.run(executeConfiguration())
 ```
 
 - Learn more about managing configurations via the [How-To: Manage configuration]({{< ref howto-manage-configuration.md >}}) guide.
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/configuration) for code samples and instructions to try out configuration
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/configuration) for code samples and instructions to try out configuration.
 
 ### Distributed Lock
 
@@ -316,4 +357,4 @@ def main():
 
 
 ## Related links
-- [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples)
+[Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples)

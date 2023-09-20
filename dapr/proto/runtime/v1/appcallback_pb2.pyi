@@ -31,6 +31,7 @@ else:
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
+@typing_extensions.final
 class TopicEventRequest(google.protobuf.message.Message):
     """TopicEventRequest message is compatible with CloudEvent spec v1.0
     https://github.com/cloudevents/spec/blob/v1.0/spec.md
@@ -98,6 +99,7 @@ class TopicEventRequest(google.protobuf.message.Message):
 
 global___TopicEventRequest = TopicEventRequest
 
+@typing_extensions.final
 class TopicEventResponse(google.protobuf.message.Message):
     """TopicEventResponse is response from app on published message"""
 
@@ -138,6 +140,7 @@ class TopicEventResponse(google.protobuf.message.Message):
 
 global___TopicEventResponse = TopicEventResponse
 
+@typing_extensions.final
 class TopicEventCERequest(google.protobuf.message.Message):
     """TopicEventCERequest message is compatible with CloudEvent spec v1.0"""
 
@@ -181,11 +184,13 @@ class TopicEventCERequest(google.protobuf.message.Message):
 
 global___TopicEventCERequest = TopicEventCERequest
 
+@typing_extensions.final
 class TopicEventBulkRequestEntry(google.protobuf.message.Message):
     """TopicEventBulkRequestEntry represents a single message inside a bulk request"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -231,11 +236,13 @@ class TopicEventBulkRequestEntry(google.protobuf.message.Message):
 
 global___TopicEventBulkRequestEntry = TopicEventBulkRequestEntry
 
+@typing_extensions.final
 class TopicEventBulkRequest(google.protobuf.message.Message):
     """TopicEventBulkRequest represents request for bulk message"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -291,6 +298,7 @@ class TopicEventBulkRequest(google.protobuf.message.Message):
 
 global___TopicEventBulkRequest = TopicEventBulkRequest
 
+@typing_extensions.final
 class TopicEventBulkResponseEntry(google.protobuf.message.Message):
     """TopicEventBulkResponseEntry Represents single response, as part of TopicEventBulkResponse, to be
     sent by subscibed App for the corresponding single message during bulk subscribe
@@ -314,6 +322,7 @@ class TopicEventBulkResponseEntry(google.protobuf.message.Message):
 
 global___TopicEventBulkResponseEntry = TopicEventBulkResponseEntry
 
+@typing_extensions.final
 class TopicEventBulkResponse(google.protobuf.message.Message):
     """AppBulkResponse is response from app on published message"""
 
@@ -332,11 +341,13 @@ class TopicEventBulkResponse(google.protobuf.message.Message):
 
 global___TopicEventBulkResponse = TopicEventBulkResponse
 
+@typing_extensions.final
 class BindingEventRequest(google.protobuf.message.Message):
     """BindingEventRequest represents input bindings event."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -373,6 +384,7 @@ class BindingEventRequest(google.protobuf.message.Message):
 
 global___BindingEventRequest = BindingEventRequest
 
+@typing_extensions.final
 class BindingEventResponse(google.protobuf.message.Message):
     """BindingEventResponse includes operations to save state or
     send data to output bindings optionally.
@@ -431,6 +443,7 @@ class BindingEventResponse(google.protobuf.message.Message):
 
 global___BindingEventResponse = BindingEventResponse
 
+@typing_extensions.final
 class ListTopicSubscriptionsResponse(google.protobuf.message.Message):
     """ListTopicSubscriptionsResponse is the message including the list of the subscribing topics."""
 
@@ -449,11 +462,13 @@ class ListTopicSubscriptionsResponse(google.protobuf.message.Message):
 
 global___ListTopicSubscriptionsResponse = ListTopicSubscriptionsResponse
 
+@typing_extensions.final
 class TopicSubscription(google.protobuf.message.Message):
     """TopicSubscription represents topic and metadata."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -507,6 +522,7 @@ class TopicSubscription(google.protobuf.message.Message):
 
 global___TopicSubscription = TopicSubscription
 
+@typing_extensions.final
 class TopicRoutes(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -527,6 +543,7 @@ class TopicRoutes(google.protobuf.message.Message):
 
 global___TopicRoutes = TopicRoutes
 
+@typing_extensions.final
 class TopicRule(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -552,6 +569,7 @@ class TopicRule(google.protobuf.message.Message):
 
 global___TopicRule = TopicRule
 
+@typing_extensions.final
 class BulkSubscribeConfig(google.protobuf.message.Message):
     """BulkSubscribeConfig is the message to pass settings for bulk subscribe"""
 
@@ -577,6 +595,7 @@ class BulkSubscribeConfig(google.protobuf.message.Message):
 
 global___BulkSubscribeConfig = BulkSubscribeConfig
 
+@typing_extensions.final
 class ListInputBindingsResponse(google.protobuf.message.Message):
     """ListInputBindingsResponse is the message including the list of input bindings."""
 
@@ -595,6 +614,7 @@ class ListInputBindingsResponse(google.protobuf.message.Message):
 
 global___ListInputBindingsResponse = ListInputBindingsResponse
 
+@typing_extensions.final
 class HealthCheckResponse(google.protobuf.message.Message):
     """HealthCheckResponse is the message with the response to the health check.
     This message is currently empty as used as placeholder.

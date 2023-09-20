@@ -12,7 +12,7 @@ all the distributed lock API methods available as example.
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.7+](https://www.python.org/downloads/)
+- [Install Python 3.8+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -40,7 +40,7 @@ timeout_seconds: 5
 -->
 
 ```bash
-dapr run --app-id=locksapp --app-protocol grpc --components-path components/ python3 lock.py
+dapr run --app-id=locksapp --app-protocol grpc --resources-path components/ python3 lock.py
 ```
 <!-- END_STEP -->
 

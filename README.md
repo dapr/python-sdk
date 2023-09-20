@@ -28,7 +28,7 @@ This includes the following packages:
 ### Prerequisites
 
 * [Install Dapr standalone mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-standalone)
-* [Install Python 3.7+](https://www.python.org/downloads/)
+* [Install Python 3.8+](https://www.python.org/downloads/)
 
 ### Install Dapr python sdk
 
@@ -98,7 +98,7 @@ tox -e flake8
 5. Run unit-test
 
 ```bash
-tox -e py37
+tox -e py311
 ```
 
 6. Run type check

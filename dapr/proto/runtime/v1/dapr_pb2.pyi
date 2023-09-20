@@ -32,6 +32,7 @@ else:
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
+@typing_extensions.final
 class InvokeServiceRequest(google.protobuf.message.Message):
     """InvokeServiceRequest represents the request message for Service invocation."""
 
@@ -55,11 +56,13 @@ class InvokeServiceRequest(google.protobuf.message.Message):
 
 global___InvokeServiceRequest = InvokeServiceRequest
 
+@typing_extensions.final
 class GetStateRequest(google.protobuf.message.Message):
     """GetStateRequest is the message to get key-value states from specific state store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -100,11 +103,13 @@ class GetStateRequest(google.protobuf.message.Message):
 
 global___GetStateRequest = GetStateRequest
 
+@typing_extensions.final
 class GetBulkStateRequest(google.protobuf.message.Message):
     """GetBulkStateRequest is the message to get a list of key-value states from specific state store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -146,6 +151,7 @@ class GetBulkStateRequest(google.protobuf.message.Message):
 
 global___GetBulkStateRequest = GetBulkStateRequest
 
+@typing_extensions.final
 class GetBulkStateResponse(google.protobuf.message.Message):
     """GetBulkStateResponse is the response conveying the list of state values."""
 
@@ -164,6 +170,7 @@ class GetBulkStateResponse(google.protobuf.message.Message):
 
 global___GetBulkStateResponse = GetBulkStateResponse
 
+@typing_extensions.final
 class BulkStateItem(google.protobuf.message.Message):
     """BulkStateItem is the response item for a bulk get operation.
     Return values include the item key, data and etag.
@@ -171,6 +178,7 @@ class BulkStateItem(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -217,11 +225,13 @@ class BulkStateItem(google.protobuf.message.Message):
 
 global___BulkStateItem = BulkStateItem
 
+@typing_extensions.final
 class GetStateResponse(google.protobuf.message.Message):
     """GetStateResponse is the response conveying the state value and etag."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -260,11 +270,13 @@ class GetStateResponse(google.protobuf.message.Message):
 
 global___GetStateResponse = GetStateResponse
 
+@typing_extensions.final
 class DeleteStateRequest(google.protobuf.message.Message):
     """DeleteStateRequest is the message to delete key-value states in the specific state store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -316,6 +328,7 @@ class DeleteStateRequest(google.protobuf.message.Message):
 
 global___DeleteStateRequest = DeleteStateRequest
 
+@typing_extensions.final
 class DeleteBulkStateRequest(google.protobuf.message.Message):
     """DeleteBulkStateRequest is the message to delete a list of key-value states from specific state store."""
 
@@ -338,6 +351,7 @@ class DeleteBulkStateRequest(google.protobuf.message.Message):
 
 global___DeleteBulkStateRequest = DeleteBulkStateRequest
 
+@typing_extensions.final
 class SaveStateRequest(google.protobuf.message.Message):
     """SaveStateRequest is the message to save multiple states into state store."""
 
@@ -360,11 +374,13 @@ class SaveStateRequest(google.protobuf.message.Message):
 
 global___SaveStateRequest = SaveStateRequest
 
+@typing_extensions.final
 class QueryStateRequest(google.protobuf.message.Message):
     """QueryStateRequest is the message to query state store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -401,6 +417,7 @@ class QueryStateRequest(google.protobuf.message.Message):
 
 global___QueryStateRequest = QueryStateRequest
 
+@typing_extensions.final
 class QueryStateItem(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -430,11 +447,13 @@ class QueryStateItem(google.protobuf.message.Message):
 
 global___QueryStateItem = QueryStateItem
 
+@typing_extensions.final
 class QueryStateResponse(google.protobuf.message.Message):
     """QueryStateResponse is the response conveying the query results."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -472,11 +491,13 @@ class QueryStateResponse(google.protobuf.message.Message):
 
 global___QueryStateResponse = QueryStateResponse
 
+@typing_extensions.final
 class PublishEventRequest(google.protobuf.message.Message):
     """PublishEventRequest is the message to publish event data to pubsub topic"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -525,11 +546,13 @@ class PublishEventRequest(google.protobuf.message.Message):
 
 global___PublishEventRequest = PublishEventRequest
 
+@typing_extensions.final
 class BulkPublishRequest(google.protobuf.message.Message):
     """BulkPublishRequest is the message to bulk publish events to pubsub topic"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -571,11 +594,13 @@ class BulkPublishRequest(google.protobuf.message.Message):
 
 global___BulkPublishRequest = BulkPublishRequest
 
+@typing_extensions.final
 class BulkPublishRequestEntry(google.protobuf.message.Message):
     """BulkPublishRequestEntry is the message containing the event to be bulk published"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -616,6 +641,7 @@ class BulkPublishRequestEntry(google.protobuf.message.Message):
 
 global___BulkPublishRequestEntry = BulkPublishRequestEntry
 
+@typing_extensions.final
 class BulkPublishResponse(google.protobuf.message.Message):
     """BulkPublishResponse is the message returned from a BulkPublishEvent call"""
 
@@ -634,6 +660,7 @@ class BulkPublishResponse(google.protobuf.message.Message):
 
 global___BulkPublishResponse = BulkPublishResponse
 
+@typing_extensions.final
 class BulkPublishResponseFailedEntry(google.protobuf.message.Message):
     """BulkPublishResponseFailedEntry is the message containing the entryID and error of a failed event in BulkPublishEvent call"""
 
@@ -655,11 +682,13 @@ class BulkPublishResponseFailedEntry(google.protobuf.message.Message):
 
 global___BulkPublishResponseFailedEntry = BulkPublishResponseFailedEntry
 
+@typing_extensions.final
 class InvokeBindingRequest(google.protobuf.message.Message):
     """InvokeBindingRequest is the message to send data to output bindings"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -707,11 +736,13 @@ class InvokeBindingRequest(google.protobuf.message.Message):
 
 global___InvokeBindingRequest = InvokeBindingRequest
 
+@typing_extensions.final
 class InvokeBindingResponse(google.protobuf.message.Message):
     """InvokeBindingResponse is the message returned from an output binding invocation"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -744,11 +775,13 @@ class InvokeBindingResponse(google.protobuf.message.Message):
 
 global___InvokeBindingResponse = InvokeBindingResponse
 
+@typing_extensions.final
 class GetSecretRequest(google.protobuf.message.Message):
     """GetSecretRequest is the message to get secret from secret store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -785,11 +818,13 @@ class GetSecretRequest(google.protobuf.message.Message):
 
 global___GetSecretRequest = GetSecretRequest
 
+@typing_extensions.final
 class GetSecretResponse(google.protobuf.message.Message):
     """GetSecretResponse is the response message to convey the requested secret."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class DataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -820,11 +855,13 @@ class GetSecretResponse(google.protobuf.message.Message):
 
 global___GetSecretResponse = GetSecretResponse
 
+@typing_extensions.final
 class GetBulkSecretRequest(google.protobuf.message.Message):
     """GetBulkSecretRequest is the message to get the secrets from secret store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -857,11 +894,13 @@ class GetBulkSecretRequest(google.protobuf.message.Message):
 
 global___GetBulkSecretRequest = GetBulkSecretRequest
 
+@typing_extensions.final
 class SecretResponse(google.protobuf.message.Message):
     """SecretResponse is a map of decrypted string/string values"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class SecretsEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -889,11 +928,13 @@ class SecretResponse(google.protobuf.message.Message):
 
 global___SecretResponse = SecretResponse
 
+@typing_extensions.final
 class GetBulkSecretResponse(google.protobuf.message.Message):
     """GetBulkSecretResponse is the response message to convey the requested secrets."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class DataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -926,6 +967,7 @@ class GetBulkSecretResponse(google.protobuf.message.Message):
 
 global___GetBulkSecretResponse = GetBulkSecretResponse
 
+@typing_extensions.final
 class TransactionalStateOperation(google.protobuf.message.Message):
     """TransactionalStateOperation is the message to execute a specified operation with a key-value pair."""
 
@@ -949,11 +991,13 @@ class TransactionalStateOperation(google.protobuf.message.Message):
 
 global___TransactionalStateOperation = TransactionalStateOperation
 
+@typing_extensions.final
 class ExecuteStateTransactionRequest(google.protobuf.message.Message):
     """ExecuteStateTransactionRequest is the message to execute multiple operations on a specified store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -991,6 +1035,7 @@ class ExecuteStateTransactionRequest(google.protobuf.message.Message):
 
 global___ExecuteStateTransactionRequest = ExecuteStateTransactionRequest
 
+@typing_extensions.final
 class RegisterActorTimerRequest(google.protobuf.message.Message):
     """RegisterActorTimerRequest is the message to register a timer for an actor of a given type and id."""
 
@@ -1028,6 +1073,7 @@ class RegisterActorTimerRequest(google.protobuf.message.Message):
 
 global___RegisterActorTimerRequest = RegisterActorTimerRequest
 
+@typing_extensions.final
 class UnregisterActorTimerRequest(google.protobuf.message.Message):
     """UnregisterActorTimerRequest is the message to unregister an actor timer"""
 
@@ -1050,6 +1096,7 @@ class UnregisterActorTimerRequest(google.protobuf.message.Message):
 
 global___UnregisterActorTimerRequest = UnregisterActorTimerRequest
 
+@typing_extensions.final
 class RegisterActorReminderRequest(google.protobuf.message.Message):
     """RegisterActorReminderRequest is the message to register a reminder for an actor of a given type and id."""
 
@@ -1084,6 +1131,7 @@ class RegisterActorReminderRequest(google.protobuf.message.Message):
 
 global___RegisterActorReminderRequest = RegisterActorReminderRequest
 
+@typing_extensions.final
 class UnregisterActorReminderRequest(google.protobuf.message.Message):
     """UnregisterActorReminderRequest is the message to unregister an actor reminder."""
 
@@ -1106,6 +1154,7 @@ class UnregisterActorReminderRequest(google.protobuf.message.Message):
 
 global___UnregisterActorReminderRequest = UnregisterActorReminderRequest
 
+@typing_extensions.final
 class RenameActorReminderRequest(google.protobuf.message.Message):
     """RenameActorReminderRequest is the message to rename an actor reminder."""
 
@@ -1131,6 +1180,7 @@ class RenameActorReminderRequest(google.protobuf.message.Message):
 
 global___RenameActorReminderRequest = RenameActorReminderRequest
 
+@typing_extensions.final
 class GetActorStateRequest(google.protobuf.message.Message):
     """GetActorStateRequest is the message to get key-value states from specific actor."""
 
@@ -1153,22 +1203,45 @@ class GetActorStateRequest(google.protobuf.message.Message):
 
 global___GetActorStateRequest = GetActorStateRequest
 
+@typing_extensions.final
 class GetActorStateResponse(google.protobuf.message.Message):
     """GetActorStateResponse is the response conveying the actor's state value."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
     DATA_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
     data: builtins.bytes
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        """The metadata which will be sent to app."""
     def __init__(
         self,
         *,
         data: builtins.bytes = ...,
+        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["data", b"data"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data", b"data", "metadata", b"metadata"]) -> None: ...
 
 global___GetActorStateResponse = GetActorStateResponse
 
+@typing_extensions.final
 class ExecuteActorStateTransactionRequest(google.protobuf.message.Message):
     """ExecuteActorStateTransactionRequest is the message to execute multiple operations on a specified actor."""
 
@@ -1192,11 +1265,13 @@ class ExecuteActorStateTransactionRequest(google.protobuf.message.Message):
 
 global___ExecuteActorStateTransactionRequest = ExecuteActorStateTransactionRequest
 
+@typing_extensions.final
 class TransactionalActorStateOperation(google.protobuf.message.Message):
     """TransactionalActorStateOperation is the message to execute a specified operation with a key-value pair."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1240,11 +1315,13 @@ class TransactionalActorStateOperation(google.protobuf.message.Message):
 
 global___TransactionalActorStateOperation = TransactionalActorStateOperation
 
+@typing_extensions.final
 class InvokeActorRequest(google.protobuf.message.Message):
     """InvokeActorRequest is the message to call an actor."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1284,6 +1361,7 @@ class InvokeActorRequest(google.protobuf.message.Message):
 
 global___InvokeActorRequest = InvokeActorRequest
 
+@typing_extensions.final
 class InvokeActorResponse(google.protobuf.message.Message):
     """InvokeActorResponse is the method that returns an actor invocation response."""
 
@@ -1300,11 +1378,13 @@ class InvokeActorResponse(google.protobuf.message.Message):
 
 global___InvokeActorResponse = InvokeActorResponse
 
+@typing_extensions.final
 class GetMetadataResponse(google.protobuf.message.Message):
     """GetMetadataResponse is a message that is returned on GetMetadata rpc call"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class ExtendedMetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1326,6 +1406,9 @@ class GetMetadataResponse(google.protobuf.message.Message):
     EXTENDED_METADATA_FIELD_NUMBER: builtins.int
     SUBSCRIPTIONS_FIELD_NUMBER: builtins.int
     HTTP_ENDPOINTS_FIELD_NUMBER: builtins.int
+    APP_CONNECTION_PROPERTIES_FIELD_NUMBER: builtins.int
+    RUNTIME_VERSION_FIELD_NUMBER: builtins.int
+    ENABLED_FEATURES_FIELD_NUMBER: builtins.int
     id: builtins.str
     @property
     def active_actors_count(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ActiveActorsCount]: ...
@@ -1337,6 +1420,11 @@ class GetMetadataResponse(google.protobuf.message.Message):
     def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___PubsubSubscription]: ...
     @property
     def http_endpoints(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___MetadataHTTPEndpoint]: ...
+    @property
+    def app_connection_properties(self) -> global___AppConnectionProperties: ...
+    runtime_version: builtins.str
+    @property
+    def enabled_features(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]: ...
     def __init__(
         self,
         *,
@@ -1346,11 +1434,16 @@ class GetMetadataResponse(google.protobuf.message.Message):
         extended_metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         subscriptions: collections.abc.Iterable[global___PubsubSubscription] | None = ...,
         http_endpoints: collections.abc.Iterable[global___MetadataHTTPEndpoint] | None = ...,
+        app_connection_properties: global___AppConnectionProperties | None = ...,
+        runtime_version: builtins.str = ...,
+        enabled_features: collections.abc.Iterable[builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count", b"active_actors_count", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "subscriptions", b"subscriptions"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["app_connection_properties", b"app_connection_properties"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count", b"active_actors_count", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "subscriptions", b"subscriptions"]) -> None: ...
 
 global___GetMetadataResponse = GetMetadataResponse
 
+@typing_extensions.final
 class ActiveActorsCount(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1368,6 +1461,7 @@ class ActiveActorsCount(google.protobuf.message.Message):
 
 global___ActiveActorsCount = ActiveActorsCount
 
+@typing_extensions.final
 class RegisteredComponents(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1392,6 +1486,7 @@ class RegisteredComponents(google.protobuf.message.Message):
 
 global___RegisteredComponents = RegisteredComponents
 
+@typing_extensions.final
 class MetadataHTTPEndpoint(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1406,9 +1501,64 @@ class MetadataHTTPEndpoint(google.protobuf.message.Message):
 
 global___MetadataHTTPEndpoint = MetadataHTTPEndpoint
 
+@typing_extensions.final
+class AppConnectionProperties(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    PORT_FIELD_NUMBER: builtins.int
+    PROTOCOL_FIELD_NUMBER: builtins.int
+    CHANNEL_ADDRESS_FIELD_NUMBER: builtins.int
+    MAX_CONCURRENCY_FIELD_NUMBER: builtins.int
+    HEALTH_FIELD_NUMBER: builtins.int
+    port: builtins.int
+    protocol: builtins.str
+    channel_address: builtins.str
+    max_concurrency: builtins.int
+    @property
+    def health(self) -> global___AppConnectionHealthProperties: ...
+    def __init__(
+        self,
+        *,
+        port: builtins.int = ...,
+        protocol: builtins.str = ...,
+        channel_address: builtins.str = ...,
+        max_concurrency: builtins.int = ...,
+        health: global___AppConnectionHealthProperties | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["health", b"health"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["channel_address", b"channel_address", "health", b"health", "max_concurrency", b"max_concurrency", "port", b"port", "protocol", b"protocol"]) -> None: ...
+
+global___AppConnectionProperties = AppConnectionProperties
+
+@typing_extensions.final
+class AppConnectionHealthProperties(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    HEALTH_CHECK_PATH_FIELD_NUMBER: builtins.int
+    HEALTH_PROBE_INTERVAL_FIELD_NUMBER: builtins.int
+    HEALTH_PROBE_TIMEOUT_FIELD_NUMBER: builtins.int
+    HEALTH_THRESHOLD_FIELD_NUMBER: builtins.int
+    health_check_path: builtins.str
+    health_probe_interval: builtins.str
+    health_probe_timeout: builtins.str
+    health_threshold: builtins.int
+    def __init__(
+        self,
+        *,
+        health_check_path: builtins.str = ...,
+        health_probe_interval: builtins.str = ...,
+        health_probe_timeout: builtins.str = ...,
+        health_threshold: builtins.int = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["health_check_path", b"health_check_path", "health_probe_interval", b"health_probe_interval", "health_probe_timeout", b"health_probe_timeout", "health_threshold", b"health_threshold"]) -> None: ...
+
+global___AppConnectionHealthProperties = AppConnectionHealthProperties
+
+@typing_extensions.final
 class PubsubSubscription(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1450,6 +1600,7 @@ class PubsubSubscription(google.protobuf.message.Message):
 
 global___PubsubSubscription = PubsubSubscription
 
+@typing_extensions.final
 class PubsubSubscriptionRules(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1465,6 +1616,7 @@ class PubsubSubscriptionRules(google.protobuf.message.Message):
 
 global___PubsubSubscriptionRules = PubsubSubscriptionRules
 
+@typing_extensions.final
 class PubsubSubscriptionRule(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1482,6 +1634,7 @@ class PubsubSubscriptionRule(google.protobuf.message.Message):
 
 global___PubsubSubscriptionRule = PubsubSubscriptionRule
 
+@typing_extensions.final
 class SetMetadataRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1499,11 +1652,13 @@ class SetMetadataRequest(google.protobuf.message.Message):
 
 global___SetMetadataRequest = SetMetadataRequest
 
+@typing_extensions.final
 class GetConfigurationRequest(google.protobuf.message.Message):
     """GetConfigurationRequest is the message to get a list of key-value configuration from specified configuration store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1544,6 +1699,7 @@ class GetConfigurationRequest(google.protobuf.message.Message):
 
 global___GetConfigurationRequest = GetConfigurationRequest
 
+@typing_extensions.final
 class GetConfigurationResponse(google.protobuf.message.Message):
     """GetConfigurationResponse is the response conveying the list of configuration values.
     It should be the FULL configuration of specified application which contains all of its configuration items.
@@ -1551,6 +1707,7 @@ class GetConfigurationResponse(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class ItemsEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1580,11 +1737,13 @@ class GetConfigurationResponse(google.protobuf.message.Message):
 
 global___GetConfigurationResponse = GetConfigurationResponse
 
+@typing_extensions.final
 class SubscribeConfigurationRequest(google.protobuf.message.Message):
     """SubscribeConfigurationRequest is the message to get a list of key-value configuration from specified configuration store."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class MetadataEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1625,6 +1784,7 @@ class SubscribeConfigurationRequest(google.protobuf.message.Message):
 
 global___SubscribeConfigurationRequest = SubscribeConfigurationRequest
 
+@typing_extensions.final
 class UnsubscribeConfigurationRequest(google.protobuf.message.Message):
     """UnSubscribeConfigurationRequest is the message to stop watching the key-value configuration."""
 
@@ -1646,9 +1806,11 @@ class UnsubscribeConfigurationRequest(google.protobuf.message.Message):
 
 global___UnsubscribeConfigurationRequest = UnsubscribeConfigurationRequest
 
+@typing_extensions.final
 class SubscribeConfigurationResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class ItemsEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1683,6 +1845,7 @@ class SubscribeConfigurationResponse(google.protobuf.message.Message):
 
 global___SubscribeConfigurationResponse = SubscribeConfigurationResponse
 
+@typing_extensions.final
 class UnsubscribeConfigurationResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1700,6 +1863,7 @@ class UnsubscribeConfigurationResponse(google.protobuf.message.Message):
 
 global___UnsubscribeConfigurationResponse = UnsubscribeConfigurationResponse
 
+@typing_extensions.final
 class TryLockRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1744,6 +1908,7 @@ class TryLockRequest(google.protobuf.message.Message):
 
 global___TryLockRequest = TryLockRequest
 
+@typing_extensions.final
 class TryLockResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1758,6 +1923,7 @@ class TryLockResponse(google.protobuf.message.Message):
 
 global___TryLockResponse = TryLockResponse
 
+@typing_extensions.final
 class UnlockRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1779,6 +1945,7 @@ class UnlockRequest(google.protobuf.message.Message):
 
 global___UnlockRequest = UnlockRequest
 
+@typing_extensions.final
 class UnlockResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1810,6 +1977,7 @@ class UnlockResponse(google.protobuf.message.Message):
 
 global___UnlockResponse = UnlockResponse
 
+@typing_extensions.final
 class SubtleGetKeyRequest(google.protobuf.message.Message):
     """SubtleGetKeyRequest is the request object for SubtleGetKeyAlpha1."""
 
@@ -1852,6 +2020,7 @@ class SubtleGetKeyRequest(google.protobuf.message.Message):
 
 global___SubtleGetKeyRequest = SubtleGetKeyRequest
 
+@typing_extensions.final
 class SubtleGetKeyResponse(google.protobuf.message.Message):
     """SubtleGetKeyResponse is the response for SubtleGetKeyAlpha1."""
 
@@ -1875,6 +2044,7 @@ class SubtleGetKeyResponse(google.protobuf.message.Message):
 
 global___SubtleGetKeyResponse = SubtleGetKeyResponse
 
+@typing_extensions.final
 class SubtleEncryptRequest(google.protobuf.message.Message):
     """SubtleEncryptRequest is the request for SubtleEncryptAlpha1."""
 
@@ -1914,6 +2084,7 @@ class SubtleEncryptRequest(google.protobuf.message.Message):
 
 global___SubtleEncryptRequest = SubtleEncryptRequest
 
+@typing_extensions.final
 class SubtleEncryptResponse(google.protobuf.message.Message):
     """SubtleEncryptResponse is the response for SubtleEncryptAlpha1."""
 
@@ -1937,6 +2108,7 @@ class SubtleEncryptResponse(google.protobuf.message.Message):
 
 global___SubtleEncryptResponse = SubtleEncryptResponse
 
+@typing_extensions.final
 class SubtleDecryptRequest(google.protobuf.message.Message):
     """SubtleDecryptRequest is the request for SubtleDecryptAlpha1."""
 
@@ -1982,6 +2154,7 @@ class SubtleDecryptRequest(google.protobuf.message.Message):
 
 global___SubtleDecryptRequest = SubtleDecryptRequest
 
+@typing_extensions.final
 class SubtleDecryptResponse(google.protobuf.message.Message):
     """SubtleDecryptResponse is the response for SubtleDecryptAlpha1."""
 
@@ -1999,6 +2172,7 @@ class SubtleDecryptResponse(google.protobuf.message.Message):
 
 global___SubtleDecryptResponse = SubtleDecryptResponse
 
+@typing_extensions.final
 class SubtleWrapKeyRequest(google.protobuf.message.Message):
     """SubtleWrapKeyRequest is the request for SubtleWrapKeyAlpha1."""
 
@@ -2038,6 +2212,7 @@ class SubtleWrapKeyRequest(google.protobuf.message.Message):
 
 global___SubtleWrapKeyRequest = SubtleWrapKeyRequest
 
+@typing_extensions.final
 class SubtleWrapKeyResponse(google.protobuf.message.Message):
     """SubtleWrapKeyResponse is the response for SubtleWrapKeyAlpha1."""
 
@@ -2061,6 +2236,7 @@ class SubtleWrapKeyResponse(google.protobuf.message.Message):
 
 global___SubtleWrapKeyResponse = SubtleWrapKeyResponse
 
+@typing_extensions.final
 class SubtleUnwrapKeyRequest(google.protobuf.message.Message):
     """SubtleUnwrapKeyRequest is the request for SubtleUnwrapKeyAlpha1."""
 
@@ -2106,6 +2282,7 @@ class SubtleUnwrapKeyRequest(google.protobuf.message.Message):
 
 global___SubtleUnwrapKeyRequest = SubtleUnwrapKeyRequest
 
+@typing_extensions.final
 class SubtleUnwrapKeyResponse(google.protobuf.message.Message):
     """SubtleUnwrapKeyResponse is the response for SubtleUnwrapKeyAlpha1."""
 
@@ -2123,6 +2300,7 @@ class SubtleUnwrapKeyResponse(google.protobuf.message.Message):
 
 global___SubtleUnwrapKeyResponse = SubtleUnwrapKeyResponse
 
+@typing_extensions.final
 class SubtleSignRequest(google.protobuf.message.Message):
     """SubtleSignRequest is the request for SubtleSignAlpha1."""
 
@@ -2152,6 +2330,7 @@ class SubtleSignRequest(google.protobuf.message.Message):
 
 global___SubtleSignRequest = SubtleSignRequest
 
+@typing_extensions.final
 class SubtleSignResponse(google.protobuf.message.Message):
     """SubtleSignResponse is the response for SubtleSignAlpha1."""
 
@@ -2169,6 +2348,7 @@ class SubtleSignResponse(google.protobuf.message.Message):
 
 global___SubtleSignResponse = SubtleSignResponse
 
+@typing_extensions.final
 class SubtleVerifyRequest(google.protobuf.message.Message):
     """SubtleVerifyRequest is the request for SubtleVerifyAlpha1."""
 
@@ -2202,6 +2382,7 @@ class SubtleVerifyRequest(google.protobuf.message.Message):
 
 global___SubtleVerifyRequest = SubtleVerifyRequest
 
+@typing_extensions.final
 class SubtleVerifyResponse(google.protobuf.message.Message):
     """SubtleVerifyResponse is the response for SubtleVerifyAlpha1."""
 
@@ -2219,6 +2400,7 @@ class SubtleVerifyResponse(google.protobuf.message.Message):
 
 global___SubtleVerifyResponse = SubtleVerifyResponse
 
+@typing_extensions.final
 class EncryptRequest(google.protobuf.message.Message):
     """EncryptRequest is the request for EncryptAlpha1."""
 
@@ -2243,6 +2425,7 @@ class EncryptRequest(google.protobuf.message.Message):
 
 global___EncryptRequest = EncryptRequest
 
+@typing_extensions.final
 class EncryptRequestOptions(google.protobuf.message.Message):
     """EncryptRequestOptions contains options for the first message in the EncryptAlpha1 request."""
 
@@ -2289,6 +2472,7 @@ class EncryptRequestOptions(google.protobuf.message.Message):
 
 global___EncryptRequestOptions = EncryptRequestOptions
 
+@typing_extensions.final
 class EncryptResponse(google.protobuf.message.Message):
     """EncryptResponse is the response for EncryptAlpha1."""
 
@@ -2308,6 +2492,7 @@ class EncryptResponse(google.protobuf.message.Message):
 
 global___EncryptResponse = EncryptResponse
 
+@typing_extensions.final
 class DecryptRequest(google.protobuf.message.Message):
     """DecryptRequest is the request for DecryptAlpha1."""
 
@@ -2332,6 +2517,7 @@ class DecryptRequest(google.protobuf.message.Message):
 
 global___DecryptRequest = DecryptRequest
 
+@typing_extensions.final
 class DecryptRequestOptions(google.protobuf.message.Message):
     """DecryptRequestOptions contains options for the first message in the DecryptAlpha1 request."""
 
@@ -2356,6 +2542,7 @@ class DecryptRequestOptions(google.protobuf.message.Message):
 
 global___DecryptRequestOptions = DecryptRequestOptions
 
+@typing_extensions.final
 class DecryptResponse(google.protobuf.message.Message):
     """DecryptResponse is the response for DecryptAlpha1."""
 
@@ -2375,8 +2562,9 @@ class DecryptResponse(google.protobuf.message.Message):
 
 global___DecryptResponse = DecryptResponse
 
+@typing_extensions.final
 class GetWorkflowRequest(google.protobuf.message.Message):
-    """GetWorkflowRequest is the request for GetWorkflowAlpha1."""
+    """GetWorkflowRequest is the request for GetWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2396,11 +2584,13 @@ class GetWorkflowRequest(google.protobuf.message.Message):
 
 global___GetWorkflowRequest = GetWorkflowRequest
 
+@typing_extensions.final
 class GetWorkflowResponse(google.protobuf.message.Message):
-    """GetWorkflowResponse is the response for GetWorkflowAlpha1."""
+    """GetWorkflowResponse is the response for GetWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class PropertiesEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2452,11 +2642,13 @@ class GetWorkflowResponse(google.protobuf.message.Message):
 
 global___GetWorkflowResponse = GetWorkflowResponse
 
+@typing_extensions.final
 class StartWorkflowRequest(google.protobuf.message.Message):
-    """StartWorkflowRequest is the request for StartWorkflowAlpha1."""
+    """StartWorkflowRequest is the request for StartWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
     class OptionsEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2501,8 +2693,9 @@ class StartWorkflowRequest(google.protobuf.message.Message):
 
 global___StartWorkflowRequest = StartWorkflowRequest
 
+@typing_extensions.final
 class StartWorkflowResponse(google.protobuf.message.Message):
-    """StartWorkflowResponse is the response for StartWorkflowAlpha1."""
+    """StartWorkflowResponse is the response for StartWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2518,8 +2711,9 @@ class StartWorkflowResponse(google.protobuf.message.Message):
 
 global___StartWorkflowResponse = StartWorkflowResponse
 
+@typing_extensions.final
 class TerminateWorkflowRequest(google.protobuf.message.Message):
-    """TerminateWorkflowRequest is the request for TerminateWorkflowAlpha1."""
+    """TerminateWorkflowRequest is the request for TerminateWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2539,8 +2733,9 @@ class TerminateWorkflowRequest(google.protobuf.message.Message):
 
 global___TerminateWorkflowRequest = TerminateWorkflowRequest
 
+@typing_extensions.final
 class PauseWorkflowRequest(google.protobuf.message.Message):
-    """PauseWorkflowRequest is the request for PauseWorkflowAlpha1."""
+    """PauseWorkflowRequest is the request for PauseWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2560,8 +2755,9 @@ class PauseWorkflowRequest(google.protobuf.message.Message):
 
 global___PauseWorkflowRequest = PauseWorkflowRequest
 
+@typing_extensions.final
 class ResumeWorkflowRequest(google.protobuf.message.Message):
-    """ResumeWorkflowRequest is the request for ResumeWorkflowAlpha1."""
+    """ResumeWorkflowRequest is the request for ResumeWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2581,8 +2777,9 @@ class ResumeWorkflowRequest(google.protobuf.message.Message):
 
 global___ResumeWorkflowRequest = ResumeWorkflowRequest
 
+@typing_extensions.final
 class RaiseEventWorkflowRequest(google.protobuf.message.Message):
-    """RaiseEventWorkflowRequest is the request for RaiseEventWorkflowAlpha1."""
+    """RaiseEventWorkflowRequest is the request for RaiseEventWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2610,8 +2807,9 @@ class RaiseEventWorkflowRequest(google.protobuf.message.Message):
 
 global___RaiseEventWorkflowRequest = RaiseEventWorkflowRequest
 
+@typing_extensions.final
 class PurgeWorkflowRequest(google.protobuf.message.Message):
-    """PurgeWorkflowRequest is the request for PurgeWorkflowAlpha1."""
+    """PurgeWorkflowRequest is the request for PurgeWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 

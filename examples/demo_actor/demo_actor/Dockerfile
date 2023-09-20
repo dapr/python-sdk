@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.7-slim-buster
+FROM python:3.9-slim-buster
 
 WORKDIR /app
 COPY . . 
