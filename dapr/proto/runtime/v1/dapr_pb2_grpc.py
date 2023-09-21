@@ -252,6 +252,41 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RaiseEventWorkflowRequest.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
+        self.StartWorkflowBeta1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/StartWorkflowBeta1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.StartWorkflowRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.StartWorkflowResponse.FromString,
+                )
+        self.GetWorkflowBeta1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/GetWorkflowBeta1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetWorkflowRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetWorkflowResponse.FromString,
+                )
+        self.PurgeWorkflowBeta1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/PurgeWorkflowBeta1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PurgeWorkflowRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
+        self.TerminateWorkflowBeta1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/TerminateWorkflowBeta1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TerminateWorkflowRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
+        self.PauseWorkflowBeta1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/PauseWorkflowBeta1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PauseWorkflowRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
+        self.ResumeWorkflowBeta1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/ResumeWorkflowBeta1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ResumeWorkflowRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
+        self.RaiseEventWorkflowBeta1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/RaiseEventWorkflowBeta1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RaiseEventWorkflowRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
         self.Shutdown = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/Shutdown',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
@@ -593,6 +628,55 @@ class DaprServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def StartWorkflowBeta1(self, request, context):
+        """Starts a new instance of a workflow
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetWorkflowBeta1(self, request, context):
+        """Gets details about a started workflow instance
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PurgeWorkflowBeta1(self, request, context):
+        """Purge Workflow
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def TerminateWorkflowBeta1(self, request, context):
+        """Terminates a running workflow instance
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PauseWorkflowBeta1(self, request, context):
+        """Pauses a running workflow instance
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ResumeWorkflowBeta1(self, request, context):
+        """Resumes a paused workflow instance
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RaiseEventWorkflowBeta1(self, request, context):
+        """Raise an event to a running workflow instance
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def Shutdown(self, request, context):
         """Shutdown the sidecar
         """
@@ -835,6 +919,41 @@ def add_DaprServicer_to_server(servicer, server):
             ),
             'RaiseEventWorkflowAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.RaiseEventWorkflowAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RaiseEventWorkflowRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'StartWorkflowBeta1': grpc.unary_unary_rpc_method_handler(
+                    servicer.StartWorkflowBeta1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.StartWorkflowRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.StartWorkflowResponse.SerializeToString,
+            ),
+            'GetWorkflowBeta1': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetWorkflowBeta1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetWorkflowRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetWorkflowResponse.SerializeToString,
+            ),
+            'PurgeWorkflowBeta1': grpc.unary_unary_rpc_method_handler(
+                    servicer.PurgeWorkflowBeta1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PurgeWorkflowRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'TerminateWorkflowBeta1': grpc.unary_unary_rpc_method_handler(
+                    servicer.TerminateWorkflowBeta1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TerminateWorkflowRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'PauseWorkflowBeta1': grpc.unary_unary_rpc_method_handler(
+                    servicer.PauseWorkflowBeta1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PauseWorkflowRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'ResumeWorkflowBeta1': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResumeWorkflowBeta1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ResumeWorkflowRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'RaiseEventWorkflowBeta1': grpc.unary_unary_rpc_method_handler(
+                    servicer.RaiseEventWorkflowBeta1,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RaiseEventWorkflowRequest.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
@@ -1648,6 +1767,125 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/RaiseEventWorkflowAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RaiseEventWorkflowRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def StartWorkflowBeta1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/StartWorkflowBeta1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.StartWorkflowRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.StartWorkflowResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetWorkflowBeta1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/GetWorkflowBeta1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetWorkflowRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.GetWorkflowResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def PurgeWorkflowBeta1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/PurgeWorkflowBeta1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PurgeWorkflowRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def TerminateWorkflowBeta1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/TerminateWorkflowBeta1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.TerminateWorkflowRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def PauseWorkflowBeta1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/PauseWorkflowBeta1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.PauseWorkflowRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ResumeWorkflowBeta1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/ResumeWorkflowBeta1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ResumeWorkflowRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def RaiseEventWorkflowBeta1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/RaiseEventWorkflowBeta1',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.RaiseEventWorkflowRequest.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,

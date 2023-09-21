@@ -1209,14 +1209,35 @@ class GetActorStateResponse(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
+    @typing_extensions.final
+    class MetadataEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: builtins.str
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: builtins.str = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+
     DATA_FIELD_NUMBER: builtins.int
+    METADATA_FIELD_NUMBER: builtins.int
     data: builtins.bytes
+    @property
+    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        """The metadata which will be sent to app."""
     def __init__(
         self,
         *,
         data: builtins.bytes = ...,
+        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["data", b"data"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data", b"data", "metadata", b"metadata"]) -> None: ...
 
 global___GetActorStateResponse = GetActorStateResponse
 
@@ -1932,7 +1953,7 @@ class UnlockResponse(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _StatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[UnlockResponse._Status.ValueType], builtins.type):
+    class _StatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[UnlockResponse._Status.ValueType], builtins.type):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         SUCCESS: UnlockResponse._Status.ValueType  # 0
         LOCK_DOES_NOT_EXIST: UnlockResponse._Status.ValueType  # 1
@@ -1966,7 +1987,7 @@ class SubtleGetKeyRequest(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _KeyFormatEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[SubtleGetKeyRequest._KeyFormat.ValueType], builtins.type):
+    class _KeyFormatEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[SubtleGetKeyRequest._KeyFormat.ValueType], builtins.type):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         PEM: SubtleGetKeyRequest._KeyFormat.ValueType  # 0
         """PEM (PKIX) (default)"""
@@ -2543,7 +2564,7 @@ global___DecryptResponse = DecryptResponse
 
 @typing_extensions.final
 class GetWorkflowRequest(google.protobuf.message.Message):
-    """GetWorkflowRequest is the request for GetWorkflowAlpha1."""
+    """GetWorkflowRequest is the request for GetWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2565,7 +2586,7 @@ global___GetWorkflowRequest = GetWorkflowRequest
 
 @typing_extensions.final
 class GetWorkflowResponse(google.protobuf.message.Message):
-    """GetWorkflowResponse is the response for GetWorkflowAlpha1."""
+    """GetWorkflowResponse is the response for GetWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2623,7 +2644,7 @@ global___GetWorkflowResponse = GetWorkflowResponse
 
 @typing_extensions.final
 class StartWorkflowRequest(google.protobuf.message.Message):
-    """StartWorkflowRequest is the request for StartWorkflowAlpha1."""
+    """StartWorkflowRequest is the request for StartWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2674,7 +2695,7 @@ global___StartWorkflowRequest = StartWorkflowRequest
 
 @typing_extensions.final
 class StartWorkflowResponse(google.protobuf.message.Message):
-    """StartWorkflowResponse is the response for StartWorkflowAlpha1."""
+    """StartWorkflowResponse is the response for StartWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2692,7 +2713,7 @@ global___StartWorkflowResponse = StartWorkflowResponse
 
 @typing_extensions.final
 class TerminateWorkflowRequest(google.protobuf.message.Message):
-    """TerminateWorkflowRequest is the request for TerminateWorkflowAlpha1."""
+    """TerminateWorkflowRequest is the request for TerminateWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2714,7 +2735,7 @@ global___TerminateWorkflowRequest = TerminateWorkflowRequest
 
 @typing_extensions.final
 class PauseWorkflowRequest(google.protobuf.message.Message):
-    """PauseWorkflowRequest is the request for PauseWorkflowAlpha1."""
+    """PauseWorkflowRequest is the request for PauseWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2736,7 +2757,7 @@ global___PauseWorkflowRequest = PauseWorkflowRequest
 
 @typing_extensions.final
 class ResumeWorkflowRequest(google.protobuf.message.Message):
-    """ResumeWorkflowRequest is the request for ResumeWorkflowAlpha1."""
+    """ResumeWorkflowRequest is the request for ResumeWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2758,7 +2779,7 @@ global___ResumeWorkflowRequest = ResumeWorkflowRequest
 
 @typing_extensions.final
 class RaiseEventWorkflowRequest(google.protobuf.message.Message):
-    """RaiseEventWorkflowRequest is the request for RaiseEventWorkflowAlpha1."""
+    """RaiseEventWorkflowRequest is the request for RaiseEventWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -2788,7 +2809,7 @@ global___RaiseEventWorkflowRequest = RaiseEventWorkflowRequest
 
 @typing_extensions.final
 class PurgeWorkflowRequest(google.protobuf.message.Message):
-    """PurgeWorkflowRequest is the request for PurgeWorkflowAlpha1."""
+    """PurgeWorkflowRequest is the request for PurgeWorkflowBeta1."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
