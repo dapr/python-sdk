@@ -22,6 +22,9 @@ from durabletask import client
 from dapr.ext.workflow.workflow_state import WorkflowState
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.util import getAddress
+from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
+from dapr.conf import settings
+
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -39,7 +42,10 @@ class DaprWorkflowClient:
     """
     def __init__(self, host: Optional[str] = None, port: Optional[str] = None):
         address = getAddress(host, port)
-        self.__obj = client.TaskHubGrpcClient(host_address=address)
+        metadata = tuple()
+        if settings.DAPR_API_TOKEN:
+            metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
+        self.__obj = client.TaskHubGrpcClient(host_address=address, metadata=metadata)
 
     def schedule_new_workflow(self,
                               workflow: Workflow, *,
