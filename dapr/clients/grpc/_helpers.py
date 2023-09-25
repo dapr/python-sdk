@@ -159,7 +159,6 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         Returns:
             A response object after invoking the continuation callable
         """
-
         # Pre-process or intercept call
         new_call_details = self._intercept_call(client_call_details)
         # Call continuation
