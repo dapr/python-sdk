@@ -1141,7 +1141,7 @@ class DaprGrpcClient:
                 :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(workflow_component=workflow_component,
                                workflow_name=workflow_name)
@@ -1169,7 +1169,7 @@ class DaprGrpcClient:
             input=encoded_data)
 
         try:
-            response = self._stub.StartWorkflowAlpha1(req)
+            response = self._stub.StartWorkflowBeta1(req)
             return StartWorkflowResponse(instance_id=response.instance_id)
         except RpcError as err:
             raise DaprInternalError(err.details())
@@ -1190,7 +1190,7 @@ class DaprGrpcClient:
                 :class:`GetWorkflowResponse`: Instance ID associated with the started workflow
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1200,7 +1200,7 @@ class DaprGrpcClient:
             workflow_component=workflow_component)
 
         try:
-            resp = self._stub.GetWorkflowAlpha1(req)
+            resp = self._stub.GetWorkflowBeta1(req)
             if resp.created_at is None:
                 resp.created_at = datetime.now()
             if resp.last_updated_at is None:
@@ -1231,7 +1231,7 @@ class DaprGrpcClient:
 
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1241,7 +1241,7 @@ class DaprGrpcClient:
             workflow_component=workflow_component)
 
         try:
-            _, call = self._stub.TerminateWorkflowAlpha1.with_call(req)
+            _, call = self._stub.TerminateWorkflowBeta1.with_call(req)
             return DaprResponse(
                 headers=call.initial_metadata())
         except RpcError as err:
@@ -1273,7 +1273,7 @@ class DaprGrpcClient:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component,
@@ -1303,7 +1303,7 @@ class DaprGrpcClient:
             event_data=encoded_data)
 
         try:
-            _, call = self._stub.RaiseEventWorkflowAlpha1.with_call(req)
+            _, call = self._stub.RaiseEventWorkflowBeta1.with_call(req)
             return DaprResponse(
                 headers=call.initial_metadata())
         except RpcError as err:
@@ -1326,7 +1326,7 @@ class DaprGrpcClient:
 
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1336,7 +1336,7 @@ class DaprGrpcClient:
             workflow_component=workflow_component)
 
         try:
-            _, call = self._stub.PauseWorkflowAlpha1.with_call(req)
+            _, call = self._stub.PauseWorkflowBeta1.with_call(req)
 
             return DaprResponse(
                 headers=call.initial_metadata())
@@ -1359,7 +1359,7 @@ class DaprGrpcClient:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1369,7 +1369,7 @@ class DaprGrpcClient:
             workflow_component=workflow_component)
 
         try:
-            _, call = self._stub.ResumeWorkflowAlpha1.with_call(req)
+            _, call = self._stub.ResumeWorkflowBeta1.with_call(req)
 
             return DaprResponse(
                 headers=call.initial_metadata())
@@ -1392,7 +1392,7 @@ class DaprGrpcClient:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1402,7 +1402,7 @@ class DaprGrpcClient:
             workflow_component=workflow_component)
 
         try:
-            _, call = self._stub.PurgeWorkflowAlpha1.with_call(req)
+            _, call = self._stub.PurgeWorkflowBeta1.with_call(req)
 
             return DaprResponse(
                 headers=call.initial_metadata())
