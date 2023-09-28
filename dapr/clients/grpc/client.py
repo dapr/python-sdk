@@ -1141,7 +1141,7 @@ class DaprGrpcClient:
                 :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(workflow_component=workflow_component,
                                workflow_name=workflow_name)
@@ -1190,7 +1190,7 @@ class DaprGrpcClient:
                 :class:`GetWorkflowResponse`: Instance ID associated with the started workflow
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1231,7 +1231,7 @@ class DaprGrpcClient:
 
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1273,7 +1273,7 @@ class DaprGrpcClient:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component,
@@ -1326,7 +1326,7 @@ class DaprGrpcClient:
 
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1359,7 +1359,7 @@ class DaprGrpcClient:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
@@ -1392,7 +1392,7 @@ class DaprGrpcClient:
                 :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is an Alpha version and is subject to change.',
+        warn('The Workflow API is a Beta version and is subject to change.',
              UserWarning, stacklevel=2)
         validateNotBlankString(instance_id=instance_id,
                                workflow_component=workflow_component)
