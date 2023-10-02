@@ -47,10 +47,11 @@ def main():
         host = settings.DAPR_RUNTIME_HOST
         port = settings.DAPR_GRPC_PORT
         workflowRuntime = WorkflowRuntime(host, port)
-        workflowRuntime = WorkflowRuntime()
         workflowRuntime.register_workflow(hello_world_wf)
         workflowRuntime.register_activity(hello_act)
         workflowRuntime.start()
+
+        sleep(2)
 
         print("==========Start Counter Increase as per Input:==========")
         start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
@@ -70,7 +71,7 @@ def main():
         d.resume_workflow(instance_id=instanceId, workflow_component=workflowComponent)
         getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
         print(f"Get response from {workflowName} after resume call: {getResponse.runtime_status}")
-        
+
         sleep(1)
         # Raise event
         d.raise_workflow_event(instance_id=instanceId, workflow_component=workflowComponent,
