@@ -181,5 +181,5 @@ The sample then demonstrated terminating a workflow by:
 ```
 
 ## Next steps
-- [Learn more about Dapr workflow]({{< ref workflow >}})
+- [Learn more about Dapr workflow]({{< ref workflow-overview.md >}})
 - [Workflow API reference]({{< ref workflow_api.md >}})
