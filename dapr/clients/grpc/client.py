@@ -52,7 +52,7 @@ from dapr.clients.grpc._helpers import (
     validateNotNone,
     validateNotBlankString,
 )
-from dapr.conf.helpers import parse_endpoint
+from dapr.conf.helpers import parse_grpc_endpoint
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
@@ -138,15 +138,17 @@ class DaprGrpcClient:
             address = settings.DAPR_GRPC_ENDPOINT or (f"{settings.DAPR_RUNTIME_HOST}:"
                                                       f"{settings.DAPR_GRPC_PORT}")
 
-        self._scheme, self._hostname, self._port = parse_endpoint(address)
+        self._endpoint = parse_grpc_endpoint(address)
 
-        if self._scheme == "https":
-            self._channel = grpc.secure_channel(f"{self._hostname}:{self._port}",  # type: ignore
+        if self._endpoint.is_secure():
+            self._channel = grpc.secure_channel(self._endpoint.to_string(),
+                                                # type: ignore
                                                 self.get_credentials(),
 
                                                 options=options)
         else:
-            self._channel = grpc.insecure_channel(address, options=options)     # type: ignore
+            self._channel = grpc.insecure_channel(self._endpoint.to_string(),
+                                                  options=options)  # type: ignore
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor([
@@ -1431,7 +1433,7 @@ class DaprGrpcClient:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout_s)
                 try:
-                    s.connect((self._hostname, self._port))
+                    s.connect((self._endpoint.hostname, self._endpoint.port))
                     return
                 except Exception as e:
                     remaining = (start + timeout_s) - time.time()

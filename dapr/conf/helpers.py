@@ -1,56 +1,70 @@
 from typing import Tuple
+from urllib.parse import urlparse, parse_qs
+
+DEFAULT_SCHEME = "grpc"
+DEFAULT_HOSTNAME = "localhost"
+DEFAULT_PORT = 50001
+DEFAULT_PATH = ""
+DEFAULT_QUERY = ""
+DEFAULT_TLS_PORT = 443
+DEFAULT_TLS = False
 
 
-def parse_endpoint(address: str) -> Tuple[str, str, int]:
-    scheme = "http"
-    fqdn = "localhost"
-    port = 80
-    addr = address
+class Endpoint:
+    scheme: str
+    hostname: str
+    port: int
+    path: str
+    query: str
+    tls: bool
 
-    addr_list = address.split("://")
+    def __init__(self, scheme: str, hostname: str, port: int, path: str, query: str, tls: bool):
+        self.scheme = scheme or DEFAULT_SCHEME
+        self.hostname = hostname or DEFAULT_HOSTNAME
+        self.port = port or DEFAULT_PORT
+        self.path = path or DEFAULT_PATH
+        self.query = query or DEFAULT_QUERY
+        self.tls = tls or DEFAULT_TLS
 
-    if len(addr_list) == 2:
-        # A scheme was explicitly specified
-        scheme = addr_list[0]
-        if scheme == "https":
-            port = 443
-        addr = addr_list[1]
+    def is_secure(self) -> bool:
+        return self.tls
 
-    addr_list = addr.split(":")
-    if len(addr_list) == 2:
-        # A port was explicitly specified
-        if len(addr_list[0]) > 0:
-            fqdn = addr_list[0]
-        # Account for Endpoints of the type http://localhost:3500/v1.0/invoke
-        addr_list = addr_list[1].split("/")
-        port = addr_list[0]     # type: ignore
-    elif len(addr_list) == 1:
-        # No port was specified
-        # Account for Endpoints of the type :3500/v1.0/invoke
-        addr_list = addr_list[0].split("/")
-        fqdn = addr_list[0]
-    else:
-        # IPv6 address
-        addr_list = addr.split("]:")
-        if len(addr_list) == 2:
-            # A port was explicitly specified
-            fqdn = addr_list[0]
-            fqdn = fqdn.replace("[", "")
+    def to_string(self) -> str:
+        return f"{self.scheme}://{self.hostname}:{self.port}"
 
-            addr_list = addr_list[1].split("/")
-            port = addr_list[0]     # type: ignore
-        elif len(addr_list) == 1:
-            # No port was specified
-            addr_list = addr_list[0].split("/")
-            fqdn = addr_list[0]
-            fqdn = fqdn.replace("[", "")
-            fqdn = fqdn.replace("]", "")
-        else:
-            raise ValueError(f"Invalid address: {address}")
 
-    try:
-        port = int(port)
-    except ValueError:
-        raise ValueError(f"invalid port: {port}")
+def parse_grpc_endpoint(url: str) -> Endpoint:
+    # If a scheme was not explicitly specified in the URL
+    # we need to add a default scheme,
+    # because of how urlparse works
+    url_list = url.split("://")
+    if len(url_list) == 1:
+        url = f'{DEFAULT_SCHEME}://{url}'
 
-    return scheme, fqdn, port
+    parsed_url = urlparse(url)
+    scheme = parsed_url.scheme
+    hostname = parsed_url.hostname or DEFAULT_HOSTNAME
+    port = parsed_url.port
+    path = parsed_url.path
+    query = parsed_url.query
+
+    if len(path) > 0:
+        raise ValueError(f"paths are not supported for gRPC endpoints: '{path}' in '{url}'")
+
+    # Check if the query string contains a tls parameter
+    query_dict = parse_qs(query)
+    tls = query_dict.get('tls', ["False"])
+    tls = True if tls and tls[0].lower() == 'true' else False
+
+    # Special case for backwards compatibility
+    if scheme == "https":
+        tls = True
+        scheme = DEFAULT_SCHEME
+        port = port or DEFAULT_TLS_PORT
+
+    query_dict.pop('tls', None)
+    if len(query_dict) > 0:
+        raise ValueError(
+            f"query parameters are not supported for gRPC endpoints: '{query}' in '{url}'")
+
+    return Endpoint(scheme, hostname, port, path, query, tls)
