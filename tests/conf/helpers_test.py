@@ -1,161 +1,99 @@
 import unittest
 
-from dapr.conf.helpers import parse_endpoint, parse_http_endpoint
+from dapr.conf.helpers import parse_endpoint, parse_grpc_endpoint
 
 
 class DaprClientHelpersTests(unittest.TestCase):
 
-    def test_parse_http_endpoint(self):
-        # testcases = [
-        #     {
-        #         "endpoint": "localhost",
-        #         "scheme": "dns",
-        #
-        #     }
-        # ]
+    def test_parse_grpc_endpoint(self):
+        testcases = [
+            # Port only
+            # {"url": ":5000", "error": False, "secure": False, "scheme": "", "host": "localhost",
+            #  "port": 5000, "endpoint": "dns:localhost:5000"},
+            # {"url": ":5000?tls=false", "error": False, "secure": False, "scheme": "",
+            #  "host": "localhost", "port": 5000, "endpoint": "dns:localhost:5000"},
+            # {"url": ":5000?tls=true", "error": False, "secure": True, "scheme": "",
+            #  "host": "localhost", "port": 5000, "endpoint": "dns:localhost:5000"},
+            #
+            # # Host only
+            # {"url": "myhost", "error": False, "secure": False, "scheme": "", "host": "myhost",
+            #  "port": 443, "endpoint": "dns:myhost:443"},
+            # {"url": "myhost?tls=false", "error": False, "secure": False, "scheme": "",
+            #  "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            # {"url": "myhost?tls=true", "error": False, "secure": True, "scheme": "",
+            #  "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            #
+            # # Host and port
+            # {"url": "myhost:443", "error": False, "secure": False, "scheme": "", "host": "myhost",
+            #  "port": 443, "endpoint": "dns:myhost:443"},
+            # {"url": "myhost:443?tls=false", "error": False, "secure": False, "scheme": "",
+            #  "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            # {"url": "myhost:443?tls=true", "error": False, "secure": True, "scheme": "",
+            #  "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
 
-        testcases = [{"endpoint": ":5000", "scheme": "http", "host": "localhost", "port": 5000},
-                     {"endpoint": ":5000/v1/dapr", "scheme": "http", "host": "localhost",
-                      "port": 5000, "tls": False},
+            # Scheme, host and port
+            {"url": "http://myhost", "error": False, "secure": False, "scheme": "",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            {"url": "http://myhost?tls=false", "error": True},
+            # We can't have both http/https and the tls query parameter
+            {"url": "http://myhost?tls=true", "error": True},
+            # We can't have both http/https and the tls query parameter
 
-                     {"endpoint": "localhost", "scheme": "http", "host": "localhost", "port": 80,
-                      "tls": False},
-                     {"endpoint": "localhost/v1/dapr", "scheme": "http", "host": "localhost",
-                      "port": 80, "tls": False},
-                     {"endpoint": "localhost:5000", "scheme": "http", "host": "localhost",
-                      "port": 5000, "tls": False},
-                     {"endpoint": "localhost:5000/v1/dapr", "scheme": "http", "host": "localhost",
-                      "port": 5000, "tls": False},
+            {"url": "http://myhost:443", "error": False, "secure": False, "scheme": "",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            {"url": "http://myhost:443?tls=false", "error": True},
+            # We can't have both http/https and the tls query parameter
+            {"url": "http://myhost:443?tls=true", "error": True},
+            # We can't have both http/https and the tls query parameter
 
-                     {"endpoint": "http://localhost", "scheme": "http", "host": "localhost",
-                      "port": 80, "tls": False},
-                     {"endpoint": "http://localhost/v1/dapr", "scheme": "http", "host": "localhost",
-                      "port": 80, "tls": False},
-                     {"endpoint": "http://localhost:5000", "scheme": "http", "host": "localhost",
-                      "port": 5000, "tls": False},
-                     {"endpoint": "http://localhost:5000/v1/dapr", "scheme": "http",
-                      "host": "localhost", "port": 5000, "tls": False},
+            {"url": "http://myhost:5000", "error": False, "secure": False, "scheme": "",
+             "host": "myhost", "port": 5000, "endpoint": "dns:myhost:5000"},
+            {"url": "http://myhost:5000?tls=false", "error": True},
+            # We can't have both http/https and the tls query parameter
+            {"url": "http://myhost:5000?tls=true", "error": True},
+            # We can't have both http/https and the tls query parameter
 
-                     {"endpoint": "https://localhost", "scheme": "https", "host": "localhost",
-                      "port": 443, "tls": True},
-                     {"endpoint": "https://localhost/v1/dapr", "scheme": "https",
-                                     "host": "localhost", "port": 443, "tls": True},
-                     {"endpoint": "https://localhost:5000", "scheme": "https", "host": "localhost",
-                      "port": 5000, "tls": False},
-                     {"endpoint": "https://localhost:5000/v1/dapr", "scheme": "https",
-                      "host": "localhost", "port": 5000, "tls": True},
+            {"url": "https://myhost:443", "error": False, "secure": True, "scheme": "",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            {"url": "https://myhost:443?tls=false", "error": True},
+            {"url": "https://myhost:443?tls=true", "error": True},
 
-                     {"endpoint": "127.0.0.1", "scheme": "http", "host": "127.0.0.1", "port": 80, "tls": False},
-                     {"endpoint": "127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1",
-                      "port": 80, "tls": False},
-                     {"endpoint": "127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1",
-                      "port": 5000, "tls": False},
-                     {"endpoint": "127.0.0.1:5000/v1/dapr", "scheme": "http", "host": "127.0.0.1",
-                      "port": 5000, "tls": False},
+            # Scheme = dns
+            {"url": "dns:myhost", "error": False, "secure": False, "scheme": "dns",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            {"url": "dns:myhost?tls=false", "error": False, "secure": False, "scheme": "dns",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            {"url": "dns:myhost?tls=true", "error": False, "secure": True, "scheme": "dns",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
 
-                     {"endpoint": "http://127.0.0.1", "scheme": "http", "host": "127.0.0.1",
-                      "port": 80, "tls": False},
-                     {"endpoint": "http://127.0.0.1/v1/dapr", "scheme": "http", "host": "127.0.0.1",
-                      "port": 80, "tls": False},
-                     {"endpoint": "http://127.0.0.1:5000", "scheme": "http", "host": "127.0.0.1",
-                      "port": 5000, "tls": False}, {"endpoint": "http://127.0.0.1:5000/v1/dapr", "scheme": "http",
-                                      "host": "127.0.0.1", "port": 5000, "tls": False},
+            {"url": "dns://myhost", "error": False, "secure": False, "scheme": "dns",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            {"url": "dns://myhost?tls=false", "error": False, "secure": False, "scheme": "dns",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            {"url": "dns://myhost?tls=true", "error": False, "secure": True, "scheme": "dns",
+             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
 
-                     {"endpoint": "https://127.0.0.1", "scheme": "https", "host": "127.0.0.1",
-                      "port": 443, "tls": True},
-                     {"endpoint": "https://127.0.0.1/v1/dapr", "scheme": "https",
-                                     "host": "127.0.0.1", "port": 443, "tls": True},
-                     {"endpoint": "https://127.0.0.1:5000", "scheme": "https", "host": "127.0.0.1",
-                      "port": 5000, "tls": True},
-                     {"endpoint": "https://127.0.0.1:5000/v1/dapr", "scheme": "https",
-                      "host": "127.0.0.1", "port": 5000, "tls": True},
+            # IPv6 addresses
+            {"url": "[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": False, "scheme": "", "host":"[2001:db8:1f70::999:de8:7648:6e8]", "port": 443, "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
+            {"url": "dns:[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": False, "scheme": "", "host":"[2001:db8:1f70::999:de8:7648:6e8]", "port": 443, "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
+            {"url": "https://[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": True, "scheme": "", "host":"[2001:db8:1f70::999:de8:7648:6e8]", "port": 443, "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
 
-                     {"endpoint": "[2001:db8:1f70::999:de8:7648:6e8]", "scheme": "http",
-                      "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 80, "tls": False},
-                     {"endpoint": "[2001:db8:1f70::999:de8:7648:6e8]/v1/dapr", "scheme": "http",
-                      "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 80, "tls": False},
-                     {"endpoint": "[2001:db8:1f70::999:de8:7648:6e8]:5000", "scheme": "http",
-                      "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 5000, "tls": False},
-                     {"endpoint": "[2001:db8:1f70::999:de8:7648:6e8]:5000/v1/dapr",
-                      "scheme": "http", "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 5000, "tls": False},
+            {"url": "myhost:5000/v1/dapr", "error": True},
+            # Paths are not allowed in grpc endpoints
+            {"url": "myhost:5000/?a=1", "error": True},
+            # Query parameters are not allowed in grpc endpoints
+        ]
 
-                     {"endpoint": "http://[2001:db8:1f70::999:de8:7648:6e8]", "scheme": "http",
-                      "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 80, "tls": False},
-                     {"endpoint": "http://[2001:db8:1f70::999:de8:7648:6e8]/v1/dapr",
-                      "scheme": "http", "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 80, "tls": False},
-                     {"endpoint": "http://[2001:db8:1f70::999:de8:7648:6e8]:5000", "scheme": "http",
-                      "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 5000, "tls": False},
-                     {"endpoint": "http://[2001:db8:1f70::999:de8:7648:6e8]:5000/v1/dapr",
-                      "scheme": "http", "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 5000, "tls": False},
-
-                     {"endpoint": "https://[2001:db8:1f70::999:de8:7648:6e8]", "scheme": "https",
-                      "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 443, "tls": True},
-                     {"endpoint": "https://[2001:db8:1f70::999:de8:7648:6e8]/v1/dapr",
-                      "scheme": "https", "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 443, "tls": True},
-                     {"endpoint": "https://[2001:db8:1f70::999:de8:7648:6e8]:5000",
-                      "scheme": "https", "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 5000, "tls": True},
-                     {"endpoint": "https://[2001:db8:1f70::999:de8:7648:6e8]:5000/v1/dapr",
-                      "scheme": "https", "host": "2001:db8:1f70::999:de8:7648:6e8", "port": 5000, "tls": True},
-
-                     {"endpoint": "domain.com", "scheme": "http", "host": "domain.com", "port": 80, "tls": False},
-                     {"endpoint": "domain.com/v1/grpc", "scheme": "http", "host": "domain.com",
-                      "port": 80, "tls": False},
-                     {"endpoint": "domain.com:5000", "scheme": "http", "host": "domain.com",
-                      "port": 5000, "tls": False},
-                     {"endpoint": "domain.com:5000/v1/dapr", "scheme": "http", "host": "domain.com",
-                      "port": 5000, "tls": False},
-
-                     {"endpoint": "http://domain.com", "scheme": "http", "host": "domain.com",
-                      "port": 80, "tls": False},
-                     {"endpoint": "http://domain.com/v1/dapr", "scheme": "http",
-                                    "host": "domain.com", "port": 80, "tls": False},
-                     {"endpoint": "http://domain.com:5000", "scheme": "http", "host": "domain.com",
-                      "port": 5000, "tls": False},
-                     {"endpoint": "http://domain.com:5000/v1/dapr", "scheme": "http",
-                      "host": "domain.com", "port": 5000, "tls": False},
-
-                     {"endpoint": "https://domain.com", "scheme": "https", "host": "domain.com",
-                      "port": 443, "tls": True},
-                     {"endpoint": "https://domain.com/v1/dapr", "scheme": "https",
-                                     "host": "domain.com", "port": 443, "tls": True},
-                     {"endpoint": "https://domain.com:5000", "scheme": "https",
-                      "host": "domain.com", "port": 5000, "tls": True},
-                     {"endpoint": "https://domain.com:5000/v1/dapr", "scheme": "https",
-                      "host": "domain.com", "port": 5000, "tls": True},
-
-                     {"endpoint": "abc.domain.com", "scheme": "http", "host": "abc.domain.com",
-                      "port": 80, "tls": False},
-                     {"endpoint": "abc.domain.com/v1/grpc", "scheme": "http",
-                                    "host": "abc.domain.com", "port": 80, "tls": False},
-                     {"endpoint": "abc.domain.com:5000", "scheme": "http", "host": "abc.domain.com",
-                      "port": 5000, "tls": False},
-                     {"endpoint": "abc.domain.com:5000/v1/dapr", "scheme": "http",
-                                      "host": "abc.domain.com", "port": 5000, "tls": False},
-
-                     {"endpoint": "http://abc.domain.com/v1/dapr", "scheme": "http",
-                      "host": "abc.domain.com", "port": 80, "tls": False},
-                     {"endpoint": "http://abc.domain.com/v1/dapr", "scheme": "http",
-                      "host": "abc.domain.com", "port": 80, "tls": False},
-                     {"endpoint": "http://abc.domain.com:5000/v1/dapr", "scheme": "http",
-                      "host": "abc.domain.com", "port": 5000, "tls": False},
-                     {"endpoint": "http://abc.domain.com:5000/v1/dapr/v1/dapr", "scheme": "http",
-                      "host": "abc.domain.com", "port": 5000, "tls": False},
-
-                     {"endpoint": "https://abc.domain.com/v1/dapr", "scheme": "https",
-                      "host": "abc.domain.com", "port": 443, "tls": True},
-                     {"endpoint": "https://abc.domain.com/v1/dapr", "scheme": "https",
-                      "host": "abc.domain.com", "port": 443, "tls": True},
-                     {"endpoint": "https://abc.domain.com:5000/v1/dapr", "scheme": "https",
-                      "host": "abc.domain.com", "port": 5000, "tls": True},
-                     {"endpoint": "https://abc.domain.com:5000/v1/dapr/v1/dapr", "scheme": "https",
-                      "host": "abc.domain.com", "port": 5000, "tls": True},
-
-                     ]
-
+        print(f'URL \t endpoint\t  hostname \t port \t secure \t error')
         for testcase in testcases:
-            print(testcase["endpoint"])
-            o = parse_http_endpoint(testcase["endpoint"])
-
-            self.assertEqual(testcase["scheme"], o["scheme"])
-            self.assertEqual(testcase["host"], o["hostname"])
-            self.assertEqual(testcase["port"], o["port"])
+            if testcase["error"]:
+                with self.assertRaises(ValueError):
+                    parse_grpc_endpoint(testcase["url"])
+            else:
+                endpoint = parse_grpc_endpoint(testcase["url"])
+                print(
+                    f'{testcase["url"]}\t {endpoint.get_endpoint()} \t{endpoint.get_hostname()}\t{endpoint.get_port()}\t{endpoint.is_secure()}')
+                assert testcase["endpoint"] == endpoint.get_endpoint()
+                assert testcase["secure"] == endpoint.is_secure()
+                assert testcase["host"] == endpoint.get_hostname()
+                assert str(testcase["port"]) == endpoint.get_port()
