@@ -1,6 +1,6 @@
 import unittest
 
-from dapr.conf.helpers import parse_grpc_endpoint
+from dapr.conf.helpers import GrpcEndpoint
 
 
 class DaprClientHelpersTests(unittest.TestCase):
@@ -66,24 +66,50 @@ class DaprClientHelpersTests(unittest.TestCase):
             {"url": "dns:myhost?tls=true", "error": False, "secure": True, "scheme": "dns",
              "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
 
-            {"url": "dns://myhost", "error": False, "secure": False, "scheme": "dns",
-             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
-            {"url": "dns://myhost?tls=false", "error": False, "secure": False, "scheme": "dns",
-             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
-            {"url": "dns://myhost?tls=true", "error": False, "secure": True, "scheme": "dns",
-             "host": "myhost", "port": 443, "endpoint": "dns:myhost:443"},
+            # Scheme = dns with authority
+            {"url": "dns://myauthority:53/myhost", "error": False, "secure": False, "scheme": "dns",
+             "host": "myhost", "port": 443, "endpoint": "dns://myauthority:53/myhost:443"},
+            {"url": "dns://myauthority:53/myhost?tls=false", "error": False, "secure": False,
+             "scheme": "dns", "host": "myhost", "port": 443,
+             "endpoint": "dns://myauthority:53/myhost:443"},
+            {"url": "dns://myauthority:53/myhost?tls=true", "error": False, "secure": True,
+             "scheme": "dns", "host": "myhost", "port": 443,
+             "endpoint": "dns://myauthority:53/myhost:443"}, {"url": "dns://myhost", "error": True},
 
             # Unix sockets
+            {"url": "unix:my.sock", "error": False, "secure": False, "scheme": "unix",
+             "host": "my.sock", "port": "", "endpoint": "unix:my.sock"},
+            {"url": "unix:my.sock?tls=true", "error": False, "secure": True, "scheme": "unix",
+             "host": "my.sock", "port": "", "endpoint": "unix:my.sock"},
+
+            # Unix sockets with absolute path
             {"url": "unix://my.sock", "error": False, "secure": False, "scheme": "unix",
              "host": "my.sock", "port": "", "endpoint": "unix://my.sock"},
             {"url": "unix://my.sock?tls=true", "error": False, "secure": True, "scheme": "unix",
              "host": "my.sock", "port": "", "endpoint": "unix://my.sock"},
 
+            # Unix abstract sockets
+            {"url": "unix-abstract:my.sock", "error": False, "secure": False, "scheme": "unix",
+             "host": "my.sock", "port": "", "endpoint": "unix-abstract:my.sock"},
+            {"url": "unix-abstract:my.sock?tls=true", "error": False, "secure": True,
+             "scheme": "unix", "host": "my.sock", "port": "", "endpoint": "unix-abstract:my.sock"},
+
+            # Vsock
+            {"url": "vsock:mycid:5000", "error": False, "secure": False, "scheme": "unix",
+             "host": "mycid", "port": 5000, "endpoint": "vsock:mycid:5000"},
+            {"url": "vsock:mycid:5000?tls=true", "error": False, "secure": True, "scheme": "unix",
+             "host": "mycid", "port": 5000, "endpoint": "vsock:mycid:5000"},
 
             # IPv6 addresses
-            {"url": "[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": False, "scheme": "", "host":"[2001:db8:1f70::999:de8:7648:6e8]", "port": 443, "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
-            {"url": "dns:[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": False, "scheme": "", "host":"[2001:db8:1f70::999:de8:7648:6e8]", "port": 443, "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
-            {"url": "https://[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": True, "scheme": "", "host":"[2001:db8:1f70::999:de8:7648:6e8]", "port": 443, "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
+            {"url": "[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": False,
+             "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 443,
+             "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
+            {"url": "dns:[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": False,
+             "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 443,
+             "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
+            {"url": "https://[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": True,
+             "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 443,
+             "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
 
             # Invalid addresses (with path and queries)
             {"url": "host:5000/v1/dapr", "error": True},  # Paths are not allowed in grpc endpoints
@@ -91,23 +117,11 @@ class DaprClientHelpersTests(unittest.TestCase):
         ]
 
         for testcase in testcases:
-            try:
-                endpoint = parse_grpc_endpoint(testcase["url"])
-                print(f'{testcase["url"]}\t {endpoint.get_endpoint()} \t{endpoint.get_hostname()}\t{endpoint.get_port()}\t{endpoint.is_secure()}')
-                assert endpoint.get_endpoint() == testcase["endpoint"]
-                assert endpoint.is_secure() == testcase["secure"]
-                assert endpoint.get_hostname() == testcase["host"]
-                assert endpoint.get_port() == str(testcase["port"])
-            except ValueError as error:
-                print(f'{testcase["url"]}\t {error}')
-
             if testcase["error"]:
                 with self.assertRaises(ValueError):
-                    parse_grpc_endpoint(testcase["url"])
+                    GrpcEndpoint(testcase["url"])
             else:
-                endpoint = parse_grpc_endpoint(testcase["url"])
-                print(
-                    f'{testcase["url"]}\t {endpoint.get_endpoint()} \t{endpoint.get_hostname()}\t{endpoint.get_port()}\t{endpoint.is_secure()}')
+                endpoint = GrpcEndpoint(testcase["url"])
                 assert endpoint.get_endpoint() == testcase["endpoint"]
                 assert endpoint.is_secure() == testcase["secure"]
                 assert endpoint.get_hostname() == testcase["host"]

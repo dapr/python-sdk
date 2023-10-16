@@ -41,7 +41,7 @@ from grpc.aio import (  # type: ignore
 from dapr.clients.exceptions import DaprInternalError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
-from dapr.conf.helpers import parse_endpoint
+from dapr.conf.helpers import GrpcEndpoint
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -139,14 +139,18 @@ class DaprGrpcClientAsync:
             address = settings.DAPR_GRPC_ENDPOINT or (f"{settings.DAPR_RUNTIME_HOST}:"
                                                       f"{settings.DAPR_GRPC_PORT}")
 
-        self._scheme, self._hostname, self._port = parse_endpoint(address)
+        try:
+            self._endpoint = GrpcEndpoint(address)
+        except ValueError as error:
+            raise DaprInternalError(f'{error}') from error
 
-        if self._scheme == "https":
-            self._channel = grpc.aio.secure_channel(f"{self._hostname}:{self._port}",
+        if self._endpoint.is_secure():
+            self._channel = grpc.aio.secure_channel(self._endpoint.get_endpoint(),
                                                     credentials=self.get_credentials(),
-                                                    options=options)
+                                                    options=options)  # type: ignore
         else:
-            self._channel = grpc.aio.insecure_channel(address, options)  # type: ignore
+            self._channel = grpc.aio.insecure_channel(self._endpoint.get_endpoint(),
+                                                      options)  # type: ignore
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptorAsync([
@@ -164,7 +168,7 @@ class DaprGrpcClientAsync:
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
-        if self._channel:
+        if hasattr(self, '_channel') and self._channel:
             self._channel.close()
 
     async def __aenter__(self) -> Self:  # type: ignore
@@ -1442,7 +1446,7 @@ class DaprGrpcClientAsync:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout_s)
                 try:
-                    s.connect((self._hostname, self._port))
+                    s.connect((self._endpoint.get_hostname(), self._endpoint.get_port_as_int()))
                     return
                 except Exception as e:
                     remaining = (start + timeout_s) - time.time()

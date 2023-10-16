@@ -52,7 +52,7 @@ from dapr.clients.grpc._helpers import (
     validateNotNone,
     validateNotBlankString,
 )
-from dapr.conf.helpers import parse_grpc_endpoint
+from dapr.conf.helpers import GrpcEndpoint
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
@@ -138,17 +138,18 @@ class DaprGrpcClient:
             address = settings.DAPR_GRPC_ENDPOINT or (f"{settings.DAPR_RUNTIME_HOST}:"
                                                       f"{settings.DAPR_GRPC_PORT}")
 
-        self._endpoint = parse_grpc_endpoint(address)
+        try:
+            self._endpoint = GrpcEndpoint(address)
+        except ValueError as error:
+            raise DaprInternalError(f'{error}') from error
 
         if self._endpoint.is_secure():
-            self._channel = grpc.secure_channel(self._endpoint.to_string(),
-                                                # type: ignore
+            self._channel = grpc.secure_channel(self._endpoint.get_endpoint(), # type: ignore
                                                 self.get_credentials(),
-
                                                 options=options)
         else:
-            self._channel = grpc.insecure_channel(self._endpoint.to_string(),
-                                                  options=options)  # type: ignore
+            self._channel = grpc.insecure_channel(self._endpoint.get_endpoint(), # type: ignore
+                                                  options=options)
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor([
@@ -168,7 +169,7 @@ class DaprGrpcClient:
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
-        if self._channel:
+        if hasattr(self, '_channel') and self._channel:
             self._channel.close()
 
     def __del__(self):
@@ -807,8 +808,8 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata argument is deprecated. Dapr already intercepts API token '
+                 'headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
@@ -863,8 +864,8 @@ class DaprGrpcClient:
             :class:`GetSecretResponse` object with the secret and metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata argument is deprecated. Dapr already intercepts API token '
+                 'headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req = api_v1.GetSecretRequest(
             store_name=store_name,
@@ -910,8 +911,8 @@ class DaprGrpcClient:
             :class:`GetBulkSecretResponse` object with secrets and metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn('metadata argument is deprecated. Dapr already intercepts API token '
+                 'headers and this is not needed.', DeprecationWarning, stacklevel=2)
 
         req = api_v1.GetBulkSecretRequest(
             store_name=store_name,
@@ -1433,7 +1434,7 @@ class DaprGrpcClient:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout_s)
                 try:
-                    s.connect((self._endpoint.hostname, self._endpoint.port))
+                    s.connect((self._endpoint.get_hostname(), self._endpoint.get_port_as_int()))
                     return
                 except Exception as e:
                     remaining = (start + timeout_s) - time.time()
