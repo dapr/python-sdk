@@ -1,3 +1,4 @@
+from warnings import warn
 from urllib.parse import urlparse, parse_qs, ParseResult
 
 
@@ -35,8 +36,13 @@ class GrpcEndpoint:
         self._set_endpoint()
 
     def _set_scheme(self):
-        if len(self._parsed_url.scheme) == 0 or self._parsed_url.scheme in ["http", "https"]:
+        if len(self._parsed_url.scheme) == 0:
             self._scheme = URIParseConfig.DEFAULT_SCHEME
+            return
+
+        if self._parsed_url.scheme in ["http", "https"]:
+            self._scheme = URIParseConfig.DEFAULT_SCHEME
+            warn("http and https schemes are deprecated, use grpc or grpcs instead")
             return
 
         if self._parsed_url.scheme not in URIParseConfig.ACCEPTED_SCHEMES:
