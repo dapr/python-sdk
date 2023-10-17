@@ -51,25 +51,25 @@ class DaprSecureGrpcClientTests(DaprGrpcClientTests):
     @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
     def test_init_with_DAPR_GRPC_ENDPOINT(self):
         dapr = DaprGrpcClient()
-        self.assertEqual("dns:domain1.com:5000", dapr._endpoint.get_endpoint())
+        self.assertEqual("dns:domain1.com:5000", dapr._uri.endpoint)
 
     @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
     def test_init_with_DAPR_GRPC_ENDPOINT_and_argument(self):
         dapr = DaprGrpcClient("https://domain2.com:5002")
-        self.assertEqual("dns:domain2.com:5002", dapr._endpoint.get_endpoint())
+        self.assertEqual("dns:domain2.com:5002", dapr._uri.endpoint)
 
     @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
     @patch.object(settings, "DAPR_RUNTIME_HOST", "domain2.com")
     @patch.object(settings, "DAPR_GRPC_PORT", "5002")
     def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
         dapr = DaprGrpcClient()
-        self.assertEqual("dns:domain1.com:5000", dapr._endpoint.get_endpoint())
+        self.assertEqual("dns:domain1.com:5000", dapr._uri.endpoint)
 
     @patch.object(settings, "DAPR_RUNTIME_HOST", "domain1.com")
     @patch.object(settings, "DAPR_GRPC_PORT", "5000")
     def test_init_with_argument_and_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
         dapr = DaprGrpcClient("https://domain2.com:5002")
-        self.assertEqual("dns:domain2.com:5002", dapr._endpoint.get_endpoint())
+        self.assertEqual("dns:domain2.com:5002", dapr._uri.endpoint)
 
 
 if __name__ == '__main__':

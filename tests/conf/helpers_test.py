@@ -114,6 +114,10 @@ class DaprClientHelpersTests(unittest.TestCase):
             # Invalid addresses (with path and queries)
             {"url": "host:5000/v1/dapr", "error": True},  # Paths are not allowed in grpc endpoints
             {"url": "host:5000/?a=1", "error": True},  # Query params not allowed in grpc endpoints
+
+            # Invalid scheme
+            {"url": "inv-scheme://myhost", "error": True},
+            {"url": "inv-scheme:myhost:5000", "error": True},
         ]
 
         for testcase in testcases:
@@ -121,8 +125,8 @@ class DaprClientHelpersTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     GrpcEndpoint(testcase["url"])
             else:
-                endpoint = GrpcEndpoint(testcase["url"])
-                assert endpoint.get_endpoint() == testcase["endpoint"]
-                assert endpoint.is_secure() == testcase["secure"]
-                assert endpoint.get_hostname() == testcase["host"]
-                assert endpoint.get_port() == str(testcase["port"])
+                url = GrpcEndpoint(testcase["url"])
+                assert url.endpoint == testcase["endpoint"]
+                assert url.tls == testcase["secure"]
+                assert url.hostname == testcase["host"]
+                assert url.port == str(testcase["port"])

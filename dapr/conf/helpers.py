@@ -1,4 +1,4 @@
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, ParseResult
 
 
 class URIParseConfig:
@@ -12,69 +12,110 @@ class URIParseConfig:
 
 
 class GrpcEndpoint:
+    _scheme: str
+    _hostname: str
+    _port: int
+    _tls: bool
+    _authority: str
+    _url: str
+    _parsed_url: ParseResult  # from urllib.parse
+    _endpoint: str
+
     def __init__(self, url: str):
-        self.authority = URIParseConfig.DEFAULT_AUTHORITY
-        self.url = url
+        self._authority = URIParseConfig.DEFAULT_AUTHORITY
+        self._url = url
 
-        url = self.preprocess_url(url)
-        parsed_url = urlparse(url)
-        validate_path_and_query(parsed_url.path, parsed_url.query, parsed_url.scheme)
-        tls = extract_tls_from_query(parsed_url.query, parsed_url.scheme)
+        self._parsed_url = urlparse(self._preprocess_uri(url))
+        self._validate_path_and_query()
 
-        self.scheme = parsed_url.scheme or URIParseConfig.DEFAULT_SCHEME
-        self.hostname = parsed_url.hostname or URIParseConfig.DEFAULT_HOSTNAME
-        self.port = parsed_url.port or URIParseConfig.DEFAULT_PORT
-        self.tls = tls or URIParseConfig.DEFAULT_TLS
+        self._set_tls()
+        self._set_hostname()
+        self._set_scheme()
+        self._set_port()
+        self._set_endpoint()
 
-    def is_secure(self) -> bool:
-        return self.tls
+    def _set_scheme(self):
+        if len(self._parsed_url.scheme) == 0 or self._parsed_url.scheme in ["http", "https"]:
+            self._scheme = URIParseConfig.DEFAULT_SCHEME
+            return
 
-    def get_scheme(self) -> str:
-        return self.scheme if self.scheme in URIParseConfig.VALID_SCHEMES \
-            else URIParseConfig.DEFAULT_SCHEME
+        if self._parsed_url.scheme not in URIParseConfig.ACCEPTED_SCHEMES:
+            raise ValueError(f"invalid scheme '{self._parsed_url.scheme}' in URL '{self._url}'")
 
-    def get_port(self) -> str:
-        port = self.get_port_as_int()
-        if port == 0:
+        self._scheme = self._parsed_url.scheme
+
+    @property
+    def scheme(self) -> str:
+        return self._scheme
+
+    def _set_hostname(self):
+        if self._parsed_url.hostname is None:
+            self._hostname = URIParseConfig.DEFAULT_HOSTNAME
+            return
+
+        if self._parsed_url.hostname.count(":") == 7:
+            # IPv6 address
+            self._hostname = f"[{self._parsed_url.hostname}]"
+            return
+
+        self._hostname = self._parsed_url.hostname
+
+    @property
+    def hostname(self) -> str:
+        return self._hostname
+
+    def _set_port(self):
+        if self._parsed_url.scheme in ["unix", "unix-abstract"]:
+            self._port = 0
+            return
+
+        if self._parsed_url.port is None:
+            self._port = URIParseConfig.DEFAULT_PORT
+            return
+
+        self._port = self._parsed_url.port
+
+    @property
+    def port(self) -> str:
+        if self._port == 0:
             return ""
 
-        return str(port)
+        return str(self._port)
 
-    def get_port_as_int(self) -> int:
-        if self.scheme in ["unix", "unix-abstract"]:
-            return 0
+    @property
+    def port_as_int(self) -> int:
+        return self._port
 
-        return self.port
+    def _set_endpoint(self):
+        port = "" if not self._port else f":{self.port}"
 
-    def get_hostname(self) -> str:
-        hostname = self.hostname
-        if self.hostname.count(":") == 7:
-            # IPv6 address
-            hostname = f"[{hostname}]"
-        return hostname
+        if self._scheme == "unix":
+            separator = "://" if self._url.startswith("unix://") else ":"
+            self._endpoint = f"{self._scheme}{separator}{self._hostname}"
+            return
 
-    def get_endpoint(self) -> str:
-        scheme = self.get_scheme()
-        port = "" if len(self.get_port()) == 0 else f":{self.port}"
-
-        if scheme == "unix":
-            separator = "://" if self.url.startswith("unix://") else ":"
-            return f"{scheme}{separator}{self.hostname}"
-
-        if scheme == "vsock":
+        if self._scheme == "vsock":
             port = "" if self.port == 0 else f":{self.port}"
-            return f"{scheme}:{self.get_hostname()}{port}"
+            self._endpoint = f"{self._scheme}:{self._hostname}{port}"
+            return
 
-        if scheme == "unix-abstract":
-            return f"{scheme}:{self.get_hostname()}{port}"
+        if self._scheme == "unix-abstract":
+            self._endpoint = f"{self._scheme}:{self._hostname}{port}"
+            return
 
-        if scheme == "dns":
-            authority = f"//{self.authority}/" if self.authority else ""
-            return f"{scheme}:{authority}{self.get_hostname()}{port}"
+        if self._scheme == "dns":
+            authority = f"//{self._authority}/" if self._authority else ""
+            self._endpoint = f"{self._scheme}:{authority}{self._hostname}{port}"
+            return
 
-        return f"{scheme}:{self.get_hostname()}{port}"
+        self._endpoint = f"{self._scheme}:{self._hostname}{port}"
 
-    def preprocess_url(self, url: str) -> str:
+    @property
+    def endpoint(self) -> str:
+        return self._endpoint
+
+    # Prepares the uri string in a specific format for parsing by the urlparse function
+    def _preprocess_uri(self, url: str) -> str:
         url_list = url.split(":")
         if len(url_list) == 3 and "://" not in url:
             # A URI like dns:mydomain:5000 or vsock:mycid:5000 was used
@@ -95,7 +136,7 @@ class GrpcEndpoint:
                 # we need to make sure it is a valid scheme
                 scheme = url_list[0]
                 if scheme not in URIParseConfig.ACCEPTED_SCHEMES:
-                    raise ValueError(f"Invalid scheme '{scheme}' in URL '{url}'")
+                    raise ValueError(f"invalid scheme '{scheme}' in URL '{url}'")
 
                 # We should do a special check if the scheme is dns, and it uses
                 # an authority in the format of dns:[//authority/]host[:port]
@@ -103,29 +144,35 @@ class GrpcEndpoint:
                     # A URI like dns://authority/mydomain was used
                     url_list = url.split("/")
                     if len(url_list) < 4:
-                        raise ValueError(f"Invalid dns authority '{url_list[2]}' in URL '{url}'")
-                    self.authority = url_list[2]
+                        raise ValueError(f"invalid dns authority '{url_list[2]}' in URL '{url}'")
+                    self._authority = url_list[2]
                     url = f'dns://{url_list[3]}'
         return url
 
+    def _set_tls(self):
+        query_dict = parse_qs(self._parsed_url.query)
+        tls_str = query_dict.get('tls', [""])[0]
+        tls = tls_str.lower() == 'true'
+        if self._parsed_url.scheme == "https":
+            tls = True
 
-def validate_path_and_query(path: str, query: str, scheme: str) -> None:
-    if path:
-        raise ValueError(f"Paths are not supported for gRPC endpoints: '{path}'")
-    if query:
-        query_dict = parse_qs(query)
-        if 'tls' in query_dict and scheme in ["http", "https"]:
-            raise ValueError(
-                f"The tls query parameter is not supported for http(s) endpoints: '{query}'")
-        query_dict.pop('tls', None)
-        if query_dict:
-            raise ValueError(f"Query parameters are not supported for gRPC endpoints: '{query}'")
+        self._tls = tls
 
+    @property
+    def tls(self) -> bool:
+        return self._tls
 
-def extract_tls_from_query(query: str, scheme: str) -> bool:
-    query_dict = parse_qs(query)
-    tls_str = query_dict.get('tls', [""])[0]
-    tls = tls_str.lower() == 'true'
-    if scheme == "https":
-        tls = True
-    return tls
+    def _validate_path_and_query(self) -> None:
+        if self._parsed_url.path:
+            raise ValueError(f"paths are not supported for gRPC endpoints:"
+                             f" '{self._parsed_url.path}'")
+        if self._parsed_url.query:
+            query_dict = parse_qs(self._parsed_url.query)
+            if 'tls' in query_dict and self._parsed_url.scheme in ["http", "https"]:
+                raise ValueError(
+                    f"the tls query parameter is not supported for http(s) endpoints: "
+                    f"'{self._parsed_url.query}'")
+            query_dict.pop('tls', None)
+            if query_dict:
+                raise ValueError(f"query parameters are not supported for gRPC endpoints:"
+                                 f" '{self._parsed_url.query}'")

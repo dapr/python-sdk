@@ -140,16 +140,16 @@ class DaprGrpcClientAsync:
                                                       f"{settings.DAPR_GRPC_PORT}")
 
         try:
-            self._endpoint = GrpcEndpoint(address)
+            self._uri = GrpcEndpoint(address)
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        if self._endpoint.is_secure():
-            self._channel = grpc.aio.secure_channel(self._endpoint.get_endpoint(),
+        if self._uri.tls:
+            self._channel = grpc.aio.secure_channel(self._uri.endpoint,
                                                     credentials=self.get_credentials(),
                                                     options=options)  # type: ignore
         else:
-            self._channel = grpc.aio.insecure_channel(self._endpoint.get_endpoint(),
+            self._channel = grpc.aio.insecure_channel(self._uri.endpoint,
                                                       options)  # type: ignore
 
         if settings.DAPR_API_TOKEN:
@@ -1446,7 +1446,7 @@ class DaprGrpcClientAsync:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout_s)
                 try:
-                    s.connect((self._endpoint.get_hostname(), self._endpoint.get_port_as_int()))
+                    s.connect((self._uri.hostname, self._uri.port_as_int))
                     return
                 except Exception as e:
                     remaining = (start + timeout_s) - time.time()

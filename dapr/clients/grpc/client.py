@@ -139,16 +139,16 @@ class DaprGrpcClient:
                                                       f"{settings.DAPR_GRPC_PORT}")
 
         try:
-            self._endpoint = GrpcEndpoint(address)
+            self._uri = GrpcEndpoint(address)
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        if self._endpoint.is_secure():
-            self._channel = grpc.secure_channel(self._endpoint.get_endpoint(), # type: ignore
+        if self._uri.tls:
+            self._channel = grpc.secure_channel(self._uri.endpoint,  # type: ignore
                                                 self.get_credentials(),
                                                 options=options)
         else:
-            self._channel = grpc.insecure_channel(self._endpoint.get_endpoint(), # type: ignore
+            self._channel = grpc.insecure_channel(self._uri.endpoint,  # type: ignore
                                                   options=options)
 
         if settings.DAPR_API_TOKEN:
@@ -1434,7 +1434,7 @@ class DaprGrpcClient:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout_s)
                 try:
-                    s.connect((self._endpoint.get_hostname(), self._endpoint.get_port_as_int()))
+                    s.connect((self._uri.hostname, self._uri.port_as_int))
                     return
                 except Exception as e:
                     remaining = (start + timeout_s) - time.time()
