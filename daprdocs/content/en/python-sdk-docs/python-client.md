@@ -44,19 +44,25 @@ When passed as an argument in the constructor, the endpoint takes precedence ove
 ```python
 from dapr.clients import DaprClient
 
-with DaprClient("https://mydomain:4443") as d:
+with DaprClient("mydomain:50051?tls=true") as d:
     # use the client
 ```  
 
 #### Specifying an endpoint in an environment variable:  
 You can use the standardised `DAPR_GRPC_ENDPOINT` and/or `DAPR_HTTP_ENDPOINT` environment variables to
 specify the endpoint. When these environment variables are set, the client can be initialised 
-without any arguments.
+without any arguments:
 
 ```bash
-export DAPR_GRPC_ENDPOINT="https://mydomain:50051"
+export DAPR_GRPC_ENDPOINT="mydomain:50051?tls=true"
 export DAPR_HTTP_ENDPOINT="https://mydomain:443"
 ```
+```python
+from dapr.clients import DaprClient
+
+with DaprClient() as d:
+    # the client will use the endpoint specified in the environment variables
+```  
 
 The legacy environment variables `DAPR_RUNTIME_HOST`, `DAPR_HTTP_PORT` and `DAPR_GRPC_PORT` are 
 also supported, but `DAPR_GRPC_ENDPOINT` and `DAPR_HTTP_ENDPOINT` take precedence.
