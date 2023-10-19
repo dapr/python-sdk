@@ -68,6 +68,8 @@ The Python SDK allows you to interface with all of the [Dapr building blocks]({{
 
 ### Invoke a service
 
+The Dapr Python SDK provides a simple API for invoking services via either HTTP or gRPC. The protocol can be selected by setting the `DAPR_API_METHOD_INVOCATION_PROTOCOL` environment variable, defaulting to HTTP when unset. 
+
 ```python 
 from dapr.clients import DaprClient
 
@@ -79,6 +81,12 @@ with DaprClient() as d:
     # invoke a 'POST' method (HTTP only)    
     resp = d.invoke_method('service-to-invoke', 'method-to-invoke', data='{"id":"100", "FirstName":"Value", "LastName":"Value"}', http_verb='post')
 ```
+
+The base endpoint for HTTP api calls is specified in the `DAPR_HTTP_ENDPOINT` environment variable.
+If this variable is not set, the endpoint value is derived from the `DAPR_RUNTIME_HOST` and `DAPR_HTTP_PORT` variables, whose default values are `127.0.0.1` and `3500` accordingly.
+
+The base endpoint for gRPC calls is the one used for the client initialisation ([explained above](#initialising-the-client)).
+
 
 - For a full guide on service invocation visit [How-To: Invoke a service]({{< ref howto-invoke-discover-services.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-simple) for code samples and instructions to try out service invocation.
