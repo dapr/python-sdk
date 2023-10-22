@@ -95,9 +95,11 @@ class DaprClientHelpersTests(unittest.TestCase):
              "scheme": "unix", "host": "my.sock", "port": "", "endpoint": "unix-abstract:my.sock"},
 
             # Vsock
-            {"url": "vsock:mycid:5000", "error": False, "secure": False, "scheme": "unix",
+            {"url": "vsock:mycid", "error": False, "secure": False, "scheme": "vsock",
+             "host": "mycid", "port": "443", "endpoint": "vsock:mycid:443"},
+            {"url": "vsock:mycid:5000", "error": False, "secure": False, "scheme": "vsock",
              "host": "mycid", "port": 5000, "endpoint": "vsock:mycid:5000"},
-            {"url": "vsock:mycid:5000?tls=true", "error": False, "secure": True, "scheme": "unix",
+            {"url": "vsock:mycid:5000?tls=true", "error": False, "secure": True, "scheme": "vsock",
              "host": "mycid", "port": 5000, "endpoint": "vsock:mycid:5000"},
 
             # IPv6 addresses

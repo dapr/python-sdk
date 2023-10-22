@@ -101,8 +101,7 @@ class GrpcEndpoint:
             return
 
         if self._scheme == "vsock":
-            port = "" if self.port == 0 else f":{self.port}"
-            self._endpoint = f"{self._scheme}:{self._hostname}{port}"
+            self._endpoint = f"{self._scheme}:{self._hostname}:{self.port}"
             return
 
         if self._scheme == "unix-abstract":
