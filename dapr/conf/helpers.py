@@ -129,6 +129,9 @@ class GrpcEndpoint:
                 0] in URIParseConfig.ACCEPTED_SCHEMES:
             # A URI like dns:mydomain was used
             url = url.replace(":", "://", 1)
+        elif len(url_list) > 2 and "://" not in url and url_list[0] in URIParseConfig.ACCEPTED_SCHEMES:
+            # Possibly a URI like dns:[2001:db8:1f70::999:de8:7648:6e8]:mydomain was used
+            url = url.replace(":", "://", 1)
         else:
             url_list = url.split("://")
             if len(url_list) == 1:

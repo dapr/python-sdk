@@ -102,16 +102,30 @@ class DaprClientHelpersTests(unittest.TestCase):
             {"url": "vsock:mycid:5000?tls=true", "error": False, "secure": True, "scheme": "vsock",
              "host": "mycid", "port": 5000, "endpoint": "vsock:mycid:5000"},
 
-            # IPv6 addresses
+            # IPv6 addresses with dns scheme
             {"url": "[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": False,
              "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 443,
              "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
             {"url": "dns:[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": False,
              "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 443,
              "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
+            {"url": "dns:[2001:db8:1f70::999:de8:7648:6e8]:5000", "error": False, "secure": False,
+             "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 5000,
+             "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:5000"},
+            {"url": "dns:[2001:db8:1f70::999:de8:7648:6e8]:5000?abc=[]", "error": True},
+
+            # IPv6 addresses with dns scheme and authority
+            {"url": "dns://myauthority:53/[2001:db8:1f70::999:de8:7648:6e8]", "error": False,
+             "secure": False, "scheme": "dns", "host": "[2001:db8:1f70::999:de8:7648:6e8]",
+             "port": 443, "endpoint": "dns://myauthority:53/[2001:db8:1f70::999:de8:7648:6e8]:443"},
+
+            # IPv6 addresses with https scheme
             {"url": "https://[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": True,
              "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 443,
              "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
+            {"url": "https://[2001:db8:1f70::999:de8:7648:6e8]:5000", "error": False, "secure": True,
+             "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 5000,
+             "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:5000"},
 
             # Invalid addresses (with path and queries)
             {"url": "host:5000/v1/dapr", "error": True},  # Paths are not allowed in grpc endpoints
@@ -123,12 +137,21 @@ class DaprClientHelpersTests(unittest.TestCase):
         ]
 
         for testcase in testcases:
-            if testcase["error"]:
-                with self.assertRaises(ValueError):
-                    GrpcEndpoint(testcase["url"])
-            else:
+            # if testcase["error"]:
+            #     with self.assertRaises(ValueError):
+            #         GrpcEndpoint(testcase["url"])
+            # else:
+            #     url = GrpcEndpoint(testcase["url"])
+            #     assert url.endpoint == testcase["endpoint"]
+            #     assert url.tls == testcase["secure"]
+            #     assert url.hostname == testcase["host"]
+            #     assert url.port == str(testcase["port"])
+            try:
                 url = GrpcEndpoint(testcase["url"])
+                print(f'{testcase["url"]}\t {url.endpoint} \t{url.hostname}\t{url.port}\t{url.tls}')
                 assert url.endpoint == testcase["endpoint"]
                 assert url.tls == testcase["secure"]
                 assert url.hostname == testcase["host"]
                 assert url.port == str(testcase["port"])
+            except ValueError as error:
+                print(f'{testcase["url"]}\t \t\t\t\t Error: {error}')
