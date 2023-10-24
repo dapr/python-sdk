@@ -123,9 +123,9 @@ class DaprClientHelpersTests(unittest.TestCase):
             {"url": "https://[2001:db8:1f70::999:de8:7648:6e8]", "error": False, "secure": True,
              "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 443,
              "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:443"},
-            {"url": "https://[2001:db8:1f70::999:de8:7648:6e8]:5000", "error": False, "secure": True,
-             "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]", "port": 5000,
-             "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:5000"},
+            {"url": "https://[2001:db8:1f70::999:de8:7648:6e8]:5000", "error": False,
+             "secure": True, "scheme": "", "host": "[2001:db8:1f70::999:de8:7648:6e8]",
+             "port": 5000, "endpoint": "dns:[2001:db8:1f70::999:de8:7648:6e8]:5000"},
 
             # Invalid addresses (with path and queries)
             {"url": "host:5000/v1/dapr", "error": True},  # Paths are not allowed in grpc endpoints
