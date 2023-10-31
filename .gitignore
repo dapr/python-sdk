@@ -107,5 +107,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# OS Stuff
+# macOS specific files
 .DS_Store
