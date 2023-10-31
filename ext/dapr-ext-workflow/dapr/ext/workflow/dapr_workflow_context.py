@@ -61,7 +61,8 @@ class DaprWorkflowContext(WorkflowContext):
         def wf(ctx: task.OrchestrationContext, inp: TInput):
             daprWfContext = DaprWorkflowContext(ctx)
             return workflow(daprWfContext, inp)
-        wf.__name__ = workflow.__name__ # copy workflow name so durabletask.worker can find the orchestrator in its registry
+        # copy workflow name so durabletask.worker can find the orchestrator in its registry
+        wf.__name__ = workflow.__name__ 
         return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
 
     def wait_for_external_event(self, name: str) -> task.Task:
