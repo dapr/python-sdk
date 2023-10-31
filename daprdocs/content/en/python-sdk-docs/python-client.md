@@ -68,7 +68,7 @@ The Python SDK allows you to interface with all of the [Dapr building blocks]({{
 
 ### Invoke a service
 
-The Dapr Python SDK provides a simple API for invoking services via either HTTP or gRPC. The protocol can be selected by setting the `DAPR_API_METHOD_INVOCATION_PROTOCOL` environment variable, defaulting to HTTP when unset. 
+The Dapr Python SDK provides a simple API for invoking services via either HTTP or gRPC (deprecated). The protocol can be selected by setting the `DAPR_API_METHOD_INVOCATION_PROTOCOL` environment variable, defaulting to HTTP when unset. GRPC service invocation in Dapr is deprecated and GRPC proxying is recommended as an alternative.
 
 ```python 
 from dapr.clients import DaprClient
