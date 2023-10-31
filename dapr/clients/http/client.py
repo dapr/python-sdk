@@ -37,8 +37,7 @@ class DaprHttpClient:
     def __init__(self,
                  message_serializer: 'Serializer',
                  timeout: Optional[int] = 60,
-                 headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
-                 address: Optional[str] = None):
+                 headers_callback: Optional[Callable[[], Dict[str, str]]] = None):
         """Invokes Dapr over HTTP.
 
         Args:
@@ -49,16 +48,13 @@ class DaprHttpClient:
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
         self._headers_callback = headers_callback
-        self._address = address
 
     def get_api_url(self) -> str:
-        if self._address:
-            return '{}/{}'.format(self._address, settings.DAPR_API_VERSION)
         if settings.DAPR_HTTP_ENDPOINT:
             return '{}/{}'.format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
-        else:
-            return 'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST,
-                                            settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION)
+
+        return 'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST,
+                                        settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION)
 
     async def send_bytes(
             self, method: str, url: str,
