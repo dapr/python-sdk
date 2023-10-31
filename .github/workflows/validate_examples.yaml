@@ -41,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_ver: [3.8, 3.9, "3.10", "3.11"]
+        python_ver: [3.8, 3.9, "3.10", "3.11", "3.12"]
     steps:
       - name: Parse repository_dispatch payload
         if: github.event_name == 'repository_dispatch'
