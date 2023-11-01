@@ -52,7 +52,7 @@ def send_alert(ctx, message: str):
 
 
 if __name__ == '__main__':
-    workflowRuntime = wf.WorkflowRuntime("localhost", "50001")
+    workflowRuntime = wf.WorkflowRuntime()
     workflowRuntime.register_workflow(status_monitor_workflow)
     workflowRuntime.register_activity(check_status)
     workflowRuntime.register_activity(send_alert)

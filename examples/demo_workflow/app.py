@@ -47,9 +47,7 @@ def hello_act(ctx: WorkflowActivityContext, wf_input):
 
 def main():
     with DaprClient() as d:
-        host = settings.DAPR_RUNTIME_HOST
-        port = settings.DAPR_GRPC_PORT
-        workflow_runtime = WorkflowRuntime(host, port)
+        workflow_runtime = WorkflowRuntime()
         workflow_runtime.register_workflow(hello_world_wf)
         workflow_runtime.register_activity(hello_act)
         workflow_runtime.start()
