@@ -17,14 +17,14 @@ on:
     types: [fossa]
   push:
     branches:
-      - master
+      - main
       - release-*
       - feature/*
     tags:
       - v*
   pull_request:
     branches:
-      - master
+      - main
       - release-*
       - feature/*
   workflow_dispatch: {}
