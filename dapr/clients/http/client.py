@@ -98,7 +98,7 @@ class DaprHttpClient:
 
             raise (await self.convert_to_error(r))
 
-    async def convert_to_error(self, response) -> DaprInternalError:
+    async def convert_to_error(self, response: aiohttp.ClientResponse) -> DaprInternalError:
         error_info = None
         try:
             error_body = await response.read()
@@ -106,14 +106,16 @@ class DaprHttpClient:
                 return DaprInternalError("Not Found", ERROR_CODE_DOES_NOT_EXIST)
             error_info = self._serializer.deserialize(error_body)
         except Exception:
-            return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}')
+            return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}',
+                                     raw_response_bytes=error_body)
 
         if error_info and isinstance(error_info, dict):
             message = error_info.get('message')
             error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
-            return DaprInternalError(message, error_code)
+            return DaprInternalError(message, error_code, raw_response_bytes=error_body)
 
-        return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}')
+        return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}',
+                                 raw_response_bytes=error_body)
 
     def get_ssl_context(self):
         # This method is used (overwritten) from tests

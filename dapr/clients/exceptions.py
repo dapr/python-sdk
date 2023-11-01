@@ -23,12 +23,15 @@ class DaprInternalError(Exception):
     """DaprInternalError encapsulates all Dapr exceptions"""
     def __init__(
             self, message: Optional[str],
-            error_code: Optional[str] = ERROR_CODE_UNKNOWN):
+            error_code: Optional[str] = ERROR_CODE_UNKNOWN,
+            raw_response_bytes: Optional[bytes] = None):
         self._message = message
         self._error_code = error_code
+        self._raw_response_bytes = raw_response_bytes
 
     def as_dict(self):
         return {
             'message': self._message,
             'errorCode': self._error_code,
+            'raw_response_bytes': self._raw_response_bytes
         }
