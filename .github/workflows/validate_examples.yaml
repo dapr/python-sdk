@@ -3,13 +3,13 @@ name: validate-examples
 on:
   push:
     branches:
-      - master
+      - main
       - feature/*
     tags:
       - v*
   pull_request:
     branches:
-      - master
+      - main
       - release-*
       - feature/*
   workflow_dispatch:
