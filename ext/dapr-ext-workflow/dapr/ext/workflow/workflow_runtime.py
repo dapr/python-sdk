@@ -21,8 +21,11 @@ from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
 from dapr.ext.workflow.util import getAddress
+
+from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
+from dapr.conf.helpers import GrpcEndpoint
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -39,7 +42,12 @@ class WorkflowRuntime:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         address = getAddress(host, port)
 
-        self.__worker = worker.TaskHubGrpcWorker(host_address=address, metadata=metadata)
+        try:
+            uri = GrpcEndpoint(address)
+        except ValueError as error:
+            raise DaprInternalError(f'{error}') from error
+
+        self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint, metadata=metadata, secure_channel=uri.tls)
 
     def register_workflow(self, fn: Workflow):
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
