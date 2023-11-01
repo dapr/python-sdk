@@ -62,11 +62,19 @@ class App:
         """Adds an external gRPC service to the same server"""
         servicer_callback(external_servicer, self._server)
 
-    def run(self, app_port: Optional[int] = None) -> None:
-        """Starts app gRPC server and waits until :class:`App`.stop() is called."""
+    def run(self, app_port: Optional[int] = None, listen_address: Optional[str] = None) -> None:
+        """Starts app gRPC server and waits until :class:`App`.stop() is called.
+
+        Args:
+            app_port (int, optional): The port on which to listen for incoming gRPC calls.
+                Defaults to settings.GRPC_APP_PORT.
+            listen_address (str, optional): The IP address on which to listen for incoming gRPC
+                calls. Defaults to [::] (all IP addresses).
+        """
         if app_port is None:
             app_port = settings.GRPC_APP_PORT
-        self._server.add_insecure_port(f'[::]:{app_port}')
+        self._server.add_insecure_port(
+            f'{listen_address if listen_address else "[::]"}:{app_port}')
         self._server.start()
         self._server.wait_for_termination()
 
