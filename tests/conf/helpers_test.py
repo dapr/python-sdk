@@ -146,4 +146,3 @@ class DaprClientHelpersTests(unittest.TestCase):
                 assert url.tls == testcase["secure"]
                 assert url.hostname == testcase["host"]
                 assert url.port == str(testcase["port"])
-
