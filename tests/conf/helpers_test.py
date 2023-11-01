@@ -137,21 +137,12 @@ class DaprClientHelpersTests(unittest.TestCase):
         ]
 
         for testcase in testcases:
-            # if testcase["error"]:
-            #     with self.assertRaises(ValueError):
-            #         GrpcEndpoint(testcase["url"])
-            # else:
-            #     url = GrpcEndpoint(testcase["url"])
-            #     assert url.endpoint == testcase["endpoint"]
-            #     assert url.tls == testcase["secure"]
-            #     assert url.hostname == testcase["host"]
-            #     assert url.port == str(testcase["port"])
-            try:
+            if testcase["error"]:
+                with self.assertRaises(ValueError):
+                    GrpcEndpoint(testcase["url"])
+            else:
                 url = GrpcEndpoint(testcase["url"])
-                print(f'{testcase["url"]}\t {url.endpoint} \t{url.hostname}\t{url.port}\t{url.tls}')
                 assert url.endpoint == testcase["endpoint"]
                 assert url.tls == testcase["secure"]
                 assert url.hostname == testcase["host"]
                 assert url.port == str(testcase["port"])
-            except ValueError as error:
-                print(f'{testcase["url"]}\t \t\t\t\t Error: {error}')
