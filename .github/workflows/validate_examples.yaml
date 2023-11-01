@@ -24,6 +24,7 @@ on:
         default: ''
   repository_dispatch:
     types: [validate-examples]
+  merge_group:
 jobs:
   validate:
     runs-on: ubuntu-latest
