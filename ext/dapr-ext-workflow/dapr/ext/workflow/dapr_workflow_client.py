@@ -42,6 +42,7 @@ class DaprWorkflowClient:
        This client is intended to be used by workflow application, not by general purpose
        application.
     """
+
     def __init__(self, host: Optional[str] = None, port: Optional[str] = None):
         address = getAddress(host, port)
 
@@ -53,11 +54,10 @@ class DaprWorkflowClient:
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
-        self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint, metadata=metadata, secure_channel=uri.tls)
+        self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint, metadata=metadata,
+                                              secure_channel=uri.tls)
 
-    def schedule_new_workflow(self,
-                              workflow: Workflow, *,
-                              input: Optional[TInput] = None,
+    def schedule_new_workflow(self, workflow: Workflow, *, input: Optional[TInput] = None,
                               instance_id: Optional[str] = None,
                               start_at: Optional[datetime] = None) -> str:
         """Schedules a new workflow instance for execution.
@@ -75,9 +75,8 @@ class DaprWorkflowClient:
         Returns:
             The ID of the scheduled workflow instance.
         """
-        return self.__obj.schedule_new_orchestration(workflow.__name__,
-                                                     input=input, instance_id=instance_id,
-                                                     start_at=start_at)
+        return self.__obj.schedule_new_orchestration(workflow.__name__, input=input,
+                                                     instance_id=instance_id, start_at=start_at)
 
     def get_workflow_state(self, instance_id: str, *,
                            fetch_payloads: bool = True) -> Optional[WorkflowState]:
@@ -96,8 +95,7 @@ class DaprWorkflowClient:
         state = self.__obj.get_orchestration_state(instance_id, fetch_payloads=fetch_payloads)
         return WorkflowState(state) if state else None
 
-    def wait_for_workflow_start(self, instance_id: str, *,
-                                fetch_payloads: bool = False,
+    def wait_for_workflow_start(self, instance_id: str, *, fetch_payloads: bool = False,
                                 timeout_in_seconds: int = 60) -> Optional[WorkflowState]:
         """Waits for a workflow to start running and returns a WorkflowState object that contains
            metadata about the started workflow.
@@ -117,13 +115,11 @@ class DaprWorkflowClient:
             WorkflowState record that describes the workflow instance and its execution status.
             If the specified workflow isn't found, the WorkflowState.Exists value will be false.
         """
-        state = self.__obj.wait_for_orchestration_start(instance_id,
-                                                        fetch_payloads=fetch_payloads,
+        state = self.__obj.wait_for_orchestration_start(instance_id, fetch_payloads=fetch_payloads,
                                                         timeout=timeout_in_seconds)
         return WorkflowState(state) if state else None
 
-    def wait_for_workflow_completion(self, instance_id: str, *,
-                                     fetch_payloads: bool = True,
+    def wait_for_workflow_completion(self, instance_id: str, *, fetch_payloads: bool = True,
                                      timeout_in_seconds: int = 60) -> Optional[WorkflowState]:
         """Waits for a workflow to complete and returns a WorkflowState object that contains
            metadata about the started instance.
@@ -180,8 +176,7 @@ class DaprWorkflowClient:
         """
         return self.__obj.raise_orchestration_event(instance_id, event_name, data=data)
 
-    def terminate_workflow(self, instance_id: str, *,
-                           output: Optional[Any] = None):
+    def terminate_workflow(self, instance_id: str, *, output: Optional[Any] = None):
         """Terminates a running workflow instance and updates its runtime status to
            WorkflowRuntimeStatus.Terminated This method internally enqueues a "terminate" message in
            the task hub. When the task hub worker processes this message, it will update the runtime

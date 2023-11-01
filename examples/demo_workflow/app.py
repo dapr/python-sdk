@@ -32,11 +32,11 @@ non_existent_id_error = "no such instance exists"
 
 def hello_world_wf(ctx: DaprWorkflowContext, wf_input):
     print(f'{wf_input}')
-    yield ctx.call_activity(hello_act, wf_input=1)
-    yield ctx.call_activity(hello_act, wf_input=10)
+    yield ctx.call_activity(hello_act, input=1)
+    yield ctx.call_activity(hello_act, input=10)
     yield ctx.wait_for_external_event("event1")
-    yield ctx.call_activity(hello_act, wf_input=100)
-    yield ctx.call_activity(hello_act, wf_input=1000)
+    yield ctx.call_activity(hello_act, input=100)
+    yield ctx.call_activity(hello_act, input=1000)
 
 
 def hello_act(ctx: WorkflowActivityContext, wf_input):
@@ -105,8 +105,8 @@ def main():
         sleep(1)
         get_response = d.get_workflow(instance_id=instance_id,
                                       workflow_component=workflow_component)
-        print(
-            f"Get response from {workflow_name} after terminate call: {get_response.runtime_status}")
+        print(f"Get response from {workflow_name} "
+              f"after terminate call: {get_response.runtime_status}")
 
         # Purge Test
         d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)

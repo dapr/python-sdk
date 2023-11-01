@@ -47,7 +47,8 @@ class WorkflowRuntime:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint, metadata=metadata, secure_channel=uri.tls)
+        self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint, metadata=metadata,
+                                                 secure_channel=uri.tls)
 
     def register_workflow(self, fn: Workflow):
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
