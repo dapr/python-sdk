@@ -1,9 +1,11 @@
 ---
-name: Python Dapr Client SDK Bug report (not workflow SDK)
-about: Report a bug in python-sdk (not dapr-ext-workflow)
-title: '[BUG] <title>'
-labels: kind/bug
-assignees: ''
+name: WORKFLOW SDK Bug report
+about: Report a bug in dapr-ext-workflow
+title: '[WORKFLOW SDK BUG] <title>'
+labels: ["kind/enhancement","dapr-ext-workflow"]
+assignees:
+ - cgillum
+ - DeepanshuA
 
 ---
 ## Expected Behavior

@@ -1,12 +1,14 @@
 ---
-name: Python Dapr Client SDK Feature Request
-about: Create a Feature Request for python-sdk
-title: '[FEATURE REQUEST] <title>'
-labels: kind/enhancement
-assignees: ''
+name: WORKFLOW SDK Feature Request
+about: Create a Feature Request for dapr-ext-workflow
+title: '[WORKFLOW SDK FEATURE REQUEST] <title>'
+labels: ["kind/enhancement","dapr-ext-workflow"]
+assignees:
+ - cgillum
+ - DeepanshuA
 
 ---
-## Describe the feature
+## Describe the WORKFLOW SDK feature
 
 ## Release Note
 <!-- How should this new feature be announced in our release notes? It can be populated later. -->
