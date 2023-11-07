@@ -1,6 +1,6 @@
 ---
-name: Python Dapr Client SDK Feature Request
-about: Create a Feature Request for python-sdk
+name: Python Dapr Client SDK Feature Request (not workflow)
+about: Create a Feature Request for python-sdk (not dapr-ext-workflow)
 title: '[FEATURE REQUEST] <title>'
 labels: kind/enhancement
 assignees: ''
