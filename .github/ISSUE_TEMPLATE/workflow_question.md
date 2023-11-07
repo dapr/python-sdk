@@ -1,8 +1,8 @@
 ---
-name: Workflow SDK Question
-about: Ask a question about dapr-ext-workflow
-title: '[WORKFLOW SDK QUESTION] <title>'
-labels: kind/question
+name: WORKFLOW Question
+about: Ask a question about workflow
+title: '[WORKFLOW QUESTION] <title>'
+labels: ["kind/question", "dapr-ext-workflow"]
 assignees: ''
 
 ---
