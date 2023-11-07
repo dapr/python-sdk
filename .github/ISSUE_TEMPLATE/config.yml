@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Dapr Community Support (Discord Chat, Community meetings, etc.)
+    url: https://github.com/dapr/community
+    about: Please ask and answer questions here. This is the best place to get help from fellow users with realworld experience.
+  - name: Reporting security issues
+    url: https://docs.dapr.io/operations/support/support-security-issues/
+    about: Please report security vulnerabilities here.
