@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Dapr Discord Python SDK channel
+    url: https://discord.com/channels/778680217417809931/782286950983663617
+    about: Please use this channel for general Dapr Python SDK questions.
+  - name: Dapr Discord Workflow SDK channel
+    url: https://discord.com/channels/778680217417809931/1075836407156850698
+    about: Please use this channel for general Dapr Workflow questions.
   - name: Dapr Community Support (Discord Invitation, Community meetings, etc.)
     url: https://github.com/dapr/community
     about: More information about the Dapr community and how to get involved.
