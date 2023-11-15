@@ -15,7 +15,7 @@ limitations under the License.
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, Optional, TypeVar, Union
 
 from durabletask import task
@@ -85,13 +85,13 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def create_timer(self, fire_at: datetime) -> task.Task:
+    def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
         """Create a Timer Task to fire after at the specified deadline.
 
         Parameters
         ----------
-        fire_at: datetime.datetime
-            The time for the timer to trigger
+        fire_at: datetime.datetime | datetime.timedelta
+            The time for the timer to trigger. Can be specified as a `datetime` or a `timedelta`.
 
         Returns
         -------

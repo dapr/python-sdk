@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Callable, List, Optional, TypeVar
-from datetime import datetime
+from typing import Any, Callable, List, Optional, TypeVar, Union
+from datetime import datetime, timedelta
 
 from durabletask import task
 
@@ -48,7 +48,7 @@ class DaprWorkflowContext(WorkflowContext):
     def is_replaying(self) -> bool:
         return self.__obj.is_replaying
 
-    def create_timer(self, fire_at: datetime) -> task.Task:
+    def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
         return self.__obj.create_timer(fire_at)
 
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
