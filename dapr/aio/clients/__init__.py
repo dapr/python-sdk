@@ -20,6 +20,7 @@ from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync, MetadataTuple, InvokeMethodResponse
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClient
+from dapr.clients.http.helpers import DaprHealthClient
 from dapr.conf import settings
 from google.protobuf.message import Message as GrpcMessage
 
@@ -71,6 +72,7 @@ class DaprClient(DaprGrpcClientAsync):
         """
         super().__init__(address, interceptors, max_grpc_message_length)
         self.invocation_client = None
+        self.health_client = DaprHealthClient(timeout=http_timeout_seconds)
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
 
@@ -131,3 +133,15 @@ class DaprClient(DaprGrpcClientAsync):
                 http_querystring=http_querystring,
                 timeout=timeout
             )
+
+    async def wait(self, timeout_s: int):
+        """Wait for the client to become ready. If the client is already ready, this
+        method returns immediately.
+
+        Args:
+            timeout_s (float): The maximum time to wait in seconds.
+
+        Throws:
+            DaprInternalError: if the timeout expires.
+        """
+        await self.health_client.wait_async(timeout_s)

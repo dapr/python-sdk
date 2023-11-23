@@ -19,6 +19,7 @@ from warnings import warn
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.clients.grpc.client import DaprGrpcClient, MetadataTuple, InvokeMethodResponse
+from dapr.clients.http.helpers import DaprHealthClient
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClient
 from dapr.conf import settings
@@ -72,6 +73,7 @@ class DaprClient(DaprGrpcClient):
         """
         super().__init__(address, interceptors, max_grpc_message_length)
         self.invocation_client = None
+        self.helath_client = DaprHealthClient(timeout=http_timeout_seconds)
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
 
@@ -173,3 +175,27 @@ class DaprClient(DaprGrpcClient):
         else:
             raise NotImplementedError(
                 'Please use `dapr.aio.clients.DaprClient` for async invocation')
+
+    def wait(self, timeout_s: float):
+        """Wait for the client to become ready. If the client is already ready, this
+        method returns immediately.
+
+        Args:
+            timeout_s (float): The maximum time to wait in seconds.
+
+        Throws:
+            DaprInternalError: if the timeout expires.
+        """
+        self.helath_client.wait(int(timeout_s))
+
+    async def wait_async(self, timeout_s: float):
+        """Wait for the client to become ready. If the client is already ready, this
+        method returns immediately.
+
+        Args:
+            timeout_s (float): The maximum time to wait in seconds.
+
+        Throws:
+            DaprInternalError: if the timeout expires.
+        """
+        await self.helath_client.wait_async(int(timeout_s))
