@@ -169,7 +169,7 @@ class DaprGrpcClientAsync:
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
         if hasattr(self, '_channel') and self._channel:
-            self._channel.close()
+            await self._channel.close()
 
     async def __aenter__(self) -> Self:  # type: ignore
         return self
