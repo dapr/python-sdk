@@ -45,7 +45,7 @@ jobs:
       uses: codecov/codecov-action@v3
   publish:
     needs: build
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'create'
     runs-on: ubuntu-latest
     env:
       TWINE_USERNAME: "__token__"
@@ -60,12 +60,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine tox
     - name: Build and publish Dapr Python SDK
+      if: startsWith(github.ref_name, 'v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-workflow
+      if: startsWith(github.ref_name, 'worfklow-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -73,6 +75,7 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish Dapr Flask Extension
+      if: startsWith(github.ref_name, 'flask-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -80,6 +83,7 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-grpc
+      if: startsWith(github.ref_name, 'grpc-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -87,6 +91,7 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-fastapi
+      if: startsWith(github.ref_name, 'fastapi-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
