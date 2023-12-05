@@ -38,8 +38,8 @@ class WorkflowRuntime:
     """
 
     def __init__(
-            self, 
-            host: Optional[str] = None, 
+            self,
+            host: Optional[str] = None,
             port: Optional[str] = None,
             logger_options: Optional[LoggerOptions] = None):
         if logger_options is None:
@@ -56,13 +56,15 @@ class WorkflowRuntime:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint, metadata=metadata,
-                                                 secure_channel=uri.tls, log_handler=logger_options.log_handler,
+        self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint,
+                                                 metadata=metadata,
+                                                 secure_channel=uri.tls,
+                                                 log_handler=logger_options.log_handler,
                                                  log_formatter=logger_options.log_formatter)
-    
 
     def register_workflow(self, fn: Workflow):
         self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
+
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
             daprWfContext = DaprWorkflowContext(ctx, self._logger_options)
@@ -77,6 +79,7 @@ class WorkflowRuntime:
            a specified input type and returns a specified output type.
         """
         self._logger.info(f"Registering activity '{fn.__name__}' with runtime")
+
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
             wfActivityContext = WorkflowActivityContext(ctx)

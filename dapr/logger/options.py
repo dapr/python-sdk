@@ -19,14 +19,14 @@ import logging
 
 class LoggerOptions:
     def __init__(
-            self, 
+            self,
             log_level: Union[str, None] = None,
             log_handler: Union[logging.Handler, None] = None,
             log_formatter: Union[logging.Formatter, None] = None,
     ):
         # Set default log level to INFO if none is provided
         if log_level is None:
-            log_level = logging.INFO  
+            log_level = logging.INFO
         # Add a default log handler if none is provided
         if log_handler is None:
             log_handler = logging.StreamHandler()

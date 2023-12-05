@@ -30,13 +30,15 @@ TOutput = TypeVar('TOutput')
 class DaprWorkflowContext(WorkflowContext):
     """DaprWorkflowContext that provides proxy access to internal OrchestrationContext instance."""
 
-    def __init__(self, ctx: task.OrchestrationContext, logger_options: Optional[LoggerOptions] = None):
+    def __init__(
+            self,
+            ctx: task.OrchestrationContext,
+            logger_options: Optional[LoggerOptions] = None):
         self.__obj = ctx
         if logger_options is None:
             logger_options = LoggerOptions()
         self._logger_options = logger_options
         self._logger = logger_options.get_logger("DaprWorkflowContext")
-
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
@@ -66,7 +68,9 @@ class DaprWorkflowContext(WorkflowContext):
     def call_child_workflow(self, workflow: Workflow, *,
                             input: Optional[TInput],
                             instance_id: Optional[str]) -> task.Task[TOutput]:
-        self._logger.debug(f'instance_id {self.instance_id} call_child_workflow: {workflow.__name__}')
+        self._logger.debug(f'instance_id {self.instance_id} \
+                           call_child_workflow: {workflow.__name__}')
+
         def wf(ctx: task.OrchestrationContext, inp: TInput):
             daprWfContext = DaprWorkflowContext(ctx, self._logger_options)
             return workflow(daprWfContext, inp)

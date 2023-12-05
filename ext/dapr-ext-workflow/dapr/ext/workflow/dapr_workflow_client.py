@@ -45,18 +45,17 @@ class DaprWorkflowClient:
     """
 
     def __init__(
-            self, 
-            host: Optional[str] = None, 
+            self,
+            host: Optional[str] = None,
             port: Optional[str] = None,
-            logger_options: Optional[LoggerOptions] = None
-            ):
+            logger_options: Optional[LoggerOptions] = None):
         address = getAddress(host, port)
 
         try:
             uri = GrpcEndpoint(address)
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
-        
+
         if logger_options is None:
             logger_options = LoggerOptions()
         self._logger = logger_options.get_logger("DaprWorkflowClient")
@@ -64,8 +63,10 @@ class DaprWorkflowClient:
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
-        self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint, metadata=metadata,
-                                              secure_channel=uri.tls, log_handler=logger_options.log_handler,
+        self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint,
+                                              metadata=metadata,
+                                              secure_channel=uri.tls,
+                                              log_handler=logger_options.log_handler,
                                               log_formatter=logger_options.log_formatter)
 
     def schedule_new_workflow(self, workflow: Workflow, *, input: Optional[TInput] = None,
