@@ -26,6 +26,7 @@ from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
+from dapr.logger.options import LoggerOptions
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -36,7 +37,15 @@ class WorkflowRuntime:
     """WorkflowRuntime is the entry point for registering workflows and activities.
     """
 
-    def __init__(self, host: Optional[str] = None, port: Optional[str] = None):
+    def __init__(
+            self, 
+            host: Optional[str] = None, 
+            port: Optional[str] = None,
+            logger_options: Optional[LoggerOptions] = None):
+        if logger_options is None:
+            logger_options = LoggerOptions()
+        self._logger_options = logger_options
+        self._logger = logger_options.get_logger("WorkflowRuntime")
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
@@ -48,12 +57,15 @@ class WorkflowRuntime:
             raise DaprInternalError(f'{error}') from error
 
         self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint, metadata=metadata,
-                                                 secure_channel=uri.tls)
+                                                 secure_channel=uri.tls, log_handler=logger_options.log_handler,
+                                                 log_formatter=logger_options.log_formatter)
+    
 
     def register_workflow(self, fn: Workflow):
+        self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
-            daprWfContext = DaprWorkflowContext(ctx)
+            daprWfContext = DaprWorkflowContext(ctx, self._logger_options)
             if inp is None:
                 return fn(daprWfContext)
             return fn(daprWfContext, inp)
@@ -64,6 +76,7 @@ class WorkflowRuntime:
         """Registers a workflow activity as a function that takes
            a specified input type and returns a specified output type.
         """
+        self._logger.info(f"Registering activity '{fn.__name__}' with runtime")
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
             wfActivityContext = WorkflowActivityContext(ctx)
