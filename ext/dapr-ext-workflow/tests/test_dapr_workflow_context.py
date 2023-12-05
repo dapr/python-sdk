@@ -28,6 +28,8 @@ mock_call_sub_orchestrator = "call_sub_orchestrator"
 
 
 class FakeOrchestrationContext:
+    def __init__(self):
+        self.instance_id = mock_instance_id
 
     def create_timer(self, fire_at):
         return mock_create_timer
