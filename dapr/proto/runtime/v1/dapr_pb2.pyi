@@ -1353,22 +1353,8 @@ class InvokeActorResponse(google.protobuf.message.Message):
 global___InvokeActorResponse = InvokeActorResponse
 
 @typing_extensions.final
-class GetMetadataRequest(google.protobuf.message.Message):
-    """GetMetadataRequest is the message for the GetMetadata request.
-    Empty
-    """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
-
-    def __init__(
-        self,
-    ) -> None: ...
-
-global___GetMetadataRequest = GetMetadataRequest
-
-@typing_extensions.final
 class GetMetadataResponse(google.protobuf.message.Message):
-    """GetMetadataResponse is a message that is returned on GetMetadata rpc call."""
+    """GetMetadataResponse is a message that is returned on GetMetadata rpc call"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -1397,11 +1383,9 @@ class GetMetadataResponse(google.protobuf.message.Message):
     APP_CONNECTION_PROPERTIES_FIELD_NUMBER: builtins.int
     RUNTIME_VERSION_FIELD_NUMBER: builtins.int
     ENABLED_FEATURES_FIELD_NUMBER: builtins.int
-    ACTOR_RUNTIME_FIELD_NUMBER: builtins.int
     id: builtins.str
     @property
-    def active_actors_count(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ActiveActorsCount]:
-        """Deprecated alias for actor_runtime.active_actors."""
+    def active_actors_count(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ActiveActorsCount]: ...
     @property
     def registered_components(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___RegisteredComponents]: ...
     @property
@@ -1415,8 +1399,6 @@ class GetMetadataResponse(google.protobuf.message.Message):
     runtime_version: builtins.str
     @property
     def enabled_features(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]: ...
-    @property
-    def actor_runtime(self) -> global___ActorRuntime: ...
     def __init__(
         self,
         *,
@@ -1429,66 +1411,11 @@ class GetMetadataResponse(google.protobuf.message.Message):
         app_connection_properties: global___AppConnectionProperties | None = ...,
         runtime_version: builtins.str = ...,
         enabled_features: collections.abc.Iterable[builtins.str] | None = ...,
-        actor_runtime: global___ActorRuntime | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "subscriptions", b"subscriptions"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["app_connection_properties", b"app_connection_properties"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["active_actors_count", b"active_actors_count", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "subscriptions", b"subscriptions"]) -> None: ...
 
 global___GetMetadataResponse = GetMetadataResponse
-
-@typing_extensions.final
-class ActorRuntime(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
-
-    class _ActorRuntimeStatus:
-        ValueType = typing.NewType("ValueType", builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
-
-    class _ActorRuntimeStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ActorRuntime._ActorRuntimeStatus.ValueType], builtins.type):  # noqa: F821
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
-        INITIALIZING: ActorRuntime._ActorRuntimeStatus.ValueType  # 0
-        """Indicates that the actor runtime is still being initialized."""
-        DISABLED: ActorRuntime._ActorRuntimeStatus.ValueType  # 1
-        """Indicates that the actor runtime is disabled.
-        This normally happens when Dapr is started without "placement-host-address"
-        """
-        RUNNING: ActorRuntime._ActorRuntimeStatus.ValueType  # 2
-        """Indicates the actor runtime is running, either as an actor host or client."""
-
-    class ActorRuntimeStatus(_ActorRuntimeStatus, metaclass=_ActorRuntimeStatusEnumTypeWrapper): ...
-    INITIALIZING: ActorRuntime.ActorRuntimeStatus.ValueType  # 0
-    """Indicates that the actor runtime is still being initialized."""
-    DISABLED: ActorRuntime.ActorRuntimeStatus.ValueType  # 1
-    """Indicates that the actor runtime is disabled.
-    This normally happens when Dapr is started without "placement-host-address"
-    """
-    RUNNING: ActorRuntime.ActorRuntimeStatus.ValueType  # 2
-    """Indicates the actor runtime is running, either as an actor host or client."""
-
-    RUNTIME_STATUS_FIELD_NUMBER: builtins.int
-    ACTIVE_ACTORS_FIELD_NUMBER: builtins.int
-    HOST_READY_FIELD_NUMBER: builtins.int
-    PLACEMENT_FIELD_NUMBER: builtins.int
-    runtime_status: global___ActorRuntime.ActorRuntimeStatus.ValueType
-    """Contains an enum indicating whether the actor runtime has been initialized."""
-    @property
-    def active_actors(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ActiveActorsCount]:
-        """Count of active actors per type."""
-    host_ready: builtins.bool
-    """Indicates whether the actor runtime is ready to host actors."""
-    placement: builtins.str
-    """Custom message from the placement provider."""
-    def __init__(
-        self,
-        *,
-        runtime_status: global___ActorRuntime.ActorRuntimeStatus.ValueType = ...,
-        active_actors: collections.abc.Iterable[global___ActiveActorsCount] | None = ...,
-        host_ready: builtins.bool = ...,
-        placement: builtins.str = ...,
-    ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["active_actors", b"active_actors", "host_ready", b"host_ready", "placement", b"placement", "runtime_status", b"runtime_status"]) -> None: ...
-
-global___ActorRuntime = ActorRuntime
 
 @typing_extensions.final
 class ActiveActorsCount(google.protobuf.message.Message):
@@ -2875,17 +2802,3 @@ class PurgeWorkflowRequest(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
 
 global___PurgeWorkflowRequest = PurgeWorkflowRequest
-
-@typing_extensions.final
-class ShutdownRequest(google.protobuf.message.Message):
-    """ShutdownRequest is the request for Shutdown.
-    Empty
-    """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
-
-    def __init__(
-        self,
-    ) -> None: ...
-
-global___ShutdownRequest = ShutdownRequest
