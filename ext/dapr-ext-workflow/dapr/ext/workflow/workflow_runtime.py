@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import inspect
+from functools import wraps
 from typing import Optional, TypeVar
 
 from durabletask import worker, task
@@ -50,17 +52,24 @@ class WorkflowRuntime:
         self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint, metadata=metadata,
                                                  secure_channel=uri.tls)
 
-    def register_workflow(self, fn: Workflow):
+    def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
-            """Responsible to call Workflow function in orchestrationWrapper"""
+            """Responsible to call Workflow function in orchestrationWrapper."""
             daprWfContext = DaprWorkflowContext(ctx)
             if inp is None:
                 return fn(daprWfContext)
             return fn(daprWfContext, inp)
 
+        if hasattr(fn, '_registered_name'):
+            raise ValueError(f'Workflow {fn.__name__} already registered as {fn._registered_name}')
+        fn.__dict__['_registered_name'] = name if name else fn.__name__
+
+        if name:
+            self.__worker._registry.add_named_orchestrator(name, orchestrationWrapper)
+            return
         self.__worker._registry.add_named_orchestrator(fn.__name__, orchestrationWrapper)
 
-    def register_activity(self, fn: Activity):
+    def register_activity(self, fn: Activity, *, name: Optional[str] = None):
         """Registers a workflow activity as a function that takes
            a specified input type and returns a specified output type.
         """
@@ -71,6 +80,13 @@ class WorkflowRuntime:
                 return fn(wfActivityContext)
             return fn(wfActivityContext, inp)
 
+        if hasattr(fn, '_registered_name'):
+            raise ValueError(f'Activity {fn.__name__} already registered as {fn._registered_name}')
+        fn.__dict__['_registered_name'] = name if name else fn.__name__
+
+        if name:
+            self.__worker._registry.add_named_activity(name, activityWrapper)
+            return
         self.__worker._registry.add_named_activity(fn.__name__, activityWrapper)
 
     def start(self):
@@ -80,3 +96,91 @@ class WorkflowRuntime:
     def shutdown(self):
         """Stops the listening for work items on a background thread."""
         self.__worker.stop()
+
+    def workflow(self, __fn: Workflow = None, *, name: Optional[str] = None):
+        """Decorator to register a workflow function.
+
+        This example shows how to register a workflow function with a name:
+
+                from dapr.ext.workflow import WorkflowRuntime
+                wfr = WorkflowRuntime()
+
+                @wfr.workflow(name="add")
+                def add(ctx, x: int, y: int) -> int:
+                    return x + y
+
+        This example shows how to register a workflow function without a name:
+
+                    from dapr.ext.workflow import WorkflowRuntime
+                    wfr = WorkflowRuntime()
+
+                    @wfr.workflow
+                    def add(ctx, x: int, y: int) -> int:
+                        return x + y
+
+        Args:
+            name (Optional[str], optional): Name to identify the workflow function as in
+            the workflow runtime. Defaults to None.
+        """
+
+        def wrapper(fn: Workflow):
+            self.register_workflow(fn, name=name)
+
+            @wraps(fn)
+            def innerfn():
+                return fn
+
+            innerfn.__dict__['_registered_name'] = name if name else fn.__name__
+            innerfn.__signature__ = inspect.signature(fn)
+            return innerfn
+
+        if __fn:
+            # This case is true when the decorator is used without arguments
+            # and the function to be decorated is passed as the first argument.
+            return wrapper(__fn)
+
+        return wrapper
+
+    def activity(self, __fn: Activity = None, *, name: Optional[str] = None):
+        """Decorator to register an activity function.
+
+        This example shows how to register an activity function with a name:
+
+            from dapr.ext.workflow import WorkflowRuntime
+            wfr = WorkflowRuntime()
+
+            @wfr.activity(name="add")
+            def add(ctx, x: int, y: int) -> int:
+                return x + y
+
+        This example shows how to register an activity function without a name:
+
+                from dapr.ext.workflow import WorkflowRuntime
+                wfr = WorkflowRuntime()
+
+                @wfr.activity
+                def add(ctx, x: int, y: int) -> int:
+                    return x + y
+
+        Args:
+            name (Optional[str], optional): Name to identify the activity function as in
+            the workflow runtime. Defaults to None.
+        """
+
+        def wrapper(fn: Activity):
+            self.register_activity(fn, name=name)
+
+            @wraps(fn)
+            def innerfn():
+                return fn
+
+            innerfn.__dict__['_registered_name'] = name if name else fn.__name__
+            innerfn.__signature__ = inspect.signature(fn)
+            return innerfn
+
+        if __fn:
+            # This case is true when the decorator is used without arguments
+            # and the function to be decorated is passed as the first argument.
+            return wrapper(__fn)
+
+        return wrapper

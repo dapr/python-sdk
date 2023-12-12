@@ -53,6 +53,9 @@ class DaprWorkflowContext(WorkflowContext):
 
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
                       input: TInput = None) -> task.Task[TOutput]:
+        if hasattr(activity, '_registered_name'):
+            return self.__obj.call_activity(activity=activity.__dict__['_registered_name'],
+                                            input=input)
         return self.__obj.call_activity(activity=activity.__name__, input=input)
 
     def call_child_workflow(self, workflow: Workflow, *,
@@ -62,7 +65,12 @@ class DaprWorkflowContext(WorkflowContext):
             daprWfContext = DaprWorkflowContext(ctx)
             return workflow(daprWfContext, inp)
         # copy workflow name so durabletask.worker can find the orchestrator in its registry
-        wf.__name__ = workflow.__name__
+
+        # Any workflow function using python decorator will have a _registered_name attribute
+        if hasattr(workflow, '_registered_name'):
+            wf.__name__ = workflow.__dict__['_registered_name']
+        else:
+            wf.__name__ = workflow.__name__
         return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
 
     def wait_for_external_event(self, name: str) -> task.Task:

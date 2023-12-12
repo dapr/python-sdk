@@ -22,10 +22,20 @@ Each of the examples in this directory can be run directly from the command line
 ### Task Chaining
 
 This example demonstrates how to chain "activity" tasks together in a workflow. You can run this sample using the following command:
+<!--STEP
+name: Run the task chaining example
+expected_stdout_lines:
+  - "== APP == Step 1: Received input: 42."
+  - "== APP == Step 2: Received input: 43."
+  - "== APP == Step 3: Received input: 86."
+  - "== APP == Workflow completed! Status: WorkflowStatus.COMPLETED"
+timeout_seconds: 30
+-->
 
 ```sh
 dapr run --app-id wfexample --dapr-grpc-port 50001 -- python3 task_chaining.py
 ```
+<!--END_STEP-->
 
 The output of this example should look like this:
 
@@ -41,9 +51,38 @@ The output of this example should look like this:
 
 This example demonstrates how to fan-out a workflow into multiple parallel tasks, and then fan-in the results of those tasks. You can run this sample using the following command:
 
+<!--STEP
+name: Run the fan-out/fan-in example
+match_order: none
+expected_stdout_lines:
+  - "== APP == Processing work item: 1."
+  - "== APP == Processing work item: 2."
+  - "== APP == Processing work item: 3."
+  - "== APP == Processing work item: 4."
+  - "== APP == Processing work item: 5."
+  - "== APP == Processing work item: 6."
+  - "== APP == Processing work item: 7."
+  - "== APP == Processing work item: 8."
+  - "== APP == Processing work item: 9."
+  - "== APP == Processing work item: 10."
+  - "== APP == Work item 1 processed. Result: 2."
+  - "== APP == Work item 2 processed. Result: 4."
+  - "== APP == Work item 3 processed. Result: 6."
+  - "== APP == Work item 4 processed. Result: 8."
+  - "== APP == Work item 5 processed. Result: 10."
+  - "== APP == Work item 6 processed. Result: 12."
+  - "== APP == Work item 7 processed. Result: 14."
+  - "== APP == Work item 8 processed. Result: 16."
+  - "== APP == Work item 9 processed. Result: 18."
+  - "== APP == Work item 10 processed. Result: 20."
+  - "== APP == Final result: 110."
+timeout_seconds: 30
+-->
+
 ```sh
 dapr run --app-id wfexample --dapr-grpc-port 50001 -- python3 fan_out_fan_in.py
 ```
+<!--END_STEP-->
 
 The output of this sample should look like this:
 
