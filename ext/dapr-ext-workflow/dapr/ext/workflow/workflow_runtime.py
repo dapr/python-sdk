@@ -60,14 +60,20 @@ class WorkflowRuntime:
                 return fn(daprWfContext)
             return fn(daprWfContext, inp)
 
-        if hasattr(fn, '_registered_name'):
-            raise ValueError(f'Workflow {fn.__name__} already registered as {fn._registered_name}')
-        fn.__dict__['_registered_name'] = name if name else fn.__name__
+        if hasattr(fn, '_workflow_registered'):
+            # whenever a workflow is registered, it also has _alternate_name attribute
+            alt_name = fn.__dict__['_alternate_name']
+            raise ValueError(f'Workflow {fn.__name__} already registered as {alt_name}')
+        if hasattr(fn, '_alternate_name'):
+            if name is not None:
+                m = f'Workflow {fn.__name__} already has an alternate name {fn._alternate_name}'
+                raise ValueError(m)
+        else:
+            fn.__dict__['_alternate_name'] = name if name else fn.__name__
 
-        if name:
-            self.__worker._registry.add_named_orchestrator(name, orchestrationWrapper)
-            return
-        self.__worker._registry.add_named_orchestrator(fn.__name__, orchestrationWrapper)
+        self.__worker._registry.add_named_orchestrator(fn.__dict__['_alternate_name'],
+                                                       orchestrationWrapper)
+        fn.__dict__['_workflow_registered'] = True
 
     def register_activity(self, fn: Activity, *, name: Optional[str] = None):
         """Registers a workflow activity as a function that takes
@@ -80,14 +86,20 @@ class WorkflowRuntime:
                 return fn(wfActivityContext)
             return fn(wfActivityContext, inp)
 
-        if hasattr(fn, '_registered_name'):
-            raise ValueError(f'Activity {fn.__name__} already registered as {fn._registered_name}')
-        fn.__dict__['_registered_name'] = name if name else fn.__name__
+        if hasattr(fn, '_activity_registered'):
+            # whenever an activity is registered, it also has _alternate_name attribute
+            alt_name = fn.__dict__['_alternate_name']
+            raise ValueError(f'Activity {fn.__name__} already registered as {alt_name}')
+        if hasattr(fn, '_alternate_name'):
+            if name is not None:
+                m = f'Activity {fn.__name__} already has an alternate name {fn._alternate_name}'
+                raise ValueError(m)
+        else:
+            fn.__dict__['_alternate_name'] = name if name else fn.__name__
 
-        if name:
-            self.__worker._registry.add_named_activity(name, activityWrapper)
-            return
-        self.__worker._registry.add_named_activity(fn.__name__, activityWrapper)
+
+        self.__worker._registry.add_named_activity(fn.__dict__['_alternate_name'], activityWrapper)
+        fn.__dict__['_activity_registered'] = True
 
     def start(self):
         """Starts the listening for work items on a background thread."""
@@ -129,8 +141,10 @@ class WorkflowRuntime:
             @wraps(fn)
             def innerfn():
                 return fn
-
-            innerfn.__dict__['_registered_name'] = name if name else fn.__name__
+            if hasattr(fn, '_alternate_name'):
+                innerfn.__dict__['_alternate_name'] = fn.__dict__['_alternate_name']
+            else:
+                innerfn.__dict__['_alternate_name'] = name if name else fn.__name__
             innerfn.__signature__ = inspect.signature(fn)
             return innerfn
 
@@ -174,7 +188,10 @@ class WorkflowRuntime:
             def innerfn():
                 return fn
 
-            innerfn.__dict__['_registered_name'] = name if name else fn.__name__
+            if hasattr(fn, '_alternate_name'):
+                innerfn.__dict__['_alternate_name'] = fn.__dict__['_alternate_name']
+            else:
+                innerfn.__dict__['_alternate_name'] = name if name else fn.__name__
             innerfn.__signature__ = inspect.signature(fn)
             return innerfn
 
@@ -184,3 +201,46 @@ class WorkflowRuntime:
             return wrapper(__fn)
 
         return wrapper
+
+def alternate_name(name: Optional[str] = None):
+    """Decorator to register a workflow or activity function with an alternate name.
+
+    This example shows how to register a workflow function with a name:
+
+            from dapr.ext.workflow import WorkflowRuntime
+            wfr = WorkflowRuntime()
+
+            @wfr.workflow
+            @alternate_name(add")
+            def add(ctx, x: int, y: int) -> int:
+                return x + y
+
+    This example shows how to register an activity function with a name:
+
+            from dapr.ext.workflow import WorkflowRuntime
+            wfr = WorkflowRuntime()
+
+            @wfr.activity
+            @alternate_name("add")
+            def add(ctx, x: int, y: int) -> int:
+                return x + y
+
+    Args:
+        name (Optional[str], optional): Name to identify the workflow or activity function as in
+        the workflow runtime. Defaults to None.
+    """
+
+    def wrapper(fn: any):
+        if hasattr(fn, '_alternate_name'):
+                raise ValueError(f'Function {fn.__name__} already has an alternate name {fn._alternate_name}')
+        fn.__dict__['_alternate_name'] = name if name else fn.__name__
+
+        @wraps(fn)
+        def innerfn(*args, **kwargs):
+            return fn(*args, **kwargs)
+
+        innerfn.__dict__['_alternate_name'] = name if name else fn.__name__
+        innerfn.__signature__ = inspect.signature(fn)
+        return innerfn
+
+    return wrapper
