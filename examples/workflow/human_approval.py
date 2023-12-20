@@ -18,7 +18,7 @@ import time
 from dapr.clients import DaprClient
 import dapr.ext.workflow as wf
 
-wfr = wf.WorkflowRuntime("localhost", "50001")
+wfr = wf.WorkflowRuntime()
 
 @dataclass
 class Order:

@@ -15,7 +15,7 @@ from time import sleep
 import dapr.ext.workflow as wf
 
 
-wfr = wf.WorkflowRuntime("localhost", "50001")
+wfr = wf.WorkflowRuntime()
 
 @wfr.workflow(name="random_workflow")
 def task_chain_workflow(ctx: wf.DaprWorkflowContext, wf_input: int):

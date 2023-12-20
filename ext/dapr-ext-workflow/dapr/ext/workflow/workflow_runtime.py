@@ -120,7 +120,8 @@ class WorkflowRuntime:
                 def add(ctx, x: int, y: int) -> int:
                     return x + y
 
-        This example shows how to register a workflow function without a name:
+        This example shows how to register a workflow function without
+        an alternate name:
 
                     from dapr.ext.workflow import WorkflowRuntime
                     wfr = WorkflowRuntime()
@@ -157,7 +158,7 @@ class WorkflowRuntime:
     def activity(self, __fn: Activity = None, *, name: Optional[str] = None):
         """Decorator to register an activity function.
 
-        This example shows how to register an activity function with a name:
+        This example shows how to register an activity function with an alternate name:
 
             from dapr.ext.workflow import WorkflowRuntime
             wfr = WorkflowRuntime()
@@ -166,7 +167,7 @@ class WorkflowRuntime:
             def add(ctx, x: int, y: int) -> int:
                 return x + y
 
-        This example shows how to register an activity function without a name:
+        This example shows how to register an activity function without an alternate name:
 
                 from dapr.ext.workflow import WorkflowRuntime
                 wfr = WorkflowRuntime()
@@ -205,23 +206,13 @@ class WorkflowRuntime:
 def alternate_name(name: Optional[str] = None):
     """Decorator to register a workflow or activity function with an alternate name.
 
-    This example shows how to register a workflow function with a name:
+    This example shows how to register a workflow function with an alternate name:
 
             from dapr.ext.workflow import WorkflowRuntime
             wfr = WorkflowRuntime()
 
             @wfr.workflow
             @alternate_name(add")
-            def add(ctx, x: int, y: int) -> int:
-                return x + y
-
-    This example shows how to register an activity function with a name:
-
-            from dapr.ext.workflow import WorkflowRuntime
-            wfr = WorkflowRuntime()
-
-            @wfr.activity
-            @alternate_name("add")
             def add(ctx, x: int, y: int) -> int:
                 return x + y
 

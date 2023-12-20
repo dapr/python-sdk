@@ -14,7 +14,7 @@ import time
 from typing import List
 import dapr.ext.workflow as wf
 
-wfr = wf.WorkflowRuntime("localhost", "50001")
+wfr = wf.WorkflowRuntime()
 
 @wfr.workflow(name="batch_processing")
 def batch_processing_workflow(ctx: wf.DaprWorkflowContext, wf_input: int):
