@@ -97,7 +97,6 @@ class WorkflowRuntime:
         else:
             fn.__dict__['_alternate_name'] = name if name else fn.__name__
 
-
         self.__worker._registry.add_named_activity(fn.__dict__['_alternate_name'], activityWrapper)
         fn.__dict__['_activity_registered'] = True
 
@@ -202,6 +201,7 @@ class WorkflowRuntime:
 
         return wrapper
 
+
 def alternate_name(name: Optional[str] = None):
     """Decorator to register a workflow or activity function with an alternate name.
 
@@ -232,7 +232,8 @@ def alternate_name(name: Optional[str] = None):
 
     def wrapper(fn: any):
         if hasattr(fn, '_alternate_name'):
-                raise ValueError(f'Function {fn.__name__} already has an alternate name {fn._alternate_name}')
+            raise ValueError(
+                f'Function {fn.__name__} already has an alternate name {fn._alternate_name}')
         fn.__dict__['_alternate_name'] = name if name else fn.__name__
 
         @wraps(fn)

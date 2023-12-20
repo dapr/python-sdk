@@ -15,8 +15,6 @@ limitations under the License.
 
 from typing import List
 import unittest
-import logging
-import inspect
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from unittest import mock
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
@@ -37,7 +35,6 @@ class FakeTaskHubGrpcWorker:
 class WorkflowRuntimeTest(unittest.TestCase):
 
     def setUp(self):
-        self.log = logging.getLogger(__name__)
         listActivities.clear()
         listOrchestrators.clear()
         mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
@@ -50,7 +47,6 @@ class WorkflowRuntimeTest(unittest.TestCase):
             del self.mock_client_wf.__dict__["_workflow_registered"]
         if hasattr(self.mock_client_activity, "_activity_registered"):
             del self.mock_client_activity.__dict__["_activity_registered"]
-
 
     def mock_client_wf(ctx: DaprWorkflowContext, input):
         print(f'{input}')
@@ -129,7 +125,7 @@ class WorkflowRuntimeTest(unittest.TestCase):
         with self.assertRaises(ValueError) as exeception_context:
             (self.runtime_options.activity(name="random"))(client_act)
         self.assertEqual(exeception_context.exception.args[0],
-                            f'Activity {client_act.__name__} already has an alternate name test')
+                         f'Activity {client_act.__name__} already has an alternate name test')
 
     def test_register_wf_act_using_both_decorator_and_method_without_name(self):
         client_wf = (self.runtime_options.workflow())(self.mock_client_wf)
