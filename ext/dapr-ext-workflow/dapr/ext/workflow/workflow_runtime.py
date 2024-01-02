@@ -26,7 +26,7 @@ from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
-from dapr.ext.workflow.logger import LoggerOptions
+from dapr.ext.workflow.logger import LoggerOptions, Logger
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -42,10 +42,7 @@ class WorkflowRuntime:
             host: Optional[str] = None,
             port: Optional[str] = None,
             logger_options: Optional[LoggerOptions] = None):
-        if logger_options is None:
-            logger_options = LoggerOptions()
-        self._logger_options = logger_options
-        self._logger = logger_options.get_logger("WorkflowRuntime")
+        self._logger = Logger("WorkflowRuntime", logger_options)
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
@@ -59,15 +56,15 @@ class WorkflowRuntime:
         self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint,
                                                  metadata=metadata,
                                                  secure_channel=uri.tls,
-                                                 log_handler=logger_options.log_handler,
-                                                 log_formatter=logger_options.log_formatter)
+                                                 log_handler=self._logger.get_options().log_handler,
+                                                 log_formatter=self._logger.get_options().log_formatter)
 
     def register_workflow(self, fn: Workflow):
         self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
 
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
-            daprWfContext = DaprWorkflowContext(ctx, self._logger_options)
+            daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
             if inp is None:
                 return fn(daprWfContext)
             return fn(daprWfContext, inp)

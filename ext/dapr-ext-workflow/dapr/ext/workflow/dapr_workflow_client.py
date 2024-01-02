@@ -27,7 +27,7 @@ from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
-from dapr.ext.workflow.logger import LoggerOptions
+from dapr.ext.workflow.logger import LoggerOptions, Logger
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -56,9 +56,7 @@ class DaprWorkflowClient:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        if logger_options is None:
-            logger_options = LoggerOptions()
-        self._logger = logger_options.get_logger("DaprWorkflowClient")
+        self._logger = Logger("DaprWorkflowClient", logger_options)
 
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
@@ -66,8 +64,8 @@ class DaprWorkflowClient:
         self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint,
                                               metadata=metadata,
                                               secure_channel=uri.tls,
-                                              log_handler=logger_options.log_handler,
-                                              log_formatter=logger_options.log_formatter)
+                                              log_handler=self._logger.get_options().log_handler,
+                                              log_formatter=self._logger.get_options().log_formatter)
 
     def schedule_new_workflow(self, workflow: Workflow, *, input: Optional[TInput] = None,
                               instance_id: Optional[str] = None,

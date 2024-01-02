@@ -20,7 +20,7 @@ from durabletask import task
 
 from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
-from dapr.ext.workflow.logger import LoggerOptions
+from dapr.ext.workflow.logger import LoggerOptions, Logger
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -35,10 +35,8 @@ class DaprWorkflowContext(WorkflowContext):
             ctx: task.OrchestrationContext,
             logger_options: Optional[LoggerOptions] = None):
         self.__obj = ctx
-        if logger_options is None:
-            logger_options = LoggerOptions()
-        self._logger_options = logger_options
-        self._logger = logger_options.get_logger("DaprWorkflowContext")
+
+        self._logger = Logger("DaprWorkflowContext", logger_options)
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
@@ -72,7 +70,7 @@ class DaprWorkflowContext(WorkflowContext):
                            call_child_workflow: {workflow.__name__}')
 
         def wf(ctx: task.OrchestrationContext, inp: TInput):
-            daprWfContext = DaprWorkflowContext(ctx, self._logger_options)
+            daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
             return workflow(daprWfContext, inp)
         # copy workflow name so durabletask.worker can find the orchestrator in its registry
         wf.__name__ = workflow.__name__

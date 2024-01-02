@@ -38,13 +38,3 @@ class LoggerOptions:
         self.log_level = log_level
         self.log_handler = log_handler
         self.log_formatter = log_formatter
-
-    def get_logger(
-            self,
-            name: str) -> logging.Logger:
-        logger = logging.Logger(name)
-        log_handler = self.log_handler
-        log_handler.setLevel(self.log_level)
-        log_handler.setFormatter(self.log_formatter)
-        logger.handlers.append(log_handler)
-        return logger
