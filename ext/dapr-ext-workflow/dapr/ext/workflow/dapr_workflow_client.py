@@ -27,7 +27,7 @@ from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
-from dapr.logger.options import LoggerOptions
+from dapr.ext.workflow.logger import LoggerOptions
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

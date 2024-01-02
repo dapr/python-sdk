@@ -20,7 +20,7 @@ from durabletask import task
 
 from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
-from dapr.logger.options import LoggerOptions
+from dapr.ext.workflow.logger import LoggerOptions
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
