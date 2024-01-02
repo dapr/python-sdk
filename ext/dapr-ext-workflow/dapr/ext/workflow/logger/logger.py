@@ -2,9 +2,10 @@ import logging
 from typing import Union
 from dapr.ext.workflow.logger.options import LoggerOptions
 
+
 class Logger:
-    def __init__(self, 
-                 name: str, 
+    def __init__(self,
+                 name: str,
                  options: Union[LoggerOptions, None] = None):
         # If options is None, then create a new LoggerOptions object
         if options is None:
@@ -16,7 +17,7 @@ class Logger:
         logger.handlers.append(log_handler)
         self._logger_options = options
         self._logger = logger
-    
+
     def get_options(self) -> LoggerOptions:
         return self._logger_options
 

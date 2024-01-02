@@ -61,11 +61,12 @@ class DaprWorkflowClient:
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
+        options = self._logger.get_options()
         self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint,
                                               metadata=metadata,
                                               secure_channel=uri.tls,
-                                              log_handler=self._logger.get_options().log_handler,
-                                              log_formatter=self._logger.get_options().log_formatter)
+                                              log_handler=options.log_handler,
+                                              log_formatter=options.log_formatter)
 
     def schedule_new_workflow(self, workflow: Workflow, *, input: Optional[TInput] = None,
                               instance_id: Optional[str] = None,

@@ -53,11 +53,12 @@ class WorkflowRuntime:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
+        options = self._logger.get_options()
         self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint,
                                                  metadata=metadata,
                                                  secure_channel=uri.tls,
-                                                 log_handler=self._logger.get_options().log_handler,
-                                                 log_formatter=self._logger.get_options().log_formatter)
+                                                 log_handler=options.log_handler,
+                                                 log_formatter=options.log_formatter)
 
     def register_workflow(self, fn: Workflow):
         self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
