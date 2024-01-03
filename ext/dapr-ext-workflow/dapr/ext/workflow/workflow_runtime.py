@@ -61,17 +61,18 @@ class WorkflowRuntime:
             return fn(daprWfContext, inp)
 
         if hasattr(fn, '_workflow_registered'):
-            # whenever a workflow is registered, it also has _alternate_name attribute
-            alt_name = fn.__dict__['_alternate_name']
+            # whenever a workflow is registered, it has a _dapr_alternate_name attribute
+            alt_name = fn.__dict__['_dapr_alternate_name']
             raise ValueError(f'Workflow {fn.__name__} already registered as {alt_name}')
-        if hasattr(fn, '_alternate_name'):
+        if hasattr(fn, '_dapr_alternate_name'):
+            alt_name = fn._dapr_alternate_name
             if name is not None:
-                m = f'Workflow {fn.__name__} already has an alternate name {fn._alternate_name}'
+                m = f'Workflow {fn.__name__} already has an alternate name {alt_name}'
                 raise ValueError(m)
         else:
-            fn.__dict__['_alternate_name'] = name if name else fn.__name__
+            fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
-        self.__worker._registry.add_named_orchestrator(fn.__dict__['_alternate_name'],
+        self.__worker._registry.add_named_orchestrator(fn.__dict__['_dapr_alternate_name'],
                                                        orchestrationWrapper)
         fn.__dict__['_workflow_registered'] = True
 
@@ -87,17 +88,19 @@ class WorkflowRuntime:
             return fn(wfActivityContext, inp)
 
         if hasattr(fn, '_activity_registered'):
-            # whenever an activity is registered, it also has _alternate_name attribute
-            alt_name = fn.__dict__['_alternate_name']
+            # whenever an activity is registered, it has a _dapr_alternate_name attribute
+            alt_name = fn.__dict__['_dapr_alternate_name']
             raise ValueError(f'Activity {fn.__name__} already registered as {alt_name}')
-        if hasattr(fn, '_alternate_name'):
+        if hasattr(fn, '_dapr_alternate_name'):
+            alt_name = fn._dapr_alternate_name
             if name is not None:
-                m = f'Activity {fn.__name__} already has an alternate name {fn._alternate_name}'
+                m = f'Activity {fn.__name__} already has an alternate name {alt_name}'
                 raise ValueError(m)
         else:
-            fn.__dict__['_alternate_name'] = name if name else fn.__name__
+            fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
-        self.__worker._registry.add_named_activity(fn.__dict__['_alternate_name'], activityWrapper)
+        self.__worker._registry.add_named_activity(fn.__dict__['_dapr_alternate_name'],
+                                                   activityWrapper)
         fn.__dict__['_activity_registered'] = True
 
     def start(self):
@@ -141,10 +144,10 @@ class WorkflowRuntime:
             @wraps(fn)
             def innerfn():
                 return fn
-            if hasattr(fn, '_alternate_name'):
-                innerfn.__dict__['_alternate_name'] = fn.__dict__['_alternate_name']
+            if hasattr(fn, '_dapr_alternate_name'):
+                innerfn.__dict__['_dapr_alternate_name'] = fn.__dict__['_dapr_alternate_name']
             else:
-                innerfn.__dict__['_alternate_name'] = name if name else fn.__name__
+                innerfn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
             innerfn.__signature__ = inspect.signature(fn)
             return innerfn
 
@@ -188,10 +191,10 @@ class WorkflowRuntime:
             def innerfn():
                 return fn
 
-            if hasattr(fn, '_alternate_name'):
-                innerfn.__dict__['_alternate_name'] = fn.__dict__['_alternate_name']
+            if hasattr(fn, '_dapr_alternate_name'):
+                innerfn.__dict__['_dapr_alternate_name'] = fn.__dict__['_dapr_alternate_name']
             else:
-                innerfn.__dict__['_alternate_name'] = name if name else fn.__name__
+                innerfn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
             innerfn.__signature__ = inspect.signature(fn)
             return innerfn
 
@@ -222,16 +225,16 @@ def alternate_name(name: Optional[str] = None):
     """
 
     def wrapper(fn: any):
-        if hasattr(fn, '_alternate_name'):
+        if hasattr(fn, '_dapr_alternate_name'):
             raise ValueError(
-                f'Function {fn.__name__} already has an alternate name {fn._alternate_name}')
-        fn.__dict__['_alternate_name'] = name if name else fn.__name__
+                f'Function {fn.__name__} already has an alternate name {fn._dapr_alternate_name}')
+        fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
         @wraps(fn)
         def innerfn(*args, **kwargs):
             return fn(*args, **kwargs)
 
-        innerfn.__dict__['_alternate_name'] = name if name else fn.__name__
+        innerfn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
         innerfn.__signature__ = inspect.signature(fn)
         return innerfn
 

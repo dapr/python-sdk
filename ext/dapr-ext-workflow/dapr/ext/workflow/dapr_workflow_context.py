@@ -53,8 +53,8 @@ class DaprWorkflowContext(WorkflowContext):
 
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
                       input: TInput = None) -> task.Task[TOutput]:
-        if hasattr(activity, '_alternate_name'):
-            return self.__obj.call_activity(activity=activity.__dict__['_alternate_name'],
+        if hasattr(activity, '_dapr_alternate_name'):
+            return self.__obj.call_activity(activity=activity.__dict__['_dapr_alternate_name'],
                                             input=input)
         # this return should ideally never execute
         return self.__obj.call_activity(activity=activity.__name__, input=input)
@@ -67,8 +67,8 @@ class DaprWorkflowContext(WorkflowContext):
             return workflow(daprWfContext, inp)
         # copy workflow name so durabletask.worker can find the orchestrator in its registry
 
-        if hasattr(workflow, '_alternate_name'):
-            wf.__name__ = workflow.__dict__['_alternate_name']
+        if hasattr(workflow, '_dapr_alternate_name'):
+            wf.__name__ = workflow.__dict__['_dapr_alternate_name']
         else:
             # this case should ideally never happen
             wf.__name__ = workflow.__name__
