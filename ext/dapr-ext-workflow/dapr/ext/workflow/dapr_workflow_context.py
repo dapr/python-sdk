@@ -35,7 +35,6 @@ class DaprWorkflowContext(WorkflowContext):
             ctx: task.OrchestrationContext,
             logger_options: Optional[LoggerOptions] = None):
         self.__obj = ctx
-
         self._logger = Logger("DaprWorkflowContext", logger_options)
 
     # provide proxy access to regular attributes of wrapped object
@@ -55,19 +54,18 @@ class DaprWorkflowContext(WorkflowContext):
         return self.__obj.is_replaying
 
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
-        self._logger.debug(f'instance_id {self.instance_id} create_timer: {fire_at}')
+        self._logger.debug(f'{self.instance_id}: Creating timer to fire at {fire_at} time')
         return self.__obj.create_timer(fire_at)
 
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
                       input: TInput = None) -> task.Task[TOutput]:
-        self._logger.debug(f'instance_id {self.instance_id} call_activity: {activity.__name__}')
+        self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
         return self.__obj.call_activity(activity=activity.__name__, input=input)
 
     def call_child_workflow(self, workflow: Workflow, *,
                             input: Optional[TInput],
                             instance_id: Optional[str]) -> task.Task[TOutput]:
-        self._logger.debug(f'instance_id {self.instance_id} \
-                           call_child_workflow: {workflow.__name__}')
+        self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
 
         def wf(ctx: task.OrchestrationContext, inp: TInput):
             daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
@@ -77,11 +75,11 @@ class DaprWorkflowContext(WorkflowContext):
         return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
 
     def wait_for_external_event(self, name: str) -> task.Task:
-        self._logger.debug(f'instance_id {self.instance_id} wait_for_external_event: {name}')
+        self._logger.debug(f'{self.instance_id}: Waiting for external event {name}')
         return self.__obj.wait_for_external_event(name)
 
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
-        self._logger.debug(f'instance_id {self.instance_id} continue_as_new')
+        self._logger.debug(f'{self.instance_id}: Continuing as new')
         self.__obj.continue_as_new(new_input, save_events=save_events)
 
 
