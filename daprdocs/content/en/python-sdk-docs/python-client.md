@@ -70,8 +70,10 @@ The legacy environment variables `DAPR_RUNTIME_HOST`, `DAPR_HTTP_PORT` and `DAPR
 also supported, but `DAPR_GRPC_ENDPOINT` takes precedence.
 
 ##### Dapr API Token
+If your Dapr instance is configured to require the `DAPR_API_TOKEN` environment variable, you can
+set it in the environment and the client will use it automatically.  
+You can read more about Dapr API token authentication [here](https://docs.dapr.io/operations/security/api-token/).
 
-You can use the `DAPR_API_TOKEN` environment variable to set the Dapr API token. 
 
 ## Building blocks
 
