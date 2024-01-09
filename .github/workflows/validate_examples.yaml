@@ -7,6 +7,10 @@ on:
       - feature/*
     tags:
       - v*
+      - workflow-v*
+      - grpc-v*
+      - fastapi-v*
+      - flask-v*
   pull_request:
     branches:
       - main
@@ -70,7 +74,7 @@ jobs:
           echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
           echo "Found $CLI_VERSION"
       - name: Set up Python ${{ matrix.python_ver }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_ver }}
       - name: Install dependencies
@@ -81,7 +85,7 @@ jobs:
         run: wget -q ${{ env.DAPR_INSTALL_URL }} -O - | /bin/bash -s ${{ env.DAPR_CLI_VER }}
       - name: Set up Go ${{ env.GOVER }}
         if: env.DAPR_REF != '' || env.DAPR_CLI_REF != ''
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GOVER }}
       - name: Checkout Dapr CLI repo to override dapr command.

@@ -7,6 +7,10 @@ on:
       - feature/*
     tags:
       - v*
+      - workflow-v*
+      - grpc-v*
+      - flask-v*
+      - fastapi-v*
   pull_request:
     branches:
       - main
@@ -25,7 +29,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python_ver }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python_ver }}
     - name: Install dependencies
@@ -52,7 +56,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.9
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9
     - name: Install dependencies
@@ -60,12 +64,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine tox
     - name: Build and publish Dapr Python SDK
+      if: startsWith(github.ref_name, 'v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-workflow
+      if: startsWith(github.ref_name, 'worfklow-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -73,6 +79,7 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish Dapr Flask Extension
+      if: startsWith(github.ref_name, 'flask-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -80,6 +87,7 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-grpc
+      if: startsWith(github.ref_name, 'grpc-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -87,6 +95,7 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-fastapi
+      if: startsWith(github.ref_name, 'fastapi-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |

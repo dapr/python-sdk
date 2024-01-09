@@ -36,5 +36,5 @@ spec:
         command: ["python"]
         args: ["/app/invoke-receiver.py"]
         ports:
-        - containerPort: 3000
+        - containerPort: 50051
         imagePullPolicy: Always
