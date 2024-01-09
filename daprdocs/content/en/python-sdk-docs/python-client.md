@@ -39,7 +39,8 @@ with DaprClient() as d:
 ```
 
 #### Specifying an endpoint on initialisation:  
-When passed as an argument in the constructor, the gRPC endpoint takes precedence over any configuration or environment variable.
+When passed as an argument in the constructor, the gRPC endpoint takes precedence over any 
+configuration or environment variable.
 
 ```python
 from dapr.clients import DaprClient
@@ -48,7 +49,9 @@ with DaprClient("mydomain:50051?tls=true") as d:
     # use the client
 ```  
 
-#### Specifying the endpoint in an environment variable:  
+#### Environment variables:  
+
+##### Dapr Sidecar Endpoints
 You can use the standardised `DAPR_GRPC_ENDPOINT` environment variable to
 specify the gRPC endpoint. When this variable is set, the client can be initialised 
 without any arguments:
@@ -65,6 +68,11 @@ with DaprClient() as d:
 
 The legacy environment variables `DAPR_RUNTIME_HOST`, `DAPR_HTTP_PORT` and `DAPR_GRPC_PORT` are 
 also supported, but `DAPR_GRPC_ENDPOINT` takes precedence.
+
+##### Dapr API Token
+If your Dapr instance is configured to require the `DAPR_API_TOKEN` environment variable, you can
+set it in the environment and the client will use it automatically.  
+You can read more about Dapr API token authentication [here](https://docs.dapr.io/operations/security/api-token/).
 
 
 ## Building blocks
