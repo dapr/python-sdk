@@ -18,6 +18,8 @@ import time
 from dapr.clients import DaprClient
 import dapr.ext.workflow as wf
 
+wfr = wf.WorkflowRuntime()
+
 
 @dataclass
 class Order:
@@ -38,6 +40,7 @@ class Approval:
         return Approval(**dict)
 
 
+@wfr.workflow(name='purchase_order_wf')
 def purchase_order_workflow(ctx: wf.DaprWorkflowContext, order: Order):
     # Orders under $1000 are auto-approved
     if order.cost < 1000:
@@ -59,10 +62,12 @@ def purchase_order_workflow(ctx: wf.DaprWorkflowContext, order: Order):
     return f"Approved by '{approval_details.approver}'"
 
 
+@wfr.activity(name='send_approval')
 def send_approval_request(_, order: Order) -> None:
     print(f'*** Requesting approval from user for order: {order}')
 
 
+@wfr.activity
 def place_order(_, order: Order) -> None:
     print(f'*** Placing order: {order}')
 
@@ -76,12 +81,8 @@ if __name__ == '__main__':
     parser.add_argument('--timeout', type=int, default=60, help='Timeout in seconds')
     args = parser.parse_args()
 
-    # configure and start the workflow runtime
-    workflowRuntime = wf.WorkflowRuntime('localhost', '50001')
-    workflowRuntime.register_workflow(purchase_order_workflow)
-    workflowRuntime.register_activity(send_approval_request)
-    workflowRuntime.register_activity(place_order)
-    workflowRuntime.start()
+    # start the workflow runtime
+    wfr.start()
 
     # Start a purchase order workflow using the user input
     order = Order(args.cost, 'MyProduct', 1)
@@ -118,4 +119,4 @@ if __name__ == '__main__':
     except TimeoutError:
         print('*** Workflow timed out!')
 
-    workflowRuntime.shutdown()
+    wfr.shutdown()

@@ -13,7 +13,10 @@
 from dataclasses import dataclass
 from datetime import timedelta
 import random
+from time import sleep
 import dapr.ext.workflow as wf
+
+wfr = wf.WorkflowRuntime()
 
 
 @dataclass
@@ -22,6 +25,7 @@ class JobStatus:
     is_healthy: bool
 
 
+@wfr.workflow(name='status_monitor')
 def status_monitor_workflow(ctx: wf.DaprWorkflowContext, job: JobStatus):
     # poll a status endpoint associated with this job
     status = yield ctx.call_activity(check_status, input=job)
@@ -43,20 +47,19 @@ def status_monitor_workflow(ctx: wf.DaprWorkflowContext, job: JobStatus):
     ctx.continue_as_new(job)
 
 
+@wfr.activity
 def check_status(ctx, _) -> str:
     return random.choice(['healthy', 'unhealthy'])
 
 
+@wfr.activity
 def send_alert(ctx, message: str):
     print(f'*** Alert: {message}')
 
 
 if __name__ == '__main__':
-    workflowRuntime = wf.WorkflowRuntime()
-    workflowRuntime.register_workflow(status_monitor_workflow)
-    workflowRuntime.register_activity(check_status)
-    workflowRuntime.register_activity(send_alert)
-    workflowRuntime.start()
+    wfr.start()
+    sleep(10)  # wait for workflow runtime to start
 
     wf_client = wf.DaprWorkflowClient()
     job_id = 'job1'
@@ -76,4 +79,4 @@ if __name__ == '__main__':
         print(f'Workflow already running. Instance ID: {job_id}')
 
     input('Press Enter to stop...\n')
-    workflowRuntime.shutdown()
+    wfr.shutdown()
