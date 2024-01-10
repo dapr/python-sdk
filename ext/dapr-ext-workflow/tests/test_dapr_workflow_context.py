@@ -29,7 +29,10 @@ mock_call_sub_orchestrator = 'call_sub_orchestrator'
 
 class FakeOrchestrationContext:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
     def __init__(self):
         self.instance_id = mock_instance_id
 

@@ -62,17 +62,23 @@ class DaprWorkflowClient:
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.__obj = client.TaskHubGrpcClient(
             host_address=uri.endpoint, metadata=metadata, secure_channel=uri.tls
         )
 =======
+=======
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
         options = self._logger.get_options()
         self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint,
                                               metadata=metadata,
                                               secure_channel=uri.tls,
                                               log_handler=options.log_handler,
                                               log_formatter=options.log_formatter)
+<<<<<<< HEAD
 >>>>>>> 2c328d1 (Add logs to Dapr Workflows (#645))
+=======
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
 
     def schedule_new_workflow(
         self,
@@ -98,6 +104,7 @@ class DaprWorkflowClient:
             The ID of the scheduled workflow instance.
         """
         if hasattr(workflow, '_dapr_alternate_name'):
+<<<<<<< HEAD
             return self.__obj.schedule_new_orchestration(
                 workflow.__dict__['_dapr_alternate_name'],
                 input=input,
@@ -107,6 +114,14 @@ class DaprWorkflowClient:
         return self.__obj.schedule_new_orchestration(
             workflow.__name__, input=input, instance_id=instance_id, start_at=start_at
         )
+=======
+            return self.__obj.schedule_new_orchestration(workflow.__dict__['_dapr_alternate_name'],
+                                                         input=input, instance_id=instance_id,
+                                                         start_at=start_at)
+        return self.__obj.schedule_new_orchestration(workflow.__name__, input=input,
+                                                     instance_id=instance_id,
+                                                     start_at=start_at)
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
 
     def get_workflow_state(
         self, instance_id: str, *, fetch_payloads: bool = True

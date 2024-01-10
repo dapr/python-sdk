@@ -47,6 +47,20 @@ class WorkflowRuntimeTest(unittest.TestCase):
         if hasattr(self.mock_client_activity, '_activity_registered'):
             del self.mock_client_activity.__dict__['_activity_registered']
 
+    def setUp(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        self.runtime_options = WorkflowRuntime()
+        if hasattr(self.mock_client_wf, '_dapr_alternate_name'):
+            del self.mock_client_wf.__dict__['_dapr_alternate_name']
+        if hasattr(self.mock_client_activity, '_dapr_alternate_name'):
+            del self.mock_client_activity.__dict__['_dapr_alternate_name']
+        if hasattr(self.mock_client_wf, '_workflow_registered'):
+            del self.mock_client_wf.__dict__['_workflow_registered']
+        if hasattr(self.mock_client_activity, '_activity_registered'):
+            del self.mock_client_activity.__dict__['_activity_registered']
+
     def mock_client_wf(ctx: DaprWorkflowContext, input):
         print(f'{input}')
 

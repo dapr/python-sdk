@@ -68,11 +68,17 @@ class DaprWorkflowContext(WorkflowContext):
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
                       input: TInput = None) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
+<<<<<<< HEAD
 >>>>>>> 2c328d1 (Add logs to Dapr Workflows (#645))
         if hasattr(activity, '_dapr_alternate_name'):
             return self.__obj.call_activity(
                 activity=activity.__dict__['_dapr_alternate_name'], input=input
             )
+=======
+        if hasattr(activity, '_dapr_alternate_name'):
+            return self.__obj.call_activity(activity=activity.__dict__['_dapr_alternate_name'],
+                                            input=input)
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
         # this return should ideally never execute
         return self.__obj.call_activity(activity=activity.__name__, input=input)
 
@@ -86,7 +92,10 @@ class DaprWorkflowContext(WorkflowContext):
                             instance_id: Optional[str]) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
 
+<<<<<<< HEAD
 >>>>>>> 2c328d1 (Add logs to Dapr Workflows (#645))
+=======
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
         def wf(ctx: task.OrchestrationContext, inp: TInput):
             daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
             return workflow(daprWfContext, inp)

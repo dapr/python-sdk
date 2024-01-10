@@ -55,17 +55,23 @@ class WorkflowRuntime:
             raise DaprInternalError(f'{error}') from error
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.__worker = worker.TaskHubGrpcWorker(
             host_address=uri.endpoint, metadata=metadata, secure_channel=uri.tls
         )
 =======
+=======
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
         options = self._logger.get_options()
         self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint,
                                                  metadata=metadata,
                                                  secure_channel=uri.tls,
                                                  log_handler=options.log_handler,
                                                  log_formatter=options.log_formatter)
+<<<<<<< HEAD
 >>>>>>> 2c328d1 (Add logs to Dapr Workflows (#645))
+=======
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
         self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
@@ -89,9 +95,14 @@ class WorkflowRuntime:
         else:
             fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
+<<<<<<< HEAD
         self.__worker._registry.add_named_orchestrator(
             fn.__dict__['_dapr_alternate_name'], orchestrationWrapper
         )
+=======
+        self.__worker._registry.add_named_orchestrator(fn.__dict__['_dapr_alternate_name'],
+                                                       orchestrationWrapper)
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
         fn.__dict__['_workflow_registered'] = True
 
     def register_activity(self, fn: Activity, *, name: Optional[str] = None):
@@ -99,9 +110,13 @@ class WorkflowRuntime:
         a specified input type and returns a specified output type.
         """
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         self._logger.info(f"Registering activity '{fn.__name__}' with runtime")
 >>>>>>> 2c328d1 (Add logs to Dapr Workflows (#645))
+=======
+        self._logger.info(f"Registering activity '{fn.__name__}' with runtime")
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
 
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
@@ -122,9 +137,14 @@ class WorkflowRuntime:
         else:
             fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
+<<<<<<< HEAD
         self.__worker._registry.add_named_activity(
             fn.__dict__['_dapr_alternate_name'], activityWrapper
         )
+=======
+        self.__worker._registry.add_named_activity(fn.__dict__['_dapr_alternate_name'],
+                                                   activityWrapper)
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
         fn.__dict__['_activity_registered'] = True
 
     def start(self):
@@ -168,7 +188,10 @@ class WorkflowRuntime:
             @wraps(fn)
             def innerfn():
                 return fn
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
             if hasattr(fn, '_dapr_alternate_name'):
                 innerfn.__dict__['_dapr_alternate_name'] = fn.__dict__['_dapr_alternate_name']
             else:
@@ -252,8 +275,12 @@ def alternate_name(name: Optional[str] = None):
     def wrapper(fn: any):
         if hasattr(fn, '_dapr_alternate_name'):
             raise ValueError(
+<<<<<<< HEAD
                 f'Function {fn.__name__} already has an alternate name {fn._dapr_alternate_name}'
             )
+=======
+                f'Function {fn.__name__} already has an alternate name {fn._dapr_alternate_name}')
+>>>>>>> 2c328d1df16e1dc5cad26c4619d770bd8b5fc119
         fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
         @wraps(fn)
