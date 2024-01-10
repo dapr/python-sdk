@@ -25,7 +25,7 @@ from dapr.serializers.base import Serializer
 from dapr.serializers.util import (
     convert_from_dapr_duration,
     convert_to_dapr_duration,
-    DAPR_DURATION_PARSER
+    DAPR_DURATION_PARSER,
 )
 
 
@@ -34,13 +34,13 @@ class DefaultJSONSerializer(Serializer):
         self.ensure_ascii = ensure_ascii
 
     def serialize(
-            self, obj: object,
-            custom_hook: Optional[Callable[[object], bytes]] = None) -> bytes:
-
+        self, obj: object, custom_hook: Optional[Callable[[object], bytes]] = None
+    ) -> bytes:
         dict_obj = obj
 
         # importing this from top scope creates a circular import
         from dapr.actor.runtime.config import ActorRuntimeConfig
+
         if callable(custom_hook):
             dict_obj = custom_hook(obj)
         elif isinstance(obj, bytes):
@@ -49,18 +49,17 @@ class DefaultJSONSerializer(Serializer):
             dict_obj = obj.as_dict()
 
         serialized = json.dumps(
-            dict_obj,
-            cls=DaprJSONEncoder,
-            separators=(',', ':'),
-            ensure_ascii=self.ensure_ascii
+            dict_obj, cls=DaprJSONEncoder, separators=(',', ':'), ensure_ascii=self.ensure_ascii
         )
 
         return serialized.encode('utf-8')
 
     def deserialize(
-            self, data: bytes, data_type: Optional[Type] = object,
-            custom_hook: Optional[Callable[[bytes], object]] = None) -> Any:
-
+        self,
+        data: bytes,
+        data_type: Optional[Type] = object,
+        custom_hook: Optional[Callable[[bytes], object]] = None,
+    ) -> Any:
         if not isinstance(data, (str, bytes)):
             raise ValueError('data must be str or bytes types')
 

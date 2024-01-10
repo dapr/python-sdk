@@ -27,8 +27,11 @@ should_retry = True  # To control whether dapr should retry sending a message
 def mytopic(event: v1.Event) -> TopicEventResponse:
     global should_retry
     data = json.loads(event.Data())
-    print(f'Subscriber received: id={data["id"]}, message="{data["message"]}", '
-          f'content_type="{event.content_type}"', flush=True)
+    print(
+        f'Subscriber received: id={data["id"]}, message="{data["message"]}", '
+        f'content_type="{event.content_type}"',
+        flush=True,
+    )
     # event.Metadata() contains a dictionary of cloud event extensions and publish metadata
     if should_retry:
         should_retry = False  # we only retry once in this example
@@ -45,11 +48,16 @@ def fail_and_send_to_dead_topic(event: v1.Event) -> TopicEventResponse:
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_D_DEAD')
 def mytopic_dead(event: v1.Event) -> TopicEventResponse:
     data = json.loads(event.Data())
-    print(f'Dead-Letter Subscriber received: id={data["id"]}, message="{data["message"]}", '
-          f'content_type="{event.content_type}"', flush=True)
-    print("Dead-Letter Subscriber. Received via deadletter topic: " + event.Subject(), flush=True)
-    print("Dead-Letter Subscriber. Originally intended topic: " + event.Extensions()['topic'],
-          flush=True)
+    print(
+        f'Dead-Letter Subscriber received: id={data["id"]}, message="{data["message"]}", '
+        f'content_type="{event.content_type}"',
+        flush=True,
+    )
+    print('Dead-Letter Subscriber. Received via deadletter topic: ' + event.Subject(), flush=True)
+    print(
+        'Dead-Letter Subscriber. Originally intended topic: ' + event.Extensions()['topic'],
+        flush=True,
+    )
     return TopicEventResponse('success')
 
 
@@ -57,8 +65,9 @@ def mytopic_dead(event: v1.Event) -> TopicEventResponse:
 # workaround as redis pubsub does not support wildcards
 # we manually register the distinct topics
 for id in range(4, 7):
-    app._servicer._registered_topics.append(appcallback_v1.TopicSubscription(
-        pubsub_name='pubsub', topic=f'topic/{id}'))
+    app._servicer._registered_topics.append(
+        appcallback_v1.TopicSubscription(pubsub_name='pubsub', topic=f'topic/{id}')
+    )
 # =================================
 
 
@@ -66,8 +75,11 @@ for id in range(4, 7):
 @app.subscribe(pubsub_name='pubsub', topic='topic/#', disable_topic_validation=True)
 def mytopic_wildcard(event: v1.Event) -> TopicEventResponse:
     data = json.loads(event.Data())
-    print(f'Wildcard-Subscriber received: id={data["id"]}, message="{data["message"]}", '
-          f'content_type="{event.content_type}"', flush=True)
+    print(
+        f'Wildcard-Subscriber received: id={data["id"]}, message="{data["message"]}", '
+        f'content_type="{event.content_type}"',
+        flush=True,
+    )
     return TopicEventResponse('success')
 
 

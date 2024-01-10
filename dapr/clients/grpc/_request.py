@@ -26,7 +26,7 @@ from dapr.clients.grpc._helpers import (
     tuple_to_dict,
     to_bytes,
     to_str,
-    unpack
+    unpack,
 )
 
 
@@ -38,6 +38,7 @@ class DaprRequest:
     Attributes:
         metadata(dict): A dict to include the headers from Dapr Request.
     """
+
     def __init__(self, metadata: MetadataTuple = ()):
         self.metadata = metadata  # type: ignore
 
@@ -83,21 +84,13 @@ class InvokeMethodRequest(DaprRequest):
             only for bytes array data.
     """
 
-    HTTP_METHODS = [
-        'GET',
-        'HEAD',
-        'POST',
-        'PUT',
-        'DELETE',
-        'CONNECT',
-        'OPTIONS',
-        'TRACE'
-    ]
+    HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE']
 
     def __init__(
-            self,
-            data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
-            content_type: Optional[str] = None):
+        self,
+        data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
+        content_type: Optional[str] = None,
+    ):
         """Inits InvokeMethodRequestData with data and content_type.
 
         Args:
@@ -230,10 +223,8 @@ class BindingRequest(DaprRequest):
         data (bytes): the data which is used for invoke_binding request.
         metadata (Dict[str, str]): the metadata sent to the binding.
     """
-    def __init__(
-            self,
-            data: Union[str, bytes],
-            binding_metadata: Dict[str, str] = {}):
+
+    def __init__(self, data: Union[str, bytes], binding_metadata: Dict[str, str] = {}):
         """Inits BindingRequest with data and metadata if given.
 
         Args:
@@ -244,7 +235,7 @@ class BindingRequest(DaprRequest):
             ValueError: data is not bytes or str.
         """
         super(BindingRequest, self).__init__(())
-        self.data = data   # type: ignore
+        self.data = data  # type: ignore
         self._binding_metadata = binding_metadata
 
     @property
@@ -269,8 +260,9 @@ class BindingRequest(DaprRequest):
 
 class TransactionOperationType(Enum):
     """Represents the type of operation for a Dapr Transaction State Api Call"""
-    upsert = "upsert"
-    delete = "delete"
+
+    upsert = 'upsert'
+    delete = 'delete'
 
 
 class TransactionalStateOperation:
@@ -284,11 +276,12 @@ class TransactionalStateOperation:
     """
 
     def __init__(
-            self,
-            key: str,
-            data: Union[bytes, str],
-            etag: Optional[str] = None,
-            operation_type: TransactionOperationType = TransactionOperationType.upsert):
+        self,
+        key: str,
+        data: Union[bytes, str],
+        etag: Optional[str] = None,
+        operation_type: TransactionOperationType = TransactionOperationType.upsert,
+    ):
         """Initializes TransactionalStateOperation item from
         :obj:`runtime_v1.TransactionalStateOperation`.
 

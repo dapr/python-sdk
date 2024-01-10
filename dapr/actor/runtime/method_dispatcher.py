@@ -41,5 +41,4 @@ class ActorMethodDispatcher:
 
     def _check_name_exist(self, name: str):
         if name not in self._dispatch_mapping:
-            raise AttributeError(
-                f'type object {self.__class__.__name__} has no method {name}')
+            raise AttributeError(f'type object {self.__class__.__name__} has no method {name}')

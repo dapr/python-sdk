@@ -17,6 +17,7 @@ from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.runtime._type_utils import is_dapr_actor, get_actor_interfaces
 
 from typing import List, Type, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from dapr.actor.actor_interface import ActorInterface  # noqa: F401
     from dapr.actor.runtime.actor import Actor  # noqa: F401
@@ -27,8 +28,12 @@ class ActorTypeInformation:
     implementing an actor.
     """
 
-    def __init__(self, name: str, implementation_class: Type['Actor'],
-                 actor_bases: List[Type['ActorInterface']]):
+    def __init__(
+        self,
+        name: str,
+        implementation_class: Type['Actor'],
+        actor_bases: List[Type['ActorInterface']],
+    ):
         self._name = name
         self._impl_type = implementation_class
         self._actor_bases = actor_bases

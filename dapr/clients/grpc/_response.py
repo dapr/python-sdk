@@ -20,8 +20,16 @@ import threading
 from datetime import datetime
 from enum import Enum
 from typing import (
-    Callable, Dict, List, Optional, Text, Union,
-    Sequence, Mapping, TYPE_CHECKING, NamedTuple
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Text,
+    Union,
+    Sequence,
+    Mapping,
+    TYPE_CHECKING,
+    NamedTuple,
 )
 
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -59,9 +67,7 @@ class DaprResponse:
         headers(dict): A dict to include the headers from Dapr gRPC Response.
     """
 
-    def __init__(
-            self,
-            headers: MetadataTuple = ()):
+    def __init__(self, headers: MetadataTuple = ()):
         """Inits DapResponse with headers and trailers.
 
         Args:
@@ -111,11 +117,12 @@ class InvokeMethodResponse(DaprResponse):
     """
 
     def __init__(
-            self,
-            data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
-            content_type: Optional[str] = None,
-            headers: MetadataTuple = (),
-            status_code: Optional[int] = None):
+        self,
+        data: Union[str, bytes, GrpcAny, GrpcMessage, None] = None,
+        content_type: Optional[str] = None,
+        headers: MetadataTuple = (),
+        status_code: Optional[int] = None,
+    ):
         """Initializes InvokeMethodReponse from :obj:`common_v1.InvokeResponse`.
 
         Args:
@@ -243,7 +250,7 @@ class InvokeMethodResponse(DaprResponse):
                 matched with the response data type
         """
 
-        if self.content_type is not None and self.content_type.lower() == "application/x-protobuf":
+        if self.content_type is not None and self.content_type.lower() == 'application/x-protobuf':
             message.ParseFromString(self.data)
             return
 
@@ -261,10 +268,11 @@ class BindingResponse(DaprResponse):
     """
 
     def __init__(
-            self,
-            data: Union[bytes, str],
-            binding_metadata: Dict[str, str] = {},
-            headers: MetadataTuple = ()):
+        self,
+        data: Union[bytes, str],
+        binding_metadata: Dict[str, str] = {},
+        headers: MetadataTuple = (),
+    ):
         """Initializes InvokeBindingReponse from :obj:`runtime_v1.InvokeBindingResponse`.
 
         Args:
@@ -313,10 +321,7 @@ class GetSecretResponse(DaprResponse):
         secret (Dict[str, str]): secret received from response
     """
 
-    def __init__(
-            self,
-            secret: Dict[str, str],
-            headers: MetadataTuple = ()):
+    def __init__(self, secret: Dict[str, str], headers: MetadataTuple = ()):
         """Initializes GetSecretReponse from :obj:`dapr_v1.GetSecretResponse`.
 
         Args:
@@ -341,10 +346,7 @@ class GetBulkSecretResponse(DaprResponse):
         secret (Dict[str, Dict[str, str]]): secret received from response
     """
 
-    def __init__(
-            self,
-            secrets: Dict[str, Dict[str, str]],
-            headers: MetadataTuple = ()):
+    def __init__(self, secrets: Dict[str, Dict[str, str]], headers: MetadataTuple = ()):
         """Initializes GetBulkSecretReponse from :obj:`dapr_v1.GetBulkSecretResponse`.
 
         Args:
@@ -371,11 +373,7 @@ class StateResponse(DaprResponse):
         headers (Tuple, optional): the headers from Dapr gRPC response
     """
 
-    def __init__(
-            self,
-            data: Union[bytes, str],
-            etag: str = '',
-            headers: MetadataTuple = ()):
+    def __init__(self, data: Union[bytes, str], etag: str = '', headers: MetadataTuple = ()):
         """Initializes StateResponse from :obj:`runtime_v1.GetStateResponse`.
 
         Args:
@@ -425,12 +423,7 @@ class BulkStateItem:
         error (str): error when state was retrieved
     """
 
-    def __init__(
-            self,
-            key: str,
-            data: Union[bytes, str],
-            etag: str = '',
-            error: str = ''):
+    def __init__(self, key: str, data: Union[bytes, str], etag: str = '', error: str = ''):
         """Initializes BulkStateItem item from :obj:`runtime_v1.BulkStateItem`.
 
         Args:
@@ -482,10 +475,7 @@ class BulkStatesResponse(DaprResponse):
         data (Union[bytes, str]): state's data.
     """
 
-    def __init__(
-            self,
-            items: Sequence[BulkStateItem],
-            headers: MetadataTuple = ()):
+    def __init__(self, items: Sequence[BulkStateItem], headers: MetadataTuple = ()):
         """Initializes BulkStatesResponse from :obj:`runtime_v1.GetBulkStateResponse`.
 
         Args:
@@ -511,12 +501,7 @@ class QueryResponseItem:
         error (str): error when state was retrieved
     """
 
-    def __init__(
-            self,
-            key: str,
-            value: bytes,
-            etag: str = '',
-            error: str = ''):
+    def __init__(self, key: str, value: bytes, etag: str = '', error: str = ''):
         """Initializes QueryResponseItem item from :obj:`runtime_v1.QueryStateItem`.
 
         Args:
@@ -571,11 +556,12 @@ class QueryResponse(DaprResponse):
     """
 
     def __init__(
-            self,
-            results: Sequence[QueryResponseItem],
-            token: str = '',
-            metadata: Dict[str, str] = dict(),
-            headers: MetadataTuple = ()):
+        self,
+        results: Sequence[QueryResponseItem],
+        token: str = '',
+        metadata: Dict[str, str] = dict(),
+        headers: MetadataTuple = (),
+    ):
         """Initializes QueryResponse from :obj:`runtime_v1.QueryStateResponse`.
 
         Args:
@@ -614,11 +600,7 @@ class ConfigurationItem:
         metadata (str): metadata
     """
 
-    def __init__(
-            self,
-            value: str,
-            version: str,
-            metadata: Optional[Dict[str, str]] = dict()):
+    def __init__(self, value: str, version: str, metadata: Optional[Dict[str, str]] = dict()):
         """Initializes ConfigurationItem item from :obj:`runtime_v1.ConfigurationItem`.
 
         Args:
@@ -663,10 +645,7 @@ class ConfigurationResponse(DaprResponse):
         - items (Mapping[Text, ConfigurationItem]): state's data.
     """
 
-    def __init__(
-            self,
-            items: Mapping[Text, ConfigurationItem],
-            headers: MetadataTuple = ()):
+    def __init__(self, items: Mapping[Text, ConfigurationItem], headers: MetadataTuple = ()):
         """Initializes ConfigurationResponse from :obj:`runtime_v1.GetConfigurationResponse`.
 
         Args:
@@ -682,16 +661,22 @@ class ConfigurationResponse(DaprResponse):
         return self._items
 
 
-class ConfigurationWatcher():
+class ConfigurationWatcher:
     def __init__(self):
         self.event: threading.Event = threading.Event()
-        self.id: str = ""
+        self.id: str = ''
 
-    def watch_configuration(self, stub: api_service_v1.DaprStub, store_name: str,
-                            keys: List[str], handler: Callable[[Text, ConfigurationResponse], None],
-                            config_metadata: Optional[Dict[str, str]] = dict()):
+    def watch_configuration(
+        self,
+        stub: api_service_v1.DaprStub,
+        store_name: str,
+        keys: List[str],
+        handler: Callable[[Text, ConfigurationResponse], None],
+        config_metadata: Optional[Dict[str, str]] = dict(),
+    ):
         req = api_v1.SubscribeConfigurationRequest(
-            store_name=store_name, keys=keys, metadata=config_metadata)
+            store_name=store_name, keys=keys, metadata=config_metadata
+        )
         thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req, handler))
         thread.daemon = True
         thread.start()
@@ -699,13 +684,16 @@ class ConfigurationWatcher():
         self.store_name = store_name
         check = self.event.wait(timeout=5)
         if not check:
-            print(f"Unable to get configuration id for keys {self.keys}")
+            print(f'Unable to get configuration id for keys {self.keys}')
             return None
         return self.id
 
-    def _read_subscribe_config(self, stub: api_service_v1.DaprStub,
-                               req: api_v1.SubscribeConfigurationRequest,
-                               handler: Callable[[Text, ConfigurationResponse], None]):
+    def _read_subscribe_config(
+        self,
+        stub: api_service_v1.DaprStub,
+        req: api_v1.SubscribeConfigurationRequest,
+        handler: Callable[[Text, ConfigurationResponse], None],
+    ):
         try:
             responses = stub.SubscribeConfigurationAlpha1(req)
             isFirst = True
@@ -717,8 +705,7 @@ class ConfigurationWatcher():
                 if len(response.items) > 0:
                     handler(response.id, ConfigurationResponse(response.items))
         except Exception:
-            print(f"{self.store_name} configuration watcher for keys "
-                  f"{self.keys} stopped.")
+            print(f'{self.store_name} configuration watcher for keys ' f'{self.keys} stopped.')
             pass
 
 
@@ -751,7 +738,7 @@ class TopicEventResponse(DaprResponse):
         """
         super(TopicEventResponse, self).__init__(headers)
         values = [e.name for e in TopicEventResponseStatus]
-        errormsg = f"`status` must be one of {values} or a TopicEventResponseStatus"
+        errormsg = f'`status` must be one of {values} or a TopicEventResponseStatus'
 
         if isinstance(status, str):
             try:
@@ -770,26 +757,26 @@ class TopicEventResponse(DaprResponse):
 
 class UnlockResponseStatus(Enum):
     success = api_v1.UnlockResponse.Status.SUCCESS
-    '''The Unlock operation for the referred lock was successful.'''
+    """The Unlock operation for the referred lock was successful."""
 
     lock_does_not_exist = api_v1.UnlockResponse.Status.LOCK_DOES_NOT_EXIST
-    ''''The unlock operation failed: the referred lock does not exist.'''
+    """'The unlock operation failed: the referred lock does not exist."""
 
     lock_belongs_to_others = api_v1.UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS
-    '''The unlock operation failed: the referred lock belongs to another owner.'''
+    """The unlock operation failed: the referred lock belongs to another owner."""
 
     internal_error = api_v1.UnlockResponse.Status.INTERNAL_ERROR
-    '''An internal error happened while handling the Unlock operation'''
+    """An internal error happened while handling the Unlock operation"""
 
 
 class UnlockResponse(DaprResponse):
-    '''The response of an unlock operation.
+    """The response of an unlock operation.
 
     This inherits from DaprResponse
 
     Attributes:
         status (UnlockResponseStatus): the status of the unlock operation.
-    '''
+    """
 
     def __init__(
         self,
@@ -812,13 +799,14 @@ class UnlockResponse(DaprResponse):
 
 
 class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
-    '''The response of a try_lock operation.
+    """The response of a try_lock operation.
 
     This inherits from DaprResponse and AbstractContextManager.
 
     Attributes:
         success (bool): the result of the try_lock operation.
-    '''
+    """
+
     def __init__(
         self,
         success: bool,
@@ -854,39 +842,42 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
         return self._success
 
     def __exit__(self, *exc) -> None:
-        ''''Automatically unlocks the lock if this TryLockResponse was used as
+        """'Automatically unlocks the lock if this TryLockResponse was used as
         a ContextManager / `with` statement.
 
         Notice: we are not checking the result of the unlock operation.
         If this is something  you care about it might be wiser creating
         your own ContextManager that logs or otherwise raises exceptions
         if unlock doesn't return `UnlockResponseStatus.success`.
-        '''
+        """
         if self._success:
             self._client.unlock(self._store_name, self._resource_id, self._lock_owner)
         # else: there is no point unlocking a lock we did not acquire.
 
     async def __aexit__(self, *exc) -> None:
-        ''''Automatically unlocks the lock if this TryLockResponse was used as
+        """'Automatically unlocks the lock if this TryLockResponse was used as
         a ContextManager / `with` statement.
 
         Notice: we are not checking the result of the unlock operation.
         If this is something  you care about it might be wiser creating
         your own ContextManager that logs or otherwise raises exceptions
         if unlock doesn't return `UnlockResponseStatus.success`.
-        '''
+        """
         if self._success:
-            await self._client.unlock(self._store_name,   # type: ignore
-                                      self._resource_id, self._lock_owner)
+            await self._client.unlock(
+                self._store_name,  # type: ignore
+                self._resource_id,
+                self._lock_owner,
+            )
         # else: there is no point unlocking a lock we did not acquire.
 
     async def __aenter__(self) -> 'TryLockResponse':
-        '''Returns self as the context manager object.'''
+        """Returns self as the context manager object."""
         return self
 
 
 class GetMetadataResponse(DaprResponse):
-    '''GetMetadataResponse is a message that is returned on GetMetadata rpc call.'''
+    """GetMetadataResponse is a message that is returned on GetMetadata rpc call."""
 
     def __init__(
         self,
@@ -896,7 +887,7 @@ class GetMetadataResponse(DaprResponse):
         extended_metadata: Dict[str, str],
         headers: MetadataTuple = (),
     ):
-        '''Initializes GetMetadataResponse.
+        """Initializes GetMetadataResponse.
 
         Args:
             application_id (str): The Application ID.
@@ -907,7 +898,7 @@ class GetMetadataResponse(DaprResponse):
             extended_metadata (Dict[str, str]): mapping of custom (extended)
                     attributes to their respective values.
             headers (Tuple, optional): the headers from Dapr gRPC response.
-        '''
+        """
         super().__init__(headers)
         self._application_id = application_id
         self._active_actors_count = active_actors_count
@@ -916,27 +907,27 @@ class GetMetadataResponse(DaprResponse):
 
     @property
     def application_id(self) -> str:
-        '''The Application ID.'''
+        """The Application ID."""
         return self._application_id
 
     @property
     def active_actors_count(self) -> Dict[str, int]:
-        '''Mapping from the type of registered actors to their number of running instances.'''
+        """Mapping from the type of registered actors to their number of running instances."""
         return self._active_actors_count
 
     @property
     def registered_components(self) -> Sequence[RegisteredComponents]:
-        '''List of loaded components metadata.'''
+        """List of loaded components metadata."""
         return self._registered_components
 
     @property
     def extended_metadata(self) -> Dict[str, str]:
-        '''Mapping of custom (extended) attributes to their respective values.'''
+        """Mapping of custom (extended) attributes to their respective values."""
         return self._extended_metadata
 
 
-class GetWorkflowResponse():
-    '''The response of get_workflow operation.'''
+class GetWorkflowResponse:
+    """The response of get_workflow operation."""
 
     def __init__(
         self,
@@ -965,8 +956,8 @@ class GetWorkflowResponse():
         self.properties = properties
 
 
-class StartWorkflowResponse():
-    '''The response of start_workflow operation.'''
+class StartWorkflowResponse:
+    """The response of start_workflow operation."""
 
     def __init__(
         self,
@@ -981,16 +972,16 @@ class StartWorkflowResponse():
 
 
 class RegisteredComponents(NamedTuple):
-    '''Describes a loaded Dapr component.'''
+    """Describes a loaded Dapr component."""
 
     name: str
-    '''Name of the component.'''
+    """Name of the component."""
 
     type: str
-    '''Component type.'''
+    """Component type."""
 
     version: str
-    '''Component version.'''
+    """Component version."""
 
     capabilities: Sequence[str]
-    '''Supported capabilities for this component type and version.'''
+    """Supported capabilities for this component type and version."""

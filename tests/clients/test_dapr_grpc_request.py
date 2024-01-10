@@ -30,7 +30,7 @@ class InvokeMethodRequestTests(unittest.TestCase):
 
     def test_proto_message_data(self):
         # arrange
-        fake_req = common_v1.InvokeRequest(method="test")
+        fake_req = common_v1.InvokeRequest(method='test')
 
         # act
         req = InvokeMethodRequest(data=fake_req)
@@ -38,8 +38,8 @@ class InvokeMethodRequestTests(unittest.TestCase):
         # assert
         self.assertIsNotNone(req.proto)
         self.assertEqual(
-            'type.googleapis.com/dapr.proto.common.v1.InvokeRequest',
-            req.proto.type_url)
+            'type.googleapis.com/dapr.proto.common.v1.InvokeRequest', req.proto.type_url
+        )
         self.assertIsNotNone(req.proto.value)
         self.assertIsNone(req.content_type)
 

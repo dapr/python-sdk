@@ -34,10 +34,7 @@ from tests.actor.fake_actor_classes import (
 
 from tests.actor.fake_client import FakeDaprActorClient
 
-from tests.actor.utils import (
-    _async_mock,
-    _run
-)
+from tests.actor.utils import _async_mock, _run
 
 
 class ActorTests(unittest.TestCase):
@@ -64,7 +61,8 @@ class ActorTests(unittest.TestCase):
 
         # apply new config
         new_config = ActorRuntimeConfig(
-            timedelta(hours=3), timedelta(seconds=10), timedelta(minutes=1), False)
+            timedelta(hours=3), timedelta(seconds=10), timedelta(minutes=1), False
+        )
 
         ActorRuntime.set_actor_config(new_config)
         config = ActorRuntime.get_actor_config()
@@ -91,13 +89,15 @@ class ActorTests(unittest.TestCase):
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
 
         request_body = {
-            "message": "hello dapr",
+            'message': 'hello dapr',
         }
 
         test_request_body = self._serializer.serialize(request_body)
-        response = _run(ActorRuntime.dispatch(
-            FakeMultiInterfacesActor.__name__, 'test-id',
-            "ActionMethod", test_request_body))
+        response = _run(
+            ActorRuntime.dispatch(
+                FakeMultiInterfacesActor.__name__, 'test-id', 'ActionMethod', test_request_body
+            )
+        )
 
         self.assertEqual(b'"hello dapr"', response)
 
@@ -109,68 +109,87 @@ class ActorTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.register_reminder',
-        new=_async_mock(return_value=b'"ok"'))
+        new=_async_mock(return_value=b'"ok"'),
+    )
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.unregister_reminder',
-        new=_async_mock(return_value=b'"ok"'))
+        new=_async_mock(return_value=b'"ok"'),
+    )
     def test_register_reminder(self):
-
         test_actor_id = ActorId('test_id')
         test_type_info = ActorTypeInformation.create(FakeSimpleReminderActor)
         test_client = FakeDaprActorClient
-        ctx = ActorRuntimeContext(
-            test_type_info, self._serializer,
-            self._serializer, test_client)
+        ctx = ActorRuntimeContext(test_type_info, self._serializer, self._serializer, test_client)
         test_actor = FakeSimpleReminderActor(ctx, test_actor_id)
 
         # register reminder
-        _run(test_actor.register_reminder(
-            'test_reminder', b'reminder_message',
-            timedelta(seconds=1), timedelta(seconds=1)))
+        _run(
+            test_actor.register_reminder(
+                'test_reminder', b'reminder_message', timedelta(seconds=1), timedelta(seconds=1)
+            )
+        )
         test_client.register_reminder.mock.assert_called_once()
         test_client.register_reminder.mock.assert_called_with(
-            'FakeSimpleReminderActor', 'test_id',
+            'FakeSimpleReminderActor',
+            'test_id',
             'test_reminder',
-            b'{"reminderName":"test_reminder","dueTime":"0h0m1s0ms0\\u03bcs","period":"0h0m1s0ms0\\u03bcs","data":"cmVtaW5kZXJfbWVzc2FnZQ=="}')  # noqa E501
+            b'{"reminderName":"test_reminder","dueTime":"0h0m1s0ms0\\u03bcs","period":"0h0m1s0ms0\\u03bcs","data":"cmVtaW5kZXJfbWVzc2FnZQ=="}',
+        )  # noqa E501
 
         # unregister reminder
         _run(test_actor.unregister_reminder('test_reminder'))
         test_client.unregister_reminder.mock.assert_called_once()
         test_client.unregister_reminder.mock.assert_called_with(
-            'FakeSimpleReminderActor', 'test_id', 'test_reminder')
+            'FakeSimpleReminderActor', 'test_id', 'test_reminder'
+        )
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.register_timer',
-        new=_async_mock(return_value=b'"ok"'))
+        new=_async_mock(return_value=b'"ok"'),
+    )
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.unregister_timer',
-        new=_async_mock(return_value=b'"ok"'))
+        new=_async_mock(return_value=b'"ok"'),
+    )
     def test_register_timer(self):
-
         test_actor_id = ActorId('test_id')
         test_type_info = ActorTypeInformation.create(FakeSimpleTimerActor)
         test_client = FakeDaprActorClient
-        ctx = ActorRuntimeContext(
-            test_type_info, self._serializer,
-            self._serializer, test_client)
+        ctx = ActorRuntimeContext(test_type_info, self._serializer, self._serializer, test_client)
         test_actor = FakeSimpleTimerActor(ctx, test_actor_id)
 
         # register timer
-        _run(test_actor.register_timer(
-            'test_timer', test_actor.timer_callback,
-            "mydata", timedelta(seconds=1), timedelta(seconds=2)))
+        _run(
+            test_actor.register_timer(
+                'test_timer',
+                test_actor.timer_callback,
+                'mydata',
+                timedelta(seconds=1),
+                timedelta(seconds=2),
+            )
+        )
         test_client.register_timer.mock.assert_called_once()
         test_client.register_timer.mock.assert_called_with(
-            'FakeSimpleTimerActor', 'test_id', 'test_timer',
-            b'{"callback":"timer_callback","data":"mydata","dueTime":"0h0m1s0ms0\\u03bcs","period":"0h0m2s0ms0\\u03bcs"}')  # noqa E501
+            'FakeSimpleTimerActor',
+            'test_id',
+            'test_timer',
+            b'{"callback":"timer_callback","data":"mydata","dueTime":"0h0m1s0ms0\\u03bcs","period":"0h0m2s0ms0\\u03bcs"}',
+        )  # noqa E501
 
         # unregister timer
         _run(test_actor.unregister_timer('test_timer'))
         test_client.unregister_timer.mock.assert_called_once()
         test_client.unregister_timer.mock.assert_called_with(
-            'FakeSimpleTimerActor', 'test_id', 'test_timer')
+            'FakeSimpleTimerActor', 'test_id', 'test_timer'
+        )
 
         # register timer without timer name
-        _run(test_actor.register_timer(
-            None, test_actor.timer_callback,
-            "timer call", timedelta(seconds=1), timedelta(seconds=1)))
+        _run(
+            test_actor.register_timer(
+                None,
+                test_actor.timer_callback,
+                'timer call',
+                timedelta(seconds=1),
+                timedelta(seconds=1),
+            )
+        )

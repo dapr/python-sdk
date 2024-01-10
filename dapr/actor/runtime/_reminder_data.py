@@ -32,8 +32,13 @@ class ActorReminderData:
     """
 
     def __init__(
-            self, reminder_name: str, state: Optional[bytes],
-            due_time: timedelta, period: timedelta, ttl: Optional[timedelta] = None):
+        self,
+        reminder_name: str,
+        state: Optional[bytes],
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta] = None,
+    ):
         """Creates new :class:`ActorReminderData` instance.
 
         Args:
@@ -90,7 +95,7 @@ class ActorReminderData:
             'reminderName': self._reminder_name,
             'dueTime': self._due_time,
             'period': self._period,
-            'data': encoded_state.decode("utf-8")
+            'data': encoded_state.decode('utf-8'),
         }
 
         if self._ttl is not None:
@@ -106,7 +111,8 @@ class ActorReminderData:
         if b64encoded_state is not None and len(b64encoded_state) > 0:
             state_bytes = base64.b64decode(b64encoded_state)
         if 'ttl' in obj:
-            return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'],
-                                     obj['ttl'])
+            return ActorReminderData(
+                reminder_name, state_bytes, obj['dueTime'], obj['period'], obj['ttl']
+            )
         else:
             return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'])

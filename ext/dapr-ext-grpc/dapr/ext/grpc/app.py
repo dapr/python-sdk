@@ -19,7 +19,7 @@ from concurrent import futures
 from typing import Dict, Optional
 
 from dapr.conf import settings
-from dapr.ext.grpc._servicier import _CallbackServicer, Rule   # type: ignore
+from dapr.ext.grpc._servicier import _CallbackServicer, Rule  # type: ignore
 from dapr.proto import appcallback_service_v1
 
 
@@ -48,9 +48,11 @@ class App:
             if max_grpc_message_length is not None:
                 options = [
                     ('grpc.max_send_message_length', max_grpc_message_length),
-                    ('grpc.max_receive_message_length', max_grpc_message_length)]
+                    ('grpc.max_receive_message_length', max_grpc_message_length),
+                ]
             self._server = grpc.server(  # type: ignore
-                futures.ThreadPoolExecutor(max_workers=10), options=options)
+                futures.ThreadPoolExecutor(max_workers=10), options=options
+            )
         else:
             self._server = grpc.server(**kwargs)  # type: ignore
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
@@ -73,8 +75,7 @@ class App:
         """
         if app_port is None:
             app_port = settings.GRPC_APP_PORT
-        self._server.add_insecure_port(
-            f'{listen_address if listen_address else "[::]"}:{app_port}')
+        self._server.add_insecure_port(f'{listen_address if listen_address else "[::]"}:{app_port}')
         self._server.start()
         self._server.wait_for_termination()
 
@@ -119,13 +120,21 @@ class App:
         Args:
             name (str): name of invoked method
         """
+
         def decorator(func):
             self._servicer.register_method(name, func)
+
         return decorator
 
-    def subscribe(self, pubsub_name: str, topic: str, metadata: Optional[Dict[str, str]] = {},
-                  dead_letter_topic: Optional[str] = None, rule: Optional[Rule] = None,
-                  disable_topic_validation: Optional[bool] = False):
+    def subscribe(
+        self,
+        pubsub_name: str,
+        topic: str,
+        metadata: Optional[Dict[str, str]] = {},
+        dead_letter_topic: Optional[str] = None,
+        rule: Optional[Rule] = None,
+        disable_topic_validation: Optional[bool] = False,
+    ):
         """A decorator that is used to register the subscribing topic method.
 
         The below example registers 'topic' subscription topic and pass custom
@@ -144,9 +153,18 @@ class App:
                 during initialization
             dead_letter_topic (str, optional): the dead letter topic name for the subscription
         """
+
         def decorator(func):
-            self._servicer.register_topic(pubsub_name, topic, func, metadata, dead_letter_topic,
-                                          rule, disable_topic_validation)
+            self._servicer.register_topic(
+                pubsub_name,
+                topic,
+                func,
+                metadata,
+                dead_letter_topic,
+                rule,
+                disable_topic_validation,
+            )
+
         return decorator
 
     def binding(self, name: str):
@@ -161,6 +179,8 @@ class App:
         Args:
             name (str): the name of invoked method
         """
+
         def decorator(func):
             self._servicer.register_binding(name, func)
+
         return decorator

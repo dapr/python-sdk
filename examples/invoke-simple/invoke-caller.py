@@ -4,10 +4,7 @@ import time
 from dapr.clients import DaprClient
 
 with DaprClient() as d:
-    req_data = {
-        'id': 1,
-        'message': 'hello world'
-    }
+    req_data = {'id': 1, 'message': 'hello world'}
 
     while True:
         # Create a typed message with content type and body

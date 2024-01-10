@@ -24,9 +24,15 @@ class ActorTimerDataTests(unittest.TestCase):
     def test_timer_data(self):
         def my_callback(input: Any):
             print(input)
+
         timer = ActorTimerData(
-            'timer_name', my_callback, 'called',
-            timedelta(seconds=2), timedelta(seconds=1), timedelta(seconds=3))
+            'timer_name',
+            my_callback,
+            'called',
+            timedelta(seconds=2),
+            timedelta(seconds=1),
+            timedelta(seconds=3),
+        )
         self.assertEqual('timer_name', timer.timer_name)
         self.assertEqual('my_callback', timer.callback)
         self.assertEqual('called', timer.state)
@@ -37,9 +43,15 @@ class ActorTimerDataTests(unittest.TestCase):
     def test_as_dict(self):
         def my_callback(input: Any):
             print(input)
+
         timer = ActorTimerData(
-            'timer_name', my_callback, 'called',
-            timedelta(seconds=1), timedelta(seconds=1), timedelta(seconds=1))
+            'timer_name',
+            my_callback,
+            'called',
+            timedelta(seconds=1),
+            timedelta(seconds=1),
+            timedelta(seconds=1),
+        )
         expected = {
             'callback': 'my_callback',
             'data': 'called',

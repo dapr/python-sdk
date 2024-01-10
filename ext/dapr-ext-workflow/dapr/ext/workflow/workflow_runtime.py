@@ -33,8 +33,7 @@ TOutput = TypeVar('TOutput')
 
 
 class WorkflowRuntime:
-    """WorkflowRuntime is the entry point for registering workflows and activities.
-    """
+    """WorkflowRuntime is the entry point for registering workflows and activities."""
 
     def __init__(self, host: Optional[str] = None, port: Optional[str] = None):
         metadata = tuple()
@@ -47,8 +46,9 @@ class WorkflowRuntime:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        self.__worker = worker.TaskHubGrpcWorker(host_address=uri.endpoint, metadata=metadata,
-                                                 secure_channel=uri.tls)
+        self.__worker = worker.TaskHubGrpcWorker(
+            host_address=uri.endpoint, metadata=metadata, secure_channel=uri.tls
+        )
 
     def register_workflow(self, fn: Workflow):
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
@@ -62,8 +62,9 @@ class WorkflowRuntime:
 
     def register_activity(self, fn: Activity):
         """Registers a workflow activity as a function that takes
-           a specified input type and returns a specified output type.
+        a specified input type and returns a specified output type.
         """
+
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
             wfActivityContext = WorkflowActivityContext(ctx)

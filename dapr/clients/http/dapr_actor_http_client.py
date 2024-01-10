@@ -28,10 +28,11 @@ class DaprActorHttpClient(DaprActorClientBase):
     """A Dapr Actor http client implementing :class:`DaprActorClientBase`"""
 
     def __init__(
-            self,
-            message_serializer: 'Serializer',
-            timeout: int = 60,
-            headers_callback: Optional[Callable[[], Dict[str, str]]] = None):
+        self,
+        message_serializer: 'Serializer',
+        timeout: int = 60,
+        headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+    ):
         """Invokes Dapr Actors over HTTP.
 
         Args:
@@ -42,8 +43,8 @@ class DaprActorHttpClient(DaprActorClientBase):
         self._client = DaprHttpClient(message_serializer, timeout, headers_callback)
 
     async def invoke_method(
-            self, actor_type: str, actor_id: str,
-            method: str, data: Optional[bytes] = None) -> bytes:
+        self, actor_type: str, actor_id: str, method: str, data: Optional[bytes] = None
+    ) -> bytes:
         """Invoke method defined in :class:`Actor` remotely.
 
         Args:
@@ -59,17 +60,17 @@ class DaprActorHttpClient(DaprActorClientBase):
 
         # import to avoid circular dependency
         from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+
         reentrancy_id = reentrancy_ctx.get()
         headers: Dict[str, Union[bytes, str]] = (
-            {DAPR_REENTRANCY_ID_HEADER: reentrancy_id} if reentrancy_id else {})
+            {DAPR_REENTRANCY_ID_HEADER: reentrancy_id} if reentrancy_id else {}
+        )
 
         body, _ = await self._client.send_bytes(method='POST', url=url, data=data, headers=headers)
 
         return body
 
-    async def save_state_transactionally(
-            self, actor_type: str, actor_id: str,
-            data: bytes) -> None:
+    async def save_state_transactionally(self, actor_type: str, actor_id: str, data: bytes) -> None:
         """Save state transactionally.
 
         Args:
@@ -80,8 +81,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         url = f'{self._get_base_url(actor_type, actor_id)}/state'
         await self._client.send_bytes(method='PUT', url=url, data=data)
 
-    async def get_state(
-            self, actor_type: str, actor_id: str, name: str) -> bytes:
+    async def get_state(self, actor_type: str, actor_id: str, name: str) -> bytes:
         """Get state value for name key.
 
         Args:
@@ -97,7 +97,8 @@ class DaprActorHttpClient(DaprActorClientBase):
         return body
 
     async def register_reminder(
-            self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
+        self, actor_type: str, actor_id: str, name: str, data: bytes
+    ) -> None:
         """Register actor reminder.
 
         Args:
@@ -109,8 +110,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         url = f'{self._get_base_url(actor_type, actor_id)}/reminders/{name}'
         await self._client.send_bytes(method='PUT', url=url, data=data)
 
-    async def unregister_reminder(
-            self, actor_type: str, actor_id: str, name: str) -> None:
+    async def unregister_reminder(self, actor_type: str, actor_id: str, name: str) -> None:
         """Unregister actor reminder.
 
         Args:
@@ -121,8 +121,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         url = f'{self._get_base_url(actor_type, actor_id)}/reminders/{name}'
         await self._client.send_bytes(method='DELETE', url=url, data=None)
 
-    async def register_timer(
-            self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
+    async def register_timer(self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
         """Register actor timer.
 
         Args:
@@ -134,8 +133,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         url = f'{self._get_base_url(actor_type, actor_id)}/timers/{name}'
         await self._client.send_bytes(method='PUT', url=url, data=data)
 
-    async def unregister_timer(
-            self, actor_type: str, actor_id: str, name: str) -> None:
+    async def unregister_timer(self, actor_type: str, actor_id: str, name: str) -> None:
         """Unregister actor timer.
 
         Args:
@@ -147,7 +145,4 @@ class DaprActorHttpClient(DaprActorClientBase):
         await self._client.send_bytes(method='DELETE', url=url, data=None)
 
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
-        return '{}/actors/{}/{}'.format(
-            self._client.get_api_url(),
-            actor_type,
-            actor_id)
+        return '{}/actors/{}/{}'.format(self._client.get_api_url(), actor_type, actor_id)

@@ -40,5 +40,5 @@ def main():
 
 if __name__ == '__main__':
     # Suppress "The Distributed Lock API is an Alpha" warnings
-    warnings.simplefilter("ignore")
+    warnings.simplefilter('ignore')
     main()

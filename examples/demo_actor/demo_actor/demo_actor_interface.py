@@ -17,31 +17,31 @@ from dapr.actor import ActorInterface, actormethod
 
 class DemoActorInterface(ActorInterface):
     @abstractmethod
-    @actormethod(name="GetMyData")
+    @actormethod(name='GetMyData')
     async def get_my_data(self) -> object:
         ...
 
     @abstractmethod
-    @actormethod(name="SetMyData")
+    @actormethod(name='SetMyData')
     async def set_my_data(self, data: object) -> None:
         ...
 
     @abstractmethod
-    @actormethod(name="ClearMyData")
+    @actormethod(name='ClearMyData')
     async def clear_my_data(self) -> None:
         ...
 
     @abstractmethod
-    @actormethod(name="SetReminder")
+    @actormethod(name='SetReminder')
     async def set_reminder(self, enabled: bool) -> None:
         ...
 
     @abstractmethod
-    @actormethod(name="SetTimer")
+    @actormethod(name='SetTimer')
     async def set_timer(self, enabled: bool) -> None:
         ...
 
     @abstractmethod
-    @actormethod(name="GetReentrancyStatus")
+    @actormethod(name='GetReentrancyStatus')
     async def get_reentrancy_status(self) -> bool:
         ...

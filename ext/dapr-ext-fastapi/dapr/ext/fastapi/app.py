@@ -24,24 +24,24 @@ class DaprApp:
         app_instance: The FastAPI instance to wrap.
     """
 
-    def __init__(self, app_instance: FastAPI,
-                 router_tags: Optional[List[str]] = ['PubSub']):
+    def __init__(self, app_instance: FastAPI, router_tags: Optional[List[str]] = ['PubSub']):
         # The router_tags should be added to all magic Dapr App PubSub methods implemented here
         self._router_tags = router_tags
         self._app = app_instance
         self._subscriptions: List[Dict[str, object]] = []
 
-        self._app.add_api_route("/dapr/subscribe",
-                                self._get_subscriptions,
-                                methods=["GET"],
-                                tags=self._router_tags)
+        self._app.add_api_route(
+            '/dapr/subscribe', self._get_subscriptions, methods=['GET'], tags=self._router_tags
+        )
 
-    def subscribe(self,
-                  pubsub: str,
-                  topic: str,
-                  metadata: Optional[Dict[str, str]] = {},
-                  route: Optional[str] = None,
-                  dead_letter_topic: Optional[str] = None):
+    def subscribe(
+        self,
+        pubsub: str,
+        topic: str,
+        metadata: Optional[Dict[str, str]] = {},
+        route: Optional[str] = None,
+        dead_letter_topic: Optional[str] = None,
+    ):
         """
         Subscribes to a topic on a pub/sub component.
 
@@ -73,21 +73,27 @@ class DaprApp:
         Returns:
             The decorator for the function.
         """
+
         def decorator(func):
-            event_handler_route = f"/events/{pubsub}/{topic}" if route is None else route
+            event_handler_route = f'/events/{pubsub}/{topic}' if route is None else route
 
-            self._app.add_api_route(event_handler_route,
-                                    func,
-                                    methods=["POST"],
-                                    tags=self._router_tags)
+            self._app.add_api_route(
+                event_handler_route, func, methods=['POST'], tags=self._router_tags
+            )
 
-            self._subscriptions.append({
-                "pubsubname": pubsub,
-                "topic": topic,
-                "route": event_handler_route,
-                "metadata": metadata,
-                **({"deadLetterTopic": dead_letter_topic} if dead_letter_topic is not None else {})
-            })
+            self._subscriptions.append(
+                {
+                    'pubsubname': pubsub,
+                    'topic': topic,
+                    'route': event_handler_route,
+                    'metadata': metadata,
+                    **(
+                        {'deadLetterTopic': dead_letter_topic}
+                        if dead_letter_topic is not None
+                        else {}
+                    ),
+                }
+            )
 
         return decorator
 

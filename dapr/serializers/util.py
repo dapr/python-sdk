@@ -18,7 +18,8 @@ from datetime import timedelta
 
 # Regex to parse Go Duration datatype, e.g. 4h15m50s123ms345μs
 DAPR_DURATION_PARSER = re.compile(
-    r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?((?P<milliseconds>\d+)ms)?((?P<microseconds>\d+)(μs|us))?$')  # noqa: E501
+    r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?((?P<milliseconds>\d+)ms)?((?P<microseconds>\d+)(μs|us))?$'
+)  # noqa: E501
 
 
 def convert_from_dapr_duration(duration: str) -> timedelta:
@@ -33,7 +34,7 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
 
     matched = DAPR_DURATION_PARSER.match(duration)
     if not matched or matched.lastindex == 0:
-        raise ValueError(f'Invalid Dapr Duration format: \'{duration}\'')
+        raise ValueError(f"Invalid Dapr Duration format: '{duration}'")
 
     days = 0.0
     hours = 0.0
@@ -42,10 +43,12 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
         days, hours = divmod(float(matched.group('hours')), 24)
     mins = 0.0 if not matched.group('mins') else float(matched.group('mins'))
     seconds = 0.0 if not matched.group('seconds') else float(matched.group('seconds'))
-    milliseconds = 0.0 if not matched.group(
-        'milliseconds') else float(matched.group('milliseconds'))
-    microseconds = 0.0 if not matched.group(
-        'microseconds') else float(matched.group('microseconds'))
+    milliseconds = (
+        0.0 if not matched.group('milliseconds') else float(matched.group('milliseconds'))
+    )
+    microseconds = (
+        0.0 if not matched.group('microseconds') else float(matched.group('microseconds'))
+    )
 
     return timedelta(
         days=days,
@@ -53,7 +56,7 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
         minutes=mins,
         seconds=seconds,
         milliseconds=milliseconds,
-        microseconds=microseconds
+        microseconds=microseconds,
     )
 
 

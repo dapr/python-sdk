@@ -31,7 +31,7 @@ class ActorId:
 
     def __init__(self, actor_id: str):
         if not isinstance(actor_id, str):
-            raise TypeError(f"Argument actor_id must be of type str, not {type(actor_id)}")
+            raise TypeError(f'Argument actor_id must be of type str, not {type(actor_id)}')
         self._id = actor_id
 
     @classmethod

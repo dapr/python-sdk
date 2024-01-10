@@ -44,7 +44,8 @@ class ActorTypeConfigTests(unittest.TestCase):
             drain_ongoing_call_timeout=timedelta(seconds=60),
             drain_rebalanced_actors=False,
             reentrancy=ActorReentrancyConfig(enabled=True),
-            reminders_storage_partitions=10)
+            reminders_storage_partitions=10,
+        )
         self.assertEqual(config._actor_idle_timeout, timedelta(seconds=3600))
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
         self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
@@ -97,13 +98,14 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         typeConfig1 = ActorTypeConfig(
             'testactor1',
             actor_scan_interval=timedelta(seconds=10),
-            reentrancy=ActorReentrancyConfig(enabled=True))
+            reentrancy=ActorReentrancyConfig(enabled=True),
+        )
         typeConfig2 = ActorTypeConfig(
             'testactor2',
             drain_ongoing_call_timeout=timedelta(seconds=60),
-            reminders_storage_partitions=10)
-        config = ActorRuntimeConfig(
-            actor_type_configs=[typeConfig1, typeConfig2])
+            reminders_storage_partitions=10,
+        )
+        config = ActorRuntimeConfig(actor_type_configs=[typeConfig1, typeConfig2])
 
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
 
@@ -148,12 +150,9 @@ class ActorRuntimeConfigTests(unittest.TestCase):
     def test_update_actor_type_config(self):
         config = ActorRuntimeConfig()
         config.update_entities(['actortype1'])
-        config.update_actor_type_configs([
-            ActorTypeConfig(
-                'updatetype1',
-                actor_scan_interval=timedelta(seconds=5)
-            )
-        ])
+        config.update_actor_type_configs(
+            [ActorTypeConfig('updatetype1', actor_scan_interval=timedelta(seconds=5))]
+        )
 
         d = config.as_dict()
         self.assertEqual(sorted(d['entities']), ['actortype1', 'updatetype1'])

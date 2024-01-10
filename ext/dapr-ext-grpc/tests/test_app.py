@@ -33,10 +33,8 @@ class AppTests(unittest.TestCase):
             pass
 
         method_map = self._app._servicer._invoke_method_map
-        self.assertIn('AppTests.test_method_decorator.<locals>.method1', str(
-            method_map['Method1']))
-        self.assertIn('AppTests.test_method_decorator.<locals>.method2', str(
-            method_map['Method2']))
+        self.assertIn('AppTests.test_method_decorator.<locals>.method1', str(method_map['Method1']))
+        self.assertIn('AppTests.test_method_decorator.<locals>.method2', str(method_map['Method2']))
 
     def test_binding_decorator(self):
         @self._app.binding('binding1')
@@ -45,16 +43,17 @@ class AppTests(unittest.TestCase):
 
         binding_map = self._app._servicer._binding_map
         self.assertIn(
-            'AppTests.test_binding_decorator.<locals>.binding1',
-            str(binding_map['binding1']))
+            'AppTests.test_binding_decorator.<locals>.binding1', str(binding_map['binding1'])
+        )
 
     def test_subscribe_decorator(self):
         @self._app.subscribe(pubsub_name='pubsub', topic='topic')
         def handle_default(event: v1.Event) -> None:
             pass
 
-        @self._app.subscribe(pubsub_name='pubsub', topic='topic',
-                             rule=Rule("event.type == \"test\"", 1))
+        @self._app.subscribe(
+            pubsub_name='pubsub', topic='topic', rule=Rule('event.type == "test"', 1)
+        )
         def handle_test_event(event: v1.Event) -> None:
             pass
 
@@ -65,10 +64,13 @@ class AppTests(unittest.TestCase):
         subscription_map = self._app._servicer._topic_map
         self.assertIn(
             'AppTests.test_subscribe_decorator.<locals>.handle_default',
-            str(subscription_map['pubsub:topic:']))
+            str(subscription_map['pubsub:topic:']),
+        )
         self.assertIn(
             'AppTests.test_subscribe_decorator.<locals>.handle_test_event',
-            str(subscription_map['pubsub:topic:handle_test_event']))
+            str(subscription_map['pubsub:topic:handle_test_event']),
+        )
         self.assertIn(
             'AppTests.test_subscribe_decorator.<locals>.handle_dead_letter',
-            str(subscription_map['pubsub:topic2:']))
+            str(subscription_map['pubsub:topic2:']),
+        )

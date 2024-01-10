@@ -31,7 +31,7 @@ def is_release():
 name = 'dapr-ext-grpc'
 version = __version__
 description = 'The official release of Dapr Python SDK gRPC Extension.'
-long_description = '''
+long_description = """
 This is the gRPC extension for Dapr.
 
 Dapr is a portable, serverless, event-driven runtime that makes it easy for developers to
@@ -42,7 +42,7 @@ Dapr codifies the best practices for building microservice applications into ope
 independent, building blocks that enable you to build portable applications with the language
 and framework of your choice. Each building block is independent and you can use one, some,
 or all of them in your application.
-'''.lstrip()
+""".lstrip()
 
 # Get build number from GITHUB_RUN_NUMBER environment variable
 build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')

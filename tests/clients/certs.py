@@ -13,24 +13,24 @@ def create_certificates(server_type='grpc'):
 
     # create a self-signed cert
     cert = crypto.X509()
-    cert.get_subject().organizationName = "Dapr"
-    cert.get_subject().commonName = "localhost"
+    cert.get_subject().organizationName = 'Dapr'
+    cert.get_subject().commonName = 'localhost'
     cert.gmtime_adj_notBefore(0)
     cert.gmtime_adj_notAfter(24 * 60 * 60)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
 
     if server_type == 'http':
-        cert.add_extensions([crypto.X509Extension(b"subjectAltName", False, b"DNS:localhost")])
+        cert.add_extensions([crypto.X509Extension(b'subjectAltName', False, b'DNS:localhost')])
 
     cert.sign(k, 'sha512')
 
-    f_cert = open(CERTIFICATE_CHAIN_PATH, "wt")
-    f_cert.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
+    f_cert = open(CERTIFICATE_CHAIN_PATH, 'wt')
+    f_cert.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
     f_cert.close()
 
-    f_key = open(PRIVATE_KEY_PATH, "wt")
-    f_key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+    f_key = open(PRIVATE_KEY_PATH, 'wt')
+    f_key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))
     f_key.close()
 
 

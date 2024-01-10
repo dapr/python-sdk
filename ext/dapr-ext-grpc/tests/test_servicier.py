@@ -47,6 +47,7 @@ class OnInvokeTests(unittest.TestCase):
     def test_on_invoke_return_str(self):
         def method_cb(request: InvokeMethodRequest):
             return 'method_str_cb'
+
         resp = self._on_invoke('method_str', method_cb)
 
         self.assertEqual(b'method_str_cb', resp.data.value)
@@ -54,6 +55,7 @@ class OnInvokeTests(unittest.TestCase):
     def test_on_invoke_return_bytes(self):
         def method_cb(request: InvokeMethodRequest):
             return b'method_str_cb'
+
         resp = self._on_invoke('method_bytes', method_cb)
 
         self.assertEqual(b'method_str_cb', resp.data.value)
@@ -61,6 +63,7 @@ class OnInvokeTests(unittest.TestCase):
     def test_on_invoke_return_proto(self):
         def method_cb(request: InvokeMethodRequest):
             return common_v1.StateItem(key='fake_key')
+
         resp = self._on_invoke('method_proto', method_cb)
 
         state = common_v1.StateItem()
@@ -74,6 +77,7 @@ class OnInvokeTests(unittest.TestCase):
                 data='fake_data',
                 content_type='text/plain',
             )
+
         resp = self._on_invoke('method_resp', method_cb)
 
         self.assertEqual(b'fake_data', resp.data.value)
@@ -93,35 +97,20 @@ class TopicSubscriptionTests(unittest.TestCase):
         self._topic1_method = Mock()
         self._topic2_method = Mock()
         self._topic3_method = Mock()
-        self._topic3_method.return_value = TopicEventResponse("success")
+        self._topic3_method.return_value = TopicEventResponse('success')
         self._topic4_method = Mock()
 
-        self._servicier.register_topic(
-            'pubsub1',
-            'topic1',
-            self._topic1_method,
-            {'session': 'key'})
-        self._servicier.register_topic(
-            'pubsub1',
-            'topic3',
-            self._topic3_method,
-            {'session': 'key'})
-        self._servicier.register_topic(
-            'pubsub2',
-            'topic2',
-            self._topic2_method,
-            {'session': 'key'})
-        self._servicier.register_topic(
-            'pubsub2',
-            'topic3',
-            self._topic3_method,
-            {'session': 'key'})
+        self._servicier.register_topic('pubsub1', 'topic1', self._topic1_method, {'session': 'key'})
+        self._servicier.register_topic('pubsub1', 'topic3', self._topic3_method, {'session': 'key'})
+        self._servicier.register_topic('pubsub2', 'topic2', self._topic2_method, {'session': 'key'})
+        self._servicier.register_topic('pubsub2', 'topic3', self._topic3_method, {'session': 'key'})
         self._servicier.register_topic(
             'pubsub3',
             'topic4',
             self._topic4_method,
             {'session': 'key'},
-            disable_topic_validation=True)
+            disable_topic_validation=True,
+        )
 
         # fake context
         self.fake_context = MagicMock()
@@ -133,10 +122,8 @@ class TopicSubscriptionTests(unittest.TestCase):
     def test_duplicated_topic(self):
         with self.assertRaises(ValueError):
             self._servicier.register_topic(
-                'pubsub1',
-                'topic1',
-                self._topic1_method,
-                {'session': 'key'})
+                'pubsub1', 'topic1', self._topic1_method, {'session': 'key'}
+            )
 
     def test_list_topic_subscription(self):
         resp = self._servicier.ListTopicSubscriptions(None, None)
@@ -178,8 +165,7 @@ class TopicSubscriptionTests(unittest.TestCase):
         )
         self.assertIsInstance(response, appcallback_v1.TopicEventResponse)
         self.assertEqual(
-            response.status,
-            appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
+            response.status, appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
         )
 
     def test_disable_topic_validation(self):
@@ -204,10 +190,8 @@ class BindingTests(unittest.TestCase):
         self._binding1_method = Mock()
         self._binding2_method = Mock()
 
-        self._servicier.register_binding(
-            'binding1', self._binding1_method)
-        self._servicier.register_binding(
-            'binding2', self._binding2_method)
+        self._servicier.register_binding('binding1', self._binding1_method)
+        self._servicier.register_binding('binding2', self._binding2_method)
 
         # fake context
         self.fake_context = MagicMock()
@@ -218,8 +202,7 @@ class BindingTests(unittest.TestCase):
 
     def test_duplicated_binding(self):
         with self.assertRaises(ValueError):
-            self._servicier.register_binding(
-                'binding1', self._binding1_method)
+            self._servicier.register_binding('binding1', self._binding1_method)
 
     def test_list_bindings(self):
         resp = self._servicier.ListInputBindings(None, None)

@@ -1,4 +1,3 @@
-
 """
 dapr run python3 state_store_query.py
 """
@@ -20,7 +19,7 @@ with DaprClient() as d:
     res = d.query_state(store_name=storeName, query=query)
     for r in res.results:
         print(r.key, json.dumps(json.loads(str(r.value, 'UTF-8')), sort_keys=True))
-    print("Token:", res.token)
+    print('Token:', res.token)
 
     # Get more results using a pagination token
 
@@ -28,4 +27,4 @@ with DaprClient() as d:
     res = d.query_state(store_name=storeName, query=query)
     for r in res.results:
         print(r.key, json.dumps(json.loads(str(r.value, 'UTF-8')), sort_keys=True))
-    print("Token:", res.token)
+    print('Token:', res.token)

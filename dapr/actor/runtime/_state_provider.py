@@ -34,16 +34,18 @@ class StateProvider:
 
     This provides the decorator methods to load and save states and check the existence of states.
     """
+
     def __init__(
-            self,
-            actor_client: DaprActorClientBase,
-            state_serializer: Serializer = DefaultJSONSerializer()):
+        self,
+        actor_client: DaprActorClientBase,
+        state_serializer: Serializer = DefaultJSONSerializer(),
+    ):
         self._state_client = actor_client
         self._state_serializer = state_serializer
 
     async def try_load_state(
-            self, actor_type: str, actor_id: str,
-            state_name: str, state_type: Type[Any] = object) -> Tuple[bool, Any]:
+        self, actor_type: str, actor_id: str, state_name: str, state_type: Type[Any] = object
+    ) -> Tuple[bool, Any]:
         raw_state_value = await self._state_client.get_state(actor_type, actor_id, state_name)
         if (not raw_state_value) or len(raw_state_value) == 0:
             return (False, None)
@@ -55,8 +57,8 @@ class StateProvider:
         return (raw_state_value is not None) and len(raw_state_value) > 0
 
     async def save_state(
-            self, actor_type: str, actor_id: str,
-            state_changes: List[ActorStateChange]) -> None:
+        self, actor_type: str, actor_id: str, state_changes: List[ActorStateChange]
+    ) -> None:
         """
         Transactional state update request body:
         [

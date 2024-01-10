@@ -18,8 +18,11 @@ import unittest
 from google.protobuf.any_pb2 import Any as GrpcAny
 
 from dapr.clients.grpc._response import (
-    DaprResponse, InvokeMethodResponse, BindingResponse, StateResponse,
-    BulkStateItem
+    DaprResponse,
+    InvokeMethodResponse,
+    BindingResponse,
+    StateResponse,
+    BulkStateItem,
 )
 
 from dapr.proto import common_v1
@@ -50,28 +53,24 @@ class InvokeMethodResponseTests(unittest.TestCase):
 
     def test_is_proto_for_non_protobuf(self):
         test_data = GrpcAny(value=b'hello dapr')
-        resp = InvokeMethodResponse(
-            data=test_data,
-            content_type='application/json')
+        resp = InvokeMethodResponse(data=test_data, content_type='application/json')
         self.assertFalse(resp.is_proto())
 
     def test_is_proto_for_protobuf(self):
-        fake_req = common_v1.InvokeRequest(method="test")
+        fake_req = common_v1.InvokeRequest(method='test')
         test_data = GrpcAny()
         test_data.Pack(fake_req)
         resp = InvokeMethodResponse(data=test_data)
         self.assertTrue(resp.is_proto())
 
     def test_proto(self):
-        fake_req = common_v1.InvokeRequest(method="test")
+        fake_req = common_v1.InvokeRequest(method='test')
         resp = InvokeMethodResponse(data=fake_req)
         self.assertIsNotNone(resp.proto)
 
     def test_data(self):
         test_data = GrpcAny(value=b'hello dapr')
-        resp = InvokeMethodResponse(
-            data=test_data,
-            content_type='application/json')
+        resp = InvokeMethodResponse(data=test_data, content_type='application/json')
         self.assertEqual(b'hello dapr', resp.data)
         self.assertEqual('hello dapr', resp.text())
         self.assertEqual('application/json', resp.content_type)
@@ -82,7 +81,7 @@ class InvokeMethodResponseTests(unittest.TestCase):
 
     def test_unpack(self):
         # arrange
-        fake_req = common_v1.InvokeRequest(method="test")
+        fake_req = common_v1.InvokeRequest(method='test')
 
         # act
         resp = InvokeMethodResponse(data=fake_req)
@@ -90,7 +89,7 @@ class InvokeMethodResponseTests(unittest.TestCase):
         resp.unpack(resp_proto)
 
         # assert
-        self.assertEqual("test", resp_proto.method)
+        self.assertEqual('test', resp_proto.method)
 
 
 class InvokeBindingResponseTests(unittest.TestCase):

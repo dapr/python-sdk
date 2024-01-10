@@ -31,26 +31,26 @@ class ActorMethodDispatcherTests(unittest.TestCase):
         self._serializer = DefaultJSONSerializer()
         self._fake_client = FakeDaprActorClient
         self._fake_runtime_ctx = ActorRuntimeContext(
-            self._testActorTypeInfo, self._serializer,
-            self._serializer, self._fake_client)
+            self._testActorTypeInfo, self._serializer, self._serializer, self._fake_client
+        )
 
     def test_get_arg_names(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
-        arg_names = dispatcher.get_arg_names("ActorMethod")
+        arg_names = dispatcher.get_arg_names('ActorMethod')
         self.assertEqual(['arg'], arg_names)
 
     def test_get_arg_types(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
-        arg_names = dispatcher.get_arg_types("ActorMethod")
+        arg_names = dispatcher.get_arg_types('ActorMethod')
         self.assertEqual([int], arg_names)
 
     def test_get_return_type(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
-        arg_names = dispatcher.get_return_type("ActorMethod")
+        arg_names = dispatcher.get_return_type('ActorMethod')
         self.assertEqual(dict, arg_names)
 
     def test_dispatch(self):
         dispatcher = ActorMethodDispatcher(self._testActorTypeInfo)
         actorInstance = FakeSimpleActor(self._fake_runtime_ctx, None)
-        result = _run(dispatcher.dispatch(actorInstance, "ActorMethod", 10))
+        result = _run(dispatcher.dispatch(actorInstance, 'ActorMethod', 10))
         self.assertEqual({'name': 'actor_method'}, result)

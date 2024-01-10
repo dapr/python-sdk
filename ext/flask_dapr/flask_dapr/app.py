@@ -29,17 +29,18 @@ class DaprApp:
         self._app = app_instance
         self._subscriptions: List[Dict[str, object]] = []
 
-        self._app.add_url_rule('/dapr/subscribe',
-                               '/dapr/subscribe',
-                               self._get_subscriptions,
-                               methods=["GET"])
+        self._app.add_url_rule(
+            '/dapr/subscribe', '/dapr/subscribe', self._get_subscriptions, methods=['GET']
+        )
 
-    def subscribe(self,
-                  pubsub: str,
-                  topic: str,
-                  metadata: Optional[Dict[str, str]] = {},
-                  route: Optional[str] = None,
-                  dead_letter_topic: Optional[str] = None):
+    def subscribe(
+        self,
+        pubsub: str,
+        topic: str,
+        metadata: Optional[Dict[str, str]] = {},
+        route: Optional[str] = None,
+        dead_letter_topic: Optional[str] = None,
+    ):
         """
         Subscribes to a topic on a pub/sub component.
 
@@ -71,21 +72,25 @@ class DaprApp:
         Returns:
             The decorator for the function.
         """
+
         def decorator(func):
-            event_handler_route = f"/events/{pubsub}/{topic}" if route is None else route
+            event_handler_route = f'/events/{pubsub}/{topic}' if route is None else route
 
-            self._app.add_url_rule(event_handler_route,
-                                   event_handler_route,
-                                   func,
-                                   methods=["POST"])
+            self._app.add_url_rule(event_handler_route, event_handler_route, func, methods=['POST'])
 
-            self._subscriptions.append({
-                "pubsubname": pubsub,
-                "topic": topic,
-                "route": event_handler_route,
-                "metadata": metadata,
-                **({"deadLetterTopic": dead_letter_topic} if dead_letter_topic is not None else {})
-            })
+            self._subscriptions.append(
+                {
+                    'pubsubname': pubsub,
+                    'topic': topic,
+                    'route': event_handler_route,
+                    'metadata': metadata,
+                    **(
+                        {'deadLetterTopic': dead_letter_topic}
+                        if dead_letter_topic is not None
+                        else {}
+                    ),
+                }
+            )
 
         return decorator
 

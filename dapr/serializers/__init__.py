@@ -16,7 +16,4 @@ limitations under the License.
 from dapr.serializers.base import Serializer
 from dapr.serializers.json import DefaultJSONSerializer
 
-__all__ = [
-    'Serializer',
-    'DefaultJSONSerializer'
-]
+__all__ = ['Serializer', 'DefaultJSONSerializer']

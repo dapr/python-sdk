@@ -35,7 +35,7 @@ from grpc.aio import (  # type: ignore
     UnaryUnaryClientInterceptor,
     UnaryStreamClientInterceptor,
     StreamUnaryClientInterceptor,
-    StreamStreamClientInterceptor
+    StreamStreamClientInterceptor,
 )
 
 
@@ -46,16 +46,22 @@ class DaprClient(DaprGrpcClientAsync):
     variable. See: https://github.com/dapr/python-sdk/issues/176 for more details"""
 
     def __init__(
-            self,
-            address: Optional[str] = None,
-            headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
-            interceptors: Optional[List[Union[
-                UnaryUnaryClientInterceptor,
-                UnaryStreamClientInterceptor,
-                StreamUnaryClientInterceptor,
-                StreamStreamClientInterceptor]]] = None,
-            http_timeout_seconds: Optional[int] = None,
-            max_grpc_message_length: Optional[int] = None):
+        self,
+        address: Optional[str] = None,
+        headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+        interceptors: Optional[
+            List[
+                Union[
+                    UnaryUnaryClientInterceptor,
+                    UnaryStreamClientInterceptor,
+                    StreamUnaryClientInterceptor,
+                    StreamStreamClientInterceptor,
+                ]
+            ]
+        ] = None,
+        http_timeout_seconds: Optional[int] = None,
+        max_grpc_message_length: Optional[int] = None,
+    ):
         """Connects to Dapr Runtime and via gRPC and HTTP.
 
         Args:
@@ -77,24 +83,27 @@ class DaprClient(DaprGrpcClientAsync):
         if invocation_protocol == 'HTTP':
             if http_timeout_seconds is None:
                 http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
-            self.invocation_client = DaprInvocationHttpClient(headers_callback=headers_callback,
-                                                              timeout=http_timeout_seconds)
+            self.invocation_client = DaprInvocationHttpClient(
+                headers_callback=headers_callback, timeout=http_timeout_seconds
+            )
         elif invocation_protocol == 'GRPC':
             pass
         else:
             raise DaprInternalError(
-                f'Unknown value for DAPR_API_METHOD_INVOCATION_PROTOCOL: {invocation_protocol}')
+                f'Unknown value for DAPR_API_METHOD_INVOCATION_PROTOCOL: {invocation_protocol}'
+            )
 
     async def invoke_method(
-            self,
-            app_id: str,
-            method_name: str,
-            data: Union[bytes, str, GrpcMessage],
-            content_type: Optional[str] = None,
-            metadata: Optional[MetadataTuple] = None,
-            http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None,
-            timeout: Optional[int] = None) -> InvokeMethodResponse:
+        self,
+        app_id: str,
+        method_name: str,
+        data: Union[bytes, str, GrpcMessage],
+        content_type: Optional[str] = None,
+        metadata: Optional[MetadataTuple] = None,
+        http_verb: Optional[str] = None,
+        http_querystring: Optional[MetadataTuple] = None,
+        timeout: Optional[int] = None,
+    ) -> InvokeMethodResponse:
         """Invoke a service method over gRPC or HTTP.
 
         Args:
@@ -119,7 +128,8 @@ class DaprClient(DaprGrpcClientAsync):
                 metadata=metadata,
                 http_verb=http_verb,
                 http_querystring=http_querystring,
-                timeout=timeout)
+                timeout=timeout,
+            )
         else:
             return await super().invoke_method(
                 app_id,
@@ -129,5 +139,5 @@ class DaprClient(DaprGrpcClientAsync):
                 metadata=metadata,
                 http_verb=http_verb,
                 http_querystring=http_querystring,
-                timeout=timeout
+                timeout=timeout,
             )

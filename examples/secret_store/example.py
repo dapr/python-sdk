@@ -15,7 +15,7 @@ from dapr.clients import DaprClient
 
 with DaprClient() as d:
     key = 'secretKey'
-    randomKey = "random"
+    randomKey = 'random'
     storeName = 'localsecretstore'
 
     resp = d.get_secret(store_name=storeName, key=key)
@@ -30,5 +30,4 @@ with DaprClient() as d:
         print('Got!')
         print(resp.secret)
     except:
-        print("Got expected error for accessing random key")
-
+        print('Got expected error for accessing random key')

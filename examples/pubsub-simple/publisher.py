@@ -20,10 +20,7 @@ with DaprClient() as d:
     id = 0
     while id < 3:
         id += 1
-        req_data = {
-            'id': id,
-            'message': 'hello world'
-        }
+        req_data = {'id': id, 'message': 'hello world'}
 
         # Create a typed message with content type and body
         resp = d.publish_event(
@@ -44,10 +41,7 @@ with DaprClient() as d:
     id = 3
     while id < 6:
         id += 1
-        req_data = {
-            'id': id,
-            'message': 'hello world'
-        }
+        req_data = {'id': id, 'message': 'hello world'}
         resp = d.publish_event(
             pubsub_name='pubsub',
             topic_name=f'topic/{id}',
@@ -67,7 +61,7 @@ with DaprClient() as d:
         topic_name='TOPIC_D',
         data=json.dumps(req_data),
         data_content_type='application/json',
-        publish_metadata={'custommeta': 'somevalue'}
+        publish_metadata={'custommeta': 'somevalue'},
     )
 
     # Print the request

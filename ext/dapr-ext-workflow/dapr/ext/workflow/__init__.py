@@ -28,5 +28,5 @@ __all__ = [
     'WorkflowState',
     'WorkflowStatus',
     'when_all',
-    'when_any'
+    'when_any',
 ]

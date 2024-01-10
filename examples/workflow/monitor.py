@@ -28,7 +28,7 @@ def status_monitor_workflow(ctx: wf.DaprWorkflowContext, job: JobStatus):
     if not ctx.is_replaying:
         print(f"Job '{job.job_id}' is {status}.")
 
-    if status == "healthy":
+    if status == 'healthy':
         job.is_healthy = True
         next_sleep_interval = 60  # check less frequently when healthy
     else:
@@ -44,7 +44,7 @@ def status_monitor_workflow(ctx: wf.DaprWorkflowContext, job: JobStatus):
 
 
 def check_status(ctx, _) -> str:
-    return random.choice(["healthy", "unhealthy"])
+    return random.choice(['healthy', 'unhealthy'])
 
 
 def send_alert(ctx, message: str):
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     workflowRuntime.start()
 
     wf_client = wf.DaprWorkflowClient()
-    job_id = "job1"
+    job_id = 'job1'
     status = None
     try:
         status = wf_client.get_workflow_state(job_id)
@@ -69,10 +69,11 @@ if __name__ == '__main__':
         instance_id = wf_client.schedule_new_workflow(
             workflow=status_monitor_workflow,
             input=JobStatus(job_id=job_id, is_healthy=True),
-            instance_id=job_id)
+            instance_id=job_id,
+        )
         print(f'Workflow started. Instance ID: {instance_id}')
     else:
         print(f'Workflow already running. Instance ID: {job_id}')
 
-    input("Press Enter to stop...\n")
+    input('Press Enter to stop...\n')
     workflowRuntime.shutdown()

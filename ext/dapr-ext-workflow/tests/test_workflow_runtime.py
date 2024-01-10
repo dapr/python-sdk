@@ -33,7 +33,6 @@ class FakeTaskHubGrpcWorker:
 
 
 class WorkflowRuntimeTest(unittest.TestCase):
-
     def mock_client_wf(ctx: DaprWorkflowContext, input):
         print(f'{input}')
 

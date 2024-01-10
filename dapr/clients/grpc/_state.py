@@ -5,6 +5,7 @@ from typing import Dict, Optional, Union
 
 class Consistency(Enum):
     """Represents the consistency mode for a Dapr State Api Call"""
+
     unspecified = common_v1.StateOptions.StateConsistency.CONSISTENCY_UNSPECIFIED  # type: ignore
     eventual = common_v1.StateOptions.StateConsistency.CONSISTENCY_EVENTUAL  # type: ignore
     strong = common_v1.StateOptions.StateConsistency.CONSISTENCY_STRONG  # type: ignore
@@ -12,6 +13,7 @@ class Consistency(Enum):
 
 class Concurrency(Enum):
     """Represents the consistency mode for a Dapr State Api Call"""
+
     unspecified = common_v1.StateOptions.StateConcurrency.CONCURRENCY_UNSPECIFIED  # type: ignore
     first_write = common_v1.StateOptions.StateConcurrency.CONCURRENCY_FIRST_WRITE  # type: ignore
     last_write = common_v1.StateOptions.StateConcurrency.CONCURRENCY_LAST_WRITE  # type: ignore
@@ -56,7 +58,7 @@ class StateItem:
         value: Union[bytes, str],
         etag: Optional[str] = None,
         options: Optional[StateOptions] = None,
-        metadata: Optional[Dict[str, str]] = dict()
+        metadata: Optional[Dict[str, str]] = dict(),
     ):
         """Inits StateItem with the required parameters.
 

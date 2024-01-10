@@ -51,16 +51,21 @@ class DaprWorkflowContext(WorkflowContext):
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
         return self.__obj.create_timer(fire_at)
 
-    def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
-                      input: TInput = None) -> task.Task[TOutput]:
+    def call_activity(
+        self,
+        activity: Callable[[WorkflowActivityContext, TInput], TOutput],
+        *,
+        input: TInput = None,
+    ) -> task.Task[TOutput]:
         return self.__obj.call_activity(activity=activity.__name__, input=input)
 
-    def call_child_workflow(self, workflow: Workflow, *,
-                            input: Optional[TInput],
-                            instance_id: Optional[str]) -> task.Task[TOutput]:
+    def call_child_workflow(
+        self, workflow: Workflow, *, input: Optional[TInput], instance_id: Optional[str]
+    ) -> task.Task[TOutput]:
         def wf(ctx: task.OrchestrationContext, inp: TInput):
             daprWfContext = DaprWorkflowContext(ctx)
             return workflow(daprWfContext, inp)
+
         # copy workflow name so durabletask.worker can find the orchestrator in its registry
         wf.__name__ = workflow.__name__
         return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)

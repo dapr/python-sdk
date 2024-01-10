@@ -20,14 +20,16 @@ from grpc.aio import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ign
 
 
 class _ClientCallDetailsAsync(
-        namedtuple(
-            '_ClientCallDetails',
-            ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready']),
-        ClientCallDetails):
+    namedtuple(
+        '_ClientCallDetails', ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready']
+    ),
+    ClientCallDetails,
+):
     """This is an implementation of the ClientCallDetails interface needed for interceptors.
     This class takes five named values and inherits the ClientCallDetails from grpc package.
     This class encloses the values that describe a RPC to be invoked.
     """
+
     pass
 
 
@@ -46,9 +48,7 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
         intercepted_channel = grpc.intercept_channel(grpc_channel, interceptor)
     """
 
-    def __init__(
-            self,
-            metadata: List[Tuple[str, str]]):
+    def __init__(self, metadata: List[Tuple[str, str]]):
         """Initializes the metadata field for the class.
 
         Args:
@@ -58,9 +58,7 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
 
         self._metadata = metadata
 
-    async def _intercept_call(
-            self,
-            client_call_details: ClientCallDetails) -> ClientCallDetails:
+    async def _intercept_call(self, client_call_details: ClientCallDetails) -> ClientCallDetails:
         """Internal intercept_call implementation which adds metadata to grpc metadata in the RPC
         call details.
 
@@ -78,15 +76,15 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
         metadata.extend(self._metadata)
 
         new_call_details = _ClientCallDetailsAsync(
-            client_call_details.method, client_call_details.timeout, metadata,
-            client_call_details.credentials, client_call_details.wait_for_ready)
+            client_call_details.method,
+            client_call_details.timeout,
+            metadata,
+            client_call_details.credentials,
+            client_call_details.wait_for_ready,
+        )
         return new_call_details
 
-    async def intercept_unary_unary(
-            self,
-            continuation,
-            client_call_details,
-            request):
+    async def intercept_unary_unary(self, continuation, client_call_details, request):
         """This method intercepts a unary-unary gRPC call. This is the implementation of the
         abstract method defined in UnaryUnaryClientInterceptor defined in grpc. This is invoked
         automatically by grpc based on the order in which interceptors are added to the channel.

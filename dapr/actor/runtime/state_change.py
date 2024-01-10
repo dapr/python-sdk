@@ -23,6 +23,7 @@ class StateChangeKind(Enum):
     """A enumeration that represents the kind of state change for an actor state
     when saves change is called to a set of actor states.
     """
+
     # No change in state
     none = 0
     # The state needs to be added

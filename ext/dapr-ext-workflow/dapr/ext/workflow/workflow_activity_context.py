@@ -23,7 +23,7 @@ TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
 
-class WorkflowActivityContext():
+class WorkflowActivityContext:
     """Defines properties and methods for task activity context objects."""
 
     def __init__(self, ctx: task.ActivityContext):

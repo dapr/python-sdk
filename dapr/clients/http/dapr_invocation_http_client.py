@@ -32,10 +32,11 @@ class DaprInvocationHttpClient:
     """Service Invocation HTTP Client"""
 
     def __init__(
-            self,
-            timeout: int = 60,
-            headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
-            address: Optional[str] = None):
+        self,
+        timeout: int = 60,
+        headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+        address: Optional[str] = None,
+    ):
         """Invokes Dapr's API for method invocation over HTTP.
 
         Args:
@@ -45,15 +46,16 @@ class DaprInvocationHttpClient:
         self._client = DaprHttpClient(DefaultJSONSerializer(), timeout, headers_callback, address)
 
     async def invoke_method_async(
-            self,
-            app_id: str,
-            method_name: str,
-            data: Union[bytes, str, GrpcMessage],
-            content_type: Optional[str] = None,
-            metadata: Optional[MetadataTuple] = None,
-            http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None,
-            timeout: Optional[int] = None) -> InvokeMethodResponse:
+        self,
+        app_id: str,
+        method_name: str,
+        data: Union[bytes, str, GrpcMessage],
+        content_type: Optional[str] = None,
+        metadata: Optional[MetadataTuple] = None,
+        http_verb: Optional[str] = None,
+        http_querystring: Optional[MetadataTuple] = None,
+        timeout: Optional[int] = None,
+    ) -> InvokeMethodResponse:
         """Invoke a service method over HTTP (async).
 
         Args:
@@ -105,7 +107,8 @@ class DaprInvocationHttpClient:
                 url=url,
                 data=body,
                 query_params=query_params,
-                timeout=timeout)
+                timeout=timeout,
+            )
 
             respHeaders: MetadataTuple = tuple(r.headers.items())
 
@@ -113,8 +116,10 @@ class DaprInvocationHttpClient:
                 data=resp_body,
                 content_type=r.content_type,
                 headers=respHeaders,
-                status_code=r.status)
+                status_code=r.status,
+            )
             return resp_data
+
         return await make_request()
 
     def invoke_method(
@@ -126,7 +131,7 @@ class DaprInvocationHttpClient:
         metadata: Optional[MetadataTuple] = None,
         http_verb: Optional[str] = None,
         http_querystring: Optional[MetadataTuple] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> InvokeMethodResponse:
         """Invoke a service method over HTTP (async).
 
@@ -151,12 +156,6 @@ class DaprInvocationHttpClient:
         asyncio.set_event_loop(loop)
 
         awaitable = self.invoke_method_async(
-            app_id,
-            method_name,
-            data,
-            content_type,
-            metadata,
-            http_verb,
-            http_querystring,
-            timeout)
+            app_id, method_name, data, content_type, metadata, http_verb, http_querystring, timeout
+        )
         return loop.run_until_complete(awaitable)

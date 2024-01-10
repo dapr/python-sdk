@@ -67,8 +67,14 @@ class Actor:
         return f'{self.id}_Timer_{uuid.uuid4()}'
 
     async def register_timer(
-            self, name: Optional[str], callback: TIMER_CALLBACK, state: Any,
-            due_time: timedelta, period: timedelta, ttl: Optional[timedelta] = None) -> None:
+        self,
+        name: Optional[str],
+        callback: TIMER_CALLBACK,
+        state: Any,
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta] = None,
+    ) -> None:
         """Registers actor timer.
 
         All timers are stopped when the actor is deactivated as part of garbage collection.
@@ -88,7 +94,8 @@ class Actor:
 
         req_body = self._runtime_ctx.message_serializer.serialize(timer.as_dict())
         await self._runtime_ctx.dapr_client.register_timer(
-            self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body)
+            self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body
+        )
 
     async def unregister_timer(self, name: str) -> None:
         """Unregisters actor timer.
@@ -97,11 +104,17 @@ class Actor:
             name (str): the name of the timer to unregister.
         """
         await self._runtime_ctx.dapr_client.unregister_timer(
-            self._runtime_ctx.actor_type_info.type_name, self.id.id, name)
+            self._runtime_ctx.actor_type_info.type_name, self.id.id, name
+        )
 
     async def register_reminder(
-            self, name: str, state: bytes,
-            due_time: timedelta, period: timedelta, ttl: Optional[timedelta] = None) -> None:
+        self,
+        name: str,
+        state: bytes,
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta] = None,
+    ) -> None:
         """Registers actor reminder.
 
         Reminders are a mechanism to trigger persistent callbacks on an actor at specified times.
@@ -124,7 +137,8 @@ class Actor:
         reminder = ActorReminderData(name, state, due_time, period, ttl)
         req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())
         await self._runtime_ctx.dapr_client.register_reminder(
-            self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body)
+            self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body
+        )
 
     async def unregister_reminder(self, name: str) -> None:
         """Unregisters actor reminder.
@@ -133,7 +147,8 @@ class Actor:
             name (str): the name of the reminder to unregister.
         """
         await self._runtime_ctx.dapr_client.unregister_reminder(
-            self._runtime_ctx.actor_type_info.type_name, self.id.id, name)
+            self._runtime_ctx.actor_type_info.type_name, self.id.id, name
+        )
 
     async def _on_activate_internal(self) -> None:
         """Clears all state cache, calls the overridden :meth:`_on_activate`,
@@ -170,8 +185,7 @@ class Actor:
         await self._save_state_internal()
 
     async def _on_invoke_failed_internal(self, exception=None):
-        """Clears states in the cache when actor method invocation is failed.
-        """
+        """Clears states in the cache when actor method invocation is failed."""
         await self._reset_state_internal()
 
     async def _reset_state_internal(self) -> None:

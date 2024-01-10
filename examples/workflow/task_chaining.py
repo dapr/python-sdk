@@ -48,7 +48,7 @@ def error_handler(ctx, error):
 
 
 if __name__ == '__main__':
-    workflowRuntime = wf.WorkflowRuntime("localhost", "50001")
+    workflowRuntime = wf.WorkflowRuntime('localhost', '50001')
     workflowRuntime.register_workflow(task_chain_workflow)
     workflowRuntime.register_activity(step1)
     workflowRuntime.register_activity(step2)
@@ -57,9 +57,7 @@ if __name__ == '__main__':
     workflowRuntime.start()
 
     wf_client = wf.DaprWorkflowClient()
-    instance_id = wf_client.schedule_new_workflow(
-        workflow=task_chain_workflow,
-        input=42)
+    instance_id = wf_client.schedule_new_workflow(workflow=task_chain_workflow, input=42)
     print(f'Workflow started. Instance ID: {instance_id}')
     state = wf_client.wait_for_workflow_completion(instance_id)
     print(f'Workflow completed! Status: {state.runtime_status}')

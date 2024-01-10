@@ -58,12 +58,12 @@ class DaprActorTest(unittest.TestCase):
             '/actors/{actor_type_name}/{actor_id}',
             '/actors/{actor_type_name}/{actor_id}/method/{method_name}',
             '/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}',
-            '/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}'
+            '/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}',
         ]
 
         foundTags = False
         for route in app1.router.routes:
-            if hasattr(route, "tags"):
+            if hasattr(route, 'tags'):
                 self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
                 self.assertEqual(['MyTag', 'Actor'], route.tags)
                 foundTags = True
@@ -72,7 +72,7 @@ class DaprActorTest(unittest.TestCase):
 
         foundTags = False
         for route in app2.router.routes:
-            if hasattr(route, "tags"):
+            if hasattr(route, 'tags'):
                 self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
                 self.assertEqual(['Actor'], route.tags)
                 foundTags = True
@@ -80,7 +80,7 @@ class DaprActorTest(unittest.TestCase):
             self.fail('No tags found')
 
         for route in app3.router.routes:
-            if hasattr(route, "tags"):
+            if hasattr(route, 'tags'):
                 if len(route.tags) > 0:
                     self.fail('Found tags on route that should not have any')
 

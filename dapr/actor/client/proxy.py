@@ -30,8 +30,11 @@ ACTOR_FACTORY_CALLBACK = Callable[[ActorInterface, str, str], 'ActorProxy']
 class ActorFactoryBase(ABC):
     @abstractmethod
     def create(
-            self, actor_type: str, actor_id: ActorId,
-            actor_interface: Optional[Type[ActorInterface]] = None) -> 'ActorProxy':
+        self,
+        actor_type: str,
+        actor_id: ActorId,
+        actor_interface: Optional[Type[ActorInterface]] = None,
+    ) -> 'ActorProxy':
         ...
 
 
@@ -44,25 +47,29 @@ class ActorProxyFactory(ActorFactoryBase):
     """
 
     def __init__(
-            self,
-            message_serializer=DefaultJSONSerializer(),
-            http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS):
+        self,
+        message_serializer=DefaultJSONSerializer(),
+        http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+    ):
         # TODO: support serializer for state store later
         self._dapr_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
         self._message_serializer = message_serializer
 
     def create(
-            self, actor_type: str, actor_id: ActorId,
-            actor_interface: Optional[Type[ActorInterface]] = None) -> 'ActorProxy':
+        self,
+        actor_type: str,
+        actor_id: ActorId,
+        actor_interface: Optional[Type[ActorInterface]] = None,
+    ) -> 'ActorProxy':
         return ActorProxy(
-            self._dapr_client, actor_type, actor_id,
-            actor_interface, self._message_serializer)
+            self._dapr_client, actor_type, actor_id, actor_interface, self._message_serializer
+        )
 
 
 class CallableProxy:
     def __init__(
-            self, proxy: 'ActorProxy', attr_call_type: Dict[str, Any],
-            message_serializer: Serializer):
+        self, proxy: 'ActorProxy', attr_call_type: Dict[str, Any], message_serializer: Serializer
+    ):
         self._proxy = proxy
         self._attr_call_type = attr_call_type
         self._message_serializer = message_serializer
@@ -94,11 +101,13 @@ class ActorProxy:
     _default_proxy_factory = ActorProxyFactory()
 
     def __init__(
-            self, client: DaprActorClientBase,
-            actor_type: str,
-            actor_id: ActorId,
-            actor_interface: Optional[Type[ActorInterface]],
-            message_serializer: Serializer):
+        self,
+        client: DaprActorClientBase,
+        actor_type: str,
+        actor_id: ActorId,
+        actor_interface: Optional[Type[ActorInterface]],
+        message_serializer: Serializer,
+    ):
         self._dapr_client = client
         self._actor_id = actor_id
         self._actor_type = actor_type
@@ -120,10 +129,12 @@ class ActorProxy:
 
     @classmethod
     def create(
-            cls,
-            actor_type: str, actor_id: ActorId,
-            actor_interface: Optional[Type[ActorInterface]] = None,
-            actor_proxy_factory: Optional[ActorFactoryBase] = None) -> 'ActorProxy':
+        cls,
+        actor_type: str,
+        actor_id: ActorId,
+        actor_interface: Optional[Type[ActorInterface]] = None,
+        actor_proxy_factory: Optional[ActorFactoryBase] = None,
+    ) -> 'ActorProxy':
         """Creates ActorProxy client to call actor.
 
         Args:
@@ -160,7 +171,8 @@ class ActorProxy:
             raise ValueError(f'raw_body {type(raw_body)} is not bytes type')
 
         return await self._dapr_client.invoke_method(
-            self._actor_type, str(self._actor_id), method, raw_body)
+            self._actor_type, str(self._actor_id), method, raw_body
+        )
 
     def __getattr__(self, name: str) -> CallableProxy:
         """Enables RPC style actor method invocation.
@@ -188,6 +200,7 @@ class ActorProxy:
 
         if name not in self._callable_proxies:
             self._callable_proxies[name] = CallableProxy(
-                self, attr_call_type, self._message_serializer)
+                self, attr_call_type, self._message_serializer
+            )
 
         return self._callable_proxies[name]

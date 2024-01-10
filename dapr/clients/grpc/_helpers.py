@@ -79,14 +79,17 @@ def to_str(data: Union[str, bytes]) -> str:
 
 
 class _ClientCallDetails(
-        namedtuple(
-            '_ClientCallDetails',
-            ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression']),
-        ClientCallDetails):
+    namedtuple(
+        '_ClientCallDetails',
+        ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression'],
+    ),
+    ClientCallDetails,
+):
     """This is an implementation of the ClientCallDetails interface needed for interceptors.
     This class takes six named values and inherits the ClientCallDetails from grpc package.
     This class encloses the values that describe a RPC to be invoked.
     """
+
     pass
 
 
@@ -105,9 +108,7 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         intercepted_channel = grpc.intercept_channel(grpc_channel, interceptor)
     """
 
-    def __init__(
-            self,
-            metadata: List[Tuple[str, str]]):
+    def __init__(self, metadata: List[Tuple[str, str]]):
         """Initializes the metadata field for the class.
 
         Args:
@@ -117,9 +118,7 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
 
         self._metadata = metadata
 
-    def _intercept_call(
-            self,
-            client_call_details: ClientCallDetails) -> ClientCallDetails:
+    def _intercept_call(self, client_call_details: ClientCallDetails) -> ClientCallDetails:
         """Internal intercept_call implementation which adds metadata to grpc metadata in the RPC
         call details.
 
@@ -137,16 +136,16 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         metadata.extend(self._metadata)
 
         new_call_details = _ClientCallDetails(
-            client_call_details.method, client_call_details.timeout, metadata,
-            client_call_details.credentials, client_call_details.wait_for_ready,
-            client_call_details.compression)
+            client_call_details.method,
+            client_call_details.timeout,
+            metadata,
+            client_call_details.credentials,
+            client_call_details.wait_for_ready,
+            client_call_details.compression,
+        )
         return new_call_details
 
-    def intercept_unary_unary(
-            self,
-            continuation,
-            client_call_details,
-            request):
+    def intercept_unary_unary(self, continuation, client_call_details, request):
         """This method intercepts a unary-unary gRPC call. This is the implementation of the
         abstract method defined in UnaryUnaryClientInterceptor defined in grpc. This is invoked
         automatically by grpc based on the order in which interceptors are added to the channel.
@@ -168,26 +167,27 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
 
 # Data validation helpers
 
+
 def validateNotNone(**kwargs: Optional[str]):
     for field_name, value in kwargs.items():
         if value is None:
-            raise ValueError(f"{field_name} name cannot be None")
+            raise ValueError(f'{field_name} name cannot be None')
 
 
 def validateNotBlankString(**kwargs: Optional[str]):
     for field_name, value in kwargs.items():
         if not value or not value.strip():
-            raise ValueError(f"{field_name} name cannot be empty or blank")
+            raise ValueError(f'{field_name} name cannot be empty or blank')
 
 
 class WorkflowRuntimeStatus(Enum):
-    UNKNOWN = "Unknown"
-    RUNNING = "Running"
-    COMPLETED = "Completed"
-    FAILED = "Failed"
-    TERMINATED = "Terminated"
-    PENDING = "Pending"
-    SUSPENDED = "Suspended"
+    UNKNOWN = 'Unknown'
+    RUNNING = 'Running'
+    COMPLETED = 'Completed'
+    FAILED = 'Failed'
+    TERMINATED = 'Terminated'
+    PENDING = 'Pending'
+    SUSPENDED = 'Suspended'
 
 
 # Will return the enum entry if it is present, otherwise returns "unknown"

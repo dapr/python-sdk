@@ -27,7 +27,7 @@ from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 
 # Fake Simple Actor Class for testing
 class FakeSimpleActorInterface(ActorInterface):
-    @actormethod(name="ActorMethod")
+    @actormethod(name='ActorMethod')
     async def actor_method(self, arg: int) -> dict:
         ...
 
@@ -53,9 +53,14 @@ class FakeSimpleReminderActor(Actor, FakeSimpleActorInterface, Remindable):
     async def non_actor_method(self, arg0: int, arg1: str, arg2: float) -> str:
         pass
 
-    async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta,
-                               ttl: Optional[timedelta]) -> None:
+    async def receive_reminder(
+        self,
+        name: str,
+        state: bytes,
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta],
+    ) -> None:
         pass
 
 
@@ -70,53 +75,59 @@ class FakeSimpleTimerActor(Actor, FakeSimpleActorInterface):
     async def timer_callback(self, obj) -> None:
         self.timer_called = True
 
-    async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta,
-                               ttl: Optional[timedelta]) -> None:
+    async def receive_reminder(
+        self,
+        name: str,
+        state: bytes,
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta],
+    ) -> None:
         pass
 
 
 class FakeActorCls1Interface(ActorInterface):
     # Fake Actor Class deriving multiple ActorInterfaces
-    @actormethod(name="ActorCls1Method")
+    @actormethod(name='ActorCls1Method')
     async def actor_cls1_method(self, arg):
         ...
 
-    @actormethod(name="ActorCls1Method1")
+    @actormethod(name='ActorCls1Method1')
     async def actor_cls1_method1(self, arg):
         ...
 
-    @actormethod(name="ActorCls1Method2")
+    @actormethod(name='ActorCls1Method2')
     async def actor_cls1_method2(self, arg):
         ...
 
 
 class FakeActorCls2Interface(ActorInterface):
-    @actormethod(name="ActorCls2Method")
+    @actormethod(name='ActorCls2Method')
     async def actor_cls2_method(self, arg):
         ...
 
-    @actormethod(name="ActionMethod")
+    @actormethod(name='ActionMethod')
     async def action(self, data: object) -> str:
         ...
 
-    @actormethod(name="ActionMethodWithoutArg")
+    @actormethod(name='ActionMethodWithoutArg')
     async def action_no_arg(self) -> str:
         ...
 
 
 class ReentrantActorInterface(ActorInterface):
-    @actormethod(name="ReentrantMethod")
+    @actormethod(name='ReentrantMethod')
     async def reentrant_method(self, data: object) -> str:
         ...
 
-    @actormethod(name="ReentrantMethodWithPassthrough")
+    @actormethod(name='ReentrantMethodWithPassthrough')
     async def reentrant_pass_through_method(self, arg):
         ...
 
 
-class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Interface,
-                               ReentrantActorInterface):
+class FakeMultiInterfacesActor(
+    Actor, FakeActorCls1Interface, FakeActorCls2Interface, ReentrantActorInterface
+):
     def __init__(self, ctx, actor_id):
         super(FakeMultiInterfacesActor, self).__init__(ctx, actor_id)
         self.activated = False
@@ -168,8 +179,10 @@ class FakeReentrantActor(Actor, FakeActorCls1Interface, ReentrantActorInterface)
 
     async def reentrant_pass_through_method(self, arg):
         from dapr.actor.client import proxy
+
         await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
-            FakeSlowReentrantActor.__name__, 'test-id', 'ReentrantMethod')
+            FakeSlowReentrantActor.__name__, 'test-id', 'ReentrantMethod'
+        )
 
     async def actor_cls1_method(self, arg):
         pass
@@ -193,7 +206,8 @@ class FakeSlowReentrantActor(Actor, FakeActorCls2Interface, ReentrantActorInterf
         from dapr.actor.client import proxy
 
         await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
-            FakeReentrantActor.__name__, 'test-id', 'ReentrantMethod')
+            FakeReentrantActor.__name__, 'test-id', 'ReentrantMethod'
+        )
 
     async def actor_cls2_method(self, arg):
         pass

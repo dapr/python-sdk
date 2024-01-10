@@ -20,7 +20,7 @@ from dapr.actor.runtime.actor import Actor
 
 
 def get_class_method_args(func: Any) -> List[str]:
-    args = func.__code__.co_varnames[:func.__code__.co_argcount]
+    args = func.__code__.co_varnames[: func.__code__.co_argcount]
 
     # Exclude self, cls arguments
     if args[0] == 'self' or args[0] == 'cls':
@@ -46,8 +46,8 @@ def get_method_return_types(func: Any) -> Type:
 
 
 def get_dispatchable_attrs_from_interface(
-        actor_interface: Type[ActorInterface],
-        dispatch_map: Dict[str, Any]) -> None:
+    actor_interface: Type[ActorInterface], dispatch_map: Dict[str, Any]
+) -> None:
     for attr, v in actor_interface.__dict__.items():
         if attr.startswith('_') or not callable(v):
             continue
@@ -58,7 +58,7 @@ def get_dispatchable_attrs_from_interface(
             'method_name': attr,
             'arg_names': get_class_method_args(v),
             'arg_types': get_method_arg_types(v),
-            'return_types': get_method_return_types(v)
+            'return_types': get_method_return_types(v),
         }
 
 

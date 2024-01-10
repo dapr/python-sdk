@@ -72,6 +72,6 @@ class WorkflowState:
             'failure_details': {
                 'message': self.__obj.failure_details.message,
                 'error_type': self.__obj.failure_details.error_type,
-                'stack_trace': self.__obj.failure_details.stack_trace
-            }
+                'stack_trace': self.__obj.failure_details.stack_trace,
+            },
         }

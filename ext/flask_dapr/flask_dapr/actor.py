@@ -22,7 +22,7 @@ from dapr.actor import Actor, ActorRuntime
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.serializers import DefaultJSONSerializer
 
-DEFAULT_CONTENT_TYPE = "application/json; utf-8"
+DEFAULT_CONTENT_TYPE = 'application/json; utf-8'
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
 
@@ -35,35 +35,31 @@ class DaprActor(object):
             self.init_routes(app)
 
     def init_routes(self, app):
+        app.add_url_rule('/healthz', None, self._healthz_handler, methods=['GET'])
+        app.add_url_rule('/dapr/config', None, self._config_handler, methods=['GET'])
         app.add_url_rule(
-            '/healthz', None,
-            self._healthz_handler,
-            methods=['GET']
-        )
-        app.add_url_rule(
-            '/dapr/config', None,
-            self._config_handler,
-            methods=['GET']
-        )
-        app.add_url_rule(
-            '/actors/<actor_type_name>/<actor_id>', None,
+            '/actors/<actor_type_name>/<actor_id>',
+            None,
             self._deactivation_handler,
-            methods=['DELETE']
+            methods=['DELETE'],
         )
         app.add_url_rule(
-            '/actors/<actor_type_name>/<actor_id>/method/<method_name>', None,
+            '/actors/<actor_type_name>/<actor_id>/method/<method_name>',
+            None,
             self._method_handler,
-            methods=['PUT']
+            methods=['PUT'],
         )
         app.add_url_rule(
-            '/actors/<actor_type_name>/<actor_id>/method/timer/<timer_name>', None,
+            '/actors/<actor_type_name>/<actor_id>/method/timer/<timer_name>',
+            None,
             self._timer_handler,
-            methods=['PUT']
+            methods=['PUT'],
         )
         app.add_url_rule(
-            '/actors/<actor_type_name>/<actor_id>/method/remind/<reminder_name>', None,
+            '/actors/<actor_type_name>/<actor_id>/method/remind/<reminder_name>',
+            None,
             self._reminder_handler,
-            methods=['PUT']
+            methods=['PUT'],
         )
 
     def teardown(self, exception):
@@ -97,8 +93,11 @@ class DaprActor(object):
             # Read raw bytes from request stream
             req_body = request.stream.read()
             reentrancy_id = request.headers.get(DAPR_REENTRANCY_ID_HEADER)
-            result = asyncio.run(ActorRuntime.dispatch(
-                actor_type_name, actor_id, method_name, req_body, reentrancy_id))
+            result = asyncio.run(
+                ActorRuntime.dispatch(
+                    actor_type_name, actor_id, method_name, req_body, reentrancy_id
+                )
+            )
         except DaprInternalError as ex:
             return wrap_response(500, ex.as_dict())
         except Exception as ex:
@@ -126,8 +125,9 @@ class DaprActor(object):
         try:
             # Read raw bytes from request stream
             req_body = request.stream.read()
-            asyncio.run(ActorRuntime.fire_reminder(
-                actor_type_name, actor_id, reminder_name, req_body))
+            asyncio.run(
+                ActorRuntime.fire_reminder(actor_type_name, actor_id, reminder_name, req_body)
+            )
         except DaprInternalError as ex:
             return wrap_response(500, ex.as_dict())
         except Exception as ex:
@@ -140,8 +140,8 @@ class DaprActor(object):
 
 # wrap_response wraps dapr errors to flask response
 def wrap_response(
-        status: int, msg: Any,
-        error_code: Optional[str] = None, content_type: Optional[str] = None):
+    status: int, msg: Any, error_code: Optional[str] = None, content_type: Optional[str] = None
+):
     resp = None
     if isinstance(msg, str):
         response_obj = {

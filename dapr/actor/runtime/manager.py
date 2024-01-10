@@ -61,11 +61,12 @@ class ActorManager:
         await deactivated_actor._on_deactivate_internal()
 
     async def fire_reminder(
-            self, actor_id: ActorId,
-            reminder_name: str, request_body: bytes) -> None:
+        self, actor_id: ActorId, reminder_name: str, request_body: bytes
+    ) -> None:
         if not self._runtime_ctx.actor_type_info.is_remindable():
             raise ValueError(
-                f'{self._runtime_ctx.actor_type_info.type_name} does not implment Remindable.')
+                f'{self._runtime_ctx.actor_type_info.type_name} does not implment Remindable.'
+            )
         request_obj = self._message_serializer.deserialize(request_body, object)
         if isinstance(request_obj, dict):
             reminder_data = ActorReminderData.from_dict(reminder_name, request_obj)
@@ -74,15 +75,18 @@ class ActorManager:
         async def invoke_reminder(actor: Actor) -> Optional[bytes]:
             reminder = getattr(actor, REMINDER_METHOD_NAME)
             if reminder is not None:
-                await reminder(reminder_data.reminder_name, reminder_data.state,
-                               reminder_data.due_time, reminder_data.period, reminder_data.ttl)
+                await reminder(
+                    reminder_data.reminder_name,
+                    reminder_data.state,
+                    reminder_data.due_time,
+                    reminder_data.period,
+                    reminder_data.ttl,
+                )
             return None
 
         await self._dispatch_internal(actor_id, self._reminder_method_context, invoke_reminder)
 
-    async def fire_timer(
-            self, actor_id: ActorId,
-            timer_name: str, request_body: bytes) -> None:
+    async def fire_timer(self, actor_id: ActorId, timer_name: str, request_body: bytes) -> None:
         timer = self._message_serializer.deserialize(request_body, object)
 
         async def invoke_timer(actor: Actor) -> Optional[bytes]:
@@ -92,8 +96,8 @@ class ActorManager:
         await self._dispatch_internal(actor_id, self._timer_method_context, invoke_timer)
 
     async def dispatch(
-            self, actor_id: ActorId,
-            actor_method_name: str, request_body: bytes) -> bytes:
+        self, actor_id: ActorId, actor_method_name: str, request_body: bytes
+    ) -> bytes:
         method_context = ActorMethodContext.create_for_actor(actor_method_name)
         arg_types = self._dispatcher.get_arg_types(actor_method_name)
 
@@ -113,8 +117,11 @@ class ActorManager:
         return self._message_serializer.serialize(rtn_obj)
 
     async def _dispatch_internal(
-            self, actor_id: ActorId, method_context: ActorMethodContext,
-            dispatch_action: Callable[[Actor], Coroutine[Any, Any, Optional[bytes]]]) -> object:
+        self,
+        actor_id: ActorId,
+        method_context: ActorMethodContext,
+        dispatch_action: Callable[[Actor], Coroutine[Any, Any, Optional[bytes]]],
+    ) -> object:
         # Activate actor when actor is invoked.
         if actor_id.id not in self._active_actors:
             await self.activate_actor(actor_id)

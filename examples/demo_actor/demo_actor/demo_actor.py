@@ -67,12 +67,13 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         if enabled:
             # Register 'demo_reminder' reminder and call receive_reminder method
             await self.register_reminder(
-                'demo_reminder',               # reminder name
-                b'reminder_state',             # user_state (bytes)
+                'demo_reminder',  # reminder name
+                b'reminder_state',  # user_state (bytes)
                 # The amount of time to delay before firing the reminder
                 datetime.timedelta(seconds=5),
                 datetime.timedelta(seconds=5),  # The time interval between firing of reminders
-                datetime.timedelta(seconds=5))
+                datetime.timedelta(seconds=5),
+            )
         else:
             # Unregister 'demo_reminder'
             await self.unregister_reminder('demo_reminder')
@@ -88,13 +89,14 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         if enabled:
             # Register 'demo_timer' timer and call timer_callback method
             await self.register_timer(
-                'demo_timer',                   # timer name
-                self.timer_callback,            # Callback method
-                'timer_state',                  # Parameter to pass to the callback method
+                'demo_timer',  # timer name
+                self.timer_callback,  # Callback method
+                'timer_state',  # Parameter to pass to the callback method
                 # Amount of time to delay before the callback is invoked
                 datetime.timedelta(seconds=5),
                 datetime.timedelta(seconds=5),  # Time interval between invocations
-                datetime.timedelta(seconds=5))
+                datetime.timedelta(seconds=5),
+            )
         else:
             # Unregister 'demo_timer'
             await self.unregister_timer('demo_timer')
@@ -108,13 +110,19 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         """
         print(f'time_callback is called - {state}', flush=True)
 
-    async def receive_reminder(self, name: str, state: bytes,
-                               due_time: datetime.timedelta, period: datetime.timedelta,
-                               ttl: Optional[datetime.timedelta] = None) -> None:
+    async def receive_reminder(
+        self,
+        name: str,
+        state: bytes,
+        due_time: datetime.timedelta,
+        period: datetime.timedelta,
+        ttl: Optional[datetime.timedelta] = None,
+    ) -> None:
         """A callback which will be called when reminder is triggered."""
         print(f'receive_reminder is called - {name} reminder - {str(state)}', flush=True)
 
     async def get_reentrancy_status(self) -> bool:
         """For Testing Only: An actor method which gets reentrancy status."""
         from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+
         return reentrancy_ctx.get(None) is not None

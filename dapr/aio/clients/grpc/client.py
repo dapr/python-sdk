@@ -35,7 +35,7 @@ from grpc.aio import (  # type: ignore
     UnaryUnaryClientInterceptor,
     UnaryStreamClientInterceptor,
     StreamUnaryClientInterceptor,
-    StreamStreamClientInterceptor
+    StreamStreamClientInterceptor,
 )
 
 from dapr.clients.exceptions import DaprInternalError
@@ -57,7 +57,7 @@ from dapr.clients.grpc._helpers import (
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
-    TransactionalStateOperation
+    TransactionalStateOperation,
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
@@ -105,12 +105,17 @@ class DaprGrpcClientAsync:
     def __init__(
         self,
         address: Optional[str] = None,
-        interceptors: Optional[List[Union[
-            UnaryUnaryClientInterceptor,
-            UnaryStreamClientInterceptor,
-            StreamUnaryClientInterceptor,
-            StreamStreamClientInterceptor]]] = None,
-        max_grpc_message_length: Optional[int] = None
+        interceptors: Optional[
+            List[
+                Union[
+                    UnaryUnaryClientInterceptor,
+                    UnaryStreamClientInterceptor,
+                    StreamUnaryClientInterceptor,
+                    StreamStreamClientInterceptor,
+                ]
+            ]
+        ] = None,
+        max_grpc_message_length: Optional[int] = None,
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -132,12 +137,13 @@ class DaprGrpcClientAsync:
             options = [
                 ('grpc.max_send_message_length', max_grpc_message_length),
                 ('grpc.max_receive_message_length', max_grpc_message_length),
-                ('grpc.primary_user_agent', useragent)
+                ('grpc.primary_user_agent', useragent),
             ]
 
         if not address:
-            address = settings.DAPR_GRPC_ENDPOINT or (f"{settings.DAPR_RUNTIME_HOST}:"
-                                                      f"{settings.DAPR_GRPC_PORT}")
+            address = settings.DAPR_GRPC_ENDPOINT or (
+                f'{settings.DAPR_RUNTIME_HOST}:' f'{settings.DAPR_GRPC_PORT}'
+            )
 
         try:
             self._uri = GrpcEndpoint(address)
@@ -145,21 +151,25 @@ class DaprGrpcClientAsync:
             raise DaprInternalError(f'{error}') from error
 
         if self._uri.tls:
-            self._channel = grpc.aio.secure_channel(self._uri.endpoint,
-                                                    credentials=self.get_credentials(),
-                                                    options=options)  # type: ignore
+            self._channel = grpc.aio.secure_channel(
+                self._uri.endpoint, credentials=self.get_credentials(), options=options
+            )  # type: ignore
         else:
-            self._channel = grpc.aio.insecure_channel(self._uri.endpoint,
-                                                      options)  # type: ignore
+            self._channel = grpc.aio.insecure_channel(self._uri.endpoint, options)  # type: ignore
 
         if settings.DAPR_API_TOKEN:
-            api_token_interceptor = DaprClientInterceptorAsync([
-                ('dapr-api-token', settings.DAPR_API_TOKEN), ])
+            api_token_interceptor = DaprClientInterceptorAsync(
+                [
+                    ('dapr-api-token', settings.DAPR_API_TOKEN),
+                ]
+            )
             self._channel = grpc.aio.insecure_channel(  # type: ignore
-                address, options=options, interceptors=(api_token_interceptor,))
+                address, options=options, interceptors=(api_token_interceptor,)
+            )
         if interceptors:
             self._channel = grpc.aio.insecure_channel(  # type: ignore
-                address, options=options, *interceptors)
+                address, options=options, *interceptors
+            )
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
@@ -178,8 +188,7 @@ class DaprGrpcClientAsync:
         await self.close()
 
     def _get_http_extension(
-            self, http_verb: str,
-            http_querystring: Optional[MetadataTuple] = None
+        self, http_verb: str, http_querystring: Optional[MetadataTuple] = None
     ) -> common_v1.HTTPExtension:  # type: ignore
         verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
         http_ext = common_v1.HTTPExtension(verb=verb)
@@ -188,15 +197,16 @@ class DaprGrpcClientAsync:
         return http_ext
 
     async def invoke_method(
-            self,
-            app_id: str,
-            method_name: str,
-            data: Union[bytes, str, GrpcMessage] = '',
-            content_type: Optional[str] = None,
-            metadata: Optional[MetadataTuple] = None,
-            http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None,
-            timeout: Optional[int] = None) -> InvokeMethodResponse:
+        self,
+        app_id: str,
+        method_name: str,
+        data: Union[bytes, str, GrpcMessage] = '',
+        content_type: Optional[str] = None,
+        metadata: Optional[MetadataTuple] = None,
+        http_verb: Optional[str] = None,
+        http_querystring: Optional[MetadataTuple] = None,
+        timeout: Optional[int] = None,
+    ) -> InvokeMethodResponse:
         """Invokes the target service to call method.
 
         This can invoke the specified target service to call method with bytes array data or
@@ -270,18 +280,25 @@ class DaprGrpcClientAsync:
         Returns:
             :class:`InvokeMethodResponse` object returned from callee
         """
-        warn('invoke_method with protocol gRPC is deprecated. Use gRPC proxying instead.',
-             DeprecationWarning, stacklevel=2)
+        warn(
+            'invoke_method with protocol gRPC is deprecated. Use gRPC proxying instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         req_data = InvokeMethodRequest(data, content_type)
         http_ext = None
         if http_verb:
             http_ext = self._get_http_extension(http_verb, http_querystring)
 
-        content_type = ""
+        content_type = ''
         if req_data.content_type:
             content_type = req_data.content_type
         req = api_v1.InvokeServiceRequest(
@@ -290,7 +307,8 @@ class DaprGrpcClientAsync:
                 method=method_name,
                 data=req_data.proto,
                 content_type=content_type,
-                http_extension=http_ext)
+                http_extension=http_ext,
+            ),
         )
 
         call = self._stub.InvokeService(req, metadata=metadata, timeout=timeout)
@@ -301,12 +319,13 @@ class DaprGrpcClientAsync:
         return resp_data
 
     async def invoke_binding(
-            self,
-            binding_name: str,
-            operation: str,
-            data: Union[bytes, str] = '',
-            binding_metadata: Dict[str, str] = {},
-            metadata: Optional[MetadataTuple] = None) -> BindingResponse:
+        self,
+        binding_name: str,
+        operation: str,
+        data: Union[bytes, str] = '',
+        binding_metadata: Dict[str, str] = {},
+        metadata: Optional[MetadataTuple] = None,
+    ) -> BindingResponse:
         """Invokes the output binding with the specified operation.
 
         The data field takes any JSON serializable value and acts as the
@@ -338,8 +357,12 @@ class DaprGrpcClientAsync:
             :class:`InvokeBindingResponse` object returned from binding
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token '
-                 'headers and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token '
+                'headers and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         req_data = BindingRequest(data, binding_metadata)
 
@@ -347,23 +370,24 @@ class DaprGrpcClientAsync:
             name=binding_name,
             data=req_data.data,
             metadata=req_data.binding_metadata,
-            operation=operation
+            operation=operation,
         )
 
         call = self._stub.InvokeBinding(req, metadata=metadata)
         response = await call
         return BindingResponse(
-            response.data, dict(response.metadata),
-            await call.initial_metadata())
+            response.data, dict(response.metadata), await call.initial_metadata()
+        )
 
     async def publish_event(
-            self,
-            pubsub_name: str,
-            topic_name: str,
-            data: Union[bytes, str],
-            publish_metadata: Dict[str, str] = {},
-            metadata: Optional[MetadataTuple] = None,
-            data_content_type: Optional[str] = None) -> DaprResponse:
+        self,
+        pubsub_name: str,
+        topic_name: str,
+        data: Union[bytes, str],
+        publish_metadata: Dict[str, str] = {},
+        metadata: Optional[MetadataTuple] = None,
+        data_content_type: Optional[str] = None,
+    ) -> DaprResponse:
         """Publish to a given topic.
         This publishes an event with bytes array or str data to a specified topic and
         specified pubsub component. The str data is encoded into bytes with default
@@ -394,8 +418,12 @@ class DaprGrpcClientAsync:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if not isinstance(data, bytes) and not isinstance(data, str):
             raise ValueError(f'invalid type for data {type(data)}')
@@ -407,7 +435,7 @@ class DaprGrpcClientAsync:
             if isinstance(data, str):
                 req_data = data.encode('utf-8')
 
-        content_type = ""
+        content_type = ''
         if data_content_type:
             content_type = data_content_type
         req = api_v1.PublishEventRequest(
@@ -415,7 +443,8 @@ class DaprGrpcClientAsync:
             topic=topic_name,
             data=req_data,
             data_content_type=content_type,
-            metadata=publish_metadata)
+            metadata=publish_metadata,
+        )
 
         call = self._stub.PublishEvent(req, metadata=metadata)
         # response is google.protobuf.Empty
@@ -424,11 +453,12 @@ class DaprGrpcClientAsync:
         return DaprResponse(await call.initial_metadata())
 
     async def get_state(
-            self,
-            store_name: str,
-            key: str,
-            state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None) -> StateResponse:
+        self,
+        store_name: str,
+        key: str,
+        state_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
+    ) -> StateResponse:
         """Gets value from a statestore with a key
 
         The example gets value from a statestore:
@@ -452,26 +482,30 @@ class DaprGrpcClientAsync:
             and value obtained from the state store
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
         call = self._stub.GetState(req, metadata=metadata)
         response = await call
         return StateResponse(
-            data=response.data,
-            etag=response.etag,
-            headers=await call.initial_metadata())
+            data=response.data, etag=response.etag, headers=await call.initial_metadata()
+        )
 
     async def get_bulk_state(
-            self,
-            store_name: str,
-            keys: Sequence[str],
-            parallelism: int = 1,
-            states_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None) -> BulkStatesResponse:
+        self,
+        store_name: str,
+        keys: Sequence[str],
+        parallelism: int = 1,
+        states_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
+    ) -> BulkStatesResponse:
         """Gets values from a statestore with keys
 
         The example gets value from a statestore:
@@ -496,36 +530,31 @@ class DaprGrpcClientAsync:
             and value obtained from the state store
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
         req = api_v1.GetBulkStateRequest(
-            store_name=store_name,
-            keys=keys,
-            parallelism=parallelism,
-            metadata=states_metadata)
+            store_name=store_name, keys=keys, parallelism=parallelism, metadata=states_metadata
+        )
         call = self._stub.GetBulkState(req, metadata=metadata)
         response = await call
 
         items = []
         for item in response.items:
             items.append(
-                BulkStateItem(
-                    key=item.key,
-                    data=item.data,
-                    etag=item.etag,
-                    error=item.error))
-        return BulkStatesResponse(
-            items=items,
-            headers=await call.initial_metadata())
+                BulkStateItem(key=item.key, data=item.data, etag=item.etag, error=item.error)
+            )
+        return BulkStatesResponse(items=items, headers=await call.initial_metadata())
 
     async def query_state(
-            self,
-            store_name: str,
-            query: str,
-            states_metadata: Optional[Dict[str, str]] = dict()) -> QueryResponse:
+        self, store_name: str, query: str, states_metadata: Optional[Dict[str, str]] = dict()
+    ) -> QueryResponse:
         """Queries a statestore with a query
 
         For details on supported queries see https://docs.dapr.io/
@@ -563,43 +592,41 @@ class DaprGrpcClientAsync:
             :class:`QueryStateResponse` gRPC metadata returned from callee,
                 pagination token and results of the query
         """
-        warn('The State Store Query API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
+        warn(
+            'The State Store Query API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
-        req = api_v1.QueryStateRequest(
-            store_name=store_name,
-            query=query,
-            metadata=states_metadata)
+            raise ValueError('State store name cannot be empty')
+        req = api_v1.QueryStateRequest(store_name=store_name, query=query, metadata=states_metadata)
         call = self._stub.QueryStateAlpha1(req)
         response = await call
 
         results = []
         for item in response.results:
             results.append(
-                QueryResponseItem(
-                    key=item.key,
-                    value=item.data,
-                    etag=item.etag,
-                    error=item.error)
+                QueryResponseItem(key=item.key, value=item.data, etag=item.etag, error=item.error)
             )
 
         return QueryResponse(
             token=response.token,
             results=results,
             metadata=response.metadata,
-            headers=await call.initial_metadata())
+            headers=await call.initial_metadata(),
+        )
 
     async def save_state(
-            self,
-            store_name: str,
-            key: str,
-            value: Union[bytes, str],
-            etag: Optional[str] = None,
-            options: Optional[StateOptions] = None,
-            state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
+        self,
+        store_name: str,
+        key: str,
+        value: Union[bytes, str],
+        etag: Optional[str] = None,
+        options: Optional[StateOptions] = None,
+        state_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
+    ) -> DaprResponse:
         """Saves key-value pairs to a statestore
 
         This saves a value to the statestore with a given key and state store name.
@@ -635,8 +662,12 @@ class DaprGrpcClientAsync:
             ValueError: store_name is empty
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if not isinstance(value, (bytes, str)):
             raise ValueError(f'invalid type for data {type(value)}')
@@ -644,7 +675,7 @@ class DaprGrpcClientAsync:
         req_value = value
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
 
         if options is None:
             state_options = None
@@ -656,19 +687,17 @@ class DaprGrpcClientAsync:
             value=to_bytes(req_value),
             etag=common_v1.Etag(value=etag) if etag is not None else None,
             options=state_options,
-            metadata=state_metadata)
+            metadata=state_metadata,
+        )
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         call = self._stub.SaveState(req, metadata=metadata)
         await call
-        return DaprResponse(
-            headers=await call.initial_metadata())
+        return DaprResponse(headers=await call.initial_metadata())
 
     async def save_bulk_state(
-            self,
-            store_name: str,
-            states: List[StateItem],
-            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
+        self, store_name: str, states: List[StateItem], metadata: Optional[MetadataTuple] = None
+    ) -> DaprResponse:
         """Saves state items to a statestore
 
         This saves a given state item into the statestore specified by store_name.
@@ -695,34 +724,42 @@ class DaprGrpcClientAsync:
             ValueError: store_name is empty
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if not states or len(states) == 0:
-            raise ValueError("States to be saved cannot be empty")
+            raise ValueError('States to be saved cannot be empty')
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
 
-        req_states = [common_v1.StateItem(
-            key=i.key,
-            value=to_bytes(i.value),
-            etag=common_v1.Etag(value=i.etag) if i.etag is not None else None,
-            options=i.options,
-            metadata=i.metadata) for i in states]
+        req_states = [
+            common_v1.StateItem(
+                key=i.key,
+                value=to_bytes(i.value),
+                etag=common_v1.Etag(value=i.etag) if i.etag is not None else None,
+                options=i.options,
+                metadata=i.metadata,
+            )
+            for i in states
+        ]
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=req_states)
         call = self._stub.SaveState(req, metadata=metadata)
         await call
-        return DaprResponse(
-            headers=await call.initial_metadata())
+        return DaprResponse(headers=await call.initial_metadata())
 
     async def execute_state_transaction(
-            self,
-            store_name: str,
-            operations: Sequence[TransactionalStateOperation],
-            transactional_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
+        self,
+        store_name: str,
+        operations: Sequence[TransactionalStateOperation],
+        transactional_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
+    ) -> DaprResponse:
         """Saves or deletes key-value pairs to a statestore as a transaction
 
         This saves or deletes key-values to the statestore as part of a single transaction,
@@ -754,36 +791,43 @@ class DaprGrpcClientAsync:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
-        req_ops = [api_v1.TransactionalStateOperation(
-            operationType=o.operation_type.value,
-            request=common_v1.StateItem(
-                key=o.key,
-                value=to_bytes(o.data),
-                etag=common_v1.Etag(value=o.etag) if o.etag is not None else None))
-            for o in operations]
+            raise ValueError('State store name cannot be empty')
+        req_ops = [
+            api_v1.TransactionalStateOperation(
+                operationType=o.operation_type.value,
+                request=common_v1.StateItem(
+                    key=o.key,
+                    value=to_bytes(o.data),
+                    etag=common_v1.Etag(value=o.etag) if o.etag is not None else None,
+                ),
+            )
+            for o in operations
+        ]
 
         req = api_v1.ExecuteStateTransactionRequest(
-            storeName=store_name,
-            operations=req_ops,
-            metadata=transactional_metadata)
+            storeName=store_name, operations=req_ops, metadata=transactional_metadata
+        )
         call = self._stub.ExecuteStateTransaction(req, metadata=metadata)
         await call
-        return DaprResponse(
-            headers=await call.initial_metadata())
+        return DaprResponse(headers=await call.initial_metadata())
 
     async def delete_state(
-            self,
-            store_name: str,
-            key: str,
-            etag: Optional[str] = None,
-            options: Optional[StateOptions] = None,
-            state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None) -> DaprResponse:
+        self,
+        store_name: str,
+        key: str,
+        etag: Optional[str] = None,
+        options: Optional[StateOptions] = None,
+        state_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
+    ) -> DaprResponse:
         """Deletes key-value pairs from a statestore
 
         This deletes a value from the statestore with a given key and state store name.
@@ -813,11 +857,15 @@ class DaprGrpcClientAsync:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
 
         if options is None:
             state_options = None
@@ -825,20 +873,24 @@ class DaprGrpcClientAsync:
             state_options = options.get_proto()
 
         etag_object = common_v1.Etag(value=etag) if etag is not None else None
-        req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
-                                        etag=etag_object, options=state_options,
-                                        metadata=state_metadata)
+        req = api_v1.DeleteStateRequest(
+            store_name=store_name,
+            key=key,
+            etag=etag_object,
+            options=state_options,
+            metadata=state_metadata,
+        )
         call = self._stub.DeleteState(req, metadata=metadata)
         await call
-        return DaprResponse(
-            headers=await call.initial_metadata())
+        return DaprResponse(headers=await call.initial_metadata())
 
     async def get_secret(
-            self,
-            store_name: str,
-            key: str,
-            secret_metadata: Optional[Dict[str, str]] = {},
-            metadata: Optional[MetadataTuple] = None) -> GetSecretResponse:
+        self,
+        store_name: str,
+        key: str,
+        secret_metadata: Optional[Dict[str, str]] = {},
+        metadata: Optional[MetadataTuple] = None,
+    ) -> GetSecretResponse:
         """Get secret with a given key.
 
         This gets a secret from secret store with a given key and secret store name.
@@ -870,26 +922,26 @@ class DaprGrpcClientAsync:
             :class:`GetSecretResponse` object with the secret and metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
-        req = api_v1.GetSecretRequest(
-            store_name=store_name,
-            key=key,
-            metadata=secret_metadata)
+        req = api_v1.GetSecretRequest(store_name=store_name, key=key, metadata=secret_metadata)
 
         call = self._stub.GetSecret(req, metadata=metadata)
         response = await call
 
-        return GetSecretResponse(
-            secret=response.data,
-            headers=await call.initial_metadata())
+        return GetSecretResponse(secret=response.data, headers=await call.initial_metadata())
 
     async def get_bulk_secret(
-            self,
-            store_name: str,
-            secret_metadata: Optional[Dict[str, str]] = {},
-            metadata: Optional[MetadataTuple] = None) -> GetBulkSecretResponse:
+        self,
+        store_name: str,
+        secret_metadata: Optional[Dict[str, str]] = {},
+        metadata: Optional[MetadataTuple] = None,
+    ) -> GetBulkSecretResponse:
         """Get all granted secrets.
 
         This gets all granted secrets from secret store.
@@ -918,12 +970,14 @@ class DaprGrpcClientAsync:
             :class:`GetBulkSecretResponse` object with secrets and metadata returned from callee
         """
         if metadata is not None:
-            warn('metadata argument is deprecated. Dapr already intercepts API token headers '
-                 'and this is not needed.', DeprecationWarning, stacklevel=2)
+            warn(
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
-        req = api_v1.GetBulkSecretRequest(
-            store_name=store_name,
-            metadata=secret_metadata)
+        req = api_v1.GetBulkSecretRequest(store_name=store_name, metadata=secret_metadata)
 
         call = self._stub.GetBulkSecret(req, metadata=metadata)
         response = await call
@@ -936,15 +990,11 @@ class DaprGrpcClientAsync:
                 secrets_submap[subkey] = secret_response.secrets[subkey]
             secrets_map[key] = secrets_submap
 
-        return GetBulkSecretResponse(
-            secrets=secrets_map,
-            headers=await call.initial_metadata())
+        return GetBulkSecretResponse(secrets=secrets_map, headers=await call.initial_metadata())
 
     async def get_configuration(
-            self,
-            store_name: str,
-            keys: List[str],
-            config_metadata: Optional[Dict[str, str]] = dict()) -> ConfigurationResponse:
+        self, store_name: str, keys: List[str], config_metadata: Optional[Dict[str, str]] = dict()
+    ) -> ConfigurationResponse:
         """Gets values from a config store with keys
 
         The example gets value from a config store:
@@ -966,22 +1016,22 @@ class DaprGrpcClientAsync:
             and value obtained from the config store
         """
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("Config store name cannot be empty to get the configuration")
+            raise ValueError('Config store name cannot be empty to get the configuration')
 
         req = api_v1.GetConfigurationRequest(
-            store_name=store_name, keys=keys, metadata=config_metadata)
+            store_name=store_name, keys=keys, metadata=config_metadata
+        )
         call = self._stub.GetConfiguration(req)
         response = await call
-        return ConfigurationResponse(
-            items=response.items,
-            headers=await call.initial_metadata())
+        return ConfigurationResponse(items=response.items, headers=await call.initial_metadata())
 
     async def subscribe_configuration(
-            self,
-            store_name: str,
-            keys: List[str],
-            handler: Callable[[Text, ConfigurationResponse], None],
-            config_metadata: Optional[Dict[str, str]] = dict()) -> Text:
+        self,
+        store_name: str,
+        keys: List[str],
+        handler: Callable[[Text, ConfigurationResponse], None],
+        config_metadata: Optional[Dict[str, str]] = dict(),
+    ) -> Text:
         """Gets changed value from a config store with a key
 
         The example gets value from a config store:
@@ -1004,82 +1054,81 @@ class DaprGrpcClientAsync:
             id (str): subscription id, which can be used to unsubscribe later
         """
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("Config store name cannot be empty to get the configuration")
+            raise ValueError('Config store name cannot be empty to get the configuration')
 
         configWatcher = ConfigurationWatcher()
-        id = configWatcher.watch_configuration(self._stub, store_name, keys,
-                                               handler, config_metadata)
+        id = configWatcher.watch_configuration(
+            self._stub, store_name, keys, handler, config_metadata
+        )
         return id
 
-    async def unsubscribe_configuration(
-            self,
-            store_name: str,
-            id: str) -> bool:
+    async def unsubscribe_configuration(self, store_name: str, id: str) -> bool:
         """Unsubscribes from configuration changes.
 
-            Args:
-                store_name (str): the state store name to unsubscribe from
-                id (str): the subscription id to unsubscribe
+        Args:
+            store_name (str): the state store name to unsubscribe from
+            id (str): the subscription id to unsubscribe
 
-            Returns:
-                bool: True if unsubscribed successfully, False otherwise
+        Returns:
+            bool: True if unsubscribed successfully, False otherwise
         """
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
         response: UnsubscribeConfigurationResponse = await self._stub.UnsubscribeConfiguration(req)
         return response.ok
 
     async def try_lock(
-            self,
-            store_name: str,
-            resource_id: str,
-            lock_owner: str,
-            expiry_in_seconds: int) -> TryLockResponse:
+        self, store_name: str, resource_id: str, lock_owner: str, expiry_in_seconds: int
+    ) -> TryLockResponse:
         """Tries to get a lock with an expiry.
 
-            You can use the result of this operation directly on an `if` statement:
+        You can use the result of this operation directly on an `if` statement:
 
-                if client.try_lock(store_name, resource_id, first_client_id, expiry_s):
+            if client.try_lock(store_name, resource_id, first_client_id, expiry_s):
+                # lock acquired successfully...
+
+        You can also inspect the response's `success` attribute:
+
+                response = client.try_lock(store_name, resource_id, first_client_id, expiry_s)
+                if response.success:
                     # lock acquired successfully...
 
-            You can also inspect the response's `success` attribute:
+        Finally, you can use this response with a `with` statement, and have the lock
+        be automatically unlocked after the with-statement scope ends
 
-                    response = client.try_lock(store_name, resource_id, first_client_id, expiry_s)
-                    if response.success:
-                        # lock acquired successfully...
+            with client.try_lock(store_name, resource_id, first_client_id, expiry_s) as lock:
+                if lock:
+                    # lock acquired successfully...
+            # Lock automatically unlocked at this point, no need to call client->unlock(...)
 
-            Finally, you can use this response with a `with` statement, and have the lock
-            be automatically unlocked after the with-statement scope ends
+        Args:
+            store_name (str): the lock store name, e.g. `redis`.
+            resource_id (str): the lock key. e.g. `order_id_111`.
+                                It stands for "which resource I want to protect".
+            lock_owner (str):  indicates the identifier of lock owner.
+            expiry_in_seconds (int): The length of time (in seconds) for which this lock
+                will be held and after which it expires.
 
-                with client.try_lock(store_name, resource_id, first_client_id, expiry_s) as lock:
-                    if lock:
-                        # lock acquired successfully...
-                # Lock automatically unlocked at this point, no need to call client->unlock(...)
-
-            Args:
-                store_name (str): the lock store name, e.g. `redis`.
-                resource_id (str): the lock key. e.g. `order_id_111`.
-                                    It stands for "which resource I want to protect".
-                lock_owner (str):  indicates the identifier of lock owner.
-                expiry_in_seconds (int): The length of time (in seconds) for which this lock
-                    will be held and after which it expires.
-
-            Returns:
-                :class:`TryLockResponse`: With the result of the try-lock operation.
+        Returns:
+            :class:`TryLockResponse`: With the result of the try-lock operation.
         """
         # Warnings and input validation
-        warn('The Distributed Lock API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(store_name=store_name,
-                               resource_id=resource_id,
-                               lock_owner=lock_owner)
+        warn(
+            'The Distributed Lock API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(
+            store_name=store_name, resource_id=resource_id, lock_owner=lock_owner
+        )
         if not expiry_in_seconds or expiry_in_seconds < 1:
-            raise ValueError("expiry_in_seconds must be a positive number")
+            raise ValueError('expiry_in_seconds must be a positive number')
         # Actual tryLock invocation
         req = api_v1.TryLockRequest(
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
-            expiry_in_seconds=expiry_in_seconds)
+            expiry_in_seconds=expiry_in_seconds,
+        )
         call = self._stub.TryLockAlpha1(req)
         response = await call
         return TryLockResponse(
@@ -1088,78 +1137,84 @@ class DaprGrpcClientAsync:
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
-            headers=await call.initial_metadata())
+            headers=await call.initial_metadata(),
+        )
 
-    async def unlock(
-            self,
-            store_name: str,
-            resource_id: str,
-            lock_owner: str) -> UnlockResponse:
+    async def unlock(self, store_name: str, resource_id: str, lock_owner: str) -> UnlockResponse:
         """Unlocks a lock.
 
-            Args:
-                store_name (str): the lock store name, e.g. `redis`.
-                resource_id (str): the lock key. e.g. `order_id_111`.
-                                    It stands for "which resource I want to protect".
-                lock_owner (str):  indicates the identifier of lock owner.
-                metadata (tuple, optional, DEPRECATED): gRPC custom metadata
+        Args:
+            store_name (str): the lock store name, e.g. `redis`.
+            resource_id (str): the lock key. e.g. `order_id_111`.
+                                It stands for "which resource I want to protect".
+            lock_owner (str):  indicates the identifier of lock owner.
+            metadata (tuple, optional, DEPRECATED): gRPC custom metadata
 
-            Returns:
-                :class:`UnlockResponseStatus`: Status of the request,
-                    `UnlockResponseStatus.success` if it was successful of some other
-                    status otherwise.
+        Returns:
+            :class:`UnlockResponseStatus`: Status of the request,
+                `UnlockResponseStatus.success` if it was successful of some other
+                status otherwise.
         """
         # Warnings and input validation
-        warn('The Distributed Lock API is an Alpha version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(store_name=store_name,
-                               resource_id=resource_id,
-                               lock_owner=lock_owner)
+        warn(
+            'The Distributed Lock API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(
+            store_name=store_name, resource_id=resource_id, lock_owner=lock_owner
+        )
         # Actual unlocking invocation
         req = api_v1.UnlockRequest(
-            store_name=store_name,
-            resource_id=resource_id,
-            lock_owner=lock_owner)
+            store_name=store_name, resource_id=resource_id, lock_owner=lock_owner
+        )
         call = self._stub.UnlockAlpha1(req)
         response = await call
 
-        return UnlockResponse(status=UnlockResponseStatus(response.status),
-                              headers=await call.initial_metadata())
+        return UnlockResponse(
+            status=UnlockResponseStatus(response.status), headers=await call.initial_metadata()
+        )
 
     async def start_workflow(
-            self,
-            workflow_component: str,
-            workflow_name: str,
-            input: Optional[Union[Any, bytes]] = None,
-            instance_id: Optional[str] = None,
-            workflow_options: Optional[Dict[str, str]] = dict(),
-            send_raw_bytes: bool = False) -> StartWorkflowResponse:
+        self,
+        workflow_component: str,
+        workflow_name: str,
+        input: Optional[Union[Any, bytes]] = None,
+        instance_id: Optional[str] = None,
+        workflow_options: Optional[Dict[str, str]] = dict(),
+        send_raw_bytes: bool = False,
+    ) -> StartWorkflowResponse:
         """Starts a workflow.
 
-            Args:
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-                workflow_name (str): the name of the workflow that will be executed.
-                input (Optional[Union[Any, bytes]]): the input that the workflow will receive.
-                                                 The input value will be serialized to JSON
-                                                 by default. Use the send_raw_bytes param
-                                                 to send unencoded binary input.
-                instance_id (Optional[str]): the name of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_options (Optional[Dict[str, str]]): the key-value options
-                                    that the workflow will receive.
-                send_raw_bytes (bool) if true, no serialization will be performed on the input
-                                    bytes
+        Args:
+            workflow_component (str): the name of the workflow component
+                                that will run the workflow. e.g. `dapr`.
+            workflow_name (str): the name of the workflow that will be executed.
+            input (Optional[Union[Any, bytes]]): the input that the workflow will receive.
+                                             The input value will be serialized to JSON
+                                             by default. Use the send_raw_bytes param
+                                             to send unencoded binary input.
+            instance_id (Optional[str]): the name of the workflow instance,
+                                e.g. `order_processing_workflow-103784`.
+            workflow_options (Optional[Dict[str, str]]): the key-value options
+                                that the workflow will receive.
+            send_raw_bytes (bool) if true, no serialization will be performed on the input
+                                bytes
 
-            Returns:
-                :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
+        Returns:
+            :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
         """
         # Warnings and input validation
-        warn('The Workflow API is a Beta version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component,
-                               workflow_name=workflow_name)
+        warn(
+            'The Workflow API is a Beta version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(
+            instance_id=instance_id,
+            workflow_component=workflow_component,
+            workflow_name=workflow_name,
+        )
 
         if instance_id is None:
             instance_id = str(uuid.uuid4())
@@ -1168,12 +1223,11 @@ class DaprGrpcClientAsync:
             encoded_data = input
         else:
             try:
-                encoded_data = json.dumps(input).encode(
-                    "utf-8") if input is not None else bytes([])
+                encoded_data = json.dumps(input).encode('utf-8') if input is not None else bytes([])
             except TypeError:
-                raise DaprInternalError("start_workflow: input data must be JSON serializable")
+                raise DaprInternalError('start_workflow: input data must be JSON serializable')
             except ValueError as e:
-                raise DaprInternalError(f"start_workflow JSON serialization error: {e}")
+                raise DaprInternalError(f'start_workflow JSON serialization error: {e}')
 
         # Actual start workflow invocation
         req = api_v1.StartWorkflowRequest(
@@ -1181,7 +1235,8 @@ class DaprGrpcClientAsync:
             workflow_component=workflow_component,
             workflow_name=workflow_name,
             options=workflow_options,
-            input=encoded_data)
+            input=encoded_data,
+        )
 
         try:
             response = self._stub.StartWorkflowBeta1(req)
@@ -1189,30 +1244,29 @@ class DaprGrpcClientAsync:
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
-    async def get_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> GetWorkflowResponse:
+    async def get_workflow(self, instance_id: str, workflow_component: str) -> GetWorkflowResponse:
         """Gets information on a workflow.
 
-            Args:
-                instance_id (str): the ID of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
+        Args:
+            instance_id (str): the ID of the workflow instance,
+                                e.g. `order_processing_workflow-103784`.
+            workflow_component (str): the name of the workflow component
+                                that will run the workflow. e.g. `dapr`.
 
-            Returns:
-                :class:`GetWorkflowResponse`: Instance ID associated with the started workflow
+        Returns:
+            :class:`GetWorkflowResponse`: Instance ID associated with the started workflow
         """
         # Warnings and input validation
-        warn('The Workflow API is a Beta version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
+        warn(
+            'The Workflow API is a Beta version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
         # Actual get workflow invocation
         req = api_v1.GetWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
+            instance_id=instance_id, workflow_component=workflow_component
+        )
 
         try:
             resp = self._stub.GetWorkflowBeta1(req)
@@ -1220,93 +1274,102 @@ class DaprGrpcClientAsync:
                 resp.created_at = datetime.now
             if resp.last_updated_at is None:
                 resp.last_updated_at = datetime.now
-            return GetWorkflowResponse(instance_id=instance_id,
-                                       workflow_name=resp.workflow_name,
-                                       created_at=resp.created_at,
-                                       last_updated_at=resp.last_updated_at,
-                                       runtime_status=getWorkflowRuntimeStatus(resp.runtime_status),
-                                       properties=resp.properties)
+            return GetWorkflowResponse(
+                instance_id=instance_id,
+                workflow_name=resp.workflow_name,
+                created_at=resp.created_at,
+                last_updated_at=resp.last_updated_at,
+                runtime_status=getWorkflowRuntimeStatus(resp.runtime_status),
+                properties=resp.properties,
+            )
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
-    async def terminate_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
+    async def terminate_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
         """Terminates a workflow.
 
-            Args:
-                instance_id (str): the ID of the workflow instance, e.g.
-                                    `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
+        Args:
+            instance_id (str): the ID of the workflow instance, e.g.
+                                `order_processing_workflow-103784`.
+            workflow_component (str): the name of the workflow component
+                                that will run the workflow. e.g. `dapr`.
 
-            Returns:
-                :class:`DaprResponse` gRPC metadata returned from callee
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
 
         """
         # Warnings and input validation
-        warn('The Workflow API is a Beta version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
+        warn(
+            'The Workflow API is a Beta version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
         # Actual terminate workflow invocation
         req = api_v1.TerminateWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
+            instance_id=instance_id, workflow_component=workflow_component
+        )
 
         try:
             _, call = self._stub.TerminateWorkflowBeta1.with_call(req)
-            return DaprResponse(
-                headers=call.initial_metadata())
+            return DaprResponse(headers=call.initial_metadata())
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
     async def raise_workflow_event(
-            self,
-            instance_id: str,
-            workflow_component: str,
-            event_name: str,
-            event_data: Optional[Union[Any, bytes]] = None,
-            send_raw_bytes: bool = False) -> DaprResponse:
+        self,
+        instance_id: str,
+        workflow_component: str,
+        event_name: str,
+        event_data: Optional[Union[Any, bytes]] = None,
+        send_raw_bytes: bool = False,
+    ) -> DaprResponse:
         """Raises an event on a workflow.
 
-            Args:
-                instance_id (str): the ID of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-                event_name (str): the name of the event to be raised on
-                                    the workflow.
-                event_data (Optional[Union[Any, bytes]]): the input that the workflow will receive.
-                                                 The input value will be serialized to JSON
-                                                 by default. Use the send_raw_bytes param
-                                                 to send unencoded binary input.
-                send_raw_bytes (bool) if true, no serialization will be performed on the input
-                                    bytes
+        Args:
+            instance_id (str): the ID of the workflow instance,
+                                e.g. `order_processing_workflow-103784`.
+            workflow_component (str): the name of the workflow component
+                                that will run the workflow. e.g. `dapr`.
+            event_name (str): the name of the event to be raised on
+                                the workflow.
+            event_data (Optional[Union[Any, bytes]]): the input that the workflow will receive.
+                                             The input value will be serialized to JSON
+                                             by default. Use the send_raw_bytes param
+                                             to send unencoded binary input.
+            send_raw_bytes (bool) if true, no serialization will be performed on the input
+                                bytes
 
-            Returns:
-                :class:`DaprResponse` gRPC metadata returned from callee
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is a Beta version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component,
-                               event_name=event_name)
+        warn(
+            'The Workflow API is a Beta version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(
+            instance_id=instance_id, workflow_component=workflow_component, event_name=event_name
+        )
         if isinstance(event_data, bytes) and send_raw_bytes:
             encoded_data = event_data
         else:
             if event_data is not None:
                 try:
-                    encoded_data = json.dumps(event_data).encode(
-                        "utf-8") if event_data is not None else bytes([])
+                    encoded_data = (
+                        json.dumps(event_data).encode('utf-8')
+                        if event_data is not None
+                        else bytes([])
+                    )
                 except TypeError:
-                    raise DaprInternalError("raise_workflow_event:\
-                                             event_data must be JSON serializable")
+                    raise DaprInternalError(
+                        'raise_workflow_event:\
+                                             event_data must be JSON serializable'
+                    )
                 except ValueError as e:
-                    raise DaprInternalError(f"raise_workflow_event JSON serialization error: {e}")
-                encoded_data = json.dumps(event_data).encode("utf-8")
+                    raise DaprInternalError(f'raise_workflow_event JSON serialization error: {e}')
+                encoded_data = json.dumps(event_data).encode('utf-8')
             else:
                 encoded_data = bytes([])
         # Actual workflow raise event invocation
@@ -1314,19 +1377,16 @@ class DaprGrpcClientAsync:
             instance_id=instance_id,
             workflow_component=workflow_component,
             event_name=event_name,
-            event_data=encoded_data)
+            event_data=encoded_data,
+        )
 
         try:
             _, call = self._stub.RaiseEventWorkflowBeta1.with_call(req)
-            return DaprResponse(
-                headers=call.initial_metadata())
+            return DaprResponse(headers=call.initial_metadata())
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
-    async def pause_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
+    async def pause_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
         """Pause a workflow.
 
             Args:
@@ -1340,86 +1400,83 @@ class DaprGrpcClientAsync:
 
         """
         # Warnings and input validation
-        warn('The Workflow API is a Beta version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
+        warn(
+            'The Workflow API is a Beta version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
         # Actual pause workflow invocation
         req = api_v1.PauseWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
+            instance_id=instance_id, workflow_component=workflow_component
+        )
 
         try:
             _, call = self._stub.PauseWorkflowBeta1.with_call(req)
 
-            return DaprResponse(
-                headers=call.initial_metadata())
+            return DaprResponse(headers=call.initial_metadata())
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
-    async def resume_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
+    async def resume_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
         """Resumes a workflow.
 
-            Args:
-                instance_id (str): the ID of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
+        Args:
+            instance_id (str): the ID of the workflow instance,
+                                e.g. `order_processing_workflow-103784`.
+            workflow_component (str): the name of the workflow component
+                                that will run the workflow. e.g. `dapr`.
 
-            Returns:
-                :class:`DaprResponse` gRPC metadata returned from callee
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is a Beta version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
+        warn(
+            'The Workflow API is a Beta version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
         # Actual resume workflow invocation
         req = api_v1.ResumeWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
+            instance_id=instance_id, workflow_component=workflow_component
+        )
 
         try:
             _, call = self._stub.ResumeWorkflowBeta1.with_call(req)
 
-            return DaprResponse(
-                headers=call.initial_metadata())
+            return DaprResponse(headers=call.initial_metadata())
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
-    async def purge_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str) -> DaprResponse:
+    async def purge_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
         """Purges a workflow.
 
-            Args:
-                instance_id (str): the ID of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
+        Args:
+            instance_id (str): the ID of the workflow instance,
+                                e.g. `order_processing_workflow-103784`.
+            workflow_component (str): the name of the workflow component
+                                that will run the workflow. e.g. `dapr`.
 
-            Returns:
-                :class:`DaprResponse` gRPC metadata returned from callee
+        Returns:
+            :class:`DaprResponse` gRPC metadata returned from callee
         """
         # Warnings and input validation
-        warn('The Workflow API is a Beta version and is subject to change.',
-             UserWarning, stacklevel=2)
-        validateNotBlankString(instance_id=instance_id,
-                               workflow_component=workflow_component)
+        warn(
+            'The Workflow API is a Beta version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
         # Actual purge workflow invocation
         req = api_v1.PurgeWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component)
+            instance_id=instance_id, workflow_component=workflow_component
+        )
 
         try:
             _, call = self._stub.PurgeWorkflowBeta1.with_call(req)
 
-            return DaprResponse(
-                headers=call.initial_metadata())
+            return DaprResponse(headers=call.initial_metadata())
 
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
@@ -1471,14 +1528,12 @@ class DaprGrpcClientAsync:
         response: api_v1.GetMetadataResponse = _resp  # type alias
         # Convert to more pythonic formats
         active_actors_count = {
-            type_count.type: type_count.count
-            for type_count in response.active_actors_count
+            type_count.type: type_count.count for type_count in response.active_actors_count
         }
         registered_components = [
-            RegisteredComponents(name=i.name,
-                                 type=i.type,
-                                 version=i.version,
-                                 capabilities=i.capabilities)
+            RegisteredComponents(
+                name=i.name, type=i.type, version=i.version, capabilities=i.capabilities
+            )
             for i in response.registered_components
         ]
         extended_metadata = dict(response.extended_metadata.items())
@@ -1488,7 +1543,8 @@ class DaprGrpcClientAsync:
             active_actors_count=active_actors_count,
             registered_components=registered_components,
             extended_metadata=extended_metadata,
-            headers=await call.initial_metadata())
+            headers=await call.initial_metadata(),
+        )
 
     async def set_metadata(self, attributeName: str, attributeValue: str) -> DaprResponse:
         """Adds a custom (extended) metadata attribute to the Dapr sidecar

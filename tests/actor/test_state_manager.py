@@ -28,10 +28,7 @@ from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import FakeSimpleActor
 from tests.actor.fake_client import FakeDaprActorClient
 
-from tests.actor.utils import (
-    _async_mock,
-    _run
-)
+from tests.actor.utils import _async_mock, _run
 
 
 class ActorStateManagerTests(unittest.TestCase):
@@ -43,17 +40,18 @@ class ActorStateManagerTests(unittest.TestCase):
         self._test_type_info = ActorTypeInformation.create(FakeSimpleActor)
         self._serializer = DefaultJSONSerializer()
         self._runtime_ctx = ActorRuntimeContext(
-            self._test_type_info, self._serializer, self._serializer, self._fake_client)
+            self._test_type_info, self._serializer, self._serializer, self._fake_client
+        )
         self._fake_actor = FakeSimpleActor(self._runtime_ctx, self._test_actor_id)
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=base64.b64encode(b'"value1"')))
+        new=_async_mock(return_value=base64.b64encode(b'"value1"')),
+    )
     @mock.patch(
-        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally',
-        new=_async_mock())
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
     def test_add_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
 
@@ -71,7 +69,6 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_get_state_for_no_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         has_value, val = _run(state_manager.try_get_state('state1'))
         self.assertFalse(has_value)
@@ -85,19 +82,19 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_get_state_for_existing_value(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         has_value, val = _run(state_manager.try_get_state('state1'))
         self.assertTrue(has_value)
-        self.assertEqual("value1", val)
+        self.assertEqual('value1', val)
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_get_state_for_removed_value(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
         removed = _run(state_manager.try_remove_state('state1'))
@@ -112,7 +109,6 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_set_state_for_new_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.set_state('state1', 'value1'))
@@ -123,7 +119,6 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_set_state_for_existing_state_only_in_mem(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.set_state('state1', 'value1'))
@@ -139,9 +134,9 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_set_state_for_existing_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.set_state('state1', 'value2'))
@@ -151,16 +146,15 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_remove_state_for_non_existing_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         removed = _run(state_manager.try_remove_state('state1'))
         self.assertFalse(removed)
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_remove_state_for_existing_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
         removed = _run(state_manager.try_remove_state('state1'))
@@ -171,7 +165,6 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_remove_state_for_existing_state_in_mem(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         _run(state_manager.set_state('state1', 'value1'))
         removed = _run(state_manager.try_remove_state('state1'))
@@ -179,7 +172,6 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_remove_state_twice_for_existing_state_in_mem(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         _run(state_manager.set_state('state1', 'value1'))
         removed = _run(state_manager.try_remove_state('state1'))
@@ -189,7 +181,6 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_contains_state_for_removed_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         _run(state_manager.set_state('state1', 'value1'))
 
@@ -198,25 +189,23 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_contains_state_for_existing_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         exist = _run(state_manager.contains_state('state1'))
         self.assertTrue(exist)
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_get_or_add_state_for_existing_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         val = _run(state_manager.get_or_add_state('state1', 'value2'))
         self.assertEqual('value1', val)
 
-    @mock.patch(
-        'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock())
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_get_or_add_state_for_non_existing_state(self):
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
@@ -227,14 +216,14 @@ class ActorStateManagerTests(unittest.TestCase):
         self.assertEqual('value2', val)
 
         self._fake_client.get_state.mock.assert_called_once_with(
-            self._test_type_info._name,
-            self._test_actor_id.id, 'state1')
+            self._test_type_info._name, self._test_actor_id.id, 'state1'
+        )
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_get_or_add_state_for_removed_state(self):
-
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
         _run(state_manager.remove_state('state1'))
@@ -249,6 +238,7 @@ class ActorStateManagerTests(unittest.TestCase):
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_add_or_update_state_for_new_state(self):
         """adds state if state does not exist."""
+
         def test_update_value(name, value):
             return f'{name}-{value}'
 
@@ -261,10 +251,12 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_add_or_update_state_for_state_in_storage(self):
         """updates state value using update_value_factory if state is
         in the storage."""
+
         def test_update_value(name, value):
             return f'{name}-{value}'
 
@@ -277,9 +269,11 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_add_or_update_state_for_removed_state(self):
         """add state value if state was removed."""
+
         def test_update_value(name, value):
             return f'{name}-{value}'
 
@@ -291,9 +285,11 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value1"'))
+        new=_async_mock(return_value=b'"value1"'),
+    )
     def test_add_or_update_state_for_none_state_key(self):
-        """update state value for StateChangeKind.none state """
+        """update state value for StateChangeKind.none state"""
+
         def test_update_value(name, value):
             return f'{name}-{value}'
 
@@ -306,7 +302,7 @@ class ActorStateManagerTests(unittest.TestCase):
         self.assertEqual('state1-value1', val)
 
     def test_add_or_update_state_without_update_value_factory(self):
-        """tries to add or update state without update_value_factory """
+        """tries to add or update state without update_value_factory"""
         state_manager = ActorStateManager(self._fake_actor)
         with self.assertRaises(AttributeError):
             _run(state_manager.add_or_update_state('state1', 'value1', None))
@@ -321,21 +317,19 @@ class ActorStateManagerTests(unittest.TestCase):
         self.assertEqual(['state1', 'state2', 'state3'], names)
 
         self._fake_client.get_state.mock.assert_any_call(
-            self._test_type_info._name,
-            self._test_actor_id.id,
-            'state1')
+            self._test_type_info._name, self._test_actor_id.id, 'state1'
+        )
         self._fake_client.get_state.mock.assert_any_call(
-            self._test_type_info._name,
-            self._test_actor_id.id,
-            'state2')
+            self._test_type_info._name, self._test_actor_id.id, 'state2'
+        )
         self._fake_client.get_state.mock.assert_any_call(
-            self._test_type_info._name,
-            self._test_actor_id.id,
-            'state3')
+            self._test_type_info._name, self._test_actor_id.id, 'state3'
+        )
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value0"'))
+        new=_async_mock(return_value=b'"value0"'),
+    )
     def test_clear_cache(self):
         state_manager = ActorStateManager(self._fake_actor)
         state_change_tracker = state_manager._get_contextual_state_tracker()
@@ -348,10 +342,11 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=b'"value3"'))
+        new=_async_mock(return_value=b'"value3"'),
+    )
     @mock.patch(
-        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally',
-        new=_async_mock())
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
     def test_save_state(self):
         state_manager = ActorStateManager(self._fake_actor)
         # set states which are StateChangeKind.add
@@ -360,7 +355,7 @@ class ActorStateManagerTests(unittest.TestCase):
 
         has_value, val = _run(state_manager.try_get_state('state3'))
         self.assertTrue(has_value)
-        self.assertEqual("value3", val)
+        self.assertEqual('value3', val)
         # set state which is StateChangeKind.remove
         _run(state_manager.remove_state('state4'))
         # set state which is StateChangeKind.update

@@ -45,7 +45,7 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
         self.server.start()
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
-        self.client = DaprClient("https://localhost:{}".format(self.server_port))
+        self.client = DaprClient('https://localhost:{}'.format(self.server_port))
         self.app_id = 'fakeapp'
         self.method_name = 'fakemethod'
         self.invoke_url = f'/v1.0/invoke/{self.app_id}/method/{self.method_name}'
@@ -58,25 +58,30 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
     def test_global_timeout_setting_is_honored(self):
         previous_timeout = settings.DAPR_HTTP_TIMEOUT_SECONDS
         settings.DAPR_HTTP_TIMEOUT_SECONDS = 1
-        new_client = DaprClient("https://localhost:{}".format(self.server_port))
+        new_client = DaprClient('https://localhost:{}'.format(self.server_port))
         self.server.set_server_delay(1.5)
         with self.assertRaises(TimeoutError):
-            new_client.invoke_method(self.app_id, self.method_name, "")
+            new_client.invoke_method(self.app_id, self.method_name, '')
 
         settings.DAPR_HTTP_TIMEOUT_SECONDS = previous_timeout
 
     def test_invoke_method_with_tracer(self):
         tracer = Tracer(sampler=samplers.AlwaysOnSampler(), exporter=print_exporter.PrintExporter())
 
-        self.client = DaprClient("https://localhost:{}".format(self.server_port),
-                                 headers_callback=lambda: tracer.propagator.to_headers(
-                                     tracer.span_context))
-        self.server.set_response(b"FOO")
+        self.client = DaprClient(
+            'https://localhost:{}'.format(self.server_port),
+            headers_callback=lambda: tracer.propagator.to_headers(tracer.span_context),
+        )
+        self.server.set_response(b'FOO')
 
-        with tracer.span(name="test"):
+        with tracer.span(name='test'):
             req = common_v1.StateItem(key='test')
-            resp = self.client.invoke_method(self.app_id, self.method_name, http_verb='PUT',
-                                             data=req, )
+            resp = self.client.invoke_method(
+                self.app_id,
+                self.method_name,
+                http_verb='PUT',
+                data=req,
+            )
 
         request_headers = self.server.get_request_headers()
 
@@ -84,8 +89,9 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
         self.assertEqual(b'FOO', resp.data)
 
     def test_timeout_exception_thrown_when_timeout_reached(self):
-        new_client = DaprClient("https://localhost:{}".format(self.server_port),
-                                http_timeout_seconds=1)
+        new_client = DaprClient(
+            'https://localhost:{}'.format(self.server_port), http_timeout_seconds=1
+        )
         self.server.set_server_delay(1.5)
         with self.assertRaises(TimeoutError):
-            new_client.invoke_method(self.app_id, self.method_name, "")
+            new_client.invoke_method(self.app_id, self.method_name, '')
