@@ -28,6 +28,12 @@ mock_call_sub_orchestrator = 'call_sub_orchestrator'
 
 
 class FakeOrchestrationContext:
+<<<<<<< HEAD
+=======
+    def __init__(self):
+        self.instance_id = mock_instance_id
+
+>>>>>>> 2c328d1 (Add logs to Dapr Workflows (#645))
     def create_timer(self, fire_at):
         return mock_create_timer
 

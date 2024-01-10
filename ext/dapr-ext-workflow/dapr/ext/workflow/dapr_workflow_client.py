@@ -27,6 +27,7 @@ from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
+from dapr.ext.workflow.logger import LoggerOptions, Logger
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -43,7 +44,11 @@ class DaprWorkflowClient:
     application.
     """
 
-    def __init__(self, host: Optional[str] = None, port: Optional[str] = None):
+    def __init__(
+            self,
+            host: Optional[str] = None,
+            port: Optional[str] = None,
+            logger_options: Optional[LoggerOptions] = None):
         address = getAddress(host, port)
 
         try:
@@ -51,12 +56,23 @@ class DaprWorkflowClient:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
+        self._logger = Logger("DaprWorkflowClient", logger_options)
+
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
+<<<<<<< HEAD
         self.__obj = client.TaskHubGrpcClient(
             host_address=uri.endpoint, metadata=metadata, secure_channel=uri.tls
         )
+=======
+        options = self._logger.get_options()
+        self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint,
+                                              metadata=metadata,
+                                              secure_channel=uri.tls,
+                                              log_handler=options.log_handler,
+                                              log_formatter=options.log_formatter)
+>>>>>>> 2c328d1 (Add logs to Dapr Workflows (#645))
 
     def schedule_new_workflow(
         self,
