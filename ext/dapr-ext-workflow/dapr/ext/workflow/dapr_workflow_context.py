@@ -20,6 +20,7 @@ from durabletask import task
 
 from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow.logger import LoggerOptions, Logger
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -29,8 +30,12 @@ TOutput = TypeVar('TOutput')
 class DaprWorkflowContext(WorkflowContext):
     """DaprWorkflowContext that provides proxy access to internal OrchestrationContext instance."""
 
-    def __init__(self, ctx: task.OrchestrationContext):
+    def __init__(
+            self,
+            ctx: task.OrchestrationContext,
+            logger_options: Optional[LoggerOptions] = None):
         self.__obj = ctx
+        self._logger = Logger("DaprWorkflowContext", logger_options)
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
@@ -49,10 +54,12 @@ class DaprWorkflowContext(WorkflowContext):
         return self.__obj.is_replaying
 
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
+        self._logger.debug(f'{self.instance_id}: Creating timer to fire at {fire_at} time')
         return self.__obj.create_timer(fire_at)
 
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
                       input: TInput = None) -> task.Task[TOutput]:
+        self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
         if hasattr(activity, '_dapr_alternate_name'):
             return self.__obj.call_activity(activity=activity.__dict__['_dapr_alternate_name'],
                                             input=input)
@@ -62,8 +69,10 @@ class DaprWorkflowContext(WorkflowContext):
     def call_child_workflow(self, workflow: Workflow, *,
                             input: Optional[TInput],
                             instance_id: Optional[str]) -> task.Task[TOutput]:
+        self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
+
         def wf(ctx: task.OrchestrationContext, inp: TInput):
-            daprWfContext = DaprWorkflowContext(ctx)
+            daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
             return workflow(daprWfContext, inp)
         # copy workflow name so durabletask.worker can find the orchestrator in its registry
 
@@ -75,9 +84,11 @@ class DaprWorkflowContext(WorkflowContext):
         return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
 
     def wait_for_external_event(self, name: str) -> task.Task:
+        self._logger.debug(f'{self.instance_id}: Waiting for external event {name}')
         return self.__obj.wait_for_external_event(name)
 
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
+        self._logger.debug(f'{self.instance_id}: Continuing as new')
         self.__obj.continue_as_new(new_input, save_events=save_events)
 
 
