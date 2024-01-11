@@ -29,7 +29,7 @@ TOutput = TypeVar('TOutput')
 
 
 class DaprWorkflowContext(WorkflowContext):
-    """DaprWorkflowContext1 that provides proxy access to internal OrchestrationContext instance."""
+    """DaprWorkflowContext that provides proxy access to internal OrchestrationContext instance."""
 
     def __init__(
             self,
