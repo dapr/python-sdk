@@ -24,7 +24,7 @@ TOutput = TypeVar('TOutput')
 
 
 class RetryPolicy:
-    """Represents the retry policy for an orchestration or activity function."""
+    """Represents the retry policy for a workflow or activity function."""
 
     def __init__(self, *,
                  first_retry_interval: timedelta,
