@@ -53,9 +53,9 @@ def hello_act(ctx: WorkflowActivityContext, wf_input):
     counter += wf_input
     print(f'New counter value is: {counter}!', flush=True)
 
-def hello_retryable_act(ctx: WorkflowActivityContext, wf_input):
+def hello_retryable_act(ctx: WorkflowActivityContext):
     global retry_count
-    if (retry_count >> 1) == 0:
+    if (retry_count % 2) == 0:
         print(f'Retry count value is: {retry_count}!', flush=True)
         retry_count += 1
         raise ValueError("Retryable Error")
@@ -68,6 +68,7 @@ def main():
         workflow_runtime = WorkflowRuntime()
         workflow_runtime.register_workflow(hello_world_wf)
         workflow_runtime.register_activity(hello_act)
+        workflow_runtime.register_activity(hello_retryable_act)
         workflow_runtime.start()
 
         sleep(2)
@@ -82,7 +83,7 @@ def main():
         # Sleep for a while to let the workflow run
         sleep(2)
         assert counter == 11
-        assert retry_count == 1
+        assert retry_count == 2
 
         # Pause Test
         d.pause_workflow(instance_id=instance_id, workflow_component=workflow_component)
