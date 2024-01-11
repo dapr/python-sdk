@@ -10,8 +10,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import timedelta
 from time import sleep
-from dapr.ext.workflow import WorkflowRuntime, DaprWorkflowContext, WorkflowActivityContext
+from dapr.ext.workflow import WorkflowRuntime, DaprWorkflowContext, WorkflowActivityContext, RetryPolicy
 from dapr.conf import Settings
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
@@ -19,6 +20,7 @@ from dapr.clients.exceptions import DaprInternalError
 settings = Settings()
 
 counter = 0
+retry_count = 0
 instance_id = "exampleInstanceID"
 workflow_component = "dapr"
 workflow_name = "hello_world_wf"
@@ -32,8 +34,15 @@ non_existent_id_error = "no such instance exists"
 
 def hello_world_wf(ctx: DaprWorkflowContext, wf_input):
     print(f'{wf_input}')
+    retry_policy=RetryPolicy(first_retry_interval=timedelta(seconds=1),
+                             max_number_of_attempts=3,
+                             backoff_coefficient=2,
+                             max_retry_interval=timedelta(seconds=10),
+                             retry_timeout=timedelta(seconds=100)
+                            )
     yield ctx.call_activity(hello_act, input=1)
     yield ctx.call_activity(hello_act, input=10)
+    yield ctx.call_activity(hello_retryable_act, retry_policy=retry_policy)
     yield ctx.wait_for_external_event("event1")
     yield ctx.call_activity(hello_act, input=100)
     yield ctx.call_activity(hello_act, input=1000)
@@ -43,6 +52,15 @@ def hello_act(ctx: WorkflowActivityContext, wf_input):
     global counter
     counter += wf_input
     print(f'New counter value is: {counter}!', flush=True)
+
+def hello_retryable_act(ctx: WorkflowActivityContext, wf_input):
+    global retry_count
+    if (retry_count >> 1) == 0:
+        print(f'Retry count value is: {retry_count}!', flush=True)
+        retry_count += 1
+        raise ValueError("Retryable Error")
+    print(f'Retry count value is: {retry_count}! This print statement verifies retry', flush=True)
+    retry_count += 1
 
 
 def main():
@@ -62,8 +80,9 @@ def main():
         print(f"start_resp {start_resp.instance_id}")
 
         # Sleep for a while to let the workflow run
-        sleep(1)
+        sleep(2)
         assert counter == 11
+        assert retry_count == 1
 
         # Pause Test
         d.pause_workflow(instance_id=instance_id, workflow_component=workflow_component)
