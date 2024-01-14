@@ -163,6 +163,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return empty_pb2.Empty()
 
     def SaveState(self, request, context):
+        self.check_for_exception(context)
+
         headers = ()
         trailers = ()
         for state in request.states:
