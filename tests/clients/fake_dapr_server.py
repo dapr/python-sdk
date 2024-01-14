@@ -4,6 +4,7 @@ import json
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
+from grpc_status import rpc_status
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
@@ -48,6 +49,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.workflow_status = {}
         self.workflow_options: Dict[str, str] = {}
         self.metadata: Dict[str, str] = {}
+        self._next_exception = None
 
     def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
@@ -77,6 +79,25 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def stop_secure(self):
         self._server.stop(None)
         delete_certificates()
+
+    def raise_exception_on_next_call(self, exception):
+        """
+        Raise an exception on the next call to the server.
+        Useful for testing error handling.
+        @param exception:
+        """
+        self._next_exception = exception
+
+    def check_for_exception(self, context):
+        """
+        Check if an exception was raised on the last call to the server.
+        Useful for testing error handling.
+        @return: The raised exception, or None if no exception was raised.
+        """
+        if self._next_exception is None:
+            return None
+
+        context.abort_with_status(rpc_status.to_status(self._next_exception))
 
     def InvokeService(self, request, context) -> common_v1.InvokeResponse:
         headers = ()

@@ -20,6 +20,12 @@ import uuid
 import asyncio
 
 from unittest.mock import patch
+
+import grpc
+from google.rpc import error_details_pb2, status_pb2, code_pb2
+from google.protobuf.any_pb2 import Any
+
+from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
 from dapr.proto import common_v1
@@ -302,6 +308,23 @@ class DaprGrpcClientTests(unittest.TestCase):
             dapr.delete_state(store_name='statestore', key=key, state_metadata={'must_delete': '1'})
         print(context.exception)
         self.assertTrue('delete failed' in str(context.exception))
+
+    def test_grpc_error_on_save(self):
+        detail = Any()
+        detail.Pack(error_details_pb2.ErrorInfo(reason="DAPR_STATE_NOT_CONFIGURED"))
+        expected_status = status_pb2.Status(code=code_pb2.FAILED_PRECONDITION,
+                                            message="state store operation failed",
+                                            details=[detail], )
+
+        with self.assertRaises(DaprGrpcError) as context:
+            self._fake_dapr_server.raise_exception_on_next_call(expected_status)
+            dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
+            dapr.save_state(store_name="statestore", key="mykey", value="myvalue")
+
+        e = context.exception
+        self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
+        self.assertEqual(e.message(), "state store operation failed")
+        self.assertEqual(e.error_code(), "DAPR_STATE_NOT_CONFIGURED")
 
     def test_get_save_state_etag_none(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')

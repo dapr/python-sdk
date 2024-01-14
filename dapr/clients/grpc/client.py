@@ -37,7 +37,7 @@ from grpc import (  # type: ignore
     RpcError,
 )
 
-from dapr.clients.exceptions import DaprInternalError
+from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.conf import settings
@@ -692,8 +692,11 @@ class DaprGrpcClient:
         )
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
-        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
-        return DaprResponse(headers=call.initial_metadata())
+        try:
+            _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def save_bulk_state(
         self, store_name: str, states: List[StateItem], metadata: Optional[MetadataTuple] = None
