@@ -14,9 +14,9 @@ limitations under the License.
 """
 
 from typing import Optional
-from grpc import RpcError
+from grpc import RpcError  # type: ignore
 from grpc_status import rpc_status  # type: ignore
-from google.rpc import error_details_pb2
+from google.rpc import error_details_pb2  # type: ignore
 
 ERROR_CODE_UNKNOWN = 'UNKNOWN'
 ERROR_CODE_DOES_NOT_EXIST = 'ERR_DOES_NOT_EXIST'
