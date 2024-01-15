@@ -15,7 +15,7 @@ limitations under the License.
 
 from typing import Optional
 from grpc import RpcError
-from grpc_status import rpc_status
+from grpc_status import rpc_status  # type: ignore
 from google.rpc import error_details_pb2
 
 ERROR_CODE_UNKNOWN = 'UNKNOWN'
