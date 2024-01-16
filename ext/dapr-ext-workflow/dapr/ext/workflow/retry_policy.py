@@ -26,25 +26,25 @@ TOutput = TypeVar('TOutput')
 class RetryPolicy:
     """Represents the retry policy for a workflow or activity function."""
 
-    def __init__(self, *,
-                 first_retry_interval: timedelta,
-                 max_number_of_attempts: int,
-                 backoff_coefficient: Optional[float] = 1.0,
-                 max_retry_interval: Optional[timedelta] = None,
-                 retry_timeout: Optional[timedelta] = None):
+    def __init__(
+            self, *,
+            first_retry_interval: timedelta,
+            max_number_of_attempts: int,
+            backoff_coefficient: Optional[float] = 1.0,
+            max_retry_interval: Optional[timedelta] = None,
+            retry_timeout: Optional[timedelta] = None
+    ):
         """Creates a new RetryPolicy instance.
-        Parameters
-        ----------
-        first_retry_interval : timedelta
-            The retry interval to use for the first retry attempt.
-        max_number_of_attempts : int
-            The maximum number of retry attempts.
-        backoff_coefficient : Optional[float]
-            The backoff coefficient to use for calculating the next retry interval.
-        max_retry_interval : Optional[timedelta]
-            The maximum retry interval to use for any retry attempt.
-        retry_timeout : Optional[timedelta]
-            The maximum amount of time to spend retrying the operation.
+
+        Args:
+            first_retry_interval(timedelta): The retry interval to use for the first retry attempt.
+            max_number_of_attempts(int):  The maximum number of retry attempts.
+            backoff_coefficient(Optional[float]): The backoff coefficient to use for calculating
+                the next retry interval.
+            max_retry_interval(Optional[timedelta]): The maximum retry interval to use for any
+                retry attempt.
+            retry_timeout(Optional[timedelta]): The maximum amount of time to spend retrying the
+                operation.
         """
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
@@ -58,7 +58,7 @@ class RetryPolicy:
         if retry_timeout is not None and retry_timeout < timedelta(seconds=0):
             raise ValueError('retry_timeout must be >= 0')
 
-        self.obj = task.RetryPolicy(
+        self._obj = task.RetryPolicy(
             first_retry_interval=first_retry_interval,
             max_number_of_attempts=max_number_of_attempts,
             backoff_coefficient=backoff_coefficient,
@@ -67,26 +67,31 @@ class RetryPolicy:
         )
 
     @property
+    def obj(self) -> task.RetryPolicy:
+        """Returns the underlying RetryPolicy object."""
+        return self._obj
+
+    @property
     def first_retry_interval(self) -> timedelta:
         """The retry interval to use for the first retry attempt."""
-        return self.obj._first_retry_interval
+        return self._obj._first_retry_interval
 
     @property
     def max_number_of_attempts(self) -> int:
         """The maximum number of retry attempts."""
-        return self.obj._max_number_of_attempts
+        return self._obj._max_number_of_attempts
 
     @property
     def backoff_coefficient(self) -> Optional[float]:
         """The backoff coefficient to use for calculating the next retry interval."""
-        return self.obj._backoff_coefficient
+        return self._obj._backoff_coefficient
 
     @property
     def max_retry_interval(self) -> Optional[timedelta]:
         """The maximum retry interval to use for any retry attempt."""
-        return self.obj._max_retry_interval
+        return self._obj._max_retry_interval
 
     @property
     def retry_timeout(self) -> Optional[timedelta]:
         """The maximum amount of time to spend retrying the operation."""
-        return self.obj._retry_timeout
+        return self._obj._retry_timeout

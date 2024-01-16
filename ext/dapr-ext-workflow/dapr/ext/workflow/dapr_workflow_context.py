@@ -63,17 +63,17 @@ class DaprWorkflowContext(WorkflowContext):
                       retry_policy: Optional[RetryPolicy] = None) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
         if hasattr(activity, '_dapr_alternate_name'):
-            if retry_policy is None:
-                return self.__obj.call_activity(activity=activity.__dict__['_dapr_alternate_name'],
-                                                input=input)
-            return self.__obj.call_activity(activity=activity.__dict__['_dapr_alternate_name'],
-                                            input=input, retry_policy=retry_policy.obj)
-        # this return should ideally never execute
-        return self.__obj.call_activity(activity=activity.__name__, input=input)
+            act=activity.__dict__['_dapr_alternate_name']
+        else:
+            # this case should ideally never happen
+            act=activity.__name__
+        if retry_policy is None:
+            return self.__obj.call_activity(activity=act, input=input)
+        return self.__obj.call_activity(activity=act, input=input, retry_policy=retry_policy.obj)
 
     def call_child_workflow(self, workflow: Workflow, *,
-                            input: Optional[TInput],
-                            instance_id: Optional[str],
+                            input: Optional[TInput] = None,
+                            instance_id: Optional[str] = None,
                             retry_policy: Optional[RetryPolicy] = None) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
 
