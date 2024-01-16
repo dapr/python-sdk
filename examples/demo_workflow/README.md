@@ -69,6 +69,15 @@ You should be able to see the following output:
 == APP == New counter value is: 11!
 == APP == Retry count value is: 0!
 == APP == Retry count value is: 1! This print statement verifies retry
+== APP == Appending 1 to child_orchestrator_string!
+== APP == Appending a to child_orchestrator_string!
+== APP == Appending a to child_orchestrator_string!
+== APP == Appending 2 to child_orchestrator_string!
+== APP == Appending b to child_orchestrator_string!
+== APP == Appending b to child_orchestrator_string!
+== APP == Appending 3 to child_orchestrator_string!
+== APP == Appending c to child_orchestrator_string!
+== APP == Appending c to child_orchestrator_string!
 == APP == Get response from hello_world_wf after pause call: Suspended
 == APP == Get response from hello_world_wf after resume call: Running
 == APP == New counter value is: 111!

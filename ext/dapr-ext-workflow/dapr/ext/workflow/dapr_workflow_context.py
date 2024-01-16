@@ -63,10 +63,10 @@ class DaprWorkflowContext(WorkflowContext):
                       retry_policy: Optional[RetryPolicy] = None) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
         if hasattr(activity, '_dapr_alternate_name'):
-            act=activity.__dict__['_dapr_alternate_name']
+            act = activity.__dict__['_dapr_alternate_name']
         else:
             # this case should ideally never happen
-            act=activity.__name__
+            act = activity.__name__
         if retry_policy is None:
             return self.__obj.call_activity(activity=act, input=input)
         return self.__obj.call_activity(activity=act, input=input, retry_policy=retry_policy.obj)
