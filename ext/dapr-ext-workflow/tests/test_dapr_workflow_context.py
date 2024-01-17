@@ -58,7 +58,7 @@ class DaprWorkflowContextTest(unittest.TestCase):
             assert call_activity_result == mock_call_activity
 
             call_sub_orchestrator_result = dapr_wf_ctx.call_child_workflow(
-                self.mock_client_child_wf, input=None, instance_id=None)
+                self.mock_client_child_wf)
             assert call_sub_orchestrator_result == mock_call_sub_orchestrator
 
             create_timer_result = dapr_wf_ctx.create_timer(mock_date_time)

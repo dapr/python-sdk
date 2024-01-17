@@ -21,6 +21,7 @@ from durabletask import task
 from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.logger import LoggerOptions, Logger
+from dapr.ext.workflow.retry_policy import RetryPolicy
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -58,17 +59,22 @@ class DaprWorkflowContext(WorkflowContext):
         return self.__obj.create_timer(fire_at)
 
     def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
-                      input: TInput = None) -> task.Task[TOutput]:
+                      input: TInput = None,
+                      retry_policy: Optional[RetryPolicy] = None) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
         if hasattr(activity, '_dapr_alternate_name'):
-            return self.__obj.call_activity(activity=activity.__dict__['_dapr_alternate_name'],
-                                            input=input)
-        # this return should ideally never execute
-        return self.__obj.call_activity(activity=activity.__name__, input=input)
+            act = activity.__dict__['_dapr_alternate_name']
+        else:
+            # this case should ideally never happen
+            act = activity.__name__
+        if retry_policy is None:
+            return self.__obj.call_activity(activity=act, input=input)
+        return self.__obj.call_activity(activity=act, input=input, retry_policy=retry_policy.obj)
 
     def call_child_workflow(self, workflow: Workflow, *,
-                            input: Optional[TInput],
-                            instance_id: Optional[str]) -> task.Task[TOutput]:
+                            input: Optional[TInput] = None,
+                            instance_id: Optional[str] = None,
+                            retry_policy: Optional[RetryPolicy] = None) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
 
         def wf(ctx: task.OrchestrationContext, inp: TInput):
@@ -81,7 +87,10 @@ class DaprWorkflowContext(WorkflowContext):
         else:
             # this case should ideally never happen
             wf.__name__ = workflow.__name__
-        return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
+        if retry_policy is None:
+            return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
+        return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id,
+                                                retry_policy=retry_policy.obj)
 
     def wait_for_external_event(self, name: str) -> task.Task:
         self._logger.debug(f'{self.instance_id}: Waiting for external event {name}')
