@@ -1285,17 +1285,22 @@ class DaprGrpcClientAsync:
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
-    async def terminate_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
+    async def terminate_workflow(
+            self,
+            instance_id: str,
+            workflow_component: str,
+            non_recursive: bool = False) -> DaprResponse:
         """Terminates a workflow.
 
-        Args:
-            instance_id (str): the ID of the workflow instance, e.g.
-                                `order_processing_workflow-103784`.
-            workflow_component (str): the name of the workflow component
-                                that will run the workflow. e.g. `dapr`.
-
-        Returns:
-            :class:`DaprResponse` gRPC metadata returned from callee
+            Args:
+                instance_id (str): the ID of the workflow instance, e.g.
+                                    `order_processing_workflow-103784`.
+                workflow_component (str): the name of the workflow component
+                                    that will run the workflow. e.g. `dapr`.
+                non_recursive (bool): if true, child workflows will not be terminated,
+                                    defaults to false.
+            Returns:
+                :class:`DaprResponse` gRPC metadata returned from callee
 
         """
         # Warnings and input validation
@@ -1307,8 +1312,9 @@ class DaprGrpcClientAsync:
         validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
         # Actual terminate workflow invocation
         req = api_v1.TerminateWorkflowRequest(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
+            instance_id=instance_id,
+            workflow_component=workflow_component,
+            non_recursive=non_recursive)
 
         try:
             _, call = self._stub.TerminateWorkflowBeta1.with_call(req)
@@ -1449,14 +1455,20 @@ class DaprGrpcClientAsync:
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
 
-    async def purge_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
+    async def purge_workflow(
+            self,
+            instance_id: str,
+            workflow_component: str,
+            non_recursive: bool = False) -> DaprResponse:
         """Purges a workflow.
 
-        Args:
-            instance_id (str): the ID of the workflow instance,
-                                e.g. `order_processing_workflow-103784`.
-            workflow_component (str): the name of the workflow component
-                                that will run the workflow. e.g. `dapr`.
+            Args:
+                instance_id (str): the ID of the workflow instance,
+                                    e.g. `order_processing_workflow-103784`.
+                workflow_component (str): the name of the workflow component
+                                    that will run the workflow. e.g. `dapr`.
+                non_recursive (bool): if true, child workflows will not be purged,
+                                    defaults to false.
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -1470,8 +1482,9 @@ class DaprGrpcClientAsync:
         validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
         # Actual purge workflow invocation
         req = api_v1.PurgeWorkflowRequest(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
+            instance_id=instance_id,
+            workflow_component=workflow_component,
+            non_recursive=non_recursive)
 
         try:
             _, call = self._stub.PurgeWorkflowBeta1.with_call(req)

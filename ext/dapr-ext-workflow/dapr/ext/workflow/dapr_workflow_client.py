@@ -215,11 +215,12 @@ class DaprWorkflowClient:
            status of the target instance to WorkflowRuntimeStatus.Terminated. You can use
            wait_for_workflow_completion to wait for the instance to reach the terminated state.
 
-           Terminating a workflow instance has no effect on any in-flight activity function
-           executions or child workflows that were started by the terminated instance. Those
-           actions will continue to run without interruption. However, their results will be
-           discarded. If you want to terminate child-workflows, you must issue separate terminate
-           commands for each child workflow instance individually.
+           Terminating a workflow by default will terminate all of the child workflows that were started by
+           the workflow instance. If you don't want to terminate child workflows, you can set `non_recursive`
+           flag to true which will disable termination of child workflows.
+              
+           However, terminating a workflow would have no effect on any in-flight activity function executions
+           that were started by the terminated workflow instance.
 
            At the time of writing, there is no way to terminate an in-flight activity execution.
 
