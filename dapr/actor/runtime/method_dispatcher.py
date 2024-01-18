@@ -25,21 +25,20 @@ class ActorMethodDispatcher:
 
     async def dispatch(self, actor: Actor, name: str, *args, **kwargs) -> Any:
         self._check_name_exist(name)
-        return await getattr(actor, self._dispatch_mapping[name]['method_name'])(*args, **kwargs)
+        return await getattr(actor, self._dispatch_mapping[name]["method_name"])(*args, **kwargs)
 
     def get_arg_names(self, name: str) -> List[str]:
         self._check_name_exist(name)
-        return self._dispatch_mapping[name]['arg_names']
+        return self._dispatch_mapping[name]["arg_names"]
 
     def get_arg_types(self, name: str) -> List[Any]:
         self._check_name_exist(name)
-        return self._dispatch_mapping[name]['arg_types']
+        return self._dispatch_mapping[name]["arg_types"]
 
     def get_return_type(self, name: str) -> Dict[str, Any]:
         self._check_name_exist(name)
-        return self._dispatch_mapping[name]['return_types']
+        return self._dispatch_mapping[name]["return_types"]
 
     def _check_name_exist(self, name: str):
         if name not in self._dispatch_mapping:
-            raise AttributeError(
-                f'type object {self.__class__.__name__} has no method {name}')
+            raise AttributeError(f"type object {self.__class__.__name__} has no method {name}")

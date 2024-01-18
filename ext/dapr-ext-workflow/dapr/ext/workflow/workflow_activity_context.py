@@ -18,12 +18,12 @@ from typing import Callable, TypeVar
 
 from durabletask import task
 
-T = TypeVar('T')
-TInput = TypeVar('TInput')
-TOutput = TypeVar('TOutput')
+T = TypeVar("T")
+TInput = TypeVar("TInput")
+TOutput = TypeVar("TOutput")
 
 
-class WorkflowActivityContext():
+class WorkflowActivityContext:
     """Defines properties and methods for task activity context objects."""
 
     def __init__(self, ctx: task.ActivityContext):

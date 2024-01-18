@@ -37,7 +37,7 @@ class FakeSimpleActor(Actor, FakeSimpleActorInterface):
         super(FakeSimpleActor, self).__init__(ctx, actor_id)
 
     async def actor_method(self, arg: int) -> dict:
-        return {'name': 'actor_method'}
+        return {"name": "actor_method"}
 
     async def non_actor_method(self, arg0: int, arg1: str, arg2: float) -> str:
         pass
@@ -48,14 +48,19 @@ class FakeSimpleReminderActor(Actor, FakeSimpleActorInterface, Remindable):
         super(FakeSimpleReminderActor, self).__init__(ctx, actor_id)
 
     async def actor_method(self, arg: int) -> dict:
-        return {'name': 'actor_method'}
+        return {"name": "actor_method"}
 
     async def non_actor_method(self, arg0: int, arg1: str, arg2: float) -> str:
         pass
 
-    async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta,
-                               ttl: Optional[timedelta]) -> None:
+    async def receive_reminder(
+        self,
+        name: str,
+        state: bytes,
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta],
+    ) -> None:
         pass
 
 
@@ -65,14 +70,19 @@ class FakeSimpleTimerActor(Actor, FakeSimpleActorInterface):
         self.timer_called = False
 
     async def actor_method(self, arg: int) -> dict:
-        return {'name': 'actor_method'}
+        return {"name": "actor_method"}
 
     async def timer_callback(self, obj) -> None:
         self.timer_called = True
 
-    async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta,
-                               ttl: Optional[timedelta]) -> None:
+    async def receive_reminder(
+        self,
+        name: str,
+        state: bytes,
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta],
+    ) -> None:
         pass
 
 
@@ -115,8 +125,9 @@ class ReentrantActorInterface(ActorInterface):
         ...
 
 
-class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Interface,
-                               ReentrantActorInterface):
+class FakeMultiInterfacesActor(
+    Actor, FakeActorCls1Interface, FakeActorCls2Interface, ReentrantActorInterface
+):
     def __init__(self, ctx, actor_id):
         super(FakeMultiInterfacesActor, self).__init__(ctx, actor_id)
         self.activated = False
@@ -137,11 +148,11 @@ class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Inter
 
     async def action(self, data: object) -> str:
         self.action_data = data
-        return self.action_data['message']
+        return self.action_data["message"]
 
     async def action_no_arg(self) -> str:
-        self.action_data = {'message': 'no_arg'}
-        return self.action_data['message']
+        self.action_data = {"message": "no_arg"}
+        return self.action_data["message"]
 
     async def _on_activate(self):
         self.activated = True
@@ -153,7 +164,7 @@ class FakeMultiInterfacesActor(Actor, FakeActorCls1Interface, FakeActorCls2Inter
 
     async def reentrant_method(self, data: object) -> str:
         self.action_data = data
-        return self.action_data['message']
+        return self.action_data["message"]
 
     async def reentrant_pass_through_method(self, arg):
         pass
@@ -168,8 +179,10 @@ class FakeReentrantActor(Actor, FakeActorCls1Interface, ReentrantActorInterface)
 
     async def reentrant_pass_through_method(self, arg):
         from dapr.actor.client import proxy
+
         await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
-            FakeSlowReentrantActor.__name__, 'test-id', 'ReentrantMethod')
+            FakeSlowReentrantActor.__name__, "test-id", "ReentrantMethod"
+        )
 
     async def actor_cls1_method(self, arg):
         pass
@@ -193,7 +206,8 @@ class FakeSlowReentrantActor(Actor, FakeActorCls2Interface, ReentrantActorInterf
         from dapr.actor.client import proxy
 
         await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
-            FakeReentrantActor.__name__, 'test-id', 'ReentrantMethod')
+            FakeReentrantActor.__name__, "test-id", "ReentrantMethod"
+        )
 
     async def actor_cls2_method(self, arg):
         pass

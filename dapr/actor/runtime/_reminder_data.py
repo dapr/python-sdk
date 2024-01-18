@@ -32,8 +32,13 @@ class ActorReminderData:
     """
 
     def __init__(
-            self, reminder_name: str, state: Optional[bytes],
-            due_time: timedelta, period: timedelta, ttl: Optional[timedelta] = None):
+        self,
+        reminder_name: str,
+        state: Optional[bytes],
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta] = None,
+    ):
         """Creates new :class:`ActorReminderData` instance.
 
         Args:
@@ -52,7 +57,7 @@ class ActorReminderData:
         self._ttl = ttl
 
         if not isinstance(state, bytes):
-            raise ValueError(f'only bytes are allowed for state: {type(state)}')
+            raise ValueError(f"only bytes are allowed for state: {type(state)}")
 
         self._state = state
 
@@ -87,26 +92,27 @@ class ActorReminderData:
         if self._state is not None:
             encoded_state = base64.b64encode(self._state)
         reminderDict: Dict[str, Any] = {
-            'reminderName': self._reminder_name,
-            'dueTime': self._due_time,
-            'period': self._period,
-            'data': encoded_state.decode("utf-8")
+            "reminderName": self._reminder_name,
+            "dueTime": self._due_time,
+            "period": self._period,
+            "data": encoded_state.decode("utf-8"),
         }
 
         if self._ttl is not None:
-            reminderDict.update({'ttl': self._ttl})
+            reminderDict.update({"ttl": self._ttl})
 
         return reminderDict
 
     @classmethod
-    def from_dict(cls, reminder_name: str, obj: Dict[str, Any]) -> 'ActorReminderData':
+    def from_dict(cls, reminder_name: str, obj: Dict[str, Any]) -> "ActorReminderData":
         """Creates :class:`ActorReminderData` object from dict object."""
-        b64encoded_state = obj.get('data')
+        b64encoded_state = obj.get("data")
         state_bytes = None
         if b64encoded_state is not None and len(b64encoded_state) > 0:
             state_bytes = base64.b64decode(b64encoded_state)
-        if 'ttl' in obj:
-            return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'],
-                                     obj['ttl'])
+        if "ttl" in obj:
+            return ActorReminderData(
+                reminder_name, state_bytes, obj["dueTime"], obj["period"], obj["ttl"]
+            )
         else:
-            return ActorReminderData(reminder_name, state_bytes, obj['dueTime'], obj['period'])
+            return ActorReminderData(reminder_name, state_bytes, obj["dueTime"], obj["period"])

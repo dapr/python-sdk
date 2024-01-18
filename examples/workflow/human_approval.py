@@ -20,6 +20,7 @@ import dapr.ext.workflow as wf
 
 wfr = wf.WorkflowRuntime()
 
+
 @dataclass
 class Order:
     cost: float
@@ -27,7 +28,7 @@ class Order:
     quantity: int
 
     def __str__(self):
-        return f'{self.product} ({self.quantity})'
+        return f"{self.product} ({self.quantity})"
 
 
 @dataclass
@@ -37,6 +38,7 @@ class Approval:
     @staticmethod
     def from_dict(dict):
         return Approval(**dict)
+
 
 @wfr.workflow(name="purchase_order_wf")
 def purchase_order_workflow(ctx: wf.DaprWorkflowContext, order: Order):
@@ -62,12 +64,12 @@ def purchase_order_workflow(ctx: wf.DaprWorkflowContext, order: Order):
 
 @wfr.activity(name="send_approval")
 def send_approval_request(_, order: Order) -> None:
-    print(f'*** Requesting approval from user for order: {order}')
+    print(f"*** Requesting approval from user for order: {order}")
 
 
 @wfr.activity
 def place_order(_, order: Order) -> None:
-    print(f'*** Placing order: {order}')
+    print(f"*** Placing order: {order}")
 
 
 if __name__ == "__main__":
@@ -86,9 +88,7 @@ if __name__ == "__main__":
     order = Order(args.cost, "MyProduct", 1)
 
     wf_client = wf.DaprWorkflowClient()
-    instance_id = wf_client.schedule_new_workflow(
-        workflow=purchase_order_workflow,
-        input=order)
+    instance_id = wf_client.schedule_new_workflow(workflow=purchase_order_workflow, input=order)
 
     def prompt_for_approval():
         # Give the workflow time to start up and notify the user
@@ -99,7 +99,8 @@ if __name__ == "__main__":
                 instance_id=instance_id,
                 workflow_component="dapr",
                 event_name="approval_received",
-                event_data=asdict(Approval(args.approver)))
+                event_data=asdict(Approval(args.approver)),
+            )
 
     # Prompt the user for approval on a background thread
     threading.Thread(target=prompt_for_approval, daemon=True).start()
@@ -107,14 +108,14 @@ if __name__ == "__main__":
     # Wait for the orchestration to complete
     try:
         state = wf_client.wait_for_workflow_completion(
-            instance_id,
-            timeout_in_seconds=args.timeout + 2)
+            instance_id, timeout_in_seconds=args.timeout + 2
+        )
         if not state:
             print("Workflow not found!")  # not expected
-        elif state.runtime_status.name == 'COMPLETED':
-            print(f'Workflow completed! Result: {state.serialized_output}')
+        elif state.runtime_status.name == "COMPLETED":
+            print(f"Workflow completed! Result: {state.serialized_output}")
         else:
-            print(f'Workflow failed! Status: {state.runtime_status.name}')  # not expected
+            print(f"Workflow failed! Status: {state.runtime_status.name}")  # not expected
     except TimeoutError:
         print("*** Workflow timed out!")
 

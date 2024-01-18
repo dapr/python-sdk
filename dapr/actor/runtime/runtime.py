@@ -42,10 +42,12 @@ class ActorRuntime:
 
     @classmethod
     async def register_actor(
-            cls, actor: Type[Actor],
-            message_serializer: Serializer = DefaultJSONSerializer(),
-            state_serializer: Serializer = DefaultJSONSerializer(),
-            http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS) -> None:
+        cls,
+        actor: Type[Actor],
+        message_serializer: Serializer = DefaultJSONSerializer(),
+        state_serializer: Serializer = DefaultJSONSerializer(),
+        http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+    ) -> None:
         """Registers an :class:`Actor` object with the runtime.
 
         Args:
@@ -83,14 +85,18 @@ class ActorRuntime:
         """
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
-            raise ValueError(f'{actor_type_name} is not registered.')
+            raise ValueError(f"{actor_type_name} is not registered.")
         await manager.deactivate_actor(ActorId(actor_id))
 
     @classmethod
     async def dispatch(
-            cls, actor_type_name: str, actor_id: str,
-            actor_method_name: str, request_body: bytes,
-            reentrancy_id: Optional[str] = None) -> bytes:
+        cls,
+        actor_type_name: str,
+        actor_id: str,
+        actor_method_name: str,
+        request_body: bytes,
+        reentrancy_id: Optional[str] = None,
+    ) -> bytes:
         """Dispatches actor method defined in actor_type.
 
         Args:
@@ -110,13 +116,13 @@ class ActorRuntime:
         reentrancy_ctx.set(reentrancy_id)
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
-            raise ValueError(f'{actor_type_name} is not registered.')
+            raise ValueError(f"{actor_type_name} is not registered.")
         return await manager.dispatch(ActorId(actor_id), actor_method_name, request_body)
 
     @classmethod
     async def fire_reminder(
-            cls, actor_type_name: str, actor_id: str,
-            name: str, state: bytes) -> None:
+        cls, actor_type_name: str, actor_id: str, name: str, state: bytes
+    ) -> None:
         """Fires a reminder for the Actor.
 
         Args:
@@ -131,14 +137,11 @@ class ActorRuntime:
 
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
-            raise ValueError(f'{actor_type_name} is not registered.')
+            raise ValueError(f"{actor_type_name} is not registered.")
         await manager.fire_reminder(ActorId(actor_id), name, state)
 
     @classmethod
-    async def fire_timer(
-            cls, actor_type_name: str,
-            actor_id: str, name: str,
-            state: bytes) -> None:
+    async def fire_timer(cls, actor_type_name: str, actor_id: str, name: str, state: bytes) -> None:
         """Fires a timer for the Actor.
 
         Args:
@@ -152,7 +155,7 @@ class ActorRuntime:
         """
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
-            raise ValueError(f'{actor_type_name} is not registered.')
+            raise ValueError(f"{actor_type_name} is not registered.")
         await manager.fire_timer(ActorId(actor_id), name, state)
 
     @classmethod

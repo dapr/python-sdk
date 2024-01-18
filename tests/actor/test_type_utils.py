@@ -17,9 +17,12 @@ import unittest
 
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime._type_utils import (
-    get_class_method_args, get_method_arg_types,
-    get_method_return_types, is_dapr_actor,
-    get_actor_interfaces, get_dispatchable_attrs
+    get_class_method_args,
+    get_method_arg_types,
+    get_method_return_types,
+    is_dapr_actor,
+    get_actor_interfaces,
+    get_dispatchable_attrs,
 )
 
 from tests.actor.fake_actor_classes import (
@@ -33,7 +36,7 @@ from tests.actor.fake_actor_classes import (
 class TypeUtilsTests(unittest.TestCase):
     def test_get_class_method_args(self):
         args = get_class_method_args(FakeSimpleActor.actor_method)
-        self.assertEqual(args, ['arg'])
+        self.assertEqual(args, ["arg"])
 
     def test_get_method_arg_types(self):
         arg_types = get_method_arg_types(FakeSimpleActor.non_actor_method)
@@ -66,10 +69,10 @@ class TypeUtilsTests(unittest.TestCase):
     def test_get_dispatchable_attrs(self):
         dispatchable_attrs = get_dispatchable_attrs(FakeMultiInterfacesActor)
         expected_dispatchable_attrs = [
-            'ActorCls1Method',
-            'ActorCls1Method1',
-            'ActorCls1Method2',
-            'ActorCls2Method'
+            "ActorCls1Method",
+            "ActorCls1Method1",
+            "ActorCls1Method2",
+            "ActorCls2Method",
         ]
 
         method_cnt = 0

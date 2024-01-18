@@ -6,7 +6,6 @@ from dapr.conf import settings
 
 
 class DaprWorkflowUtilTest(unittest.TestCase):
-
     def test_get_address_default(self):
         expected = f"{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}"
         self.assertEqual(expected, getAddress())

@@ -29,7 +29,7 @@ from dapr.conf import settings
 # Used temporarily, so we can trust self-signed certificates in unit tests
 # until they get their own environment variable
 def replacement_get_credentials_func(a):
-    f = open(os.path.join(os.path.dirname(__file__), 'selfsigned.pem'), 'rb')
+    f = open(os.path.join(os.path.dirname(__file__), "selfsigned.pem"), "rb")
     creds = grpc.ssl_channel_credentials(f.read())
     f.close()
 
@@ -41,7 +41,7 @@ DaprGrpcClientAsync.get_credentials = replacement_get_credentials_func
 
 class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
     server_port = 4443
-    scheme = 'https://'
+    scheme = "https://"
 
     def setUp(self):
         self._fake_dapr_server = FakeDaprSidecar()
@@ -77,5 +77,5 @@ class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

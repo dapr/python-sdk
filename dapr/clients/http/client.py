@@ -25,20 +25,22 @@ from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
 from dapr.version import __version__
 
-CONTENT_TYPE_HEADER = 'content-type'
-DAPR_API_TOKEN_HEADER = 'dapr-api-token'
-USER_AGENT_HEADER = 'User-Agent'
-DAPR_USER_AGENT = f'dapr-sdk-python/{__version__}'
+CONTENT_TYPE_HEADER = "content-type"
+DAPR_API_TOKEN_HEADER = "dapr-api-token"
+USER_AGENT_HEADER = "User-Agent"
+DAPR_USER_AGENT = f"dapr-sdk-python/{__version__}"
 
 
 class DaprHttpClient:
     """A Dapr Http API client"""
 
-    def __init__(self,
-                 message_serializer: 'Serializer',
-                 timeout: Optional[int] = 60,
-                 headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
-                 address: Optional[str] = None):
+    def __init__(
+        self,
+        message_serializer: "Serializer",
+        timeout: Optional[int] = 60,
+        headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+        address: Optional[str] = None,
+    ):
         """Invokes Dapr over HTTP.
 
         Args:
@@ -53,19 +55,22 @@ class DaprHttpClient:
 
     def get_api_url(self) -> str:
         if self._address:
-            return '{}/{}'.format(self._address, settings.DAPR_API_VERSION)
+            return "{}/{}".format(self._address, settings.DAPR_API_VERSION)
         if settings.DAPR_HTTP_ENDPOINT:
-            return '{}/{}'.format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
+            return "{}/{}".format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
         else:
-            return 'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST,
-                                            settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION)
+            return "http://{}:{}/{}".format(
+                settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
+            )
 
     async def send_bytes(
-            self, method: str, url: str,
-            data: Optional[bytes],
-            headers: Dict[str, Union[bytes, str]] = {},
-            query_params: Optional[Mapping] = None,
-            timeout: Optional[int] = None
+        self,
+        method: str,
+        url: str,
+        data: Optional[bytes],
+        headers: Dict[str, Union[bytes, str]] = {},
+        query_params: Optional[Mapping] = None,
+        timeout: Optional[int] = None,
     ) -> Tuple[bytes, aiohttp.ClientResponse]:
         headers_map = headers
         if not headers_map.get(CONTENT_TYPE_HEADER):
@@ -91,7 +96,8 @@ class DaprHttpClient:
                 data=data,
                 headers=headers_map,
                 ssl=sslcontext,
-                params=query_params)
+                params=query_params,
+            )
 
             if r.status >= 200 and r.status < 300:
                 return await r.read(), r
@@ -106,16 +112,20 @@ class DaprHttpClient:
                 return DaprInternalError("Not Found", ERROR_CODE_DOES_NOT_EXIST)
             error_info = self._serializer.deserialize(error_body)
         except Exception:
-            return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}',
-                                     raw_response_bytes=error_body)
+            return DaprInternalError(
+                f"Unknown Dapr Error. HTTP status code: {response.status}",
+                raw_response_bytes=error_body,
+            )
 
         if error_info and isinstance(error_info, dict):
-            message = error_info.get('message')
-            error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
+            message = error_info.get("message")
+            error_code = error_info.get("errorCode") or ERROR_CODE_UNKNOWN
             return DaprInternalError(message, error_code, raw_response_bytes=error_body)
 
-        return DaprInternalError(f'Unknown Dapr Error. HTTP status code: {response.status}',
-                                 raw_response_bytes=error_body)
+        return DaprInternalError(
+            f"Unknown Dapr Error. HTTP status code: {response.status}",
+            raw_response_bytes=error_body,
+        )
 
     def get_ssl_context(self):
         # This method is used (overwritten) from tests

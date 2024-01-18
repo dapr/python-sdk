@@ -23,18 +23,17 @@ from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.logger import LoggerOptions, Logger
 from dapr.ext.workflow.retry_policy import RetryPolicy
 
-T = TypeVar('T')
-TInput = TypeVar('TInput')
-TOutput = TypeVar('TOutput')
+T = TypeVar("T")
+TInput = TypeVar("TInput")
+TOutput = TypeVar("TOutput")
 
 
 class DaprWorkflowContext(WorkflowContext):
     """DaprWorkflowContext that provides proxy access to internal OrchestrationContext instance."""
 
     def __init__(
-            self,
-            ctx: task.OrchestrationContext,
-            logger_options: Optional[LoggerOptions] = None):
+        self, ctx: task.OrchestrationContext, logger_options: Optional[LoggerOptions] = None
+    ):
         self.__obj = ctx
         self._logger = Logger("DaprWorkflowContext", logger_options)
 
@@ -55,15 +54,19 @@ class DaprWorkflowContext(WorkflowContext):
         return self.__obj.is_replaying
 
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
-        self._logger.debug(f'{self.instance_id}: Creating timer to fire at {fire_at} time')
+        self._logger.debug(f"{self.instance_id}: Creating timer to fire at {fire_at} time")
         return self.__obj.create_timer(fire_at)
 
-    def call_activity(self, activity: Callable[[WorkflowActivityContext, TInput], TOutput], *,
-                      input: TInput = None,
-                      retry_policy: Optional[RetryPolicy] = None) -> task.Task[TOutput]:
-        self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
-        if hasattr(activity, '_dapr_alternate_name'):
-            act = activity.__dict__['_dapr_alternate_name']
+    def call_activity(
+        self,
+        activity: Callable[[WorkflowActivityContext, TInput], TOutput],
+        *,
+        input: TInput = None,
+        retry_policy: Optional[RetryPolicy] = None,
+    ) -> task.Task[TOutput]:
+        self._logger.debug(f"{self.instance_id}: Creating activity {activity.__name__}")
+        if hasattr(activity, "_dapr_alternate_name"):
+            act = activity.__dict__["_dapr_alternate_name"]
         else:
             # this case should ideally never happen
             act = activity.__name__
@@ -71,33 +74,39 @@ class DaprWorkflowContext(WorkflowContext):
             return self.__obj.call_activity(activity=act, input=input)
         return self.__obj.call_activity(activity=act, input=input, retry_policy=retry_policy.obj)
 
-    def call_child_workflow(self, workflow: Workflow, *,
-                            input: Optional[TInput] = None,
-                            instance_id: Optional[str] = None,
-                            retry_policy: Optional[RetryPolicy] = None) -> task.Task[TOutput]:
-        self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
+    def call_child_workflow(
+        self,
+        workflow: Workflow,
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+    ) -> task.Task[TOutput]:
+        self._logger.debug(f"{self.instance_id}: Creating child workflow {workflow.__name__}")
 
         def wf(ctx: task.OrchestrationContext, inp: TInput):
             daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
             return workflow(daprWfContext, inp)
+
         # copy workflow name so durabletask.worker can find the orchestrator in its registry
 
-        if hasattr(workflow, '_dapr_alternate_name'):
-            wf.__name__ = workflow.__dict__['_dapr_alternate_name']
+        if hasattr(workflow, "_dapr_alternate_name"):
+            wf.__name__ = workflow.__dict__["_dapr_alternate_name"]
         else:
             # this case should ideally never happen
             wf.__name__ = workflow.__name__
         if retry_policy is None:
             return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
-        return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id,
-                                                retry_policy=retry_policy.obj)
+        return self.__obj.call_sub_orchestrator(
+            wf, input=input, instance_id=instance_id, retry_policy=retry_policy.obj
+        )
 
     def wait_for_external_event(self, name: str) -> task.Task:
-        self._logger.debug(f'{self.instance_id}: Waiting for external event {name}')
+        self._logger.debug(f"{self.instance_id}: Waiting for external event {name}")
         return self.__obj.wait_for_external_event(name)
 
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
-        self._logger.debug(f'{self.instance_id}: Continuing as new')
+        self._logger.debug(f"{self.instance_id}: Continuing as new")
         self.__obj.continue_as_new(new_input, save_events=save_events)
 
 

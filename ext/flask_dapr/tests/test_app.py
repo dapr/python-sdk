@@ -25,11 +25,16 @@ class DaprAppTest(unittest.TestCase):
 
         response = self.client.get("/dapr/subscribe")
         self.assertEqual(
-            [{'pubsubname': 'pubsub',
-                'topic': 'test',
-                'route': '/events/pubsub/test',
-                'metadata': {}
-              }], json.loads(response.data))
+            [
+                {
+                    "pubsubname": "pubsub",
+                    "topic": "test",
+                    "route": "/events/pubsub/test",
+                    "metadata": {},
+                }
+            ],
+            json.loads(response.data),
+        )
 
         response = self.client.post("/events/pubsub/test", json={"body": "new message"})
         self.assertEqual(response.status_code, 200)
@@ -47,22 +52,18 @@ class DaprAppTest(unittest.TestCase):
 
         response = self.client.get("/dapr/subscribe")
         self.assertEqual(
-            [{'pubsubname': 'pubsub',
-              'topic': 'test',
-              'route': '/do-something',
-              'metadata': {}
-              }], json.loads(response.data))
+            [{"pubsubname": "pubsub", "topic": "test", "route": "/do-something", "metadata": {}}],
+            json.loads(response.data),
+        )
 
         response = self.client.post("/do-something", json={"body": "new message"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data.decode("utf-8"), 'custom route')
+        self.assertEqual(response.data.decode("utf-8"), "custom route")
 
     def test_subscribe_metadata(self):
         handler_metadata = {"rawPayload": "true"}
 
-        @self.dapr_app.subscribe(pubsub="pubsub",
-                                 topic="test",
-                                 metadata=handler_metadata)
+        @self.dapr_app.subscribe(pubsub="pubsub", topic="test", metadata=handler_metadata)
         def event_handler():
             return "custom metadata"
 
@@ -70,11 +71,16 @@ class DaprAppTest(unittest.TestCase):
 
         response = self.client.get("/dapr/subscribe")
         self.assertEqual(
-            [{'pubsubname': 'pubsub',
-              'topic': 'test',
-              'route': '/events/pubsub/test',
-              'metadata': {"rawPayload": "true"}
-              }], json.loads(response.data))
+            [
+                {
+                    "pubsubname": "pubsub",
+                    "topic": "test",
+                    "route": "/events/pubsub/test",
+                    "metadata": {"rawPayload": "true"},
+                }
+            ],
+            json.loads(response.data),
+        )
 
         response = self.client.post("/events/pubsub/test", json={"body": "new message"})
         self.assertEqual(response.status_code, 200)
@@ -83,9 +89,7 @@ class DaprAppTest(unittest.TestCase):
     def test_subscribe_dead_letter(self):
         dead_letter_topic = "dead-test"
 
-        @self.dapr_app.subscribe(pubsub="pubsub",
-                                 topic="test",
-                                 dead_letter_topic=dead_letter_topic)
+        @self.dapr_app.subscribe(pubsub="pubsub", topic="test", dead_letter_topic=dead_letter_topic)
         def event_handler():
             return "dead letter test"
 
@@ -93,17 +97,22 @@ class DaprAppTest(unittest.TestCase):
 
         response = self.client.get("/dapr/subscribe")
         self.assertEqual(
-            [{'pubsubname': 'pubsub',
-              'topic': 'test',
-              'route': '/events/pubsub/test',
-              'metadata': {},
-              'deadLetterTopic': dead_letter_topic
-              }], json.loads(response.data))
+            [
+                {
+                    "pubsubname": "pubsub",
+                    "topic": "test",
+                    "route": "/events/pubsub/test",
+                    "metadata": {},
+                    "deadLetterTopic": dead_letter_topic,
+                }
+            ],
+            json.loads(response.data),
+        )
 
         response = self.client.post("/events/pubsub/test", json={"body": "new message"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data.decode("utf-8"), "dead letter test")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

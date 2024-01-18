@@ -17,6 +17,8 @@ from time import sleep
 import dapr.ext.workflow as wf
 
 wfr = wf.WorkflowRuntime()
+
+
 @dataclass
 class JobStatus:
     job_id: str
@@ -52,10 +54,10 @@ def check_status(ctx, _) -> str:
 
 @wfr.activity
 def send_alert(ctx, message: str):
-    print(f'*** Alert: {message}')
+    print(f"*** Alert: {message}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     wfr.start()
     sleep(10)  # wait for workflow runtime to start
 
@@ -66,14 +68,15 @@ if __name__ == '__main__':
         status = wf_client.get_workflow_state(job_id)
     except Exception:
         pass
-    if not status or status.runtime_status.name != 'RUNNING':
+    if not status or status.runtime_status.name != "RUNNING":
         instance_id = wf_client.schedule_new_workflow(
             workflow=status_monitor_workflow,
             input=JobStatus(job_id=job_id, is_healthy=True),
-            instance_id=job_id)
-        print(f'Workflow started. Instance ID: {instance_id}')
+            instance_id=job_id,
+        )
+        print(f"Workflow started. Instance ID: {instance_id}")
     else:
-        print(f'Workflow already running. Instance ID: {job_id}')
+        print(f"Workflow already running. Instance ID: {job_id}")
 
     input("Press Enter to stop...\n")
     wfr.shutdown()
