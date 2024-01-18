@@ -496,10 +496,12 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
-        response, call = self._stub.GetState.with_call(req, metadata=metadata)
-        return StateResponse(
-            data=response.data, etag=response.etag, headers=call.initial_metadata()
-        )
+        try:
+            response, call = self._stub.GetState.with_call(req, metadata=metadata)
+            return StateResponse(data=response.data, etag=response.etag,
+                                 headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def get_bulk_state(
         self,
@@ -874,15 +876,15 @@ class DaprGrpcClient:
             state_options = options.get_proto()
 
         etag_object = common_v1.Etag(value=etag) if etag is not None else None
-        req = api_v1.DeleteStateRequest(
-            store_name=store_name,
-            key=key,
-            etag=etag_object,
-            options=state_options,
-            metadata=state_metadata,
-        )
-        _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
-        return DaprResponse(headers=call.initial_metadata())
+        req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
+                                        etag=etag_object, options=state_options,
+                                        metadata=state_metadata)
+
+        try:
+            _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def get_secret(
         self,

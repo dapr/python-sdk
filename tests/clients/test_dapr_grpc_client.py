@@ -309,22 +309,90 @@ class DaprGrpcClientTests(unittest.TestCase):
         print(context.exception)
         self.assertTrue('delete failed' in str(context.exception))
 
-    def test_grpc_error_on_save(self):
+    def test_error_on_get_and_delete_state(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
+
+        detail1 = Any()
+        detail1.Pack(error_details_pb2.ErrorInfo(reason="DAPR_STATE_ILLEGAL_KEY"))
+
+        detail2 = Any()
+        detail2.Pack(
+            error_details_pb2.ResourceInfo(resource_type="state", resource_name="my_statestore"))
+
+        detail3 = Any()
+        detail3.Pack(error_details_pb2.BadRequest(field_violations=[
+            error_details_pb2.BadRequest.FieldViolation(field="key||",
+                                                        description="key is invalid")]))
+
+        expected_status = status_pb2.Status(code=code_pb2.INVALID_ARGUMENT,
+                                            message="state store get operation failed",
+                                            details=[detail1, detail2, detail3])
+
+        # Get key
+        self._fake_dapr_server.raise_exception_on_next_call(expected_status)
+
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.get_state(store_name="my_statestore", key="key||")
+
+        e = context.exception
+        self.assertEqual(e.code(), grpc.StatusCode.INVALID_ARGUMENT)
+        self.assertEqual(e.message(), "state store get operation failed")
+        self.assertEqual(e.error_code(), "DAPR_STATE_ILLEGAL_KEY")
+
+        self.assertIsNotNone(e.error_info)
+        self.assertEqual(e.error_info.reason, "DAPR_STATE_ILLEGAL_KEY")
+        #
+        self.assertIsNotNone(e.resource_info)
+        self.assertEqual(e.resource_info.resource_type, "state")
+        self.assertEqual(e.resource_info.resource_name, "my_statestore")
+
+        self.assertIsNotNone(e.bad_request)
+        self.assertEqual(len(e.bad_request.field_violations), 1)
+        self.assertEqual(e.bad_request.field_violations[0].field, "key||")
+        self.assertEqual(e.bad_request.field_violations[0].description, "key is invalid")
+
+        # Delete key
+        self._fake_dapr_server.raise_exception_on_next_call(expected_status)
+
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.delete_state(store_name="my_statestore", key="key||")
+
+        e = context.exception
+        self.assertEqual(e.code(), grpc.StatusCode.INVALID_ARGUMENT)
+        self.assertEqual(e.message(), "state store get operation failed")
+        self.assertEqual(e.error_code(), "DAPR_STATE_ILLEGAL_KEY")
+
+        self.assertIsNotNone(e.error_info)
+        self.assertEqual(e.error_info.reason, "DAPR_STATE_ILLEGAL_KEY")
+        #
+        self.assertIsNotNone(e.resource_info)
+        self.assertEqual(e.resource_info.resource_type, "state")
+        self.assertEqual(e.resource_info.resource_name, "my_statestore")
+
+        self.assertIsNotNone(e.bad_request)
+        self.assertEqual(len(e.bad_request.field_violations), 1)
+        self.assertEqual(e.bad_request.field_violations[0].field, "key||")
+        self.assertEqual(e.bad_request.field_violations[0].description, "key is invalid")
+
+    def test_grpc_error_on_save_state(self):
         detail = Any()
         detail.Pack(error_details_pb2.ErrorInfo(reason="DAPR_STATE_NOT_CONFIGURED"))
         expected_status = status_pb2.Status(code=code_pb2.FAILED_PRECONDITION,
                                             message="state store operation failed",
-                                            details=[detail], )
+                                            details=[detail])
+
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
+        self._fake_dapr_server.raise_exception_on_next_call(expected_status)
 
         with self.assertRaises(DaprGrpcError) as context:
-            self._fake_dapr_server.raise_exception_on_next_call(expected_status)
-            dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
             dapr.save_state(store_name="statestore", key="mykey", value="myvalue")
 
         e = context.exception
         self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
         self.assertEqual(e.message(), "state store operation failed")
         self.assertEqual(e.error_code(), "DAPR_STATE_NOT_CONFIGURED")
+        self.assertIsNotNone(e.error_info)
+        self.assertEqual(e.error_info.reason, "DAPR_STATE_NOT_CONFIGURED")
 
     def test_get_save_state_etag_none(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')

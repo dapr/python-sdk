@@ -94,10 +94,14 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         Useful for testing error handling.
         @return: The raised exception, or None if no exception was raised.
         """
-        if self._next_exception is None:
+
+        exception = self._next_exception
+        self._next_exception = None
+
+        if exception is None:
             return None
 
-        context.abort_with_status(rpc_status.to_status(self._next_exception))
+        context.abort_with_status(rpc_status.to_status(exception))
 
     def InvokeService(self, request, context) -> common_v1.InvokeResponse:
         headers = ()
@@ -197,6 +201,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return empty_pb2.Empty()
 
     def GetState(self, request, context):
+        self.check_for_exception(context)
+
         key = request.key
         if key not in self.store:
             return empty_pb2.Empty()
@@ -219,6 +225,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.GetBulkStateResponse(items=items)
 
     def DeleteState(self, request, context):
+        self.check_for_exception(context)
+
         headers = ()
         trailers = ()
         key = request.key
