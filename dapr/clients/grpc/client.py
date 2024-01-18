@@ -150,14 +150,14 @@ class DaprGrpcClient:
             raise DaprInternalError(f"{error}") from error
 
         if self._uri.tls:
-            self._channel = grpc.secure_channel(
-                self._uri.endpoint,  # type: ignore
+            self._channel = grpc.secure_channel(  # type: ignore
+                self._uri.endpoint,
                 self.get_credentials(),
                 options=options,
             )
         else:
-            self._channel = grpc.insecure_channel(
-                self._uri.endpoint,  # type: ignore
+            self._channel = grpc.insecure_channel(  # type: ignore
+                self._uri.endpoint,
                 options=options,
             )
 
