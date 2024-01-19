@@ -18,8 +18,11 @@ import unittest
 from google.protobuf.any_pb2 import Any as GrpcAny
 
 from dapr.clients.grpc._response import (
-    DaprResponse, InvokeMethodResponse, BindingResponse, StateResponse,
-    BulkStateItem
+    DaprResponse,
+    InvokeMethodResponse,
+    BindingResponse,
+    StateResponse,
+    BulkStateItem,
 )
 
 from dapr.proto import common_v1
@@ -27,9 +30,9 @@ from dapr.proto import common_v1
 
 class DaprResponseTests(unittest.TestCase):
     test_headers = (
-        ('key1', 'value1'),
-        ('key2', 'value2'),
-        ('key3', 'value3'),
+        ("key1", "value1"),
+        ("key2", "value2"),
+        ("key3", "value3"),
     )
 
     def test_convert_metadata(self):
@@ -46,13 +49,11 @@ class InvokeMethodResponseTests(unittest.TestCase):
     def test_non_protobuf_message(self):
         with self.assertRaises(ValueError):
             resp = InvokeMethodResponse(data=123)
-            self.assertIsNone(resp, 'This should not be reached.')
+            self.assertIsNone(resp, "This should not be reached.")
 
     def test_is_proto_for_non_protobuf(self):
-        test_data = GrpcAny(value=b'hello dapr')
-        resp = InvokeMethodResponse(
-            data=test_data,
-            content_type='application/json')
+        test_data = GrpcAny(value=b"hello dapr")
+        resp = InvokeMethodResponse(data=test_data, content_type="application/json")
         self.assertFalse(resp.is_proto())
 
     def test_is_proto_for_protobuf(self):
@@ -68,17 +69,15 @@ class InvokeMethodResponseTests(unittest.TestCase):
         self.assertIsNotNone(resp.proto)
 
     def test_data(self):
-        test_data = GrpcAny(value=b'hello dapr')
-        resp = InvokeMethodResponse(
-            data=test_data,
-            content_type='application/json')
-        self.assertEqual(b'hello dapr', resp.data)
-        self.assertEqual('hello dapr', resp.text())
-        self.assertEqual('application/json', resp.content_type)
+        test_data = GrpcAny(value=b"hello dapr")
+        resp = InvokeMethodResponse(data=test_data, content_type="application/json")
+        self.assertEqual(b"hello dapr", resp.data)
+        self.assertEqual("hello dapr", resp.text())
+        self.assertEqual("application/json", resp.content_type)
 
     def test_json_data(self):
-        resp = InvokeMethodResponse(data=b'{ "status": "ok" }', content_type='application/json')
-        self.assertEqual({'status': 'ok'}, resp.json())
+        resp = InvokeMethodResponse(data=b'{ "status": "ok" }', content_type="application/json")
+        self.assertEqual({"status": "ok"}, resp.json())
 
     def test_unpack(self):
         # arrange
@@ -95,38 +94,38 @@ class InvokeMethodResponseTests(unittest.TestCase):
 
 class InvokeBindingResponseTests(unittest.TestCase):
     def test_bytes_message(self):
-        resp = BindingResponse(data=b'data', binding_metadata={})
+        resp = BindingResponse(data=b"data", binding_metadata={})
         self.assertEqual({}, resp.binding_metadata)
-        self.assertEqual(b'data', resp.data)
-        self.assertEqual('data', resp.text())
+        self.assertEqual(b"data", resp.data)
+        self.assertEqual("data", resp.text())
 
     def test_json_data(self):
         resp = BindingResponse(data=b'{"status": "ok"}', binding_metadata={})
-        self.assertEqual({'status': 'ok'}, resp.json())
+        self.assertEqual({"status": "ok"}, resp.json())
 
     def test_metadata(self):
-        resp = BindingResponse(data=b'data', binding_metadata={'status': 'ok'})
-        self.assertEqual({'status': 'ok'}, resp.binding_metadata)
-        self.assertEqual(b'data', resp.data)
-        self.assertEqual('data', resp.text())
+        resp = BindingResponse(data=b"data", binding_metadata={"status": "ok"})
+        self.assertEqual({"status": "ok"}, resp.binding_metadata)
+        self.assertEqual(b"data", resp.data)
+        self.assertEqual("data", resp.text())
 
 
 class StateResponseTests(unittest.TestCase):
     def test_data(self):
-        resp = StateResponse(data=b'hello dapr')
-        self.assertEqual('hello dapr', resp.text())
-        self.assertEqual(b'hello dapr', resp.data)
+        resp = StateResponse(data=b"hello dapr")
+        self.assertEqual("hello dapr", resp.text())
+        self.assertEqual(b"hello dapr", resp.data)
 
     def test_json_data(self):
         resp = StateResponse(data=b'{"status": "ok"}')
-        self.assertEqual({'status': 'ok'}, resp.json())
+        self.assertEqual({"status": "ok"}, resp.json())
 
 
 class BulkStateItemTests(unittest.TestCase):
     def test_data(self):
-        item = BulkStateItem(key='item1', data=b'{ "status": "ok" }')
-        self.assertEqual({'status': 'ok'}, item.json())
+        item = BulkStateItem(key="item1", data=b'{ "status": "ok" }')
+        self.assertEqual({"status": "ok"}, item.json())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

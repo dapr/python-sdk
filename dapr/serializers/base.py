@@ -22,12 +22,15 @@ class Serializer(ABC):
 
     @abstractmethod
     def serialize(
-            self, obj: object,
-            custom_hook: Optional[Callable[[object], bytes]] = None) -> bytes:
+        self, obj: object, custom_hook: Optional[Callable[[object], bytes]] = None
+    ) -> bytes:
         ...
 
     @abstractmethod
     def deserialize(
-            self, data: bytes, data_type: Optional[Type] = object,
-            custom_hook: Optional[Callable[[bytes], object]] = None) -> Any:
+        self,
+        data: bytes,
+        data_type: Optional[Type] = object,
+        custom_hook: Optional[Callable[[bytes], object]] = None,
+    ) -> Any:
         ...

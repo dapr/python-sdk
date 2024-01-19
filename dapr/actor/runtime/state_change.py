@@ -16,13 +16,14 @@ limitations under the License.
 from enum import Enum
 from typing import TypeVar, Generic
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class StateChangeKind(Enum):
     """A enumeration that represents the kind of state change for an actor state
     when saves change is called to a set of actor states.
     """
+
     # No change in state
     none = 0
     # The state needs to be added

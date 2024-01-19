@@ -2,11 +2,11 @@ import os
 
 from OpenSSL import crypto
 
-PRIVATE_KEY_PATH = os.path.join(os.path.dirname(__file__), 'private.key')
-CERTIFICATE_CHAIN_PATH = os.path.join(os.path.dirname(__file__), 'selfsigned.pem')
+PRIVATE_KEY_PATH = os.path.join(os.path.dirname(__file__), "private.key")
+CERTIFICATE_CHAIN_PATH = os.path.join(os.path.dirname(__file__), "selfsigned.pem")
 
 
-def create_certificates(server_type='grpc'):
+def create_certificates(server_type="grpc"):
     # create a key pair
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 4096)
@@ -20,10 +20,10 @@ def create_certificates(server_type='grpc'):
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
 
-    if server_type == 'http':
+    if server_type == "http":
         cert.add_extensions([crypto.X509Extension(b"subjectAltName", False, b"DNS:localhost")])
 
-    cert.sign(k, 'sha512')
+    cert.sign(k, "sha512")
 
     f_cert = open(CERTIFICATE_CHAIN_PATH, "wt")
     f_cert.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))

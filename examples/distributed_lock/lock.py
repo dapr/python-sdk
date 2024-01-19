@@ -17,28 +17,28 @@ import warnings
 
 def main():
     # Lock parameters
-    store_name = 'lockstore'  # as defined in components/lockstore.yaml
-    resource_id = 'example-lock-resource'
-    client_id = 'example-client-id'
+    store_name = "lockstore"  # as defined in components/lockstore.yaml
+    resource_id = "example-lock-resource"
+    client_id = "example-client-id"
     expiry_in_seconds = 60
 
     with DaprClient() as dapr:
-        print('Will try to acquire a lock from lock store named [%s]' % store_name)
-        print('The lock is for a resource named [%s]' % resource_id)
-        print('The client identifier is [%s]' % client_id)
-        print('The lock will will expire in %s seconds.' % expiry_in_seconds)
+        print("Will try to acquire a lock from lock store named [%s]" % store_name)
+        print("The lock is for a resource named [%s]" % resource_id)
+        print("The client identifier is [%s]" % client_id)
+        print("The lock will will expire in %s seconds." % expiry_in_seconds)
 
         with dapr.try_lock(store_name, resource_id, client_id, expiry_in_seconds) as lock_result:
-            assert lock_result.success, 'Failed to acquire the lock. Aborting.'
-            print('Lock acquired successfully!!!')
+            assert lock_result.success, "Failed to acquire the lock. Aborting."
+            print("Lock acquired successfully!!!")
 
         # At this point the lock was released - by magic of the `with` clause ;)
         unlock_result = dapr.unlock(store_name, resource_id, client_id)
-        print('We already released the lock so unlocking will not work.')
-        print('We tried to unlock it anyway and got back [%s]' % unlock_result.status)
+        print("We already released the lock so unlocking will not work.")
+        print("We tried to unlock it anyway and got back [%s]" % unlock_result.status)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Suppress "The Distributed Lock API is an Alpha" warnings
     warnings.simplefilter("ignore")
     main()

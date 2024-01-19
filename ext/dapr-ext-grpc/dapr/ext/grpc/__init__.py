@@ -16,14 +16,14 @@ limitations under the License.
 from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
 
-from dapr.ext.grpc.app import App, Rule   # type:ignore
+from dapr.ext.grpc.app import App, Rule  # type:ignore
 
 
 __all__ = [
-    'App',
-    'Rule',
-    'InvokeMethodRequest',
-    'InvokeMethodResponse',
-    'BindingRequest',
-    'TopicEventResponse',
+    "App",
+    "Rule",
+    "InvokeMethodRequest",
+    "InvokeMethodResponse",
+    "BindingRequest",
+    "TopicEventResponse",
 ]

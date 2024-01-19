@@ -123,9 +123,11 @@ class GrpcEndpoint:
         if len(url_list) == 3 and "://" not in url:
             # A URI like dns:mydomain:5000 or vsock:mycid:5000 was used
             url = url.replace(":", "://", 1)
-        elif len(url_list) >= 2 and "://" not in url and url_list[
-                0] in URIParseConfig.ACCEPTED_SCHEMES:
-
+        elif (
+            len(url_list) >= 2
+            and "://" not in url
+            and url_list[0] in URIParseConfig.ACCEPTED_SCHEMES
+        ):
             # A URI like dns:mydomain or dns:[2001:db8:1f70::999:de8:7648:6e8]:mydomain was used
             # Possibly a URI like dns:[2001:db8:1f70::999:de8:7648:6e8]:mydomain was used
             url = url.replace(":", "://", 1)
@@ -135,7 +137,7 @@ class GrpcEndpoint:
                 # If a scheme was not explicitly specified in the URL
                 # we need to add a default scheme,
                 # because of how urlparse works
-                url = f'{URIParseConfig.DEFAULT_SCHEME}://{url}'
+                url = f"{URIParseConfig.DEFAULT_SCHEME}://{url}"
             else:
                 # If a scheme was explicitly specified in the URL
                 # we need to make sure it is a valid scheme
@@ -151,13 +153,13 @@ class GrpcEndpoint:
                     if len(url_list) < 4:
                         raise ValueError(f"invalid dns authority '{url_list[2]}' in URL '{url}'")
                     self._authority = url_list[2]
-                    url = f'dns://{url_list[3]}'
+                    url = f"dns://{url_list[3]}"
         return url
 
     def _set_tls(self):
         query_dict = parse_qs(self._parsed_url.query)
-        tls_str = query_dict.get('tls', [""])[0]
-        tls = tls_str.lower() == 'true'
+        tls_str = query_dict.get("tls", [""])[0]
+        tls = tls_str.lower() == "true"
         if self._parsed_url.scheme == "https":
             tls = True
 
@@ -169,15 +171,19 @@ class GrpcEndpoint:
 
     def _validate_path_and_query(self) -> None:
         if self._parsed_url.path:
-            raise ValueError(f"paths are not supported for gRPC endpoints:"
-                             f" '{self._parsed_url.path}'")
+            raise ValueError(
+                f"paths are not supported for gRPC endpoints:" f" '{self._parsed_url.path}'"
+            )
         if self._parsed_url.query:
             query_dict = parse_qs(self._parsed_url.query)
-            if 'tls' in query_dict and self._parsed_url.scheme in ["http", "https"]:
+            if "tls" in query_dict and self._parsed_url.scheme in ["http", "https"]:
                 raise ValueError(
                     f"the tls query parameter is not supported for http(s) endpoints: "
-                    f"'{self._parsed_url.query}'")
-            query_dict.pop('tls', None)
+                    f"'{self._parsed_url.query}'"
+                )
+            query_dict.pop("tls", None)
             if query_dict:
-                raise ValueError(f"query parameters are not supported for gRPC endpoints:"
-                                 f" '{self._parsed_url.query}'")
+                raise ValueError(
+                    f"query parameters are not supported for gRPC endpoints:"
+                    f" '{self._parsed_url.query}'"
+                )

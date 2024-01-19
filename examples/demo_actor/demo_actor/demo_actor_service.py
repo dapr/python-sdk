@@ -17,16 +17,14 @@ from dapr.ext.fastapi import DaprActor  # type: ignore
 from demo_actor import DemoActor
 
 
-app = FastAPI(title=f'{DemoActor.__name__}Service')
+app = FastAPI(title=f"{DemoActor.__name__}Service")
 
 # This is an optional advanced configuration which enables reentrancy only for the
 # specified actor type. By default reentrancy is not enabled for all actor types.
 config = ActorRuntimeConfig()  # init with default values
-config.update_actor_type_configs([
-    ActorTypeConfig(
-        actor_type=DemoActor.__name__,
-        reentrancy=ActorReentrancyConfig(enabled=True))
-])
+config.update_actor_type_configs(
+    [ActorTypeConfig(actor_type=DemoActor.__name__, reentrancy=ActorReentrancyConfig(enabled=True))]
+)
 ActorRuntime.set_actor_config(config)
 
 # Add Dapr Actor Extension

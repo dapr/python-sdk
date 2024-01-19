@@ -20,16 +20,16 @@ from dapr.actor.runtime.actor import Actor
 
 
 def get_class_method_args(func: Any) -> List[str]:
-    args = func.__code__.co_varnames[:func.__code__.co_argcount]
+    args = func.__code__.co_varnames[: func.__code__.co_argcount]
 
     # Exclude self, cls arguments
-    if args[0] == 'self' or args[0] == 'cls':
+    if args[0] == "self" or args[0] == "cls":
         args = args[1:]
     return list(args)
 
 
 def get_method_arg_types(func: Any) -> List[Type]:
-    annotations = getattr(func, '__annotations__')
+    annotations = getattr(func, "__annotations__")
     args = get_class_method_args(func)
     arg_types = []
     for arg_name in args:
@@ -39,26 +39,26 @@ def get_method_arg_types(func: Any) -> List[Type]:
 
 
 def get_method_return_types(func: Any) -> Type:
-    annotations = getattr(func, '__annotations__')
-    if len(annotations) == 0 or not annotations['return']:
+    annotations = getattr(func, "__annotations__")
+    if len(annotations) == 0 or not annotations["return"]:
         return object
-    return annotations['return']
+    return annotations["return"]
 
 
 def get_dispatchable_attrs_from_interface(
-        actor_interface: Type[ActorInterface],
-        dispatch_map: Dict[str, Any]) -> None:
+    actor_interface: Type[ActorInterface], dispatch_map: Dict[str, Any]
+) -> None:
     for attr, v in actor_interface.__dict__.items():
-        if attr.startswith('_') or not callable(v):
+        if attr.startswith("_") or not callable(v):
             continue
-        actor_method_name = getattr(v, '__actormethod__') if hasattr(v, '__actormethod__') else attr
+        actor_method_name = getattr(v, "__actormethod__") if hasattr(v, "__actormethod__") else attr
 
         dispatch_map[actor_method_name] = {
-            'actor_method': actor_method_name,
-            'method_name': attr,
-            'arg_names': get_class_method_args(v),
-            'arg_types': get_method_arg_types(v),
-            'return_types': get_method_return_types(v)
+            "actor_method": actor_method_name,
+            "method_name": attr,
+            "arg_names": get_class_method_args(v),
+            "arg_types": get_method_arg_types(v),
+            "return_types": get_method_return_types(v),
         }
 
 
@@ -77,7 +77,7 @@ def get_dispatchable_attrs(actor_class: Type[Actor]) -> Dict[str, Any]:
     # Find all user actor interfaces derived from ActorInterface
     actor_interfaces = get_actor_interfaces(actor_class)
     if len(actor_interfaces) == 0:
-        raise ValueError(f'{actor_class.__name__} has not inherited from ActorInterface')
+        raise ValueError(f"{actor_class.__name__} has not inherited from ActorInterface")
 
     # Find all dispatchable attributes
     dispatch_map: Dict[str, Any] = {}

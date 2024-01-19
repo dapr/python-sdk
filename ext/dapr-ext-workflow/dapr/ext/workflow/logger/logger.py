@@ -4,9 +4,7 @@ from dapr.ext.workflow.logger.options import LoggerOptions
 
 
 class Logger:
-    def __init__(self,
-                 name: str,
-                 options: Union[LoggerOptions, None] = None):
+    def __init__(self, name: str, options: Union[LoggerOptions, None] = None):
         # If options is None, then create a new LoggerOptions object
         if options is None:
             options = LoggerOptions()

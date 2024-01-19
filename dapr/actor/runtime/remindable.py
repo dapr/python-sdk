@@ -24,9 +24,14 @@ class Remindable(ABC):
     """
 
     @abstractmethod
-    async def receive_reminder(self, name: str, state: bytes,
-                               due_time: timedelta, period: timedelta,
-                               ttl: Optional[timedelta] = None) -> None:
+    async def receive_reminder(
+        self,
+        name: str,
+        state: bytes,
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta] = None,
+    ) -> None:
         """A callback which will be called when reminder is triggered.
 
         Args:

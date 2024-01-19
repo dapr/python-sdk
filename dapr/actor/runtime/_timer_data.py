@@ -33,10 +33,14 @@ class ActorTimerData:
     """
 
     def __init__(
-            self, timer_name: str,
-            callback: TIMER_CALLBACK, state: Any,
-            due_time: timedelta, period: timedelta,
-            ttl: Optional[timedelta] = None):
+        self,
+        timer_name: str,
+        callback: TIMER_CALLBACK,
+        state: Any,
+        due_time: timedelta,
+        period: timedelta,
+        ttl: Optional[timedelta] = None,
+    ):
         """Create new :class:`ActorTimerData` instance.
 
         Args:
@@ -93,13 +97,13 @@ class ActorTimerData:
         """
 
         timerDict: Dict[str, Any] = {
-            'callback': self._callback,
-            'data': self._state,
-            'dueTime': self._due_time,
-            'period': self._period
+            "callback": self._callback,
+            "data": self._state,
+            "dueTime": self._due_time,
+            "period": self._period,
         }
 
         if self._ttl:
-            timerDict.update({'ttl': self._ttl})
+            timerDict.update({"ttl": self._ttl})
 
         return timerDict

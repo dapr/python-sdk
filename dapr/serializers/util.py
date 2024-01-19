@@ -18,7 +18,8 @@ from datetime import timedelta
 
 # Regex to parse Go Duration datatype, e.g. 4h15m50s123ms345μs
 DAPR_DURATION_PARSER = re.compile(
-    r'((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?((?P<milliseconds>\d+)ms)?((?P<microseconds>\d+)(μs|us))?$')  # noqa: E501
+    r"((?P<hours>\d+)h)?((?P<mins>\d+)m)?((?P<seconds>\d+)s)?((?P<milliseconds>\d+)ms)?((?P<microseconds>\d+)(μs|us))?$"
+)  # noqa: E501
 
 
 def convert_from_dapr_duration(duration: str) -> timedelta:
@@ -33,19 +34,21 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
 
     matched = DAPR_DURATION_PARSER.match(duration)
     if not matched or matched.lastindex == 0:
-        raise ValueError(f'Invalid Dapr Duration format: \'{duration}\'')
+        raise ValueError(f"Invalid Dapr Duration format: '{duration}'")
 
     days = 0.0
     hours = 0.0
 
-    if matched.group('hours') is not None:
-        days, hours = divmod(float(matched.group('hours')), 24)
-    mins = 0.0 if not matched.group('mins') else float(matched.group('mins'))
-    seconds = 0.0 if not matched.group('seconds') else float(matched.group('seconds'))
-    milliseconds = 0.0 if not matched.group(
-        'milliseconds') else float(matched.group('milliseconds'))
-    microseconds = 0.0 if not matched.group(
-        'microseconds') else float(matched.group('microseconds'))
+    if matched.group("hours") is not None:
+        days, hours = divmod(float(matched.group("hours")), 24)
+    mins = 0.0 if not matched.group("mins") else float(matched.group("mins"))
+    seconds = 0.0 if not matched.group("seconds") else float(matched.group("seconds"))
+    milliseconds = (
+        0.0 if not matched.group("milliseconds") else float(matched.group("milliseconds"))
+    )
+    microseconds = (
+        0.0 if not matched.group("microseconds") else float(matched.group("microseconds"))
+    )
 
     return timedelta(
         days=days,
@@ -53,7 +56,7 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
         minutes=mins,
         seconds=seconds,
         milliseconds=milliseconds,
-        microseconds=microseconds
+        microseconds=microseconds,
     )
 
 
@@ -71,4 +74,4 @@ def convert_to_dapr_duration(td: timedelta) -> str:
     milliseconds, microseconds = divmod(td.microseconds, 1000.0)
     hours, mins = divmod(total_minutes, 60.0)
 
-    return f'{hours:.0f}h{mins:.0f}m{seconds:.0f}s{milliseconds:.0f}ms{microseconds:.0f}μs'
+    return f"{hours:.0f}h{mins:.0f}m{seconds:.0f}s{milliseconds:.0f}ms{microseconds:.0f}μs"

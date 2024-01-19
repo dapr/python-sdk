@@ -18,7 +18,7 @@ from demo_actor_interface import DemoActorInterface
 
 async def main():
     # Create proxy client
-    proxy = ActorProxy.create('DemoActor', ActorId('1'), DemoActorInterface)
+    proxy = ActorProxy.create("DemoActor", ActorId("1"), DemoActorInterface)
 
     # -----------------------------------------------
     # Actor invocation demo
@@ -33,14 +33,14 @@ async def main():
     print(rtn_obj, flush=True)
     # Check actor is reentrant
     is_reentrant = await proxy.invoke_method("GetReentrancyStatus")
-    print(f'Actor reentrancy enabled: {str(is_reentrant)}', flush=True)
+    print(f"Actor reentrancy enabled: {str(is_reentrant)}", flush=True)
 
     # -----------------------------------------------
     # Actor state management demo
     # -----------------------------------------------
     # Invoke SetMyData actor method to save the state
     print("call SetMyData actor method to save the state", flush=True)
-    await proxy.SetMyData({'data': 'new_data'})
+    await proxy.SetMyData({"data": "new_data"})
     # Invoke GetMyData actor method to get the state
     print("call GetMyData actor method to get the state", flush=True)
     rtn_obj = await proxy.GetMyData()
@@ -73,7 +73,6 @@ async def main():
     # Clear actor state
     print("clear actor state", flush=True)
     await proxy.ClearMyData()
-
 
 
 asyncio.run(main())

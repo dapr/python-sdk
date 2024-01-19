@@ -15,13 +15,13 @@ from dapr.clients import DaprClient
 
 
 def main():
-    extended_attribute_name = 'is-this-our-metadata-example'
+    extended_attribute_name = "is-this-our-metadata-example"
 
     with DaprClient() as dapr:
         print("First, we will assign a new custom label to Dapr sidecar")
         # We do this so example can be made deterministic across
         # multiple invocations.
-        original_value = 'yes'
+        original_value = "yes"
         dapr.set_metadata(extended_attribute_name, original_value)
 
         print("Now, we will fetch the sidecar's metadata")
@@ -36,7 +36,7 @@ def main():
             print(f"    name={name} type={type} version={version} capabilities={sorted(caps)}")
 
         print("We will update our custom label value and check it was persisted")
-        dapr.set_metadata(extended_attribute_name, 'You bet it is!')
+        dapr.set_metadata(extended_attribute_name, "You bet it is!")
         metadata = dapr.get_metadata()
         new_value = metadata.extended_metadata[extended_attribute_name]
         print("We added a custom label named [%s]" % extended_attribute_name)
@@ -45,5 +45,5 @@ def main():
         print("And we are done 👋", flush=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -29,32 +29,33 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.ext.workflow.logger import LoggerOptions, Logger
 
-T = TypeVar('T')
-TInput = TypeVar('TInput')
-TOutput = TypeVar('TOutput')
+T = TypeVar("T")
+TInput = TypeVar("TInput")
+TOutput = TypeVar("TOutput")
 
 
 class DaprWorkflowClient:
     """Defines client operations for managing Dapr Workflow instances.
 
-       This is an alternative to the general purpose Dapr client. It uses a gRPC connection to send
-       commands directly to the workflow engine, bypassing the Dapr API layer.
+    This is an alternative to the general purpose Dapr client. It uses a gRPC connection to send
+    commands directly to the workflow engine, bypassing the Dapr API layer.
 
-       This client is intended to be used by workflow application, not by general purpose
-       application.
+    This client is intended to be used by workflow application, not by general purpose
+    application.
     """
 
     def __init__(
-            self,
-            host: Optional[str] = None,
-            port: Optional[str] = None,
-            logger_options: Optional[LoggerOptions] = None):
+        self,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        logger_options: Optional[LoggerOptions] = None,
+    ):
         address = getAddress(host, port)
 
         try:
             uri = GrpcEndpoint(address)
         except ValueError as error:
-            raise DaprInternalError(f'{error}') from error
+            raise DaprInternalError(f"{error}") from error
 
         self._logger = Logger("DaprWorkflowClient", logger_options)
 
@@ -62,15 +63,22 @@ class DaprWorkflowClient:
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         options = self._logger.get_options()
-        self.__obj = client.TaskHubGrpcClient(host_address=uri.endpoint,
-                                              metadata=metadata,
-                                              secure_channel=uri.tls,
-                                              log_handler=options.log_handler,
-                                              log_formatter=options.log_formatter)
+        self.__obj = client.TaskHubGrpcClient(
+            host_address=uri.endpoint,
+            metadata=metadata,
+            secure_channel=uri.tls,
+            log_handler=options.log_handler,
+            log_formatter=options.log_formatter,
+        )
 
-    def schedule_new_workflow(self, workflow: Workflow, *, input: Optional[TInput] = None,
-                              instance_id: Optional[str] = None,
-                              start_at: Optional[datetime] = None) -> str:
+    def schedule_new_workflow(
+        self,
+        workflow: Workflow,
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        start_at: Optional[datetime] = None,
+    ) -> str:
         """Schedules a new workflow instance for execution.
 
         Args:
@@ -86,16 +94,20 @@ class DaprWorkflowClient:
         Returns:
             The ID of the scheduled workflow instance.
         """
-        if hasattr(workflow, '_dapr_alternate_name'):
-            return self.__obj.schedule_new_orchestration(workflow.__dict__['_dapr_alternate_name'],
-                                                         input=input, instance_id=instance_id,
-                                                         start_at=start_at)
-        return self.__obj.schedule_new_orchestration(workflow.__name__, input=input,
-                                                     instance_id=instance_id,
-                                                     start_at=start_at)
+        if hasattr(workflow, "_dapr_alternate_name"):
+            return self.__obj.schedule_new_orchestration(
+                workflow.__dict__["_dapr_alternate_name"],
+                input=input,
+                instance_id=instance_id,
+                start_at=start_at,
+            )
+        return self.__obj.schedule_new_orchestration(
+            workflow.__name__, input=input, instance_id=instance_id, start_at=start_at
+        )
 
-    def get_workflow_state(self, instance_id: str, *,
-                           fetch_payloads: bool = True) -> Optional[WorkflowState]:
+    def get_workflow_state(
+        self, instance_id: str, *, fetch_payloads: bool = True
+    ) -> Optional[WorkflowState]:
         """Fetches runtime state for the specified workflow instance.
 
         Args:
@@ -111,8 +123,9 @@ class DaprWorkflowClient:
         state = self.__obj.get_orchestration_state(instance_id, fetch_payloads=fetch_payloads)
         return WorkflowState(state) if state else None
 
-    def wait_for_workflow_start(self, instance_id: str, *, fetch_payloads: bool = False,
-                                timeout_in_seconds: int = 60) -> Optional[WorkflowState]:
+    def wait_for_workflow_start(
+        self, instance_id: str, *, fetch_payloads: bool = False, timeout_in_seconds: int = 60
+    ) -> Optional[WorkflowState]:
         """Waits for a workflow to start running and returns a WorkflowState object that contains
            metadata about the started workflow.
 
@@ -131,12 +144,14 @@ class DaprWorkflowClient:
             WorkflowState record that describes the workflow instance and its execution status.
             If the specified workflow isn't found, the WorkflowState.Exists value will be false.
         """
-        state = self.__obj.wait_for_orchestration_start(instance_id, fetch_payloads=fetch_payloads,
-                                                        timeout=timeout_in_seconds)
+        state = self.__obj.wait_for_orchestration_start(
+            instance_id, fetch_payloads=fetch_payloads, timeout=timeout_in_seconds
+        )
         return WorkflowState(state) if state else None
 
-    def wait_for_workflow_completion(self, instance_id: str, *, fetch_payloads: bool = True,
-                                     timeout_in_seconds: int = 60) -> Optional[WorkflowState]:
+    def wait_for_workflow_completion(
+        self, instance_id: str, *, fetch_payloads: bool = True, timeout_in_seconds: int = 60
+    ) -> Optional[WorkflowState]:
         """Waits for a workflow to complete and returns a WorkflowState object that contains
            metadata about the started instance.
 
@@ -162,13 +177,14 @@ class DaprWorkflowClient:
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
         """
-        state = self.__obj.wait_for_orchestration_completion(instance_id,
-                                                             fetch_payloads=fetch_payloads,
-                                                             timeout=timeout_in_seconds)
+        state = self.__obj.wait_for_orchestration_completion(
+            instance_id, fetch_payloads=fetch_payloads, timeout=timeout_in_seconds
+        )
         return WorkflowState(state) if state else None
 
-    def raise_workflow_event(self, instance_id: str, event_name: str, *,
-                             data: Optional[Any] = None):
+    def raise_workflow_event(
+        self, instance_id: str, event_name: str, *, data: Optional[Any] = None
+    ):
         """Sends an event notification message to a waiting workflow instance.
            In order to handle the event, the target workflow instance must be waiting for an
            event named value of "eventName" param using the wait_for_external_event API.
@@ -210,7 +226,7 @@ class DaprWorkflowClient:
         Args:
             instance_id: The ID of the workflow instance to terminate.
             output: The optional output to set for the terminated workflow instance.
-       """
+        """
         return self.__obj.terminate_orchestration(instance_id, output=output)
 
     def pause_workflow(self, instance_id: str):

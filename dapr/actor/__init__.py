@@ -22,12 +22,12 @@ from dapr.actor.runtime.runtime import ActorRuntime
 
 
 __all__ = [
-    'ActorInterface',
-    'ActorProxy',
-    'ActorProxyFactory',
-    'ActorId',
-    'Actor',
-    'ActorRuntime',
-    'Remindable',
-    'actormethod',
+    "ActorInterface",
+    "ActorProxy",
+    "ActorProxyFactory",
+    "ActorId",
+    "Actor",
+    "ActorRuntime",
+    "Remindable",
+    "actormethod",
 ]

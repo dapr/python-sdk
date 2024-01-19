@@ -33,6 +33,7 @@ class ActorInterface(ABC):
             async def do_actor_method2(self, param):
                 ...
     """
+
     ...
 
 
@@ -51,8 +52,10 @@ def actormethod(name: Optional[str] = None):
     Args:
         name (str, optional): the name of actor method.
     """
+
     def wrapper(funcobj):
         funcobj.__actormethod__ = name
         funcobj.__isabstractmethod__ = True
         return funcobj
+
     return wrapper

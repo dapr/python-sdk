@@ -25,7 +25,7 @@ from dapr.serializers.base import Serializer
 from dapr.serializers.util import (
     convert_from_dapr_duration,
     convert_to_dapr_duration,
-    DAPR_DURATION_PARSER
+    DAPR_DURATION_PARSER,
 )
 
 
@@ -34,35 +34,34 @@ class DefaultJSONSerializer(Serializer):
         self.ensure_ascii = ensure_ascii
 
     def serialize(
-            self, obj: object,
-            custom_hook: Optional[Callable[[object], bytes]] = None) -> bytes:
-
+        self, obj: object, custom_hook: Optional[Callable[[object], bytes]] = None
+    ) -> bytes:
         dict_obj = obj
 
         # importing this from top scope creates a circular import
         from dapr.actor.runtime.config import ActorRuntimeConfig
+
         if callable(custom_hook):
             dict_obj = custom_hook(obj)
         elif isinstance(obj, bytes):
-            dict_obj = base64.b64encode(obj).decode('utf-8')
+            dict_obj = base64.b64encode(obj).decode("utf-8")
         elif isinstance(obj, ActorRuntimeConfig):
             dict_obj = obj.as_dict()
 
         serialized = json.dumps(
-            dict_obj,
-            cls=DaprJSONEncoder,
-            separators=(',', ':'),
-            ensure_ascii=self.ensure_ascii
+            dict_obj, cls=DaprJSONEncoder, separators=(",", ":"), ensure_ascii=self.ensure_ascii
         )
 
-        return serialized.encode('utf-8')
+        return serialized.encode("utf-8")
 
     def deserialize(
-            self, data: bytes, data_type: Optional[Type] = object,
-            custom_hook: Optional[Callable[[bytes], object]] = None) -> Any:
-
+        self,
+        data: bytes,
+        data_type: Optional[Type] = object,
+        custom_hook: Optional[Callable[[bytes], object]] = None,
+    ) -> Any:
         if not isinstance(data, (str, bytes)):
-            raise ValueError('data must be str or bytes types')
+            raise ValueError("data must be str or bytes types")
 
         obj = json.loads(data, cls=DaprJSONDecoder)
 
@@ -76,22 +75,22 @@ class DaprJSONEncoder(json.JSONEncoder):
             r = obj.isoformat()
             if obj.microsecond:
                 r = r[:23] + r[26:]
-            if r.endswith('+00:00'):
-                r = r[:-6] + 'Z'
+            if r.endswith("+00:00"):
+                r = r[:-6] + "Z"
             return r
         elif isinstance(obj, datetime.date):
             return obj.isoformat()
         elif isinstance(obj, datetime.timedelta):
             return convert_to_dapr_duration(obj)
         elif isinstance(obj, bytes):
-            return base64.b64encode(obj).decode('utf-8')
+            return base64.b64encode(obj).decode("utf-8")
         else:
             return json.JSONEncoder.default(self, obj)
 
 
 class DaprJSONDecoder(json.JSONDecoder):
     # TODO: improve regex
-    datetime_regex = re.compile(r'(\d{4}[-/]\d{2}[-/]\d{2})')
+    datetime_regex = re.compile(r"(\d{4}[-/]\d{2}[-/]\d{2})")
 
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, *args, **kwargs)

@@ -96,19 +96,25 @@ pip3 install -r dev-requirements.txt
 tox -e flake8
 ```
 
-5. Run unit-test
+5. Run autofix
+
+```bash
+tox -e ruff
+```
+
+6. Run unit-test
 
 ```bash
 tox -e py311
 ```
 
-6. Run type check
+7. Run type check
 
 ```bash
 tox -e type
 ```
 
-7. Run examples
+8. Run examples
 
 ```bash
 tox -e examples

@@ -18,10 +18,7 @@ from typing import Any, Dict, List, Optional, Set
 
 
 class ActorReentrancyConfig:
-    def __init__(
-            self,
-            enabled: bool = False,
-            maxStackDepth: int = 32):
+    def __init__(self, enabled: bool = False, maxStackDepth: int = 32):
         """Inits :class:`ActorReentrancyConfig` to optionally configure actor
         reentrancy.
 
@@ -37,8 +34,8 @@ class ActorReentrancyConfig:
     def as_dict(self) -> Dict[str, Any]:
         """Returns ActorReentrancyConfig as a dict."""
         return {
-            'enabled': self._enabled,
-            'maxStackDepth': self._maxStackDepth,
+            "enabled": self._enabled,
+            "maxStackDepth": self._maxStackDepth,
         }
 
 
@@ -48,14 +45,15 @@ class ActorTypeConfig:
     """
 
     def __init__(
-            self,
-            actor_type: str,
-            actor_idle_timeout: Optional[timedelta] = None,
-            actor_scan_interval: Optional[timedelta] = None,
-            drain_ongoing_call_timeout: Optional[timedelta] = None,
-            drain_rebalanced_actors: Optional[bool] = None,
-            reentrancy: Optional[ActorReentrancyConfig] = None,
-            reminders_storage_partitions: Optional[int] = None):
+        self,
+        actor_type: str,
+        actor_idle_timeout: Optional[timedelta] = None,
+        actor_scan_interval: Optional[timedelta] = None,
+        drain_ongoing_call_timeout: Optional[timedelta] = None,
+        drain_rebalanced_actors: Optional[bool] = None,
+        reentrancy: Optional[ActorReentrancyConfig] = None,
+        reminders_storage_partitions: Optional[int] = None,
+    ):
         """Inits :class:`ActorTypeConfig` to configure the behavior of a specific actor type
         when dapr runtime starts.
 
@@ -87,26 +85,25 @@ class ActorTypeConfig:
         """Returns ActorTypeConfig as a dict."""
 
         configDict: Dict[str, Any] = dict()
-        configDict['entities'] = [self._actor_type]
+        configDict["entities"] = [self._actor_type]
 
         if self._actor_idle_timeout is not None:
-            configDict.update({'actorIdleTimeout': self._actor_idle_timeout})
+            configDict.update({"actorIdleTimeout": self._actor_idle_timeout})
 
         if self._actor_scan_interval is not None:
-            configDict.update({'actorScanInterval': self._actor_scan_interval})
+            configDict.update({"actorScanInterval": self._actor_scan_interval})
 
         if self._drain_ongoing_call_timeout is not None:
-            configDict.update({'drainOngoingCallTimeout': self._drain_ongoing_call_timeout})
+            configDict.update({"drainOngoingCallTimeout": self._drain_ongoing_call_timeout})
 
         if self._drain_rebalanced_actors is not None:
-            configDict.update({'drainRebalancedActors': self._drain_rebalanced_actors})
+            configDict.update({"drainRebalancedActors": self._drain_rebalanced_actors})
 
         if self._reentrancy:
-            configDict.update({'reentrancy': self._reentrancy.as_dict()})
+            configDict.update({"reentrancy": self._reentrancy.as_dict()})
 
         if self._reminders_storage_partitions:
-            configDict.update(
-                {'remindersStoragePartitions': self._reminders_storage_partitions})
+            configDict.update({"remindersStoragePartitions": self._reminders_storage_partitions})
 
         return configDict
 
@@ -117,14 +114,15 @@ class ActorRuntimeConfig:
     """
 
     def __init__(
-            self,
-            actor_idle_timeout: Optional[timedelta] = timedelta(hours=1),
-            actor_scan_interval: Optional[timedelta] = timedelta(seconds=30),
-            drain_ongoing_call_timeout: Optional[timedelta] = timedelta(minutes=1),
-            drain_rebalanced_actors: Optional[bool] = True,
-            reentrancy: Optional[ActorReentrancyConfig] = None,
-            reminders_storage_partitions: Optional[int] = None,
-            actor_type_configs: List[ActorTypeConfig] = []):
+        self,
+        actor_idle_timeout: Optional[timedelta] = timedelta(hours=1),
+        actor_scan_interval: Optional[timedelta] = timedelta(seconds=30),
+        drain_ongoing_call_timeout: Optional[timedelta] = timedelta(minutes=1),
+        drain_rebalanced_actors: Optional[bool] = True,
+        reentrancy: Optional[ActorReentrancyConfig] = None,
+        reminders_storage_partitions: Optional[int] = None,
+        actor_type_configs: List[ActorTypeConfig] = [],
+    ):
         """Inits :class:`ActorRuntimeConfig` to configure actors when dapr runtime starts.
 
         Args:
@@ -175,24 +173,23 @@ class ActorRuntimeConfig:
         entities: Set[str] = self._entities
 
         configDict: Dict[str, Any] = {
-            'actorIdleTimeout': self._actor_idle_timeout,
-            'actorScanInterval': self._actor_scan_interval,
-            'drainOngoingCallTimeout': self._drain_ongoing_call_timeout,
-            'drainRebalancedActors': self._drain_rebalanced_actors,
+            "actorIdleTimeout": self._actor_idle_timeout,
+            "actorScanInterval": self._actor_scan_interval,
+            "drainOngoingCallTimeout": self._drain_ongoing_call_timeout,
+            "drainRebalancedActors": self._drain_rebalanced_actors,
         }
 
         if self._reentrancy:
-            configDict.update({'reentrancy': self._reentrancy.as_dict()})
+            configDict.update({"reentrancy": self._reentrancy.as_dict()})
 
         if self._reminders_storage_partitions:
-            configDict.update(
-                {'remindersStoragePartitions': self._reminders_storage_partitions})
+            configDict.update({"remindersStoragePartitions": self._reminders_storage_partitions})
 
-        configDict['entitiesConfig'] = []
+        configDict["entitiesConfig"] = []
         for entityConfig in self._entitiesConfig:
-            configDict['entitiesConfig'].append(entityConfig.as_dict())
+            configDict["entitiesConfig"].append(entityConfig.as_dict())
             entities.add(entityConfig._actor_type)
 
-        configDict['entities'] = list(entities)
+        configDict["entities"] = list(entities)
 
         return configDict

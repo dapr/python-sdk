@@ -22,15 +22,15 @@ from durabletask import task
 
 from dapr.ext.workflow.workflow_activity_context import Activity
 
-T = TypeVar('T')
-TInput = TypeVar('TInput')
-TOutput = TypeVar('TOutput')
+T = TypeVar("T")
+TInput = TypeVar("TInput")
+TOutput = TypeVar("TOutput")
 
 
 class WorkflowContext(ABC):
     """Context object used by workflow implementations to perform actions such as scheduling
-       activities, durable timers, waiting for external events, and for getting basic information
-       about the current workflow instance.
+    activities, durable timers, waiting for external events, and for getting basic information
+    about the current workflow instance.
     """
 
     @property
@@ -101,8 +101,9 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def call_activity(self, activity: Activity[TOutput], *,
-                      input: Optional[TInput] = None) -> task.Task[TOutput]:
+    def call_activity(
+        self, activity: Activity[TOutput], *, input: Optional[TInput] = None
+    ) -> task.Task[TOutput]:
         """Schedule an activity for execution.
 
         Parameters
@@ -122,9 +123,13 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def call_child_workflow(self, orchestrator: Workflow[TOutput], *,
-                            input: Optional[TInput] = None,
-                            instance_id: Optional[str] = None) -> task.Task[TOutput]:
+    def call_child_workflow(
+        self,
+        orchestrator: Workflow[TOutput],
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+    ) -> task.Task[TOutput]:
         """Schedule child-workflow function for execution.
 
         Parameters

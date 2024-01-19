@@ -19,10 +19,10 @@ import logging
 
 class LoggerOptions:
     def __init__(
-            self,
-            log_level: Union[str, None] = None,
-            log_handler: Union[logging.Handler, None] = None,
-            log_formatter: Union[logging.Formatter, None] = None,
+        self,
+        log_level: Union[str, None] = None,
+        log_handler: Union[logging.Handler, None] = None,
+        log_formatter: Union[logging.Formatter, None] = None,
     ):
         # Set default log level to INFO if none is provided
         if log_level is None:
@@ -34,7 +34,8 @@ class LoggerOptions:
         if log_formatter is None:
             log_formatter = logging.Formatter(
                 fmt="%(asctime)s.%(msecs)03d %(name)s %(levelname)s: %(message)s",
-                datefmt='%Y-%m-%d %H:%M:%S')
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
         self.log_level = log_level
         self.log_handler = log_handler
         self.log_formatter = log_formatter
