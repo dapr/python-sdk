@@ -21,12 +21,12 @@ from unittest import mock
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from durabletask import client
 
-mock_schedule_result = "workflow001"
-mock_raise_event_result = "event001"
-mock_terminate_result = "terminate001"
-mock_suspend_result = "suspend001"
-mock_resume_result = "resume001"
-mockInstanceId = "instance001"
+mock_schedule_result = 'workflow001'
+mock_raise_event_result = 'event001'
+mock_terminate_result = 'terminate001'
+mock_suspend_result = 'suspend001'
+mock_resume_result = 'resume001'
+mockInstanceId = 'instance001'
 
 
 class FakeTaskHubGrpcClient:
@@ -61,7 +61,7 @@ class FakeTaskHubGrpcClient:
     def _inner_get_orchestration_state(self, instance_id, state: client.OrchestrationStatus):
         return client.OrchestrationState(
             instance_id=instance_id,
-            name="",
+            name='',
             runtime_status=state,
             created_at=datetime.now(),
             last_updated_at=datetime.now(),
@@ -74,43 +74,43 @@ class FakeTaskHubGrpcClient:
 
 class WorkflowClientTest(unittest.TestCase):
     def mock_client_wf(ctx: DaprWorkflowContext, input):
-        print(f"{input}")
+        print(f'{input}')
 
     def test_client_functions(self):
         with mock.patch(
-            "durabletask.client.TaskHubGrpcClient", return_value=FakeTaskHubGrpcClient()
+            'durabletask.client.TaskHubGrpcClient', return_value=FakeTaskHubGrpcClient()
         ):
             wfClient = DaprWorkflowClient()
             actual_schedule_result = wfClient.schedule_new_workflow(
-                workflow=self.mock_client_wf, input="Hi Chef!"
+                workflow=self.mock_client_wf, input='Hi Chef!'
             )
             assert actual_schedule_result == mock_schedule_result
 
             actual_get_result = wfClient.get_workflow_state(
                 instance_id=mockInstanceId, fetch_payloads=True
             )
-            assert actual_get_result.runtime_status.name == "PENDING"
+            assert actual_get_result.runtime_status.name == 'PENDING'
             assert actual_get_result.instance_id == mockInstanceId
 
             actual_wait_start_result = wfClient.wait_for_workflow_start(
                 instance_id=mockInstanceId, timeout_in_seconds=30
             )
-            assert actual_wait_start_result.runtime_status.name == "RUNNING"
+            assert actual_wait_start_result.runtime_status.name == 'RUNNING'
             assert actual_wait_start_result.instance_id == mockInstanceId
 
             actual_wait_completion_result = wfClient.wait_for_workflow_completion(
                 instance_id=mockInstanceId, timeout_in_seconds=30
             )
-            assert actual_wait_completion_result.runtime_status.name == "COMPLETED"
+            assert actual_wait_completion_result.runtime_status.name == 'COMPLETED'
             assert actual_wait_completion_result.instance_id == mockInstanceId
 
             actual_raise_event_result = wfClient.raise_workflow_event(
-                instance_id=mockInstanceId, event_name="test_event", data="test_data"
+                instance_id=mockInstanceId, event_name='test_event', data='test_data'
             )
             assert actual_raise_event_result == mock_raise_event_result
 
             actual_terminate_result = wfClient.terminate_workflow(
-                instance_id=mockInstanceId, output="test_output"
+                instance_id=mockInstanceId, output='test_output'
             )
             assert actual_terminate_result == mock_terminate_result
 

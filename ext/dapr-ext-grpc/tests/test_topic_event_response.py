@@ -26,7 +26,7 @@ class TopicEventResponseTests(unittest.TestCase):
 
     def test_topic_event_response_creation_fails(self):
         with self.assertRaises(KeyError):
-            TopicEventResponse("invalid")
+            TopicEventResponse('invalid')
 
     def test_topic_event_response_creation_from_str(self):
         for status in TopicEventResponseStatus:
@@ -38,5 +38,5 @@ class TopicEventResponseTests(unittest.TestCase):
             TopicEventResponse(None)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

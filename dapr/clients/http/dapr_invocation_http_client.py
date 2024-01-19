@@ -24,8 +24,8 @@ from dapr.clients.grpc._response import InvokeMethodResponse
 from dapr.serializers import DefaultJSONSerializer
 from dapr.version import __version__
 
-USER_AGENT_HEADER = "User-Agent"
-DAPR_USER_AGENT = f"dapr-python-sdk/{__version__}"
+USER_AGENT_HEADER = 'User-Agent'
+DAPR_USER_AGENT = f'dapr-python-sdk/{__version__}'
 
 
 class DaprInvocationHttpClient:
@@ -72,7 +72,7 @@ class DaprInvocationHttpClient:
             InvokeMethodResponse: the response from the method invocation.
         """
 
-        verb = "GET"
+        verb = 'GET'
         if http_verb is not None:
             verb = http_verb
 
@@ -91,12 +91,12 @@ class DaprInvocationHttpClient:
 
         headers[USER_AGENT_HEADER] = DAPR_USER_AGENT
 
-        url = f"{self._client.get_api_url()}/invoke/{app_id}/method/{method_name}"
+        url = f'{self._client.get_api_url()}/invoke/{app_id}/method/{method_name}'
 
         if isinstance(data, GrpcMessage):
             body = data.SerializeToString()
         elif isinstance(data, str):
-            body = data.encode("utf-8")
+            body = data.encode('utf-8')
         else:
             body = data
 

@@ -30,7 +30,7 @@ class DaprApp:
         self._subscriptions: List[Dict[str, object]] = []
 
         self._app.add_url_rule(
-            "/dapr/subscribe", "/dapr/subscribe", self._get_subscriptions, methods=["GET"]
+            '/dapr/subscribe', '/dapr/subscribe', self._get_subscriptions, methods=['GET']
         )
 
     def subscribe(
@@ -74,18 +74,18 @@ class DaprApp:
         """
 
         def decorator(func):
-            event_handler_route = f"/events/{pubsub}/{topic}" if route is None else route
+            event_handler_route = f'/events/{pubsub}/{topic}' if route is None else route
 
-            self._app.add_url_rule(event_handler_route, event_handler_route, func, methods=["POST"])
+            self._app.add_url_rule(event_handler_route, event_handler_route, func, methods=['POST'])
 
             self._subscriptions.append(
                 {
-                    "pubsubname": pubsub,
-                    "topic": topic,
-                    "route": event_handler_route,
-                    "metadata": metadata,
+                    'pubsubname': pubsub,
+                    'topic': topic,
+                    'route': event_handler_route,
+                    'metadata': metadata,
                     **(
-                        {"deadLetterTopic": dead_letter_topic}
+                        {'deadLetterTopic': dead_letter_topic}
                         if dead_letter_topic is not None
                         else {}
                     ),

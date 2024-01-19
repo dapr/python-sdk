@@ -73,7 +73,7 @@ class StateItem:
             ValueError: value is not bytes or str
         """
         if not isinstance(value, (bytes, str)):
-            raise ValueError(f"invalid type for data {type(value)}")
+            raise ValueError(f'invalid type for data {type(value)}')
 
         self._key = key
         self._value = value

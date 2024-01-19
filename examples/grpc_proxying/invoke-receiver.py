@@ -10,13 +10,13 @@ import json
 class HelloWorldService(helloworld_service_pb2_grpc.HelloWorldService):
     def SayHello(self, request: HelloRequest, context: grpc.aio.ServicerContext) -> HelloReply:
         logging.info(request)
-        return HelloReply(message="Hello, %s!" % request.name)
+        return HelloReply(message='Hello, %s!' % request.name)
 
 
 app = App()
 
-if __name__ == "__main__":
-    print("starting the HelloWorld Service")
+if __name__ == '__main__':
+    print('starting the HelloWorld Service')
     logging.basicConfig(level=logging.INFO)
     app.add_external_service(
         helloworld_service_pb2_grpc.add_HelloWorldServiceServicer_to_server, HelloWorldService()

@@ -18,9 +18,9 @@ from typing import Callable, TypeVar
 
 from durabletask import task
 
-T = TypeVar("T")
-TInput = TypeVar("TInput")
-TOutput = TypeVar("TOutput")
+T = TypeVar('T')
+TInput = TypeVar('TInput')
+TOutput = TypeVar('TOutput')
 
 
 class WorkflowActivityContext:

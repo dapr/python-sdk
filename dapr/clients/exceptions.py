@@ -15,8 +15,8 @@ limitations under the License.
 
 from typing import Optional
 
-ERROR_CODE_UNKNOWN = "UNKNOWN"
-ERROR_CODE_DOES_NOT_EXIST = "ERR_DOES_NOT_EXIST"
+ERROR_CODE_UNKNOWN = 'UNKNOWN'
+ERROR_CODE_DOES_NOT_EXIST = 'ERR_DOES_NOT_EXIST'
 
 
 class DaprInternalError(Exception):
@@ -34,7 +34,7 @@ class DaprInternalError(Exception):
 
     def as_dict(self):
         return {
-            "message": self._message,
-            "errorCode": self._error_code,
-            "raw_response_bytes": self._raw_response_bytes,
+            'message': self._message,
+            'errorCode': self._error_code,
+            'raw_response_bytes': self._raw_response_bytes,
         }

@@ -128,27 +128,27 @@ class DaprGrpcClientAsync:
             max_grpc_messsage_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
         """
-        useragent = f"dapr-sdk-python/{__version__}"
+        useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
             options = [
-                ("grpc.primary_user_agent", useragent),
+                ('grpc.primary_user_agent', useragent),
             ]
         else:
             options = [
-                ("grpc.max_send_message_length", max_grpc_message_length),
-                ("grpc.max_receive_message_length", max_grpc_message_length),
-                ("grpc.primary_user_agent", useragent),
+                ('grpc.max_send_message_length', max_grpc_message_length),
+                ('grpc.max_receive_message_length', max_grpc_message_length),
+                ('grpc.primary_user_agent', useragent),
             ]
 
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or (
-                f"{settings.DAPR_RUNTIME_HOST}:" f"{settings.DAPR_GRPC_PORT}"
+                f'{settings.DAPR_RUNTIME_HOST}:' f'{settings.DAPR_GRPC_PORT}'
             )
 
         try:
             self._uri = GrpcEndpoint(address)
         except ValueError as error:
-            raise DaprInternalError(f"{error}") from error
+            raise DaprInternalError(f'{error}') from error
 
         if self._uri.tls:
             self._channel = grpc.aio.secure_channel(
@@ -160,7 +160,7 @@ class DaprGrpcClientAsync:
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptorAsync(
                 [
-                    ("dapr-api-token", settings.DAPR_API_TOKEN),
+                    ('dapr-api-token', settings.DAPR_API_TOKEN),
                 ]
             )
             self._channel = grpc.aio.insecure_channel(  # type: ignore
@@ -178,7 +178,7 @@ class DaprGrpcClientAsync:
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
-        if hasattr(self, "_channel") and self._channel:
+        if hasattr(self, '_channel') and self._channel:
             await self._channel.close()
 
     async def __aenter__(self) -> Self:  # type: ignore
@@ -200,7 +200,7 @@ class DaprGrpcClientAsync:
         self,
         app_id: str,
         method_name: str,
-        data: Union[bytes, str, GrpcMessage] = "",
+        data: Union[bytes, str, GrpcMessage] = '',
         content_type: Optional[str] = None,
         metadata: Optional[MetadataTuple] = None,
         http_verb: Optional[str] = None,
@@ -281,14 +281,14 @@ class DaprGrpcClientAsync:
             :class:`InvokeMethodResponse` object returned from callee
         """
         warn(
-            "invoke_method with protocol gRPC is deprecated. Use gRPC proxying instead.",
+            'invoke_method with protocol gRPC is deprecated. Use gRPC proxying instead.',
             DeprecationWarning,
             stacklevel=2,
         )
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -298,7 +298,7 @@ class DaprGrpcClientAsync:
         if http_verb:
             http_ext = self._get_http_extension(http_verb, http_querystring)
 
-        content_type = ""
+        content_type = ''
         if req_data.content_type:
             content_type = req_data.content_type
         req = api_v1.InvokeServiceRequest(
@@ -322,7 +322,7 @@ class DaprGrpcClientAsync:
         self,
         binding_name: str,
         operation: str,
-        data: Union[bytes, str] = "",
+        data: Union[bytes, str] = '',
         binding_metadata: Dict[str, str] = {},
         metadata: Optional[MetadataTuple] = None,
     ) -> BindingResponse:
@@ -358,8 +358,8 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token "
-                "headers and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token '
+                'headers and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -419,23 +419,23 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if not isinstance(data, bytes) and not isinstance(data, str):
-            raise ValueError(f"invalid type for data {type(data)}")
+            raise ValueError(f'invalid type for data {type(data)}')
 
         req_data: bytes
         if isinstance(data, bytes):
             req_data = data
         else:
             if isinstance(data, str):
-                req_data = data.encode("utf-8")
+                req_data = data.encode('utf-8')
 
-        content_type = ""
+        content_type = ''
         if data_content_type:
             content_type = data_content_type
         req = api_v1.PublishEventRequest(
@@ -483,14 +483,14 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
         call = self._stub.GetState(req, metadata=metadata)
         response = await call
@@ -531,14 +531,14 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
         req = api_v1.GetBulkStateRequest(
             store_name=store_name, keys=keys, parallelism=parallelism, metadata=states_metadata
         )
@@ -593,13 +593,13 @@ class DaprGrpcClientAsync:
                 pagination token and results of the query
         """
         warn(
-            "The State Store Query API is an Alpha version and is subject to change.",
+            'The State Store Query API is an Alpha version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
         req = api_v1.QueryStateRequest(store_name=store_name, query=query, metadata=states_metadata)
         call = self._stub.QueryStateAlpha1(req)
         response = await call
@@ -663,19 +663,19 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if not isinstance(value, (bytes, str)):
-            raise ValueError(f"invalid type for data {type(value)}")
+            raise ValueError(f'invalid type for data {type(value)}')
 
         req_value = value
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
 
         if options is None:
             state_options = None
@@ -725,17 +725,17 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if not states or len(states) == 0:
-            raise ValueError("States to be saved cannot be empty")
+            raise ValueError('States to be saved cannot be empty')
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
 
         req_states = [
             common_v1.StateItem(
@@ -792,14 +792,14 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
         req_ops = [
             api_v1.TransactionalStateOperation(
                 operationType=o.operation_type.value,
@@ -858,14 +858,14 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("State store name cannot be empty")
+            raise ValueError('State store name cannot be empty')
 
         if options is None:
             state_options = None
@@ -923,8 +923,8 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -971,8 +971,8 @@ class DaprGrpcClientAsync:
         """
         if metadata is not None:
             warn(
-                "metadata argument is deprecated. Dapr already intercepts API token headers "
-                "and this is not needed.",
+                'metadata argument is deprecated. Dapr already intercepts API token headers '
+                'and this is not needed.',
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -1016,7 +1016,7 @@ class DaprGrpcClientAsync:
             and value obtained from the config store
         """
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("Config store name cannot be empty to get the configuration")
+            raise ValueError('Config store name cannot be empty to get the configuration')
 
         req = api_v1.GetConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata
@@ -1054,7 +1054,7 @@ class DaprGrpcClientAsync:
             id (str): subscription id, which can be used to unsubscribe later
         """
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
-            raise ValueError("Config store name cannot be empty to get the configuration")
+            raise ValueError('Config store name cannot be empty to get the configuration')
 
         configWatcher = ConfigurationWatcher()
         id = configWatcher.watch_configuration(
@@ -1113,7 +1113,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Distributed Lock API is an Alpha version and is subject to change.",
+            'The Distributed Lock API is an Alpha version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1121,7 +1121,7 @@ class DaprGrpcClientAsync:
             store_name=store_name, resource_id=resource_id, lock_owner=lock_owner
         )
         if not expiry_in_seconds or expiry_in_seconds < 1:
-            raise ValueError("expiry_in_seconds must be a positive number")
+            raise ValueError('expiry_in_seconds must be a positive number')
         # Actual tryLock invocation
         req = api_v1.TryLockRequest(
             store_name=store_name,
@@ -1157,7 +1157,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Distributed Lock API is an Alpha version and is subject to change.",
+            'The Distributed Lock API is an Alpha version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1206,7 +1206,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Workflow API is a Beta version and is subject to change.",
+            'The Workflow API is a Beta version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1223,11 +1223,11 @@ class DaprGrpcClientAsync:
             encoded_data = input
         else:
             try:
-                encoded_data = json.dumps(input).encode("utf-8") if input is not None else bytes([])
+                encoded_data = json.dumps(input).encode('utf-8') if input is not None else bytes([])
             except TypeError:
-                raise DaprInternalError("start_workflow: input data must be JSON serializable")
+                raise DaprInternalError('start_workflow: input data must be JSON serializable')
             except ValueError as e:
-                raise DaprInternalError(f"start_workflow JSON serialization error: {e}")
+                raise DaprInternalError(f'start_workflow JSON serialization error: {e}')
 
         # Actual start workflow invocation
         req = api_v1.StartWorkflowRequest(
@@ -1258,7 +1258,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Workflow API is a Beta version and is subject to change.",
+            'The Workflow API is a Beta version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1300,7 +1300,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Workflow API is a Beta version and is subject to change.",
+            'The Workflow API is a Beta version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1345,7 +1345,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Workflow API is a Beta version and is subject to change.",
+            'The Workflow API is a Beta version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1358,18 +1358,18 @@ class DaprGrpcClientAsync:
             if event_data is not None:
                 try:
                     encoded_data = (
-                        json.dumps(event_data).encode("utf-8")
+                        json.dumps(event_data).encode('utf-8')
                         if event_data is not None
                         else bytes([])
                     )
                 except TypeError:
                     raise DaprInternalError(
-                        "raise_workflow_event:\
-                                             event_data must be JSON serializable"
+                        'raise_workflow_event:\
+                                             event_data must be JSON serializable'
                     )
                 except ValueError as e:
-                    raise DaprInternalError(f"raise_workflow_event JSON serialization error: {e}")
-                encoded_data = json.dumps(event_data).encode("utf-8")
+                    raise DaprInternalError(f'raise_workflow_event JSON serialization error: {e}')
+                encoded_data = json.dumps(event_data).encode('utf-8')
             else:
                 encoded_data = bytes([])
         # Actual workflow raise event invocation
@@ -1401,7 +1401,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Workflow API is a Beta version and is subject to change.",
+            'The Workflow API is a Beta version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1432,7 +1432,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Workflow API is a Beta version and is subject to change.",
+            'The Workflow API is a Beta version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1463,7 +1463,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            "The Workflow API is a Beta version and is subject to change.",
+            'The Workflow API is a Beta version and is subject to change.',
             UserWarning,
             stacklevel=2,
         )

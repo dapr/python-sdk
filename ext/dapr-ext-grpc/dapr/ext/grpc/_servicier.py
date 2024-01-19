@@ -32,7 +32,7 @@ InvokeMethodCallable = Callable[[InvokeMethodRequest], Union[str, bytes, InvokeM
 TopicSubscribeCallable = Callable[[v1.Event], Optional[TopicEventResponse]]
 BindingCallable = Callable[[BindingRequest], None]
 
-DELIMITER = ":"
+DELIMITER = ':'
 
 
 class Rule:
@@ -73,7 +73,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
     def register_method(self, method: str, cb: InvokeMethodCallable) -> None:
         """Registers method for service invocation."""
         if method in self._invoke_method_map:
-            raise ValueError(f"{method} is already registered")
+            raise ValueError(f'{method} is already registered')
         self._invoke_method_map[method] = cb
 
     def register_topic(
@@ -93,10 +93,10 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             topic_key = pubsub_name
         pubsub_topic = topic_key + DELIMITER
         if rule is not None:
-            path = getattr(cb, "__name__", rule.match)
+            path = getattr(cb, '__name__', rule.match)
             pubsub_topic = pubsub_topic + path
         if pubsub_topic in self._topic_map:
-            raise ValueError(f"{topic} is already registered with {pubsub_name}")
+            raise ValueError(f'{topic} is already registered with {pubsub_name}')
         self._topic_map[pubsub_topic] = cb
 
         registered_topic = self._registered_topics_map.get(topic_key)
@@ -119,7 +119,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         rules = registered_topic.rules
 
         if rule:
-            path = getattr(cb, "__name__", rule.match)
+            path = getattr(cb, '__name__', rule.match)
             rules.append((rule.priority, appcallback_v1.TopicRule(match=rule.match, path=path)))
             rules.sort(key=lambda x: x[0])
             rs = [rule for id, rule in rules]
@@ -129,7 +129,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
     def register_binding(self, name: str, cb: BindingCallable) -> None:
         """Registers input bindings."""
         if name in self._binding_map:
-            raise ValueError(f"{name} is already registered")
+            raise ValueError(f'{name} is already registered')
         self._binding_map[name] = cb
         self._registered_bindings.append(name)
 
@@ -137,7 +137,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         """Invokes service method with InvokeRequest."""
         if request.method not in self._invoke_method_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(f"{request.method} method not implemented!")
+            raise NotImplementedError(f'{request.method} method not implemented!')
 
         req = InvokeMethodRequest(request.data, request.content_type)
         req.metadata = context.invocation_metadata()
@@ -156,13 +156,13 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             resp_data = resp
         else:
             context.set_code(grpc.StatusCode.OUT_OF_RANGE)
-            context.set_details(f"{type(resp)} is the invalid return type.")
-            raise NotImplementedError(f"{request.method} method not implemented!")
+            context.set_details(f'{type(resp)} is the invalid return type.')
+            raise NotImplementedError(f'{request.method} method not implemented!')
 
         if len(resp_data.get_headers()) > 0:
             context.send_initial_metadata(resp_data.get_headers())
 
-        content_type = ""
+        content_type = ''
         if resp_data.content_type:
             content_type = resp_data.content_type
 
@@ -182,14 +182,14 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
                 pubsub_topic = no_validation_key
             else:
                 context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-                raise NotImplementedError(f"topic {request.topic} is not implemented!")
+                raise NotImplementedError(f'topic {request.topic} is not implemented!')
 
         customdata: Struct = request.extensions
         extensions = dict()
         for k, v in customdata.items():
             extensions[k] = v
         for k, v in context.invocation_metadata():
-            extensions["_metadata_" + k] = v
+            extensions['_metadata_' + k] = v
 
         event = v1.Event()
         event.SetEventType(request.type)
@@ -216,7 +216,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         """
         if request.name not in self._binding_map:
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(f"{request.name} binding not implemented!")
+            raise NotImplementedError(f'{request.name} binding not implemented!')
 
         req = BindingRequest(request.data, dict(request.metadata))
         req.metadata = context.invocation_metadata()

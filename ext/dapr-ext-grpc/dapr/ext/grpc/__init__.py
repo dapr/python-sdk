@@ -20,10 +20,10 @@ from dapr.ext.grpc.app import App, Rule  # type:ignore
 
 
 __all__ = [
-    "App",
-    "Rule",
-    "InvokeMethodRequest",
-    "InvokeMethodResponse",
-    "BindingRequest",
-    "TopicEventResponse",
+    'App',
+    'Rule',
+    'InvokeMethodRequest',
+    'InvokeMethodResponse',
+    'BindingRequest',
+    'TopicEventResponse',
 ]

@@ -18,9 +18,9 @@ from datetime import timedelta
 
 from durabletask import task
 
-T = TypeVar("T")
-TInput = TypeVar("TInput")
-TOutput = TypeVar("TOutput")
+T = TypeVar('T')
+TInput = TypeVar('TInput')
+TOutput = TypeVar('TOutput')
 
 
 class RetryPolicy:
@@ -49,15 +49,15 @@ class RetryPolicy:
         """
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
-            raise ValueError("first_retry_interval must be >= 0")
+            raise ValueError('first_retry_interval must be >= 0')
         if max_number_of_attempts < 1:
-            raise ValueError("max_number_of_attempts must be >= 1")
+            raise ValueError('max_number_of_attempts must be >= 1')
         if backoff_coefficient is not None and backoff_coefficient < 1:
-            raise ValueError("backoff_coefficient must be >= 1")
+            raise ValueError('backoff_coefficient must be >= 1')
         if max_retry_interval is not None and max_retry_interval < timedelta(seconds=0):
-            raise ValueError("max_retry_interval must be >= 0")
+            raise ValueError('max_retry_interval must be >= 0')
         if retry_timeout is not None and retry_timeout < timedelta(seconds=0):
-            raise ValueError("retry_timeout must be >= 0")
+            raise ValueError('retry_timeout must be >= 0')
 
         self._obj = task.RetryPolicy(
             first_retry_interval=first_retry_interval,

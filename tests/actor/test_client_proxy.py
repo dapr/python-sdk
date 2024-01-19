@@ -49,53 +49,53 @@ class ActorProxyTests(unittest.TestCase):
         self._fake_factory = FakeActoryProxyFactory(self._fake_client)
         self._proxy = ActorProxy.create(
             FakeMultiInterfacesActor.__name__,
-            ActorId("fake-id"),
+            ActorId('fake-id'),
             FakeActorCls2Interface,
             self._fake_factory,
         )
 
     @mock.patch(
-        "tests.actor.fake_client.FakeDaprActorClient.invoke_method",
+        'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'),
     )
     def test_invoke(self):
-        response = _run(self._proxy.invoke_method("ActionMethod", b"arg0"))
+        response = _run(self._proxy.invoke_method('ActionMethod', b'arg0'))
         self.assertEqual(b'"expected_response"', response)
         self._fake_client.invoke_method.mock.assert_called_once_with(
-            FakeMultiInterfacesActor.__name__, "fake-id", "ActionMethod", b"arg0"
+            FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0'
         )
 
     @mock.patch(
-        "tests.actor.fake_client.FakeDaprActorClient.invoke_method",
+        'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'),
     )
     def test_invoke_no_arg(self):
-        response = _run(self._proxy.invoke_method("ActionMethodWithoutArg"))
+        response = _run(self._proxy.invoke_method('ActionMethodWithoutArg'))
         self.assertEqual(b'"expected_response"', response)
         self._fake_client.invoke_method.mock.assert_called_once_with(
-            FakeMultiInterfacesActor.__name__, "fake-id", "ActionMethodWithoutArg", None
+            FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethodWithoutArg', None
         )
 
     @mock.patch(
-        "tests.actor.fake_client.FakeDaprActorClient.invoke_method",
+        'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'),
     )
     def test_invoke_with_static_typing(self):
-        response = _run(self._proxy.ActionMethod(b"arg0"))
-        self.assertEqual("expected_response", response)
+        response = _run(self._proxy.ActionMethod(b'arg0'))
+        self.assertEqual('expected_response', response)
         self._fake_client.invoke_method.mock.assert_called_once_with(
-            FakeMultiInterfacesActor.__name__, "fake-id", "ActionMethod", b"arg0"
+            FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethod', b'arg0'
         )
 
     @mock.patch(
-        "tests.actor.fake_client.FakeDaprActorClient.invoke_method",
+        'tests.actor.fake_client.FakeDaprActorClient.invoke_method',
         new=_async_mock(return_value=b'"expected_response"'),
     )
     def test_invoke_with_static_typing_no_arg(self):
         response = _run(self._proxy.ActionMethodWithoutArg())
-        self.assertEqual("expected_response", response)
+        self.assertEqual('expected_response', response)
         self._fake_client.invoke_method.mock.assert_called_once_with(
-            FakeMultiInterfacesActor.__name__, "fake-id", "ActionMethodWithoutArg", None
+            FakeMultiInterfacesActor.__name__, 'fake-id', 'ActionMethodWithoutArg', None
         )
 
     def test_raise_exception_non_existing_method(self):

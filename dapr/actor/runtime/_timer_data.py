@@ -97,13 +97,13 @@ class ActorTimerData:
         """
 
         timerDict: Dict[str, Any] = {
-            "callback": self._callback,
-            "data": self._state,
-            "dueTime": self._due_time,
-            "period": self._period,
+            'callback': self._callback,
+            'data': self._state,
+            'dueTime': self._due_time,
+            'period': self._period,
         }
 
         if self._ttl:
-            timerDict.update({"ttl": self._ttl})
+            timerDict.update({'ttl': self._ttl})
 
         return timerDict

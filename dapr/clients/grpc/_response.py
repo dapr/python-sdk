@@ -153,7 +153,7 @@ class InvokeMethodResponse(DaprResponse):
 
     def is_proto(self) -> bool:
         """Returns True if the response data is the serialized protocol buffer message."""
-        return hasattr(self, "_data") and self._data.type_url != ""
+        return hasattr(self, '_data') and self._data.type_url != ''
 
     @property
     def data(self) -> bytes:
@@ -164,7 +164,7 @@ class InvokeMethodResponse(DaprResponse):
             ValueError: the response data is the serialized protocol buffer message
         """
         if self.is_proto():
-            raise ValueError("data is protocol buffer message object.")
+            raise ValueError('data is protocol buffer message object.')
         return self._data.value
 
     @data.setter
@@ -181,7 +181,7 @@ class InvokeMethodResponse(DaprResponse):
         elif isinstance(val, (GrpcAny, GrpcMessage)):
             self.pack(val)
         else:
-            raise ValueError(f"invalid data type {type(val)}")
+            raise ValueError(f'invalid data type {type(val)}')
 
     def text(self) -> str:
         """Gets content as str if the response data content is not serialized
@@ -226,7 +226,7 @@ class InvokeMethodResponse(DaprResponse):
             self._data = GrpcAny()
             self._data.Pack(val)
         else:
-            raise ValueError("invalid data type")
+            raise ValueError('invalid data type')
 
     @property
     def status_code(self) -> Optional[int]:
@@ -250,7 +250,7 @@ class InvokeMethodResponse(DaprResponse):
                 matched with the response data type
         """
 
-        if self.content_type is not None and self.content_type.lower() == "application/x-protobuf":
+        if self.content_type is not None and self.content_type.lower() == 'application/x-protobuf':
             message.ParseFromString(self.data)
             return
 
@@ -373,7 +373,7 @@ class StateResponse(DaprResponse):
         headers (Tuple, optional): the headers from Dapr gRPC response
     """
 
-    def __init__(self, data: Union[bytes, str], etag: str = "", headers: MetadataTuple = ()):
+    def __init__(self, data: Union[bytes, str], etag: str = '', headers: MetadataTuple = ()):
         """Initializes StateResponse from :obj:`runtime_v1.GetStateResponse`.
 
         Args:
@@ -423,7 +423,7 @@ class BulkStateItem:
         error (str): error when state was retrieved
     """
 
-    def __init__(self, key: str, data: Union[bytes, str], etag: str = "", error: str = ""):
+    def __init__(self, key: str, data: Union[bytes, str], etag: str = '', error: str = ''):
         """Initializes BulkStateItem item from :obj:`runtime_v1.BulkStateItem`.
 
         Args:
@@ -501,7 +501,7 @@ class QueryResponseItem:
         error (str): error when state was retrieved
     """
 
-    def __init__(self, key: str, value: bytes, etag: str = "", error: str = ""):
+    def __init__(self, key: str, value: bytes, etag: str = '', error: str = ''):
         """Initializes QueryResponseItem item from :obj:`runtime_v1.QueryStateItem`.
 
         Args:
@@ -558,7 +558,7 @@ class QueryResponse(DaprResponse):
     def __init__(
         self,
         results: Sequence[QueryResponseItem],
-        token: str = "",
+        token: str = '',
         metadata: Dict[str, str] = dict(),
         headers: MetadataTuple = (),
     ):
@@ -664,7 +664,7 @@ class ConfigurationResponse(DaprResponse):
 class ConfigurationWatcher:
     def __init__(self):
         self.event: threading.Event = threading.Event()
-        self.id: str = ""
+        self.id: str = ''
 
     def watch_configuration(
         self,
@@ -684,7 +684,7 @@ class ConfigurationWatcher:
         self.store_name = store_name
         check = self.event.wait(timeout=5)
         if not check:
-            print(f"Unable to get configuration id for keys {self.keys}")
+            print(f'Unable to get configuration id for keys {self.keys}')
             return None
         return self.id
 
@@ -705,7 +705,7 @@ class ConfigurationWatcher:
                 if len(response.items) > 0:
                     handler(response.id, ConfigurationResponse(response.items))
         except Exception:
-            print(f"{self.store_name} configuration watcher for keys " f"{self.keys} stopped.")
+            print(f'{self.store_name} configuration watcher for keys ' f'{self.keys} stopped.')
             pass
 
 
@@ -738,7 +738,7 @@ class TopicEventResponse(DaprResponse):
         """
         super(TopicEventResponse, self).__init__(headers)
         values = [e.name for e in TopicEventResponseStatus]
-        errormsg = f"`status` must be one of {values} or a TopicEventResponseStatus"
+        errormsg = f'`status` must be one of {values} or a TopicEventResponseStatus'
 
         if isinstance(status, str):
             try:
@@ -871,7 +871,7 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
             )
         # else: there is no point unlocking a lock we did not acquire.
 
-    async def __aenter__(self) -> "TryLockResponse":
+    async def __aenter__(self) -> 'TryLockResponse':
         """Returns self as the context manager object."""
         return self
 

@@ -3,7 +3,7 @@ from dapr.ext.grpc import App, BindingRequest
 app = App()
 
 
-@app.binding("kafkaBinding")
+@app.binding('kafkaBinding')
 def binding(request: BindingRequest):
     print(request.text(), flush=True)
 

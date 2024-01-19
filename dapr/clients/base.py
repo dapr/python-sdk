@@ -17,8 +17,8 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 
-DEFAULT_ENCODING = "utf-8"
-DEFAULT_JSON_CONTENT_TYPE = f"application/json; charset={DEFAULT_ENCODING}"
+DEFAULT_ENCODING = 'utf-8'
+DEFAULT_JSON_CONTENT_TYPE = f'application/json; charset={DEFAULT_ENCODING}'
 
 
 class DaprActorClientBase(ABC):

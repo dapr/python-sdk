@@ -17,7 +17,7 @@ from dapr.ext.fastapi import DaprActor  # type: ignore
 from demo_actor import DemoActor
 
 
-app = FastAPI(title=f"{DemoActor.__name__}Service")
+app = FastAPI(title=f'{DemoActor.__name__}Service')
 
 # This is an optional advanced configuration which enables reentrancy only for the
 # specified actor type. By default reentrancy is not enabled for all actor types.
@@ -31,7 +31,7 @@ ActorRuntime.set_actor_config(config)
 actor = DaprActor(app)
 
 
-@app.on_event("startup")
+@app.on_event('startup')
 async def startup_event():
     # Register DemoActor
     await actor.register_actor(DemoActor)

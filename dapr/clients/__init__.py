@@ -25,11 +25,11 @@ from dapr.conf import settings
 from google.protobuf.message import Message as GrpcMessage
 
 __all__ = [
-    "DaprClient",
-    "DaprActorClientBase",
-    "DaprActorHttpClient",
-    "DaprInternalError",
-    "ERROR_CODE_UNKNOWN",
+    'DaprClient',
+    'DaprActorClientBase',
+    'DaprActorHttpClient',
+    'DaprInternalError',
+    'ERROR_CODE_UNKNOWN',
 ]
 
 from grpc import (  # type: ignore
@@ -81,24 +81,24 @@ class DaprClient(DaprGrpcClient):
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
 
-        if invocation_protocol == "HTTP":
+        if invocation_protocol == 'HTTP':
             if http_timeout_seconds is None:
                 http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
             self.invocation_client = DaprInvocationHttpClient(
                 headers_callback=headers_callback, timeout=http_timeout_seconds, address=address
             )
-        elif invocation_protocol == "GRPC":
+        elif invocation_protocol == 'GRPC':
             pass
         else:
             raise DaprInternalError(
-                f"Unknown value for DAPR_API_METHOD_INVOCATION_PROTOCOL: {invocation_protocol}"
+                f'Unknown value for DAPR_API_METHOD_INVOCATION_PROTOCOL: {invocation_protocol}'
             )
 
     def invoke_method(
         self,
         app_id: str,
         method_name: str,
-        data: Union[bytes, str, GrpcMessage] = "",
+        data: Union[bytes, str, GrpcMessage] = '',
         content_type: Optional[str] = None,
         metadata: Optional[MetadataTuple] = None,
         http_verb: Optional[str] = None,
@@ -171,7 +171,7 @@ class DaprClient(DaprGrpcClient):
         """
         if self.invocation_client:
             warn(
-                "Async invocation is deprecated. Please use `dapr.aio.clients.DaprClient`.",
+                'Async invocation is deprecated. Please use `dapr.aio.clients.DaprClient`.',
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -187,5 +187,5 @@ class DaprClient(DaprGrpcClient):
             )
         else:
             raise NotImplementedError(
-                "Please use `dapr.aio.clients.DaprClient` for async invocation"
+                'Please use `dapr.aio.clients.DaprClient` for async invocation'
             )

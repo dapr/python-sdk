@@ -85,7 +85,7 @@ class ActorRuntime:
         """
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
-            raise ValueError(f"{actor_type_name} is not registered.")
+            raise ValueError(f'{actor_type_name} is not registered.')
         await manager.deactivate_actor(ActorId(actor_id))
 
     @classmethod
@@ -116,7 +116,7 @@ class ActorRuntime:
         reentrancy_ctx.set(reentrancy_id)
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
-            raise ValueError(f"{actor_type_name} is not registered.")
+            raise ValueError(f'{actor_type_name} is not registered.')
         return await manager.dispatch(ActorId(actor_id), actor_method_name, request_body)
 
     @classmethod
@@ -137,7 +137,7 @@ class ActorRuntime:
 
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
-            raise ValueError(f"{actor_type_name} is not registered.")
+            raise ValueError(f'{actor_type_name} is not registered.')
         await manager.fire_reminder(ActorId(actor_id), name, state)
 
     @classmethod
@@ -155,7 +155,7 @@ class ActorRuntime:
         """
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
-            raise ValueError(f"{actor_type_name} is not registered.")
+            raise ValueError(f'{actor_type_name} is not registered.')
         await manager.fire_timer(ActorId(actor_id), name, state)
 
     @classmethod

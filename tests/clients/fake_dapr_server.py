@@ -50,17 +50,17 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.metadata: Dict[str, str] = {}
 
     def start(self, port: int = 8080):
-        self._server.add_insecure_port(f"[::]:{port}")
+        self._server.add_insecure_port(f'[::]:{port}')
         self._server.start()
 
     def start_secure(self, port: int = 4443):
         create_certificates()
 
-        private_key_file = open(PRIVATE_KEY_PATH, "rb")
+        private_key_file = open(PRIVATE_KEY_PATH, 'rb')
         private_key_content = private_key_file.read()
         private_key_file.close()
 
-        certificate_chain_file = open(CERTIFICATE_CHAIN_PATH, "rb")
+        certificate_chain_file = open(CERTIFICATE_CHAIN_PATH, 'rb')
         certificate_chain_content = certificate_chain_file.read()
         certificate_chain_file.close()
 
@@ -68,7 +68,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             [(private_key_content, certificate_chain_content)]
         )
 
-        self._server.add_secure_port(f"[::]:{port}", credentials)
+        self._server.add_secure_port(f'[::]:{port}', credentials)
         self._server.start()
 
     def stop(self):
@@ -83,13 +83,13 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         trailers = ()
 
         for k, v in context.invocation_metadata():
-            headers = headers + (("h" + k, v),)
-            trailers = trailers + (("t" + k, v),)
+            headers = headers + (('h' + k, v),)
+            trailers = trailers + (('t' + k, v),)
 
         resp = GrpcAny()
-        content_type = ""
+        content_type = ''
 
-        if request.message.method == "bytes":
+        if request.message.method == 'bytes':
             resp.value = request.message.data.value
             content_type = request.message.content_type
         else:
@@ -105,13 +105,13 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         trailers = ()
 
         for k, v in request.metadata.items():
-            headers = headers + (("h" + k, v),)
-            trailers = trailers + (("t" + k, v),)
+            headers = headers + (('h' + k, v),)
+            trailers = trailers + (('t' + k, v),)
 
-        resp_data = b"INVALID"
+        resp_data = b'INVALID'
         metadata = {}
 
-        if request.operation == "create":
+        if request.operation == 'create':
             resp_data = request.data
             metadata = request.metadata
 
@@ -124,18 +124,18 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         headers = ()
         trailers = ()
         if request.topic:
-            headers = headers + (("htopic", request.topic),)
-            trailers = trailers + (("ttopic", request.topic),)
+            headers = headers + (('htopic', request.topic),)
+            trailers = trailers + (('ttopic', request.topic),)
         if request.data:
-            headers = headers + (("hdata", request.data),)
-            trailers = trailers + (("hdata", request.data),)
+            headers = headers + (('hdata', request.data),)
+            trailers = trailers + (('hdata', request.data),)
         if request.data_content_type:
-            headers = headers + (("data_content_type", request.data_content_type),)
-            trailers = trailers + (("data_content_type", request.data_content_type),)
-        if request.metadata["rawPayload"]:
-            headers = headers + (("metadata_raw_payload", request.metadata["rawPayload"]),)
-        if request.metadata["ttlInSeconds"]:
-            headers = headers + (("metadata_ttl_in_seconds", request.metadata["ttlInSeconds"]),)
+            headers = headers + (('data_content_type', request.data_content_type),)
+            trailers = trailers + (('data_content_type', request.data_content_type),)
+        if request.metadata['rawPayload']:
+            headers = headers + (('metadata_raw_payload', request.metadata['rawPayload']),)
+        if request.metadata['ttlInSeconds']:
+            headers = headers + (('metadata_ttl_in_seconds', request.metadata['ttlInSeconds']),)
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -146,12 +146,12 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         trailers = ()
         for state in request.states:
             data = state.value
-            if state.metadata["capitalize"]:
-                data = to_bytes(data.decode("utf-8").capitalize())
-            if state.HasField("etag"):
+            if state.metadata['capitalize']:
+                data = to_bytes(data.decode('utf-8').capitalize())
+            if state.HasField('etag'):
                 self.store[state.key] = (data, state.etag.value)
             else:
-                self.store[state.key] = (data, "ETAG_WAS_NONE")
+                self.store[state.key] = (data, 'ETAG_WAS_NONE')
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -161,11 +161,11 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         headers = ()
         trailers = ()
         for operation in request.operations:
-            if operation.operationType == "delete":
+            if operation.operationType == 'delete':
                 del self.store[operation.request.key]
             else:
-                etag = "ETAG_WAS_NONE"
-                if operation.request.HasField("etag"):
+                etag = 'ETAG_WAS_NONE'
+                if operation.request.HasField('etag'):
                     etag = operation.request.etag.value
                 self.store[operation.request.key] = (operation.request.value, etag)
 
@@ -179,8 +179,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return empty_pb2.Empty()
         else:
             data, etag = self.store[key]
-            if request.metadata["upper"]:
-                data = to_bytes(data.decode("utf-8").upper())
+            if request.metadata['upper']:
+                data = to_bytes(data.decode('utf-8').upper())
             return api_v1.GetStateResponse(data=data, etag=etag)
 
     def GetBulkState(self, request, context):
@@ -190,8 +190,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             res = self.GetState(req, context)
             data = res.data
             etag = res.etag
-            if request.metadata["upper"]:
-                data = to_bytes(data.decode("utf-8").upper())
+            if request.metadata['upper']:
+                data = to_bytes(data.decode('utf-8').upper())
             items.append(api_v1.BulkStateItem(key=key, etag=etag, data=data))
         return api_v1.GetBulkStateResponse(items=items)
 
@@ -202,8 +202,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         if key in self.store:
             del self.store[key]
         else:
-            if request.metadata["must_delete"]:
-                raise ValueError("delete failed")
+            if request.metadata['must_delete']:
+                raise ValueError('delete failed')
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -215,10 +215,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         key = request.key
 
-        headers = headers + (("keyh", key),)
-        trailers = trailers + (("keyt", key),)
+        headers = headers + (('keyh', key),)
+        trailers = trailers + (('keyt', key),)
 
-        resp = {key: "val"}
+        resp = {key: 'val'}
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -229,10 +229,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         headers = ()
         trailers = ()
 
-        headers = headers + (("keyh", "bulk"),)
-        trailers = trailers + (("keyt", "bulk"),)
+        headers = headers + (('keyh', 'bulk'),)
+        trailers = trailers + (('keyt', 'bulk'),)
 
-        resp = {"keya": api_v1.SecretResponse(secrets={"keyb": "val"})}
+        resp = {'keya': api_v1.SecretResponse(secrets={'keyb': 'val'})}
 
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
@@ -242,13 +242,13 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def GetConfiguration(self, request, context):
         items = dict()
         for key in request.keys:
-            items[str(key)] = ConfigurationItem(value="value", version="1.5.0")
+            items[str(key)] = ConfigurationItem(value='value', version='1.5.0')
         return api_v1.GetConfigurationResponse(items=items)
 
     def SubscribeConfiguration(self, request, context):
         items = []
         for key in request.keys:
-            item = {"key": key, "value": "value", "version": "1.5.0", "metadata": {}}
+            item = {'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}}
             items.append(item)
         response = {items: items}
         responses = []
@@ -260,19 +260,19 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
     def QueryStateAlpha1(self, request, context):
         items = [
-            QueryStateItem(key=str(key), data=bytes("value of " + str(key), "UTF-8"))
+            QueryStateItem(key=str(key), data=bytes('value of ' + str(key), 'UTF-8'))
             for key in range(1, 11)
         ]
         query = json.loads(request.query)
 
         tokenIndex = 1
-        if "page" in query:
-            if "token" in query["page"]:
+        if 'page' in query:
+            if 'token' in query['page']:
                 # For testing purposes, we return a token that is the same as the key
-                tokenIndex = int(query["page"]["token"])
+                tokenIndex = int(query['page']['token'])
                 items = items[tokenIndex - 1 :]
-            if "limit" in query["page"]:
-                limit = int(query["page"]["limit"])
+            if 'limit' in query['page']:
+                limit = int(query['page']['limit'])
                 if len(items) > limit:
                     items = items[:limit]
                 tokenIndex = tokenIndex + len(items)
@@ -308,16 +308,16 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return StartWorkflowResponse(instance_id=instance_id)
         else:
             # workflow already running
-            raise Exception("Unable to start insance of the workflow")
+            raise Exception('Unable to start insance of the workflow')
 
     def GetWorkflowBeta1(self, request: GetWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
-            status = str(self.workflow_status[instance_id])[len("WorkflowRuntimeStatus.") :]
+            status = str(self.workflow_status[instance_id])[len('WorkflowRuntimeStatus.') :]
             return GetWorkflowResponse(
                 instance_id=instance_id,
-                workflow_name="example",
+                workflow_name='example',
                 created_at=None,
                 last_updated_at=None,
                 runtime_status=status,
@@ -325,7 +325,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             )
         else:
             # workflow non-existent
-            raise Exception("Workflow instance does not exist")
+            raise Exception('Workflow instance does not exist')
 
     def PauseWorkflowBeta1(self, request: PauseWorkflowRequest, context):
         instance_id = request.instance_id
@@ -335,7 +335,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return empty_pb2.Empty()
         else:
             # workflow non-existent
-            raise Exception("Workflow instance could not be paused")
+            raise Exception('Workflow instance could not be paused')
 
     def ResumeWorkflowBeta1(self, request: ResumeWorkflowRequest, context):
         instance_id = request.instance_id
@@ -345,7 +345,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return empty_pb2.Empty()
         else:
             # workflow non-existent
-            raise Exception("Workflow instance could not be resumed")
+            raise Exception('Workflow instance could not be resumed')
 
     def TerminateWorkflowBeta1(self, request: TerminateWorkflowRequest, context):
         instance_id = request.instance_id
@@ -355,7 +355,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return empty_pb2.Empty()
         else:
             # workflow non-existent
-            raise Exception("Workflow instance could not be terminated")
+            raise Exception('Workflow instance could not be terminated')
 
     def PurgeWorkflowBeta1(self, request: PurgeWorkflowRequest, context):
         instance_id = request.instance_id
@@ -365,7 +365,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return empty_pb2.Empty()
         else:
             # workflow non-existent
-            raise Exception("Workflow instance could not be purged")
+            raise Exception('Workflow instance could not be purged')
 
     def RaiseEventWorkflowBeta1(self, request: RaiseEventWorkflowRequest, context):
         instance_id = request.instance_id
@@ -374,35 +374,35 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             self.workflow_options[instance_id] = request.event_data
             return empty_pb2.Empty()
         else:
-            raise Exception("Unable to raise event on workflow instance")
+            raise Exception('Unable to raise event on workflow instance')
 
     def GetMetadata(self, request, context):
         return GetMetadataResponse(
-            id="myapp",
+            id='myapp',
             active_actors_count=[
                 ActiveActorsCount(
-                    type="Nichelle Nichols",
+                    type='Nichelle Nichols',
                     count=1,
                 ),
             ],
             registered_components=[
                 RegisteredComponents(
-                    name="lockstore",
-                    type="lock.redis",
-                    version="",
+                    name='lockstore',
+                    type='lock.redis',
+                    version='',
                     # Missing capabilities definition,
                 ),
                 RegisteredComponents(
-                    name="pubsub", type="pubsub.redis", version="v1", capabilities=[]
+                    name='pubsub', type='pubsub.redis', version='v1', capabilities=[]
                 ),
                 RegisteredComponents(
-                    name="statestore",
-                    type="state.redis",
-                    version="v1",
+                    name='statestore',
+                    type='state.redis',
+                    version='v1',
                     capabilities=[
-                        "ETAG",
-                        "TRANSACTIONAL",
-                        "ACTOR",
+                        'ETAG',
+                        'TRANSACTIONAL',
+                        'ACTOR',
                     ],
                 ),
             ],

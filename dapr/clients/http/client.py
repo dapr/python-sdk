@@ -25,10 +25,10 @@ from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
 from dapr.version import __version__
 
-CONTENT_TYPE_HEADER = "content-type"
-DAPR_API_TOKEN_HEADER = "dapr-api-token"
-USER_AGENT_HEADER = "User-Agent"
-DAPR_USER_AGENT = f"dapr-sdk-python/{__version__}"
+CONTENT_TYPE_HEADER = 'content-type'
+DAPR_API_TOKEN_HEADER = 'dapr-api-token'
+USER_AGENT_HEADER = 'User-Agent'
+DAPR_USER_AGENT = f'dapr-sdk-python/{__version__}'
 
 
 class DaprHttpClient:
@@ -36,7 +36,7 @@ class DaprHttpClient:
 
     def __init__(
         self,
-        message_serializer: "Serializer",
+        message_serializer: 'Serializer',
         timeout: Optional[int] = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
         address: Optional[str] = None,
@@ -55,11 +55,11 @@ class DaprHttpClient:
 
     def get_api_url(self) -> str:
         if self._address:
-            return "{}/{}".format(self._address, settings.DAPR_API_VERSION)
+            return '{}/{}'.format(self._address, settings.DAPR_API_VERSION)
         if settings.DAPR_HTTP_ENDPOINT:
-            return "{}/{}".format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
+            return '{}/{}'.format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
         else:
-            return "http://{}:{}/{}".format(
+            return 'http://{}:{}/{}'.format(
                 settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
             )
 
@@ -109,21 +109,21 @@ class DaprHttpClient:
         try:
             error_body = await response.read()
             if (error_body is None or len(error_body) == 0) and response.status == 404:
-                return DaprInternalError("Not Found", ERROR_CODE_DOES_NOT_EXIST)
+                return DaprInternalError('Not Found', ERROR_CODE_DOES_NOT_EXIST)
             error_info = self._serializer.deserialize(error_body)
         except Exception:
             return DaprInternalError(
-                f"Unknown Dapr Error. HTTP status code: {response.status}",
+                f'Unknown Dapr Error. HTTP status code: {response.status}',
                 raw_response_bytes=error_body,
             )
 
         if error_info and isinstance(error_info, dict):
-            message = error_info.get("message")
-            error_code = error_info.get("errorCode") or ERROR_CODE_UNKNOWN
+            message = error_info.get('message')
+            error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
             return DaprInternalError(message, error_code, raw_response_bytes=error_body)
 
         return DaprInternalError(
-            f"Unknown Dapr Error. HTTP status code: {response.status}",
+            f'Unknown Dapr Error. HTTP status code: {response.status}',
             raw_response_bytes=error_body,
         )
 

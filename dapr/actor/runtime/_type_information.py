@@ -31,8 +31,8 @@ class ActorTypeInformation:
     def __init__(
         self,
         name: str,
-        implementation_class: Type["Actor"],
-        actor_bases: List[Type["ActorInterface"]],
+        implementation_class: Type['Actor'],
+        actor_bases: List[Type['ActorInterface']],
     ):
         self._name = name
         self._impl_type = implementation_class
@@ -44,12 +44,12 @@ class ActorTypeInformation:
         return self._name
 
     @property
-    def implementation_type(self) -> Type["Actor"]:
+    def implementation_type(self) -> Type['Actor']:
         """Returns Actor implementation type."""
         return self._impl_type
 
     @property
-    def actor_interfaces(self) -> List[Type["ActorInterface"]]:
+    def actor_interfaces(self) -> List[Type['ActorInterface']]:
         """Returns the list of :class:`ActorInterface` of this type."""
         return self._actor_bases
 
@@ -58,7 +58,7 @@ class ActorTypeInformation:
         return Remindable in self._impl_type.__bases__
 
     @classmethod
-    def create(cls, actor_class: Type["Actor"]) -> "ActorTypeInformation":
+    def create(cls, actor_class: Type['Actor']) -> 'ActorTypeInformation':
         """Creates :class:`ActorTypeInformation` for actor_class.
 
         Args:
@@ -69,10 +69,10 @@ class ActorTypeInformation:
                   and actor base class deriving :class:`ActorInterface`
         """
         if not is_dapr_actor(actor_class):
-            raise ValueError(f"{actor_class.__name__} is not actor")
+            raise ValueError(f'{actor_class.__name__} is not actor')
 
         actors = get_actor_interfaces(actor_class)
         if len(actors) == 0:
-            raise ValueError(f"{actor_class.__name__} does not implement ActorInterface")
+            raise ValueError(f'{actor_class.__name__} does not implement ActorInterface')
 
         return ActorTypeInformation(actor_class.__name__, actor_class, actors)

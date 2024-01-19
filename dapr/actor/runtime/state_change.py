@@ -16,7 +16,7 @@ limitations under the License.
 from enum import Enum
 from typing import TypeVar, Generic
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 class StateChangeKind(Enum):

@@ -24,8 +24,8 @@ from typing import Any, Callable, Dict, Generic, List, Tuple, TypeVar, Optional,
 if TYPE_CHECKING:
     from dapr.actor.runtime.actor import Actor
 
-T = TypeVar("T")
-CONTEXT: ContextVar[Optional[Dict[str, Any]]] = ContextVar("state_tracker_context")
+T = TypeVar('T')
+CONTEXT: ContextVar[Optional[Dict[str, Any]]] = ContextVar('state_tracker_context')
 
 
 class StateMetadata(Generic[T]):
@@ -51,17 +51,17 @@ class StateMetadata(Generic[T]):
 
 
 class ActorStateManager(Generic[T]):
-    def __init__(self, actor: "Actor"):
+    def __init__(self, actor: 'Actor'):
         self._actor = actor
         if not actor.runtime_ctx:
-            raise AttributeError("runtime context was not set")
+            raise AttributeError('runtime context was not set')
         self._type_name = actor.runtime_ctx.actor_type_info.type_name
 
         self._default_state_change_tracker: Dict[str, StateMetadata] = {}
 
     async def add_state(self, state_name: str, value: T) -> None:
         if not await self.try_add_state(state_name, value):
-            raise ValueError(f"The actor state name {state_name} already exist.")
+            raise ValueError(f'The actor state name {state_name} already exist.')
 
     async def try_add_state(self, state_name: str, value: T) -> bool:
         state_change_tracker = self._get_contextual_state_tracker()
@@ -86,7 +86,7 @@ class ActorStateManager(Generic[T]):
         if has_value:
             return val
         else:
-            raise KeyError(f"Actor State with name {state_name} was not found.")
+            raise KeyError(f'Actor State with name {state_name} was not found.')
 
     async def try_get_state(self, state_name: str) -> Tuple[bool, Optional[T]]:
         state_change_tracker = self._get_contextual_state_tracker()
@@ -126,7 +126,7 @@ class ActorStateManager(Generic[T]):
 
     async def remove_state(self, state_name: str) -> None:
         if not await self.try_remove_state(state_name):
-            raise KeyError(f"Actor State with name {state_name} was not found.")
+            raise KeyError(f'Actor State with name {state_name} was not found.')
 
     async def try_remove_state(self, state_name: str) -> bool:
         state_change_tracker = self._get_contextual_state_tracker()
@@ -174,7 +174,7 @@ class ActorStateManager(Generic[T]):
         self, state_name: str, value: T, update_value_factory: Callable[[str, T], T]
     ) -> T:
         if not callable(update_value_factory):
-            raise AttributeError("update_value_factory is not callable")
+            raise AttributeError('update_value_factory is not callable')
 
         state_change_tracker = self._get_contextual_state_tracker()
         if state_name in state_change_tracker:
@@ -254,13 +254,13 @@ class ActorStateManager(Generic[T]):
     def _get_contextual_state_tracker(self) -> Dict[str, StateMetadata]:
         context = CONTEXT.get(None)
         if context is not None and reentrancy_ctx.get(None) is not None:
-            return context["tracker"]
+            return context['tracker']
         else:
             return self._default_state_change_tracker
 
     def set_state_context(self, contextID: Optional[str]):
         if contextID is not None:
-            CONTEXT.set({"id": contextID, "tracker": {}})
+            CONTEXT.set({'id': contextID, 'tracker': {}})
         else:
             CONTEXT.set(None)
         return

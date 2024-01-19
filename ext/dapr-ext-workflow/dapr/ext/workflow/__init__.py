@@ -22,14 +22,14 @@ from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
 from dapr.ext.workflow.retry_policy import RetryPolicy
 
 __all__ = [
-    "WorkflowRuntime",
-    "DaprWorkflowClient",
-    "DaprWorkflowContext",
-    "WorkflowActivityContext",
-    "WorkflowState",
-    "WorkflowStatus",
-    "when_all",
-    "when_any",
-    "alternate_name",
-    "RetryPolicy",
+    'WorkflowRuntime',
+    'DaprWorkflowClient',
+    'DaprWorkflowContext',
+    'WorkflowActivityContext',
+    'WorkflowState',
+    'WorkflowStatus',
+    'when_all',
+    'when_any',
+    'alternate_name',
+    'RetryPolicy',
 ]

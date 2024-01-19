@@ -21,7 +21,7 @@ from grpc.aio import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ign
 
 class _ClientCallDetailsAsync(
     namedtuple(
-        "_ClientCallDetails", ["method", "timeout", "metadata", "credentials", "wait_for_ready"]
+        '_ClientCallDetails', ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready']
     ),
     ClientCallDetails,
 ):

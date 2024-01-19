@@ -19,18 +19,18 @@ from setuptools import setup
 
 # Load version in dapr package.
 version_info = {}
-with open("dapr/ext/grpc/version.py") as fp:
+with open('dapr/ext/grpc/version.py') as fp:
     exec(fp.read(), version_info)
-__version__ = version_info["__version__"]
+__version__ = version_info['__version__']
 
 
 def is_release():
-    return ".dev" not in __version__
+    return '.dev' not in __version__
 
 
-name = "dapr-ext-grpc"
+name = 'dapr-ext-grpc'
 version = __version__
-description = "The official release of Dapr Python SDK gRPC Extension."
+description = 'The official release of Dapr Python SDK gRPC Extension.'
 long_description = """
 This is the gRPC extension for Dapr.
 
@@ -45,15 +45,15 @@ or all of them in your application.
 """.lstrip()
 
 # Get build number from GITHUB_RUN_NUMBER environment variable
-build_number = os.environ.get("GITHUB_RUN_NUMBER", "0")
+build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 
 if not is_release():
-    name += "-dev"
-    version = f"{__version__}{build_number}"
-    description = "The developmental release for Dapr gRPC AppCallback."
-    long_description = "This is the developmental release for Dapr gRPC AppCallback."
+    name += '-dev'
+    version = f'{__version__}{build_number}'
+    description = 'The developmental release for Dapr gRPC AppCallback.'
+    long_description = 'This is the developmental release for Dapr gRPC AppCallback.'
 
-print(f"package name: {name}, version: {version}", flush=True)
+print(f'package name: {name}, version: {version}', flush=True)
 
 
 setup(

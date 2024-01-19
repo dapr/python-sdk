@@ -18,7 +18,7 @@ from dapr.actor.runtime.config import ActorRuntimeConfig, ActorTypeConfig, Actor
 from dapr.actor.runtime.runtime import ActorRuntime
 from demo_actor import DemoActor
 
-app = Flask(f"{DemoActor.__name__}Service")
+app = Flask(f'{DemoActor.__name__}Service')
 
 # This is an optional advanced configuration which enables reentrancy only for the
 # specified actor type. By default reentrancy is not enabled for all actor types.
@@ -35,10 +35,10 @@ actor.register_actor(DemoActor)
 
 
 # This route is optional.
-@app.route("/")
+@app.route('/')
 def index():
-    return jsonify({"status": "ok"}), 200
+    return jsonify({'status': 'ok'}), 200
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(port=settings.HTTP_APP_PORT)

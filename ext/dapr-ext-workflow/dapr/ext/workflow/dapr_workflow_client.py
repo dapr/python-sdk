@@ -29,9 +29,9 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.ext.workflow.logger import LoggerOptions, Logger
 
-T = TypeVar("T")
-TInput = TypeVar("TInput")
-TOutput = TypeVar("TOutput")
+T = TypeVar('T')
+TInput = TypeVar('TInput')
+TOutput = TypeVar('TOutput')
 
 
 class DaprWorkflowClient:
@@ -55,9 +55,9 @@ class DaprWorkflowClient:
         try:
             uri = GrpcEndpoint(address)
         except ValueError as error:
-            raise DaprInternalError(f"{error}") from error
+            raise DaprInternalError(f'{error}') from error
 
-        self._logger = Logger("DaprWorkflowClient", logger_options)
+        self._logger = Logger('DaprWorkflowClient', logger_options)
 
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
@@ -94,9 +94,9 @@ class DaprWorkflowClient:
         Returns:
             The ID of the scheduled workflow instance.
         """
-        if hasattr(workflow, "_dapr_alternate_name"):
+        if hasattr(workflow, '_dapr_alternate_name'):
             return self.__obj.schedule_new_orchestration(
-                workflow.__dict__["_dapr_alternate_name"],
+                workflow.__dict__['_dapr_alternate_name'],
                 input=input,
                 instance_id=instance_id,
                 start_at=start_at,

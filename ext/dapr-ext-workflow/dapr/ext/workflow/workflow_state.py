@@ -61,17 +61,17 @@ class WorkflowState:
 
     def to_json(self):
         return {
-            "instance_id": self.__obj.instance_id,
-            "name": self.__obj.name,
-            "runtime_status": self.__obj.runtime_status.name,
-            "created_at": self.__obj.created_at,
-            "last_updated_at": self.__obj.last_updated_at,
-            "serialized_input": self.__obj.serialized_input,
-            "serialized_output": self.__obj.serialized_output,
-            "serialized_custom_status": self.__obj.serialized_custom_status,
-            "failure_details": {
-                "message": self.__obj.failure_details.message,
-                "error_type": self.__obj.failure_details.error_type,
-                "stack_trace": self.__obj.failure_details.stack_trace,
+            'instance_id': self.__obj.instance_id,
+            'name': self.__obj.name,
+            'runtime_status': self.__obj.runtime_status.name,
+            'created_at': self.__obj.created_at,
+            'last_updated_at': self.__obj.last_updated_at,
+            'serialized_input': self.__obj.serialized_input,
+            'serialized_output': self.__obj.serialized_output,
+            'serialized_custom_status': self.__obj.serialized_custom_status,
+            'failure_details': {
+                'message': self.__obj.failure_details.message,
+                'error_type': self.__obj.failure_details.error_type,
+                'stack_trace': self.__obj.failure_details.stack_trace,
             },
         }

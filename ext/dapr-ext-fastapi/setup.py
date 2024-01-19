@@ -19,18 +19,18 @@ from setuptools import setup
 
 # Load version in dapr package.
 version_info = {}
-with open("dapr/ext/fastapi/version.py") as fp:
+with open('dapr/ext/fastapi/version.py') as fp:
     exec(fp.read(), version_info)
-__version__ = version_info["__version__"]
+__version__ = version_info['__version__']
 
 
 def is_release():
-    return ".dev" not in __version__
+    return '.dev' not in __version__
 
 
-name = "dapr-ext-fastapi"
+name = 'dapr-ext-fastapi'
 version = __version__
-description = "The official release of Dapr FastAPI extension."
+description = 'The official release of Dapr FastAPI extension.'
 long_description = """
 This is the FastAPI extension for Dapr.
 
@@ -45,15 +45,15 @@ or all of them in your application.
 """.lstrip()
 
 # Get build number from GITHUB_RUN_NUMBER environment variable
-build_number = os.environ.get("GITHUB_RUN_NUMBER", "0")
+build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 
 if not is_release():
-    name += "-dev"
-    version = f"{__version__}{build_number}"
-    description = "The developmental release for Dapr FastAPI extension."
-    long_description = "This is the developmental release for Dapr FastAPI extension."
+    name += '-dev'
+    version = f'{__version__}{build_number}'
+    description = 'The developmental release for Dapr FastAPI extension.'
+    long_description = 'This is the developmental release for Dapr FastAPI extension.'
 
-print(f"package name: {name}, version: {version}", flush=True)
+print(f'package name: {name}, version: {version}', flush=True)
 
 
 setup(

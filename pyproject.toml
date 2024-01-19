@@ -16,3 +16,5 @@ ignore = [
   # Undefined name {name}
   "F821",
 ]
+[tool.ruff.format]
+quote-style = 'single'

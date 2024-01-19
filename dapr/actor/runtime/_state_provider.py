@@ -23,9 +23,9 @@ from dapr.serializers import Serializer, DefaultJSONSerializer
 
 # Mapping StateChangeKind to Dapr State Operation
 _MAP_CHANGE_KIND_TO_OPERATION = {
-    StateChangeKind.remove: b"delete",
-    StateChangeKind.add: b"upsert",
-    StateChangeKind.update: b"upsert",
+    StateChangeKind.remove: b'delete',
+    StateChangeKind.add: b'upsert',
+    StateChangeKind.update: b'upsert',
 }
 
 
@@ -79,24 +79,24 @@ class StateProvider:
         """
 
         json_output = io.BytesIO()
-        json_output.write(b"[")
+        json_output.write(b'[')
         first_state = True
         for state in state_changes:
             if not first_state:
-                json_output.write(b",")
-            operation = _MAP_CHANGE_KIND_TO_OPERATION.get(state.change_kind) or b""
+                json_output.write(b',')
+            operation = _MAP_CHANGE_KIND_TO_OPERATION.get(state.change_kind) or b''
             json_output.write(b'{"operation":"')
             json_output.write(operation)
             json_output.write(b'","request":{"key":"')
-            json_output.write(state.state_name.encode("utf-8"))
+            json_output.write(state.state_name.encode('utf-8'))
             json_output.write(b'"')
             if state.value is not None:
                 serialized = self._state_serializer.serialize(state.value)
                 json_output.write(b',"value":')
                 json_output.write(serialized)
-            json_output.write(b"}}")
+            json_output.write(b'}}')
             first_state = False
-        json_output.write(b"]")
+        json_output.write(b']')
         data = json_output.getvalue()
         json_output.close()
         await self._state_client.save_state_transactionally(actor_type, actor_id, data)

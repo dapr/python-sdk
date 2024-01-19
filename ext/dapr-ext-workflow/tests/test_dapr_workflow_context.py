@@ -21,10 +21,10 @@ from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from durabletask import worker
 
 mock_date_time = datetime(2023, 4, 27)
-mock_instance_id = "instance001"
-mock_create_timer = "create_timer"
-mock_call_activity = "call_activity"
-mock_call_sub_orchestrator = "call_sub_orchestrator"
+mock_instance_id = 'instance001'
+mock_create_timer = 'create_timer'
+mock_call_activity = 'call_activity'
+mock_call_sub_orchestrator = 'call_sub_orchestrator'
 
 
 class FakeOrchestrationContext:
@@ -43,14 +43,14 @@ class FakeOrchestrationContext:
 
 class DaprWorkflowContextTest(unittest.TestCase):
     def mock_client_activity(ctx: WorkflowActivityContext, input):
-        print(f"{input}!", flush=True)
+        print(f'{input}!', flush=True)
 
     def mock_client_child_wf(ctx: DaprWorkflowContext, input):
-        print(f"{input}")
+        print(f'{input}')
 
     def test_workflow_context_functions(self):
         with mock.patch(
-            "durabletask.worker._RuntimeOrchestrationContext",
+            'durabletask.worker._RuntimeOrchestrationContext',
             return_value=FakeOrchestrationContext(),
         ):
             fakeContext = worker._RuntimeOrchestrationContext(mock_instance_id)

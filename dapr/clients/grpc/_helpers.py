@@ -52,9 +52,9 @@ def unpack(data: GrpcAny, message: GrpcMessage) -> None:
             matched with the response data type
     """
     if not isinstance(message, GrpcMessage):
-        raise ValueError("output message is not protocol buffer message object")
+        raise ValueError('output message is not protocol buffer message object')
     if not data.Is(message.DESCRIPTOR):
-        raise ValueError(f"invalid type. serialized message type: {data.type_url}")
+        raise ValueError(f'invalid type. serialized message type: {data.type_url}')
     data.Unpack(message)
 
 
@@ -63,9 +63,9 @@ def to_bytes(data: Union[str, bytes]) -> bytes:
     if isinstance(data, bytes):
         return data
     elif isinstance(data, str):
-        return data.encode("utf-8")
+        return data.encode('utf-8')
     else:
-        raise f"invalid data type {type(data)}"
+        raise f'invalid data type {type(data)}'
 
 
 def to_str(data: Union[str, bytes]) -> str:
@@ -73,15 +73,15 @@ def to_str(data: Union[str, bytes]) -> str:
     if isinstance(data, str):
         return data
     elif isinstance(data, bytes):
-        return data.decode("utf-8")
+        return data.decode('utf-8')
     else:
-        raise f"invalid data type {type(data)}"
+        raise f'invalid data type {type(data)}'
 
 
 class _ClientCallDetails(
     namedtuple(
-        "_ClientCallDetails",
-        ["method", "timeout", "metadata", "credentials", "wait_for_ready", "compression"],
+        '_ClientCallDetails',
+        ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression'],
     ),
     ClientCallDetails,
 ):
@@ -171,23 +171,23 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
 def validateNotNone(**kwargs: Optional[str]):
     for field_name, value in kwargs.items():
         if value is None:
-            raise ValueError(f"{field_name} name cannot be None")
+            raise ValueError(f'{field_name} name cannot be None')
 
 
 def validateNotBlankString(**kwargs: Optional[str]):
     for field_name, value in kwargs.items():
         if not value or not value.strip():
-            raise ValueError(f"{field_name} name cannot be empty or blank")
+            raise ValueError(f'{field_name} name cannot be empty or blank')
 
 
 class WorkflowRuntimeStatus(Enum):
-    UNKNOWN = "Unknown"
-    RUNNING = "Running"
-    COMPLETED = "Completed"
-    FAILED = "Failed"
-    TERMINATED = "Terminated"
-    PENDING = "Pending"
-    SUSPENDED = "Suspended"
+    UNKNOWN = 'Unknown'
+    RUNNING = 'Running'
+    COMPLETED = 'Completed'
+    FAILED = 'Failed'
+    TERMINATED = 'Terminated'
+    PENDING = 'Pending'
+    SUSPENDED = 'Suspended'
 
 
 # Will return the enum entry if it is present, otherwise returns "unknown"

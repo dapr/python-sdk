@@ -38,7 +38,7 @@ from dapr.clients.grpc._response import (
 
 class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     server_port = 8080
-    scheme = ""
+    scheme = ''
 
     def setUp(self):
         self._fake_dapr_server = FakeDaprSidecar()
@@ -48,286 +48,286 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self._fake_dapr_server.stop()
 
     async def test_http_extension(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
 
         # Test POST verb without querystring
-        ext = dapr._get_http_extension("POST")
+        ext = dapr._get_http_extension('POST')
         self.assertEqual(common_v1.HTTPExtension.Verb.POST, ext.verb)
 
         # Test Non-supported http verb
         with self.assertRaises(ValueError):
-            ext = dapr._get_http_extension("")
+            ext = dapr._get_http_extension('')
 
         # Test POST verb with querystring
         qs = (
-            ("query1", "string1"),
-            ("query2", "string2"),
-            ("query1", "string 3"),
+            ('query1', 'string1'),
+            ('query2', 'string2'),
+            ('query1', 'string 3'),
         )
-        ext = dapr._get_http_extension("POST", qs)
+        ext = dapr._get_http_extension('POST', qs)
 
         self.assertEqual(common_v1.HTTPExtension.Verb.POST, ext.verb)
-        self.assertEqual("query1=string1&query2=string2&query1=string+3", ext.querystring)
+        self.assertEqual('query1=string1&query2=string2&query1=string+3', ext.querystring)
 
     async def test_invoke_method_bytes_data(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.invoke_method(
-            app_id="targetId",
-            method_name="bytes",
-            data=b"haha",
-            content_type="text/plain",
+            app_id='targetId',
+            method_name='bytes',
+            data=b'haha',
+            content_type='text/plain',
             metadata=(
-                ("key1", "value1"),
-                ("key2", "value2"),
+                ('key1', 'value1'),
+                ('key2', 'value2'),
             ),
-            http_verb="PUT",
+            http_verb='PUT',
         )
 
-        self.assertEqual(b"haha", resp.data)
-        self.assertEqual("text/plain", resp.content_type)
+        self.assertEqual(b'haha', resp.data)
+        self.assertEqual('text/plain', resp.content_type)
         self.assertEqual(3, len(resp.headers))
-        self.assertEqual(["value1"], resp.headers["hkey1"])
+        self.assertEqual(['value1'], resp.headers['hkey1'])
 
     async def test_invoke_method_no_data(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.invoke_method(
-            app_id="targetId",
-            method_name="bytes",
-            content_type="text/plain",
+            app_id='targetId',
+            method_name='bytes',
+            content_type='text/plain',
             metadata=(
-                ("key1", "value1"),
-                ("key2", "value2"),
+                ('key1', 'value1'),
+                ('key2', 'value2'),
             ),
-            http_verb="PUT",
+            http_verb='PUT',
         )
 
-        self.assertEqual(b"", resp.data)
-        self.assertEqual("text/plain", resp.content_type)
+        self.assertEqual(b'', resp.data)
+        self.assertEqual('text/plain', resp.content_type)
         self.assertEqual(3, len(resp.headers))
-        self.assertEqual(["value1"], resp.headers["hkey1"])
+        self.assertEqual(['value1'], resp.headers['hkey1'])
 
     async def test_invoke_method_with_dapr_client(self):
-        dapr = DaprClient(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprClient(f'{self.scheme}localhost:{self.server_port}')
         dapr.invocation_client = None  # force to use grpc client
 
         resp = await dapr.invoke_method(
-            app_id="targetId",
-            method_name="bytes",
-            data=b"haha",
-            content_type="text/plain",
+            app_id='targetId',
+            method_name='bytes',
+            data=b'haha',
+            content_type='text/plain',
             metadata=(
-                ("key1", "value1"),
-                ("key2", "value2"),
+                ('key1', 'value1'),
+                ('key2', 'value2'),
             ),
-            http_verb="PUT",
+            http_verb='PUT',
         )
-        self.assertEqual(b"haha", resp.data)
-        self.assertEqual("text/plain", resp.content_type)
+        self.assertEqual(b'haha', resp.data)
+        self.assertEqual('text/plain', resp.content_type)
         self.assertEqual(3, len(resp.headers))
-        self.assertEqual(["value1"], resp.headers["hkey1"])
+        self.assertEqual(['value1'], resp.headers['hkey1'])
 
     async def test_invoke_method_proto_data(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        req = common_v1.StateItem(key="test")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        req = common_v1.StateItem(key='test')
         resp = await dapr.invoke_method(
-            app_id="targetId",
-            method_name="proto",
+            app_id='targetId',
+            method_name='proto',
             data=req,
             metadata=(
-                ("key1", "value1"),
-                ("key2", "value2"),
+                ('key1', 'value1'),
+                ('key2', 'value2'),
             ),
         )
 
         self.assertEqual(3, len(resp.headers))
-        self.assertEqual(["value1"], resp.headers["hkey1"])
+        self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertTrue(resp.is_proto())
 
         # unpack to new protobuf object
         new_resp = common_v1.StateItem()
         resp.unpack(new_resp)
-        self.assertEqual("test", new_resp.key)
+        self.assertEqual('test', new_resp.key)
 
     async def test_invoke_binding_bytes_data(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.invoke_binding(
-            binding_name="binding",
-            operation="create",
-            data=b"haha",
+            binding_name='binding',
+            operation='create',
+            data=b'haha',
             binding_metadata={
-                "key1": "value1",
-                "key2": "value2",
+                'key1': 'value1',
+                'key2': 'value2',
             },
         )
 
-        self.assertEqual(b"haha", resp.data)
-        self.assertEqual({"key1": "value1", "key2": "value2"}, resp.binding_metadata)
+        self.assertEqual(b'haha', resp.data)
+        self.assertEqual({'key1': 'value1', 'key2': 'value2'}, resp.binding_metadata)
         self.assertEqual(2, len(resp.headers))
-        self.assertEqual(["value1"], resp.headers["hkey1"])
+        self.assertEqual(['value1'], resp.headers['hkey1'])
 
     async def test_invoke_binding_no_metadata(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.invoke_binding(
-            binding_name="binding",
-            operation="create",
-            data=b"haha",
+            binding_name='binding',
+            operation='create',
+            data=b'haha',
         )
 
-        self.assertEqual(b"haha", resp.data)
+        self.assertEqual(b'haha', resp.data)
         self.assertEqual({}, resp.binding_metadata)
         self.assertEqual(0, len(resp.headers))
 
     async def test_invoke_binding_no_data(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.invoke_binding(
-            binding_name="binding",
-            operation="create",
+            binding_name='binding',
+            operation='create',
         )
 
-        self.assertEqual(b"", resp.data)
+        self.assertEqual(b'', resp.data)
         self.assertEqual({}, resp.binding_metadata)
         self.assertEqual(0, len(resp.headers))
 
     async def test_invoke_binding_no_create(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.invoke_binding(
-            binding_name="binding",
-            operation="delete",
-            data=b"haha",
+            binding_name='binding',
+            operation='delete',
+            data=b'haha',
         )
 
-        self.assertEqual(b"INVALID", resp.data)
+        self.assertEqual(b'INVALID', resp.data)
         self.assertEqual({}, resp.binding_metadata)
         self.assertEqual(0, len(resp.headers))
 
     async def test_publish_event(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        resp = await dapr.publish_event(pubsub_name="pubsub", topic_name="example", data=b"haha")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        resp = await dapr.publish_event(pubsub_name='pubsub', topic_name='example', data=b'haha')
 
         self.assertEqual(2, len(resp.headers))
-        self.assertEqual(["haha"], resp.headers["hdata"])
+        self.assertEqual(['haha'], resp.headers['hdata'])
 
     async def test_publish_event_with_content_type(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.publish_event(
-            pubsub_name="pubsub",
-            topic_name="example",
+            pubsub_name='pubsub',
+            topic_name='example',
             data=b'{"foo": "bar"}',
-            data_content_type="application/json",
+            data_content_type='application/json',
         )
 
         self.assertEqual(3, len(resp.headers))
-        self.assertEqual(['{"foo": "bar"}'], resp.headers["hdata"])
-        self.assertEqual(["application/json"], resp.headers["data_content_type"])
+        self.assertEqual(['{"foo": "bar"}'], resp.headers['hdata'])
+        self.assertEqual(['application/json'], resp.headers['data_content_type'])
 
     async def test_publish_event_with_metadata(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.publish_event(
-            pubsub_name="pubsub",
-            topic_name="example",
+            pubsub_name='pubsub',
+            topic_name='example',
             data=b'{"foo": "bar"}',
-            publish_metadata={"ttlInSeconds": "100", "rawPayload": "false"},
+            publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'},
         )
 
         print(resp.headers)
-        self.assertEqual(['{"foo": "bar"}'], resp.headers["hdata"])
-        self.assertEqual(["false"], resp.headers["metadata_raw_payload"])
-        self.assertEqual(["100"], resp.headers["metadata_ttl_in_seconds"])
+        self.assertEqual(['{"foo": "bar"}'], resp.headers['hdata'])
+        self.assertEqual(['false'], resp.headers['metadata_raw_payload'])
+        self.assertEqual(['100'], resp.headers['metadata_ttl_in_seconds'])
 
     async def test_publish_error(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         with self.assertRaisesRegex(ValueError, "invalid type for data <class 'int'>"):
             await dapr.publish_event(
-                pubsub_name="pubsub",
-                topic_name="example",
+                pubsub_name='pubsub',
+                topic_name='example',
                 data=111,
             )
 
-    @patch.object(settings, "DAPR_API_TOKEN", "test-token")
+    @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     async def test_dapr_api_token_insertion(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.invoke_method(
-            app_id="targetId",
-            method_name="bytes",
-            data=b"haha",
-            content_type="text/plain",
+            app_id='targetId',
+            method_name='bytes',
+            data=b'haha',
+            content_type='text/plain',
             metadata=(
-                ("key1", "value1"),
-                ("key2", "value2"),
+                ('key1', 'value1'),
+                ('key2', 'value2'),
             ),
         )
 
-        self.assertEqual(b"haha", resp.data)
-        self.assertEqual("text/plain", resp.content_type)
+        self.assertEqual(b'haha', resp.data)
+        self.assertEqual('text/plain', resp.content_type)
         self.assertEqual(4, len(resp.headers))
-        self.assertEqual(["value1"], resp.headers["hkey1"])
-        self.assertEqual(["test-token"], resp.headers["hdapr-api-token"])
+        self.assertEqual(['value1'], resp.headers['hkey1'])
+        self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
 
     async def test_get_save_delete_state(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        key = "key_1"
-        value = "value_1"
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        key = 'key_1'
+        value = 'value_1'
         options = StateOptions(
             consistency=Consistency.eventual,
             concurrency=Concurrency.first_write,
         )
         await dapr.save_state(
-            store_name="statestore",
+            store_name='statestore',
             key=key,
             value=value,
-            etag="fake_etag",
+            etag='fake_etag',
             options=options,
-            state_metadata={"capitalize": "1"},
+            state_metadata={'capitalize': '1'},
         )
 
-        resp = await dapr.get_state(store_name="statestore", key=key)
+        resp = await dapr.get_state(store_name='statestore', key=key)
         self.assertEqual(resp.data, to_bytes(value.capitalize()))
-        self.assertEqual(resp.etag, "fake_etag")
+        self.assertEqual(resp.etag, 'fake_etag')
 
-        resp = await dapr.get_state(store_name="statestore", key=key, state_metadata={"upper": "1"})
+        resp = await dapr.get_state(store_name='statestore', key=key, state_metadata={'upper': '1'})
         self.assertEqual(resp.data, to_bytes(value.upper()))
-        self.assertEqual(resp.etag, "fake_etag")
+        self.assertEqual(resp.etag, 'fake_etag')
 
-        resp = await dapr.get_state(store_name="statestore", key="NotValidKey")
-        self.assertEqual(resp.data, b"")
-        self.assertEqual(resp.etag, "")
+        resp = await dapr.get_state(store_name='statestore', key='NotValidKey')
+        self.assertEqual(resp.data, b'')
+        self.assertEqual(resp.etag, '')
 
-        await dapr.delete_state(store_name="statestore", key=key)
-        resp = await dapr.get_state(store_name="statestore", key=key)
-        self.assertEqual(resp.data, b"")
-        self.assertEqual(resp.etag, "")
+        await dapr.delete_state(store_name='statestore', key=key)
+        resp = await dapr.get_state(store_name='statestore', key=key)
+        self.assertEqual(resp.data, b'')
+        self.assertEqual(resp.etag, '')
 
         with self.assertRaises(Exception) as context:
             await dapr.delete_state(
-                store_name="statestore", key=key, state_metadata={"must_delete": "1"}
+                store_name='statestore', key=key, state_metadata={'must_delete': '1'}
             )
         print(context.exception)
-        self.assertTrue("delete failed" in str(context.exception))
+        self.assertTrue('delete failed' in str(context.exception))
 
     async def test_get_save_state_etag_none(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
 
-        value = "test"
-        no_etag_key = "no_etag"
-        empty_etag_key = "empty_etag"
+        value = 'test'
+        no_etag_key = 'no_etag'
+        empty_etag_key = 'empty_etag'
         await dapr.save_state(
-            store_name="statestore",
+            store_name='statestore',
             key=no_etag_key,
             value=value,
         )
 
-        await dapr.save_state(store_name="statestore", key=empty_etag_key, value=value, etag="")
+        await dapr.save_state(store_name='statestore', key=empty_etag_key, value=value, etag='')
 
-        resp = await dapr.get_state(store_name="statestore", key=no_etag_key)
+        resp = await dapr.get_state(store_name='statestore', key=no_etag_key)
         self.assertEqual(resp.data, to_bytes(value))
-        self.assertEqual(resp.etag, "ETAG_WAS_NONE")
+        self.assertEqual(resp.etag, 'ETAG_WAS_NONE')
 
-        resp = await dapr.get_state(store_name="statestore", key=empty_etag_key)
+        resp = await dapr.get_state(store_name='statestore', key=empty_etag_key)
         self.assertEqual(resp.data, to_bytes(value))
-        self.assertEqual(resp.etag, "")
+        self.assertEqual(resp.etag, '')
 
     async def test_transaction_then_get_states(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
 
         key = str(uuid.uuid4())
         value = str(uuid.uuid4())
@@ -335,24 +335,24 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         another_value = str(uuid.uuid4())
 
         await dapr.execute_state_transaction(
-            store_name="statestore",
+            store_name='statestore',
             operations=[
-                TransactionalStateOperation(key=key, data=value, etag="foo"),
+                TransactionalStateOperation(key=key, data=value, etag='foo'),
                 TransactionalStateOperation(key=another_key, data=another_value),
             ],
-            transactional_metadata={"metakey": "metavalue"},
+            transactional_metadata={'metakey': 'metavalue'},
         )
 
-        resp = await dapr.get_bulk_state(store_name="statestore", keys=[key, another_key])
+        resp = await dapr.get_bulk_state(store_name='statestore', keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].data, to_bytes(value))
-        self.assertEqual(resp.items[0].etag, "foo")
+        self.assertEqual(resp.items[0].etag, 'foo')
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value))
-        self.assertEqual(resp.items[1].etag, "ETAG_WAS_NONE")
+        self.assertEqual(resp.items[1].etag, 'ETAG_WAS_NONE')
 
         resp = await dapr.get_bulk_state(
-            store_name="statestore", keys=[key, another_key], states_metadata={"upper": "1"}
+            store_name='statestore', keys=[key, another_key], states_metadata={'upper': '1'}
         )
         self.assertEqual(resp.items[0].key, key)
         self.assertEqual(resp.items[0].data, to_bytes(value.upper()))
@@ -360,7 +360,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
     async def test_save_then_get_states(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
 
         key = str(uuid.uuid4())
         value = str(uuid.uuid4())
@@ -368,90 +368,90 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         another_value = str(uuid.uuid4())
 
         await dapr.save_bulk_state(
-            store_name="statestore",
+            store_name='statestore',
             states=[
-                StateItem(key=key, value=value, metadata={"capitalize": "1"}),
-                StateItem(key=another_key, value=another_value, etag="1"),
+                StateItem(key=key, value=value, metadata={'capitalize': '1'}),
+                StateItem(key=another_key, value=another_value, etag='1'),
             ],
-            metadata=(("metakey", "metavalue"),),
+            metadata=(('metakey', 'metavalue'),),
         )
 
-        resp = await dapr.get_bulk_state(store_name="statestore", keys=[key, another_key])
+        resp = await dapr.get_bulk_state(store_name='statestore', keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)
-        self.assertEqual(resp.items[0].etag, "ETAG_WAS_NONE")
+        self.assertEqual(resp.items[0].etag, 'ETAG_WAS_NONE')
         self.assertEqual(resp.items[0].data, to_bytes(value.capitalize()))
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value))
-        self.assertEqual(resp.items[1].etag, "1")
+        self.assertEqual(resp.items[1].etag, '1')
 
         resp = await dapr.get_bulk_state(
-            store_name="statestore", keys=[key, another_key], states_metadata={"upper": "1"}
+            store_name='statestore', keys=[key, another_key], states_metadata={'upper': '1'}
         )
         self.assertEqual(resp.items[0].key, key)
-        self.assertEqual(resp.items[0].etag, "ETAG_WAS_NONE")
+        self.assertEqual(resp.items[0].etag, 'ETAG_WAS_NONE')
         self.assertEqual(resp.items[0].data, to_bytes(value.upper()))
         self.assertEqual(resp.items[1].key, another_key)
-        self.assertEqual(resp.items[1].etag, "1")
+        self.assertEqual(resp.items[1].etag, '1')
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
     async def test_get_secret(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        key1 = "key_1"
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        key1 = 'key_1'
         resp = await dapr.get_secret(
-            store_name="store_1",
+            store_name='store_1',
             key=key1,
             metadata=(
-                ("key1", "value1"),
-                ("key2", "value2"),
+                ('key1', 'value1'),
+                ('key2', 'value2'),
             ),
         )
 
         self.assertEqual(1, len(resp.headers))
-        self.assertEqual([key1], resp.headers["keyh"])
-        self.assertEqual({key1: "val"}, resp._secret)
+        self.assertEqual([key1], resp.headers['keyh'])
+        self.assertEqual({key1: 'val'}, resp._secret)
 
     async def test_get_secret_metadata_absent(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        key1 = "key_1"
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        key1 = 'key_1'
         resp = await dapr.get_secret(
-            store_name="store_1",
+            store_name='store_1',
             key=key1,
         )
 
         self.assertEqual(1, len(resp.headers))
-        self.assertEqual([key1], resp.headers["keyh"])
-        self.assertEqual({key1: "val"}, resp._secret)
+        self.assertEqual([key1], resp.headers['keyh'])
+        self.assertEqual({key1: 'val'}, resp._secret)
 
     async def test_get_bulk_secret(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         resp = await dapr.get_bulk_secret(
-            store_name="store_1",
+            store_name='store_1',
             metadata=(
-                ("key1", "value1"),
-                ("key2", "value2"),
+                ('key1', 'value1'),
+                ('key2', 'value2'),
             ),
         )
 
         self.assertEqual(1, len(resp.headers))
-        self.assertEqual(["bulk"], resp.headers["keyh"])
-        self.assertEqual({"keya": {"keyb": "val"}}, resp._secrets)
+        self.assertEqual(['bulk'], resp.headers['keyh'])
+        self.assertEqual({'keya': {'keyb': 'val'}}, resp._secrets)
 
     async def test_get_bulk_secret_metadata_absent(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        resp = await dapr.get_bulk_secret(store_name="store_1")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        resp = await dapr.get_bulk_secret(store_name='store_1')
 
         self.assertEqual(1, len(resp.headers))
-        self.assertEqual(["bulk"], resp.headers["keyh"])
-        self.assertEqual({"keya": {"keyb": "val"}}, resp._secrets)
+        self.assertEqual(['bulk'], resp.headers['keyh'])
+        self.assertEqual({'keya': {'keyb': 'val'}}, resp._secrets)
 
     async def test_get_configuration(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        keys = ["k", "k1"]
-        value = "value"
-        version = "1.5.0"
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        keys = ['k', 'k1']
+        value = 'value'
+        version = '1.5.0'
         metadata = {}
 
-        resp = await dapr.get_configuration(store_name="configurationstore", keys=keys)
+        resp = await dapr.get_configuration(store_name='configurationstore', keys=keys)
         self.assertEqual(len(resp.items), len(keys))
         self.assertIn(keys[0], resp.items)
         item = resp.items[keys[0]]
@@ -460,7 +460,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(item.metadata, metadata)
 
         resp = await dapr.get_configuration(
-            store_name="configurationstore", keys=keys, config_metadata=metadata
+            store_name='configurationstore', keys=keys, config_metadata=metadata
         )
         self.assertEqual(len(resp.items), len(keys))
         self.assertIn(keys[0], resp.items)
@@ -470,72 +470,72 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(item.metadata, metadata)
 
     async def test_subscribe_configuration(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
 
         def mock_watch(self, stub, store_name, keys, handler, config_metadata):
             handler(
-                "id",
+                'id',
                 ConfigurationResponse(
-                    items={"k": ConfigurationItem(value="test", version="1.7.0")}
+                    items={'k': ConfigurationItem(value='test', version='1.7.0')}
                 ),
             )
-            return "id"
+            return 'id'
 
         def handler(id: str, resp: ConfigurationResponse):
-            self.assertEqual(resp.items["k"].value, "test")
-            self.assertEqual(resp.items["k"].version, "1.7.0")
+            self.assertEqual(resp.items['k'].value, 'test')
+            self.assertEqual(resp.items['k'].version, '1.7.0')
 
-        with patch.object(ConfigurationWatcher, "watch_configuration", mock_watch):
+        with patch.object(ConfigurationWatcher, 'watch_configuration', mock_watch):
             await dapr.subscribe_configuration(
-                store_name="configurationstore", keys=["k"], handler=handler
+                store_name='configurationstore', keys=['k'], handler=handler
             )
 
     async def test_unsubscribe_configuration(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        res = await dapr.unsubscribe_configuration(store_name="configurationstore", id="k")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        res = await dapr.unsubscribe_configuration(store_name='configurationstore', id='k')
         self.assertTrue(res)
 
     async def test_query_state(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
 
         resp = await dapr.query_state(
-            store_name="statestore",
-            query=json.dumps({"filter": {}, "page": {"limit": 2}}),
+            store_name='statestore',
+            query=json.dumps({'filter': {}, 'page': {'limit': 2}}),
         )
-        self.assertEqual(resp.results[0].key, "1")
+        self.assertEqual(resp.results[0].key, '1')
         self.assertEqual(len(resp.results), 2)
 
         resp = await dapr.query_state(
-            store_name="statestore",
-            query=json.dumps({"filter": {}, "page": {"limit": 3, "token": "3"}}),
+            store_name='statestore',
+            query=json.dumps({'filter': {}, 'page': {'limit': 3, 'token': '3'}}),
         )
-        self.assertEqual(resp.results[0].key, "3")
+        self.assertEqual(resp.results[0].key, '3')
         self.assertEqual(len(resp.results), 3)
 
     async def test_shutdown(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         await dapr.shutdown()
         self.assertTrue(self._fake_dapr_server.shutdown_received)
 
     async def test_wait_ok(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         await dapr.wait(0.1)
 
     async def test_wait_timeout(self):
         # First, pick an unused port
         port = 0
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("", 0))
+            s.bind(('', 0))
             port = s.getsockname()[1]
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{port}')
         with self.assertRaises(Exception) as context:
             await dapr.wait(0.1)
-        self.assertTrue("Connection refused" in str(context.exception))
+        self.assertTrue('Connection refused' in str(context.exception))
 
     async def test_lock_acquire_success(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
-        store_name = "lockstore"
+        store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
         lock_owner = str(uuid.uuid4())
         expiry_in_seconds = 60
@@ -546,9 +546,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
 
     async def test_lock_release_twice_fails(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
-        store_name = "lockstore"
+        store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
         lock_owner = str(uuid.uuid4())
         expiry_in_seconds = 60
@@ -562,9 +562,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     async def test_lock_conflict(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
-        store_name = "lockstore"
+        store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
         first_client_id = str(uuid.uuid4())
         second_client_id = str(uuid.uuid4())
@@ -584,16 +584,16 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(UnlockResponseStatus.success, unlock_response.status)
 
     async def test_lock_not_previously_acquired(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         unlock_response = await dapr.unlock(
-            store_name="lockstore", resource_id=str(uuid.uuid4()), lock_owner=str(uuid.uuid4())
+            store_name='lockstore', resource_id=str(uuid.uuid4()), lock_owner=str(uuid.uuid4())
         )
         self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     async def test_lock_release_twice_fails_with_context_manager(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
-        store_name = "lockstore"
+        store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
         first_client_id = str(uuid.uuid4())
         second_client_id = str(uuid.uuid4())
@@ -614,9 +614,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(UnlockResponseStatus.lock_does_not_exist, unlock_response.status)
 
     async def test_lock_are_not_reentrant(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         # Lock parameters
-        store_name = "lockstore"
+        store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
         client_id = str(uuid.uuid4())
         expiry_in_s = 60
@@ -632,14 +632,14 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(second_attempt.success)
 
     async def test_lock_input_validation(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         # Sane parameters
-        store_name = "lockstore"
+        store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
         client_id = str(uuid.uuid4())
         expiry_in_s = 60
         # Invalid inputs for string arguments
-        for invalid_input in [None, "", "   "]:
+        for invalid_input in [None, '', '   ']:
             # store_name
             with self.assertRaises(ValueError):
                 async with await dapr.try_lock(
@@ -667,13 +667,13 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                     self.assertTrue(res.success)
 
     async def test_unlock_input_validation(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
         # Sane parameters
-        store_name = "lockstore"
+        store_name = 'lockstore'
         resource_id = str(uuid.uuid4())
         client_id = str(uuid.uuid4())
         # Invalid inputs for string arguments
-        for invalid_input in [None, "", "   "]:
+        for invalid_input in [None, '', '   ']:
             # store_name
             with self.assertRaises(ValueError):
                 await dapr.unlock(invalid_input, resource_id, client_id)
@@ -689,12 +689,12 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     #
 
     async def test_get_metadata(self):
-        async with DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}") as dapr:
+        async with DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}') as dapr:
             response = await dapr.get_metadata()
 
             self.assertIsNotNone(response)
 
-            self.assertEqual(response.application_id, "myapp")
+            self.assertEqual(response.application_id, 'myapp')
 
             actors = response.active_actors_count
             self.assertIsNotNone(actors)
@@ -713,13 +713,13 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue(c.type)
                 self.assertIsNotNone(c.version)
                 self.assertIsNotNone(c.capabilities)
-            self.assertTrue("ETAG" in components["statestore"].capabilities)
+            self.assertTrue('ETAG' in components['statestore'].capabilities)
 
             self.assertIsNotNone(response.extended_metadata)
 
     async def test_set_metadata(self):
-        metadata_key = "test_set_metadata_attempt"
-        async with DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}") as dapr:
+        metadata_key = 'test_set_metadata_attempt'
+        async with DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}') as dapr:
             for metadata_value in [str(i) for i in range(10)]:
                 await dapr.set_metadata(attributeName=metadata_key, attributeValue=metadata_value)
                 response = await dapr.get_metadata()
@@ -728,7 +728,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.extended_metadata[metadata_key], metadata_value)
             # Empty string and blank strings should be accepted just fine
             # by this API
-            for metadata_value in ["", "    "]:
+            for metadata_value in ['', '    ']:
                 await dapr.set_metadata(attributeName=metadata_key, attributeValue=metadata_value)
                 response = await dapr.get_metadata()
                 self.assertIsNotNone(response)
@@ -736,12 +736,12 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.extended_metadata[metadata_key], metadata_value)
 
     async def test_set_metadata_input_validation(self):
-        dapr = DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}")
-        valid_attr_name = "attribute name"
-        valid_attr_value = "attribute value"
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}')
+        valid_attr_name = 'attribute name'
+        valid_attr_value = 'attribute value'
         # Invalid inputs for string arguments
-        async with DaprGrpcClientAsync(f"{self.scheme}localhost:{self.server_port}") as dapr:
-            for invalid_attr_name in [None, "", "   "]:
+        async with DaprGrpcClientAsync(f'{self.scheme}localhost:{self.server_port}') as dapr:
+            for invalid_attr_name in [None, '', '   ']:
                 with self.assertRaises(ValueError):
                     await dapr.set_metadata(invalid_attr_name, valid_attr_value)
             # We are less strict with attribute values - we just cannot accept None
@@ -750,5 +750,5 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                     await dapr.set_metadata(valid_attr_name, invalid_attr_value)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

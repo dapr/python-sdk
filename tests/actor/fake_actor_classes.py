@@ -27,7 +27,7 @@ from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 
 # Fake Simple Actor Class for testing
 class FakeSimpleActorInterface(ActorInterface):
-    @actormethod(name="ActorMethod")
+    @actormethod(name='ActorMethod')
     async def actor_method(self, arg: int) -> dict:
         ...
 
@@ -37,7 +37,7 @@ class FakeSimpleActor(Actor, FakeSimpleActorInterface):
         super(FakeSimpleActor, self).__init__(ctx, actor_id)
 
     async def actor_method(self, arg: int) -> dict:
-        return {"name": "actor_method"}
+        return {'name': 'actor_method'}
 
     async def non_actor_method(self, arg0: int, arg1: str, arg2: float) -> str:
         pass
@@ -48,7 +48,7 @@ class FakeSimpleReminderActor(Actor, FakeSimpleActorInterface, Remindable):
         super(FakeSimpleReminderActor, self).__init__(ctx, actor_id)
 
     async def actor_method(self, arg: int) -> dict:
-        return {"name": "actor_method"}
+        return {'name': 'actor_method'}
 
     async def non_actor_method(self, arg0: int, arg1: str, arg2: float) -> str:
         pass
@@ -70,7 +70,7 @@ class FakeSimpleTimerActor(Actor, FakeSimpleActorInterface):
         self.timer_called = False
 
     async def actor_method(self, arg: int) -> dict:
-        return {"name": "actor_method"}
+        return {'name': 'actor_method'}
 
     async def timer_callback(self, obj) -> None:
         self.timer_called = True
@@ -88,39 +88,39 @@ class FakeSimpleTimerActor(Actor, FakeSimpleActorInterface):
 
 class FakeActorCls1Interface(ActorInterface):
     # Fake Actor Class deriving multiple ActorInterfaces
-    @actormethod(name="ActorCls1Method")
+    @actormethod(name='ActorCls1Method')
     async def actor_cls1_method(self, arg):
         ...
 
-    @actormethod(name="ActorCls1Method1")
+    @actormethod(name='ActorCls1Method1')
     async def actor_cls1_method1(self, arg):
         ...
 
-    @actormethod(name="ActorCls1Method2")
+    @actormethod(name='ActorCls1Method2')
     async def actor_cls1_method2(self, arg):
         ...
 
 
 class FakeActorCls2Interface(ActorInterface):
-    @actormethod(name="ActorCls2Method")
+    @actormethod(name='ActorCls2Method')
     async def actor_cls2_method(self, arg):
         ...
 
-    @actormethod(name="ActionMethod")
+    @actormethod(name='ActionMethod')
     async def action(self, data: object) -> str:
         ...
 
-    @actormethod(name="ActionMethodWithoutArg")
+    @actormethod(name='ActionMethodWithoutArg')
     async def action_no_arg(self) -> str:
         ...
 
 
 class ReentrantActorInterface(ActorInterface):
-    @actormethod(name="ReentrantMethod")
+    @actormethod(name='ReentrantMethod')
     async def reentrant_method(self, data: object) -> str:
         ...
 
-    @actormethod(name="ReentrantMethodWithPassthrough")
+    @actormethod(name='ReentrantMethodWithPassthrough')
     async def reentrant_pass_through_method(self, arg):
         ...
 
@@ -148,11 +148,11 @@ class FakeMultiInterfacesActor(
 
     async def action(self, data: object) -> str:
         self.action_data = data
-        return self.action_data["message"]
+        return self.action_data['message']
 
     async def action_no_arg(self) -> str:
-        self.action_data = {"message": "no_arg"}
-        return self.action_data["message"]
+        self.action_data = {'message': 'no_arg'}
+        return self.action_data['message']
 
     async def _on_activate(self):
         self.activated = True
@@ -164,7 +164,7 @@ class FakeMultiInterfacesActor(
 
     async def reentrant_method(self, data: object) -> str:
         self.action_data = data
-        return self.action_data["message"]
+        return self.action_data['message']
 
     async def reentrant_pass_through_method(self, arg):
         pass
@@ -181,7 +181,7 @@ class FakeReentrantActor(Actor, FakeActorCls1Interface, ReentrantActorInterface)
         from dapr.actor.client import proxy
 
         await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
-            FakeSlowReentrantActor.__name__, "test-id", "ReentrantMethod"
+            FakeSlowReentrantActor.__name__, 'test-id', 'ReentrantMethod'
         )
 
     async def actor_cls1_method(self, arg):
@@ -206,7 +206,7 @@ class FakeSlowReentrantActor(Actor, FakeActorCls2Interface, ReentrantActorInterf
         from dapr.actor.client import proxy
 
         await proxy.DaprActorHttpClient(DefaultJSONSerializer()).invoke_method(
-            FakeReentrantActor.__name__, "test-id", "ReentrantMethod"
+            FakeReentrantActor.__name__, 'test-id', 'ReentrantMethod'
         )
 
     async def actor_cls2_method(self, arg):

@@ -27,8 +27,8 @@ from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
 from dapr.actor.runtime._reminder_data import ActorReminderData
 from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 
-TIMER_METHOD_NAME = "fire_timer"
-REMINDER_METHOD_NAME = "receive_reminder"
+TIMER_METHOD_NAME = 'fire_timer'
+REMINDER_METHOD_NAME = 'receive_reminder'
 
 
 class ActorManager:
@@ -57,7 +57,7 @@ class ActorManager:
         async with self._active_actors_lock:
             deactivated_actor = self._active_actors.pop(actor_id.id, None)
             if not deactivated_actor:
-                raise ValueError(f"{actor_id} is not activated")
+                raise ValueError(f'{actor_id} is not activated')
         await deactivated_actor._on_deactivate_internal()
 
     async def fire_reminder(
@@ -65,7 +65,7 @@ class ActorManager:
     ) -> None:
         if not self._runtime_ctx.actor_type_info.is_remindable():
             raise ValueError(
-                f"{self._runtime_ctx.actor_type_info.type_name} does not implment Remindable."
+                f'{self._runtime_ctx.actor_type_info.type_name} does not implment Remindable.'
             )
         request_obj = self._message_serializer.deserialize(request_body, object)
         if isinstance(request_obj, dict):
@@ -90,7 +90,7 @@ class ActorManager:
         timer = self._message_serializer.deserialize(request_body, object)
 
         async def invoke_timer(actor: Actor) -> Optional[bytes]:
-            await actor._fire_timer_internal(timer["callback"], timer["data"])
+            await actor._fire_timer_internal(timer['callback'], timer['data'])
             return None
 
         await self._dispatch_internal(actor_id, self._timer_method_context, invoke_timer)
@@ -129,7 +129,7 @@ class ActorManager:
         async with self._active_actors_lock:
             actor = self._active_actors.get(actor_id.id, None)
         if not actor:
-            raise ValueError(f"{actor_id} is not activated")
+            raise ValueError(f'{actor_id} is not activated')
 
         try:
             if reentrancy_ctx.get(None) is not None:

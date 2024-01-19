@@ -24,11 +24,11 @@ from dapr.conf import settings
 from google.protobuf.message import Message as GrpcMessage
 
 __all__ = [
-    "DaprClient",
-    "DaprActorClientBase",
-    "DaprActorHttpClient",
-    "DaprInternalError",
-    "ERROR_CODE_UNKNOWN",
+    'DaprClient',
+    'DaprActorClientBase',
+    'DaprActorHttpClient',
+    'DaprInternalError',
+    'ERROR_CODE_UNKNOWN',
 ]
 
 from grpc.aio import (  # type: ignore
@@ -80,17 +80,17 @@ class DaprClient(DaprGrpcClientAsync):
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
 
-        if invocation_protocol == "HTTP":
+        if invocation_protocol == 'HTTP':
             if http_timeout_seconds is None:
                 http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
             self.invocation_client = DaprInvocationHttpClient(
                 headers_callback=headers_callback, timeout=http_timeout_seconds
             )
-        elif invocation_protocol == "GRPC":
+        elif invocation_protocol == 'GRPC':
             pass
         else:
             raise DaprInternalError(
-                f"Unknown value for DAPR_API_METHOD_INVOCATION_PROTOCOL: {invocation_protocol}"
+                f'Unknown value for DAPR_API_METHOD_INVOCATION_PROTOCOL: {invocation_protocol}'
             )
 
     async def invoke_method(

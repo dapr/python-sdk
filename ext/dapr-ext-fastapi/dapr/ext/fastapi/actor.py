@@ -23,8 +23,8 @@ from dapr.actor import Actor, ActorRuntime
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.serializers import DefaultJSONSerializer
 
-DEFAULT_CONTENT_TYPE = "application/json; utf-8"
-DAPR_REENTRANCY_ID_HEADER = "Dapr-Reentrancy-Id"
+DEFAULT_CONTENT_TYPE = 'application/json; utf-8'
+DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
 
 def _wrap_response(
@@ -36,10 +36,10 @@ def _wrap_response(
     resp = None
     if isinstance(msg, str):
         response_obj = {
-            "message": msg,
+            'message': msg,
         }
         if not (status_code >= 200 and status_code < 300) and error_code:
-            response_obj["errorCode"] = error_code
+            response_obj['errorCode'] = error_code
         resp = JSONResponse(content=response_obj, status_code=status_code)
     elif isinstance(msg, bytes):
         resp = Response(content=msg, media_type=content_type)
@@ -49,7 +49,7 @@ def _wrap_response(
 
 
 class DaprActor(object):
-    def __init__(self, app: FastAPI, router_tags: Optional[List[str]] = ["Actor"]):
+    def __init__(self, app: FastAPI, router_tags: Optional[List[str]] = ['Actor']):
         # router_tags should be added to all magic Dapr Actor methods implemented here
         self._router_tags = router_tags
         self._router = APIRouter()
@@ -58,16 +58,16 @@ class DaprActor(object):
         app.include_router(self._router)
 
     def init_routes(self, router: APIRouter):
-        @router.get("/healthz", tags=self._router_tags)
+        @router.get('/healthz', tags=self._router_tags)
         async def healthz():
-            return {"status": "ok"}
+            return {'status': 'ok'}
 
-        @router.get("/dapr/config", tags=self._router_tags)
+        @router.get('/dapr/config', tags=self._router_tags)
         async def dapr_config():
             serialized = self._dapr_serializer.serialize(ActorRuntime.get_actor_config())
             return _wrap_response(status.HTTP_200_OK, serialized)
 
-        @router.delete("/actors/{actor_type_name}/{actor_id}", tags=self._router_tags)
+        @router.delete('/actors/{actor_type_name}/{actor_id}', tags=self._router_tags)
         async def actor_deactivation(actor_type_name: str, actor_id: str):
             try:
                 await ActorRuntime.deactivate(actor_type_name, actor_id)
@@ -78,12 +78,12 @@ class DaprActor(object):
                     status.HTTP_500_INTERNAL_SERVER_ERROR, repr(ex), ERROR_CODE_UNKNOWN
                 )
 
-            msg = f"deactivated actor: {actor_type_name}.{actor_id}"
+            msg = f'deactivated actor: {actor_type_name}.{actor_id}'
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, msg)
 
         @router.put(
-            "/actors/{actor_type_name}/{actor_id}/method/{method_name}", tags=self._router_tags
+            '/actors/{actor_type_name}/{actor_id}/method/{method_name}', tags=self._router_tags
         )
         async def actor_method(
             actor_type_name: str, actor_id: str, method_name: str, request: Request
@@ -102,12 +102,12 @@ class DaprActor(object):
                     status.HTTP_500_INTERNAL_SERVER_ERROR, repr(ex), ERROR_CODE_UNKNOWN
                 )
 
-            msg = f"called method. actor: {actor_type_name}.{actor_id}, method: {method_name}"
+            msg = f'called method. actor: {actor_type_name}.{actor_id}, method: {method_name}'
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, result)
 
         @router.put(
-            "/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}", tags=self._router_tags
+            '/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}', tags=self._router_tags
         )
         async def actor_timer(
             actor_type_name: str, actor_id: str, timer_name: str, request: Request
@@ -123,12 +123,12 @@ class DaprActor(object):
                     status.HTTP_500_INTERNAL_SERVER_ERROR, repr(ex), ERROR_CODE_UNKNOWN
                 )
 
-            msg = f"called timer. actor: {actor_type_name}.{actor_id}, timer: {timer_name}"
+            msg = f'called timer. actor: {actor_type_name}.{actor_id}, timer: {timer_name}'
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, msg)
 
         @router.put(
-            "/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}",
+            '/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}',
             tags=self._router_tags,
         )
         async def actor_reminder(
@@ -145,10 +145,10 @@ class DaprActor(object):
                     status.HTTP_500_INTERNAL_SERVER_ERROR, repr(ex), ERROR_CODE_UNKNOWN
                 )
 
-            msg = f"called reminder. actor: {actor_type_name}.{actor_id}, reminder: {reminder_name}"
+            msg = f'called reminder. actor: {actor_type_name}.{actor_id}, reminder: {reminder_name}'
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, msg)
 
     async def register_actor(self, actor: Type[Actor]) -> None:
         await ActorRuntime.register_actor(actor)
-        logger.debug(f"registered actor: {actor.__class__.__name__}")
+        logger.debug(f'registered actor: {actor.__class__.__name__}')

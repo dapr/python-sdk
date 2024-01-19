@@ -20,13 +20,13 @@ wfr = wf.WorkflowRuntime()
 def main_workflow(ctx: wf.DaprWorkflowContext):
     try:
         instance_id = ctx.instance_id
-        child_instance_id = instance_id + "-child"
-        print(f"*** Calling child workflow {child_instance_id}", flush=True)
+        child_instance_id = instance_id + '-child'
+        print(f'*** Calling child workflow {child_instance_id}', flush=True)
         yield ctx.call_child_workflow(
             workflow=child_workflow, input=None, instance_id=child_instance_id
         )
     except Exception as e:
-        print(f"*** Exception: {e}")
+        print(f'*** Exception: {e}')
 
     return
 
@@ -34,10 +34,10 @@ def main_workflow(ctx: wf.DaprWorkflowContext):
 @wfr.workflow
 def child_workflow(ctx: wf.DaprWorkflowContext):
     instance_id = ctx.instance_id
-    print(f"*** Child workflow {instance_id} called", flush=True)
+    print(f'*** Child workflow {instance_id} called', flush=True)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     wfr.start()
     time.sleep(10)  # wait for workflow runtime to start
 

@@ -29,7 +29,7 @@ from dapr.conf import settings
 # Used temporarily, so we can trust self-signed certificates in unit tests
 # until they get their own environment variable
 def replacement_get_credentials_func(a):
-    f = open(os.path.join(os.path.dirname(__file__), "selfsigned.pem"), "rb")
+    f = open(os.path.join(os.path.dirname(__file__), 'selfsigned.pem'), 'rb')
     creds = grpc.ssl_channel_credentials(f.read())
     f.close()
 
@@ -41,7 +41,7 @@ DaprGrpcClientAsync.get_credentials = replacement_get_credentials_func
 
 class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
     server_port = 4443
-    scheme = "https://"
+    scheme = 'https://'
 
     def setUp(self):
         self._fake_dapr_server = FakeDaprSidecar()
@@ -50,32 +50,32 @@ class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
     def tearDown(self):
         self._fake_dapr_server.stop_secure()
 
-    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
+    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'https://domain1.com:5000')
     def test_init_with_DAPR_GRPC_ENDPOINT(self):
         dapr = DaprGrpcClientAsync()
-        self.assertEqual("dns:domain1.com:5000", dapr._uri.endpoint)
+        self.assertEqual('dns:domain1.com:5000', dapr._uri.endpoint)
 
-    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
+    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'https://domain1.com:5000')
     def test_init_with_DAPR_GRPC_ENDPOINT_and_argument(self):
-        dapr = DaprGrpcClientAsync("https://domain2.com:5002")
-        self.assertEqual("dns:domain2.com:5002", dapr._uri.endpoint)
+        dapr = DaprGrpcClientAsync('https://domain2.com:5002')
+        self.assertEqual('dns:domain2.com:5002', dapr._uri.endpoint)
 
-    @patch.object(settings, "DAPR_GRPC_ENDPOINT", "https://domain1.com:5000")
-    @patch.object(settings, "DAPR_RUNTIME_HOST", "domain2.com")
-    @patch.object(settings, "DAPR_GRPC_PORT", "5002")
+    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'https://domain1.com:5000')
+    @patch.object(settings, 'DAPR_RUNTIME_HOST', 'domain2.com')
+    @patch.object(settings, 'DAPR_GRPC_PORT', '5002')
     def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
         dapr = DaprGrpcClientAsync()
-        self.assertEqual("dns:domain1.com:5000", dapr._uri.endpoint)
+        self.assertEqual('dns:domain1.com:5000', dapr._uri.endpoint)
 
-    @patch.object(settings, "DAPR_RUNTIME_HOST", "domain1.com")
-    @patch.object(settings, "DAPR_GRPC_PORT", "5000")
+    @patch.object(settings, 'DAPR_RUNTIME_HOST', 'domain1.com')
+    @patch.object(settings, 'DAPR_GRPC_PORT', '5000')
     def test_init_with_argument_and_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
-        dapr = DaprGrpcClientAsync("https://domain2.com:5002")
-        self.assertEqual("dns:domain2.com:5002", dapr._uri.endpoint)
+        dapr = DaprGrpcClientAsync('https://domain2.com:5002')
+        self.assertEqual('dns:domain2.com:5002', dapr._uri.endpoint)
 
     async def test_dapr_api_token_insertion(self):
         pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

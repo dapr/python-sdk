@@ -17,13 +17,13 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 )
 
 
-_CUSTOMRESPONSE = DESCRIPTOR.message_types_by_name["CustomResponse"]
+_CUSTOMRESPONSE = DESCRIPTOR.message_types_by_name['CustomResponse']
 CustomResponse = _reflection.GeneratedProtocolMessageType(
-    "CustomResponse",
+    'CustomResponse',
     (_message.Message,),
     {
-        "DESCRIPTOR": _CUSTOMRESPONSE,
-        "__module__": "response_pb2",
+        'DESCRIPTOR': _CUSTOMRESPONSE,
+        '__module__': 'response_pb2',
         # @@protoc_insertion_point(class_scope:CustomResponse)
     },
 )

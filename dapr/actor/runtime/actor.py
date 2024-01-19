@@ -64,7 +64,7 @@ class Actor:
         return self._runtime_ctx
 
     def __get_new_timer_name(self):
-        return f"{self.id}_Timer_{uuid.uuid4()}"
+        return f'{self.id}_Timer_{uuid.uuid4()}'
 
     async def register_timer(
         self,

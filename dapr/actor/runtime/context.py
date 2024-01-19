@@ -44,11 +44,11 @@ class ActorRuntimeContext:
 
     def __init__(
         self,
-        actor_type_info: "ActorTypeInformation",
+        actor_type_info: 'ActorTypeInformation',
         message_serializer: Serializer,
         state_serializer: Serializer,
         actor_client: DaprActorClientBase,
-        actor_factory: Optional[Callable[["ActorRuntimeContext", ActorId], "Actor"]] = None,
+        actor_factory: Optional[Callable[['ActorRuntimeContext', ActorId], 'Actor']] = None,
     ):
         """Creates :class:`ActorRuntimeContext` object.
 
@@ -72,7 +72,7 @@ class ActorRuntimeContext:
         self._provider: StateProvider = StateProvider(self._dapr_client, state_serializer)
 
     @property
-    def actor_type_info(self) -> "ActorTypeInformation":
+    def actor_type_info(self) -> 'ActorTypeInformation':
         """Return :class:`ActorTypeInformation` in this context."""
         return self._actor_type_info
 
@@ -96,7 +96,7 @@ class ActorRuntimeContext:
         """Return dapr client."""
         return self._dapr_client
 
-    def create_actor(self, actor_id: ActorId) -> "Actor":
+    def create_actor(self, actor_id: ActorId) -> 'Actor':
         """Create the object of :class:`Actor` for :class:`ActorId`.
 
         Args:
@@ -107,7 +107,7 @@ class ActorRuntimeContext:
         """
         return self._actor_factory(self, actor_id)
 
-    def _default_actor_factory(self, ctx: "ActorRuntimeContext", actor_id: ActorId) -> "Actor":
+    def _default_actor_factory(self, ctx: 'ActorRuntimeContext', actor_id: ActorId) -> 'Actor':
         """Creates new Actor with actor_id.
 
         Args:

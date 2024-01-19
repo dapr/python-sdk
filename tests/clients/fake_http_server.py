@@ -13,7 +13,7 @@ from tests.clients.certs import (
 
 
 class DaprHandler(BaseHTTPRequestHandler):
-    protocol_version = "HTTP/1.1"
+    protocol_version = 'HTTP/1.1'
 
     def serve_forever(self):
         while not self.running:
@@ -24,15 +24,15 @@ class DaprHandler(BaseHTTPRequestHandler):
             time.sleep(self.server.sleep_time)
         self.received_verb = verb
         self.server.request_headers = self.headers
-        if "Content-Length" in self.headers:
-            content_length = int(self.headers["Content-Length"])
+        if 'Content-Length' in self.headers:
+            content_length = int(self.headers['Content-Length'])
 
             self.server.request_body += self.rfile.read(content_length)
 
         self.send_response(self.server.response_code)
         for key, value in self.server.response_header_list:
             self.send_header(key, value)
-        self.send_header("Content-Length", str(len(self.server.response_body)))
+        self.send_header('Content-Length', str(len(self.server.response_body)))
         self.end_headers()
 
         self.server.path = self.path
@@ -40,16 +40,16 @@ class DaprHandler(BaseHTTPRequestHandler):
         self.wfile.write(self.server.response_body)
 
     def do_GET(self):
-        self.do_request("GET")
+        self.do_request('GET')
 
     def do_POST(self):
-        self.do_request("POST")
+        self.do_request('POST')
 
     def do_PUT(self):
-        self.do_request("PUT")
+        self.do_request('PUT')
 
     def do_DELETE(self):
-        self.do_request("DELETE")
+        self.do_request('DELETE')
 
 
 class FakeHttpServer(Thread):
@@ -58,18 +58,18 @@ class FakeHttpServer(Thread):
         self.secure = secure
 
         self.port = 4443 if secure else 8080
-        self.server = HTTPServer(("localhost", self.port), DaprHandler)
+        self.server = HTTPServer(('localhost', self.port), DaprHandler)
 
         if self.secure:
-            create_certificates("http")
+            create_certificates('http')
             ssl_context = SSLContext(PROTOCOL_TLS_SERVER)
             ssl_context.load_cert_chain(CERTIFICATE_CHAIN_PATH, PRIVATE_KEY_PATH)
             self.server.socket = ssl_context.wrap_socket(self.server.socket, server_side=True)
 
-        self.server.response_body = b""
+        self.server.response_body = b''
         self.server.response_code = 200
         self.server.response_header_list = []
-        self.server.request_body = b""
+        self.server.request_body = b''
         self.server.sleep_time = None
 
     def get_port(self):

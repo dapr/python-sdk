@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.base import DaprActorClientBase
 
-DAPR_REENTRANCY_ID_HEADER = "Dapr-Reentrancy-Id"
+DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
 
 class DaprActorHttpClient(DaprActorClientBase):
@@ -29,7 +29,7 @@ class DaprActorHttpClient(DaprActorClientBase):
 
     def __init__(
         self,
-        message_serializer: "Serializer",
+        message_serializer: 'Serializer',
         timeout: int = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
     ):
@@ -56,7 +56,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         Returns:
             bytes: the response from the actor.
         """
-        url = f"{self._get_base_url(actor_type, actor_id)}/method/{method}"
+        url = f'{self._get_base_url(actor_type, actor_id)}/method/{method}'
 
         # import to avoid circular dependency
         from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
@@ -66,7 +66,7 @@ class DaprActorHttpClient(DaprActorClientBase):
             {DAPR_REENTRANCY_ID_HEADER: reentrancy_id} if reentrancy_id else {}
         )
 
-        body, _ = await self._client.send_bytes(method="POST", url=url, data=data, headers=headers)
+        body, _ = await self._client.send_bytes(method='POST', url=url, data=data, headers=headers)
 
         return body
 
@@ -78,8 +78,8 @@ class DaprActorHttpClient(DaprActorClientBase):
             actor_id (str): Id of Actor type.
             data (bytes): Json-serialized the transactional state operations.
         """
-        url = f"{self._get_base_url(actor_type, actor_id)}/state"
-        await self._client.send_bytes(method="PUT", url=url, data=data)
+        url = f'{self._get_base_url(actor_type, actor_id)}/state'
+        await self._client.send_bytes(method='PUT', url=url, data=data)
 
     async def get_state(self, actor_type: str, actor_id: str, name: str) -> bytes:
         """Get state value for name key.
@@ -92,8 +92,8 @@ class DaprActorHttpClient(DaprActorClientBase):
         Returns:
             bytes: the value of the state.
         """
-        url = f"{self._get_base_url(actor_type, actor_id)}/state/{name}"
-        body, _ = await self._client.send_bytes(method="GET", url=url, data=None)
+        url = f'{self._get_base_url(actor_type, actor_id)}/state/{name}'
+        body, _ = await self._client.send_bytes(method='GET', url=url, data=None)
         return body
 
     async def register_reminder(
@@ -107,8 +107,8 @@ class DaprActorHttpClient(DaprActorClientBase):
             name (str): The name of reminder
             data (bytes): Reminder request json body.
         """
-        url = f"{self._get_base_url(actor_type, actor_id)}/reminders/{name}"
-        await self._client.send_bytes(method="PUT", url=url, data=data)
+        url = f'{self._get_base_url(actor_type, actor_id)}/reminders/{name}'
+        await self._client.send_bytes(method='PUT', url=url, data=data)
 
     async def unregister_reminder(self, actor_type: str, actor_id: str, name: str) -> None:
         """Unregister actor reminder.
@@ -118,8 +118,8 @@ class DaprActorHttpClient(DaprActorClientBase):
             actor_id (str): Id of Actor type.
             name (str):  the name of reminder.
         """
-        url = f"{self._get_base_url(actor_type, actor_id)}/reminders/{name}"
-        await self._client.send_bytes(method="DELETE", url=url, data=None)
+        url = f'{self._get_base_url(actor_type, actor_id)}/reminders/{name}'
+        await self._client.send_bytes(method='DELETE', url=url, data=None)
 
     async def register_timer(self, actor_type: str, actor_id: str, name: str, data: bytes) -> None:
         """Register actor timer.
@@ -130,8 +130,8 @@ class DaprActorHttpClient(DaprActorClientBase):
             name (str): The name of reminder.
             data (bytes): Timer request json body.
         """
-        url = f"{self._get_base_url(actor_type, actor_id)}/timers/{name}"
-        await self._client.send_bytes(method="PUT", url=url, data=data)
+        url = f'{self._get_base_url(actor_type, actor_id)}/timers/{name}'
+        await self._client.send_bytes(method='PUT', url=url, data=data)
 
     async def unregister_timer(self, actor_type: str, actor_id: str, name: str) -> None:
         """Unregister actor timer.
@@ -141,8 +141,8 @@ class DaprActorHttpClient(DaprActorClientBase):
             actor_id (str): Id of Actor type.
             name (str): The name of timer
         """
-        url = f"{self._get_base_url(actor_type, actor_id)}/timers/{name}"
-        await self._client.send_bytes(method="DELETE", url=url, data=None)
+        url = f'{self._get_base_url(actor_type, actor_id)}/timers/{name}'
+        await self._client.send_bytes(method='DELETE', url=url, data=None)
 
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
-        return "{}/actors/{}/{}".format(self._client.get_api_url(), actor_type, actor_id)
+        return '{}/actors/{}/{}'.format(self._client.get_api_url(), actor_type, actor_id)

@@ -51,7 +51,7 @@ class DaprRequest:
     def metadata(self, val) -> None:
         """Sets metadata."""
         if not isinstance(val, tuple):
-            raise ValueError("val is not tuple")
+            raise ValueError('val is not tuple')
         self._metadata = val
 
     def get_metadata(self, as_dict: bool = False) -> Union[MetadataDict, MetadataTuple]:
@@ -84,7 +84,7 @@ class InvokeMethodRequest(DaprRequest):
             only for bytes array data.
     """
 
-    HTTP_METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"]
+    HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE']
 
     def __init__(
         self,
@@ -124,7 +124,7 @@ class InvokeMethodRequest(DaprRequest):
     def http_verb(self, val: Optional[str]) -> None:
         """Sets HTTP method to Dapr invocation request."""
         if val not in self.HTTP_METHODS:
-            raise ValueError(f"{val} is the invalid HTTP verb.")
+            raise ValueError(f'{val} is the invalid HTTP verb.')
         self._http_verb = val
 
     @property
@@ -134,7 +134,7 @@ class InvokeMethodRequest(DaprRequest):
 
     def is_http(self) -> bool:
         """Return true if this request is http compatible."""
-        return hasattr(self, "_http_verb") and not (not self._http_verb)
+        return hasattr(self, '_http_verb') and not (not self._http_verb)
 
     @property
     def proto(self) -> GrpcAny:
@@ -143,7 +143,7 @@ class InvokeMethodRequest(DaprRequest):
 
     def is_proto(self) -> bool:
         """Returns true if data is protocol-buffer serialized."""
-        return hasattr(self, "_data") and self._data.type_url != ""
+        return hasattr(self, '_data') and self._data.type_url != ''
 
     def pack(self, val: Union[GrpcAny, GrpcMessage]) -> None:
         """Serializes protocol buffer message.
@@ -160,7 +160,7 @@ class InvokeMethodRequest(DaprRequest):
             self._data = GrpcAny()
             self._data.Pack(val)
         else:
-            raise ValueError("invalid data type")
+            raise ValueError('invalid data type')
 
     def unpack(self, message: GrpcMessage) -> None:
         """Deserializes the serialized protocol buffer message.
@@ -179,7 +179,7 @@ class InvokeMethodRequest(DaprRequest):
     def data(self) -> bytes:
         """Gets request data as bytes."""
         if self.is_proto():
-            raise ValueError("data is protocol buffer message object.")
+            raise ValueError('data is protocol buffer message object.')
         return self._data.value
 
     @data.setter
@@ -196,7 +196,7 @@ class InvokeMethodRequest(DaprRequest):
         elif isinstance(val, (GrpcAny, GrpcMessage)):
             self.pack(val)
         else:
-            raise ValueError(f"invalid data type {type(val)}")
+            raise ValueError(f'invalid data type {type(val)}')
 
     def text(self) -> str:
         """Gets the request data as str."""
@@ -261,8 +261,8 @@ class BindingRequest(DaprRequest):
 class TransactionOperationType(Enum):
     """Represents the type of operation for a Dapr Transaction State Api Call"""
 
-    upsert = "upsert"
-    delete = "delete"
+    upsert = 'upsert'
+    delete = 'delete'
 
 
 class TransactionalStateOperation:
@@ -295,7 +295,7 @@ class TransactionalStateOperation:
             ValueError: data is not bytes or str.
         """
         if not isinstance(data, (bytes, str)):
-            raise ValueError(f"invalid type for data {type(data)}")
+            raise ValueError(f'invalid type for data {type(data)}')
 
         self._key = key
         self._data = data  # type: ignore

@@ -33,9 +33,9 @@ class DefaultJSONSerializerTests(unittest.TestCase):
             tzinfo=datetime.timezone.utc,
         )
         input_dict_obj = {
-            "propertyDecimal": 10,
-            "propertyStr": "StrValue",
-            "propertyDateTime": fakeDateTime,
+            'propertyDecimal': 10,
+            'propertyStr': 'StrValue',
+            'propertyDateTime': fakeDateTime,
         }
         serialized = serializer.serialize(input_dict_obj)
         self.assertEqual(
@@ -47,11 +47,11 @@ class DefaultJSONSerializerTests(unittest.TestCase):
         serializer = DefaultJSONSerializer()
 
         # Serialize`bytes data
-        serialized = serializer.serialize(b"bytes_data")
+        serialized = serializer.serialize(b'bytes_data')
         self.assertEqual(b'"Ynl0ZXNfZGF0YQ=="', serialized)
 
         # Serialize`bytes property
-        input_dict_obj = {"propertyBytes": b"bytes_property"}
+        input_dict_obj = {'propertyBytes': b'bytes_property'}
         serialized = serializer.serialize(input_dict_obj)
         self.assertEqual(serialized, b'{"propertyBytes":"Ynl0ZXNfcHJvcGVydHk="}')
 
@@ -60,11 +60,11 @@ class DefaultJSONSerializerTests(unittest.TestCase):
         payload = b'{"propertyDecimal":10,"propertyStr":"StrValue","propertyDateTime":"2020-01-01T01:00:00Z"}'  # noqa: E501
 
         obj = serializer.deserialize(payload)
-        self.assertEqual(obj["propertyDecimal"], 10)
-        self.assertEqual(obj["propertyStr"], "StrValue")
-        self.assertTrue(isinstance(obj["propertyDateTime"], datetime.datetime))
+        self.assertEqual(obj['propertyDecimal'], 10)
+        self.assertEqual(obj['propertyStr'], 'StrValue')
+        self.assertTrue(isinstance(obj['propertyDateTime'], datetime.datetime))
         self.assertEqual(
-            obj["propertyDateTime"],
+            obj['propertyDateTime'],
             datetime.datetime(
                 year=2020,
                 month=1,
@@ -78,5 +78,5 @@ class DefaultJSONSerializerTests(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

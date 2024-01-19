@@ -22,9 +22,9 @@ from durabletask import task
 
 from dapr.ext.workflow.workflow_activity_context import Activity
 
-T = TypeVar("T")
-TInput = TypeVar("TInput")
-TOutput = TypeVar("TOutput")
+T = TypeVar('T')
+TInput = TypeVar('TInput')
+TOutput = TypeVar('TOutput')
 
 
 class WorkflowContext(ABC):

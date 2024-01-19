@@ -16,4 +16,4 @@ limitations under the License.
 from typing import Optional
 from contextvars import ContextVar
 
-reentrancy_ctx: ContextVar[Optional[str]] = ContextVar("reentrancy_ctx", default=None)
+reentrancy_ctx: ContextVar[Optional[str]] = ContextVar('reentrancy_ctx', default=None)

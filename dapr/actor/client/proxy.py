@@ -24,7 +24,7 @@ from dapr.serializers import Serializer, DefaultJSONSerializer
 from dapr.conf import settings
 
 # Actor factory Callable type hint.
-ACTOR_FACTORY_CALLBACK = Callable[[ActorInterface, str, str], "ActorProxy"]
+ACTOR_FACTORY_CALLBACK = Callable[[ActorInterface, str, str], 'ActorProxy']
 
 
 class ActorFactoryBase(ABC):
@@ -34,7 +34,7 @@ class ActorFactoryBase(ABC):
         actor_type: str,
         actor_id: ActorId,
         actor_interface: Optional[Type[ActorInterface]] = None,
-    ) -> "ActorProxy":
+    ) -> 'ActorProxy':
         ...
 
 
@@ -60,7 +60,7 @@ class ActorProxyFactory(ActorFactoryBase):
         actor_type: str,
         actor_id: ActorId,
         actor_interface: Optional[Type[ActorInterface]] = None,
-    ) -> "ActorProxy":
+    ) -> 'ActorProxy':
         return ActorProxy(
             self._dapr_client, actor_type, actor_id, actor_interface, self._message_serializer
         )
@@ -68,7 +68,7 @@ class ActorProxyFactory(ActorFactoryBase):
 
 class CallableProxy:
     def __init__(
-        self, proxy: "ActorProxy", attr_call_type: Dict[str, Any], message_serializer: Serializer
+        self, proxy: 'ActorProxy', attr_call_type: Dict[str, Any], message_serializer: Serializer
     ):
         self._proxy = proxy
         self._attr_call_type = attr_call_type
@@ -76,7 +76,7 @@ class CallableProxy:
 
     async def __call__(self, *args, **kwargs) -> Any:
         if len(args) > 1:
-            raise ValueError("does not support multiple arguments")
+            raise ValueError('does not support multiple arguments')
 
         bytes_data = None
         if len(args) > 0:
@@ -85,9 +85,9 @@ class CallableProxy:
             else:
                 bytes_data = self._message_serializer.serialize(args[0])
 
-        rtnval = await self._proxy.invoke_method(self._attr_call_type["actor_method"], bytes_data)
+        rtnval = await self._proxy.invoke_method(self._attr_call_type['actor_method'], bytes_data)
 
-        return self._message_serializer.deserialize(rtnval, self._attr_call_type["return_types"])
+        return self._message_serializer.deserialize(rtnval, self._attr_call_type['return_types'])
 
 
 class ActorProxy:
@@ -134,7 +134,7 @@ class ActorProxy:
         actor_id: ActorId,
         actor_interface: Optional[Type[ActorInterface]] = None,
         actor_proxy_factory: Optional[ActorFactoryBase] = None,
-    ) -> "ActorProxy":
+    ) -> 'ActorProxy':
         """Creates ActorProxy client to call actor.
 
         Args:
@@ -168,7 +168,7 @@ class ActorProxy:
         """
 
         if raw_body is not None and not isinstance(raw_body, bytes):
-            raise ValueError(f"raw_body {type(raw_body)} is not bytes type")
+            raise ValueError(f'raw_body {type(raw_body)} is not bytes type')
 
         return await self._dapr_client.invoke_method(
             self._actor_type, str(self._actor_id), method, raw_body
@@ -189,14 +189,14 @@ class ActorProxy:
             AttributeError: method is not defined in Actor interface.
         """
         if not self._actor_interface:
-            raise ValueError("actor_interface is not set. use invoke method.")
+            raise ValueError('actor_interface is not set. use invoke method.')
 
         if name not in self._dispatchable_attr:
             get_dispatchable_attrs_from_interface(self._actor_interface, self._dispatchable_attr)
 
         attr_call_type = self._dispatchable_attr.get(name)
         if attr_call_type is None:
-            raise AttributeError(f"{self._actor_interface.__class__} has no attribute {name}")
+            raise AttributeError(f'{self._actor_interface.__class__} has no attribute {name}')
 
         if name not in self._callable_proxies:
             self._callable_proxies[name] = CallableProxy(

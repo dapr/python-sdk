@@ -17,31 +17,31 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 )
 
 
-_HELLOREQUEST = DESCRIPTOR.message_types_by_name["HelloRequest"]
-_HELLOREPLY = DESCRIPTOR.message_types_by_name["HelloReply"]
+_HELLOREQUEST = DESCRIPTOR.message_types_by_name['HelloRequest']
+_HELLOREPLY = DESCRIPTOR.message_types_by_name['HelloReply']
 HelloRequest = _reflection.GeneratedProtocolMessageType(
-    "HelloRequest",
+    'HelloRequest',
     (_message.Message,),
     {
-        "DESCRIPTOR": _HELLOREQUEST,
-        "__module__": "helloworld_service_pb2",
+        'DESCRIPTOR': _HELLOREQUEST,
+        '__module__': 'helloworld_service_pb2',
         # @@protoc_insertion_point(class_scope:HelloRequest)
     },
 )
 _sym_db.RegisterMessage(HelloRequest)
 
 HelloReply = _reflection.GeneratedProtocolMessageType(
-    "HelloReply",
+    'HelloReply',
     (_message.Message,),
     {
-        "DESCRIPTOR": _HELLOREPLY,
-        "__module__": "helloworld_service_pb2",
+        'DESCRIPTOR': _HELLOREPLY,
+        '__module__': 'helloworld_service_pb2',
         # @@protoc_insertion_point(class_scope:HelloReply)
     },
 )
 _sym_db.RegisterMessage(HelloReply)
 
-_HELLOWORLDSERVICE = DESCRIPTOR.services_by_name["HelloWorldService"]
+_HELLOWORLDSERVICE = DESCRIPTOR.services_by_name['HelloWorldService']
 if _descriptor._USE_C_DESCRIPTORS == False:
     DESCRIPTOR._options = None
     _HELLOREQUEST._serialized_start = 28
