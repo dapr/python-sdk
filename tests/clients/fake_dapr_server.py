@@ -65,6 +65,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         certificate_chain_file = open(CERTIFICATE_CHAIN_PATH, 'rb')
         certificate_chain_content = certificate_chain_file.read()
         certificate_chain_file.close()
+        certificate_chain_file.close()
 
         credentials = grpc.ssl_server_credentials(
             [(private_key_content, certificate_chain_content)]
@@ -185,6 +186,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return empty_pb2.Empty()
 
     def ExecuteStateTransaction(self, request, context):
+        self.check_for_exception(context)
+
         headers = ()
         trailers = ()
         for operation in request.operations:
@@ -213,6 +216,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return api_v1.GetStateResponse(data=data, etag=etag)
 
     def GetBulkState(self, request, context):
+        self.check_for_exception(context)
+
         items = []
         for key in request.keys:
             req = api_v1.GetStateRequest(store_name=request.store_name, key=key)
@@ -290,6 +295,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.UnsubscribeConfigurationResponse(ok=True)
 
     def QueryStateAlpha1(self, request, context):
+        self.check_for_exception(context)
+
         items = [
             QueryStateItem(key=str(key), data=bytes('value of ' + str(key), 'UTF-8'))
             for key in range(1, 11)
@@ -408,6 +415,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             raise Exception('Unable to raise event on workflow instance')
 
     def GetMetadata(self, request, context):
+        self.check_for_exception(context)
+
         return GetMetadataResponse(
             id='myapp',
             active_actors_count=[

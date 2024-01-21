@@ -98,7 +98,7 @@ class DaprGrpcError(RpcError):
 
     def message(self):
         if not self.status:
-            return ""
+            return ''
         return self.status.message
 
     def error_code(self):

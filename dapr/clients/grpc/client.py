@@ -498,8 +498,9 @@ class DaprGrpcClient:
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
         try:
             response, call = self._stub.GetState.with_call(req, metadata=metadata)
-            return StateResponse(data=response.data, etag=response.etag,
-                                 headers=call.initial_metadata())
+            return StateResponse(
+                data=response.data, etag=response.etag, headers=call.initial_metadata()
+            )
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
@@ -547,7 +548,11 @@ class DaprGrpcClient:
         req = api_v1.GetBulkStateRequest(
             store_name=store_name, keys=keys, parallelism=parallelism, metadata=states_metadata
         )
-        response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+
+        try:
+            response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
         items = []
         for item in response.items:
@@ -605,7 +610,11 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
         req = api_v1.QueryStateRequest(store_name=store_name, query=query, metadata=states_metadata)
-        response, call = self._stub.QueryStateAlpha1.with_call(req)
+
+        try:
+            response, call = self._stub.QueryStateAlpha1.with_call(req)
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
         results = []
         for item in response.results:
@@ -754,8 +763,12 @@ class DaprGrpcClient:
         ]
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=req_states)
-        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
-        return DaprResponse(headers=call.initial_metadata())
+
+        try:
+            _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def execute_state_transaction(
         self,
@@ -819,8 +832,12 @@ class DaprGrpcClient:
         req = api_v1.ExecuteStateTransactionRequest(
             storeName=store_name, operations=req_ops, metadata=transactional_metadata
         )
-        _, call = self._stub.ExecuteStateTransaction.with_call(req, metadata=metadata)
-        return DaprResponse(headers=call.initial_metadata())
+
+        try:
+            _, call = self._stub.ExecuteStateTransaction.with_call(req, metadata=metadata)
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def delete_state(
         self,
@@ -876,9 +893,13 @@ class DaprGrpcClient:
             state_options = options.get_proto()
 
         etag_object = common_v1.Etag(value=etag) if etag is not None else None
-        req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
-                                        etag=etag_object, options=state_options,
-                                        metadata=state_metadata)
+        req = api_v1.DeleteStateRequest(
+            store_name=store_name,
+            key=key,
+            etag=etag_object,
+            options=state_options,
+            metadata=state_metadata,
+        )
 
         try:
             _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
@@ -1517,7 +1538,11 @@ class DaprGrpcClient:
         information about supported features in the form of component
         capabilities.
         """
-        _resp, call = self._stub.GetMetadata.with_call(GrpcEmpty())
+        try:
+            _resp, call = self._stub.GetMetadata.with_call(GrpcEmpty())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
+
         response: api_v1.GetMetadataResponse = _resp  # type alias
         # Convert to more pythonic formats
         active_actors_count = {

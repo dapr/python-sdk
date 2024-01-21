@@ -21,9 +21,7 @@ import asyncio
 
 from unittest.mock import patch
 
-import grpc
-from google.rpc import error_details_pb2, status_pb2, code_pb2
-from google.protobuf.any_pb2 import Any
+from google.rpc import status_pb2, code_pb2
 
 from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc.client import DaprGrpcClient
@@ -46,6 +44,7 @@ from dapr.clients.grpc._response import (
 class DaprGrpcClientTests(unittest.TestCase):
     server_port = 8080
     scheme = ''
+    error = None
 
     def setUp(self):
         self._fake_dapr_server = FakeDaprSidecar()
@@ -299,100 +298,22 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.data, b'')
         self.assertEqual(resp.etag, '')
 
+        # Check a DaprGrpcError is raised
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message')
+        )
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.get_state(store_name='my_statestore', key='key||')
+
         dapr.delete_state(store_name='statestore', key=key)
         resp = dapr.get_state(store_name='statestore', key=key)
         self.assertEqual(resp.data, b'')
         self.assertEqual(resp.etag, '')
 
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(DaprGrpcError) as context:
             dapr.delete_state(store_name='statestore', key=key, state_metadata={'must_delete': '1'})
         print(context.exception)
         self.assertTrue('delete failed' in str(context.exception))
-
-    def test_error_on_get_and_delete_state(self):
-        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
-
-        detail1 = Any()
-        detail1.Pack(error_details_pb2.ErrorInfo(reason="DAPR_STATE_ILLEGAL_KEY"))
-
-        detail2 = Any()
-        detail2.Pack(
-            error_details_pb2.ResourceInfo(resource_type="state", resource_name="my_statestore"))
-
-        detail3 = Any()
-        detail3.Pack(error_details_pb2.BadRequest(field_violations=[
-            error_details_pb2.BadRequest.FieldViolation(field="key||",
-                                                        description="key is invalid")]))
-
-        expected_status = status_pb2.Status(code=code_pb2.INVALID_ARGUMENT,
-                                            message="state store get operation failed",
-                                            details=[detail1, detail2, detail3])
-
-        # Get key
-        self._fake_dapr_server.raise_exception_on_next_call(expected_status)
-
-        with self.assertRaises(DaprGrpcError) as context:
-            dapr.get_state(store_name="my_statestore", key="key||")
-
-        e = context.exception
-        self.assertEqual(e.code(), grpc.StatusCode.INVALID_ARGUMENT)
-        self.assertEqual(e.message(), "state store get operation failed")
-        self.assertEqual(e.error_code(), "DAPR_STATE_ILLEGAL_KEY")
-
-        self.assertIsNotNone(e.error_info)
-        self.assertEqual(e.error_info.reason, "DAPR_STATE_ILLEGAL_KEY")
-        #
-        self.assertIsNotNone(e.resource_info)
-        self.assertEqual(e.resource_info.resource_type, "state")
-        self.assertEqual(e.resource_info.resource_name, "my_statestore")
-
-        self.assertIsNotNone(e.bad_request)
-        self.assertEqual(len(e.bad_request.field_violations), 1)
-        self.assertEqual(e.bad_request.field_violations[0].field, "key||")
-        self.assertEqual(e.bad_request.field_violations[0].description, "key is invalid")
-
-        # Delete key
-        self._fake_dapr_server.raise_exception_on_next_call(expected_status)
-
-        with self.assertRaises(DaprGrpcError) as context:
-            dapr.delete_state(store_name="my_statestore", key="key||")
-
-        e = context.exception
-        self.assertEqual(e.code(), grpc.StatusCode.INVALID_ARGUMENT)
-        self.assertEqual(e.message(), "state store get operation failed")
-        self.assertEqual(e.error_code(), "DAPR_STATE_ILLEGAL_KEY")
-
-        self.assertIsNotNone(e.error_info)
-        self.assertEqual(e.error_info.reason, "DAPR_STATE_ILLEGAL_KEY")
-        #
-        self.assertIsNotNone(e.resource_info)
-        self.assertEqual(e.resource_info.resource_type, "state")
-        self.assertEqual(e.resource_info.resource_name, "my_statestore")
-
-        self.assertIsNotNone(e.bad_request)
-        self.assertEqual(len(e.bad_request.field_violations), 1)
-        self.assertEqual(e.bad_request.field_violations[0].field, "key||")
-        self.assertEqual(e.bad_request.field_violations[0].description, "key is invalid")
-
-    def test_grpc_error_on_save_state(self):
-        detail = Any()
-        detail.Pack(error_details_pb2.ErrorInfo(reason="DAPR_STATE_NOT_CONFIGURED"))
-        expected_status = status_pb2.Status(code=code_pb2.FAILED_PRECONDITION,
-                                            message="state store operation failed",
-                                            details=[detail])
-
-        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
-        self._fake_dapr_server.raise_exception_on_next_call(expected_status)
-
-        with self.assertRaises(DaprGrpcError) as context:
-            dapr.save_state(store_name="statestore", key="mykey", value="myvalue")
-
-        e = context.exception
-        self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
-        self.assertEqual(e.message(), "state store operation failed")
-        self.assertEqual(e.error_code(), "DAPR_STATE_NOT_CONFIGURED")
-        self.assertIsNotNone(e.error_info)
-        self.assertEqual(e.error_info.reason, "DAPR_STATE_NOT_CONFIGURED")
 
     def test_get_save_state_etag_none(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
@@ -449,7 +370,20 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
-    def test_save_then_get_states(self):
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message')
+        )
+        with self.assertRaises(DaprGrpcError):
+            dapr.execute_state_transaction(
+                store_name='statestore',
+                operations=[
+                    TransactionalStateOperation(key=key, data=value, etag='foo'),
+                    TransactionalStateOperation(key=another_key, data=another_value),
+                ],
+                transactional_metadata={'metakey': 'metavalue'},
+            )
+
+    def test_bulk_save_then_get_states(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
 
         key = str(uuid.uuid4())
@@ -483,6 +417,27 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].etag, '1')
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
+
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message')
+        )
+        with self.assertRaises(DaprGrpcError):
+            dapr.save_bulk_state(
+                store_name='statestore',
+                states=[
+                    StateItem(key=key, value=value, metadata={'capitalize': '1'}),
+                    StateItem(key=another_key, value=another_value, etag='1'),
+                ],
+                metadata=(('metakey', 'metavalue'),),
+            )
+
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message')
+        )
+        with self.assertRaises(DaprGrpcError):
+            dapr.get_bulk_state(
+                store_name='statestore', keys=[key, another_key], states_metadata={'upper': '1'}
+            )
 
     def test_get_secret(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
@@ -601,6 +556,13 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
         self.assertEqual(resp.results[0].key, '3')
         self.assertEqual(len(resp.results), 3)
+
+        self._fake_dapr_server.raise_exception_on_next_call(status_pb2.Status(
+            code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message'
+        ))
+        with self.assertRaises(DaprGrpcError):
+            dapr.query_state(store_name='statestore',
+                query=json.dumps({'filter': {}, 'page': {'limit': 3, 'token': '3'}}), )
 
     def test_shutdown(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')

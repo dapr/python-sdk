@@ -1,0 +1,145 @@
+import unittest
+
+import grpc
+from google.rpc import error_details_pb2, status_pb2, code_pb2
+from google.protobuf.any_pb2 import Any
+
+from dapr.clients import DaprGrpcClient
+from dapr.clients.exceptions import DaprGrpcError
+
+from .fake_dapr_server import FakeDaprSidecar
+
+
+def create_expected_status():
+    detail1 = Any()
+    detail1.Pack(error_details_pb2.ErrorInfo(reason='DAPR_ERROR_CODE'))
+
+    detail2 = Any()
+    detail2.Pack(
+        error_details_pb2.ResourceInfo(
+            resource_type='my_resource_type', resource_name='my_resource'
+        )
+    )
+
+    detail3 = Any()
+    detail3.Pack(
+        error_details_pb2.BadRequest(
+            field_violations=[
+                error_details_pb2.BadRequest.FieldViolation(
+                    field='my_field', description='my field violation message'
+                )
+            ]
+        )
+    )
+
+    help_message = error_details_pb2.Help()
+    link = error_details_pb2.Help.Link(description='Help Link', url='https://my_help_link')
+    help_message.links.extend([link])
+
+    detail4 = Any()
+    detail4.Pack(help_message)
+
+    return status_pb2.Status(
+        code=code_pb2.INTERNAL,
+        message='my invalid argument message',
+        details=[detail1, detail2, detail3, detail4],
+    )
+
+
+class DaprExceptionsTestCase(unittest.TestCase):
+    def setUp(self):
+        self._server_port = 8080
+        self._fake_dapr_server = FakeDaprSidecar()
+        self._fake_dapr_server.start(self._server_port)
+        self._expected_status = create_expected_status()
+
+    def tearDown(self):
+        self._fake_dapr_server.stop()
+
+    def test_exception_status_parsing(self):
+        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
+
+        self._fake_dapr_server.raise_exception_on_next_call(self._expected_status)
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.get_metadata()
+
+        dapr_error = context.exception
+
+        self.assertEqual(dapr_error.status_code, grpc.StatusCode.INTERNAL)
+        self.assertEqual(dapr_error.message(), 'my invalid argument message')
+        self.assertEqual(dapr_error.error_code(), 'DAPR_ERROR_CODE')
+
+        self.assertIsNotNone(dapr_error.error_info)
+        self.assertEqual(dapr_error.error_info.reason, 'DAPR_ERROR_CODE')
+        #
+        self.assertIsNotNone(dapr_error.resource_info)
+        self.assertEqual(dapr_error.resource_info.resource_type, 'my_resource_type')
+        self.assertEqual(dapr_error.resource_info.resource_name, 'my_resource')
+
+        self.assertIsNotNone(dapr_error.bad_request)
+        self.assertEqual(len(dapr_error.bad_request.field_violations), 1)
+        self.assertEqual(dapr_error.bad_request.field_violations[0].field, 'my_field')
+        self.assertEqual(
+            dapr_error.bad_request.field_violations[0].description, 'my field violation message'
+        )
+
+        self.assertIsNotNone(dapr_error.help)
+        self.assertEqual(dapr_error.help.links[0].url, 'https://my_help_link')
+
+    def test_code(self):
+        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
+
+        self._fake_dapr_server.raise_exception_on_next_call(self._expected_status)
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.get_metadata()
+
+        dapr_error = context.exception
+
+        self.assertEqual(dapr_error.code(), grpc.StatusCode.INTERNAL)
+
+    def test_message(self):
+        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
+
+        self._fake_dapr_server.raise_exception_on_next_call(self._expected_status)
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.get_metadata()
+
+        dapr_error = context.exception
+
+        self.assertEqual(dapr_error.message(), 'my invalid argument message')
+
+    def test_error_code(self):
+        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
+
+        expected_status = create_expected_status()
+
+        self._fake_dapr_server.raise_exception_on_next_call(expected_status)
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.get_metadata()
+
+        dapr_error = context.exception
+
+        self.assertEqual(dapr_error.error_code(), 'DAPR_ERROR_CODE')
+
+        # No ErrorInfo
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INTERNAL, message='my invalid argument message')
+        )
+
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.get_metadata()
+
+        dapr_error = context.exception
+
+        self.assertEqual(dapr_error.error_code(), 'UNKNOWN')
+
+    def test_status_details(self):
+        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
+
+        self._fake_dapr_server.raise_exception_on_next_call(self._expected_status)
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.get_metadata()
+
+        dapr_error = context.exception
+
+        self.assertEqual(dapr_error.status_details(), self._expected_status.details)
