@@ -13,3 +13,5 @@ pyOpenSSL>=23.2.0
 Flask>=1.1
 # needed for auto fix
 ruff>=0.1.11
+# needed for dapr-ext-workflow
+durabletask>=0.1.1a1
