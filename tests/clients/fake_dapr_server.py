@@ -147,6 +147,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.InvokeBindingResponse(data=resp_data, metadata=metadata)
 
     def PublishEvent(self, request, context):
+        self.check_for_exception(context)
+
         headers = ()
         trailers = ()
         if request.topic:

@@ -208,10 +208,16 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_publish_event(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
-        resp = dapr.publish_event(pubsub_name='pubsub', topic_name='example', data=b'haha')
+        resp = dapr.publish_event(pubsub_name='pubsub', topic_name='example', data=b'test_data')
 
         self.assertEqual(2, len(resp.headers))
-        self.assertEqual(['haha'], resp.headers['hdata'])
+        self.assertEqual(['test_data'], resp.headers['hdata'])
+
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message')
+        )
+        with self.assertRaises(DaprGrpcError):
+            dapr.publish_event(pubsub_name='pubsub', topic_name='example', data=b'test_data')
 
     def test_publish_event_with_content_type(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')
@@ -557,12 +563,14 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.results[0].key, '3')
         self.assertEqual(len(resp.results), 3)
 
-        self._fake_dapr_server.raise_exception_on_next_call(status_pb2.Status(
-            code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message'
-        ))
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message')
+        )
         with self.assertRaises(DaprGrpcError):
-            dapr.query_state(store_name='statestore',
-                query=json.dumps({'filter': {}, 'page': {'limit': 3, 'token': '3'}}), )
+            dapr.query_state(
+                store_name='statestore',
+                query=json.dumps({'filter': {}, 'page': {'limit': 3, 'token': '3'}}),
+            )
 
     def test_shutdown(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.server_port}')

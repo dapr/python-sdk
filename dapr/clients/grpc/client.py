@@ -451,8 +451,11 @@ class DaprGrpcClient:
             metadata=publish_metadata,
         )
 
-        # response is google.protobuf.Empty
-        _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+        try:
+            # response is google.protobuf.Empty
+            _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
         return DaprResponse(call.initial_metadata())
 
