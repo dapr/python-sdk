@@ -3,6 +3,7 @@ import unittest
 import grpc
 from google.rpc import error_details_pb2, status_pb2, code_pb2
 from google.protobuf.any_pb2 import Any
+from google.protobuf.duration_pb2 import Duration
 
 from dapr.clients import DaprGrpcClient
 from dapr.clients.exceptions import DaprGrpcError
@@ -15,35 +16,46 @@ def create_expected_status():
     detail1.Pack(error_details_pb2.ErrorInfo(reason='DAPR_ERROR_CODE'))
 
     detail2 = Any()
-    detail2.Pack(
-        error_details_pb2.ResourceInfo(
-            resource_type='my_resource_type', resource_name='my_resource'
-        )
-    )
+    detail2.Pack(error_details_pb2.ResourceInfo(resource_type='my_resource_type',
+        resource_name='my_resource'))
 
     detail3 = Any()
-    detail3.Pack(
-        error_details_pb2.BadRequest(
-            field_violations=[
-                error_details_pb2.BadRequest.FieldViolation(
-                    field='my_field', description='my field violation message'
-                )
-            ]
-        )
-    )
+    detail3.Pack(error_details_pb2.BadRequest(field_violations=[
+        error_details_pb2.BadRequest.FieldViolation(field='my_field',
+            description='my field violation message')]))
 
+    detail4 = Any()
     help_message = error_details_pb2.Help()
     link = error_details_pb2.Help.Link(description='Help Link', url='https://my_help_link')
     help_message.links.extend([link])
-
-    detail4 = Any()
     detail4.Pack(help_message)
 
-    return status_pb2.Status(
-        code=code_pb2.INTERNAL,
-        message='my invalid argument message',
-        details=[detail1, detail2, detail3, detail4],
-    )
+    detail5 = Any()
+    retry_info = error_details_pb2.RetryInfo(retry_delay=Duration(seconds=5))
+    detail5.Pack(retry_info)
+
+    detail6 = Any()
+    detail6.Pack(error_details_pb2.DebugInfo(stack_entries=['stack_entry_1', 'stack_entry_2']))
+
+    detail7 = Any()
+    detail7.Pack(error_details_pb2.LocalizedMessage(locale='en-US', message='my localized message'))
+
+    detail8 = Any()
+    violation = error_details_pb2.PreconditionFailure.Violation(type="your_violation_type",
+                                                                subject="your_violation_subject",
+                                                                description="your_violation_description")
+    detail8.Pack(error_details_pb2.PreconditionFailure(violations=[violation]))
+
+    detail9 = Any()
+    violation = error_details_pb2.QuotaFailure.Violation(subject="your_violation_subject", description="your_violation_description")
+    detail9.Pack(error_details_pb2.QuotaFailure(violations=[violation]))
+
+    detail10 = Any()
+    detail10.Pack(error_details_pb2.RequestInfo(request_id="your_request_id", serving_data="your_serving_data"))
+
+    return status_pb2.Status(code=code_pb2.INTERNAL, message='my invalid argument message',
+                             details=[detail1, detail2, detail3, detail4, detail5, detail6, detail7,
+                                      detail8, detail9, detail10], )
 
 
 class DaprExceptionsTestCase(unittest.TestCase):
@@ -79,12 +91,40 @@ class DaprExceptionsTestCase(unittest.TestCase):
         self.assertIsNotNone(dapr_error.bad_request)
         self.assertEqual(len(dapr_error.bad_request.field_violations), 1)
         self.assertEqual(dapr_error.bad_request.field_violations[0].field, 'my_field')
-        self.assertEqual(
-            dapr_error.bad_request.field_violations[0].description, 'my field violation message'
-        )
+        self.assertEqual(dapr_error.bad_request.field_violations[0].description,
+            'my field violation message')
 
         self.assertIsNotNone(dapr_error.help)
         self.assertEqual(dapr_error.help.links[0].url, 'https://my_help_link')
+
+        self.assertIsNotNone(dapr_error.retry_info)
+        self.assertEqual(dapr_error.retry_info.retry_delay.seconds, 5)
+
+        self.assertIsNotNone(dapr_error.debug_info)
+        self.assertEqual(len(dapr_error.debug_info.stack_entries), 2)
+        self.assertEqual(dapr_error.debug_info.stack_entries[0], 'stack_entry_1')
+        self.assertEqual(dapr_error.debug_info.stack_entries[1], 'stack_entry_2')
+
+        self.assertIsNotNone(dapr_error.localized_message)
+        self.assertEqual(dapr_error.localized_message.locale, 'en-US')
+        self.assertEqual(dapr_error.localized_message.message, 'my localized message')
+
+        self.assertIsNotNone(dapr_error.precondition_failure)
+        self.assertEqual(len(dapr_error.precondition_failure.violations), 1)
+        self.assertEqual(dapr_error.precondition_failure.violations[0].type, 'your_violation_type')
+        self.assertEqual(dapr_error.precondition_failure.violations[0].subject, 'your_violation_subject')
+        self.assertEqual(dapr_error.precondition_failure.violations[0].description, 'your_violation_description')
+
+        self.assertIsNotNone(dapr_error.quota_failure)
+        self.assertEqual(len(dapr_error.quota_failure.violations), 1)
+        self.assertEqual(dapr_error.quota_failure.violations[0].subject, 'your_violation_subject')
+        self.assertEqual(dapr_error.quota_failure.violations[0].description, 'your_violation_description')
+
+        self.assertIsNotNone(dapr_error.request_info)
+        self.assertEqual(dapr_error.request_info.request_id, 'your_request_id')
+        self.assertEqual(dapr_error.request_info.serving_data, 'your_serving_data')
+
+
 
     def test_code(self):
         dapr = DaprGrpcClient(f'localhost:{self._server_port}')
@@ -123,8 +163,7 @@ class DaprExceptionsTestCase(unittest.TestCase):
 
         # No ErrorInfo
         self._fake_dapr_server.raise_exception_on_next_call(
-            status_pb2.Status(code=code_pb2.INTERNAL, message='my invalid argument message')
-        )
+            status_pb2.Status(code=code_pb2.INTERNAL, message='my invalid argument message'))
 
         with self.assertRaises(DaprGrpcError) as context:
             dapr.get_metadata()
