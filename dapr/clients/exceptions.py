@@ -72,6 +72,9 @@ class DaprGrpcError(RpcError):
         self._parse_details()
 
     def _parse_details(self):
+        if self._grpc_status is None:
+            return
+
         for detail in self._grpc_status.details:
             if detail.Is(error_details_pb2.ErrorInfo.DESCRIPTOR):
                 self._details.error_info = serialize_status_detail(detail)
@@ -95,13 +98,17 @@ class DaprGrpcError(RpcError):
                 self._details.localized_message = serialize_status_detail(detail)
 
     def code(self):
-        return self._status_code.name
+        return self._status_code
 
-    def message(self):
+    def details(self):
+        """
+        We're keeping the method name details() so it matches the grpc.RpcError interface.
+        @return:
+        """
         return self._err_message
 
     def error_code(self):
-        if not self._details.error_info:
+        if not self.status_details() or not self.status_details().error_info:
             return ERROR_CODE_UNKNOWN
         return self._details.error_info['reason']
 
@@ -114,7 +121,7 @@ class DaprGrpcError(RpcError):
     def json(self):
         error_details = {
             'status_code': self.code(),
-            'message': self.message(),
+            'message': self.details(),
             'error_code': self.error_code(),
             'details': self._details.as_dict(),
         }

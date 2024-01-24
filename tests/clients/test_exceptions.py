@@ -107,8 +107,8 @@ class DaprExceptionsTestCase(unittest.TestCase):
 
         dapr_error = context.exception
 
-        self.assertEqual(dapr_error.code(), 'INTERNAL')
-        self.assertEqual(dapr_error.message(), 'my invalid argument message')
+        self.assertEqual(dapr_error.code(), grpc.StatusCode.INTERNAL)
+        self.assertEqual(dapr_error.details(), 'my invalid argument message')
         self.assertEqual(dapr_error.error_code(), 'DAPR_ERROR_CODE')
 
         self.assertIsNotNone(dapr_error._details.error_info)
