@@ -1274,10 +1274,8 @@ class DaprGrpcClient:
             raise DaprInternalError(err.details())
 
     def terminate_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str,
-            non_recursive: bool = False) -> DaprResponse:
+        self, instance_id: str, workflow_component: str, non_recursive: bool = False
+    ) -> DaprResponse:
         """Terminates a workflow.
 
             Args:
@@ -1303,7 +1301,8 @@ class DaprGrpcClient:
         req = api_v1.TerminateWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component,
-            non_recursive=non_recursive)
+            non_recursive=non_recursive,
+        )
 
         try:
             _, call = self._stub.TerminateWorkflowBeta1.with_call(req)
@@ -1446,10 +1445,8 @@ class DaprGrpcClient:
             raise DaprInternalError(err.details())
 
     def purge_workflow(
-            self,
-            instance_id: str,
-            workflow_component: str,
-            non_recursive: bool = False) -> DaprResponse:
+        self, instance_id: str, workflow_component: str, non_recursive: bool = False
+    ) -> DaprResponse:
         """Purges a workflow.
 
             Args:
@@ -1458,7 +1455,7 @@ class DaprGrpcClient:
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
                 non_recursive (bool): if true, child workflows will not be purged,
-                                    defaults to false.         
+                                    defaults to false.
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -1474,7 +1471,8 @@ class DaprGrpcClient:
         req = api_v1.PurgeWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component,
-            non_recursive=non_recursive)
+            non_recursive=non_recursive,
+        )
 
         try:
             _, call = self._stub.PurgeWorkflowBeta1.with_call(req)

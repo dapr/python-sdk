@@ -60,8 +60,10 @@ def hello_world_wf(ctx: DaprWorkflowContext, wf_input):
     yield ctx.call_activity(hello_act, input=100)
     yield ctx.call_activity(hello_act, input=1000)
 
+
 def child_wf(ctx: DaprWorkflowContext):
     yield ctx.wait_for_external_event('event1')
+
 
 def hello_act(ctx: WorkflowActivityContext, wf_input):
     global counter
