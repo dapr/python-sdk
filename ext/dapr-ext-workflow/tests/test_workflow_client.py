@@ -49,7 +49,7 @@ class FakeTaskHubGrpcClient:
     ):
         return mock_raise_event_result
 
-    def terminate_orchestration(self, instance_id: str, *, output: Union[Any, None] = None):
+    def terminate_orchestration(self, instance_id: str, *, output: Union[Any, None] = None, recursive: bool = True):
         return mock_terminate_result
 
     def suspend_orchestration(self, instance_id: str):
