@@ -14,7 +14,7 @@ from dapr.clients import DaprClient
 tracer_provider = TracerProvider(sampler=ALWAYS_ON)
 
 # Create a span processor
-span_processor = BatchSpanProcessor(ZipkinExporter(endpoint="http://localhost:9411/api/v2/spans"))
+span_processor = BatchSpanProcessor(ZipkinExporter(endpoint='http://localhost:9411/api/v2/spans'))
 
 # Add the span processor to the tracer provider
 tracer_provider.add_span_processor(span_processor)
@@ -58,6 +58,9 @@ with tracer.start_as_current_span(name='main') as span:
             print(resp.text(), flush=True)
 
             forwarded_resp = d.invoke_method('invoke-receiver', 'forward', data='')
-            match_string = 'matches' if (
-                forwarded_resp.json()["receivedtraceid"] == traceid) else 'does not match'
-            print(f"Trace ID {match_string} after forwarding", flush=True)
+            match_string = (
+                'matches'
+                if (forwarded_resp.json()['receivedtraceid'] == traceid)
+                else 'does not match'
+            )
+            print(f'Trace ID {match_string} after forwarding', flush=True)

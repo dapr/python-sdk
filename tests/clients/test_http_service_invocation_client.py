@@ -308,9 +308,7 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
             TraceContextTextMapPropagator().inject(carrier=headers)
             return headers
 
-        self.client = DaprClient(
-            headers_callback=trace_injector
-        )
+        self.client = DaprClient(headers_callback=trace_injector)
         self.server.set_response(b'FOO')
 
         with tracer.start_as_current_span(name='test'):

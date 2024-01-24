@@ -110,9 +110,7 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
         self.assertEqual(b'FOO', resp.data)
 
     def test_timeout_exception_thrown_when_timeout_reached(self):
-        new_client = DaprClient(
-            f'https://localhost:{self.server_port}', http_timeout_seconds=1
-        )
+        new_client = DaprClient(f'https://localhost:{self.server_port}', http_timeout_seconds=1)
         self.server.set_server_delay(1.5)
         with self.assertRaises(TimeoutError):
             new_client.invoke_method(self.app_id, self.method_name, '')
