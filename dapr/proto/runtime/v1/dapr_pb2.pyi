@@ -1444,7 +1444,7 @@ class ActorRuntime(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _ActorRuntimeStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ActorRuntime._ActorRuntimeStatus.ValueType], builtins.type):  # noqa: F821
+    class _ActorRuntimeStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ActorRuntime._ActorRuntimeStatus.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         INITIALIZING: ActorRuntime._ActorRuntimeStatus.ValueType  # 0
         """Indicates that the actor runtime is still being initialized."""
@@ -2000,7 +2000,7 @@ class UnlockResponse(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _StatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[UnlockResponse._Status.ValueType], builtins.type):  # noqa: F821
+    class _StatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[UnlockResponse._Status.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         SUCCESS: UnlockResponse._Status.ValueType  # 0
         LOCK_DOES_NOT_EXIST: UnlockResponse._Status.ValueType  # 1
@@ -2034,7 +2034,7 @@ class SubtleGetKeyRequest(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _KeyFormatEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[SubtleGetKeyRequest._KeyFormat.ValueType], builtins.type):  # noqa: F821
+    class _KeyFormatEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[SubtleGetKeyRequest._KeyFormat.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         PEM: SubtleGetKeyRequest._KeyFormat.ValueType  # 0
         """PEM (PKIX) (default)"""
@@ -2766,17 +2766,21 @@ class TerminateWorkflowRequest(google.protobuf.message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
+    NON_RECURSIVE_FIELD_NUMBER: builtins.int
     instance_id: builtins.str
     """ID of the workflow instance to terminate."""
     workflow_component: builtins.str
     """Name of the workflow component."""
+    non_recursive: builtins.bool
+    """Indicates whether this is a non_recursive terminate request"""
     def __init__(
         self,
         *,
         instance_id: builtins.str = ...,
         workflow_component: builtins.str = ...,
+        non_recursive: builtins.bool = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "non_recursive", b"non_recursive", "workflow_component", b"workflow_component"]) -> None: ...
 
 global___TerminateWorkflowRequest = TerminateWorkflowRequest
 
@@ -2862,17 +2866,21 @@ class PurgeWorkflowRequest(google.protobuf.message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
+    NON_RECURSIVE_FIELD_NUMBER: builtins.int
     instance_id: builtins.str
     """ID of the workflow instance to purge."""
     workflow_component: builtins.str
     """Name of the workflow component."""
+    non_recursive: builtins.bool
+    """Indicates whether this is a non_recursive purge request"""
     def __init__(
         self,
         *,
         instance_id: builtins.str = ...,
         workflow_component: builtins.str = ...,
+        non_recursive: builtins.bool = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "non_recursive", b"non_recursive", "workflow_component", b"workflow_component"]) -> None: ...
 
 global___PurgeWorkflowRequest = PurgeWorkflowRequest
 

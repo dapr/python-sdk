@@ -47,7 +47,7 @@ class HTTPExtension(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _VerbEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[HTTPExtension._Verb.ValueType], builtins.type):  # noqa: F821
+    class _VerbEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[HTTPExtension._Verb.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         NONE: HTTPExtension._Verb.ValueType  # 0
         GET: HTTPExtension._Verb.ValueType  # 1
@@ -279,7 +279,7 @@ class StateOptions(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _StateConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[StateOptions._StateConcurrency.ValueType], builtins.type):  # noqa: F821
+    class _StateConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[StateOptions._StateConcurrency.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         CONCURRENCY_UNSPECIFIED: StateOptions._StateConcurrency.ValueType  # 0
         CONCURRENCY_FIRST_WRITE: StateOptions._StateConcurrency.ValueType  # 1
@@ -296,7 +296,7 @@ class StateOptions(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _StateConsistencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[StateOptions._StateConsistency.ValueType], builtins.type):  # noqa: F821
+    class _StateConsistencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[StateOptions._StateConsistency.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         CONSISTENCY_UNSPECIFIED: StateOptions._StateConsistency.ValueType  # 0
         CONSISTENCY_EVENTUAL: StateOptions._StateConsistency.ValueType  # 1

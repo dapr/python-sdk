@@ -30,8 +30,10 @@ child_orchestrator_count = 0
 child_orchestrator_string = ''
 child_act_retry_count = 0
 instance_id = 'exampleInstanceID'
+child_instance_id = 'childInstanceID'
 workflow_component = 'dapr'
 workflow_name = 'hello_world_wf'
+child_workflow_name = 'child_wf'
 input_data = 'Hi Counter!'
 workflow_options = dict()
 workflow_options['task_queue'] = 'testQueue'
@@ -53,10 +55,14 @@ def hello_world_wf(ctx: DaprWorkflowContext, wf_input):
     yield ctx.call_activity(hello_act, input=1)
     yield ctx.call_activity(hello_act, input=10)
     yield ctx.call_activity(hello_retryable_act, retry_policy=retry_policy)
-    yield ctx.call_child_workflow(workflow=child_wf, retry_policy=retry_policy)
-    yield ctx.wait_for_external_event('event1')
+    yield ctx.call_child_workflow(child_retryable_wf, retry_policy=retry_policy)
+    yield ctx.call_child_workflow(child_wf, instance_id=child_instance_id)
     yield ctx.call_activity(hello_act, input=100)
     yield ctx.call_activity(hello_act, input=1000)
+
+
+def child_wf(ctx: DaprWorkflowContext):
+    yield ctx.wait_for_external_event('event1')
 
 
 def hello_act(ctx: WorkflowActivityContext, wf_input):
@@ -75,7 +81,7 @@ def hello_retryable_act(ctx: WorkflowActivityContext):
     retry_count += 1
 
 
-def child_wf(ctx: DaprWorkflowContext):
+def child_retryable_wf(ctx: DaprWorkflowContext):
     global child_orchestrator_string, child_orchestrator_count
     if not ctx.is_replaying:
         child_orchestrator_count += 1
@@ -103,6 +109,7 @@ def main():
     with DaprClient() as d:
         workflow_runtime = WorkflowRuntime()
         workflow_runtime.register_workflow(hello_world_wf)
+        workflow_runtime.register_workflow(child_retryable_wf)
         workflow_runtime.register_workflow(child_wf)
         workflow_runtime.register_activity(hello_act)
         workflow_runtime.register_activity(hello_retryable_act)
@@ -144,7 +151,7 @@ def main():
         sleep(1)
         # Raise event
         d.raise_workflow_event(
-            instance_id=instance_id,
+            instance_id=child_instance_id,
             workflow_component=workflow_component,
             event_name=event_name,
             event_data=event_data,
@@ -171,6 +178,7 @@ def main():
         )
         print(f'start_resp {start_resp.instance_id}')
 
+        sleep(5)
         # Terminate Test
         d.terminate_workflow(instance_id=instance_id, workflow_component=workflow_component)
         sleep(1)
@@ -180,6 +188,13 @@ def main():
         print(
             f'Get response from {workflow_name} '
             f'after terminate call: {get_response.runtime_status}'
+        )
+        child_get_response = d.get_workflow(
+            instance_id=child_instance_id, workflow_component=workflow_component
+        )
+        print(
+            f'Get response from {child_workflow_name} '
+            f'after terminate call: {child_get_response.runtime_status}'
         )
 
         # Purge Test
