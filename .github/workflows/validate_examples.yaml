@@ -33,7 +33,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      GOVER: 1.20
+      GOVER: 1.21.4
       GOOS: linux
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
@@ -96,6 +96,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GOVER }}
+        env:
+          GOPATH: ${{ github.workspace }}
       - name: Checkout Dapr CLI repo to override dapr command.
         uses: actions/checkout@v4
         if: env.DAPR_CLI_REF != ''
