@@ -38,8 +38,8 @@ jobs:
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
       DAPR_INSTALL_URL: https://raw.githubusercontent.com/dapr/cli/master/install/install.sh
-      DAPR_CLI_REF: ${{ github.event.inputs.daprcli_commit }}
-      DAPR_REF: ${{ github.event.inputs.daprdapr_commit }}
+      DAPR_CLI_REF: ''
+      DAPR_REF: master
       CHECKOUT_REPO: ${{ github.repository }}
       CHECKOUT_REF: ${{ github.ref }}
 
@@ -56,7 +56,15 @@ jobs:
             echo "CHECKOUT_REF=${{ github.event.client_payload.pull_head_ref }}" >> $GITHUB_ENV
             echo "DAPR_REF=master" >> $GITHUB_ENV
           fi
-
+      - name: Parse workflow dispatch payload
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ ${{ github.event.inputs.daprcli_commit }} != '' ]; then
+            echo "DAPR_CLI_REF=${{ github.event.inputs.daprcli_commit }}" >> $GITHUB_ENV
+          fi
+          if [ ${{ github.event.inputs.daprdapr_commit }} != '' ]; then
+            echo "DAPR_REF=${{ github.event.inputs.daprdapr_commit }}" >> $GITHUB_ENV
+          fi
       - name: Check out code onto GOPATH
         uses: actions/checkout@v4
         with:
