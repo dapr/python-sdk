@@ -110,7 +110,7 @@ class DaprGrpcError(RpcError):
     def error_code(self):
         if not self.status_details() or not self.status_details().error_info:
             return ERROR_CODE_UNKNOWN
-        return self._details.error_info['reason']
+        return self.status_details().error_info.get("reason", ERROR_CODE_UNKNOWN)
 
     def status_details(self):
         return self._details
