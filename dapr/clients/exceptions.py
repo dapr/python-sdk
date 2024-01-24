@@ -12,8 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import json
 from typing import Optional
+
+from google.protobuf.json_format import MessageToDict
 from grpc import RpcError  # type: ignore
 from grpc_status import rpc_status  # type: ignore
 from google.rpc import error_details_pb2  # type: ignore
@@ -43,10 +45,9 @@ class DaprInternalError(Exception):
         }
 
 
-class DaprGrpcError(RpcError):
-    def __init__(self, err: RpcError):
-        self.status_code = err.code()
-        self.error_info = None  # Initialize attributes
+class StatusDetails:
+    def __init__(self):
+        self.error_info = None
         self.retry_info = None
         self.debug_info = None
         self.quota_failure = None
@@ -57,56 +58,70 @@ class DaprGrpcError(RpcError):
         self.help = None
         self.localized_message = None
 
-        self.status = rpc_status.from_call(err)
+    def as_dict(self):
+        return {attr: getattr(self, attr) for attr in self.__dict__}
+
+
+class DaprGrpcError(RpcError):
+    def __init__(self, err: RpcError):
+        self._status_code = err.code()
+        self._err_message = err.details()
+        self._details = StatusDetails()
+
+        self._grpc_status = rpc_status.from_call(err)
         self._parse_details()
 
     def _parse_details(self):
-        for detail in self.status_details():
+        for detail in self._grpc_status.details:
             if detail.Is(error_details_pb2.ErrorInfo.DESCRIPTOR):
-                self.error_info = error_details_pb2.ErrorInfo()
-                detail.Unpack(self.error_info)
+                self._details.error_info = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.RetryInfo.DESCRIPTOR):
-                self.retry_info = error_details_pb2.RetryInfo()
-                detail.Unpack(self.retry_info)
+                self._details.retry_info = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.DebugInfo.DESCRIPTOR):
-                self.debug_info = error_details_pb2.DebugInfo()
-                detail.Unpack(self.debug_info)
+                self._details.debug_info = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.QuotaFailure.DESCRIPTOR):
-                self.quota_failure = error_details_pb2.QuotaFailure()
-                detail.Unpack(self.quota_failure)
+                self._details.quota_failure = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.PreconditionFailure.DESCRIPTOR):
-                self.precondition_failure = error_details_pb2.PreconditionFailure()
-                detail.Unpack(self.precondition_failure)
+                self._details.precondition_failure = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.BadRequest.DESCRIPTOR):
-                self.bad_request = error_details_pb2.BadRequest()
-                detail.Unpack(self.bad_request)
+                self._details.bad_request = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.RequestInfo.DESCRIPTOR):
-                self.request_info = error_details_pb2.RequestInfo()
-                detail.Unpack(self.request_info)
+                self._details.request_info = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.ResourceInfo.DESCRIPTOR):
-                self.resource_info = error_details_pb2.ResourceInfo()
-                detail.Unpack(self.resource_info)
+                self._details.resource_info = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.Help.DESCRIPTOR):
-                self.help = error_details_pb2.Help()
-                detail.Unpack(self.help)
+                self._details.help = serialize_status_detail(detail)
             elif detail.Is(error_details_pb2.LocalizedMessage.DESCRIPTOR):
-                self.localized_message = error_details_pb2.LocalizedMessage()
-                detail.Unpack(self.localized_message)
+                self._details.localized_message = serialize_status_detail(detail)
 
     def code(self):
-        return self.status_code
+        return self._status_code.name
 
     def message(self):
-        if not self.status:
-            return ''
-        return self.status.message
+        return self._err_message
 
     def error_code(self):
-        if not self.error_info:
+        if not self._details.error_info:
             return ERROR_CODE_UNKNOWN
-        return self.error_info.reason
+        return self._details.error_info['reason']
 
     def status_details(self):
-        if not self.status or not self.status.details:
-            return []
-        return self.status.details
+        return self._details
+
+    def get_grpc_status(self):
+        return self._grpc_status
+
+    def json(self):
+        error_details = {
+            'status_code': self.code(),
+            'message': self.message(),
+            'error_code': self.error_code(),
+            'details': self._details.as_dict(),
+        }
+        return json.dumps(error_details)
+
+
+def serialize_status_detail(status_detail):
+    if not status_detail:
+        return None
+    return MessageToDict(status_detail, preserving_proto_field_name=True)

@@ -107,81 +107,83 @@ class DaprExceptionsTestCase(unittest.TestCase):
 
         dapr_error = context.exception
 
-        self.assertEqual(dapr_error.status_code, grpc.StatusCode.INTERNAL)
+        self.assertEqual(dapr_error.code(), 'INTERNAL')
         self.assertEqual(dapr_error.message(), 'my invalid argument message')
         self.assertEqual(dapr_error.error_code(), 'DAPR_ERROR_CODE')
 
-        self.assertIsNotNone(dapr_error.error_info)
-        self.assertEqual(dapr_error.error_info.reason, 'DAPR_ERROR_CODE')
+        self.assertIsNotNone(dapr_error._details.error_info)
+        self.assertEqual(dapr_error.status_details().error_info['reason'], 'DAPR_ERROR_CODE')
         #
-        self.assertIsNotNone(dapr_error.resource_info)
-        self.assertEqual(dapr_error.resource_info.resource_type, 'my_resource_type')
-        self.assertEqual(dapr_error.resource_info.resource_name, 'my_resource')
-
-        self.assertIsNotNone(dapr_error.bad_request)
-        self.assertEqual(len(dapr_error.bad_request.field_violations), 1)
-        self.assertEqual(dapr_error.bad_request.field_violations[0].field, 'my_field')
+        self.assertIsNotNone(dapr_error.status_details().resource_info)
         self.assertEqual(
-            dapr_error.bad_request.field_violations[0].description, 'my field violation message'
+            dapr_error.status_details().resource_info['resource_type'], 'my_resource_type'
         )
+        self.assertEqual(dapr_error.status_details().resource_info['resource_name'], 'my_resource')
 
-        self.assertIsNotNone(dapr_error.help)
-        self.assertEqual(dapr_error.help.links[0].url, 'https://my_help_link')
-
-        self.assertIsNotNone(dapr_error.retry_info)
-        self.assertEqual(dapr_error.retry_info.retry_delay.seconds, 5)
-
-        self.assertIsNotNone(dapr_error.debug_info)
-        self.assertEqual(len(dapr_error.debug_info.stack_entries), 2)
-        self.assertEqual(dapr_error.debug_info.stack_entries[0], 'stack_entry_1')
-        self.assertEqual(dapr_error.debug_info.stack_entries[1], 'stack_entry_2')
-
-        self.assertIsNotNone(dapr_error.localized_message)
-        self.assertEqual(dapr_error.localized_message.locale, 'en-US')
-        self.assertEqual(dapr_error.localized_message.message, 'my localized message')
-
-        self.assertIsNotNone(dapr_error.precondition_failure)
-        self.assertEqual(len(dapr_error.precondition_failure.violations), 1)
-        self.assertEqual(dapr_error.precondition_failure.violations[0].type, 'your_violation_type')
+        self.assertIsNotNone(dapr_error.status_details().bad_request)
+        self.assertEqual(len(dapr_error.status_details().bad_request['field_violations']), 1)
         self.assertEqual(
-            dapr_error.precondition_failure.violations[0].subject, 'your_violation_subject'
+            dapr_error.status_details().bad_request['field_violations'][0]['field'], 'my_field'
         )
         self.assertEqual(
-            dapr_error.precondition_failure.violations[0].description, 'your_violation_description'
+            dapr_error.status_details().bad_request['field_violations'][0]['description'],
+            'my field violation message',
         )
 
-        self.assertIsNotNone(dapr_error.quota_failure)
-        self.assertEqual(len(dapr_error.quota_failure.violations), 1)
-        self.assertEqual(dapr_error.quota_failure.violations[0].subject, 'your_violation_subject')
+        self.assertIsNotNone(dapr_error.status_details().help)
         self.assertEqual(
-            dapr_error.quota_failure.violations[0].description, 'your_violation_description'
+            dapr_error.status_details().help['links'][0]['url'], 'https://my_help_link'
         )
 
-        self.assertIsNotNone(dapr_error.request_info)
-        self.assertEqual(dapr_error.request_info.request_id, 'your_request_id')
-        self.assertEqual(dapr_error.request_info.serving_data, 'your_serving_data')
+        self.assertIsNotNone(dapr_error.status_details().retry_info)
+        self.assertEqual(dapr_error.status_details().retry_info['retry_delay'], '5s')
 
-    def test_code(self):
-        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
+        self.assertIsNotNone(dapr_error.status_details().debug_info)
+        self.assertEqual(len(dapr_error.status_details().debug_info['stack_entries']), 2)
+        self.assertEqual(
+            dapr_error.status_details().debug_info['stack_entries'][0], 'stack_entry_1'
+        )
+        self.assertEqual(
+            dapr_error.status_details().debug_info['stack_entries'][1], 'stack_entry_2'
+        )
 
-        self._fake_dapr_server.raise_exception_on_next_call(self._expected_status)
-        with self.assertRaises(DaprGrpcError) as context:
-            dapr.get_metadata()
+        self.assertIsNotNone(dapr_error.status_details().localized_message)
+        self.assertEqual(dapr_error.status_details().localized_message['locale'], 'en-US')
+        self.assertEqual(
+            dapr_error.status_details().localized_message['message'], 'my localized message'
+        )
 
-        dapr_error = context.exception
+        self.assertIsNotNone(dapr_error.status_details().precondition_failure)
+        self.assertEqual(len(dapr_error.status_details().precondition_failure['violations']), 1)
+        self.assertEqual(
+            dapr_error.status_details().precondition_failure['violations'][0]['type'],
+            'your_violation_type',
+        )
+        self.assertEqual(
+            dapr_error.status_details().precondition_failure['violations'][0]['subject'],
+            'your_violation_subject',
+        )
+        self.assertEqual(
+            dapr_error.status_details().precondition_failure['violations'][0]['description'],
+            'your_violation_description',
+        )
 
-        self.assertEqual(dapr_error.code(), grpc.StatusCode.INTERNAL)
+        self.assertIsNotNone(dapr_error.status_details().quota_failure)
+        self.assertEqual(len(dapr_error.status_details().quota_failure['violations']), 1)
+        self.assertEqual(
+            dapr_error.status_details().quota_failure['violations'][0]['subject'],
+            'your_violation_subject',
+        )
+        self.assertEqual(
+            dapr_error.status_details().quota_failure['violations'][0]['description'],
+            'your_violation_description',
+        )
 
-    def test_message(self):
-        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
-
-        self._fake_dapr_server.raise_exception_on_next_call(self._expected_status)
-        with self.assertRaises(DaprGrpcError) as context:
-            dapr.get_metadata()
-
-        dapr_error = context.exception
-
-        self.assertEqual(dapr_error.message(), 'my invalid argument message')
+        self.assertIsNotNone(dapr_error.status_details().request_info)
+        self.assertEqual(dapr_error.status_details().request_info['request_id'], 'your_request_id')
+        self.assertEqual(
+            dapr_error.status_details().request_info['serving_data'], 'your_serving_data'
+        )
 
     def test_error_code(self):
         dapr = DaprGrpcClient(f'localhost:{self._server_port}')
@@ -207,14 +209,3 @@ class DaprExceptionsTestCase(unittest.TestCase):
         dapr_error = context.exception
 
         self.assertEqual(dapr_error.error_code(), 'UNKNOWN')
-
-    def test_status_details(self):
-        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
-
-        self._fake_dapr_server.raise_exception_on_next_call(self._expected_status)
-        with self.assertRaises(DaprGrpcError) as context:
-            dapr.get_metadata()
-
-        dapr_error = context.exception
-
-        self.assertEqual(dapr_error.status_details(), self._expected_status.details)
