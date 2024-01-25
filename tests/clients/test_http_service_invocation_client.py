@@ -14,17 +14,23 @@ limitations under the License.
 """
 
 import json
+import typing
 import unittest
+from asyncio import TimeoutError
 from unittest.mock import patch
 
-from .fake_http_server import FakeHttpServer
-from asyncio import TimeoutError
-from dapr.conf import settings
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
+from dapr.conf import settings
 from dapr.proto import common_v1
-from opencensus.trace.tracer import Tracer  # type: ignore
-from opencensus.trace import print_exporter, samplers
+
+from .fake_http_server import FakeHttpServer
 
 
 class DaprInvocationHttpClientTests(unittest.TestCase):
@@ -282,14 +288,30 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.assertEqual(b'FOO', resp.data)
 
     def test_invoke_method_with_tracer(self):
-        tracer = Tracer(sampler=samplers.AlwaysOnSampler(), exporter=print_exporter.PrintExporter())
+        # Create a tracer provider
+        tracer_provider = TracerProvider(sampler=ALWAYS_ON)
 
-        self.client = DaprClient(
-            headers_callback=lambda: tracer.propagator.to_headers(tracer.span_context)
-        )
+        # Create a span processor
+        span_processor = BatchSpanProcessor(ConsoleSpanExporter())
+
+        # Add the span processor to the tracer provider
+        tracer_provider.add_span_processor(span_processor)
+
+        # Set the tracer provider
+        trace.set_tracer_provider(tracer_provider)
+
+        # Get the tracer
+        tracer = trace.get_tracer(__name__)
+
+        def trace_injector() -> typing.Dict[str, str]:
+            headers: typing.Dict[str, str] = {}
+            TraceContextTextMapPropagator().inject(carrier=headers)
+            return headers
+
+        self.client = DaprClient(headers_callback=trace_injector)
         self.server.set_response(b'FOO')
 
-        with tracer.span(name='test'):
+        with tracer.start_as_current_span(name='test'):
             req = common_v1.StateItem(key='test')
             resp = self.client.invoke_method(
                 self.app_id,
