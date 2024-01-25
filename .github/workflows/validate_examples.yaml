@@ -33,7 +33,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      GOVER: 1.20
+      GOVER: 1.21
       GOOS: linux
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
