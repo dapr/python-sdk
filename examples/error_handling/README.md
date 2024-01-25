@@ -25,7 +25,7 @@ To run this example, the following code can be used:
 <!-- STEP
 name: Run error handling example
 expected_stdout_lines:
-- "== APP == Status code: INVALID_ARGUMENT"
+- "== APP == Status code: StatusCode.INVALID_ARGUMENT"
 - "== APP == Message: input key/keyPrefix 'key||' can't contain '||'"
 - "== APP == Error code: DAPR_STATE_ILLEGAL_KEY"
 - "== APP == Error info(reason): DAPR_STATE_ILLEGAL_KEY"

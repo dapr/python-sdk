@@ -120,7 +120,7 @@ class DaprGrpcError(RpcError):
 
     def json(self):
         error_details = {
-            'status_code': self.code(),
+            'status_code': self.code().name,
             'message': self.details(),
             'error_code': self.error_code(),
             'details': self._details.as_dict(),

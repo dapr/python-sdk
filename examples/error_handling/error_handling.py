@@ -17,8 +17,10 @@ with DaprClient() as d:
         print(f'Status code: {err.code()}', flush=True)
         print(f'Message: {err.details()}', flush=True)
         print(f'Error code: {err.error_code()}', flush=True)
-        if err.status_details() is not None:
+
+        if err.status_details().error_info is not None:
             print(f'Error info(reason): {err.status_details().error_info["reason"]}', flush=True)
+        if err.status_details().resource_info is not None:
             print(
                 f'Resource info (resource type): {err.status_details().resource_info["resource_type"]}',
                 flush=True,
@@ -27,6 +29,7 @@ with DaprClient() as d:
                 f'Resource info (resource name): {err.status_details().resource_info["resource_name"]}',
                 flush=True,
             )
+        if err.status_details().bad_request is not None:
             print(
                 f'Bad request (field): {err.status_details().bad_request["field_violations"][0]["field"]}',
                 flush=True,
@@ -35,4 +38,4 @@ with DaprClient() as d:
                 f'Bad request (description): {err.status_details().bad_request["field_violations"][0]["description"]}',
                 flush=True,
             )
-            print(f'JSON: {err.json()}', flush=True)
+        print(f'JSON: {err.json()}', flush=True)
