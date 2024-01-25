@@ -15,7 +15,7 @@ with DaprClient() as d:
         d.save_state(store_name=storeName, key=key, value=value)
     except DaprGrpcError as err:
         print(f'Status code: {err.code()}', flush=True)
-        print(f'Message: {err.message()}', flush=True)
+        print(f'Message: {err.details()}', flush=True)
         print(f'Error code: {err.error_code()}', flush=True)
         if err.status_details() is not None:
             print(f'Error info(reason): {err.status_details().error_info["reason"]}', flush=True)
