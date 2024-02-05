@@ -209,7 +209,7 @@ class DaprWorkflowClient:
         return self.__obj.raise_orchestration_event(instance_id, event_name, data=data)
 
     def terminate_workflow(
-        self, instance_id: str, *, non_recursive: bool = False, output: Optional[Any] = None
+        self, instance_id: str, *, recursive: bool = True, output: Optional[Any] = None
     ):
         """Terminates a running workflow instance and updates its runtime status to
            WorkflowRuntimeStatus.Terminated This method internally enqueues a "terminate" message in
@@ -217,23 +217,23 @@ class DaprWorkflowClient:
            status of the target instance to WorkflowRuntimeStatus.Terminated. You can use
            wait_for_workflow_completion to wait for the instance to reach the terminated state.
 
-           Terminating a workflow by default will terminate all of the child workflows that were started by
-           the workflow instance. If you don't want to terminate child workflows, you can set `non_recursive`
-           flag to true which will disable termination of child workflows.
+           Terminating a workflow by default will terminate all child workflows that were started by
+           the workflow instance. If you don't want to terminate child workflows, you can set the
+           `recursive` flag to false which will disable termination of child workflows.
 
-           However, terminating a workflow would have no effect on any in-flight activity function executions
-           that were started by the terminated workflow instance.
+           However, terminating a workflow would have no effect on any in-flight activity function
+           executions that were started by the terminated workflow instance.
 
            At the time of writing, there is no way to terminate an in-flight activity execution.
 
         Args:
             instance_id: The ID of the workflow instance to terminate.
             output: The optional output to set for the terminated workflow instance.
-            non_recursive: If true, child workflows will not be terminated,
-                           defaults to false.
+            recursive (bool): if false, child workflows will not be purged,
+                                    defaults to true.
         """
         return self.__obj.terminate_orchestration(
-            instance_id, output=output, recursive=(not non_recursive)
+            instance_id, output=output, recursive=recursive
         )
 
     def pause_workflow(self, instance_id: str):

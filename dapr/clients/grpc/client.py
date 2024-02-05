@@ -1274,7 +1274,7 @@ class DaprGrpcClient:
             raise DaprInternalError(err.details())
 
     def terminate_workflow(
-        self, instance_id: str, workflow_component: str, non_recursive: bool = False
+        self, instance_id: str, workflow_component: str, recursive: bool = True
     ) -> DaprResponse:
         """Terminates a workflow.
 
@@ -1283,8 +1283,8 @@ class DaprGrpcClient:
                                     `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
-                non_recursive (bool): if true, child workflows will not be terminated,
-                                    defaults to false.
+                recursive (bool): if false, child workflows will not be purged,
+                                    defaults to true.
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -1301,7 +1301,7 @@ class DaprGrpcClient:
         req = api_v1.TerminateWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component,
-            non_recursive=non_recursive,
+            recursive=recursive,
         )
 
         try:
@@ -1445,7 +1445,7 @@ class DaprGrpcClient:
             raise DaprInternalError(err.details())
 
     def purge_workflow(
-        self, instance_id: str, workflow_component: str, non_recursive: bool = False
+        self, instance_id: str, workflow_component: str, recursive: bool = True
     ) -> DaprResponse:
         """Purges a workflow.
 
@@ -1454,8 +1454,8 @@ class DaprGrpcClient:
                                     e.g. `order_processing_workflow-103784`.
                 workflow_component (str): the name of the workflow component
                                     that will run the workflow. e.g. `dapr`.
-                non_recursive (bool): if true, child workflows will not be purged,
-                                    defaults to false.
+                recursive (bool): if false, child workflows will not be purged,
+                                    defaults to true.
 
         Returns:
             :class:`DaprResponse` gRPC metadata returned from callee
@@ -1471,7 +1471,7 @@ class DaprGrpcClient:
         req = api_v1.PurgeWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component,
-            non_recursive=non_recursive,
+            recursive=recursive,
         )
 
         try:
