@@ -30,30 +30,6 @@ else:
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
-class _Boolean:
-    ValueType = typing.NewType("ValueType", builtins.int)
-    V: typing_extensions.TypeAlias = ValueType
-
-class _BooleanEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_Boolean.ValueType], builtins.type):
-    DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
-    BOOLEAN_UNSPECIFIED: _Boolean.ValueType  # 0
-    """Unspecified value, used for defaulting."""
-    BOOLEAN_TRUE: _Boolean.ValueType  # 1
-    """True value."""
-    BOOLEAN_FALSE: _Boolean.ValueType  # 2
-    """False value."""
-
-class Boolean(_Boolean, metaclass=_BooleanEnumTypeWrapper):
-    """Boolean represents a boolean value which can be defaulted, true, or false."""
-
-BOOLEAN_UNSPECIFIED: Boolean.ValueType  # 0
-"""Unspecified value, used for defaulting."""
-BOOLEAN_TRUE: Boolean.ValueType  # 1
-"""True value."""
-BOOLEAN_FALSE: Boolean.ValueType  # 2
-"""False value."""
-global___Boolean = Boolean
-
 @typing_extensions.final
 class HTTPExtension(google.protobuf.message.Message):
     """HTTPExtension includes HTTP verb and querystring

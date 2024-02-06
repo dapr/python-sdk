@@ -2766,25 +2766,17 @@ class TerminateWorkflowRequest(google.protobuf.message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    RECURSIVE_FIELD_NUMBER: builtins.int
     instance_id: builtins.str
     """ID of the workflow instance to terminate."""
     workflow_component: builtins.str
     """Name of the workflow component."""
-    recursive: dapr.proto.common.v1.common_pb2.Boolean.ValueType
-    """Indicates whether this is a recursive terminate request
-    Defaults to true.
-    """
     def __init__(
         self,
         *,
         instance_id: builtins.str = ...,
         workflow_component: builtins.str = ...,
-        recursive: dapr.proto.common.v1.common_pb2.Boolean.ValueType | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["_recursive", b"_recursive", "recursive", b"recursive"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["_recursive", b"_recursive", "instance_id", b"instance_id", "recursive", b"recursive", "workflow_component", b"workflow_component"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["_recursive", b"_recursive"]) -> typing_extensions.Literal["recursive"] | None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
 
 global___TerminateWorkflowRequest = TerminateWorkflowRequest
 
@@ -2870,25 +2862,17 @@ class PurgeWorkflowRequest(google.protobuf.message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    RECURSIVE_FIELD_NUMBER: builtins.int
     instance_id: builtins.str
     """ID of the workflow instance to purge."""
     workflow_component: builtins.str
     """Name of the workflow component."""
-    recursive: dapr.proto.common.v1.common_pb2.Boolean.ValueType
-    """Indicates whether this is a recursive purge request
-    Defaults to true.
-    """
     def __init__(
         self,
         *,
         instance_id: builtins.str = ...,
         workflow_component: builtins.str = ...,
-        recursive: dapr.proto.common.v1.common_pb2.Boolean.ValueType | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["_recursive", b"_recursive", "recursive", b"recursive"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["_recursive", b"_recursive", "instance_id", b"instance_id", "recursive", b"recursive", "workflow_component", b"workflow_component"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["_recursive", b"_recursive"]) -> typing_extensions.Literal["recursive"] | None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]) -> None: ...
 
 global___PurgeWorkflowRequest = PurgeWorkflowRequest
 
