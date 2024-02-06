@@ -37,7 +37,7 @@ from grpc import (  # type: ignore
     RpcError,
 )
 
-from dapr.clients.exceptions import DaprInternalError
+from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.conf import settings
@@ -451,8 +451,11 @@ class DaprGrpcClient:
             metadata=publish_metadata,
         )
 
-        # response is google.protobuf.Empty
-        _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+        try:
+            # response is google.protobuf.Empty
+            _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
         return DaprResponse(call.initial_metadata())
 
@@ -496,10 +499,13 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
-        response, call = self._stub.GetState.with_call(req, metadata=metadata)
-        return StateResponse(
-            data=response.data, etag=response.etag, headers=call.initial_metadata()
-        )
+        try:
+            response, call = self._stub.GetState.with_call(req, metadata=metadata)
+            return StateResponse(
+                data=response.data, etag=response.etag, headers=call.initial_metadata()
+            )
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def get_bulk_state(
         self,
@@ -545,7 +551,11 @@ class DaprGrpcClient:
         req = api_v1.GetBulkStateRequest(
             store_name=store_name, keys=keys, parallelism=parallelism, metadata=states_metadata
         )
-        response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+
+        try:
+            response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
         items = []
         for item in response.items:
@@ -603,7 +613,11 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
         req = api_v1.QueryStateRequest(store_name=store_name, query=query, metadata=states_metadata)
-        response, call = self._stub.QueryStateAlpha1.with_call(req)
+
+        try:
+            response, call = self._stub.QueryStateAlpha1.with_call(req)
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
         results = []
         for item in response.results:
@@ -692,8 +706,11 @@ class DaprGrpcClient:
         )
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
-        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
-        return DaprResponse(headers=call.initial_metadata())
+        try:
+            _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def save_bulk_state(
         self, store_name: str, states: List[StateItem], metadata: Optional[MetadataTuple] = None
@@ -749,8 +766,12 @@ class DaprGrpcClient:
         ]
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=req_states)
-        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
-        return DaprResponse(headers=call.initial_metadata())
+
+        try:
+            _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def execute_state_transaction(
         self,
@@ -814,8 +835,12 @@ class DaprGrpcClient:
         req = api_v1.ExecuteStateTransactionRequest(
             storeName=store_name, operations=req_ops, metadata=transactional_metadata
         )
-        _, call = self._stub.ExecuteStateTransaction.with_call(req, metadata=metadata)
-        return DaprResponse(headers=call.initial_metadata())
+
+        try:
+            _, call = self._stub.ExecuteStateTransaction.with_call(req, metadata=metadata)
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def delete_state(
         self,
@@ -878,8 +903,12 @@ class DaprGrpcClient:
             options=state_options,
             metadata=state_metadata,
         )
-        _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
-        return DaprResponse(headers=call.initial_metadata())
+
+        try:
+            _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def get_secret(
         self,
@@ -1512,7 +1541,11 @@ class DaprGrpcClient:
         information about supported features in the form of component
         capabilities.
         """
-        _resp, call = self._stub.GetMetadata.with_call(GrpcEmpty())
+        try:
+            _resp, call = self._stub.GetMetadata.with_call(GrpcEmpty())
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
+
         response: api_v1.GetMetadataResponse = _resp  # type alias
         # Convert to more pythonic formats
         active_actors_count = {

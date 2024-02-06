@@ -71,7 +71,7 @@ jobs:
       run: |
         tox -e py`echo "${{ matrix.python_ver }}" | sed 's/\.//g'`
     - name: Upload test coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
   publish:
     needs: build
     if: github.event_name != 'pull_request'
