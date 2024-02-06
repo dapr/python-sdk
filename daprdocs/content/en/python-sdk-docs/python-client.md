@@ -74,6 +74,26 @@ If your Dapr instance is configured to require the `DAPR_API_TOKEN` environment 
 set it in the environment and the client will use it automatically.  
 You can read more about Dapr API token authentication [here](https://docs.dapr.io/operations/security/api-token/).
 
+## Error handling
+Initially, errors in Dapr followed the [Standard gRPC error model](https://grpc.io/docs/guides/error/#standard-error-model). However, to provide more detailed and informative error messages, in version 1.13 an enhanced error model has been introduced which aligns with the gRPC [Richer error model](https://grpc.io/docs/guides/error/#richer-error-model). In response, the Python SDK implemented `DaprGrpcError`, a custom exception class designed to improve the developer experience.  
+It's important to note that the transition to using `DaprGrpcError` for all gRPC status exceptions is a work in progress. As of now, not every API call in the SDK has been updated to leverage this custom exception. We are actively working on this enhancement and welcome contributions from the community.
+
+Example of handling `DaprGrpcError` exceptions when using the Dapr python-SDK:
+
+```python
+try:
+    d.save_state(store_name=storeName, key=key, value=value)
+except DaprGrpcError as err:
+    print(f'Status code: {err.code()}')
+    print(f"Message: {err.message()}")
+    print(f"Error code: {err.error_code()}")
+    print(f"Error info(reason): {err.error_info.reason}")
+    print(f"Resource info (resource type): {err.resource_info.resource_type}")
+    print(f"Resource info (resource name): {err.resource_info.resource_name}")
+    print(f"Bad request (field): {err.bad_request.field_violations[0].field}")
+    print(f"Bad request (description): {err.bad_request.field_violations[0].description}")
+```
+
 
 ## Building blocks
 

@@ -4,6 +4,7 @@ import json
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
+from grpc_status import rpc_status
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
@@ -48,6 +49,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.workflow_status = {}
         self.workflow_options: Dict[str, str] = {}
         self.metadata: Dict[str, str] = {}
+        self._next_exception = None
 
     def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
@@ -63,6 +65,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         certificate_chain_file = open(CERTIFICATE_CHAIN_PATH, 'rb')
         certificate_chain_content = certificate_chain_file.read()
         certificate_chain_file.close()
+        certificate_chain_file.close()
 
         credentials = grpc.ssl_server_credentials(
             [(private_key_content, certificate_chain_content)]
@@ -77,6 +80,29 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def stop_secure(self):
         self._server.stop(None)
         delete_certificates()
+
+    def raise_exception_on_next_call(self, exception):
+        """
+        Raise an exception on the next call to the server.
+        Useful for testing error handling.
+        @param exception:
+        """
+        self._next_exception = exception
+
+    def check_for_exception(self, context):
+        """
+        Check if an exception was raised on the last call to the server.
+        Useful for testing error handling.
+        @return: The raised exception, or None if no exception was raised.
+        """
+
+        exception = self._next_exception
+        self._next_exception = None
+
+        if exception is None:
+            return None
+
+        context.abort_with_status(rpc_status.to_status(exception))
 
     def InvokeService(self, request, context) -> common_v1.InvokeResponse:
         headers = ()
@@ -121,6 +147,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.InvokeBindingResponse(data=resp_data, metadata=metadata)
 
     def PublishEvent(self, request, context):
+        self.check_for_exception(context)
+
         headers = ()
         trailers = ()
         if request.topic:
@@ -142,6 +170,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return empty_pb2.Empty()
 
     def SaveState(self, request, context):
+        self.check_for_exception(context)
+
         headers = ()
         trailers = ()
         for state in request.states:
@@ -158,6 +188,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return empty_pb2.Empty()
 
     def ExecuteStateTransaction(self, request, context):
+        self.check_for_exception(context)
+
         headers = ()
         trailers = ()
         for operation in request.operations:
@@ -174,6 +206,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return empty_pb2.Empty()
 
     def GetState(self, request, context):
+        self.check_for_exception(context)
+
         key = request.key
         if key not in self.store:
             return empty_pb2.Empty()
@@ -184,6 +218,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return api_v1.GetStateResponse(data=data, etag=etag)
 
     def GetBulkState(self, request, context):
+        self.check_for_exception(context)
+
         items = []
         for key in request.keys:
             req = api_v1.GetStateRequest(store_name=request.store_name, key=key)
@@ -196,6 +232,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.GetBulkStateResponse(items=items)
 
     def DeleteState(self, request, context):
+        self.check_for_exception(context)
+
         headers = ()
         trailers = ()
         key = request.key
@@ -259,6 +297,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.UnsubscribeConfigurationResponse(ok=True)
 
     def QueryStateAlpha1(self, request, context):
+        self.check_for_exception(context)
+
         items = [
             QueryStateItem(key=str(key), data=bytes('value of ' + str(key), 'UTF-8'))
             for key in range(1, 11)
@@ -377,6 +417,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             raise Exception('Unable to raise event on workflow instance')
 
     def GetMetadata(self, request, context):
+        self.check_for_exception(context)
+
         return GetMetadataResponse(
             id='myapp',
             active_actors_count=[
