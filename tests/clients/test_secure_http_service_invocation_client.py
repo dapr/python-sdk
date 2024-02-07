@@ -23,6 +23,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
+import dapr.clients.http.helpers
 from dapr.clients import DaprClient
 from dapr.clients.http.client import DaprHttpClient
 from dapr.conf import settings
@@ -122,6 +123,8 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
     def test_get_api_url_default(self):
         client = DaprClient()
         self.assertEqual(
-            'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT,
-                                     settings.DAPR_API_VERSION),
-            client.invocation_client._client.get_api_url())
+            'http://{}:{}/{}'.format(
+                settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
+            ),
+            dapr.clients.http.helpers.get_api_url(),
+        )

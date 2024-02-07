@@ -48,13 +48,6 @@ class DaprHttpClient:
         self._serializer = message_serializer
         self._headers_callback = headers_callback
 
-    def get_api_url(self) -> str:
-        if settings.DAPR_HTTP_ENDPOINT:
-            return '{}/{}'.format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
-
-        return 'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST,
-                                        settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION)
-
     async def send_bytes(
         self,
         method: str,
