@@ -50,7 +50,7 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
         self.server.start()
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
-        settings.DAPR_HTTP_ENDPOINT = "https://localhost:{}".format(self.server_port)
+        settings.DAPR_HTTP_ENDPOINT = 'https://localhost:{}'.format(self.server_port)
         self.client = DaprClient()
         self.app_id = 'fakeapp'
         self.method_name = 'fakemethod'
@@ -118,10 +118,12 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
         with self.assertRaises(TimeoutError):
             new_client.invoke_method(self.app_id, self.method_name, '')
 
-    @patch.object(settings, "DAPR_HTTP_ENDPOINT", None)
+    @patch.object(settings, 'DAPR_HTTP_ENDPOINT', None)
     def test_get_api_url_default(self):
         client = DaprClient()
         self.assertEqual(
-            'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT,
-                                     settings.DAPR_API_VERSION),
-            client.invocation_client._client.get_api_url())
+            'http://{}:{}/{}'.format(
+                settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
+            ),
+            client.invocation_client._client.get_api_url(),
+        )

@@ -32,9 +32,8 @@ class DaprInvocationHttpClient:
     """Service Invocation HTTP Client"""
 
     def __init__(
-            self,
-            timeout: int = 60,
-            headers_callback: Optional[Callable[[], Dict[str, str]]] = None):
+        self, timeout: int = 60, headers_callback: Optional[Callable[[], Dict[str, str]]] = None
+    ):
         """Invokes Dapr's API for method invocation over HTTP.
 
         Args:

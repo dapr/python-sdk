@@ -33,10 +33,13 @@ DAPR_USER_AGENT = f'dapr-sdk-python/{__version__}'
 
 class DaprHttpClient:
     """A Dapr Http API client"""
-    def __init__(self,
-                 message_serializer: 'Serializer',
-                 timeout: Optional[int] = 60,
-                 headers_callback: Optional[Callable[[], Dict[str, str]]] = None):
+
+    def __init__(
+        self,
+        message_serializer: 'Serializer',
+        timeout: Optional[int] = 60,
+        headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+    ):
         """Invokes Dapr over HTTP.
 
         Args:
@@ -52,8 +55,9 @@ class DaprHttpClient:
         if settings.DAPR_HTTP_ENDPOINT:
             return '{}/{}'.format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
 
-        return 'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST,
-                                        settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION)
+        return 'http://{}:{}/{}'.format(
+            settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
+        )
 
     async def send_bytes(
         self,
