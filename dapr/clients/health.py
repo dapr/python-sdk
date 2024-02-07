@@ -42,14 +42,14 @@ def healthcheck(timeout_s: int = 5):
                     try:
                         async with session.get(healthz_url, headers=headers) as response:
                             if 200 <= response.status < 300:
-                                print("Dapr service is healthy.")
+                                print('Dapr service is healthy.')
                                 break
                     except aiohttp.ClientError as e:
-                        print(f"Health check failed: {e}")
+                        print(f'Health check failed: {e}')
 
                     remaining = (start + timeout_s) - time.time()
                     if remaining <= 0:
-                        print("Health check timed out.")
+                        print('Health check timed out.')
                         return False
                     await asyncio.sleep(min(1, remaining))
             return await func(*args, **kwargs)
@@ -60,14 +60,14 @@ def healthcheck(timeout_s: int = 5):
                     req = urllib.request.Request(healthz_url, headers=headers)
                     with urllib.request.urlopen(req) as response:
                         if 200 <= response.status < 300:
-                            print("Dapr service is healthy. SYNC")
+                            print('Dapr service is healthy. SYNC')
                             break
                 except urllib.error.URLError as e:
-                    print(f"Health check failed: {e.reason}")
+                    print(f'Health check failed: {e.reason}')
 
                 remaining = (start + timeout_s) - time.time()
                 if remaining <= 0:
-                    print("Health check timed out.")
+                    print('Health check timed out.')
                     return False
                 time.sleep(min(1, remaining))
             return func(*args, **kwargs)
