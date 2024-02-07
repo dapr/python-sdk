@@ -15,7 +15,6 @@ limitations under the License.
 import ssl
 import typing
 from asyncio import TimeoutError
-from unittest.mock import patch
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -23,7 +22,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-import dapr.clients.http.helpers
 from dapr.clients import DaprClient
 from dapr.clients.http.client import DaprHttpClient
 from dapr.conf import settings
