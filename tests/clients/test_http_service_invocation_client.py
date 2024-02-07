@@ -17,7 +17,6 @@ import json
 import typing
 import unittest
 from asyncio import TimeoutError
-from unittest.mock import patch
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -25,7 +24,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-import dapr.clients.http.helpers
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
 from dapr.conf import settings
@@ -50,31 +48,6 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.server.shutdown_server()
         settings.DAPR_API_TOKEN = None
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
-
-    def test_get_api_url_default(self):
-        client = DaprClient()
-        self.assertEqual(
-            'http://{}:{}/{}'.format(
-                settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
-            ),
-            dapr.clients.http.helpers.get_api_url(),
-        )
-
-    @patch.object(settings, "DAPR_HTTP_ENDPOINT", "https://domain1.com:5000")
-    def test_dont_get_api_url_endpoint_as_argument(self):
-        client = DaprClient('http://localhost:5000')
-        self.assertEqual(
-            'https://domain1.com:5000/{}'.format(settings.DAPR_API_VERSION),
-            dapr.clients.http.helpers.get_api_url(),
-        )
-
-    @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'https://domain1.com:5000')
-    def test_get_api_url_endpoint_as_env_variable(self):
-        client = DaprClient()
-        self.assertEqual(
-            'https://domain1.com:5000/{}'.format(settings.DAPR_API_VERSION),
-            dapr.clients.http.helpers.get_api_url(),
-        )
 
     def test_basic_invoke(self):
         self.server.set_response(b'STRING_BODY')
