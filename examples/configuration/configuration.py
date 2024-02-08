@@ -52,10 +52,10 @@ async def executeConfiguration():
         isSuccess = d.unsubscribe_configuration(store_name=storeName, id=id)
         print(f'Unsubscribed successfully? {isSuccess}', flush=True)
 
+
 try:
     asyncio.run(executeConfiguration())
 except TimeoutError as e:
     print("Dapr wasn't ready in time: {e}")
 except Exception as e:
     print(e)
-
