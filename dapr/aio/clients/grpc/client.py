@@ -504,8 +504,9 @@ class DaprGrpcClientAsync:
         except AioRpcError as err:
             raise DaprGrpcError(err) from err
 
-        return StateResponse(data=response.data, etag=response.etag,
-                             headers=await call.initial_metadata())
+        return StateResponse(
+            data=response.data, etag=response.etag, headers=await call.initial_metadata()
+        )
 
     async def get_bulk_state(
         self,
@@ -561,7 +562,8 @@ class DaprGrpcClientAsync:
         items = []
         for item in response.items:
             items.append(
-                BulkStateItem(key=item.key, data=item.data, etag=item.etag, error=item.error))
+                BulkStateItem(key=item.key, data=item.data, etag=item.etag, error=item.error)
+            )
         return BulkStatesResponse(items=items, headers=await call.initial_metadata())
 
     async def query_state(
@@ -623,10 +625,15 @@ class DaprGrpcClientAsync:
         results = []
         for item in response.results:
             results.append(
-                QueryResponseItem(key=item.key, value=item.data, etag=item.etag, error=item.error))
+                QueryResponseItem(key=item.key, value=item.data, etag=item.etag, error=item.error)
+            )
 
-        return QueryResponse(token=response.token, results=results, metadata=response.metadata,
-                             headers=await call.initial_metadata(), )
+        return QueryResponse(
+            token=response.token,
+            results=results,
+            metadata=response.metadata,
+            headers=await call.initial_metadata(),
+        )
 
     async def save_state(
         self,
