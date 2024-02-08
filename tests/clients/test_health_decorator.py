@@ -63,7 +63,7 @@ class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
             return 'Async function executed'
 
         async def run_test():
-            with self.assertRaises(TimeoutError) as context:
+            with self.assertRaises(TimeoutError):
                 await async_test_function()
 
         asyncio.run(run_test())
