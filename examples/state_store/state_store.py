@@ -97,4 +97,7 @@ def save_state():
         print(f'Got value after delete: {data}')
 
 
-save_state()
+try:
+    save_state()
+except TimeoutError as e:
+    print(f'Error: {e}')

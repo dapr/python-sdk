@@ -6,6 +6,7 @@ import asyncio
 from time import sleep
 from dapr.clients import DaprClient
 from dapr.clients.grpc._response import ConfigurationWatcher, ConfigurationResponse
+from dapr.clients.health import healthcheck
 
 configuration: ConfigurationWatcher = ConfigurationWatcher()
 
@@ -20,14 +21,12 @@ def handler(id: str, resp: ConfigurationResponse):
         )
 
 
+@healthcheck(timeout_s=10)
 async def executeConfiguration():
     with DaprClient() as d:
         storeName = 'configurationstore'
 
         keys = ['orderId1', 'orderId2']
-
-        # Wait for sidecar to be up within 20 seconds.
-        d.wait(20)
 
         global configuration
 
@@ -53,5 +52,10 @@ async def executeConfiguration():
         isSuccess = d.unsubscribe_configuration(store_name=storeName, id=id)
         print(f'Unsubscribed successfully? {isSuccess}', flush=True)
 
+try:
+    asyncio.run(executeConfiguration())
+except TimeoutError as e:
+    print("Dapr wasn't ready in time: {e}")
+except Exception as e:
+    print(e)
 
-asyncio.run(executeConfiguration())

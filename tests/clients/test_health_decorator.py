@@ -52,16 +52,19 @@ class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
         asyncio.run(run_test())
         mock_get.assert_called()
 
-    # @patch('aiohttp.ClientSession.get', new_callable=AsyncMock)
-    # async def test_healthcheck_async_unhealthy(self, mock_get):
-    #     # Simulate an async timeout error
-    #     mock_get.side_effect = asyncio.TimeoutError("Simulated async timeout")
-    #
-    #     @healthcheck(timeout_s=1)
-    #     async def async_test_function():
-    #         return "Async function executed"
-    #
-    #     with self.assertRaises(ValueError) as context:
-    #         await async_test_function()
-    #
-    #     mock_get.assert_called()
+    @patch('aiohttp.ClientSession.get')
+    def test_healthcheck_async_unhealthy(self, mock_get):
+        # Mock the response to simulate an unhealthy Dapr service
+        mock_response = MagicMock(status=500)
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        @healthcheck(timeout_s=1)
+        async def async_test_function():
+            return 'Async function executed'
+
+        async def run_test():
+            with self.assertRaises(TimeoutError) as context:
+                await async_test_function()
+
+        asyncio.run(run_test())
+        mock_get.assert_called()
