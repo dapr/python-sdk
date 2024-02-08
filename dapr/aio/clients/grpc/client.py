@@ -451,9 +451,10 @@ class DaprGrpcClientAsync:
             call = self._stub.PublishEvent(req, metadata=metadata)
             # response is google.protobuf.Empty
             await call
-            return DaprResponse(await call.initial_metadata())
         except AioRpcError as err:
             raise DaprGrpcError(err) from err
+
+        return DaprResponse(await call.initial_metadata())
 
     async def get_state(
         self,
@@ -500,11 +501,11 @@ class DaprGrpcClientAsync:
         try:
             call = self._stub.GetState(req, metadata=metadata)
             response = await call
-            return StateResponse(
-                data=response.data, etag=response.etag, headers=await call.initial_metadata()
-            )
         except AioRpcError as err:
             raise DaprGrpcError(err) from err
+
+        return StateResponse(data=response.data, etag=response.etag,
+                             headers=await call.initial_metadata())
 
     async def get_bulk_state(
         self,
@@ -554,14 +555,14 @@ class DaprGrpcClientAsync:
         try:
             call = self._stub.GetBulkState(req, metadata=metadata)
             response = await call
-            items = []
-            for item in response.items:
-                items.append(
-                    BulkStateItem(key=item.key, data=item.data, etag=item.etag, error=item.error)
-                )
-            return BulkStatesResponse(items=items, headers=await call.initial_metadata())
         except AioRpcError as err:
             raise DaprGrpcError(err) from err
+
+        items = []
+        for item in response.items:
+            items.append(
+                BulkStateItem(key=item.key, data=item.data, etag=item.etag, error=item.error))
+        return BulkStatesResponse(items=items, headers=await call.initial_metadata())
 
     async def query_state(
         self, store_name: str, query: str, states_metadata: Optional[Dict[str, str]] = dict()
@@ -616,22 +617,16 @@ class DaprGrpcClientAsync:
         try:
             call = self._stub.QueryStateAlpha1(req)
             response = await call
-            results = []
-            for item in response.results:
-                results.append(
-                    QueryResponseItem(
-                        key=item.key, value=item.data, etag=item.etag, error=item.error
-                    )
-                )
-
-            return QueryResponse(
-                token=response.token,
-                results=results,
-                metadata=response.metadata,
-                headers=await call.initial_metadata(),
-            )
         except AioRpcError as err:
             raise DaprGrpcError(err) from err
+
+        results = []
+        for item in response.results:
+            results.append(
+                QueryResponseItem(key=item.key, value=item.data, etag=item.etag, error=item.error))
+
+        return QueryResponse(token=response.token, results=results, metadata=response.metadata,
+                             headers=await call.initial_metadata(), )
 
     async def save_state(
         self,
@@ -772,9 +767,10 @@ class DaprGrpcClientAsync:
         try:
             call = self._stub.SaveState(req, metadata=metadata)
             await call
-            return DaprResponse(headers=await call.initial_metadata())
         except AioRpcError as err:
             raise DaprGrpcError(err) from err
+
+        return DaprResponse(headers=await call.initial_metadata())
 
     async def execute_state_transaction(
         self,
@@ -842,9 +838,10 @@ class DaprGrpcClientAsync:
         try:
             call = self._stub.ExecuteStateTransaction(req, metadata=metadata)
             await call
-            return DaprResponse(headers=await call.initial_metadata())
         except AioRpcError as err:
             raise DaprGrpcError(err) from err
+
+        return DaprResponse(headers=await call.initial_metadata())
 
     async def delete_state(
         self,
@@ -911,9 +908,10 @@ class DaprGrpcClientAsync:
         try:
             call = self._stub.DeleteState(req, metadata=metadata)
             await call
-            return DaprResponse(headers=await call.initial_metadata())
         except AioRpcError as err:
             raise DaprGrpcError(err) from err
+
+        return DaprResponse(headers=await call.initial_metadata())
 
     async def get_secret(
         self,
