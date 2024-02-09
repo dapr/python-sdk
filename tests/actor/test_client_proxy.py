@@ -25,10 +25,10 @@ health.HEALTHY = True
 from dapr.actor.id import ActorId  # noqa: E402
 from dapr.actor.client.proxy import ActorProxy  # noqa: E402
 from dapr.serializers import DefaultJSONSerializer  # noqa: E402
-from tests.actor.fake_actor_classes import (
+from tests.actor.fake_actor_classes import (  # noqa: E402
     FakeMultiInterfacesActor,
     FakeActorCls2Interface,
-)  # noqa: E402
+)
 
 
 from tests.actor.fake_client import FakeDaprActorClient  # noqa: E402
