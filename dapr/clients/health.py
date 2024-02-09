@@ -21,14 +21,16 @@ from functools import wraps
 
 import aiohttp
 
-from dapr.clients.http.client import DAPR_API_TOKEN_HEADER, USER_AGENT_HEADER, DAPR_USER_AGENT
+from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, USER_AGENT_HEADER, DAPR_USER_AGENT
 from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings
+
+HEALTHY = False
 
 
 def healthcheck(timeout_s: int = 5):
     def decorator(func):
-        healthz_url = f'{get_api_url()}/healthz/outbound'
+        health_url = f'{get_api_url()}/healthz/outbound'
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
         if settings.DAPR_API_TOKEN is not None:
             headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
@@ -38,10 +40,12 @@ def healthcheck(timeout_s: int = 5):
         async def async_wrapper(*args, **kwargs):
             # Async health check logic
             async with aiohttp.ClientSession() as session:
-                while True:
+                global HEALTHY
+                while not HEALTHY:
                     try:
-                        async with session.get(healthz_url, headers=headers) as response:
+                        async with session.get(health_url, headers=headers) as response:
                             if 200 <= response.status < 300:
+                                HEALTHY = True
                                 break
                     except aiohttp.ClientError as e:
                         print(f'Health check failed: {e}')
@@ -53,14 +57,16 @@ def healthcheck(timeout_s: int = 5):
             return await func(*args, **kwargs)
 
         def sync_wrapper(*args, **kwargs):
-            while True:
+            global HEALTHY
+            while not HEALTHY:
                 try:
-                    req = urllib.request.Request(healthz_url, headers=headers)
+                    req = urllib.request.Request(health_url, headers=headers)
                     with urllib.request.urlopen(req) as response:
                         if 200 <= response.status < 300:
+                            HEALTHY = True
                             break
                 except urllib.error.URLError as e:
-                    print(f'Health check failed: {e.reason}')
+                    print(f'Health check on {health_url} failed: {e.reason}')
 
                 remaining = (start + timeout_s) - time.time()
                 if remaining <= 0:

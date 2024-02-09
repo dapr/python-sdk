@@ -40,6 +40,7 @@ from grpc import (  # type: ignore
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
+from dapr.clients.health import healthcheck
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -101,6 +102,7 @@ class DaprGrpcClient:
         ...     resp = d.invoke_method('callee', 'method', b'data')
     """
 
+    @healthcheck(5)
     def __init__(
         self,
         address: Optional[str] = None,

@@ -17,23 +17,22 @@ import aiohttp
 
 from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
 
+from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, USER_AGENT_HEADER, DAPR_USER_AGENT, \
+    CONTENT_TYPE_HEADER
+from dapr.clients.health import healthcheck
+
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
 from dapr.conf import settings
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
-from dapr.version import __version__
-
-CONTENT_TYPE_HEADER = 'content-type'
-DAPR_API_TOKEN_HEADER = 'dapr-api-token'
-USER_AGENT_HEADER = 'User-Agent'
-DAPR_USER_AGENT = f'dapr-sdk-python/{__version__}'
 
 
 class DaprHttpClient:
     """A Dapr Http API client"""
 
+    @healthcheck(5)
     def __init__(
         self,
         message_serializer: 'Serializer',

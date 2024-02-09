@@ -18,9 +18,10 @@ import asyncio
 from typing import Callable, Dict, Optional, Union
 from multidict import MultiDict
 
-from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
+from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
 from dapr.clients.grpc._response import InvokeMethodResponse
+from dapr.clients.http.conf import CONTENT_TYPE_HEADER
 from dapr.clients.http.helpers import get_api_url
 from dapr.serializers import DefaultJSONSerializer
 from dapr.version import __version__

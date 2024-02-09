@@ -1,17 +1,24 @@
+import asyncio
 import unittest
 from unittest.mock import patch, MagicMock
-import asyncio
 
-from dapr.clients.health import healthcheck
+from dapr.clients import health
 
 
 class TestHealthCheckDecorator(unittest.TestCase):
+
+    def tearDown(self):
+        # Reset the global var to true, because it's needed for other tests
+        health.HEALTHY = True
+
     @patch('urllib.request.urlopen')
     def test_healthcheck_sync(self, mock_urlopen):
         # Mock the response to simulate a healthy Dapr service
         mock_urlopen.return_value.__enter__.return_value = MagicMock(status=200)
 
-        @healthcheck(timeout_s=1)
+        health.HEALTHY = False
+
+        @health.healthcheck(1)
         def sync_test_function():
             return 'Sync function executed'
 
@@ -22,9 +29,12 @@ class TestHealthCheckDecorator(unittest.TestCase):
     @patch('urllib.request.urlopen')
     def test_healthcheck_sync_unhealthy(self, mock_urlopen):
         # Mock the response to simulate an unhealthy Dapr service
+
         mock_urlopen.return_value.__enter__.return_value = MagicMock(status=500)
 
-        @healthcheck(timeout_s=1)
+        health.HEALTHY = False
+
+        @health.healthcheck(1)
         def sync_test_function():
             return 'Sync function executed'
 
@@ -32,6 +42,22 @@ class TestHealthCheckDecorator(unittest.TestCase):
             sync_test_function()
 
         mock_urlopen.assert_called()
+
+    @patch('urllib.request.urlopen')
+    def test_healthcheck_sync_unhealthy_with_global_healthy(self, mock_urlopen):
+        # Mock the response to simulate an unhealthy Dapr service
+        mock_urlopen.return_value.__enter__.return_value = MagicMock(status=500)
+
+        health.HEALTHY = True
+
+        @health.healthcheck(1)
+        def sync_test_function():
+            return 'Sync function executed'
+
+        sync_test_function()
+
+        # Assert we never called the health endpoint, because the global var has already been set
+        mock_urlopen.assert_not_called()
 
 
 class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
@@ -41,7 +67,9 @@ class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
         mock_response = MagicMock(status=200)
         mock_get.return_value.__aenter__.return_value = mock_response
 
-        @healthcheck(timeout_s=1)
+        health.HEALTHY = False
+
+        @health.healthcheck(1)
         async def async_test_function():
             return 'Async function executed'
 
@@ -58,7 +86,9 @@ class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
         mock_response = MagicMock(status=500)
         mock_get.return_value.__aenter__.return_value = mock_response
 
-        @healthcheck(timeout_s=1)
+        health.HEALTHY = False
+
+        @health.healthcheck(1)
         async def async_test_function():
             return 'Async function executed'
 
@@ -68,3 +98,21 @@ class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
 
         asyncio.run(run_test())
         mock_get.assert_called()
+
+    @patch('aiohttp.ClientSession.get')
+    def test_healthcheck_async_unhealthy_with_global(self, mock_get):
+        # Mock the response to simulate an unhealthy Dapr service
+        mock_response = MagicMock(status=500)
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        health.HEALTHY = True
+
+        @health.healthcheck(1)
+        async def async_test_function():
+            return 'Async function executed'
+
+        async def run_test():
+            await async_test_function()
+
+        asyncio.run(run_test())
+        mock_get.assert_not_called()

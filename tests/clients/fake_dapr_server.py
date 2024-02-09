@@ -5,6 +5,8 @@ from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
 from grpc_status import rpc_status
+
+from dapr.clients import health
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
@@ -52,10 +54,12 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._next_exception = None
 
     def start(self, port: int = 8080):
+        health.HEALTHY = True
         self._server.add_insecure_port(f'[::]:{port}')
         self._server.start()
 
     def start_secure(self, port: int = 4443):
+        health.HEALTHY = True
         create_certificates()
 
         private_key_file = open(PRIVATE_KEY_PATH, 'rb')
@@ -75,9 +79,11 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._server.start()
 
     def stop(self):
+        health.HEALTHY = False
         self._server.stop(None)
 
     def stop_secure(self):
+        health.HEALTHY = False
         self._server.stop(None)
         delete_certificates()
 

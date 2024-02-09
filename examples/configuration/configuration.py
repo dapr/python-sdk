@@ -21,7 +21,7 @@ def handler(id: str, resp: ConfigurationResponse):
         )
 
 
-@healthcheck(timeout_s=10)
+@healthcheck(5)
 async def executeConfiguration():
     with DaprClient() as d:
         storeName = 'configurationstore'

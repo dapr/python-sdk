@@ -24,13 +24,15 @@ from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClie
 from dapr.conf import settings
 from google.protobuf.message import Message as GrpcMessage
 
+
 __all__ = [
     'DaprClient',
     'DaprActorClientBase',
     'DaprActorHttpClient',
     'DaprInternalError',
-    'ERROR_CODE_UNKNOWN',
+    'ERROR_CODE_UNKNOWN'
 ]
+
 
 from grpc import (  # type: ignore
     UnaryUnaryClientInterceptor,

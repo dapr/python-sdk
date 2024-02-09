@@ -13,12 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from dapr.conf import settings
+from dapr.version import __version__
 
-
-def get_api_url() -> str:
-    if settings.DAPR_HTTP_ENDPOINT:
-        return '{}/{}'.format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
-
-    return 'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT,
-        settings.DAPR_API_VERSION)
+CONTENT_TYPE_HEADER = 'content-type'
+DAPR_API_TOKEN_HEADER = 'dapr-api-token'
+USER_AGENT_HEADER = 'User-Agent'
+DAPR_USER_AGENT = f'dapr-sdk-python/{__version__}'
