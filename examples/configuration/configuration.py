@@ -21,7 +21,6 @@ def handler(id: str, resp: ConfigurationResponse):
         )
 
 
-@healthcheck(5)
 async def executeConfiguration():
     with DaprClient() as d:
         storeName = 'configurationstore'
@@ -53,9 +52,4 @@ async def executeConfiguration():
         print(f'Unsubscribed successfully? {isSuccess}', flush=True)
 
 
-try:
-    asyncio.run(executeConfiguration())
-except TimeoutError as e:
-    print("Dapr wasn't ready in time: {e}")
-except Exception as e:
-    print(e)
+asyncio.run(executeConfiguration())
