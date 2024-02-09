@@ -1,9 +1,12 @@
-from flask import Flask
-from flask_dapr import DaprApp
-
 import unittest
-
+from flask import Flask
 import json
+
+from dapr.clients import health
+
+health.HEALTHY = True
+
+from flask_dapr import DaprApp  # noqa: E402
 
 
 class DaprAppTest(unittest.TestCase):
@@ -12,6 +15,9 @@ class DaprAppTest(unittest.TestCase):
         self.app.testing = True
         self.dapr_app = DaprApp(self.app)
         self.client = self.app.test_client()
+
+    def tearDown(self):
+        health.HEALTHY = False
 
     def test_subscribe_subscription_registered(self):
         @self.dapr_app.subscribe(pubsub='pubsub', topic='test')

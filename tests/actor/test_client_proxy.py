@@ -12,23 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
 import unittest
 
 from unittest import mock
 
-from dapr.actor.id import ActorId
-from dapr.actor.client.proxy import ActorProxy
-from dapr.serializers import DefaultJSONSerializer
+from dapr.clients import health
 
+# Set the HEALTHY variable right after importing the health module
+health.HEALTHY = True
+
+
+from dapr.actor.id import ActorId  # noqa: E402
+from dapr.actor.client.proxy import ActorProxy  # noqa: E402
+from dapr.serializers import DefaultJSONSerializer  # noqa: E402
 from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeActorCls2Interface,
-)
+)  # noqa: E402
 
-from tests.actor.fake_client import FakeDaprActorClient
 
-from tests.actor.utils import _async_mock, _run
+from tests.actor.fake_client import FakeDaprActorClient  # noqa: E402
+
+from tests.actor.utils import _async_mock, _run  # noqa: E402
 
 
 class FakeActoryProxyFactory:
@@ -44,6 +49,8 @@ class FakeActoryProxyFactory:
 
 class ActorProxyTests(unittest.TestCase):
     def setUp(self):
+        print('\nStarting test ..')
+        health.HEALTHY = True
         # Create mock client
         self._fake_client = FakeDaprActorClient
         self._fake_factory = FakeActoryProxyFactory(self._fake_client)
@@ -53,6 +60,9 @@ class ActorProxyTests(unittest.TestCase):
             FakeActorCls2Interface,
             self._fake_factory,
         )
+
+    def tearDown(self):
+        health.HEALTHY = False
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.invoke_method',

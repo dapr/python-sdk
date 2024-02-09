@@ -17,8 +17,12 @@ import aiohttp
 
 from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
 
-from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, USER_AGENT_HEADER, DAPR_USER_AGENT, \
-    CONTENT_TYPE_HEADER
+from dapr.clients.http.conf import (
+    DAPR_API_TOKEN_HEADER,
+    USER_AGENT_HEADER,
+    DAPR_USER_AGENT,
+    CONTENT_TYPE_HEADER,
+)
 from dapr.clients.health import healthcheck
 
 if TYPE_CHECKING:

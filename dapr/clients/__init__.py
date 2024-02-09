@@ -30,7 +30,7 @@ __all__ = [
     'DaprActorClientBase',
     'DaprActorHttpClient',
     'DaprInternalError',
-    'ERROR_CODE_UNKNOWN'
+    'ERROR_CODE_UNKNOWN',
 ]
 
 

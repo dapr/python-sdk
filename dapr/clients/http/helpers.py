@@ -20,5 +20,6 @@ def get_api_url() -> str:
     if settings.DAPR_HTTP_ENDPOINT:
         return '{}/{}'.format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
 
-    return 'http://{}:{}/{}'.format(settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT,
-        settings.DAPR_API_VERSION)
+    return 'http://{}:{}/{}'.format(
+        settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
+    )

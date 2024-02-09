@@ -19,6 +19,7 @@ from datetime import timedelta
 
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig
+from dapr.clients import health
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import (
@@ -32,12 +33,16 @@ from tests.actor.utils import _run
 
 class ActorRuntimeTests(unittest.TestCase):
     def setUp(self):
+        health.HEALTHY = True
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
         self._serializer = DefaultJSONSerializer()
         _run(ActorRuntime.register_actor(FakeSimpleActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
         _run(ActorRuntime.register_actor(FakeSimpleTimerActor))
+
+    def tearDown(self):
+        health.HEALTHY = False
 
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()

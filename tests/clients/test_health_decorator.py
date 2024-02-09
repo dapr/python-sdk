@@ -6,7 +6,6 @@ from dapr.clients import health
 
 
 class TestHealthCheckDecorator(unittest.TestCase):
-
     def tearDown(self):
         # Reset the global var to true, because it's needed for other tests
         health.HEALTHY = True

@@ -1,9 +1,14 @@
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from dapr.ext.fastapi import DaprApp
-from pydantic import BaseModel
-
 import unittest
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+from fastapi.testclient import TestClient
+
+from dapr.clients import health
+
+health.HEALTHY = True
+
+from dapr.ext.fastapi import DaprApp  # noqa: E402
 
 
 class Message(BaseModel):

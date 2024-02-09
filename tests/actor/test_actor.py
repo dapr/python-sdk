@@ -18,24 +18,27 @@ import unittest
 from unittest import mock
 from datetime import timedelta
 
-from dapr.actor.id import ActorId
-from dapr.actor.runtime.config import ActorRuntimeConfig
-from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.runtime import ActorRuntime
-from dapr.actor.runtime._type_information import ActorTypeInformation
-from dapr.clients.health import health
-from dapr.serializers import DefaultJSONSerializer
+from dapr.clients import health
+
+health.HEALTHY = True
+
+from dapr.actor.id import ActorId  # noqa: E402
+from dapr.actor.runtime.config import ActorRuntimeConfig  # noqa: E402
+from dapr.actor.runtime.context import ActorRuntimeContext  # noqa: E402
+from dapr.actor.runtime.runtime import ActorRuntime  # noqa: E402
+from dapr.actor.runtime._type_information import ActorTypeInformation  # noqa: E402
+from dapr.serializers import DefaultJSONSerializer  # noqa: E402
 
 from tests.actor.fake_actor_classes import (
     FakeSimpleActor,
     FakeSimpleReminderActor,
     FakeSimpleTimerActor,
     FakeMultiInterfacesActor,
-)
+)  # noqa: E402
 
-from tests.actor.fake_client import FakeDaprActorClient
+from tests.actor.fake_client import FakeDaprActorClient  # noqa: E402
 
-from tests.actor.utils import _async_mock, _run
+from tests.actor.utils import _async_mock, _run  # noqa: E402
 
 
 class ActorTests(unittest.TestCase):
