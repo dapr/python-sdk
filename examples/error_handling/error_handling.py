@@ -17,9 +17,7 @@ with DaprClient() as d:
         print(f'Error code: {err.error_code()}', flush=True)
 
         if err.status_details().error_info is not None:
-            print(
-                f'Error info(reason): {err.status_details().error_info["reason"]}', flush=True
-            )
+            print(f'Error info(reason): {err.status_details().error_info["reason"]}', flush=True)
         if err.status_details().resource_info is not None:
             print(
                 f'Resource info (resource type): {err.status_details().resource_info["resource_type"]}',

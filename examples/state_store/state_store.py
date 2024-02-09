@@ -45,9 +45,7 @@ with DaprClient() as d:
         ],
     )
     print(f'State store has successfully saved {another_value} with {another_key} as key')
-    print(
-        f'State store has successfully saved {yet_another_value} with {yet_another_key} as key'
-    )
+    print(f'State store has successfully saved {yet_another_value} with {yet_another_key} as key')
 
     # Save bulk with etag that is different from the one stored in the database.
     try:
