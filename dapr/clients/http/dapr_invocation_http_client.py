@@ -32,10 +32,7 @@ class DaprInvocationHttpClient:
     """Service Invocation HTTP Client"""
 
     def __init__(
-        self,
-        timeout: int = 60,
-        headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
-        address: Optional[str] = None,
+        self, timeout: int = 60, headers_callback: Optional[Callable[[], Dict[str, str]]] = None
     ):
         """Invokes Dapr's API for method invocation over HTTP.
 
@@ -43,7 +40,7 @@ class DaprInvocationHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
         """
-        self._client = DaprHttpClient(DefaultJSONSerializer(), timeout, headers_callback, address)
+        self._client = DaprHttpClient(DefaultJSONSerializer(), timeout, headers_callback)
 
     async def invoke_method_async(
         self,

@@ -59,10 +59,11 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
             client.invocation_client._client.get_api_url(),
         )
 
-    def test_get_api_url_endpoint_as_argument(self):
+    @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'https://domain1.com:5000')
+    def test_dont_get_api_url_endpoint_as_argument(self):
         client = DaprClient('http://localhost:5000')
         self.assertEqual(
-            'http://localhost:5000/{}'.format(settings.DAPR_API_VERSION),
+            'https://domain1.com:5000/{}'.format(settings.DAPR_API_VERSION),
             client.invocation_client._client.get_api_url(),
         )
 
