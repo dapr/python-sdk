@@ -6,10 +6,6 @@ from dapr.clients import health
 
 
 class TestHealthCheckDecorator(unittest.TestCase):
-    def tearDown(self):
-        # Reset the global var to true, because it's needed for other tests
-        health.HEALTHY = True
-
     @patch('urllib.request.urlopen')
     def test_healthcheck_sync(self, mock_urlopen):
         # Mock the response to simulate a healthy Dapr service
@@ -17,7 +13,7 @@ class TestHealthCheckDecorator(unittest.TestCase):
 
         health.HEALTHY = False
 
-        @health.healthcheck(1)
+        @health.healthcheck()
         def sync_test_function():
             return 'Sync function executed'
 
@@ -33,7 +29,7 @@ class TestHealthCheckDecorator(unittest.TestCase):
 
         health.HEALTHY = False
 
-        @health.healthcheck(1)
+        @health.healthcheck()
         def sync_test_function():
             return 'Sync function executed'
 
@@ -49,7 +45,7 @@ class TestHealthCheckDecorator(unittest.TestCase):
 
         health.HEALTHY = True
 
-        @health.healthcheck(1)
+        @health.healthcheck()
         def sync_test_function():
             return 'Sync function executed'
 
@@ -68,7 +64,7 @@ class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
 
         health.HEALTHY = False
 
-        @health.healthcheck(1)
+        @health.healthcheck()
         async def async_test_function():
             return 'Async function executed'
 
@@ -87,7 +83,7 @@ class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
 
         health.HEALTHY = False
 
-        @health.healthcheck(1)
+        @health.healthcheck()
         async def async_test_function():
             return 'Async function executed'
 
@@ -106,7 +102,7 @@ class TestHealthCheckDecoratorAsync(unittest.IsolatedAsyncioTestCase):
 
         health.HEALTHY = True
 
-        @health.healthcheck(1)
+        @health.healthcheck()
         async def async_test_function():
             return 'Async function executed'
 

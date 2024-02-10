@@ -4,7 +4,6 @@ from ssl import PROTOCOL_TLS_SERVER, SSLContext
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from dapr.clients import health
 from tests.clients.certs import (
     CERTIFICATE_CHAIN_PATH,
     PRIVATE_KEY_PATH,
@@ -54,11 +53,11 @@ class DaprHandler(BaseHTTPRequestHandler):
 
 
 class FakeHttpServer(Thread):
-    def __init__(self, secure=False):
+    def __init__(self, port: int = 8080, secure=False):
         super().__init__()
         self.secure = secure
 
-        self.port = 4443 if secure else 8080
+        self.port = port
         self.server = HTTPServer(('localhost', self.port), DaprHandler)
 
         if self.secure:
@@ -83,7 +82,6 @@ class FakeHttpServer(Thread):
         return self.server.request_headers
 
     def shutdown_server(self):
-        health.HEALTHY = False
         self.server.shutdown()
         self.server.socket.close()
         self.join()
@@ -104,5 +102,4 @@ class FakeHttpServer(Thread):
         self.server.sleep_time = delay_seconds
 
     def run(self):
-        health.HEALTHY = True
         self.server.serve_forever()

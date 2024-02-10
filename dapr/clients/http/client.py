@@ -23,7 +23,7 @@ from dapr.clients.http.conf import (
     DAPR_USER_AGENT,
     CONTENT_TYPE_HEADER,
 )
-from dapr.clients.health import healthcheck
+from dapr.clients.health import CheckDaprHealth
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
@@ -36,7 +36,6 @@ from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST
 class DaprHttpClient:
     """A Dapr Http API client"""
 
-    @healthcheck(5)
     def __init__(
         self,
         message_serializer: 'Serializer',
@@ -50,6 +49,8 @@ class DaprHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
         """
+        CheckDaprHealth()
+
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
         self._headers_callback = headers_callback

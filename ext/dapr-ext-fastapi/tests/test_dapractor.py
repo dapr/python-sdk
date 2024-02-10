@@ -20,18 +20,8 @@ from fastapi import FastAPI
 
 from dapr.ext.fastapi.actor import DaprActor, _wrap_response
 
-from dapr.clients import health
-
-health.HEALTHY = True
-
 
 class DaprActorTest(unittest.TestCase):
-    def setUp(self):
-        health.HEALTHY = True
-
-    def tearDown(self):
-        health.HEALTHY = False
-
     def test_wrap_response_str(self):
         r = _wrap_response(200, 'fake_message')
         self.assertEqual({'message': 'fake_message'}, json.loads(r.body))

@@ -44,7 +44,7 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
     def setUp(self):
         DaprHttpClient.get_ssl_context = replacement_get_ssl_context
 
-        self.server = FakeHttpServer(secure=True)
+        self.server = FakeHttpServer(secure=True, port=4443)
         self.server_port = self.server.get_port()
         self.server.start()
         settings.DAPR_HTTP_PORT = self.server_port

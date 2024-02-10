@@ -20,7 +20,6 @@ from unittest import mock
 
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig, ActorReentrancyConfig
-from dapr.clients import health
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import (
@@ -34,7 +33,6 @@ from tests.actor.utils import _run
 
 class ActorRuntimeTests(unittest.TestCase):
     def setUp(self):
-        health.HEALTHY = True
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(
             ActorRuntimeConfig(reentrancy=ActorReentrancyConfig(enabled=True))
@@ -43,9 +41,6 @@ class ActorRuntimeTests(unittest.TestCase):
         _run(ActorRuntime.register_actor(FakeReentrantActor))
         _run(ActorRuntime.register_actor(FakeSlowReentrantActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
-
-    def tearDown(self):
-        health.HEALTHY = False
 
     def test_reentrant_dispatch(self):
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))

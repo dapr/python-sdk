@@ -40,12 +40,15 @@ DaprGrpcClientAsync.get_credentials = replacement_get_credentials_func
 
 
 class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
-    server_port = 4443
+    grpc_port = 50001
+    http_port = 4443
     scheme = 'https://'
 
     def setUp(self):
-        self._fake_dapr_server = FakeDaprSidecar()
-        self._fake_dapr_server.start_secure(self.server_port)
+        self._fake_dapr_server = FakeDaprSidecar(grpc_port=self.grpc_port, http_port=self.http_port)
+        settings.DAPR_HTTP_PORT = self.http_port
+        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(self.http_port)
+        self._fake_dapr_server.start_secure()
 
     def tearDown(self):
         self._fake_dapr_server.stop_secure()

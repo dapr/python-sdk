@@ -24,22 +24,25 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-from dapr.clients import DaprClient
+
 from dapr.clients.exceptions import DaprInternalError
 from dapr.conf import settings
 from dapr.proto import common_v1
 
 from .fake_http_server import FakeHttpServer
+from dapr.clients import DaprClient
 
 
 class DaprInvocationHttpClientTests(unittest.TestCase):
     def setUp(self):
-        self.server = FakeHttpServer()
+        self.server = FakeHttpServer(port=8080)
         self.server_port = self.server.get_port()
         self.server.start()
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
+
         self.client = DaprClient()
+
         self.app_id = 'fakeapp'
         self.method_name = 'fakemethod'
         self.invoke_url = f'/v1.0/invoke/{self.app_id}/method/{self.method_name}'

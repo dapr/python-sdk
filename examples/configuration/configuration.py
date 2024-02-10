@@ -6,7 +6,6 @@ import asyncio
 from time import sleep
 from dapr.clients import DaprClient
 from dapr.clients.grpc._response import ConfigurationWatcher, ConfigurationResponse
-from dapr.clients.health import healthcheck
 
 configuration: ConfigurationWatcher = ConfigurationWatcher()
 

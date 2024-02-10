@@ -18,39 +18,31 @@ import unittest
 from unittest import mock
 from datetime import timedelta
 
-from dapr.clients import health
+from dapr.actor.id import ActorId
+from dapr.actor.runtime.config import ActorRuntimeConfig
+from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.runtime import ActorRuntime
+from dapr.actor.runtime._type_information import ActorTypeInformation
+from dapr.serializers import DefaultJSONSerializer
 
-health.HEALTHY = True
-
-from dapr.actor.id import ActorId  # noqa: E402
-from dapr.actor.runtime.config import ActorRuntimeConfig  # noqa: E402
-from dapr.actor.runtime.context import ActorRuntimeContext  # noqa: E402
-from dapr.actor.runtime.runtime import ActorRuntime  # noqa: E402
-from dapr.actor.runtime._type_information import ActorTypeInformation  # noqa: E402
-from dapr.serializers import DefaultJSONSerializer  # noqa: E402
-
-from tests.actor.fake_actor_classes import (  # noqa: E402
+from tests.actor.fake_actor_classes import (
     FakeSimpleActor,
     FakeSimpleReminderActor,
     FakeSimpleTimerActor,
     FakeMultiInterfacesActor,
 )
 
-from tests.actor.fake_client import FakeDaprActorClient  # noqa: E402
-from tests.actor.utils import _async_mock, _run  # noqa: E402
+from tests.actor.fake_client import FakeDaprActorClient
+from tests.actor.utils import _async_mock, _run
 
 
 class ActorTests(unittest.TestCase):
     def setUp(self):
-        health.HEALTHY = True
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
         self._serializer = DefaultJSONSerializer()
         _run(ActorRuntime.register_actor(FakeSimpleActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
-
-    def tearDown(self):
-        health.HEALTHY = False
 
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()
