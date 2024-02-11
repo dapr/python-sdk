@@ -155,7 +155,9 @@ class ActorProxy:
             :class:`ActorProxy': new Actor Proxy client.
             @param actor_proxy_factory:
         """
-        factory = actor_proxy_factory if actor_proxy_factory else cls._get_default_factory_instance()
+        factory = (
+            actor_proxy_factory if actor_proxy_factory else cls._get_default_factory_instance()
+        )
         return factory.create(actor_type, actor_id, actor_interface)
 
     async def invoke_method(self, method: str, raw_body: Optional[bytes] = None) -> bytes:

@@ -15,7 +15,6 @@ limitations under the License.
 import ssl
 import typing
 from asyncio import TimeoutError
-from unittest.mock import patch
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider

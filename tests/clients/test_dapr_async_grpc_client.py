@@ -208,7 +208,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_publish_event(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
-        resp = await dapr.publish_event(pubsub_name='pubsub', topic_name='example', data=b'test_data')
+        resp = await dapr.publish_event(
+            pubsub_name='pubsub', topic_name='example', data=b'test_data'
+        )
 
         self.assertEqual(2, len(resp.headers))
         self.assertEqual(['test_data'], resp.headers['hdata'])

@@ -23,6 +23,7 @@ from dapr.conf import settings
 from tests.clients.test_dapr_grpc_client import DaprGrpcClientTests
 from .fake_dapr_server import FakeDaprSidecar
 
+
 def replacement_get_credentials_func(a):
     """
     Used temporarily, so we can trust self-signed certificates in unit tests

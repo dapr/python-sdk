@@ -56,7 +56,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.metadata: Dict[str, str] = {}
         self._next_exception = None
 
-    def start(self, ):
+    def start(
+        self,
+    ):
         self._server.add_insecure_port(f'[::]:{self.grpc_port}')
         self._server.start()
         self._http_server.start()
