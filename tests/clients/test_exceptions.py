@@ -98,6 +98,7 @@ class DaprExceptionsTestCase(unittest.TestCase):
             grpc_port=self._grpc_port, http_port=self._http_port
         )
         settings.DAPR_HTTP_PORT = self._http_port
+        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(self._http_port)
         self._fake_dapr_server.start()
         self._expected_status = create_expected_status()
 

@@ -44,7 +44,6 @@ class FakeActoryProxyFactory:
 
 class ActorProxyTests(unittest.TestCase):
     def setUp(self):
-        print('\nStarting test ..')
         # Create mock client
         self._fake_client = FakeDaprActorClient
         self._fake_factory = FakeActoryProxyFactory(self._fake_client)

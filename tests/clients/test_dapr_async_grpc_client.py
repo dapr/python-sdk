@@ -44,6 +44,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self._fake_dapr_server = FakeDaprSidecar(grpc_port=self.grpc_port, http_port=self.http_port)
         settings.DAPR_HTTP_PORT = self.http_port
+        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(self.http_port)
         self._fake_dapr_server.start()
 
     def tearDown(self):
