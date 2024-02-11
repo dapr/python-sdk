@@ -36,9 +36,10 @@ from grpc.aio import (  # type: ignore
     UnaryStreamClientInterceptor,
     StreamUnaryClientInterceptor,
     StreamStreamClientInterceptor,
+    AioRpcError,
 )
 
-from dapr.clients.exceptions import DaprInternalError
+from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.health import CheckDaprHealth
@@ -449,9 +450,12 @@ class DaprGrpcClientAsync:
             metadata=publish_metadata,
         )
 
-        call = self._stub.PublishEvent(req, metadata=metadata)
-        # response is google.protobuf.Empty
-        await call
+        try:
+            call = self._stub.PublishEvent(req, metadata=metadata)
+            # response is google.protobuf.Empty
+            await call
+        except AioRpcError as err:
+            raise DaprGrpcError(err) from err
 
         return DaprResponse(await call.initial_metadata())
 
@@ -494,9 +498,15 @@ class DaprGrpcClientAsync:
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
+
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
-        call = self._stub.GetState(req, metadata=metadata)
-        response = await call
+
+        try:
+            call = self._stub.GetState(req, metadata=metadata)
+            response = await call
+        except AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
         return StateResponse(
             data=response.data, etag=response.etag, headers=await call.initial_metadata()
         )
@@ -545,8 +555,12 @@ class DaprGrpcClientAsync:
         req = api_v1.GetBulkStateRequest(
             store_name=store_name, keys=keys, parallelism=parallelism, metadata=states_metadata
         )
-        call = self._stub.GetBulkState(req, metadata=metadata)
-        response = await call
+
+        try:
+            call = self._stub.GetBulkState(req, metadata=metadata)
+            response = await call
+        except AioRpcError as err:
+            raise DaprGrpcError(err) from err
 
         items = []
         for item in response.items:
@@ -604,8 +618,12 @@ class DaprGrpcClientAsync:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
         req = api_v1.QueryStateRequest(store_name=store_name, query=query, metadata=states_metadata)
-        call = self._stub.QueryStateAlpha1(req)
-        response = await call
+
+        try:
+            call = self._stub.QueryStateAlpha1(req)
+            response = await call
+        except AioRpcError as err:
+            raise DaprGrpcError(err) from err
 
         results = []
         for item in response.results:
@@ -694,9 +712,12 @@ class DaprGrpcClientAsync:
         )
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
-        call = self._stub.SaveState(req, metadata=metadata)
-        await call
-        return DaprResponse(headers=await call.initial_metadata())
+        try:
+            call = self._stub.SaveState(req, metadata=metadata)
+            await call
+            return DaprResponse(headers=await call.initial_metadata())
+        except AioRpcError as e:
+            raise DaprInternalError(e.details()) from e
 
     async def save_bulk_state(
         self, store_name: str, states: List[StateItem], metadata: Optional[MetadataTuple] = None
@@ -752,8 +773,13 @@ class DaprGrpcClientAsync:
         ]
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=req_states)
-        call = self._stub.SaveState(req, metadata=metadata)
-        await call
+
+        try:
+            call = self._stub.SaveState(req, metadata=metadata)
+            await call
+        except AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
         return DaprResponse(headers=await call.initial_metadata())
 
     async def execute_state_transaction(
@@ -818,8 +844,13 @@ class DaprGrpcClientAsync:
         req = api_v1.ExecuteStateTransactionRequest(
             storeName=store_name, operations=req_ops, metadata=transactional_metadata
         )
-        call = self._stub.ExecuteStateTransaction(req, metadata=metadata)
-        await call
+
+        try:
+            call = self._stub.ExecuteStateTransaction(req, metadata=metadata)
+            await call
+        except AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
         return DaprResponse(headers=await call.initial_metadata())
 
     async def delete_state(
@@ -883,8 +914,13 @@ class DaprGrpcClientAsync:
             options=state_options,
             metadata=state_metadata,
         )
-        call = self._stub.DeleteState(req, metadata=metadata)
-        await call
+
+        try:
+            call = self._stub.DeleteState(req, metadata=metadata)
+            await call
+        except AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
         return DaprResponse(headers=await call.initial_metadata())
 
     async def get_secret(
@@ -1525,8 +1561,13 @@ class DaprGrpcClientAsync:
         information about supported features in the form of component
         capabilities.
         """
-        call = self._stub.GetMetadata(GrpcEmpty())
-        _resp = await call
+
+        try:
+            call = self._stub.GetMetadata(GrpcEmpty())
+            _resp = await call
+        except AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
         response: api_v1.GetMetadataResponse = _resp  # type alias
         # Convert to more pythonic formats
         active_actors_count = {
