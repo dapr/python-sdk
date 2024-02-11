@@ -23,7 +23,7 @@ from dapr.clients.http.conf import (
     DAPR_USER_AGENT,
     CONTENT_TYPE_HEADER,
 )
-from dapr.clients.health import CheckDaprHealth
+from dapr.clients.health import DaprHealth
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
@@ -49,7 +49,7 @@ class DaprHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
         """
-        CheckDaprHealth()
+        DaprHealth.wait_until_ready()
 
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer

@@ -15,6 +15,7 @@ limitations under the License.
 import ssl
 import typing
 from asyncio import TimeoutError
+from unittest.mock import patch
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -23,6 +24,7 @@ from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from dapr.clients import DaprClient
+from dapr.clients.health import DaprHealth
 from dapr.clients.http.client import DaprHttpClient
 from dapr.conf import settings
 from dapr.proto import common_v1
@@ -33,16 +35,33 @@ from .fake_http_server import FakeHttpServer
 from .test_http_service_invocation_client import DaprInvocationHttpClientTests
 
 
-def replacement_get_ssl_context(a):
+def replacement_get_client_ssl_context(a):
+    """
+    This method is used (overwritten) from tests
+    to return context for self-signed certificates
+    """
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ssl_context.load_verify_locations(CERTIFICATE_CHAIN_PATH)
 
     return ssl_context
 
 
+def replacement_get_health_context():
+    """
+    This method is used (overwritten) from tests
+    to return context for self-signed certificates
+    """
+    context = ssl.create_default_context()
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+
+    return context
+
+
 class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
     def setUp(self):
-        DaprHttpClient.get_ssl_context = replacement_get_ssl_context
+        DaprHttpClient.get_ssl_context = replacement_get_client_ssl_context
+        DaprHealth.get_context = replacement_get_health_context
 
         self.server = FakeHttpServer(secure=True, port=4443)
         self.server_port = self.server.get_port()

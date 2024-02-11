@@ -23,10 +23,11 @@ from dapr.conf import settings
 from tests.clients.test_dapr_grpc_client import DaprGrpcClientTests
 from .fake_dapr_server import FakeDaprSidecar
 
-
-# Used temporarily, so we can trust self-signed certificates in unit tests
-# until they get their own environment variable
 def replacement_get_credentials_func(a):
+    """
+    Used temporarily, so we can trust self-signed certificates in unit tests
+    until they get their own environment variable
+    """
     f = open(os.path.join(os.path.dirname(__file__), 'selfsigned.pem'), 'rb')
     creds = grpc.ssl_channel_credentials(f.read())
     f.close()

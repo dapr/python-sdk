@@ -19,6 +19,7 @@ from datetime import timedelta
 
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig
+from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import (
@@ -28,16 +29,24 @@ from tests.actor.fake_actor_classes import (
 )
 
 from tests.actor.utils import _run
+from tests.clients.fake_http_server import FakeHttpServer
 
 
 class ActorRuntimeTests(unittest.TestCase):
     def setUp(self):
+        self.server = FakeHttpServer(port=3500)
+        self.server.start()
+        settings.DAPR_HTTP_PORT = 3500
+
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
         self._serializer = DefaultJSONSerializer()
         _run(ActorRuntime.register_actor(FakeSimpleActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
         _run(ActorRuntime.register_actor(FakeSimpleTimerActor))
+
+    def tearDown(self):
+        self.server.shutdown_server()
 
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()

@@ -35,7 +35,7 @@ from dapr.clients import DaprClient
 
 class DaprInvocationHttpClientTests(unittest.TestCase):
     def setUp(self):
-        self.server = FakeHttpServer(port=8080)
+        self.server = FakeHttpServer(port=3500)
         self.server_port = self.server.get_port()
         self.server.start()
         settings.DAPR_HTTP_PORT = self.server_port

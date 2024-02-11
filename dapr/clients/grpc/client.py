@@ -40,7 +40,7 @@ from grpc import (  # type: ignore
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
-from dapr.clients.health import CheckDaprHealth
+from dapr.clients.health import DaprHealth
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -128,7 +128,7 @@ class DaprGrpcClient:
             max_grpc_messsage_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
         """
-        CheckDaprHealth()
+        DaprHealth.wait_until_ready()
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:

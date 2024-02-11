@@ -98,7 +98,7 @@ class ActorProxy:
     communication.
     """
 
-    _default_proxy_factory = ActorProxyFactory()
+    _default_proxy_factory = None
 
     def __init__(
         self,
@@ -128,6 +128,13 @@ class ActorProxy:
         return self._actor_type
 
     @classmethod
+    def _get_default_factory_instance(cls):
+        """Lazily initializes and returns the default ActorProxyFactory instance."""
+        if cls._default_proxy_factory is None:
+            cls._default_proxy_factory = ActorProxyFactory()
+        return cls._default_proxy_factory
+
+    @classmethod
     def create(
         cls,
         actor_type: str,
@@ -146,8 +153,9 @@ class ActorProxy:
 
         Returns:
             :class:`ActorProxy': new Actor Proxy client.
+            @param actor_proxy_factory:
         """
-        factory = cls._default_proxy_factory if not actor_proxy_factory else actor_proxy_factory
+        factory = actor_proxy_factory if actor_proxy_factory else cls._get_default_factory_instance()
         return factory.create(actor_type, actor_id, actor_interface)
 
     async def invoke_method(self, method: str, raw_body: Optional[bytes] = None) -> bytes:

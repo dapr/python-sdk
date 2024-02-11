@@ -21,76 +21,32 @@ from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings
 
 
-# def healthcheck():
-#     def decorator(func):
-#         timeout = settings.DAPR_HEALTH_TIMEOUT
-#         health_url = f'{get_api_url()}/healthz/outbound'
-#         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
-#         if settings.DAPR_API_TOKEN is not None:
-#             headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
-#         start = time.time()
-#
-#         @wraps(func)
-#         async def async_wrapper(*args, **kwargs):
-#             # Async health check logic
-#             async with aiohttp.ClientSession() as session:
-#                 while True:
-#                     try:
-#                         async with session.get(health_url, headers=headers) as response:
-#                             if 200 <= response.status < 300:
-#                                 break
-#                     except aiohttp.ClientError as e:
-#                         print(f'Health check failed: {e}')
-#
-#                     remaining = (start + timeout) - time.time()
-#                     if remaining <= 0:
-#                         raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
-#                     await asyncio.sleep(min(1, remaining))
-#             return await func(*args, **kwargs)
-#
-#         def sync_wrapper(*args, **kwargs):
-#             while True:
-#                 try:
-#                     req = urllib.request.Request(health_url, headers=headers)
-#                     with urllib.request.urlopen(req) as response:
-#                         if 200 <= response.status < 300:
-#                             break
-#                 except urllib.error.URLError as e:
-#                     print(f'Health check on {health_url} failed: {e.reason}')
-#
-#                 remaining = (start + timeout) - time.time()
-#                 if remaining <= 0:
-#                     raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
-#                 time.sleep(min(1, remaining))
-#             return func(*args, **kwargs)
-#
-#         if inspect.iscoroutinefunction(func):
-#             return async_wrapper
-#         else:
-#             return sync_wrapper
-#
-#     return decorator
-
-
-class CheckDaprHealth:
-    def __init__(self):
-        self.health_url = f'{get_api_url()}/healthz/outbound'
-        self.headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
+class DaprHealth:
+    @classmethod
+    def wait_until_ready(self):
+        health_url = f'{get_api_url()}/healthz/outbound'
+        headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
         if settings.DAPR_API_TOKEN is not None:
-            self.headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
-        self.timeout = settings.DAPR_HEALTH_TIMEOUT
+            headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
+        timeout = settings.DAPR_HEALTH_TIMEOUT
 
         start = time.time()
         while True:
             try:
-                req = urllib.request.Request(self.health_url, headers=self.headers)
-                with urllib.request.urlopen(req) as response:
+                req = urllib.request.Request(health_url, headers=headers)
+                with urllib.request.urlopen(req, context=self.get_context()) as response:
                     if 200 <= response.status < 300:
                         break
             except urllib.error.URLError as e:
-                print(f'Health check on {self.health_url} failed: {e.reason}')
+                print(f'Health check on {health_url} failed: {e.reason}')
 
-            remaining = (start + self.timeout) - time.time()
+            remaining = (start + timeout) - time.time()
             if remaining <= 0:
-                raise TimeoutError(f'Dapr health check timed out, after {self.timeout}.')
+                raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
             time.sleep(min(1, remaining))
+
+    @classmethod
+    def get_context(cls):
+        # This method is used (overwritten) from tests
+        # to return context for self-signed certificates
+        return None
