@@ -34,7 +34,7 @@ class DaprHealth:
         while True:
             try:
                 req = urllib.request.Request(health_url, headers=headers)
-                with urllib.request.urlopen(req, context=self.get_context()) as response:
+                with urllib.request.urlopen(req, context=self.get_ssl_context()) as response:
                     if 200 <= response.status < 300:
                         break
             except urllib.error.URLError as e:
@@ -46,7 +46,7 @@ class DaprHealth:
             time.sleep(min(1, remaining))
 
     @classmethod
-    def get_context(cls):
+    def get_ssl_context(cls):
         # This method is used (overwritten) from tests
         # to return context for self-signed certificates
         return None

@@ -1,6 +1,9 @@
 import os
+import ssl
 
 from OpenSSL import crypto
+
+import grpc
 
 PRIVATE_KEY_PATH = os.path.join(os.path.dirname(__file__), 'private.key')
 CERTIFICATE_CHAIN_PATH = os.path.join(os.path.dirname(__file__), 'selfsigned.pem')
@@ -40,3 +43,27 @@ def delete_certificates():
 
     if os.path.exists(CERTIFICATE_CHAIN_PATH):
         os.remove(CERTIFICATE_CHAIN_PATH)
+
+
+def replacement_get_credentials_func(a):
+    """
+    Used temporarily, so we can trust self-signed certificates in unit tests
+    until they get their own environment variable
+    """
+    f = open(os.path.join(os.path.dirname(__file__), 'selfsigned.pem'), 'rb')
+    creds = grpc.ssl_channel_credentials(f.read())
+    f.close()
+
+    return creds
+
+
+def replacement_get_health_context():
+    """
+    This method is used (overwritten) from tests
+    to return context for self-signed certificates
+    """
+    context = ssl.create_default_context()
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+
+    return context
