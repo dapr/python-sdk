@@ -29,23 +29,12 @@ from dapr.conf import settings
 from dapr.proto import common_v1
 
 
-from .certs import CERTIFICATE_CHAIN_PATH
+from .certs import replacement_get_health_context
 from .fake_http_server import FakeHttpServer
 from .test_http_service_invocation_client import DaprInvocationHttpClientTests
 
 
 def replacement_get_client_ssl_context(a):
-    """
-    This method is used (overwritten) from tests
-    to return context for self-signed certificates
-    """
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    ssl_context.load_verify_locations(CERTIFICATE_CHAIN_PATH)
-
-    return ssl_context
-
-
-def replacement_get_health_context():
     """
     This method is used (overwritten) from tests
     to return context for self-signed certificates
@@ -57,17 +46,18 @@ def replacement_get_health_context():
     return context
 
 
+DaprHttpClient.get_ssl_context = replacement_get_client_ssl_context
+DaprHealth.get_ssl_context = replacement_get_health_context
+
+
 class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
     def setUp(self):
-        DaprHttpClient.get_ssl_context = replacement_get_client_ssl_context
-        DaprHealth.get_context = replacement_get_health_context
-
         self.server = FakeHttpServer(secure=True, port=4443)
         self.server_port = self.server.get_port()
         self.server.start()
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
-        settings.DAPR_HTTP_ENDPOINT = 'https://localhost:{}'.format(self.server_port)
+        settings.DAPR_HTTP_ENDPOINT = 'https://127.0.0.1:{}'.format(self.server_port)
         self.client = DaprClient()
         self.app_id = 'fakeapp'
         self.method_name = 'fakemethod'

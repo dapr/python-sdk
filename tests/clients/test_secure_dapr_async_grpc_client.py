@@ -43,17 +43,17 @@ class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
     def tearDown(self):
         self._fake_dapr_server.stop_secure()
 
-    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'https://domain1.com:5000')
+    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'dns:domain1.com:5000')
     def test_init_with_DAPR_GRPC_ENDPOINT(self):
         dapr = DaprGrpcClientAsync()
         self.assertEqual('dns:domain1.com:5000', dapr._uri.endpoint)
 
-    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'https://domain1.com:5000')
+    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'dns:domain1.com:5000')
     def test_init_with_DAPR_GRPC_ENDPOINT_and_argument(self):
-        dapr = DaprGrpcClientAsync('https://domain2.com:5002')
+        dapr = DaprGrpcClientAsync('dns:domain2.com:5002')
         self.assertEqual('dns:domain2.com:5002', dapr._uri.endpoint)
 
-    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'https://domain1.com:5000')
+    @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'dns:domain1.com:5000')
     @patch.object(settings, 'DAPR_RUNTIME_HOST', 'domain2.com')
     @patch.object(settings, 'DAPR_GRPC_PORT', '5002')
     def test_init_with_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
@@ -63,7 +63,7 @@ class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
     @patch.object(settings, 'DAPR_RUNTIME_HOST', 'domain1.com')
     @patch.object(settings, 'DAPR_GRPC_PORT', '5000')
     def test_init_with_argument_and_DAPR_GRPC_ENDPOINT_and_DAPR_RUNTIME_HOST(self):
-        dapr = DaprGrpcClientAsync('https://domain2.com:5002')
+        dapr = DaprGrpcClientAsync('dns:domain2.com:5002')
         self.assertEqual('dns:domain2.com:5002', dapr._uri.endpoint)
 
     async def test_dapr_api_token_insertion(self):
