@@ -52,9 +52,9 @@ DaprHealth.get_ssl_context = replacement_get_health_context
 
 class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
     def setUp(self):
-        self.server = FakeHttpServer(secure=True, port=4443)
+        self.server = FakeHttpServer(port=4443)
         self.server_port = self.server.get_port()
-        self.server.start()
+        self.server.start_secure()
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
         settings.DAPR_HTTP_ENDPOINT = 'https://127.0.0.1:{}'.format(self.server_port)

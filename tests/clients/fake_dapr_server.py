@@ -1,3 +1,5 @@
+from ssl import SSLContext, PROTOCOL_TLS_SERVER
+
 import grpc
 import json
 
@@ -32,12 +34,7 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
 )
 from typing import Dict
 
-from tests.clients.certs import (
-    create_certificates,
-    delete_certificates,
-    PRIVATE_KEY_PATH,
-    CERTIFICATE_CHAIN_PATH,
-)
+from tests.clients.certs import GrpcCerts
 from tests.clients.fake_http_server import FakeHttpServer
 
 
@@ -46,7 +43,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.grpc_port = grpc_port
         self.http_port = http_port
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        self._http_server = FakeHttpServer(self.http_port)
+        self._http_server = FakeHttpServer(self.http_port)  # Needed for the healthcheck endpoint
         api_service_v1.add_DaprServicer_to_server(self, self._server)
         self.store = {}
         self.shutdown_received = False
@@ -56,23 +53,20 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.metadata: Dict[str, str] = {}
         self._next_exception = None
 
-    def start(
-        self,
-    ):
+    def start(self, ):
         self._server.add_insecure_port(f'[::]:{self.grpc_port}')
         self._server.start()
         self._http_server.start()
 
     def start_secure(self):
-        create_certificates()
+        GrpcCerts.create_certificates()
 
-        private_key_file = open(PRIVATE_KEY_PATH, 'rb')
+        private_key_file = open(GrpcCerts.get_pk_path(), 'rb')
         private_key_content = private_key_file.read()
         private_key_file.close()
 
-        certificate_chain_file = open(CERTIFICATE_CHAIN_PATH, 'rb')
+        certificate_chain_file = open(GrpcCerts.get_cert_path(), 'rb')
         certificate_chain_content = certificate_chain_file.read()
-        certificate_chain_file.close()
         certificate_chain_file.close()
 
         credentials = grpc.ssl_server_credentials(
@@ -81,9 +75,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         self._server.add_secure_port(f'[::]:{self.grpc_port}', credentials)
         self._server.start()
-        # The http server is only needed for the healthcheck endpoint
-        # so it can be started without a certificate
-        self._http_server.start()
+
+        self._http_server.start_secure()
 
     def stop(self):
         self._http_server.shutdown_server()
@@ -92,7 +85,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def stop_secure(self):
         self._http_server.shutdown_server()
         self._server.stop(None)
-        delete_certificates()
+        GrpcCerts.delete_certificates()
 
     def raise_exception_on_next_call(self, exception):
         """

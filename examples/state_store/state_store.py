@@ -34,7 +34,8 @@ with DaprClient() as d:
         # StatusCode should be StatusCode.ABORTED.
         print(f'Cannot save due to bad etag. ErrorCode={err.code()}')
 
-        # For detailed error messages from the dapr runtime:  # print(f"Details={err.details()})
+        # For detailed error messages from the dapr runtime:
+        # print(f"Details={err.details()})
 
     # Save multiple states.
     d.save_bulk_state(

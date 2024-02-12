@@ -1,8 +1,8 @@
 import unittest
 
 from fastapi import FastAPI
-from pydantic import BaseModel
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 from dapr.ext.fastapi import DaprApp
 

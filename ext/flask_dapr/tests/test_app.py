@@ -1,8 +1,8 @@
-import unittest
-from flask import Flask
 import json
+import unittest
 
-from flask_dapr import DaprApp  # noqa: E402
+from flask import Flask
+from flask_dapr import DaprApp
 
 
 class DaprAppTest(unittest.TestCase):

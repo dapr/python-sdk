@@ -37,8 +37,8 @@ class DaprHealth:
                 with urllib.request.urlopen(req, context=self.get_ssl_context()) as response:
                     if 200 <= response.status < 300:
                         break
-            except urllib.error.URLError as e:
-                print(f'Health check on {health_url} failed: {e.reason}')
+            except Exception as e:
+                print(f'Health check on {health_url} failed: {e}')
 
             remaining = (start + timeout) - time.time()
             if remaining <= 0:

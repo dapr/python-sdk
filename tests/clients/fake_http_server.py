@@ -4,12 +4,7 @@ from ssl import PROTOCOL_TLS_SERVER, SSLContext
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from tests.clients.certs import (
-    CERTIFICATE_CHAIN_PATH,
-    PRIVATE_KEY_PATH,
-    create_certificates,
-    delete_certificates,
-)
+from tests.clients.certs import (HttpCerts)
 
 
 class DaprHandler(BaseHTTPRequestHandler):
@@ -53,18 +48,13 @@ class DaprHandler(BaseHTTPRequestHandler):
 
 
 class FakeHttpServer(Thread):
-    def __init__(self, port: int = 8080, secure=False):
+    secure = False
+
+    def __init__(self, port: int = 8080):
         super().__init__()
-        self.secure = secure
 
         self.port = port
         self.server = HTTPServer(('localhost', self.port), DaprHandler)
-
-        if self.secure:
-            create_certificates('http')
-            ssl_context = SSLContext(PROTOCOL_TLS_SERVER)
-            ssl_context.load_cert_chain(CERTIFICATE_CHAIN_PATH, PRIVATE_KEY_PATH)
-            self.server.socket = ssl_context.wrap_socket(self.server.socket, server_side=True)
 
         self.server.response_body = b''
         self.server.response_code = 200
@@ -86,7 +76,7 @@ class FakeHttpServer(Thread):
         self.server.socket.close()
         self.join()
         if self.secure:
-            delete_certificates()
+            HttpCerts.delete_certificates()
 
     def request_path(self):
         return self.server.path
@@ -100,6 +90,16 @@ class FakeHttpServer(Thread):
 
     def set_server_delay(self, delay_seconds):
         self.server.sleep_time = delay_seconds
+
+    def start_secure(self):
+        self.secure = True
+
+        HttpCerts.create_certificates()
+        ssl_context = SSLContext(PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(HttpCerts.get_cert_path(), HttpCerts.get_pk_path())
+        self.server.socket = ssl_context.wrap_socket(self.server.socket, server_side=True)
+
+        self.start()
 
     def run(self):
         self.server.serve_forever()
