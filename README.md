@@ -1,7 +1,7 @@
 # Dapr SDK for Python
 
 [![PyPI version](https://badge.fury.io/py/dapr.svg)](https://badge.fury.io/py/dapr)
-[![PyPI version](https://badge.fury.io/py/dapr-dev.svg)](https://badge.fury.io/py/dapr-dev)
+[![PyPI version](https://badge.fury.io/py/dapr.svg)](https://badge.fury.io/py/dapr)
 ![dapr-python](https://github.com/dapr/python-sdk/workflows/dapr-python/badge.svg?branch=master)
 [![codecov](https://codecov.io/gh/dapr/python-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk)
 [![Discord](https://img.shields.io/discord/778680217417809931)](https://discord.com/channels/778680217417809931/778680217417809934)
@@ -49,7 +49,7 @@ pip3 install dapr-ext-fastapi
 
 ```sh
 # Install Dapr client sdk
-pip3 install dapr-dev
+pip3 install dapr
 
 # Install Dapr gRPC AppCallback service extension
 pip3 install dapr-ext-grpc-dev
