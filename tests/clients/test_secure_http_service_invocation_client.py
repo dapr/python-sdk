@@ -15,7 +15,6 @@ limitations under the License.
 import ssl
 import typing
 from asyncio import TimeoutError
-from unittest.mock import patch
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -23,48 +22,71 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-from dapr.clients import DaprClient
+from dapr.clients import DaprClient, DaprGrpcClient
+from dapr.clients.health import DaprHealth
 from dapr.clients.http.client import DaprHttpClient
 from dapr.conf import settings
 from dapr.proto import common_v1
 
 
-from .certs import CERTIFICATE_CHAIN_PATH
+from .certs import replacement_get_health_context, replacement_get_credentials_func, GrpcCerts
 from .fake_http_server import FakeHttpServer
 from .test_http_service_invocation_client import DaprInvocationHttpClientTests
 
 
-def replacement_get_ssl_context(a):
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    ssl_context.load_verify_locations(CERTIFICATE_CHAIN_PATH)
+def replacement_get_client_ssl_context(a):
+    """
+    This method is used (overwritten) from tests
+    to return context for self-signed certificates
+    """
+    context = ssl.create_default_context()
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
 
-    return ssl_context
+    return context
+
+
+DaprHttpClient.get_ssl_context = replacement_get_client_ssl_context
+DaprGrpcClient.get_credentials = replacement_get_credentials_func
+DaprHealth.get_ssl_context = replacement_get_health_context
 
 
 class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
-    def setUp(self):
-        DaprHttpClient.get_ssl_context = replacement_get_ssl_context
+    server_port = 4443
 
-        self.server = FakeHttpServer(secure=True)
-        self.server_port = self.server.get_port()
-        self.server.start()
+    @classmethod
+    def setUpClass(cls):
+        cls.server = FakeHttpServer(cls.server_port)
+        cls.server.start_secure()
+
+        cls.app_id = 'fakeapp'
+        cls.method_name = 'fakemethod'
+        cls.invoke_url = f'/v1.0/invoke/{cls.app_id}/method/{cls.method_name}'
+
+        # We need to set up the certificates for the gRPC server
+        # because the DaprGrpcClient will try to create a connection
+        GrpcCerts.create_certificates()
+
+    @classmethod
+    def tearDownClass(cls):
+        GrpcCerts.delete_certificates()
+        cls.server.shutdown_server()
+
+    def setUp(self):
+        settings.DAPR_API_TOKEN = None
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
-        settings.DAPR_HTTP_ENDPOINT = 'https://localhost:{}'.format(self.server_port)
-        self.client = DaprClient()
-        self.app_id = 'fakeapp'
-        self.method_name = 'fakemethod'
-        self.invoke_url = f'/v1.0/invoke/{self.app_id}/method/{self.method_name}'
+        settings.DAPR_HTTP_ENDPOINT = 'https://127.0.0.1:{}'.format(self.server_port)
 
-    def tearDown(self):
-        self.server.shutdown_server()
-        settings.DAPR_API_TOKEN = None
-        settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
+        self.server.reset()
+        self.client = DaprClient()
 
     def test_global_timeout_setting_is_honored(self):
         previous_timeout = settings.DAPR_HTTP_TIMEOUT_SECONDS
         settings.DAPR_HTTP_TIMEOUT_SECONDS = 1
+
         new_client = DaprClient(f'https://localhost:{self.server_port}')
+
         self.server.set_server_delay(1.5)
         with self.assertRaises(TimeoutError):
             new_client.invoke_method(self.app_id, self.method_name, '')
@@ -117,13 +139,3 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
         self.server.set_server_delay(1.5)
         with self.assertRaises(TimeoutError):
             new_client.invoke_method(self.app_id, self.method_name, '')
-
-    @patch.object(settings, 'DAPR_HTTP_ENDPOINT', None)
-    def test_get_api_url_default(self):
-        client = DaprClient()
-        self.assertEqual(
-            'http://{}:{}/{}'.format(
-                settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
-            ),
-            client.invocation_client._client.get_api_url(),
-        )

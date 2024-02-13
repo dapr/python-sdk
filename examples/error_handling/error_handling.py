@@ -1,14 +1,12 @@
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprGrpcError
 
+
 with DaprClient() as d:
     storeName = 'statestore'
 
     key = 'key||'
     value = 'value_1'
-
-    # Wait for sidecar to be up within 5 seconds.
-    d.wait(5)
 
     # Save single state.
     try:

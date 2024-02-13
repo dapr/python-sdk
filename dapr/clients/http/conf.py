@@ -13,20 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-# Default environment settings that environment variables overrides
+from dapr.version import __version__
 
-HTTP_APP_PORT = 3000
-GRPC_APP_PORT = 3010
-
-DAPR_API_TOKEN = None
-DAPR_HTTP_ENDPOINT = None
-DAPR_GRPC_ENDPOINT = None
-DAPR_RUNTIME_HOST = '127.0.0.1'
-DAPR_HTTP_PORT = 3500
-DAPR_GRPC_PORT = 50001
-DAPR_API_VERSION = 'v1.0'
-DAPR_HEALTH_TIMEOUT = 60  # seconds
-
-DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
-
-DAPR_HTTP_TIMEOUT_SECONDS = 60
+CONTENT_TYPE_HEADER = 'content-type'
+DAPR_API_TOKEN_HEADER = 'dapr-api-token'
+USER_AGENT_HEADER = 'User-Agent'
+DAPR_USER_AGENT = f'dapr-sdk-python/{__version__}'

@@ -17,7 +17,6 @@ import json
 import typing
 import unittest
 from asyncio import TimeoutError
-from unittest.mock import patch
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -25,55 +24,39 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-from dapr.clients import DaprClient
+
 from dapr.clients.exceptions import DaprInternalError
 from dapr.conf import settings
 from dapr.proto import common_v1
 
 from .fake_http_server import FakeHttpServer
+from dapr.clients import DaprClient
 
 
 class DaprInvocationHttpClientTests(unittest.TestCase):
+    server_port = 3500
+
+    @classmethod
+    def setUpClass(cls):
+        cls.server = FakeHttpServer(cls.server_port)
+        cls.server.start()
+
+        cls.app_id = 'fakeapp'
+        cls.method_name = 'fakemethod'
+        cls.invoke_url = f'/v1.0/invoke/{cls.app_id}/method/{cls.method_name}'
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown_server()
+
     def setUp(self):
-        self.server = FakeHttpServer()
-        self.server_port = self.server.get_port()
-        self.server.start()
+        settings.DAPR_API_TOKEN = None
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
+        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(self.server_port)
+
+        self.server.reset()
         self.client = DaprClient()
-        self.app_id = 'fakeapp'
-        self.method_name = 'fakemethod'
-        self.invoke_url = f'/v1.0/invoke/{self.app_id}/method/{self.method_name}'
-
-    def tearDown(self):
-        self.server.shutdown_server()
-        settings.DAPR_API_TOKEN = None
-        settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
-
-    def test_get_api_url_default(self):
-        client = DaprClient()
-        self.assertEqual(
-            'http://{}:{}/{}'.format(
-                settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
-            ),
-            client.invocation_client._client.get_api_url(),
-        )
-
-    @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'https://domain1.com:5000')
-    def test_dont_get_api_url_endpoint_as_argument(self):
-        client = DaprClient('http://localhost:5000')
-        self.assertEqual(
-            'https://domain1.com:5000/{}'.format(settings.DAPR_API_VERSION),
-            client.invocation_client._client.get_api_url(),
-        )
-
-    @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'https://domain1.com:5000')
-    def test_get_api_url_endpoint_as_env_variable(self):
-        client = DaprClient()
-        self.assertEqual(
-            'https://domain1.com:5000/{}'.format(settings.DAPR_API_VERSION),
-            client.invocation_client._client.get_api_url(),
-        )
 
     def test_basic_invoke(self):
         self.server.set_response(b'STRING_BODY')

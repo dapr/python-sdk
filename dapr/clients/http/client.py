@@ -17,18 +17,20 @@ import aiohttp
 
 from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
 
+from dapr.clients.http.conf import (
+    DAPR_API_TOKEN_HEADER,
+    USER_AGENT_HEADER,
+    DAPR_USER_AGENT,
+    CONTENT_TYPE_HEADER,
+)
+from dapr.clients.health import DaprHealth
+
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
 from dapr.conf import settings
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
-from dapr.version import __version__
-
-CONTENT_TYPE_HEADER = 'content-type'
-DAPR_API_TOKEN_HEADER = 'dapr-api-token'
-USER_AGENT_HEADER = 'User-Agent'
-DAPR_USER_AGENT = f'dapr-sdk-python/{__version__}'
 
 
 class DaprHttpClient:
@@ -47,17 +49,11 @@ class DaprHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
         """
+        DaprHealth.wait_until_ready()
+
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
         self._headers_callback = headers_callback
-
-    def get_api_url(self) -> str:
-        if settings.DAPR_HTTP_ENDPOINT:
-            return '{}/{}'.format(settings.DAPR_HTTP_ENDPOINT, settings.DAPR_API_VERSION)
-
-        return 'http://{}:{}/{}'.format(
-            settings.DAPR_RUNTIME_HOST, settings.DAPR_HTTP_PORT, settings.DAPR_API_VERSION
-        )
 
     async def send_bytes(
         self,

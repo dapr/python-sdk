@@ -18,9 +18,11 @@ import asyncio
 from typing import Callable, Dict, Optional, Union
 from multidict import MultiDict
 
-from dapr.clients.http.client import DaprHttpClient, CONTENT_TYPE_HEADER
+from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
 from dapr.clients.grpc._response import InvokeMethodResponse
+from dapr.clients.http.conf import CONTENT_TYPE_HEADER
+from dapr.clients.http.helpers import get_api_url
 from dapr.serializers import DefaultJSONSerializer
 from dapr.version import __version__
 
@@ -88,7 +90,7 @@ class DaprInvocationHttpClient:
 
         headers[USER_AGENT_HEADER] = DAPR_USER_AGENT
 
-        url = f'{self._client.get_api_url()}/invoke/{app_id}/method/{method_name}'
+        url = f'{get_api_url()}/invoke/{app_id}/method/{method_name}'
 
         if isinstance(data, GrpcMessage):
             body = data.SerializeToString()

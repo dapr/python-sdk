@@ -26,9 +26,6 @@ async def executeConfiguration():
 
         keys = ['orderId1', 'orderId2']
 
-        # Wait for sidecar to be up within 20 seconds.
-        d.wait(20)
-
         global configuration
 
         # Get one configuration by key.

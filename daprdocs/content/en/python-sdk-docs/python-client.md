@@ -74,6 +74,14 @@ If your Dapr instance is configured to require the `DAPR_API_TOKEN` environment 
 set it in the environment and the client will use it automatically.  
 You can read more about Dapr API token authentication [here](https://docs.dapr.io/operations/security/api-token/).
 
+##### Health timeout
+On client initialisation, a health check is performed against the Dapr sidecar (`/healthz/outboud`).
+The client will wait for the sidecar to be up and running before proceeding.  
+
+The default timeout is 60 seconds, but it can be overridden by setting the `DAPR_HEALTH_TIMEOUT`
+environment variable.
+
+
 ## Error handling
 Initially, errors in Dapr followed the [Standard gRPC error model](https://grpc.io/docs/guides/error/#standard-error-model). However, to provide more detailed and informative error messages, in version 1.13 an enhanced error model has been introduced which aligns with the gRPC [Richer error model](https://grpc.io/docs/guides/error/#richer-error-model). In response, the Python SDK implemented `DaprGrpcError`, a custom exception class designed to improve the developer experience.  
 It's important to note that the transition to using `DaprGrpcError` for all gRPC status exceptions is a work in progress. As of now, not every API call in the SDK has been updated to leverage this custom exception. We are actively working on this enhancement and welcome contributions from the community.

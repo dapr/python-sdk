@@ -1,9 +1,10 @@
+import unittest
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from dapr.ext.fastapi import DaprApp
 from pydantic import BaseModel
 
-import unittest
+from dapr.ext.fastapi import DaprApp
 
 
 class Message(BaseModel):

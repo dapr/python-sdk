@@ -15,6 +15,8 @@ limitations under the License.
 
 from typing import Callable, Dict, Optional, Union, TYPE_CHECKING
 
+from dapr.clients.http.helpers import get_api_url
+
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
@@ -145,4 +147,4 @@ class DaprActorHttpClient(DaprActorClientBase):
         await self._client.send_bytes(method='DELETE', url=url, data=None)
 
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
-        return '{}/actors/{}/{}'.format(self._client.get_api_url(), actor_type, actor_id)
+        return '{}/actors/{}/{}'.format(get_api_url(), actor_type, actor_id)

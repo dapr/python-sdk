@@ -20,6 +20,7 @@ from unittest import mock
 
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig, ActorReentrancyConfig
+from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer
 
 from tests.actor.fake_actor_classes import (
@@ -29,9 +30,20 @@ from tests.actor.fake_actor_classes import (
 )
 
 from tests.actor.utils import _run
+from tests.clients.fake_http_server import FakeHttpServer
 
 
 class ActorRuntimeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.server = FakeHttpServer(3500)
+        cls.server.start()
+        settings.DAPR_HTTP_PORT = 3500
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown_server()
+
     def setUp(self):
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(

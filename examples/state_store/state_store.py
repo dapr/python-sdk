@@ -9,6 +9,7 @@ from dapr.clients import DaprClient
 from dapr.clients.grpc._request import TransactionalStateOperation, TransactionOperationType
 from dapr.clients.grpc._state import StateItem
 
+
 with DaprClient() as d:
     storeName = 'statestore'
 
@@ -21,9 +22,6 @@ with DaprClient() as d:
 
     yet_another_key = 'key_3'
     yet_another_value = 'value_3'
-
-    # Wait for sidecar to be up within 5 seconds.
-    d.wait(5)
 
     # Save single state.
     d.save_state(store_name=storeName, key=key, value=value)
@@ -63,8 +61,7 @@ with DaprClient() as d:
         # StatusCode should be StatusCode.ABORTED.
         print(f'Cannot save bulk due to bad etags. ErrorCode={err.code()}')
 
-        # For detailed error messages from the dapr runtime:
-        # print(f"Details={err.details()})
+        # For detailed error messages from the dapr runtime:  # print(f"Details={err.details()})
 
     # Get one state by key.
     state = d.get_state(store_name=storeName, key=key, state_metadata={'metakey': 'metavalue'})

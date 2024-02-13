@@ -12,19 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
 import unittest
 
 from unittest import mock
 
+
 from dapr.actor.id import ActorId
 from dapr.actor.client.proxy import ActorProxy
 from dapr.serializers import DefaultJSONSerializer
-
 from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeActorCls2Interface,
 )
+
 
 from tests.actor.fake_client import FakeDaprActorClient
 

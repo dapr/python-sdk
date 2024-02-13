@@ -7,6 +7,7 @@ from google.protobuf.duration_pb2 import Duration
 
 from dapr.clients import DaprGrpcClient
 from dapr.clients.exceptions import DaprGrpcError
+from dapr.conf import settings
 
 from .fake_dapr_server import FakeDaprSidecar
 
@@ -89,17 +90,23 @@ def create_expected_status():
 
 
 class DaprExceptionsTestCase(unittest.TestCase):
-    def setUp(self):
-        self._server_port = 8080
-        self._fake_dapr_server = FakeDaprSidecar()
-        self._fake_dapr_server.start(self._server_port)
-        self._expected_status = create_expected_status()
+    _grpc_port = 50001
+    _http_port = 3500
 
-    def tearDown(self):
-        self._fake_dapr_server.stop()
+    @classmethod
+    def setUpClass(cls):
+        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls._grpc_port, http_port=cls._http_port)
+        settings.DAPR_HTTP_PORT = cls._http_port
+        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(cls._http_port)
+        cls._fake_dapr_server.start()
+        cls._expected_status = create_expected_status()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._fake_dapr_server.stop()
 
     def test_exception_status_parsing(self):
-        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
+        dapr = DaprGrpcClient(f'localhost:{self._grpc_port}')
 
         self._fake_dapr_server.raise_exception_on_next_call(self._expected_status)
         with self.assertRaises(DaprGrpcError) as context:
@@ -186,7 +193,7 @@ class DaprExceptionsTestCase(unittest.TestCase):
         )
 
     def test_error_code(self):
-        dapr = DaprGrpcClient(f'localhost:{self._server_port}')
+        dapr = DaprGrpcClient(f'localhost:{self._grpc_port}')
 
         expected_status = create_expected_status()
 

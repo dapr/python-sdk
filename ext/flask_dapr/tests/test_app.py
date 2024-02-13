@@ -1,9 +1,8 @@
-from flask import Flask
-from flask_dapr import DaprApp
-
+import json
 import unittest
 
-import json
+from flask import Flask
+from flask_dapr import DaprApp
 
 
 class DaprAppTest(unittest.TestCase):

@@ -5,6 +5,7 @@ from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf import empty_pb2
 from grpc_status import rpc_status
+
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.proto import api_service_v1, common_v1, api_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
@@ -31,18 +32,17 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
 )
 from typing import Dict
 
-from tests.clients.certs import (
-    create_certificates,
-    delete_certificates,
-    PRIVATE_KEY_PATH,
-    CERTIFICATE_CHAIN_PATH,
-)
+from tests.clients.certs import GrpcCerts
+from tests.clients.fake_http_server import FakeHttpServer
 
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
-    def __init__(self):
-        self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        api_service_v1.add_DaprServicer_to_server(self, self._server)
+    def __init__(self, grpc_port: int = 50001, http_port: int = 8080):
+        self.grpc_port = grpc_port
+        self.http_port = http_port
+        self._grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        self._http_server = FakeHttpServer(self.http_port)  # Needed for the healthcheck endpoint
+        api_service_v1.add_DaprServicer_to_server(self, self._grpc_server)
         self.store = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
@@ -51,35 +51,39 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.metadata: Dict[str, str] = {}
         self._next_exception = None
 
-    def start(self, port: int = 8080):
-        self._server.add_insecure_port(f'[::]:{port}')
-        self._server.start()
+    def start(self):
+        self._grpc_server.add_insecure_port(f'[::]:{self.grpc_port}')
+        self._grpc_server.start()
+        self._http_server.start()
 
-    def start_secure(self, port: int = 4443):
-        create_certificates()
+    def start_secure(self):
+        GrpcCerts.create_certificates()
 
-        private_key_file = open(PRIVATE_KEY_PATH, 'rb')
+        private_key_file = open(GrpcCerts.get_pk_path(), 'rb')
         private_key_content = private_key_file.read()
         private_key_file.close()
 
-        certificate_chain_file = open(CERTIFICATE_CHAIN_PATH, 'rb')
+        certificate_chain_file = open(GrpcCerts.get_cert_path(), 'rb')
         certificate_chain_content = certificate_chain_file.read()
-        certificate_chain_file.close()
         certificate_chain_file.close()
 
         credentials = grpc.ssl_server_credentials(
             [(private_key_content, certificate_chain_content)]
         )
 
-        self._server.add_secure_port(f'[::]:{port}', credentials)
-        self._server.start()
+        self._grpc_server.add_secure_port(f'[::]:{self.grpc_port}', credentials)
+        self._grpc_server.start()
+
+        self._http_server.start_secure()
 
     def stop(self):
-        self._server.stop(None)
+        self._http_server.shutdown_server()
+        self._grpc_server.stop(None)
 
     def stop_secure(self):
-        self._server.stop(None)
-        delete_certificates()
+        self._http_server.shutdown_server()
+        self._grpc_server.stop(None)
+        GrpcCerts.delete_certificates()
 
     def raise_exception_on_next_call(self, exception):
         """
