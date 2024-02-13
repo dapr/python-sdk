@@ -1,1 +1,1 @@
-dapr-ext-fastapi-dev>=1.11.0rc1.dev
+dapr-ext-fastapi-dev>=1.13.0rc1.dev
