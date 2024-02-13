@@ -22,8 +22,8 @@ from dapr.conf import settings
 
 
 class DaprHealth:
-    @classmethod
-    def wait_until_ready(cls):
+    @staticmethod
+    def wait_until_ready():
         health_url = f'{get_api_url()}/healthz/outbound'
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
         if settings.DAPR_API_TOKEN is not None:
@@ -34,7 +34,7 @@ class DaprHealth:
         while True:
             try:
                 req = urllib.request.Request(health_url, headers=headers)
-                with urllib.request.urlopen(req, context=cls.get_ssl_context()) as response:
+                with urllib.request.urlopen(req, context=DaprHealth.get_ssl_context()) as response:
                     if 200 <= response.status < 300:
                         break
             except urllib.error.URLError as e:
@@ -47,8 +47,8 @@ class DaprHealth:
                 raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
             time.sleep(min(1, remaining))
 
-    @classmethod
-    def get_ssl_context(cls):
+    @staticmethod
+    def get_ssl_context():
         # This method is used (overwritten) from tests
         # to return context for self-signed certificates
         return None
