@@ -23,7 +23,7 @@ from dapr.conf import settings
 
 class DaprHealth:
     @classmethod
-    def wait_until_ready(self):
+    def wait_until_ready(cls):
         health_url = f'{get_api_url()}/healthz/outbound'
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
         if settings.DAPR_API_TOKEN is not None:
@@ -34,11 +34,13 @@ class DaprHealth:
         while True:
             try:
                 req = urllib.request.Request(health_url, headers=headers)
-                with urllib.request.urlopen(req, context=self.get_ssl_context()) as response:
+                with urllib.request.urlopen(req, context=cls.get_ssl_context()) as response:
                     if 200 <= response.status < 300:
                         break
+            except urllib.error.URLError as e:
+                print(f'Health check on {health_url} failed: {e.reason}')
             except Exception as e:
-                print(f'Health check on {health_url} failed: {e}')
+                print(f'Unexpected error during health check: {e}')
 
             remaining = (start + timeout) - time.time()
             if remaining <= 0:
