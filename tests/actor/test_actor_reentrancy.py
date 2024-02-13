@@ -34,11 +34,17 @@ from tests.clients.fake_http_server import FakeHttpServer
 
 
 class ActorRuntimeTests(unittest.TestCase):
-    def setUp(self):
-        self.server = FakeHttpServer(port=3500)
-        self.server.start()
+    @classmethod
+    def setUpClass(cls):
+        cls.server = FakeHttpServer(3500)
+        cls.server.start()
         settings.DAPR_HTTP_PORT = 3500
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown_server()
+
+    def setUp(self):
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(
             ActorRuntimeConfig(reentrancy=ActorReentrancyConfig(enabled=True))
@@ -47,9 +53,6 @@ class ActorRuntimeTests(unittest.TestCase):
         _run(ActorRuntime.register_actor(FakeReentrantActor))
         _run(ActorRuntime.register_actor(FakeSlowReentrantActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
-
-    def tearDown(self):
-        self.server.shutdown_server()
 
     def test_reentrant_dispatch(self):
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))

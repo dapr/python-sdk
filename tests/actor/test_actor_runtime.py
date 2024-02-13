@@ -33,20 +33,23 @@ from tests.clients.fake_http_server import FakeHttpServer
 
 
 class ActorRuntimeTests(unittest.TestCase):
-    def setUp(self):
-        self.server = FakeHttpServer(port=3500)
-        self.server.start()
+    @classmethod
+    def setUpClass(cls):
+        cls.server = FakeHttpServer(3500)
+        cls.server.start()
         settings.DAPR_HTTP_PORT = 3500
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown_server()
+
+    def setUp(self):
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
         self._serializer = DefaultJSONSerializer()
         _run(ActorRuntime.register_actor(FakeSimpleActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
         _run(ActorRuntime.register_actor(FakeSimpleTimerActor))
-
-    def tearDown(self):
-        self.server.shutdown_server()
 
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()
