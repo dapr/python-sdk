@@ -5,7 +5,7 @@ import grpc
 from OpenSSL import crypto
 
 
-class Certs():
+class Certs:
     server_type = 'grpc'
 
     @classmethod
@@ -28,13 +28,11 @@ class Certs():
 
         cert.sign(k, 'sha512')
 
-        f_cert = open(cls.get_cert_path(), 'wt')
-        f_cert.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
-        f_cert.close()
+        with open(cls.get_cert_path(), 'wt') as f_cert:
+            f_cert.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
 
-        f_key = open(cls.get_pk_path(), 'wt')
-        f_key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))
-        f_key.close()
+        with open(cls.get_pk_path(), 'wt') as f_key:
+            f_key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))
 
     @classmethod
     def get_pk_path(cls):
@@ -68,12 +66,9 @@ def replacement_get_credentials_func(a):
     Used temporarily, so we can trust self-signed certificates in unit tests
     until they get their own environment variable
     """
-
-    f = open(GrpcCerts.get_cert_path(), 'rb')
-    creds = grpc.ssl_channel_credentials(f.read())
-    f.close()
-
-    return creds
+    with open(GrpcCerts.get_cert_path(), 'rb') as f:
+        creds = grpc.ssl_channel_credentials(f.read())
+        return creds
 
 
 def replacement_get_health_context():

@@ -22,14 +22,14 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-from dapr.clients import DaprClient
+from dapr.clients import DaprClient, DaprGrpcClient
 from dapr.clients.health import DaprHealth
 from dapr.clients.http.client import DaprHttpClient
 from dapr.conf import settings
 from dapr.proto import common_v1
 
 
-from .certs import replacement_get_health_context
+from .certs import replacement_get_health_context, replacement_get_credentials_func, GrpcCerts
 from .fake_http_server import FakeHttpServer
 from .test_http_service_invocation_client import DaprInvocationHttpClientTests
 
@@ -47,31 +47,46 @@ def replacement_get_client_ssl_context(a):
 
 
 DaprHttpClient.get_ssl_context = replacement_get_client_ssl_context
+DaprGrpcClient.get_credentials = replacement_get_credentials_func
 DaprHealth.get_ssl_context = replacement_get_health_context
 
 
 class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
+    server_port = 4443
+
+    @classmethod
+    def setUpClass(cls):
+        cls.server = FakeHttpServer(cls.server_port)
+        cls.server.start_secure()
+
+        cls.app_id = 'fakeapp'
+        cls.method_name = 'fakemethod'
+        cls.invoke_url = f'/v1.0/invoke/{cls.app_id}/method/{cls.method_name}'
+
+        # We need to set up the certificates for the gRPC server
+        # because the DaprGrpcClient will try to create a connection
+        GrpcCerts.create_certificates()
+
+    @classmethod
+    def tearDownClass(cls):
+        GrpcCerts.delete_certificates()
+        cls.server.shutdown_server()
+
     def setUp(self):
-        self.server = FakeHttpServer(port=4443)
-        self.server_port = self.server.get_port()
-        self.server.start_secure()
+        settings.DAPR_API_TOKEN = None
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
         settings.DAPR_HTTP_ENDPOINT = 'https://127.0.0.1:{}'.format(self.server_port)
-        self.client = DaprClient()
-        self.app_id = 'fakeapp'
-        self.method_name = 'fakemethod'
-        self.invoke_url = f'/v1.0/invoke/{self.app_id}/method/{self.method_name}'
 
-    def tearDown(self):
-        self.server.shutdown_server()
-        settings.DAPR_API_TOKEN = None
-        settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
+        self.server.reset()
+        self.client = DaprClient()
 
     def test_global_timeout_setting_is_honored(self):
         previous_timeout = settings.DAPR_HTTP_TIMEOUT_SECONDS
         settings.DAPR_HTTP_TIMEOUT_SECONDS = 1
+
         new_client = DaprClient(f'https://localhost:{self.server_port}')
+
         self.server.set_server_delay(1.5)
         with self.assertRaises(TimeoutError):
             new_client.invoke_method(self.app_id, self.method_name, '')

@@ -34,23 +34,29 @@ from dapr.clients import DaprClient
 
 
 class DaprInvocationHttpClientTests(unittest.TestCase):
+    server_port = 3500
+
+    @classmethod
+    def setUpClass(cls):
+        cls.server = FakeHttpServer(cls.server_port)
+        cls.server.start()
+
+        cls.app_id = 'fakeapp'
+        cls.method_name = 'fakemethod'
+        cls.invoke_url = f'/v1.0/invoke/{cls.app_id}/method/{cls.method_name}'
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown_server()
+
     def setUp(self):
-        self.server = FakeHttpServer(port=3500)
-        self.server_port = self.server.get_port()
-        self.server.start()
+        settings.DAPR_API_TOKEN = None
         settings.DAPR_HTTP_PORT = self.server_port
         settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
+        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(self.server_port)
 
+        self.server.reset()
         self.client = DaprClient()
-
-        self.app_id = 'fakeapp'
-        self.method_name = 'fakemethod'
-        self.invoke_url = f'/v1.0/invoke/{self.app_id}/method/{self.method_name}'
-
-    def tearDown(self):
-        self.server.shutdown_server()
-        settings.DAPR_API_TOKEN = None
-        settings.DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
 
     def test_basic_invoke(self):
         self.server.set_response(b'STRING_BODY')

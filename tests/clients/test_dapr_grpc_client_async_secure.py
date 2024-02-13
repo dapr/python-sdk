@@ -20,7 +20,7 @@ from unittest.mock import patch
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.clients.health import DaprHealth
 from tests.clients.certs import replacement_get_credentials_func, replacement_get_health_context
-from tests.clients.test_dapr_async_grpc_client import DaprGrpcClientAsyncTests
+from tests.clients.test_dapr_grpc_client_async import DaprGrpcClientAsyncTests
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 
@@ -34,14 +34,16 @@ class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
     http_port = 4443  # The http server is used for health checks only, and doesn't need TLS
     scheme = 'https://'
 
-    def setUp(self):
-        self._fake_dapr_server = FakeDaprSidecar(grpc_port=self.grpc_port, http_port=self.http_port)
-        self._fake_dapr_server.start_secure()
-        settings.DAPR_HTTP_PORT = self.http_port
-        settings.DAPR_HTTP_ENDPOINT = 'https://127.0.0.1:{}'.format(self.http_port)
+    @classmethod
+    def setUpClass(cls):
+        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls.grpc_port, http_port=cls.http_port)
+        cls._fake_dapr_server.start_secure()
+        settings.DAPR_HTTP_PORT = cls.http_port
+        settings.DAPR_HTTP_ENDPOINT = 'https://127.0.0.1:{}'.format(cls.http_port)
 
-    def tearDown(self):
-        self._fake_dapr_server.stop_secure()
+    @classmethod
+    def tearDownClass(cls):
+        cls._fake_dapr_server.stop_secure()
 
     @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'dns:domain1.com:5000')
     def test_init_with_DAPR_GRPC_ENDPOINT(self):

@@ -4,7 +4,7 @@ from ssl import PROTOCOL_TLS_SERVER, SSLContext
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from tests.clients.certs import (HttpCerts)
+from tests.clients.certs import HttpCerts
 
 
 class DaprHandler(BaseHTTPRequestHandler):
@@ -15,6 +15,11 @@ class DaprHandler(BaseHTTPRequestHandler):
             self.handle_request()
 
     def do_request(self, verb):
+        if self.path == '/v1.0/healthz/outbound':
+            self.send_response(200)
+            self.end_headers()
+            return
+
         if self.server.sleep_time is not None:
             time.sleep(self.server.sleep_time)
         self.received_verb = verb
@@ -103,3 +108,10 @@ class FakeHttpServer(Thread):
 
     def run(self):
         self.server.serve_forever()
+
+    def reset(self):
+        self.server.response_body = b''
+        self.server.response_code = 200
+        self.server.response_header_list = []
+        self.server.request_body = b''
+        self.server.sleep_time = None

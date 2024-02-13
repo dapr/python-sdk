@@ -93,17 +93,17 @@ class DaprExceptionsTestCase(unittest.TestCase):
     _grpc_port = 50001
     _http_port = 3500
 
-    def setUp(self):
-        self._fake_dapr_server = FakeDaprSidecar(
-            grpc_port=self._grpc_port, http_port=self._http_port
-        )
-        settings.DAPR_HTTP_PORT = self._http_port
-        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(self._http_port)
-        self._fake_dapr_server.start()
-        self._expected_status = create_expected_status()
+    @classmethod
+    def setUpClass(cls):
+        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls._grpc_port, http_port=cls._http_port)
+        settings.DAPR_HTTP_PORT = cls._http_port
+        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(cls._http_port)
+        cls._fake_dapr_server.start()
+        cls._expected_status = create_expected_status()
 
-    def tearDown(self):
-        self._fake_dapr_server.stop()
+    @classmethod
+    def tearDownClass(cls):
+        cls._fake_dapr_server.stop()
 
     def test_exception_status_parsing(self):
         dapr = DaprGrpcClient(f'localhost:{self._grpc_port}')

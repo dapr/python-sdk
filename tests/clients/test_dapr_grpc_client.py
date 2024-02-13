@@ -47,14 +47,16 @@ class DaprGrpcClientTests(unittest.TestCase):
     scheme = ''
     error = None
 
-    def setUp(self):
-        self._fake_dapr_server = FakeDaprSidecar(grpc_port=self.grpc_port, http_port=self.http_port)
-        settings.DAPR_HTTP_PORT = self.http_port
-        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(self.http_port)
-        self._fake_dapr_server.start()
+    @classmethod
+    def setUpClass(cls):
+        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls.grpc_port, http_port=cls.http_port)
+        cls._fake_dapr_server.start()
+        settings.DAPR_HTTP_PORT = cls.http_port
+        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(cls.http_port)
 
-    def tearDown(self):
-        self._fake_dapr_server.stop()
+    @classmethod
+    def tearDownClass(cls):
+        cls._fake_dapr_server.stop()
 
     def test_http_extension(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
