@@ -40,9 +40,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def __init__(self, grpc_port: int = 50001, http_port: int = 8080):
         self.grpc_port = grpc_port
         self.http_port = http_port
-        self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        self._grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         self._http_server = FakeHttpServer(self.http_port)  # Needed for the healthcheck endpoint
-        api_service_v1.add_DaprServicer_to_server(self, self._server)
+        api_service_v1.add_DaprServicer_to_server(self, self._grpc_server)
         self.store = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
@@ -52,8 +52,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._next_exception = None
 
     def start(self):
-        self._server.add_insecure_port(f'[::]:{self.grpc_port}')
-        self._server.start()
+        self._grpc_server.add_insecure_port(f'[::]:{self.grpc_port}')
+        self._grpc_server.start()
         self._http_server.start()
 
     def start_secure(self):
@@ -71,18 +71,18 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             [(private_key_content, certificate_chain_content)]
         )
 
-        self._server.add_secure_port(f'[::]:{self.grpc_port}', credentials)
-        self._server.start()
+        self._grpc_server.add_secure_port(f'[::]:{self.grpc_port}', credentials)
+        self._grpc_server.start()
 
         self._http_server.start_secure()
 
     def stop(self):
         self._http_server.shutdown_server()
-        self._server.stop(None)
+        self._grpc_server.stop(None)
 
     def stop_secure(self):
         self._http_server.shutdown_server()
-        self._server.stop(None)
+        self._grpc_server.stop(None)
         GrpcCerts.delete_certificates()
 
     def raise_exception_on_next_call(self, exception):

@@ -56,7 +56,6 @@ class ActorTests(unittest.TestCase):
         _run(ActorRuntime.register_actor(FakeSimpleActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
 
-
     def test_get_registered_actor_types(self):
         actor_types = ActorRuntime.get_registered_actor_types()
         self.assertTrue(actor_types.index('FakeSimpleActor') >= 0)
