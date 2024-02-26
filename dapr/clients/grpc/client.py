@@ -39,7 +39,11 @@ from grpc import (  # type: ignore
 
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
+from dapr.clients.grpc.interceptors import (
+    DaprRetryClientInterceptor,
+    DaprClientInterceptor,
+    RetryPolicy,
+)
 from dapr.clients.health import DaprHealth
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
@@ -47,7 +51,7 @@ from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 from dapr.clients.grpc._helpers import (
-    DaprClientInterceptor,
+    getWorkflowRuntimeStatus,
     MetadataTuple,
     to_bytes,
     validateNotNone,
@@ -116,6 +120,7 @@ class DaprGrpcClient:
             ]
         ] = None,
         max_grpc_message_length: Optional[int] = None,
+        retry_policy=None,
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -162,6 +167,13 @@ class DaprGrpcClient:
             self._channel = grpc.insecure_channel(  # type: ignore
                 self._uri.endpoint,
                 options=options,
+            )
+
+        # If set, apply a retry policy as an interceptor
+        retry_policy = retry_policy or RetryPolicy()
+        if retry_policy.max_retries != 0:
+            self._channel = grpc.intercept_channel(
+                self._channel, DaprRetryClientInterceptor(retry_policy)
             )
 
         if settings.DAPR_API_TOKEN:
