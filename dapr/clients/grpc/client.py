@@ -82,6 +82,41 @@ from dapr.clients.grpc._response import (
 )
 
 
+class RetryPolicy:
+    """RetryPolicy is a class that holds the retry policy configuration for a gRPC client.
+
+    Args:
+        max_attempts (int): The maximum number of retry attempts.
+        initial_backoff (str): The initial backoff duration.
+        max_backoff (str): The maximum backoff duration.
+        backoff_multiplier (float): The backoff multiplier.
+        retryable_status_codes (List[str]): The list of status codes that are retryable.
+    """
+
+    def __init__(
+        self,
+        max_attempts: Optional[int] = settings.DAPR_API_MAX_RETRIES,
+        initial_backoff: str = '1s',
+        max_backoff: str = '30s',
+        backoff_multiplier: float = 2,
+        retryable_status_codes: List[str] = ['UNAVAILABLE', 'DEADLINE_EXCEEDED'],
+    ):
+        self.max_attempts = max_attempts
+        self.initial_backoff = initial_backoff
+        self.max_backoff = max_backoff
+        self.backoff_multiplier = backoff_multiplier
+        self.retryable_status_codes = retryable_status_codes
+
+    def to_grpc_retry_policy(self):
+        return {
+            'maxAttempts': self.max_attempts,
+            'initialBackoff': self.initial_backoff,
+            'maxBackoff': self.max_backoff,
+            'backoffMultiplier': self.backoff_multiplier,
+            'retryableStatusCodes': self.retryable_status_codes,
+        }
+
+
 class DaprGrpcClient:
     """The convenient layer implementation of Dapr gRPC APIs.
 
@@ -116,6 +151,7 @@ class DaprGrpcClient:
             ]
         ] = None,
         max_grpc_message_length: Optional[int] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -142,23 +178,18 @@ class DaprGrpcClient:
                 ('grpc.primary_user_agent', useragent),
             ]
 
-        json_config = json.dumps(
+        retry_policy = retry_policy or RetryPolicy()
+        service_config = json.dumps(
             {
                 'methodConfig': [
                     {
                         'name': [{'service': ''}],
-                        'retryPolicy': {
-                            'maxAttempts': 5,
-                            'initialBackoff': '1s',
-                            'maxBackoff': '20s',
-                            'backoffMultiplier': 2,
-                            'retryableStatusCodes': ['UNAVAILABLE', 'DEADLINE_EXCEEDED'],
-                        },
+                        'retryPolicy': retry_policy.to_grpc_retry_policy(),
                     }
                 ]
             }
         )
-        options.append(('grpc.service_config', json_config))
+        options.append(('grpc.service_config', service_config))
 
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or (
