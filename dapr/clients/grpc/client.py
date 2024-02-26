@@ -142,6 +142,24 @@ class DaprGrpcClient:
                 ('grpc.primary_user_agent', useragent),
             ]
 
+        json_config = json.dumps(
+            {
+                'methodConfig': [
+                    {
+                        'name': [{'service': ''}],
+                        'retryPolicy': {
+                            'maxAttempts': 5,
+                            'initialBackoff': '1s',
+                            'maxBackoff': '20s',
+                            'backoffMultiplier': 2,
+                            'retryableStatusCodes': ['UNAVAILABLE', 'DEADLINE_EXCEEDED'],
+                        },
+                    }
+                ]
+            }
+        )
+        options.append(('grpc.service_config', json_config))
+
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or (
                 f'{settings.DAPR_RUNTIME_HOST}:' f'{settings.DAPR_GRPC_PORT}'
