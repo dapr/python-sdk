@@ -2,7 +2,12 @@ import time
 from collections import namedtuple
 from typing import List, Tuple
 
-from grpc import StatusCode, UnaryUnaryClientInterceptor, RpcError, ClientCallDetails, _channel
+from grpc import (  # type: ignore
+    StatusCode,
+    UnaryUnaryClientInterceptor,
+    RpcError,
+    ClientCallDetails,
+    _channel)
 
 from dapr.conf import settings
 

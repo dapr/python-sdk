@@ -172,7 +172,7 @@ class DaprGrpcClient:
         # If set, apply a retry policy as an interceptor
         retry_policy = retry_policy or RetryPolicy()
         if retry_policy.max_retries != 0:
-            self._channel = grpc.intercept_channel(
+            self._channel = grpc.intercept_channel( # type: ignore
                 self._channel, DaprRetryClientInterceptor(retry_policy)
             )
 
