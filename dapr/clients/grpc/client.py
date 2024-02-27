@@ -189,6 +189,7 @@ class DaprGrpcClient:
                 ]
             }
         )
+        options.append(("grpc.enable_retries", 1))
         options.append(('grpc.service_config', service_config))
 
         if not address:
