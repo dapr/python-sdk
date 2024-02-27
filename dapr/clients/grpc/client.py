@@ -41,6 +41,7 @@ from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.health import DaprHealth
+from dapr.clients.retry import retry_rpc_call
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -189,6 +190,10 @@ class DaprGrpcClient:
         """Closes Dapr runtime gRPC channel."""
         if hasattr(self, '_channel') and self._channel:
             self._channel.close()
+
+    @retry_rpc_call()
+    def rpc_call(self, func=Callable, *args, **kwargs):
+        return func(*args, **kwargs)
 
     def __del__(self):
         self.close()
@@ -710,7 +715,7 @@ class DaprGrpcClient:
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         try:
-            _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+            _, call = self.rpc_call(self._stub.SaveState.with_call, req, metadata=metadata)
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
             raise DaprGrpcError(err) from err
