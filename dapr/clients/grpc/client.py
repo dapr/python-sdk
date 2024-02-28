@@ -35,7 +35,6 @@ from grpc import (  # type: ignore
     StreamUnaryClientInterceptor,
     StreamStreamClientInterceptor,
     RpcError,
-    StatusCode,
 )
 
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError

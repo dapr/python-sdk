@@ -43,6 +43,7 @@ from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.health import DaprHealth
+from dapr.clients.retry import RetryPolicy, async_run_rpc_with_retry
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
@@ -118,6 +119,7 @@ class DaprGrpcClientAsync:
             ]
         ] = None,
         max_grpc_message_length: Optional[int] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -131,6 +133,7 @@ class DaprGrpcClientAsync:
                 message length in bytes.
         """
         DaprHealth.wait_until_ready()
+        self.retry_policy = retry_policy or RetryPolicy()
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
@@ -713,8 +716,9 @@ class DaprGrpcClientAsync:
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         try:
-            call = self._stub.SaveState(req, metadata=metadata)
-            await call
+            result, call = await async_run_rpc_with_retry(
+                self.retry_policy, self._stub.SaveState, req, metadata=metadata
+            )
             return DaprResponse(headers=await call.initial_metadata())
         except AioRpcError as e:
             raise DaprInternalError(e.details()) from e
