@@ -15,7 +15,7 @@ limitations under the License.
 import asyncio
 from typing import Optional, List, Callable
 
-from grpc import RpcError, StatusCode
+from grpc import RpcError, StatusCode  # type: ignore
 import time
 
 from dapr.conf import settings
@@ -56,14 +56,14 @@ def run_rpc_with_retry(policy: RetryPolicy, func=Callable, *args, **kwargs):
         return func(*args, **kwargs)
 
     attempt = 0
-    while policy.max_attempts == -1 or attempt < policy.max_attempts:
+    while policy.max_attempts == -1 or attempt < policy.max_attempts:  # type: ignore
         try:
             print(f'Trying RPC call, attempt {attempt + 1}')
             return func(*args, **kwargs)
         except RpcError as err:
             if err.code() not in policy.retryable_status_codes:
                 raise
-            if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:
+            if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:  # type: ignore
                 raise
             sleep_time = min(
                 policy.max_backoff,
@@ -83,7 +83,7 @@ async def async_run_rpc_with_retry(policy: RetryPolicy, func: Callable, *args, *
         return result, call
 
     attempt = 0
-    while policy.max_attempts == -1 or attempt < policy.max_attempts:
+    while policy.max_attempts == -1 or attempt < policy.max_attempts:  # type: ignore
         try:
             print(f'Trying RPC call, attempt {attempt + 1}')
             call = func(*args, **kwargs)
@@ -92,7 +92,7 @@ async def async_run_rpc_with_retry(policy: RetryPolicy, func: Callable, *args, *
         except RpcError as err:
             if err.code() not in policy.retryable_status_codes:
                 raise
-            if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:
+            if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:  # type: ignore
                 raise
             sleep_time = min(
                 policy.max_backoff,
