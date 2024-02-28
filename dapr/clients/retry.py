@@ -73,3 +73,32 @@ def run_rpc_with_retry(policy: RetryPolicy, func=Callable, *args, **kwargs):
             time.sleep(sleep_time)
             attempt += 1
     raise Exception(f'RPC call failed after {attempt} retries')
+
+
+async def async_run_rpc_with_retry(policy: RetryPolicy, func: Callable, *args, **kwargs):
+    # If max_retries is 0, we don't retry
+    if policy.max_attempts == 0:
+        call = func(*args, **kwargs)
+        result = await call
+        return result, call
+
+    attempt = 0
+    while policy.max_attempts == -1 or attempt < policy.max_attempts:
+        try:
+            print(f'Trying RPC call, attempt {attempt + 1}')
+            call = func(*args, **kwargs)
+            result = await call
+            return result, call
+        except RpcError as err:
+            if err.code() not in policy.retryable_status_codes:
+                raise
+            if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:
+                raise
+            sleep_time = min(
+                policy.max_backoff,
+                policy.initial_backoff * (policy.backoff_multiplier**attempt),
+            )
+            print(f'Sleeping for {sleep_time} seconds before retrying RPC call')
+            await asyncio.sleep(sleep_time)
+            attempt += 1
+    raise Exception(f'RPC call failed after {attempt} retries')
