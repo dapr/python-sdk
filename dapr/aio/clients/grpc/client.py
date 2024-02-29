@@ -50,7 +50,10 @@ from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
-from dapr.aio.clients.grpc._asynchelpers import DaprClientInterceptorAsync
+from dapr.aio.clients.grpc.interceptors import (
+    DaprClientInterceptorAsync,
+    DaprClientTimeoutInterceptorAsync,
+)
 from dapr.clients.grpc._helpers import (
     MetadataTuple,
     to_bytes,
@@ -157,12 +160,11 @@ class DaprGrpcClientAsync:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        if self._uri.tls:
-            self._channel = grpc.aio.secure_channel(
-                self._uri.endpoint, credentials=self.get_credentials(), options=options
-            )  # type: ignore
+        # Prepare interceptors
+        if interceptors is None:
+            interceptors = [DaprClientTimeoutInterceptorAsync()]
         else:
-            self._channel = grpc.aio.insecure_channel(self._uri.endpoint, options)  # type: ignore
+            interceptors.append(DaprClientTimeoutInterceptorAsync())
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptorAsync(
@@ -170,13 +172,20 @@ class DaprGrpcClientAsync:
                     ('dapr-api-token', settings.DAPR_API_TOKEN),
                 ]
             )
-            self._channel = grpc.aio.insecure_channel(  # type: ignore
-                address, options=options, interceptors=(api_token_interceptor,)
-            )
-        if interceptors:
-            self._channel = grpc.aio.insecure_channel(  # type: ignore
-                address, options=options, *interceptors
-            )
+            interceptors.append(api_token_interceptor)
+
+        # Create gRPC channel
+        if self._uri.tls:
+            self._channel = grpc.aio.secure_channel(
+                self._uri.endpoint,
+                credentials=self.get_credentials(),
+                options=options,
+                interceptors=interceptors,
+            )  # type: ignore
+        else:
+            self._channel = grpc.aio.insecure_channel(
+                self._uri.endpoint, options, interceptors=interceptors
+            )  # type: ignore
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
