@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import List, Tuple
 
-from grpc import UnaryUnaryClientInterceptor, ClientCallDetails
+from grpc import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
 
 from dapr.conf import settings
 
