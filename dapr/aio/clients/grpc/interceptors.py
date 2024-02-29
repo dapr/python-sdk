@@ -18,6 +18,8 @@ from typing import List, Tuple
 
 from grpc.aio import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
 
+from dapr.conf import settings
+
 
 class _ClientCallDetailsAsync(
     namedtuple(
@@ -31,6 +33,22 @@ class _ClientCallDetailsAsync(
     """
 
     pass
+
+
+class DaprClientTimeoutInterceptorAsync(UnaryUnaryClientInterceptor):
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        # If a specific timeout is not set, create a new ClientCallDetails with the default timeout
+        if client_call_details.timeout is None:
+            new_client_call_details = _ClientCallDetailsAsync(
+                client_call_details.method,
+                settings.DAPR_API_TIMEOUT_SECONDS,
+                client_call_details.metadata,
+                client_call_details.credentials,
+                client_call_details.wait_for_ready,
+            )
+            return continuation(new_client_call_details, request)
+
+        return continuation(client_call_details, request)
 
 
 class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):

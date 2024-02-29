@@ -40,6 +40,7 @@ from grpc import (  # type: ignore
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
+from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy, run_rpc_with_retry
 from dapr.conf import settings
@@ -48,7 +49,6 @@ from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 from dapr.clients.grpc._helpers import (
-    DaprClientInterceptor,
     MetadataTuple,
     to_bytes,
     validateNotNone,
@@ -166,6 +166,8 @@ class DaprGrpcClient:
                 self._uri.endpoint,
                 options=options,
             )
+
+        self._channel = grpc.intercept_channel(self._channel, DaprClientTimeoutInterceptor())
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor(
