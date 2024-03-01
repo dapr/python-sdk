@@ -25,7 +25,7 @@ class AsyncRetriesTests(unittest.IsolatedAsyncioTestCase):
     async def test_run_rpc_with_retry_success(self):
         mock_func = AsyncMock(return_value='success')
 
-        policy = RetryPolicy(max_attempts=3, retryable_status_codes=[StatusCode.UNAVAILABLE])
+        policy = RetryPolicy(max_attempts=3, retryable_grpc_status_codes=[StatusCode.UNAVAILABLE])
         result, _ = await async_run_rpc_with_retry(policy, mock_func, 'foo', arg1=1, arg2=2)
 
         self.assertEqual(result, 'success')
@@ -64,7 +64,7 @@ class AsyncRetriesTests(unittest.IsolatedAsyncioTestCase):
         mock_func = AsyncMock(side_effect=mock_error)
 
         with self.assertRaises(RpcError):
-            policy = RetryPolicy(max_attempts=3, retryable_status_codes=[StatusCode.UNAVAILABLE])
+            policy = RetryPolicy(max_attempts=3, retryable_grpc_status_codes=[StatusCode.UNAVAILABLE])
             await async_run_rpc_with_retry(policy, mock_func)
 
         mock_func.assert_awaited_once()
@@ -99,7 +99,7 @@ class AsyncRetriesTests(unittest.IsolatedAsyncioTestCase):
         # Then we assert that the function was called X times before breaking the loop
 
         # Configure the policy to simulate infinite retries
-        policy = RetryPolicy(max_attempts=-1, retryable_status_codes=[StatusCode.UNAVAILABLE])
+        policy = RetryPolicy(max_attempts=-1, retryable_grpc_status_codes=[StatusCode.UNAVAILABLE])
 
         mock_error = RpcError()
         mock_error.code = MagicMock(return_value=StatusCode.UNAVAILABLE)
