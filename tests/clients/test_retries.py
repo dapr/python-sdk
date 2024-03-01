@@ -21,16 +21,59 @@ from grpc import StatusCode, RpcError
 from dapr.clients.retry import RetryPolicy, run_rpc_with_retry
 
 
-class RetriesTest(unittest.TestCase):
-    def setUp(self):
-        self.retry_policy = RetryPolicy(
-            max_attempts=3, retryable_status_codes=[StatusCode.UNAVAILABLE]
-        )
+class RetryPolicyTests(unittest.TestCase):
+    def test_init_success_default(self):
+        policy = RetryPolicy()
 
+        self.assertEqual(0, policy.max_attempts)
+        self.assertEqual(1, policy.initial_backoff)
+        self.assertEqual(20, policy.max_backoff)
+        self.assertEqual(1.5, policy.backoff_multiplier)
+        self.assertEqual([408, 429, 500, 502, 503, 504], policy.retryable_http_status_codes)
+        self.assertEqual([StatusCode.UNAVAILABLE, StatusCode.DEADLINE_EXCEEDED], policy.retryable_grpc_status_codes)
+
+    def test_init_success(self):
+        policy = RetryPolicy(
+            max_attempts=3,
+            initial_backoff=2,
+            max_backoff=10,
+            backoff_multiplier=2,
+            retryable_grpc_status_codes=[StatusCode.UNAVAILABLE],
+            retryable_http_status_codes=[408, 429]
+        )
+        self.assertEqual(3, policy.max_attempts)
+        self.assertEqual(2, policy.initial_backoff)
+        self.assertEqual(10, policy.max_backoff)
+        self.assertEqual(2, policy.backoff_multiplier)
+        self.assertEqual([StatusCode.UNAVAILABLE], policy.retryable_grpc_status_codes)
+        self.assertEqual([408, 429], policy.retryable_http_status_codes)
+
+    def test_init_with_errors(self):
+        with self.assertRaises(ValueError):
+            RetryPolicy(max_attempts=-2)
+
+        with self.assertRaises(ValueError):
+            RetryPolicy(initial_backoff=0)
+
+        with self.assertRaises(ValueError):
+            RetryPolicy(max_backoff=0)
+
+        with self.assertRaises(ValueError):
+            RetryPolicy(backoff_multiplier=0)
+
+        with self.assertRaises(ValueError):
+            RetryPolicy(retryable_http_status_codes=[])
+
+        with self.assertRaises(ValueError):
+            RetryPolicy(retryable_grpc_status_codes=[])
+
+
+class RetriesTest(unittest.TestCase):
     def test_run_rpc_with_retry_success(self):
         mock_func = Mock(return_value='success')
 
-        result = run_rpc_with_retry(self.retry_policy, mock_func, 'foo', 'bar', arg1=1, arg2=2)
+        policy = RetryPolicy(max_attempts=3, retryable_grpc_status_codes=[StatusCode.UNAVAILABLE])
+        result = run_rpc_with_retry(policy, mock_func, 'foo', 'bar', arg1=1, arg2=2)
 
         self.assertEqual(result, 'success')
         mock_func.assert_called_once_with('foo', 'bar', arg1=1, arg2=2)
@@ -68,7 +111,9 @@ class RetriesTest(unittest.TestCase):
         mock_func = MagicMock(side_effect=mock_error)
 
         with self.assertRaises(RpcError):
-            run_rpc_with_retry(self.retry_policy, mock_func)
+            policy = RetryPolicy(max_attempts=3,
+                                 retryable_grpc_status_codes=[StatusCode.UNAVAILABLE])
+            run_rpc_with_retry(policy, mock_func)
 
         mock_func.assert_called_once()
 
@@ -101,7 +146,7 @@ class RetriesTest(unittest.TestCase):
         # Then we assert that the function was called X times before breaking the loop
 
         # Configure the policy to simulate infinite retries
-        policy = RetryPolicy(max_attempts=-1, retryable_status_codes=[StatusCode.UNAVAILABLE])
+        policy = RetryPolicy(max_attempts=-1, retryable_grpc_status_codes=[StatusCode.UNAVAILABLE])
 
         mock_error = RpcError()
         mock_error.code = MagicMock(return_value=StatusCode.UNAVAILABLE)

@@ -29,7 +29,8 @@ class RetryPolicy:
         initial_backoff (int): The initial backoff duration.
         max_backoff (int): The maximum backoff duration.
         backoff_multiplier (float): The backoff multiplier.
-        retryable_status_codes (List[StatusCode]): The list of status codes that are retryable.
+        retryable_http_status_codes (List[int]): The list of http retryable status codes
+        retryable_grpc_status_codes (List[StatusCode]): The list of retryable grpc status codes
     """
 
     def __init__(
@@ -38,16 +39,35 @@ class RetryPolicy:
         initial_backoff: int = 1,
         max_backoff: int = 20,
         backoff_multiplier: float = 1.5,
-        retryable_status_codes: List[StatusCode] = [
+        retryable_http_status_codes: List[int] = [408, 429, 500, 502, 503, 504],
+        retryable_grpc_status_codes: List[StatusCode] = [
             StatusCode.UNAVAILABLE,
             StatusCode.DEADLINE_EXCEEDED,
         ],
     ):
+        if max_attempts < -1:
+            raise ValueError('max_attempts must be greater than or equal to -1')
         self.max_attempts = max_attempts
+
+        if initial_backoff < 1:
+            raise ValueError('initial_backoff must be greater than or equal to 1')
         self.initial_backoff = initial_backoff
+
+        if max_backoff < 1:
+            raise ValueError('max_backoff must be greater than or equal to 1')
         self.max_backoff = max_backoff
+
+        if backoff_multiplier < 1:
+            raise ValueError('backoff_multiplier must be greater than or equal to 1')
         self.backoff_multiplier = backoff_multiplier
-        self.retryable_status_codes = retryable_status_codes
+
+        if len(retryable_http_status_codes) == 0:
+            raise ValueError('retryable_http_status_codes can\'t be empty')
+        self.retryable_http_status_codes = retryable_http_status_codes
+
+        if len(retryable_grpc_status_codes) == 0:
+            raise ValueError('retryable_http_status_codes can\'t be empty')
+        self.retryable_grpc_status_codes = retryable_grpc_status_codes
 
 
 def run_rpc_with_retry(policy: RetryPolicy, func=Callable, *args, **kwargs):
@@ -61,7 +81,7 @@ def run_rpc_with_retry(policy: RetryPolicy, func=Callable, *args, **kwargs):
             print(f'Trying RPC call, attempt {attempt + 1}')
             return func(*args, **kwargs)
         except RpcError as err:
-            if err.code() not in policy.retryable_status_codes:
+            if err.code() not in policy.retryable_grpc_status_codes:
                 raise
             if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:  # type: ignore
                 raise
@@ -90,7 +110,7 @@ async def async_run_rpc_with_retry(policy: RetryPolicy, func: Callable, *args, *
             result = await call
             return result, call
         except RpcError as err:
-            if err.code() not in policy.retryable_status_codes:
+            if err.code() not in policy.retryable_grpc_status_codes:
                 raise
             if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:  # type: ignore
                 raise
