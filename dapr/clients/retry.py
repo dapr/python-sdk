@@ -45,7 +45,7 @@ class RetryPolicy:
             StatusCode.DEADLINE_EXCEEDED,
         ],
     ):
-        if max_attempts < -1:
+        if max_attempts < -1:  # type: ignore
             raise ValueError('max_attempts must be greater than or equal to -1')
         self.max_attempts = max_attempts
 
@@ -62,11 +62,11 @@ class RetryPolicy:
         self.backoff_multiplier = backoff_multiplier
 
         if len(retryable_http_status_codes) == 0:
-            raise ValueError('retryable_http_status_codes can\'t be empty')
+            raise ValueError("retryable_http_status_codes can't be empty")
         self.retryable_http_status_codes = retryable_http_status_codes
 
         if len(retryable_grpc_status_codes) == 0:
-            raise ValueError('retryable_http_status_codes can\'t be empty')
+            raise ValueError("retryable_http_status_codes can't be empty")
         self.retryable_grpc_status_codes = retryable_grpc_status_codes
 
 
