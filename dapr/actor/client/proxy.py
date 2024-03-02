@@ -34,7 +34,8 @@ class ActorFactoryBase(ABC):
         actor_type: str,
         actor_id: ActorId,
         actor_interface: Optional[Type[ActorInterface]] = None,
-    ) -> 'ActorProxy': ...
+    ) -> 'ActorProxy':
+        ...
 
 
 class ActorProxyFactory(ActorFactoryBase):
