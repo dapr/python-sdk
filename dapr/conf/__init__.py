@@ -24,7 +24,8 @@ class Settings:
             default_value = getattr(global_settings, setting)
             env_variable = os.environ.get(setting)
             if env_variable:
-                setattr(self, setting, type(default_value)(env_variable))
+                val = type(default_value)(env_variable) if default_value is not None else env_variable
+                setattr(self, setting, val)
             else:
                 setattr(self, setting, default_value)
 
