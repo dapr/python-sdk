@@ -75,7 +75,7 @@ set it in the environment and the client will use it automatically.
 You can read more about Dapr API token authentication [here](https://docs.dapr.io/operations/security/api-token/).
 
 ##### Health timeout
-On client initialisation, a health check is performed against the Dapr sidecar (`/healthz/outboud`).
+On client initialisation, a health check is performed against the Dapr sidecar (`/healthz/outbound`).
 The client will wait for the sidecar to be up and running before proceeding.  
 
 The default timeout is 60 seconds, but it can be overridden by setting the `DAPR_HEALTH_TIMEOUT`

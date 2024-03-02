@@ -24,7 +24,6 @@ from dapr.clients.http.conf import (
     DAPR_USER_AGENT,
     CONTENT_TYPE_HEADER,
 )
-from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 
 if TYPE_CHECKING:
@@ -105,33 +104,43 @@ class DaprHttpClient:
         # If max_retries is 0, we don't retry
         if self.retry_policy.max_attempts == 0:
             return await session.request(
-                method=req["method"],
-                url=req["url"],
-                data=req["data"],
-                headers=req["headers"],
-                ssl=req["sslcontext"],
-                params=req["params"],
+                method=req['method'],
+                url=req['url'],
+                data=req['data'],
+                headers=req['headers'],
+                ssl=req['sslcontext'],
+                params=req['params'],
             )
 
         attempt = 0
         while self.retry_policy.max_attempts == -1 or attempt < self.retry_policy.max_attempts:  # type: ignore
-                print(f'Trying RPC call, attempt {attempt + 1}')
-                r = await session.request(method=req["method"], url=req["url"], data=req["data"],
-                    headers=req["headers"], ssl=req["sslcontext"], params=req["params"], )
+            print(f'Request attempt {attempt + 1}')
+            r = await session.request(
+                method=req['method'],
+                url=req['url'],
+                data=req['data'],
+                headers=req['headers'],
+                ssl=req['sslcontext'],
+                params=req['params'],
+            )
 
-                if r.status not in self.retry_policy.retryable_http_status_codes:
-                    return r
+            if r.status not in self.retry_policy.retryable_http_status_codes:
+                return r
 
-                if self.retry_policy.max_attempts != -1 and attempt == self.retry_policy.max_attempts - 1:  # type: ignore
-                    return r
+            if (
+                self.retry_policy.max_attempts != -1
+                and attempt == self.retry_policy.max_attempts - 1  # type: ignore
+            ):  # type: ignore
+                return r
 
-                sleep_time = min(self.retry_policy.max_backoff,
-                    self.retry_policy.initial_backoff * (self.retry_policy.backoff_multiplier ** attempt), )
+            sleep_time = min(
+                self.retry_policy.max_backoff,
+                self.retry_policy.initial_backoff * (self.retry_policy.backoff_multiplier**attempt),
+            )
 
-                print(f'Sleeping for {sleep_time} seconds before retrying RPC call')
-                await asyncio.sleep(sleep_time)
-                attempt += 1
-        raise Exception(f'Request failed after {attempt} retries')
+            print(f'Sleeping for {sleep_time} seconds before retrying call')
+            await asyncio.sleep(sleep_time)
+            attempt += 1
 
     async def convert_to_error(self, response: aiohttp.ClientResponse) -> DaprInternalError:
         error_info = None
