@@ -38,6 +38,7 @@ class RetryPolicyHttpTests(unittest.IsolatedAsyncioTestCase):
             'headers': None,
             'sslcontext': None,
             'params': None,
+            'timeout': None,
         }
 
     async def test_run_with_success(self):

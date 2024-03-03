@@ -84,7 +84,7 @@ class DaprHttpClient:
         client_timeout = aiohttp.ClientTimeout(total=timeout) if timeout else self._timeout
         sslcontext = self.get_ssl_context()
 
-        async with aiohttp.ClientSession(timeout=client_timeout) as session:
+        async with aiohttp.ClientSession() as session:
             req = {
                 'method': method,
                 'url': url,
@@ -92,6 +92,7 @@ class DaprHttpClient:
                 'headers': headers_map,
                 'sslcontext': sslcontext,
                 'params': query_params,
+                'timeout': client_timeout,
             }
             r = await self.retry_call(session, req)
 
@@ -110,6 +111,7 @@ class DaprHttpClient:
                 headers=req['headers'],
                 ssl=req['sslcontext'],
                 params=req['params'],
+                timeout=req['timeout'],
             )
 
         attempt = 0
@@ -122,6 +124,7 @@ class DaprHttpClient:
                 headers=req['headers'],
                 ssl=req['sslcontext'],
                 params=req['params'],
+                timeout=req['timeout'],
             )
 
             if r.status not in self.retry_policy.retryable_http_status_codes:
