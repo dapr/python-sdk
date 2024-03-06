@@ -1535,6 +1535,12 @@ class DaprGrpcClientAsync:
         Args:
             timeout_s (float): timeout in seconds
         """
+        warn(
+            'The wait method is deprecated. A health check is now done automatically on client '
+            'initialization.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         start = time.time()
         while True:
