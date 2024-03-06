@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import asyncio
 
 import aiohttp
 
@@ -23,7 +24,7 @@ from dapr.clients.http.conf import (
     DAPR_USER_AGENT,
     CONTENT_TYPE_HEADER,
 )
-from dapr.clients.health import DaprHealth
+from dapr.clients.retry import RetryPolicy
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
@@ -41,6 +42,7 @@ class DaprHttpClient:
         message_serializer: 'Serializer',
         timeout: Optional[int] = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Invokes Dapr over HTTP.
 
@@ -49,11 +51,12 @@ class DaprHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
         """
-        DaprHealth.wait_until_ready()
+        # DaprHealth.wait_until_ready()
 
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
         self._headers_callback = headers_callback
+        self.retry_policy = retry_policy or RetryPolicy()
 
     async def send_bytes(
         self,
@@ -81,20 +84,66 @@ class DaprHttpClient:
         client_timeout = aiohttp.ClientTimeout(total=timeout) if timeout else self._timeout
         sslcontext = self.get_ssl_context()
 
-        async with aiohttp.ClientSession(timeout=client_timeout) as session:
-            r = await session.request(
-                method=method,
-                url=url,
-                data=data,
-                headers=headers_map,
-                ssl=sslcontext,
-                params=query_params,
-            )
+        async with aiohttp.ClientSession() as session:
+            req = {
+                'method': method,
+                'url': url,
+                'data': data,
+                'headers': headers_map,
+                'sslcontext': sslcontext,
+                'params': query_params,
+                'timeout': client_timeout,
+            }
+            r = await self.retry_call(session, req)
 
-            if r.status >= 200 and r.status < 300:
+            if 200 <= r.status < 300:
                 return await r.read(), r
 
             raise (await self.convert_to_error(r))
+
+    async def retry_call(self, session, req):
+        # If max_retries is 0, we don't retry
+        if self.retry_policy.max_attempts == 0:
+            return await session.request(
+                method=req['method'],
+                url=req['url'],
+                data=req['data'],
+                headers=req['headers'],
+                ssl=req['sslcontext'],
+                params=req['params'],
+                timeout=req['timeout'],
+            )
+
+        attempt = 0
+        while self.retry_policy.max_attempts == -1 or attempt < self.retry_policy.max_attempts:  # type: ignore
+            print(f'Request attempt {attempt + 1}')
+            r = await session.request(
+                method=req['method'],
+                url=req['url'],
+                data=req['data'],
+                headers=req['headers'],
+                ssl=req['sslcontext'],
+                params=req['params'],
+                timeout=req['timeout'],
+            )
+
+            if r.status not in self.retry_policy.retryable_http_status_codes:
+                return r
+
+            if (
+                self.retry_policy.max_attempts != -1
+                and attempt == self.retry_policy.max_attempts - 1  # type: ignore
+            ):  # type: ignore
+                return r
+
+            sleep_time = min(
+                self.retry_policy.max_backoff,
+                self.retry_policy.initial_backoff * (self.retry_policy.backoff_multiplier**attempt),
+            )
+
+            print(f'Sleeping for {sleep_time} seconds before retrying call')
+            await asyncio.sleep(sleep_time)
+            attempt += 1
 
     async def convert_to_error(self, response: aiohttp.ClientResponse) -> DaprInternalError:
         error_info = None

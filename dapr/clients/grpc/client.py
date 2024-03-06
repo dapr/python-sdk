@@ -40,14 +40,15 @@ from grpc import (  # type: ignore
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
+from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
 from dapr.clients.health import DaprHealth
+from dapr.clients.retry import RetryPolicy, run_rpc_with_retry
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 from dapr.clients.grpc._helpers import (
-    DaprClientInterceptor,
     MetadataTuple,
     to_bytes,
     validateNotNone,
@@ -116,6 +117,7 @@ class DaprGrpcClient:
             ]
         ] = None,
         max_grpc_message_length: Optional[int] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -129,6 +131,7 @@ class DaprGrpcClient:
                 message length in bytes.
         """
         DaprHealth.wait_until_ready()
+        self.retry_policy = retry_policy or RetryPolicy()
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
@@ -163,6 +166,8 @@ class DaprGrpcClient:
                 self._uri.endpoint,
                 options=options,
             )
+
+        self._channel = grpc.intercept_channel(self._channel, DaprClientTimeoutInterceptor())  # type: ignore
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor(
@@ -710,7 +715,9 @@ class DaprGrpcClient:
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         try:
-            _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+            _, call = run_rpc_with_retry(
+                self.retry_policy, self._stub.SaveState.with_call, req, metadata=metadata
+            )
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
             raise DaprGrpcError(err) from err

@@ -1,39 +1,44 @@
-# -*- coding: utf-8 -*-
-
-"""
-Copyright 2023 The Dapr Authors
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 from collections import namedtuple
 from typing import List, Tuple
 
-from grpc.aio import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
+from grpc import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
+
+from dapr.conf import settings
 
 
-class _ClientCallDetailsAsync(
+class _ClientCallDetails(
     namedtuple(
-        '_ClientCallDetails', ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready']
+        '_ClientCallDetails',
+        ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression'],
     ),
     ClientCallDetails,
 ):
     """This is an implementation of the ClientCallDetails interface needed for interceptors.
-    This class takes five named values and inherits the ClientCallDetails from grpc package.
+    This class takes six named values and inherits the ClientCallDetails from grpc package.
     This class encloses the values that describe a RPC to be invoked.
     """
 
     pass
 
 
-class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
+class DaprClientTimeoutInterceptor(UnaryUnaryClientInterceptor):
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        # If a specific timeout is not set, create a new ClientCallDetails with the default timeout
+        if client_call_details.timeout is None:
+            new_client_call_details = _ClientCallDetails(
+                client_call_details.method,
+                settings.DAPR_API_TIMEOUT_SECONDS,
+                client_call_details.metadata,
+                client_call_details.credentials,
+                client_call_details.wait_for_ready,
+                client_call_details.compression,
+            )
+            return continuation(new_client_call_details, request)
+
+        return continuation(client_call_details, request)
+
+
+class DaprClientInterceptor(UnaryUnaryClientInterceptor):
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
 
@@ -58,7 +63,7 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
 
         self._metadata = metadata
 
-    async def _intercept_call(self, client_call_details: ClientCallDetails) -> ClientCallDetails:
+    def _intercept_call(self, client_call_details: ClientCallDetails) -> ClientCallDetails:
         """Internal intercept_call implementation which adds metadata to grpc metadata in the RPC
         call details.
 
@@ -75,16 +80,17 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
             metadata = list(client_call_details.metadata)
         metadata.extend(self._metadata)
 
-        new_call_details = _ClientCallDetailsAsync(
+        new_call_details = _ClientCallDetails(
             client_call_details.method,
             client_call_details.timeout,
             metadata,
             client_call_details.credentials,
             client_call_details.wait_for_ready,
+            client_call_details.compression,
         )
         return new_call_details
 
-    async def intercept_unary_unary(self, continuation, client_call_details, request):
+    def intercept_unary_unary(self, continuation, client_call_details, request):
         """This method intercepts a unary-unary gRPC call. This is the implementation of the
         abstract method defined in UnaryUnaryClientInterceptor defined in grpc. This is invoked
         automatically by grpc based on the order in which interceptors are added to the channel.
@@ -97,9 +103,8 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
         Returns:
             A response object after invoking the continuation callable
         """
-
         # Pre-process or intercept call
-        new_call_details = await self._intercept_call(client_call_details)
+        new_call_details = self._intercept_call(client_call_details)
         # Call continuation
-        response = await continuation(new_call_details, request)
+        response = continuation(new_call_details, request)
         return response
