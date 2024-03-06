@@ -3,6 +3,7 @@ target-version = "py38"
 line-length = 100
 fix = true
 extend-exclude = [".github", "dapr/proto"]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle errors
   "W",  # pycodestyle warnings
