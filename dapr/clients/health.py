@@ -28,7 +28,7 @@ class DaprHealth:
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
         if settings.DAPR_API_TOKEN is not None:
             headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
-        timeout = settings.DAPR_HEALTH_TIMEOUT
+        timeout = float(settings.DAPR_HEALTH_TIMEOUT)
 
         start = time.time()
         while True:

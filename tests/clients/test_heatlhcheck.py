@@ -62,7 +62,7 @@ class DaprHealthCheckTests(unittest.TestCase):
         self.assertIn('Dapr-api-token', headers)
         self.assertEqual(headers['Dapr-api-token'], 'mytoken')
 
-    @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', 2)
+    @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '2')
     @patch('urllib.request.urlopen')
     def test_wait_until_ready_timeout(self, mock_urlopen):
         mock_urlopen.return_value.__enter__.return_value = MagicMock(status=500)
