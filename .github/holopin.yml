@@ -2,6 +2,4 @@ organization: dapr
 defaultSticker: clrqfdv4x24910fl5n4iwu5oa
 stickers:
 - id: clrqfdv4x24910fl5n4iwu5oa
-  alias: sdk-badge
-    id: clrqfdv4x24910fl5n4iwu5oa
-    alias: sdk-badge
+  alias: { id: clrqfdv4x24910fl5n4iwu5oa, alias: sdk-badge }
