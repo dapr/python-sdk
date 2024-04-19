@@ -13,6 +13,6 @@ pyOpenSSL>=23.2.0
 # needed for type checking
 Flask>=1.1
 # needed for auto fix
-ruff===0.2.2
+ruff===0.4.1
 # needed for dapr-ext-workflow
 durabletask>=0.1.1a1
