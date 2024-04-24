@@ -7,7 +7,7 @@ class URIParseConfig:
     DEFAULT_HOSTNAME = 'localhost'
     DEFAULT_PORT = 443
     DEFAULT_AUTHORITY = ''
-    ACCEPTED_SCHEMES = ['dns', 'unix', 'unix-abstract', 'vsock', 'http', 'https', 'grpc', 'grpcs']
+    ACCEPTED_SCHEMES = ['dns', 'unix', 'unix-abstract', 'vsock', 'http', 'https']
 
 
 class GrpcEndpoint:
@@ -40,7 +40,7 @@ class GrpcEndpoint:
 
         if self._parsed_url.scheme in ['http', 'https']:
             self._scheme = URIParseConfig.DEFAULT_SCHEME
-            warn('http and https schemes are deprecated, use grpc or grpcs instead')
+            warn('http and https schemes are deprecated for grpc, use myhost?tls=false or myhost?tls=true instead')
             return
 
         if self._parsed_url.scheme not in URIParseConfig.ACCEPTED_SCHEMES:
