@@ -247,7 +247,7 @@ class ActorStateManager(Generic[T]):
             if state_metadata.change_kind == StateChangeKind.none:
                 continue
             state_changes.append(
-                ActorStateChange(state_name, state_metadata.value, state_metadata.change_kind)
+                ActorStateChange(state_name, state_metadata.value, state_metadata.change_kind, state_metadata.ttl_in_seconds)
             )
             if state_metadata.change_kind == StateChangeKind.remove:
                 states_to_remove.append(state_name)

@@ -66,7 +66,10 @@ class StateProvider:
                 "operation": "upsert",
                 "request": {
                     "key": "key1",
-                    "value": "myData"
+                    "value": "myData",
+                    "metadata": {
+                        "ttlInSeconds": "3600"
+                    }
                 }
             },
             {
@@ -94,6 +97,11 @@ class StateProvider:
                 serialized = self._state_serializer.serialize(state.value)
                 json_output.write(b',"value":')
                 json_output.write(serialized)
+            if  state.ttl_in_seconds is not None and state.ttl_in_seconds >= 0:
+                serialized = self._state_serializer.serialize(state.ttl_in_seconds)
+                json_output.write(b',"metadata":{"ttlInSeconds":"')
+                json_output.write(serialized)
+                json_output.write(b'"}')
             json_output.write(b'}}')
             first_state = False
         json_output.write(b']')
