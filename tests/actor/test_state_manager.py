@@ -429,13 +429,20 @@ class ActorStateManagerTests(unittest.TestCase):
         _run(state_manager.remove_state('state4'))
         # set state which is StateChangeKind.update
         _run(state_manager.set_state('state5', 'value5'))
-        expected = b'[{"operation":"upsert","request":{"key":"state1","value":"value1"}},{"operation":"upsert","request":{"key":"state2","value":"value2"}},{"operation":"delete","request":{"key":"state4"}},{"operation":"upsert","request":{"key":"state5","value":"value5"}}]'  # noqa: E501
+        _run(state_manager.set_state('state5', 'new_value5'))
+        # set state with ttl >= 0
+        _run(state_manager.set_state_ttl('state6', 'value6', 3600))
+        _run(state_manager.set_state_ttl('state7', 'value7', 0))
+        # set state with ttl < 0
+        _run(state_manager.set_state_ttl('state8', 'value8', -3600))
+
+        expected = b'[{"operation":"upsert","request":{"key":"state1","value":"value1"}},{"operation":"upsert","request":{"key":"state2","value":"value2"}},{"operation":"delete","request":{"key":"state4"}},{"operation":"upsert","request":{"key":"state5","value":"new_value5"}},{"operation":"upsert","request":{"key":"state6","value":"value6","metadata":{"ttlInSeconds":"3600"}}},{"operation":"upsert","request":{"key":"state7","value":"value7","metadata":{"ttlInSeconds":"0"}}}]'  # noqa: E501
 
         # Save the state
-        def mock_save_state(actor_type, actor_id, data):
+        async def mock_save_state(actor_type, actor_id, data):
             self.assertEqual(expected, data)
 
-        self._fake_client.save_state_transactionally.mock = mock_save_state
+        self._fake_client.save_state_transactionally = mock_save_state
         _run(state_manager.save_state())
 
 
