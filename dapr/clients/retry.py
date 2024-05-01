@@ -69,56 +69,78 @@ class RetryPolicy:
             raise ValueError("retryable_http_status_codes can't be empty")
         self.retryable_grpc_status_codes = retryable_grpc_status_codes
 
-
-def run_rpc_with_retry(policy: RetryPolicy, func=Callable, *args, **kwargs):
-    # If max_retries is 0, we don't retry
-    if policy.max_attempts == 0:
-        return func(*args, **kwargs)
-
-    attempt = 0
-    while policy.max_attempts == -1 or attempt < policy.max_attempts:  # type: ignore
-        try:
-            print(f'Trying RPC call, attempt {attempt + 1}')
+    def run_rpc(self, func=Callable, *args, **kwargs):
+        # If max_retries is 0, we don't retry
+        if self.max_attempts == 0:
             return func(*args, **kwargs)
-        except RpcError as err:
-            if err.code() not in policy.retryable_grpc_status_codes:
-                raise
-            if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:  # type: ignore
-                raise
-            sleep_time = min(
-                policy.max_backoff,
-                policy.initial_backoff * (policy.backoff_multiplier**attempt),
-            )
-            print(f'Sleeping for {sleep_time} seconds before retrying RPC call')
-            time.sleep(sleep_time)
-            attempt += 1
-    raise Exception(f'RPC call failed after {attempt} retries')
 
+        attempt = 0
+        while self.max_attempts == -1 or attempt < self.max_attempts:  # type: ignore
+            try:
+                print(f'Trying RPC call, attempt {attempt + 1}')
+                return func(*args, **kwargs)
+            except RpcError as err:
+                if err.code() not in self.retryable_grpc_status_codes:
+                    raise
+                if self.max_attempts != -1 and attempt == self.max_attempts - 1:  # type: ignore
+                    raise
+                sleep_time = min(self.max_backoff,
+                    self.initial_backoff * (self.backoff_multiplier ** attempt), )
+                print(f'Sleeping for {sleep_time} seconds before retrying RPC call')
+                time.sleep(sleep_time)
+                attempt += 1
+        raise Exception(f'RPC call failed after {attempt} retries')
 
-async def async_run_rpc_with_retry(policy: RetryPolicy, func: Callable, *args, **kwargs):
-    # If max_retries is 0, we don't retry
-    if policy.max_attempts == 0:
-        call = func(*args, **kwargs)
-        result = await call
-        return result, call
-
-    attempt = 0
-    while policy.max_attempts == -1 or attempt < policy.max_attempts:  # type: ignore
-        try:
-            print(f'Trying RPC call, attempt {attempt + 1}')
+    async def run_rpc_async(self, func: Callable, *args, **kwargs):
+        # If max_retries is 0, we don't retry
+        if self.max_attempts == 0:
             call = func(*args, **kwargs)
             result = await call
             return result, call
-        except RpcError as err:
-            if err.code() not in policy.retryable_grpc_status_codes:
-                raise
-            if policy.max_attempts != -1 and attempt == policy.max_attempts - 1:  # type: ignore
-                raise
-            sleep_time = min(
-                policy.max_backoff,
-                policy.initial_backoff * (policy.backoff_multiplier**attempt),
-            )
-            print(f'Sleeping for {sleep_time} seconds before retrying RPC call')
+
+        attempt = 0
+        while self.max_attempts == -1 or attempt < self.max_attempts:  # type: ignore
+            try:
+                print(f'Trying RPC call, attempt {attempt + 1}')
+                call = func(*args, **kwargs)
+                result = await call
+                return result, call
+            except RpcError as err:
+                if err.code() not in self.retryable_grpc_status_codes:
+                    raise
+                if self.max_attempts != -1 and attempt == self.max_attempts - 1:  # type: ignore
+                    raise
+                sleep_time = min(self.max_backoff,
+                    self.initial_backoff * (self.backoff_multiplier ** attempt), )
+                print(f'Sleeping for {sleep_time} seconds before retrying RPC call')
+                await asyncio.sleep(sleep_time)
+                attempt += 1
+        raise Exception(f'RPC call failed after {attempt} retries')
+
+    async def make_http_call(self, session, req):
+        # If max_retries is 0, we don't retry
+        if self.max_attempts == 0:
+            return await session.request(method=req['method'], url=req['url'], data=req['data'],
+                headers=req['headers'], ssl=req['sslcontext'], params=req['params'],
+                timeout=req['timeout'], )
+
+        attempt = 0
+        while self.max_attempts == -1 or attempt < self.max_attempts:  # type: ignore
+            print(f'Request attempt {attempt + 1}')
+            r = await session.request(method=req['method'], url=req['url'], data=req['data'],
+                headers=req['headers'], ssl=req['sslcontext'], params=req['params'],
+                timeout=req['timeout'], )
+
+            if r.status not in self.retryable_http_status_codes:
+                return r
+
+            if (self.max_attempts != -1 and attempt == self.max_attempts - 1  # type: ignore
+            ):  # type: ignore
+                return r
+
+            sleep_time = min(self.max_backoff,
+                self.initial_backoff * (self.backoff_multiplier ** attempt), )
+
+            print(f'Sleeping for {sleep_time} seconds before retrying call')
             await asyncio.sleep(sleep_time)
             attempt += 1
-    raise Exception(f'RPC call failed after {attempt} retries')

@@ -18,6 +18,7 @@ import aiohttp
 
 from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
 
+from dapr.clients.health import DaprHealth
 from dapr.clients.http.conf import (
     DAPR_API_TOKEN_HEADER,
     USER_AGENT_HEADER,
@@ -51,7 +52,7 @@ class DaprHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
         """
-        # DaprHealth.wait_until_ready()
+        DaprHealth.wait_until_ready()
 
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
@@ -94,56 +95,12 @@ class DaprHttpClient:
                 'params': query_params,
                 'timeout': client_timeout,
             }
-            r = await self.retry_call(session, req)
+            r = await self.retry_policy.make_http_call(session, req)
 
             if 200 <= r.status < 300:
                 return await r.read(), r
 
             raise (await self.convert_to_error(r))
-
-    async def retry_call(self, session, req):
-        # If max_retries is 0, we don't retry
-        if self.retry_policy.max_attempts == 0:
-            return await session.request(
-                method=req['method'],
-                url=req['url'],
-                data=req['data'],
-                headers=req['headers'],
-                ssl=req['sslcontext'],
-                params=req['params'],
-                timeout=req['timeout'],
-            )
-
-        attempt = 0
-        while self.retry_policy.max_attempts == -1 or attempt < self.retry_policy.max_attempts:  # type: ignore
-            print(f'Request attempt {attempt + 1}')
-            r = await session.request(
-                method=req['method'],
-                url=req['url'],
-                data=req['data'],
-                headers=req['headers'],
-                ssl=req['sslcontext'],
-                params=req['params'],
-                timeout=req['timeout'],
-            )
-
-            if r.status not in self.retry_policy.retryable_http_status_codes:
-                return r
-
-            if (
-                self.retry_policy.max_attempts != -1
-                and attempt == self.retry_policy.max_attempts - 1  # type: ignore
-            ):  # type: ignore
-                return r
-
-            sleep_time = min(
-                self.retry_policy.max_backoff,
-                self.retry_policy.initial_backoff * (self.retry_policy.backoff_multiplier**attempt),
-            )
-
-            print(f'Sleeping for {sleep_time} seconds before retrying call')
-            await asyncio.sleep(sleep_time)
-            attempt += 1
 
     async def convert_to_error(self, response: aiohttp.ClientResponse) -> DaprInternalError:
         error_info = None

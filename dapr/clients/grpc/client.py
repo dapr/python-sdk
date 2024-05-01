@@ -42,7 +42,7 @@ from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
 from dapr.clients.health import DaprHealth
-from dapr.clients.retry import RetryPolicy, run_rpc_with_retry
+from dapr.clients.retry import RetryPolicy
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -119,7 +119,7 @@ class DaprGrpcClient:
         max_grpc_message_length: Optional[int] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        """Connects to Dapr Runtime and initialize gRPC client stub.
+        """Connects to Dapr Runtime and initializes gRPC client stub.
 
         Args:
             address (str, optional): Dapr Runtime gRPC endpoint address.
@@ -129,6 +129,7 @@ class DaprGrpcClient:
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
             max_grpc_messsage_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
+            retry_policy (RetryPolicy optional): Specifies retry behaviour
         """
         DaprHealth.wait_until_ready()
         self.retry_policy = retry_policy or RetryPolicy()
@@ -715,8 +716,8 @@ class DaprGrpcClient:
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         try:
-            _, call = run_rpc_with_retry(
-                self.retry_policy, self._stub.SaveState.with_call, req, metadata=metadata
+            _, call = self.retry_policy.run_rpc(
+                self._stub.SaveState.with_call, req, metadata=metadata
             )
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:

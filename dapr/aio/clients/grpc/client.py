@@ -43,7 +43,7 @@ from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.health import DaprHealth
-from dapr.clients.retry import RetryPolicy, async_run_rpc_with_retry
+from dapr.clients.retry import RetryPolicy
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
@@ -725,9 +725,8 @@ class DaprGrpcClientAsync:
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         try:
-            result, call = await async_run_rpc_with_retry(
-                self.retry_policy, self._stub.SaveState, req, metadata=metadata
-            )
+            result, call = await self.retry_policy.run_rpc_async(self._stub.SaveState, req,
+                                                                 metadata=metadata)
             return DaprResponse(headers=await call.initial_metadata())
         except AioRpcError as e:
             raise DaprInternalError(e.details()) from e

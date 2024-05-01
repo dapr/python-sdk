@@ -14,43 +14,44 @@ limitations under the License.
 """
 import unittest
 from unittest import mock
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, MagicMock, patch, AsyncMock
 
 from grpc import StatusCode, RpcError
 
-from dapr.clients.retry import RetryPolicy, run_rpc_with_retry
+from dapr.clients.retry import RetryPolicy
+from dapr.serializers import DefaultJSONSerializer
 
 
-class RetriesTest(unittest.TestCase):
-    def test_run_rpc_with_retry_success(self):
-        mock_func = Mock(return_value='success')
+class RetryPolicyGrpcAsyncTests(unittest.IsolatedAsyncioTestCase):
+    async def test_run_rpc_async_with_retry_success(self):
+        mock_func = AsyncMock(return_value='success')
 
         policy = RetryPolicy(max_attempts=3, retryable_grpc_status_codes=[StatusCode.UNAVAILABLE])
-        result = run_rpc_with_retry(policy, mock_func, 'foo', 'bar', arg1=1, arg2=2)
+        result, _ = await policy.run_rpc_async(mock_func, 'foo', arg1=1, arg2=2)
 
         self.assertEqual(result, 'success')
-        mock_func.assert_called_once_with('foo', 'bar', arg1=1, arg2=2)
+        mock_func.assert_awaited_once_with('foo', arg1=1, arg2=2)
 
-    def test_run_rpc_with_retry_no_retry(self):
+    async def test_run_rpc_async_with_retry_no_retry(self):
         mock_error = RpcError()
         mock_error.code = MagicMock(return_value=StatusCode.UNAVAILABLE)
-        mock_func = MagicMock(side_effect=mock_error)
+        mock_func = AsyncMock(side_effect=mock_error)
 
         with self.assertRaises(RpcError):
-            run_rpc_with_retry(RetryPolicy(max_attempts=0), mock_func)
-        mock_func.assert_called_once()
+            policy = RetryPolicy(max_attempts=0)
+            await policy.run_rpc_async(mock_func)
+        mock_func.assert_awaited_once()
 
-    @patch('time.sleep', return_value=None)  # To speed up tests
-    def test_run_rpc_with_retry_fail(self, mock_sleep):
+    @patch('asyncio.sleep', return_value=None)
+    async def test_run_rpc_async_with_retry_fail(self, mock_sleep):
         mock_error = RpcError()
         mock_error.code = MagicMock(return_value=StatusCode.UNAVAILABLE)
-        mock_func = MagicMock(side_effect=mock_error)
+        mock_func = AsyncMock(side_effect=mock_error)
         with self.assertRaises(RpcError):
-            run_rpc_with_retry(
-                RetryPolicy(max_attempts=4, initial_backoff=2, backoff_multiplier=1.5), mock_func
-            )
+            policy = RetryPolicy(max_attempts=4, initial_backoff=2, backoff_multiplier=1.5)
+            await policy.run_rpc_async(mock_func)
 
-        self.assertEqual(mock_func.call_count, 4)
+        self.assertEqual(mock_func.await_count, 4)
         expected_sleep_calls = [
             mock.call(2.0),  # First sleep call
             mock.call(3.0),  # Second sleep call
@@ -58,33 +59,31 @@ class RetriesTest(unittest.TestCase):
         ]
         mock_sleep.assert_has_calls(expected_sleep_calls, any_order=False)
 
-    def test_run_rpc_with_retry_fail_with_another_status_code(self):
+    async def test_run_rpc_async_with_retry_fail_with_another_status_code(self):
         mock_error = RpcError()
         mock_error.code = MagicMock(return_value=StatusCode.FAILED_PRECONDITION)
-        mock_func = MagicMock(side_effect=mock_error)
+        mock_func = AsyncMock(side_effect=mock_error)
 
         with self.assertRaises(RpcError):
             policy = RetryPolicy(
                 max_attempts=3, retryable_grpc_status_codes=[StatusCode.UNAVAILABLE]
             )
-            run_rpc_with_retry(policy, mock_func)
+            await policy.run_rpc_async(mock_func)
 
-        mock_func.assert_called_once()
+        mock_func.assert_awaited_once()
 
-    @patch('time.sleep', return_value=None)  # To speed up tests
-    def test_run_rpc_with_retry_fail_with_max_backoff(self, mock_sleep):
+    @patch('asyncio.sleep', return_value=None)
+    async def test_run_rpc_async_with_retry_fail_with_max_backoff(self, mock_sleep):
         mock_error = RpcError()
         mock_error.code = MagicMock(return_value=StatusCode.UNAVAILABLE)
-        mock_func = MagicMock(side_effect=mock_error)
-        with self.assertRaises(RpcError):
-            run_rpc_with_retry(
-                RetryPolicy(
-                    max_attempts=4, initial_backoff=2, backoff_multiplier=1.5, max_backoff=3
-                ),
-                mock_func,
-            )
+        mock_func = AsyncMock(side_effect=mock_error)
 
-        self.assertEqual(mock_func.call_count, 4)
+        with self.assertRaises(RpcError):
+            policy = RetryPolicy(max_attempts=4, initial_backoff=2, backoff_multiplier=1.5,
+                max_backoff=3)
+            await policy.run_rpc_async(mock_func)
+
+        self.assertEqual(mock_func.await_count, 4)
         expected_sleep_calls = [
             mock.call(2.0),  # First sleep call
             mock.call(3.0),  # Second sleep call
@@ -92,8 +91,8 @@ class RetriesTest(unittest.TestCase):
         ]
         mock_sleep.assert_has_calls(expected_sleep_calls, any_order=False)
 
-    @patch('time.sleep', return_value=None)  # To speed up tests
-    def test_run_rpc_with_infinite_retries(self, mock_sleep):
+    @patch('asyncio.sleep', return_value=None)
+    async def test_run_rpc_async_with_infinite_retries(self, mock_sleep):
         # Testing a function that's supposed to run forever is tricky, so we'll simulate it
         # Instead of a fixed side effect, we'll create a function that's supposed to
         # break out of the cycle after X calls.
@@ -104,7 +103,7 @@ class RetriesTest(unittest.TestCase):
 
         mock_error = RpcError()
         mock_error.code = MagicMock(return_value=StatusCode.UNAVAILABLE)
-        mock_func = MagicMock()
+        mock_func = AsyncMock()
 
         # Use a side effect on the mock to count calls and eventually interrupt the loop
         call_count = 0
@@ -122,7 +121,7 @@ class RetriesTest(unittest.TestCase):
 
         # Run the test, expecting the custom exception to break the loop
         with self.assertRaises(Exception) as context:
-            run_rpc_with_retry(policy, mock_func)
+            await policy.run_rpc_async(mock_func)
 
         self.assertEqual(str(context.exception), 'Test interrupt')
 
