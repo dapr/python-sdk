@@ -29,7 +29,9 @@ CONTEXT: ContextVar[Optional[Dict[str, Any]]] = ContextVar('state_tracker_contex
 
 
 class StateMetadata(Generic[T]):
-    def __init__(self, value: T, change_kind: StateChangeKind, ttl_in_seconds: Optional[int] = None):
+    def __init__(
+        self, value: T, change_kind: StateChangeKind, ttl_in_seconds: Optional[int] = None
+    ):
         self._value = value
         self._change_kind = change_kind
         self._ttl_in_seconds = ttl_in_seconds
@@ -136,9 +138,13 @@ class ActorStateManager(Generic[T]):
             self._type_name, self._actor.id.id, state_name
         )
         if existed:
-            state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update, ttl_in_seconds)
+            state_change_tracker[state_name] = StateMetadata(
+                value, StateChangeKind.update, ttl_in_seconds
+            )
         else:
-            state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add, ttl_in_seconds)
+            state_change_tracker[state_name] = StateMetadata(
+                value, StateChangeKind.add, ttl_in_seconds
+            )
 
     async def remove_state(self, state_name: str) -> None:
         if not await self.try_remove_state(state_name):
@@ -247,7 +253,12 @@ class ActorStateManager(Generic[T]):
             if state_metadata.change_kind == StateChangeKind.none:
                 continue
             state_changes.append(
-                ActorStateChange(state_name, state_metadata.value, state_metadata.change_kind, state_metadata.ttl_in_seconds)
+                ActorStateChange(
+                    state_name,
+                    state_metadata.value,
+                    state_metadata.change_kind,
+                    state_metadata.ttl_in_seconds,
+                )
             )
             if state_metadata.change_kind == StateChangeKind.remove:
                 states_to_remove.append(state_name)

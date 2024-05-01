@@ -97,7 +97,7 @@ class StateProvider:
                 serialized = self._state_serializer.serialize(state.value)
                 json_output.write(b',"value":')
                 json_output.write(serialized)
-            if  state.ttl_in_seconds is not None and state.ttl_in_seconds >= 0:
+            if state.ttl_in_seconds is not None and state.ttl_in_seconds >= 0:
                 serialized = self._state_serializer.serialize(state.ttl_in_seconds)
                 json_output.write(b',"metadata":{"ttlInSeconds":"')
                 json_output.write(serialized)

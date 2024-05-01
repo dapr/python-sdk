@@ -35,7 +35,13 @@ class StateChangeKind(Enum):
 
 
 class ActorStateChange(Generic[T]):
-    def __init__(self, state_name: str, value: T, change_kind: StateChangeKind, ttl_in_seconds: Optional[int] = None):
+    def __init__(
+        self,
+        state_name: str,
+        value: T,
+        change_kind: StateChangeKind,
+        ttl_in_seconds: Optional[int] = None,
+    ):
         self._state_name = state_name
         self._value = value
         self._change_kind = change_kind
