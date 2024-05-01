@@ -53,8 +53,9 @@ class ActorProxyFactory(ActorFactoryBase):
         retry_policy: Optional[RetryPolicy] = None,
     ):
         # TODO: support serializer for state store later
-        self._dapr_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds,
-                                                retry_policy=retry_policy)
+        self._dapr_client = DaprActorHttpClient(
+            message_serializer, timeout=http_timeout_seconds, retry_policy=retry_policy
+        )
         self._message_serializer = message_serializer
 
     def create(

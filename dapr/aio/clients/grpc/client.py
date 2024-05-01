@@ -725,8 +725,9 @@ class DaprGrpcClientAsync:
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         try:
-            result, call = await self.retry_policy.run_rpc_async(self._stub.SaveState, req,
-                                                                 metadata=metadata)
+            result, call = await self.retry_policy.run_rpc_async(
+                self._stub.SaveState, req, metadata=metadata
+            )
             return DaprResponse(headers=await call.initial_metadata())
         except AioRpcError as e:
             raise DaprInternalError(e.details()) from e

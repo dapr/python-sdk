@@ -115,9 +115,7 @@ class RetryPolicyTests(unittest.TestCase):
         mock_func = MagicMock(side_effect=mock_error)
         with self.assertRaises(RpcError):
             policy = RetryPolicy(max_attempts=4, initial_backoff=2, backoff_multiplier=1.5)
-            policy.run_rpc(
-                mock_func
-            )
+            policy.run_rpc(mock_func)
 
         self.assertEqual(mock_func.call_count, 4)
         expected_sleep_calls = [
@@ -146,7 +144,9 @@ class RetryPolicyTests(unittest.TestCase):
         mock_error.code = MagicMock(return_value=StatusCode.UNAVAILABLE)
         mock_func = MagicMock(side_effect=mock_error)
         with self.assertRaises(RpcError):
-            policy = RetryPolicy(max_attempts=4, initial_backoff=2, backoff_multiplier=1.5, max_backoff=3)
+            policy = RetryPolicy(
+                max_attempts=4, initial_backoff=2, backoff_multiplier=1.5, max_backoff=3
+            )
             policy.run_rpc(
                 mock_func,
             )

@@ -34,9 +34,12 @@ DAPR_USER_AGENT = f'dapr-python-sdk/{__version__}'
 class DaprInvocationHttpClient:
     """Service Invocation HTTP Client"""
 
-    def __init__(self, timeout: int = 60,
-            headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
-            retry_policy: Optional[RetryPolicy] = None, ):
+    def __init__(
+        self,
+        timeout: int = 60,
+        headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+    ):
         """Invokes Dapr's API for method invocation over HTTP.
 
         Args:
@@ -44,7 +47,9 @@ class DaprInvocationHttpClient:
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
             retry_policy (RetryPolicy optional): Specifies retry behaviour
         """
-        self._client = DaprHttpClient(DefaultJSONSerializer(), timeout, headers_callback, retry_policy=retry_policy)
+        self._client = DaprHttpClient(
+            DefaultJSONSerializer(), timeout, headers_callback, retry_policy=retry_policy
+        )
 
     async def invoke_method_async(
         self,

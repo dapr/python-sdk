@@ -14,12 +14,11 @@ limitations under the License.
 """
 import unittest
 from unittest import mock
-from unittest.mock import Mock, MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch, AsyncMock
 
 from grpc import StatusCode, RpcError
 
 from dapr.clients.retry import RetryPolicy
-from dapr.serializers import DefaultJSONSerializer
 
 
 class RetryPolicyGrpcAsyncTests(unittest.IsolatedAsyncioTestCase):
@@ -79,8 +78,9 @@ class RetryPolicyGrpcAsyncTests(unittest.IsolatedAsyncioTestCase):
         mock_func = AsyncMock(side_effect=mock_error)
 
         with self.assertRaises(RpcError):
-            policy = RetryPolicy(max_attempts=4, initial_backoff=2, backoff_multiplier=1.5,
-                max_backoff=3)
+            policy = RetryPolicy(
+                max_attempts=4, initial_backoff=2, backoff_multiplier=1.5, max_backoff=3
+            )
             await policy.run_rpc_async(mock_func)
 
         self.assertEqual(mock_func.await_count, 4)
