@@ -25,9 +25,8 @@ maintainers = [m.strip() for m in os.getenv("MAINTAINERS").split(',')]
 
 def fetch_pulls(mergeable_state, labels={'automerge'}):
     return [pr for pr in repo.get_pulls(state='open', sort='created')
-            # noqa: E502
-            if (not pr.draft) and (pr.mergeable_state == mergeable_state) and \
-               (not labels or len(labels.intersection({label.name for label in pr.labels})) > 0)]
+            if (not pr.draft and pr.mergeable_state == mergeable_state
+                and (not labels or len(labels.intersection({label.name for label in pr.labels})) > 0))]
 
 
 def is_approved(pr):
