@@ -16,3 +16,4 @@ Flask>=1.1
 ruff===0.2.2
 # needed for dapr-ext-workflow
 durabletask>=0.1.1a1
+werkzeug>=3.0.3 # not directly required, pinned by Snyk to avoid a vulnerability
