@@ -8,6 +8,10 @@ description: Guidelines for contributing to the Dapr Python SDK
 
 When contributing to the [Python SDK](https://github.com/dapr/python-sdk) the following rules and best-practices should be followed.
 
+## Github Dapr Bot Commands
+
+Checkout the [daprbot documentation](https://docs.dapr.io/contributing/daprbot/) for Github commands you can run in this repo for common tasks. For example, you can run the `/assign` (as a comment on an issue) to assign issues to a user or group of users.
+
 ## Examples
 
 The `examples` directory contains code samples for users to run to try out specific functionality of the various Python SDK packages and extensions. When writing new and updated samples keep in mind:
