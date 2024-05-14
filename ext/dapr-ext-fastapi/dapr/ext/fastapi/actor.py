@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Optional, Type, List
+from typing import Any, Optional, Type, List, Callable
 
 from fastapi import FastAPI, APIRouter, Request, Response, status  # type: ignore
 from fastapi.logger import logger
@@ -149,6 +149,6 @@ class DaprActor(object):
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, msg)
 
-    async def register_actor(self, actor: Type[Actor]) -> None:
-        await ActorRuntime.register_actor(actor)
+    async def register_actor(self, actor: Type[Actor], **kwargs) -> None:
+        await ActorRuntime.register_actor(actor, **kwargs)
         logger.debug(f'registered actor: {actor.__class__.__name__}')
