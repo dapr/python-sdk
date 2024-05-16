@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 from enum import Enum
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, Optional
 
 T = TypeVar('T')
 
@@ -35,10 +35,17 @@ class StateChangeKind(Enum):
 
 
 class ActorStateChange(Generic[T]):
-    def __init__(self, state_name: str, value: T, change_kind: StateChangeKind):
+    def __init__(
+        self,
+        state_name: str,
+        value: T,
+        change_kind: StateChangeKind,
+        ttl_in_seconds: Optional[int] = None,
+    ):
         self._state_name = state_name
         self._value = value
         self._change_kind = change_kind
+        self._ttl_in_seconds = ttl_in_seconds
 
     @property
     def state_name(self) -> str:
@@ -51,3 +58,7 @@ class ActorStateChange(Generic[T]):
     @property
     def change_kind(self) -> StateChangeKind:
         return self._change_kind
+
+    @property
+    def ttl_in_seconds(self) -> Optional[int]:
+        return self._ttl_in_seconds

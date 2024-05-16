@@ -23,7 +23,7 @@
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
 	],
 
-	"postCreateCommand": "pip install -r ./dev-requirements.txt",
+	"postCreateCommand": ".devcontainer/postCreateCommand.sh",
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],

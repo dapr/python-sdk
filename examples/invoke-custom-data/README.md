@@ -88,7 +88,6 @@ name: Shutdown dapr
 -->
 
 ```bash
-dapr stop --app-id invoke-caller
 dapr stop --app-id invoke-receiver
 ```
 
