@@ -30,6 +30,9 @@ from typing import (
     Mapping,
     TYPE_CHECKING,
     NamedTuple,
+    Generator,
+    TypeVar,
+    Generic,
 )
 
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -56,6 +59,10 @@ from dapr.proto import api_service_v1
 # for type checking
 if TYPE_CHECKING:
     from dapr.clients.grpc.client import DaprGrpcClient
+
+TCryptoResponse = TypeVar(
+    'TCryptoResponse', bound=Union[api_v1.EncryptResponse, api_v1.DecryptResponse]
+)
 
 
 class DaprResponse:
@@ -985,3 +992,75 @@ class RegisteredComponents(NamedTuple):
 
     capabilities: Sequence[str]
     """Supported capabilities for this component type and version."""
+
+
+class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):
+    """An iterable of cryptography API responses."""
+
+    def __init__(self, stream: Generator[TCryptoResponse, None, None]):
+        """Initialize a CryptoResponse.
+
+        Args:
+            stream (Generator[TCryptoResponse, None, None]): A stream of cryptography API responses.
+        """
+        self._stream = stream
+        self._buffer = bytearray()
+        self._expected_seq = 0
+
+    def __iter__(self) -> Generator[bytes, None, None]:
+        """Read the next chunk of data from the stream.
+
+        Yields:
+            bytes: The payload data of the next chunk from the stream.
+
+        Raises:
+            ValueError: If the sequence number of the next chunk is incorrect.
+        """
+        for chunk in self._stream:
+            if chunk.payload.seq != self._expected_seq:
+                raise ValueError('invalid sequence number in chunk')
+            self._expected_seq += 1
+            yield chunk.payload.data
+
+    def read(self, size: int = -1) -> bytes:
+        """Read bytes from the stream.
+
+        If size is -1, the entire stream is read and returned as bytes.
+        Otherwise, up to `size` bytes are read from the stream and returned.
+        If the stream ends before `size` bytes are available, the remaining
+        bytes are returned.
+
+        Args:
+            size (int): The maximum number of bytes to read. If -1 (the default),
+                read until the end of the stream.
+
+        Returns:
+            bytes: The bytes read from the stream.
+        """
+        if size == -1:
+            # Read the entire stream
+            return b''.join(self)
+
+        # Read the requested number of bytes
+        data = bytes(self._buffer)
+        self._buffer.clear()
+
+        for chunk in self:
+            data += chunk
+            if len(data) >= size:
+                break
+
+        # Update the buffer
+        remaining = data[size:]
+        self._buffer.extend(remaining)
+
+        # Return the requested number of bytes
+        return data[:size]
+
+
+class EncryptResponse(CryptoResponse[TCryptoResponse]):
+    ...
+
+
+class DecryptResponse(CryptoResponse[TCryptoResponse]):
+    ...
