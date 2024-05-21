@@ -3,3 +3,4 @@ dapr-dev >= 1.13.0rc1.dev
 opentelemetry-sdk
 opentelemetry-instrumentation-grpc
 opentelemetry-exporter-zipkin
+requests>=2.32.0 # not directly required, pinned by Snyk to avoid a vulnerability
