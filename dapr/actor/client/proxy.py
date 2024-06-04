@@ -19,7 +19,8 @@ from typing import Any, Callable, Dict, Optional, Type
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_utils import get_dispatchable_attrs_from_interface
-from dapr.clients import DaprActorClientBase, DaprActorHttpClient, RetryPolicy
+from dapr.clients import DaprActorClientBase, DaprActorHttpClient
+from dapr.clients.retry import RetryPolicy
 from dapr.serializers import Serializer, DefaultJSONSerializer
 from dapr.conf import settings
 

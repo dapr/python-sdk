@@ -329,7 +329,9 @@ class DaprGrpcClient:
             ),
         )
 
-        response, call = self._stub.InvokeService.with_call(req, metadata=metadata, timeout=timeout)
+        response, call = self.retry_policy.run_rpc(
+            self._stub.InvokeService.with_call, req, metadata=metadata, timeout=timeout
+        )
 
         resp_data = InvokeMethodResponse(response.data, response.content_type)
         resp_data.headers = call.initial_metadata()  # type: ignore
@@ -390,7 +392,9 @@ class DaprGrpcClient:
             operation=operation,
         )
 
-        response, call = self._stub.InvokeBinding.with_call(req, metadata=metadata)
+        response, call = self.retry_policy.run_rpc(
+            self._stub.InvokeBinding.with_call, req, metadata=metadata
+        )
         return BindingResponse(response.data, dict(response.metadata), call.initial_metadata())
 
     def publish_event(
@@ -462,7 +466,9 @@ class DaprGrpcClient:
 
         try:
             # response is google.protobuf.Empty
-            _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+            _, call = self.retry_policy.run_rpc(
+                self._stub.PublishEvent.with_call, req, metadata=metadata
+            )
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
@@ -509,7 +515,9 @@ class DaprGrpcClient:
             raise ValueError('State store name cannot be empty')
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
         try:
-            response, call = self._stub.GetState.with_call(req, metadata=metadata)
+            response, call = self.retry_policy.run_rpc(
+                self._stub.GetState.with_call, req, metadata=metadata
+            )
             return StateResponse(
                 data=response.data, etag=response.etag, headers=call.initial_metadata()
             )
@@ -562,7 +570,9 @@ class DaprGrpcClient:
         )
 
         try:
-            response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+            response, call = self.retry_policy.run_rpc(
+                self._stub.GetBulkState.with_call, req, metadata=metadata
+            )
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
@@ -624,7 +634,7 @@ class DaprGrpcClient:
         req = api_v1.QueryStateRequest(store_name=store_name, query=query, metadata=states_metadata)
 
         try:
-            response, call = self._stub.QueryStateAlpha1.with_call(req)
+            response, call = self.retry_policy.run_rpc(self._stub.QueryStateAlpha1.with_call, req)
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
@@ -779,7 +789,9 @@ class DaprGrpcClient:
         req = api_v1.SaveStateRequest(store_name=store_name, states=req_states)
 
         try:
-            _, call = self._stub.SaveState.with_call(req, metadata=metadata)
+            _, call = self.retry_policy.run_rpc(
+                self._stub.SaveState.with_call, req, metadata=metadata
+            )
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
             raise DaprGrpcError(err) from err
@@ -848,7 +860,9 @@ class DaprGrpcClient:
         )
 
         try:
-            _, call = self._stub.ExecuteStateTransaction.with_call(req, metadata=metadata)
+            _, call = self.retry_policy.run_rpc(
+                self._stub.ExecuteStateTransaction.with_call, req, metadata=metadata
+            )
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
             raise DaprGrpcError(err) from err
@@ -916,7 +930,9 @@ class DaprGrpcClient:
         )
 
         try:
-            _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
+            _, call = self.retry_policy.run_rpc(
+                self._stub.DeleteState.with_call, req, metadata=metadata
+            )
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
             raise DaprGrpcError(err) from err
@@ -968,7 +984,9 @@ class DaprGrpcClient:
 
         req = api_v1.GetSecretRequest(store_name=store_name, key=key, metadata=secret_metadata)
 
-        response, call = self._stub.GetSecret.with_call(req, metadata=metadata)
+        response, call = self.retry_policy.run_rpc(
+            self._stub.GetSecret.with_call, req, metadata=metadata
+        )
 
         return GetSecretResponse(secret=response.data, headers=call.initial_metadata())
 
@@ -1015,7 +1033,9 @@ class DaprGrpcClient:
 
         req = api_v1.GetBulkSecretRequest(store_name=store_name, metadata=secret_metadata)
 
-        response, call = self._stub.GetBulkSecret.with_call(req, metadata=metadata)
+        response, call = self.retry_policy.run_rpc(
+            self._stub.GetBulkSecret.with_call, req, metadata=metadata
+        )
 
         secrets_map = {}
         for key in response.data.keys():
@@ -1055,7 +1075,7 @@ class DaprGrpcClient:
         req = api_v1.GetConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata
         )
-        response, call = self._stub.GetConfiguration.with_call(req)
+        response, call = self.retry_policy.run_rpc(self._stub.GetConfiguration.with_call, req)
         return ConfigurationResponse(items=response.items, headers=call.initial_metadata())
 
     def subscribe_configuration(
@@ -1163,7 +1183,7 @@ class DaprGrpcClient:
             lock_owner=lock_owner,
             expiry_in_seconds=expiry_in_seconds,
         )
-        response, call = self._stub.TryLockAlpha1.with_call(req)
+        response, call = self.retry_policy.run_rpc(self._stub.TryLockAlpha1.with_call, req)
         return TryLockResponse(
             success=response.success,
             client=self,
@@ -1201,7 +1221,7 @@ class DaprGrpcClient:
         req = api_v1.UnlockRequest(
             store_name=store_name, resource_id=resource_id, lock_owner=lock_owner
         )
-        response, call = self._stub.UnlockAlpha1.with_call(req)
+        response, call = self.retry_policy.run_rpc(self._stub.UnlockAlpha1.with_call, req)
 
         return UnlockResponse(
             status=UnlockResponseStatus(response.status), headers=call.initial_metadata()
@@ -1267,7 +1287,7 @@ class DaprGrpcClient:
         )
 
         try:
-            response = self._stub.StartWorkflowBeta1(req)
+            response, call = self.retry_policy.run_rpc(self._stub.StartWorkflowBeta1.with_call, req)
             return StartWorkflowResponse(instance_id=response.instance_id)
         except RpcError as err:
             raise DaprInternalError(err.details())
@@ -1297,7 +1317,7 @@ class DaprGrpcClient:
         )
 
         try:
-            resp = self._stub.GetWorkflowBeta1(req)
+            resp = self.retry_policy.run_rpc(self._stub.GetWorkflowBeta1, req)
             if resp.created_at is None:
                 resp.created_at = datetime.now()
             if resp.last_updated_at is None:
@@ -1339,7 +1359,7 @@ class DaprGrpcClient:
         )
 
         try:
-            _, call = self._stub.TerminateWorkflowBeta1.with_call(req)
+            _, call = self.retry_policy.run_rpc(self._stub.TerminateWorkflowBeta1.with_call, req)
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
             raise DaprInternalError(err.details())
@@ -1410,7 +1430,7 @@ class DaprGrpcClient:
         )
 
         try:
-            _, call = self._stub.RaiseEventWorkflowBeta1.with_call(req)
+            _, call = self.retry_policy.run_rpc(self._stub.RaiseEventWorkflowBeta1.with_call, req)
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
             raise DaprInternalError(err.details())
@@ -1441,7 +1461,7 @@ class DaprGrpcClient:
         )
 
         try:
-            _, call = self._stub.PauseWorkflowBeta1.with_call(req)
+            _, call = self.retry_policy.run_rpc(self._stub.PauseWorkflowBeta1.with_call, req)
 
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
@@ -1472,7 +1492,7 @@ class DaprGrpcClient:
         )
 
         try:
-            _, call = self._stub.ResumeWorkflowBeta1.with_call(req)
+            _, call = self.retry_policy.run_rpc(self._stub.ResumeWorkflowBeta1.with_call, req)
 
             return DaprResponse(headers=call.initial_metadata())
         except RpcError as err:
@@ -1503,7 +1523,7 @@ class DaprGrpcClient:
         )
 
         try:
-            _, call = self._stub.PurgeWorkflowBeta1.with_call(req)
+            response, call = self.retry_policy.run_rpc(self._stub.PurgeWorkflowBeta1.with_call, req)
 
             return DaprResponse(headers=call.initial_metadata())
 
@@ -1559,7 +1579,7 @@ class DaprGrpcClient:
         capabilities.
         """
         try:
-            _resp, call = self._stub.GetMetadata.with_call(GrpcEmpty())
+            _resp, call = self.retry_policy.run_rpc(self._stub.GetMetadata.with_call, GrpcEmpty())
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
@@ -1605,7 +1625,7 @@ class DaprGrpcClient:
         validateNotNone(attributeValue=attributeValue)
         # Actual invocation
         req = api_v1.SetMetadataRequest(key=attributeName, value=attributeValue)
-        _, call = self._stub.SetMetadata.with_call(req)
+        _, call = self.retry_policy.run_rpc(self._stub.SetMetadata.with_call, req)
 
         return DaprResponse(call.initial_metadata())
 
@@ -1625,6 +1645,6 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
 
-        _, call = self._stub.Shutdown.with_call(GrpcEmpty())
+        _, call = self.retry_policy.run_rpc(self._stub.Shutdown.with_call, GrpcEmpty())
 
         return DaprResponse(call.initial_metadata())

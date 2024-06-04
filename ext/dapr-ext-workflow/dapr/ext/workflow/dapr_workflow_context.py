@@ -21,7 +21,7 @@ from durabletask import task
 from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.logger import LoggerOptions, Logger
-from dapr.ext.workflow.retry_policy import RetryPolicy
+from dapr.clients.retry import RetryPolicy
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

@@ -13,7 +13,7 @@
 import asyncio
 
 from dapr.actor import ActorProxy, ActorId, ActorProxyFactory
-from dapr.clients import RetryPolicy
+from dapr.clients.retry import RetryPolicy
 from demo_actor_interface import DemoActorInterface
 
 
