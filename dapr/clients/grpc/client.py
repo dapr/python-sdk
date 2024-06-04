@@ -1287,7 +1287,7 @@ class DaprGrpcClient:
         )
 
         try:
-            response, call = self.retry_policy.run_rpc(self._stub.StartWorkflowBeta1.with_call, req)
+            response = self._stub.StartWorkflowBeta1(req)
             return StartWorkflowResponse(instance_id=response.instance_id)
         except RpcError as err:
             raise DaprInternalError(err.details())
