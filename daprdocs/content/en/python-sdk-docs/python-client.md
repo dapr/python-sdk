@@ -78,7 +78,7 @@ You can read more about Dapr API token authentication [here](https://docs.dapr.i
 On client initialisation, a health check is performed against the Dapr sidecar (`/healthz/outbound`).
 The client will wait for the sidecar to be up and running before proceeding.  
 
-The default timeout is 60 seconds, but it can be overridden by setting the `DAPR_HEALTH_TIMEOUT`
+The default healthcheck timeout is 60 seconds, but it can be overridden by setting the `DAPR_HEALTH_TIMEOUT`
 environment variable.
 
 ##### Retries and timeout
@@ -114,6 +114,8 @@ proxy = ActorProxy.create('DemoActor', ActorId('1'), DemoActorInterface, factory
 ```
 
 **Timeout** can be set for all calls through the environment variable `DAPR_API_TIMEOUT_SECONDS`. The default value is 60 seconds.
+
+> Note: You can control timeouts on service invocation separately, by passing a `timeout` parameter to the `invoke_method` method. 
 
 ## Error handling
 Initially, errors in Dapr followed the [Standard gRPC error model](https://grpc.io/docs/guides/error/#standard-error-model). However, to provide more detailed and informative error messages, in version 1.13 an enhanced error model has been introduced which aligns with the gRPC [Richer error model](https://grpc.io/docs/guides/error/#richer-error-model). In response, the Python SDK implemented `DaprGrpcError`, a custom exception class designed to improve the developer experience.  
