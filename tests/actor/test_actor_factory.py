@@ -22,7 +22,7 @@ from dapr.actor.runtime.manager import ActorManager
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.serializers import DefaultJSONSerializer
 
-from tests.actor.fake_actor_classes import (        
+from tests.actor.fake_actor_classes import (
     FakeSimpleActorInterface,
 )
 
@@ -30,12 +30,14 @@ from tests.actor.fake_client import FakeDaprActorClient
 
 from tests.actor.utils import _run
 
+
 class FakeDependency:
-    def __init__(self, value:str):
+    def __init__(self, value: str):
         self.value = value
 
     def get_value(self) -> str:
         return self.value
+
 
 class FakeSimpleActorWithDependency(Actor, FakeSimpleActorInterface):
     def __init__(self, ctx, actor_id, dependency: FakeDependency):
@@ -43,8 +45,8 @@ class FakeSimpleActorWithDependency(Actor, FakeSimpleActorInterface):
         self.dependency = dependency
 
     async def actor_method(self, arg: int) -> dict:
-        return {'name': f'{arg}-{self.dependency.get_value()}'}    
-    
+        return {'name': f'{arg}-{self.dependency.get_value()}'}
+
     async def _on_activate(self):
         self.activated = True
         self.deactivated = False
@@ -53,9 +55,11 @@ class FakeSimpleActorWithDependency(Actor, FakeSimpleActorInterface):
         self.activated = False
         self.deactivated = True
 
+
 def an_actor_factory(ctx: 'ActorRuntimeContext', actor_id: ActorId) -> 'Actor':
     dependency = FakeDependency('some-value')
-    return ctx.actor_type_info.implementation_type(ctx, actor_id, dependency)    
+    return ctx.actor_type_info.implementation_type(ctx, actor_id, dependency)
+
 
 class ActorFactoryTests(unittest.TestCase):
     def setUp(self):
@@ -64,14 +68,18 @@ class ActorFactoryTests(unittest.TestCase):
 
         self._fake_client = FakeDaprActorClient
         self._runtime_ctx = ActorRuntimeContext(
-            self._test_type_info, self._serializer, self._serializer, self._fake_client, an_actor_factory
+            self._test_type_info,
+            self._serializer,
+            self._serializer,
+            self._fake_client,
+            an_actor_factory,
         )
         self._manager = ActorManager(self._runtime_ctx)
 
     def test_activate_actor(self):
         """Activate ActorId(1)"""
         test_actor_id = ActorId('1')
-        _run(self._manager.activate_actor(test_actor_id))        
+        _run(self._manager.activate_actor(test_actor_id))
 
         # assert
         self.assertEqual(test_actor_id, self._manager._active_actors[test_actor_id.id].id)

@@ -61,7 +61,9 @@ class ActorRuntime:
         type_info = ActorTypeInformation.create(actor)
         # TODO: We will allow to use gRPC client later.
         actor_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
-        ctx = ActorRuntimeContext(type_info, message_serializer, state_serializer, actor_client, actor_factory)
+        ctx = ActorRuntimeContext(
+            type_info, message_serializer, state_serializer, actor_client, actor_factory
+        )
 
         # Create an ActorManager, override existing entry if registered again.
         async with cls._actor_managers_lock:
