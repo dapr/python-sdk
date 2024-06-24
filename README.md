@@ -1,12 +1,14 @@
 # Dapr SDK for Python
 
-[![PyPI version](https://badge.fury.io/py/dapr.svg)](https://badge.fury.io/py/dapr)
-[![PyPI version](https://badge.fury.io/py/dapr-dev.svg)](https://badge.fury.io/py/dapr-dev)
-![dapr-python](https://github.com/dapr/python-sdk/workflows/dapr-python/badge.svg?branch=master)
-[![codecov](https://codecov.io/gh/dapr/python-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk)
-[![Discord](https://img.shields.io/discord/778680217417809931)](https://discord.com/channels/778680217417809931/778680217417809934)
-[![License: Apache](https://img.shields.io/badge/License-Apache-yellow.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Fgithub.com%2Fdapr%2Fpython-sdk.svg?type=shield)](https://app.fossa.com/projects/custom%2B162%2Fgithub.com%2Fdapr%2Fpython-sdk?ref=badge_shield)
+[![PyPI - Version](https://img.shields.io/pypi/v/dapr?style=flat&logo=pypi&logoColor=white&label=Latest%20version)](https://pypi.org/project/dapr/) 
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/dapr?style=flat&logo=pypi&logoColor=white&label=Downloads)](https://pypi.org/project/dapr/) 
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/dapr/python-sdk/.github%2Fworkflows%2Fbuild.yaml?branch=main&label=Build&logo=github)](https://github.com/dapr/python-sdk/actions/workflows/build.yaml) 
+[![codecov](https://codecov.io/gh/dapr/python-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk) 
+[![GitHub License](https://img.shields.io/github/license/dapr/python-sdk?style=flat&label=License&logo=github)](https://github.com/dapr/python-sdk/blob/main/LICENSE) 
+[![GitHub issue custom search in repo](https://img.shields.io/github/issues-search/dapr/python-sdk?query=type%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22&label=Good%20first%20issues&style=flat&logo=github)](https://github.com/dapr/python-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 
+[![Discord](https://img.shields.io/discord/778680217417809931?label=Discord&style=flat&logo=discord)](http://bit.ly/dapr-discord) 
+[![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCtpSQ9BLB_3EXdWAUQYwnRA?style=flat&label=YouTube%20views&logo=youtube)](https://youtube.com/@daprdev) 
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/daprdev?logo=x&style=flat)](https://twitter.com/daprdev)
 
 [Dapr](https://docs.dapr.io/concepts/overview/) is a portable, event-driven, serverless runtime for building distributed applications across cloud and edge.
 
