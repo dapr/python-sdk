@@ -74,3 +74,17 @@ class AppTests(unittest.TestCase):
             'AppTests.test_subscribe_decorator.<locals>.handle_dead_letter',
             str(subscription_map['pubsub:topic2:']),
         )
+
+    def test_register_health_check(self):
+        def health_check_cb():
+            pass
+
+        self._app.register_health_check(health_check_cb)
+        registered_cb = self._app._health_check_servicer._health_check_cb
+        self.assertIn(
+            'AppTests.test_register_health_check.<locals>.health_check_cb', str(registered_cb)
+        )
+
+    def test_no_health_check(self):
+        registered_cb = self._app._health_check_servicer._health_check_cb
+        self.assertIsNone(registered_cb)

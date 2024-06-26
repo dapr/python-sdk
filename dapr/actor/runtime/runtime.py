@@ -15,7 +15,7 @@ limitations under the License.
 
 import asyncio
 
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional, Type, Callable
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime.actor import Actor
@@ -47,6 +47,7 @@ class ActorRuntime:
         message_serializer: Serializer = DefaultJSONSerializer(),
         state_serializer: Serializer = DefaultJSONSerializer(),
         http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+        actor_factory: Optional[Callable[['ActorRuntimeContext', ActorId], 'Actor']] = None,
     ) -> None:
         """Registers an :class:`Actor` object with the runtime.
 
@@ -60,7 +61,9 @@ class ActorRuntime:
         type_info = ActorTypeInformation.create(actor)
         # TODO: We will allow to use gRPC client later.
         actor_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
-        ctx = ActorRuntimeContext(type_info, message_serializer, state_serializer, actor_client)
+        ctx = ActorRuntimeContext(
+            type_info, message_serializer, state_serializer, actor_client, actor_factory
+        )
 
         # Create an ActorManager, override existing entry if registered again.
         async with cls._actor_managers_lock:
