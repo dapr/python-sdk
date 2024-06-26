@@ -83,4 +83,11 @@ def mytopic_wildcard(event: v1.Event) -> TopicEventResponse:
     return TopicEventResponse('success')
 
 
+# Example of an unhealthy status
+# def unhealthy():
+#     raise ValueError("Not healthy")
+# app.register_health_check(unhealthy)
+
+app.register_health_check(lambda: print('Healthy'))
+
 app.run(50051)

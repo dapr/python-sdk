@@ -19,7 +19,8 @@ from concurrent import futures
 from typing import Dict, Optional
 
 from dapr.conf import settings
-from dapr.ext.grpc._servicier import _CallbackServicer, Rule  # type: ignore
+from dapr.ext.grpc._servicer import _CallbackServicer, Rule  # type: ignore
+from dapr.ext.grpc._health_servicer import _HealthCheckServicer  # type: ignore
 from dapr.proto import appcallback_service_v1
 
 
@@ -43,6 +44,7 @@ class App:
             kwargs: arguments to grpc.server()
         """
         self._servicer = _CallbackServicer()
+        self._health_check_servicer = _HealthCheckServicer()
         if not kwargs:
             options = []
             if max_grpc_message_length is not None:
@@ -56,6 +58,9 @@ class App:
         else:
             self._server = grpc.server(**kwargs)  # type: ignore
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
+        appcallback_service_v1.add_AppCallbackHealthCheckServicer_to_server(
+            self._health_check_servicer, self._server
+        )
 
     def __del__(self):
         self.stop()
@@ -63,6 +68,15 @@ class App:
     def add_external_service(self, servicer_callback, external_servicer):
         """Adds an external gRPC service to the same server"""
         servicer_callback(external_servicer, self._server)
+
+    def register_health_check(self, health_check_callback):
+        """Adds a health check callback
+
+        The below example adds a basic health check to check Dapr gRPC is running
+
+            @app.register_health_check(lambda: None)
+        """
+        self._health_check_servicer.register_health_check(health_check_callback)
 
     def run(self, app_port: Optional[int] = None, listen_address: Optional[str] = None) -> None:
         """Starts app gRPC server and waits until :class:`App`.stop() is called.
