@@ -66,7 +66,7 @@ sleep: 15
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 python3 publisher.py
+dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check python3 publisher.py
 ```
 
 <!-- END_STEP -->
