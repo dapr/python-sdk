@@ -149,6 +149,6 @@ class DaprActor(object):
             logger.debug(msg)
             return _wrap_response(status.HTTP_200_OK, msg)
 
-    async def register_actor(self, actor: Type[Actor]) -> None:
-        await ActorRuntime.register_actor(actor)
+    async def register_actor(self, actor: Type[Actor], **kwargs) -> None:
+        await ActorRuntime.register_actor(actor, **kwargs)
         logger.debug(f'registered actor: {actor.__class__.__name__}')
