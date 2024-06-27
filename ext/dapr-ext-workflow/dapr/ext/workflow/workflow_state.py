@@ -60,7 +60,7 @@ class WorkflowState:
         return json.dumps(self.to_json(), indent=4, sort_keys=True, default=str)
 
     def to_json(self):
-        return {
+        state_dict = {
             'instance_id': self.__obj.instance_id,
             'name': self.__obj.name,
             'runtime_status': self.__obj.runtime_status.name,
@@ -69,9 +69,11 @@ class WorkflowState:
             'serialized_input': self.__obj.serialized_input,
             'serialized_output': self.__obj.serialized_output,
             'serialized_custom_status': self.__obj.serialized_custom_status,
-            'failure_details': {
+        }
+        if self.__obj.failure_details is not None:
+            state_dict['failure_details'] = {
                 'message': self.__obj.failure_details.message,
                 'error_type': self.__obj.failure_details.error_type,
                 'stack_trace': self.__obj.failure_details.stack_trace,
-            },
-        }
+            }
+        return state_dict

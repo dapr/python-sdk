@@ -65,8 +65,8 @@ class DaprActor(object):
     def teardown(self, exception):
         self._app.logger.debug('actor service is shutting down.')
 
-    def register_actor(self, actor: Type[Actor]) -> None:
-        asyncio.run(ActorRuntime.register_actor(actor))
+    def register_actor(self, actor: Type[Actor], **kwargs) -> None:
+        asyncio.run(ActorRuntime.register_actor(actor, **kwargs))
         self._app.logger.debug(f'registered actor: {actor.__class__.__name__}')
 
     def _healthz_handler(self):
