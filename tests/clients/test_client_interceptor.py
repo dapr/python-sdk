@@ -15,7 +15,7 @@ limitations under the License.
 
 import unittest
 
-from dapr.clients.grpc._helpers import DaprClientInterceptor, _ClientCallDetails
+from dapr.clients.grpc.interceptors import DaprClientInterceptor, _ClientCallDetails
 
 
 class DaprClientInterceptorTests(unittest.TestCase):

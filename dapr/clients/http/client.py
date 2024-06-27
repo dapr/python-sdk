@@ -17,13 +17,14 @@ import aiohttp
 
 from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
 
+from dapr.clients.health import DaprHealth
 from dapr.clients.http.conf import (
     DAPR_API_TOKEN_HEADER,
     USER_AGENT_HEADER,
     DAPR_USER_AGENT,
     CONTENT_TYPE_HEADER,
 )
-from dapr.clients.health import DaprHealth
+from dapr.clients.retry import RetryPolicy
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
@@ -41,6 +42,7 @@ class DaprHttpClient:
         message_serializer: 'Serializer',
         timeout: Optional[int] = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Invokes Dapr over HTTP.
 
@@ -54,6 +56,7 @@ class DaprHttpClient:
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
         self._headers_callback = headers_callback
+        self.retry_policy = retry_policy or RetryPolicy()
 
     async def send_bytes(
         self,
@@ -81,17 +84,19 @@ class DaprHttpClient:
         client_timeout = aiohttp.ClientTimeout(total=timeout) if timeout else self._timeout
         sslcontext = self.get_ssl_context()
 
-        async with aiohttp.ClientSession(timeout=client_timeout) as session:
-            r = await session.request(
-                method=method,
-                url=url,
-                data=data,
-                headers=headers_map,
-                ssl=sslcontext,
-                params=query_params,
-            )
+        async with aiohttp.ClientSession() as session:
+            req = {
+                'method': method,
+                'url': url,
+                'data': data,
+                'headers': headers_map,
+                'sslcontext': sslcontext,
+                'params': query_params,
+                'timeout': client_timeout,
+            }
+            r = await self.retry_policy.make_http_call(session, req)
 
-            if r.status >= 200 and r.status < 300:
+            if 200 <= r.status < 300:
                 return await r.read(), r
 
             raise (await self.convert_to_error(r))

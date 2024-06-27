@@ -20,6 +20,7 @@ from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_utils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
+from dapr.clients.retry import RetryPolicy
 from dapr.serializers import Serializer, DefaultJSONSerializer
 from dapr.conf import settings
 
@@ -50,9 +51,12 @@ class ActorProxyFactory(ActorFactoryBase):
         self,
         message_serializer=DefaultJSONSerializer(),
         http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         # TODO: support serializer for state store later
-        self._dapr_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
+        self._dapr_client = DaprActorHttpClient(
+            message_serializer, timeout=http_timeout_seconds, retry_policy=retry_policy
+        )
         self._message_serializer = message_serializer
 
     def create(

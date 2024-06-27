@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.base import DaprActorClientBase
+from dapr.clients.retry import RetryPolicy
 
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
@@ -34,6 +35,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         message_serializer: 'Serializer',
         timeout: int = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Invokes Dapr Actors over HTTP.
 
@@ -41,8 +43,9 @@ class DaprActorHttpClient(DaprActorClientBase):
             message_serializer (Serializer): Dapr serializer.
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
+            retry_policy (RetryPolicy optional): Specifies retry behaviour
         """
-        self._client = DaprHttpClient(message_serializer, timeout, headers_callback)
+        self._client = DaprHttpClient(message_serializer, timeout, headers_callback, retry_policy)
 
     async def invoke_method(
         self, actor_type: str, actor_id: str, method: str, data: Optional[bytes] = None

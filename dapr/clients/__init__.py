@@ -21,6 +21,7 @@ from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.clients.grpc.client import DaprGrpcClient, MetadataTuple, InvokeMethodResponse
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClient
+from dapr.clients.retry import RetryPolicy
 from dapr.conf import settings
 from google.protobuf.message import Message as GrpcMessage
 
@@ -64,6 +65,7 @@ class DaprClient(DaprGrpcClient):
         ] = None,
         http_timeout_seconds: Optional[int] = None,
         max_grpc_message_length: Optional[int] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Connects to Dapr Runtime via gRPC and HTTP.
 
@@ -78,7 +80,7 @@ class DaprClient(DaprGrpcClient):
             max_grpc_message_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
         """
-        super().__init__(address, interceptors, max_grpc_message_length)
+        super().__init__(address, interceptors, max_grpc_message_length, retry_policy)
         self.invocation_client = None
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
