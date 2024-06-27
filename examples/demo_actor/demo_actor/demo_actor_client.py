@@ -12,13 +12,15 @@
 
 import asyncio
 
-from dapr.actor import ActorProxy, ActorId
+from dapr.actor import ActorProxy, ActorId, ActorProxyFactory
+from dapr.clients.retry import RetryPolicy
 from demo_actor_interface import DemoActorInterface
 
 
 async def main():
     # Create proxy client
-    proxy = ActorProxy.create('DemoActor', ActorId('1'), DemoActorInterface)
+    factory = ActorProxyFactory(retry_policy=RetryPolicy(max_attempts=3))
+    proxy = ActorProxy.create('DemoActor', ActorId('1'), DemoActorInterface, factory)
 
     # -----------------------------------------------
     # Actor invocation demo

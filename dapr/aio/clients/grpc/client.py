@@ -44,13 +44,17 @@ from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.health import DaprHealth
+from dapr.clients.retry import RetryPolicy
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
-from dapr.aio.clients.grpc._asynchelpers import DaprClientInterceptorAsync
+from dapr.aio.clients.grpc.interceptors import (
+    DaprClientInterceptorAsync,
+    DaprClientTimeoutInterceptorAsync,
+)
 from dapr.clients.grpc._helpers import (
     MetadataTuple,
     to_bytes,
@@ -127,6 +131,7 @@ class DaprGrpcClientAsync:
             ]
         ] = None,
         max_grpc_message_length: Optional[int] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -140,6 +145,7 @@ class DaprGrpcClientAsync:
                 message length in bytes.
         """
         DaprHealth.wait_until_ready()
+        self.retry_policy = retry_policy or RetryPolicy()
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
@@ -163,12 +169,11 @@ class DaprGrpcClientAsync:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        if self._uri.tls:
-            self._channel = grpc.aio.secure_channel(
-                self._uri.endpoint, credentials=self.get_credentials(), options=options
-            )  # type: ignore
+        # Prepare interceptors
+        if interceptors is None:
+            interceptors = [DaprClientTimeoutInterceptorAsync()]
         else:
-            self._channel = grpc.aio.insecure_channel(self._uri.endpoint, options)  # type: ignore
+            interceptors.append(DaprClientTimeoutInterceptorAsync())
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptorAsync(
@@ -176,13 +181,20 @@ class DaprGrpcClientAsync:
                     ('dapr-api-token', settings.DAPR_API_TOKEN),
                 ]
             )
-            self._channel = grpc.aio.insecure_channel(  # type: ignore
-                address, options=options, interceptors=(api_token_interceptor,)
-            )
-        if interceptors:
-            self._channel = grpc.aio.insecure_channel(  # type: ignore
-                address, options=options, *interceptors
-            )
+            interceptors.append(api_token_interceptor)
+
+        # Create gRPC channel
+        if self._uri.tls:
+            self._channel = grpc.aio.secure_channel(
+                self._uri.endpoint,
+                credentials=self.get_credentials(),
+                options=options,
+                interceptors=interceptors,
+            )  # type: ignore
+        else:
+            self._channel = grpc.aio.insecure_channel(
+                self._uri.endpoint, options, interceptors=interceptors
+            )  # type: ignore
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
@@ -722,8 +734,9 @@ class DaprGrpcClientAsync:
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
         try:
-            call = self._stub.SaveState(req, metadata=metadata)
-            await call
+            result, call = await self.retry_policy.run_rpc_async(
+                self._stub.SaveState, req, metadata=metadata
+            )
             return DaprResponse(headers=await call.initial_metadata())
         except AioRpcError as e:
             raise DaprInternalError(e.details()) from e
