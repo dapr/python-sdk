@@ -28,14 +28,14 @@ def main():
     with DaprClient() as dapr:
         # Step 1: encrypt a string using the RSA key, then decrypt it and show the output in the terminal
         print('Running encrypt/decrypt operation on string')
-        EncryptDecryptString(dapr)
+        encrypt_decrypt_string(dapr)
 
         # Step 2: encrypt a large file and then decrypt it, using the AES key
         print('Running encrypt/decrypt operation on file')
-        EncryptDecryptFile(dapr)
+        encrypt_decrypt_file(dapr)
 
 
-def EncryptDecryptString(dapr: DaprClient):
+def encrypt_decrypt_string(dapr: DaprClient):
     message = 'The secret is "passw0rd"'
 
     # Encrypt the message
@@ -69,7 +69,7 @@ def EncryptDecryptString(dapr: DaprClient):
     assert message == decrypt_bytes.decode()
 
 
-def EncryptDecryptFile(dapr: DaprClient):
+def encrypt_decrypt_file(dapr: DaprClient):
     file_name = 'desert.jpg'
 
     # Encrypt the file

@@ -30,14 +30,14 @@ async def main():
     async with DaprClient() as dapr:
         # Step 1: encrypt a string using the RSA key, then decrypt it and show the output in the terminal
         print('Running encrypt/decrypt operation on string')
-        await EncryptDecryptStringAsync(dapr)
+        await encrypt_decrypt_string_async(dapr)
 
         # Step 2: encrypt a large file and then decrypt it, using the AES key
         print('Running encrypt/decrypt operation on file')
-        await EncryptDecryptFileAsync(dapr)
+        await encrypt_decrypt_file_async(dapr)
 
 
-async def EncryptDecryptStringAsync(dapr: DaprClient):
+async def encrypt_decrypt_string_async(dapr: DaprClient):
     message = 'The secret is "passw0rd"'
 
     # Encrypt the message
@@ -71,7 +71,7 @@ async def EncryptDecryptStringAsync(dapr: DaprClient):
     assert message == decrypt_bytes.decode()
 
 
-async def EncryptDecryptFileAsync(dapr: DaprClient):
+async def encrypt_decrypt_file_async(dapr: DaprClient):
     file_name = 'desert.jpg'
 
     # Encrypt the file

@@ -84,14 +84,18 @@ dapr run --app-id crypto-async --resources-path ./components/ -- python3 crypto-
 
 ### Cleanup
 
-`ctrl + c` to stop execution
+<!-- STEP
+name: Clean up generated resources
+timeout_seconds: 5
+-->
 
 ```bash
-dapr stop --app-id crypto
-(lsof -i:8080 | grep crypto) | awk '{print $2}' | xargs  kill
-dapr stop --app-id crypto-async
-(lsof -i:8080 | grep crypto-async) | awk '{print $2}' | xargs  kill
+rm -r keys
+rm encrypted.out
+rm decrypted.out.jpg
 ```
+
+<!-- END_STEP -->
 
 ## Result
 
