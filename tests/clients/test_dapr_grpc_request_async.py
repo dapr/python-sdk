@@ -21,7 +21,7 @@ from dapr.aio.clients.grpc._request import EncryptRequestIterator, DecryptReques
 from dapr.proto import api_v1
 
 
-class CryptoRequestIteratorAsyncTests(unittest.IsolatedAsyncioTestCase):
+class EncryptRequestIteratorAsyncTests(unittest.IsolatedAsyncioTestCase):
     async def test_encrypt_request_iterator(self):
         # arrange
         encrypt_options = EncryptOptions(
@@ -82,6 +82,8 @@ class CryptoRequestIteratorAsyncTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(StopAsyncIteration):
             await req_iter.__anext__()
 
+
+class DecryptRequestIteratorAsyncTests(unittest.IsolatedAsyncioTestCase):
     async def test_decrypt_request_iterator(self):
         # arrange
         decrypt_options = DecryptOptions(

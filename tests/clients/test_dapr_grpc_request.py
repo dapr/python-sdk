@@ -82,7 +82,7 @@ class InvokeBindingRequestDataTests(unittest.TestCase):
         self.assertEqual({'ttlInSeconds': '1000'}, data.binding_metadata)
 
 
-class CryptoRequestIteratorTests(unittest.TestCase):
+class EncryptRequestIteratorTests(unittest.TestCase):
     def test_encrypt_request_iterator(self):
         # arrange
         encrypt_options = EncryptOptions(
@@ -143,6 +143,8 @@ class CryptoRequestIteratorTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(req_iter)
 
+
+class DecryptRequestIteratorTests(unittest.TestCase):
     def test_decrypt_request_iterator(self):
         # arrange
         decrypt_options = DecryptOptions(

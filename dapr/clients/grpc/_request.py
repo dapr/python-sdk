@@ -326,31 +326,27 @@ class TransactionalStateOperation:
         return self._operation_type
 
 
-class CryptoRequestIterator(DaprRequest):
-    """An iterator for cryptography API requests.
+class EncryptRequestIterator(DaprRequest):
+    """An iterator for cryptography encrypt API requests.
 
-    This reads data from a given stream by chunks and converts it to an iterator of cryptography
-    API requests.
-
-    This iterator will be used for encrypt and decrypt gRPC bidirectional streaming requests.
+    This reads data from a given stream by chunks and converts it to an iterator of
+    cryptography encrypt API requests.
+    This iterator will be used for encrypt gRPC bidirectional streaming requests.
     """
 
     def __init__(
         self,
         data: Union[str, bytes],
-        options: Union[EncryptOptions, DecryptOptions],
-        request_type: Union[api_v1.EncryptRequest, api_v1.DecryptRequest],
+        options: EncryptOptions,
     ):
-        """Initialize CryptoRequestIterator with data and encryption/decryption options.
+        """Initialize EncryptRequestIterator with data and encryption options.
 
         Args:
-            data (Union[str, bytes]): data to be encrypted or decrypted
-            options (Union[EncryptOptions, DecryptOptions]): encryption or decryption options
-            request_type (Union[api_v1.EncryptRequest, api_v1.DecryptRequest]): cryptography API request type
+            data (Union[str, bytes]): data to be encrypted
+            options (EncryptOptions): encryption options
         """
         self.data = io.BytesIO(to_bytes(data))
         self.options = options.get_proto()
-        self.request_type = request_type
         self.buffer_size = 2 << 10  # 2KiB
         self.seq = 0
 
@@ -360,7 +356,7 @@ class CryptoRequestIterator(DaprRequest):
 
     def __next__(self):
         """Read the next chunk of data from the input stream and create a gRPC stream request."""
-        # Read data from the input stream, in chunks of up to 2KB
+        # Read data from the input stream, in chunks of up to 2KiB
         # Send the data until we reach the end of the input stream
         chunk = self.data.read(self.buffer_size)
         if not chunk:
@@ -369,41 +365,56 @@ class CryptoRequestIterator(DaprRequest):
         payload = common_v1.StreamPayload(data=chunk, seq=self.seq)
         if self.seq == 0:
             # If this is the first chunk, add the options
-            request_proto = self.request_type(payload=payload, options=self.options)
+            request_proto = api_v1.EncryptRequest(payload=payload, options=self.options)
         else:
-            request_proto = self.request_type(payload=payload)
+            request_proto = api_v1.EncryptRequest(payload=payload)
 
         self.seq += 1
         return request_proto
 
 
-class EncryptRequestIterator(CryptoRequestIterator):
-    """An iterator for encrypt API requests.
+class DecryptRequestIterator(DaprRequest):
+    """An iterator for cryptography decrypt API requests.
 
-    This inherits from CryptoRequestIterator.
+    This reads data from a given stream by chunks and converts it to an iterator of decrypt
+    cryptography API requests.
+    This iterator will be used for decrypt gRPC bidirectional streaming requests.
     """
 
-    def __init__(self, data: Union[str, bytes], options: EncryptOptions):
-        """Initialize EncryptRequestIterator with data and options.
-
-        Args:
-            data (Union[str, bytes]): data to be encrypted
-            options (EncryptOptions): encryption options
-        """
-        super().__init__(data, options, api_v1.EncryptRequest)
-
-
-class DecryptRequestIterator(CryptoRequestIterator):
-    """An iterator for decrypt API requests.
-
-    This inherits from CryptoRequestIterator.
-    """
-
-    def __init__(self, data: Union[str, bytes], options: DecryptOptions):
-        """Initialize DecryptRequestIterator with data and options.
+    def __init__(
+        self,
+        data: Union[str, bytes],
+        options: DecryptOptions,
+    ):
+        """Initialize DecryptRequestIterator with data and decryption options.
 
         Args:
             data (Union[str, bytes]): data to be decrypted
             options (DecryptOptions): decryption options
         """
-        super().__init__(data, options, api_v1.DecryptRequest)
+        self.data = io.BytesIO(to_bytes(data))
+        self.options = options.get_proto()
+        self.buffer_size = 2 << 10  # 2KiB
+        self.seq = 0
+
+    def __iter__(self):
+        """Returns the iterator object itself."""
+        return self
+
+    def __next__(self):
+        """Read the next chunk of data from the input stream and create a gRPC stream request."""
+        # Read data from the input stream, in chunks of up to 2KiB
+        # Send the data until we reach the end of the input stream
+        chunk = self.data.read(self.buffer_size)
+        if not chunk:
+            raise StopIteration
+
+        payload = common_v1.StreamPayload(data=chunk, seq=self.seq)
+        if self.seq == 0:
+            # If this is the first chunk, add the options
+            request_proto = api_v1.DecryptRequest(payload=payload, options=self.options)
+        else:
+            request_proto = api_v1.DecryptRequest(payload=payload)
+
+        self.seq += 1
+        return request_proto
