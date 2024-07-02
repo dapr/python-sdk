@@ -40,6 +40,7 @@ from grpc.aio import (  # type: ignore
 )
 
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
+from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.health import DaprHealth
@@ -59,6 +60,14 @@ from dapr.clients.grpc._helpers import (
     to_bytes,
     validateNotNone,
     validateNotBlankString,
+)
+from dapr.aio.clients.grpc._request import (
+    EncryptRequestIterator,
+    DecryptRequestIterator,
+)
+from dapr.aio.clients.grpc._response import (
+    EncryptResponse,
+    DecryptResponse,
 )
 from dapr.clients.grpc._request import (
     InvokeMethodRequest,
@@ -1226,6 +1235,97 @@ class DaprGrpcClientAsync:
         return UnlockResponse(
             status=UnlockResponseStatus(response.status), headers=await call.initial_metadata()
         )
+
+    async def encrypt(self, data: Union[str, bytes], options: EncryptOptions):
+        """Encrypt a stream data with given options.
+
+        The encrypt API encrypts a stream data with the given options.
+
+        Example:
+            from dapr.aio.clients import DaprClient
+            from dapr.clients.grpc._crypto import EncryptOptions
+
+            async with DaprClient() as d:
+                options = EncryptOptions(
+                    component_name='crypto_component',
+                    key_name='crypto_key',
+                    key_wrap_algorithm='RSA',
+                )
+                resp = await d.encrypt(
+                    data='hello dapr',
+                    options=options,
+                )
+                encrypted_data = await resp.read()
+
+        Args:
+            data (Union[str, bytes]): Data to be encrypted.
+            options (EncryptOptions): Encryption options.
+
+        Returns:
+            Readable stream of `api_v1.EncryptResponse`.
+
+        Raises:
+            ValueError: If component_name, key_name, or key_wrap_algorithm is empty.
+        """
+        # Warnings and input validation
+        warn(
+            'The Encrypt API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(
+            component_name=options.component_name,
+            key_name=options.key_name,
+            key_wrap_algorithm=options.key_wrap_algorithm,
+        )
+
+        req_iterator = EncryptRequestIterator(data, options)
+        resp_stream = self._stub.EncryptAlpha1(req_iterator)
+        return EncryptResponse(resp_stream)
+
+    async def decrypt(self, data: Union[str, bytes], options: DecryptOptions):
+        """Decrypt a stream data with given options.
+
+        The decrypt API decrypts a stream data with the given options.
+
+        Example:
+            from dapr.aio.clients import DaprClient
+            from dapr.clients.grpc._crypto import DecryptOptions
+
+            async with DaprClient() as d:
+                options = DecryptOptions(
+                    component_name='crypto_component',
+                    key_name='crypto_key',
+                )
+                resp = await d.decrypt(
+                    data='hello dapr',
+                    options=options,
+                )
+                decrypted_data = await resp.read()
+
+        Args:
+            data (Union[str, bytes]): Data to be decrypted.
+            options (DecryptOptions): Decryption options.
+
+        Returns:
+            Readable stream of `api_v1.DecryptResponse`.
+
+        Raises:
+            ValueError: If component_name is empty.
+        """
+        # Warnings and input validation
+        warn(
+            'The Decrypt API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(
+            component_name=options.component_name,
+        )
+
+        req_iterator = DecryptRequestIterator(data, options)
+        resp_stream = self._stub.DecryptAlpha1(req_iterator)
+        return DecryptResponse(resp_stream)
 
     async def start_workflow(
         self,

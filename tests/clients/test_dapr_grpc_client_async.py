@@ -15,6 +15,7 @@ limitations under the License.
 
 import json
 import socket
+import tempfile
 import unittest
 import uuid
 
@@ -31,6 +32,7 @@ from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
+from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._response import (
     ConfigurationItem,
     ConfigurationWatcher,
@@ -815,6 +817,180 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             for invalid_attr_value in [None]:
                 with self.assertRaises(ValueError):
                     await dapr.set_metadata(valid_attr_name, invalid_attr_value)
+
+    #
+    # Tests for Cryptography API
+    #
+
+    async def test_encrypt_empty_component_name(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with self.assertRaises(ValueError) as err:
+            options = EncryptOptions(
+                component_name='',
+                key_name='crypto_key',
+                key_wrap_algorithm='RSA',
+            )
+            await dapr.encrypt(
+                data='hello dapr',
+                options=options,
+            )
+            self.assertIn('component_name', str(err))
+
+    async def test_encrypt_empty_key_name(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with self.assertRaises(ValueError) as err:
+            options = EncryptOptions(
+                component_name='crypto_component',
+                key_name='',
+                key_wrap_algorithm='RSA',
+            )
+            await dapr.encrypt(
+                data='hello dapr',
+                options=options,
+            )
+            self.assertIn('key_name', str(err))
+
+    async def test_encrypt_empty_key_wrap_algorithm(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with self.assertRaises(ValueError) as err:
+            options = EncryptOptions(
+                component_name='crypto_component',
+                key_name='crypto_key',
+                key_wrap_algorithm='',
+            )
+            await dapr.encrypt(
+                data='hello dapr',
+                options=options,
+            )
+            self.assertIn('key_wrap_algorithm', str(err))
+
+    async def test_encrypt_string_data_read_all(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        options = EncryptOptions(
+            component_name='crypto_component',
+            key_name='crypto_key',
+            key_wrap_algorithm='RSA',
+        )
+        resp = await dapr.encrypt(
+            data='hello dapr',
+            options=options,
+        )
+        self.assertEqual(await resp.read(), b'HELLO DAPR')
+
+    async def test_encrypt_string_data_read_chunks(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        options = EncryptOptions(
+            component_name='crypto_component',
+            key_name='crypto_key',
+            key_wrap_algorithm='RSA',
+        )
+        resp = await dapr.encrypt(
+            data='hello dapr',
+            options=options,
+        )
+        self.assertEqual(await resp.read(5), b'HELLO')
+        self.assertEqual(await resp.read(5), b' DAPR')
+
+    async def test_encrypt_file_data_read_all(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with tempfile.TemporaryFile(mode='w+b') as temp_file:
+            temp_file.write(b'hello dapr')
+            temp_file.seek(0)
+
+            options = EncryptOptions(
+                component_name='crypto_component',
+                key_name='crypto_key',
+                key_wrap_algorithm='RSA',
+            )
+            resp = await dapr.encrypt(
+                data=temp_file.read(),
+                options=options,
+            )
+            self.assertEqual(await resp.read(), b'HELLO DAPR')
+
+    async def test_encrypt_file_data_read_chunks(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with tempfile.TemporaryFile(mode='w+b') as temp_file:
+            temp_file.write(b'hello dapr')
+            temp_file.seek(0)
+
+            options = EncryptOptions(
+                component_name='crypto_component',
+                key_name='crypto_key',
+                key_wrap_algorithm='RSA',
+            )
+            resp = await dapr.encrypt(
+                data=temp_file.read(),
+                options=options,
+            )
+            self.assertEqual(await resp.read(5), b'HELLO')
+            self.assertEqual(await resp.read(5), b' DAPR')
+
+    async def test_decrypt_empty_component_name(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with self.assertRaises(ValueError) as err:
+            options = DecryptOptions(
+                component_name='',
+            )
+            await dapr.decrypt(
+                data='HELLO DAPR',
+                options=options,
+            )
+            self.assertIn('component_name', str(err))
+
+    async def test_decrypt_string_data_read_all(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        options = DecryptOptions(
+            component_name='crypto_component',
+        )
+        resp = await dapr.decrypt(
+            data='HELLO DAPR',
+            options=options,
+        )
+        self.assertEqual(await resp.read(), b'hello dapr')
+
+    async def test_decrypt_string_data_read_chunks(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        options = DecryptOptions(
+            component_name='crypto_component',
+        )
+        resp = await dapr.decrypt(
+            data='HELLO DAPR',
+            options=options,
+        )
+        self.assertEqual(await resp.read(5), b'hello')
+        self.assertEqual(await resp.read(5), b' dapr')
+
+    async def test_decrypt_file_data_read_all(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with tempfile.TemporaryFile(mode='w+b') as temp_file:
+            temp_file.write(b'HELLO DAPR')
+            temp_file.seek(0)
+
+            options = DecryptOptions(
+                component_name='crypto_component',
+            )
+            resp = await dapr.decrypt(
+                data=temp_file.read(),
+                options=options,
+            )
+            self.assertEqual(await resp.read(), b'hello dapr')
+
+    async def test_decrypt_file_data_read_chunks(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with tempfile.TemporaryFile(mode='w+b') as temp_file:
+            temp_file.write(b'HELLO DAPR')
+            temp_file.seek(0)
+
+            options = DecryptOptions(
+                component_name='crypto_component',
+            )
+            resp = await dapr.decrypt(
+                data=temp_file.read(),
+                options=options,
+            )
+            self.assertEqual(await resp.read(5), b'hello')
+            self.assertEqual(await resp.read(5), b' dapr')
 
 
 if __name__ == '__main__':

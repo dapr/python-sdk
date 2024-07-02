@@ -13,10 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import io
 import unittest
 
-from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
-from dapr.proto import common_v1
+from dapr.clients.grpc._request import (
+    InvokeMethodRequest,
+    BindingRequest,
+    EncryptRequestIterator,
+    DecryptRequestIterator,
+)
+from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.proto import api_v1, common_v1
 
 
 class InvokeMethodRequestTests(unittest.TestCase):
@@ -73,6 +80,128 @@ class InvokeBindingRequestDataTests(unittest.TestCase):
         # arrange
         self.assertEqual(b'hello dapr', data.data)
         self.assertEqual({'ttlInSeconds': '1000'}, data.binding_metadata)
+
+
+class EncryptRequestIteratorTests(unittest.TestCase):
+    def test_encrypt_request_iterator(self):
+        # arrange
+        encrypt_options = EncryptOptions(
+            component_name='crypto_component', key_name='crypto_key', key_wrap_algorithm='RSA'
+        )
+
+        # act
+        req_iter = EncryptRequestIterator(
+            data='hello dapr',
+            options=encrypt_options,
+        )
+        req = next(req_iter)
+
+        # assert
+        self.assertEqual(req.__class__, api_v1.EncryptRequest)
+        self.assertEqual(req.payload.data, b'hello dapr')
+        self.assertEqual(req.payload.seq, 0)
+        with self.assertRaises(StopIteration):
+            next(req_iter)
+
+    def test_encrypt_request_iterator_empty_data(self):
+        # arrange
+        encrypt_options = EncryptOptions(
+            component_name='crypto_component', key_name='crypto_key', key_wrap_algorithm='RSA'
+        )
+
+        # act
+        req_iter = EncryptRequestIterator(
+            data='',
+            options=encrypt_options,
+        )
+
+        # assert
+        with self.assertRaises(StopIteration):
+            next(req_iter)
+
+    def test_encrypt_request_iterator_large_data(self):
+        # arrange
+        buffer = io.BytesIO()
+        for _ in range(100):
+            buffer.write(b'a' * 2048)
+
+        encrypt_options = EncryptOptions(
+            component_name='crypto_component', key_name='crypto_key', key_wrap_algorithm='RSA'
+        )
+
+        # act
+        req_iter = EncryptRequestIterator(
+            data=buffer.read(),
+            options=encrypt_options,
+        )
+
+        # assert
+        for seq, req in enumerate(req_iter):
+            self.assertEqual(req.__class__, api_v1.EncryptRequest)
+            self.assertEqual(req.payload.data, b'a')
+            self.assertEqual(req.payload.seq, seq)
+        with self.assertRaises(StopIteration):
+            next(req_iter)
+
+
+class DecryptRequestIteratorTests(unittest.TestCase):
+    def test_decrypt_request_iterator(self):
+        # arrange
+        decrypt_options = DecryptOptions(
+            component_name='crypto_component',
+        )
+
+        # act
+        req_iter = DecryptRequestIterator(
+            data='hello dapr',
+            options=decrypt_options,
+        )
+        req = next(req_iter)
+
+        # assert
+        self.assertEqual(req.__class__, api_v1.DecryptRequest)
+        self.assertEqual(req.payload.data, b'hello dapr')
+        self.assertEqual(req.payload.seq, 0)
+        with self.assertRaises(StopIteration):
+            next(req_iter)
+
+    def test_decrypt_request_iterator_empty_data(self):
+        # arrange
+        decrypt_options = DecryptOptions(
+            component_name='crypto_component',
+        )
+
+        # act
+        req_iter = DecryptRequestIterator(
+            data='',
+            options=decrypt_options,
+        )
+
+        # assert
+        with self.assertRaises(StopIteration):
+            next(req_iter)
+
+    def test_decrypt_request_iterator_large_data(self):
+        # arrange
+        buffer = io.BytesIO()
+        for _ in range(100):
+            buffer.write(b'a' * 2048)
+
+        encrypt_options = DecryptOptions(component_name='crypto_component')
+
+        # act
+        req_iter = DecryptRequestIterator(
+            data=buffer.read(),
+            options=encrypt_options,
+        )
+
+        # assert
+        for seq, req in enumerate(req_iter):
+            self.assertEqual(req.__class__, api_v1.DecryptRequest)
+            self.assertEqual(req.payload.data, b'a')
+            self.assertEqual(req.payload.seq, seq)
+        with self.assertRaises(StopIteration):
+            next(req_iter)
 
 
 if __name__ == '__main__':

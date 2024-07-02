@@ -23,9 +23,11 @@ from dapr.clients.grpc._response import (
     BindingResponse,
     StateResponse,
     BulkStateItem,
+    EncryptResponse,
+    DecryptResponse,
 )
 
-from dapr.proto import common_v1
+from dapr.proto import api_v1, common_v1
 
 
 class DaprResponseTests(unittest.TestCase):
@@ -125,6 +127,32 @@ class BulkStateItemTests(unittest.TestCase):
     def test_data(self):
         item = BulkStateItem(key='item1', data=b'{ "status": "ok" }')
         self.assertEqual({'status': 'ok'}, item.json())
+
+
+class CryptoResponseTests(unittest.TestCase):
+    def response_stream(self):
+        stream1 = common_v1.StreamPayload(data=b'hello', seq=0)
+        stream2 = common_v1.StreamPayload(data=b' dapr', seq=1)
+        for strm in (stream1, stream2):
+            yield api_v1.EncryptResponse(payload=strm)
+
+    def test_encrypt_response_read_bytes(self):
+        resp = EncryptResponse(stream=self.response_stream())
+        self.assertEqual(resp.read(5), b'hello')
+        self.assertEqual(resp.read(5), b' dapr')
+
+    def test_encrypt_response_read_all(self):
+        resp = EncryptResponse(stream=self.response_stream())
+        self.assertEqual(resp.read(), b'hello dapr')
+
+    def test_decrypt_response_read_bytes(self):
+        resp = DecryptResponse(stream=self.response_stream())
+        self.assertEqual(resp.read(5), b'hello')
+        self.assertEqual(resp.read(5), b' dapr')
+
+    def test_decrypt_response_read_all(self):
+        resp = DecryptResponse(stream=self.response_stream())
+        self.assertEqual(resp.read(), b'hello dapr')
 
 
 if __name__ == '__main__':

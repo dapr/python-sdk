@@ -29,6 +29,10 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
     TerminateWorkflowRequest,
     PurgeWorkflowRequest,
     RaiseEventWorkflowRequest,
+    EncryptRequest,
+    EncryptResponse,
+    DecryptRequest,
+    DecryptResponse,
 )
 from typing import Dict
 
@@ -343,6 +347,18 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             return UnlockResponse(status=UnlockResponse.Status.SUCCESS)
         else:
             return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS)
+
+    def EncryptAlpha1(self, requests: EncryptRequest, context):
+        for req in requests:
+            # mock encrypt operation by uppercasing the data
+            req.payload.data = req.payload.data.upper()
+            yield EncryptResponse(payload=req.payload)
+
+    def DecryptAlpha1(self, requests: DecryptRequest, context):
+        for req in requests:
+            # mock decrypt operation by lowercasing the data
+            req.payload.data = req.payload.data.lower()
+            yield DecryptResponse(payload=req.payload)
 
     def StartWorkflowBeta1(self, request: StartWorkflowRequest, context):
         instance_id = request.instance_id
