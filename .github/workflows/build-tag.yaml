@@ -1,0 +1,119 @@
+name: dapr-python-release
+
+on:
+  push:
+    tags:
+      - v*
+      - workflow-v*
+      - grpc-v*
+      - flask-v*
+      - fastapi-v*
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel tox
+    - name: Run Autoformatter
+      run: |
+        tox -e ruff
+        statusResult=$(git status -u --porcelain)
+        if [ -z $statusResult ]
+        then
+            exit 0
+        else
+            echo "Source files are not formatted correctly. Run 'tox -e ruff' to autoformat."
+            exit 1
+        fi
+    - name: Run Linter
+      run: |
+        tox -e flake8
+
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python_ver: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python_ver }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python_ver }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel tox
+    - name: Check Typing
+      run: |
+        tox -e type
+    - name: Run unit-tests
+      run: |
+        tox -e py`echo "${{ matrix.python_ver }}" | sed 's/\.//g'`
+    - name: Upload test coverage
+      uses: codecov/codecov-action@v4
+  publish:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      TWINE_USERNAME: "__token__"
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine tox
+    - name: Build and publish Dapr Python SDK
+      if: startsWith(github.ref_name, 'v')
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish dapr-ext-workflow
+      if: startsWith(github.ref_name, 'workflow-v')
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd ext/dapr-ext-workflow
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish Dapr Flask Extension
+      if: startsWith(github.ref_name, 'flask-v')
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd ext/flask_dapr
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish dapr-ext-grpc
+      if: startsWith(github.ref_name, 'grpc-v')
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd ext/dapr-ext-grpc
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish dapr-ext-fastapi
+      if: startsWith(github.ref_name, 'fastapi-v')
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd ext/dapr-ext-fastapi
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
