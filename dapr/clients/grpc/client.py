@@ -132,7 +132,7 @@ class DaprGrpcClient:
                 UnaryStreamClientInterceptor or
                 StreamUnaryClientInterceptor or
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
-            max_grpc_messsage_length (int, optional): The maximum grpc send and receive
+            max_grpc_message_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
             retry_policy (RetryPolicy optional): Specifies retry behaviour
         """
@@ -191,7 +191,8 @@ class DaprGrpcClient:
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
-    def get_credentials(self):
+    @staticmethod
+    def get_credentials():
         # This method is used (overwritten) from tests
         # to return credentials for self-signed certificates
         return grpc.ssl_channel_credentials()  # type: ignore
@@ -210,8 +211,9 @@ class DaprGrpcClient:
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.close()
 
+    @staticmethod
     def _get_http_extension(
-        self, http_verb: str, http_querystring: Optional[MetadataTuple] = None
+            http_verb: str, http_querystring: Optional[MetadataTuple] = None
     ) -> common_v1.HTTPExtension:  # type: ignore
         verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
         http_ext = common_v1.HTTPExtension(verb=verb)
@@ -551,7 +553,7 @@ class DaprGrpcClient:
 
         Args:
             store_name (str): the state store name to get from
-            key (Sequence[str]): the keys to be retrieved
+            keys (Sequence[str]): the keys to be retrieved
             parallelism (int): number of items to be retrieved in parallel
             states_metadata (Dict[str, str], optional): Dapr metadata for state request
             metadata (tuple, optional, DEPRECATED): gRPC custom metadata

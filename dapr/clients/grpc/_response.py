@@ -16,6 +16,7 @@ limitations under the License.
 from __future__ import annotations
 
 import contextlib
+import json
 import threading
 from datetime import datetime
 from enum import Enum
@@ -27,7 +28,6 @@ from typing import (
     Text,
     Union,
     Sequence,
-    Mapping,
     TYPE_CHECKING,
     NamedTuple,
     Generator,
@@ -48,12 +48,7 @@ from dapr.clients.grpc._helpers import (
     unpack,
     WorkflowRuntimeStatus,
 )
-from dapr.proto import appcallback_v1
-
-import json
-
-from dapr.proto import api_v1
-from dapr.proto import api_service_v1
+from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
 
 # Avoid circular import dependency by only importing DaprGrpcClient
 # for type checking
@@ -652,24 +647,30 @@ class ConfigurationResponse(DaprResponse):
         - items (Mapping[Text, ConfigurationItem]): state's data.
     """
 
-    def __init__(self, items: Mapping[Text, ConfigurationItem], headers: MetadataTuple = ()):
+    def __init__(self, items: Dict[Text, common_v1.ConfigurationItem], headers: MetadataTuple = ()):
         """Initializes ConfigurationResponse from :obj:`runtime_v1.GetConfigurationResponse`.
 
         Args:
-            items (Mapping[str, ConfigurationItem]): the items retrieved.
+            items (Mapping[str, common_v1.ConfigurationItem]): the items retrieved.
             headers (Tuple, optional): the headers from Dapr gRPC response.
         """
         super(ConfigurationResponse, self).__init__(headers)
-        self._items = items
+        self._items: Dict[Text, ConfigurationItem] = dict()
+        k: Text
+        v: common_v1.ConfigurationItem
+        for k, v in items.items():
+            self._items[k] = ConfigurationItem(v.value, v.version, v.metadata)
 
     @property
-    def items(self) -> Mapping[Text, ConfigurationItem]:
+    def items(self) -> Dict[Text, ConfigurationItem]:
         """Gets the items."""
         return self._items
 
 
 class ConfigurationWatcher:
     def __init__(self):
+        self.store_name = None
+        self.keys = None
         self.event: threading.Event = threading.Event()
         self.id: str = ''
 
@@ -702,7 +703,7 @@ class ConfigurationWatcher:
         handler: Callable[[Text, ConfigurationResponse], None],
     ):
         try:
-            responses = stub.SubscribeConfigurationAlpha1(req)
+            responses: List[api_v1.SubscribeConfigurationResponse] = stub.SubscribeConfigurationAlpha1(req)
             isFirst = True
             for response in responses:
                 if isFirst:
