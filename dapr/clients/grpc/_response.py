@@ -33,6 +33,7 @@ from typing import (
     Generator,
     TypeVar,
     Generic,
+    Mapping,
 )
 
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -647,7 +648,7 @@ class ConfigurationResponse(DaprResponse):
         - items (Mapping[Text, ConfigurationItem]): state's data.
     """
 
-    def __init__(self, items: Dict[Text, common_v1.ConfigurationItem], headers: MetadataTuple = ()):
+    def __init__(self, items: Mapping[Text, common_v1.ConfigurationItem], headers: MetadataTuple = ()):
         """Initializes ConfigurationResponse from :obj:`runtime_v1.GetConfigurationResponse`.
 
         Args:
@@ -659,7 +660,7 @@ class ConfigurationResponse(DaprResponse):
         k: Text
         v: common_v1.ConfigurationItem
         for k, v in items.items():
-            self._items[k] = ConfigurationItem(v.value, v.version, v.metadata)
+            self._items[k] = ConfigurationItem(v.value, v.version, dict(v.metadata))
 
     @property
     def items(self) -> Dict[Text, ConfigurationItem]:

@@ -1085,7 +1085,7 @@ class DaprGrpcClientAsync:
             store_name=store_name, keys=keys, metadata=config_metadata
         )
         call = self._stub.GetConfiguration(req)
-        response = await call
+        response: api_v1.GetConfigurationResponse = await call
         return ConfigurationResponse(items=response.items, headers=await call.initial_metadata())
 
     async def subscribe_configuration(
