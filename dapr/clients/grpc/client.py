@@ -213,7 +213,7 @@ class DaprGrpcClient:
 
     @staticmethod
     def _get_http_extension(
-            http_verb: str, http_querystring: Optional[MetadataTuple] = None
+        http_verb: str, http_querystring: Optional[MetadataTuple] = None
     ) -> common_v1.HTTPExtension:  # type: ignore
         verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
         http_ext = common_v1.HTTPExtension(verb=verb)

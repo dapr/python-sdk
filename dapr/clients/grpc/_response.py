@@ -648,7 +648,9 @@ class ConfigurationResponse(DaprResponse):
         - items (Mapping[Text, ConfigurationItem]): state's data.
     """
 
-    def __init__(self, items: Mapping[Text, common_v1.ConfigurationItem], headers: MetadataTuple = ()):
+    def __init__(
+        self, items: Mapping[Text, common_v1.ConfigurationItem], headers: MetadataTuple = ()
+    ):
         """Initializes ConfigurationResponse from :obj:`runtime_v1.GetConfigurationResponse`.
 
         Args:
@@ -704,7 +706,9 @@ class ConfigurationWatcher:
         handler: Callable[[Text, ConfigurationResponse], None],
     ):
         try:
-            responses: List[api_v1.SubscribeConfigurationResponse] = stub.SubscribeConfigurationAlpha1(req)
+            responses: List[
+                api_v1.SubscribeConfigurationResponse
+            ] = stub.SubscribeConfigurationAlpha1(req)
             isFirst = True
             for response in responses:
                 if isFirst:
