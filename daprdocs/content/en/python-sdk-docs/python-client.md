@@ -356,6 +356,40 @@ def main():
 - Learn more about using a distributed lock: [How-To: Use a lock]({{< ref howto-use-distributed-lock.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/blob/master/examples/distributed_lock) for code samples and instructions to try out distributed lock.
 
+### Cryptography
+
+```python
+from dapr.clients import DaprClient
+
+message = 'The secret is "passw0rd"'
+
+def main():
+    with DaprClient() as d:
+        resp = d.encrypt(
+            data=message.encode(),
+            options=EncryptOptions(
+                component_name='crypto-localstorage',
+                key_name='rsa-private-key.pem',
+                key_wrap_algorithm='RSA',
+            ),
+        )
+        encrypt_bytes = resp.read()
+
+        resp = d.decrypt(
+            data=encrypt_bytes,
+            options=DecryptOptions(
+                component_name='crypto-localstorage',
+                key_name='rsa-private-key.pem',
+            ),
+        )
+        decrypt_bytes = resp.read()
+
+        print(decrypt_bytes.decode())  # The secret is "passw0rd"
+```
+
+- For a full list of state operations visit [How-To: Use the cryptography APIs]({{< ref howto-cryptography.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/crypto) for code samples and instructions to try out cryptography
+
 ### Workflow
 
 ```python
