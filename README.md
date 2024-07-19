@@ -29,7 +29,7 @@ This includes the following packages:
 
 ### Prerequisites
 
-* [Install Dapr standalone mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-standalone)
+* [Install Dapr standalone mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-self-hosted)
 * [Install Python 3.8+](https://www.python.org/downloads/)
 
 ### Install Dapr python sdk
