@@ -4,14 +4,13 @@ import grpc
 import warnings
 
 from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_dot_common__pb2
-from dapr.proto.runtime.v1 import appcallback_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2
 from dapr.proto.runtime.v1 import dapr_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
-GRPC_GENERATED_VERSION = '1.63.0'
+GRPC_GENERATED_VERSION = '1.65.4'
 GRPC_VERSION = grpc.__version__
-EXPECTED_ERROR_RELEASE = '1.65.0'
-SCHEDULED_RELEASE_DATE = 'June 25, 2024'
+EXPECTED_ERROR_RELEASE = '1.66.0'
+SCHEDULED_RELEASE_DATE = 'August 6, 2024'
 _version_not_supported = False
 
 try:
@@ -96,7 +95,7 @@ class DaprStub(object):
         self.SubscribeTopicEventsAlpha1 = channel.stream_stream(
                 '/dapr.proto.runtime.v1.Dapr/SubscribeTopicEventsAlpha1',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeTopicEventsRequestAlpha1.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventRequest.FromString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeTopicEventsResponseAlpha1.FromString,
                 _registered_method=True)
         self.InvokeBinding = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/InvokeBinding',
@@ -803,7 +802,7 @@ def add_DaprServicer_to_server(servicer, server):
             'SubscribeTopicEventsAlpha1': grpc.stream_stream_rpc_method_handler(
                     servicer.SubscribeTopicEventsAlpha1,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeTopicEventsRequestAlpha1.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventRequest.SerializeToString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeTopicEventsResponseAlpha1.SerializeToString,
             ),
             'InvokeBinding': grpc.unary_unary_rpc_method_handler(
                     servicer.InvokeBinding,
@@ -1044,6 +1043,7 @@ def add_DaprServicer_to_server(servicer, server):
     generic_handler = grpc.method_handlers_generic_handler(
             'dapr.proto.runtime.v1.Dapr', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('dapr.proto.runtime.v1.Dapr', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -1337,7 +1337,7 @@ class Dapr(object):
             target,
             '/dapr.proto.runtime.v1.Dapr/SubscribeTopicEventsAlpha1',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeTopicEventsRequestAlpha1.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventRequest.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.SubscribeTopicEventsResponseAlpha1.FromString,
             options,
             channel_credentials,
             insecure,
