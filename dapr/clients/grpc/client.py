@@ -41,11 +41,12 @@ from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients.grpc.subscription import Subscription
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.conf import settings
-from dapr.proto import api_v1, api_service_v1, common_v1
+from dapr.proto import api_v1, api_service_v1, common_v1, appcallback_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
@@ -480,6 +481,21 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
         return DaprResponse(call.initial_metadata())
+
+    # def subscribe(self, pubsub_name, topic, metadata=None, dead_letter_topic=None):
+    #     stream = self._stub.SubscribeTopicEventsAlpha1()
+    #
+    #     # Send InitialRequest
+    #     initial_request = api_v1.SubscribeTopicEventsInitialRequestAlpha1(pubsub_name=pubsub_name, topic=topic, metadata=metadata, dead_letter_topic=dead_letter_topic)
+    #     request = api_v1.SubscribeTopicEventsRequestAlpha1(initial_request=initial_request)
+    #     stream.write(request)
+    #
+    #     return stream
+
+    def subscribe(self, pubsub_name, topic, metadata=None, dead_letter_topic=None):
+        subscription = Subscription(self._stub, pubsub_name, topic, metadata, dead_letter_topic)
+        subscription.start()
+        return subscription
 
     def get_state(
         self,
