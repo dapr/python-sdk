@@ -24,7 +24,7 @@ from unittest.mock import patch
 
 from google.rpc import status_pb2, code_pb2
 
-from dapr.clients.exceptions import DaprGrpcError
+from dapr.clients.exceptions import DaprGrpcError, StreamInactiveError
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
 from dapr.proto import common_v1
@@ -34,13 +34,9 @@ from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc._response import (
-    ConfigurationItem,
-    ConfigurationResponse,
-    ConfigurationWatcher,
-    UnlockResponseStatus,
-    WorkflowRuntimeStatus,
-)
+from dapr.clients.grpc._response import (ConfigurationItem, ConfigurationResponse,
+                                         ConfigurationWatcher, UnlockResponseStatus,
+                                         WorkflowRuntimeStatus, TopicEventResponse, )
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -261,6 +257,35 @@ class DaprGrpcClientTests(unittest.TestCase):
                 topic_name='example',
                 data=111,
             )
+
+    def test_subscribe_topic(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
+
+        # First message
+        message1 = subscription.next_message(timeout=5)
+        subscription.respond_success(message1)
+
+        self.assertEqual('123', message1.id)
+        self.assertEqual(b'hello1', message1.data)
+        self.assertEqual('TOPIC_A', message1.topic)
+
+        # Second message
+        message2 = subscription.next_message(timeout=5)
+        subscription.respond_success(message2)
+
+        self.assertEqual('456', message2.id)
+        self.assertEqual(b'hello2', message2.data)
+        self.assertEqual('TOPIC_A', message2.topic)
+
+    def test_subscribe_topic_early_close(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
+        subscription.close()
+
+        with self.assertRaises(StreamInactiveError):
+            subscription.next_message(timeout=5)
+
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     def test_dapr_api_token_insertion(self):

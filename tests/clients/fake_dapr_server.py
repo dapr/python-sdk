@@ -7,7 +7,7 @@ from google.protobuf import empty_pb2
 from grpc_status import rpc_status
 
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.proto import api_service_v1, common_v1, api_v1
+from dapr.proto import api_service_v1, common_v1, api_v1, appcallback_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
 from dapr.clients.grpc._response import WorkflowRuntimeStatus
 from dapr.proto.runtime.v1.dapr_pb2 import (
@@ -176,6 +176,14 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
+
+    def SubscribeTopicEventsAlpha1(self, request_iterator, context):
+        yield api_v1.SubscribeTopicEventsResponseAlpha1(
+            initial_response=api_v1.SubscribeTopicEventsResponseInitialAlpha1())
+        yield api_v1.SubscribeTopicEventsResponseAlpha1(
+            event_message=appcallback_v1.TopicEventRequest(id='123', topic="TOPIC_A", data=b'hello1'))
+        yield api_v1.SubscribeTopicEventsResponseAlpha1(
+            event_message=appcallback_v1.TopicEventRequest(id='456', topic="TOPIC_A", data=b'hello2'))
 
     def SaveState(self, request, context):
         self.check_for_exception(context)
