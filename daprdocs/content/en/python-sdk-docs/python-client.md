@@ -255,6 +255,36 @@ def mytopic_important(event: v1.Event) -> None:
 - For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/pubsub-simple) for code samples and instructions to try out pub/sub.
 
+#### Subscribe to messages with streaming
+You can subscribe to messages from a PubSub topic with streaming by using the `subscribe` method. 
+This method will return a `Subscription` object on which you can call the `next_message` method to
+yield messages as they arrive.
+When done using the subscription, you should call the `close` method to stop the subscription.
+
+```python
+    with DaprClient() as client:
+        subscription = client.subscribe(
+            pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
+        )
+    
+        try:
+            for i in range(5):
+                message = subscription.next_message(1)
+                if message is None:
+                    print('No message received within timeout period.')
+                    continue
+    
+                # Process the message
+                # ...
+                
+                # Return the status based on the processing result
+                subscription.respond_success(message)
+                # or subscription.respond_retry(message)
+                # or subscription.respond_drop(message)
+    
+        finally:
+            subscription.close()
+```
 
 ### Interact with output bindings
 
