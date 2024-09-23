@@ -205,8 +205,6 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             spec_version='1.0',
         )
         yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg3)
-        # Simulate the stream being closed with an error
-        context.abort(grpc.StatusCode.CANCELLED, 'Stream closed by server')
 
     def SaveState(self, request, context):
         self.check_for_exception(context)
