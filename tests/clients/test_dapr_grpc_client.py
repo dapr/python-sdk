@@ -266,7 +266,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
 
-        # First message
+        # First message - text
         message1 = subscription.next_message()
         subscription.respond_success(message1)
 
@@ -281,7 +281,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual('text/plain', message1.data_content_type())
         self.assertEqual('hello2', message1.data())
 
-        # Second message
+        # Second message - json
         message2 = subscription.next_message()
         subscription.respond_success(message2)
 
