@@ -26,10 +26,10 @@ name: Kafka install
 sleep: 30
 -->
 
-1. Start the kafka containers using docker-compose 
+1. Start the kafka containers using docker compose 
 
 ```bash
-docker-compose -f ./docker-compose-single-kafka.yml up -d
+docker compose -f ./docker-compose-single-kafka.yml up -d
 ```
 
 <!-- END_STEP -->
@@ -91,7 +91,7 @@ dapr stop --app-id receiver
 For kafka cleanup, run the following code:
 
 ```bash
-docker-compose -f ./docker-compose-single-kafka.yml down
+docker compose -f ./docker-compose-single-kafka.yml down
 ```
 
 <!-- END_STEP -->
