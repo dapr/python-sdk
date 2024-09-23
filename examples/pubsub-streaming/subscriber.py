@@ -17,25 +17,20 @@ def main():
 
         try:
             for i in range(5):
-                try:
-                    message = subscription.next_message()
-                    if message is None:
-                        print('No message received within timeout period.')
-                        continue
+                message = subscription.next_message()
+                if message is None:
+                    print('No message received within timeout period.')
+                    continue
 
-                    # Process the message
-                    response_status = process_message(message)
+                # Process the message
+                response_status = process_message(message)
 
-                    if response_status == 'success':
-                        subscription.respond_success(message)
-                    elif response_status == 'retry':
-                        subscription.respond_retry(message)
-                    elif response_status == 'drop':
-                        subscription.respond_drop(message)
-
-                except Exception as e:
-                    print(f'Error getting message: {e}')
-                    break
+                if response_status == 'success':
+                    subscription.respond_success(message)
+                elif response_status == 'retry':
+                    subscription.respond_retry(message)
+                elif response_status == 'drop':
+                    subscription.respond_drop(message)
 
         finally:
             subscription.close()
