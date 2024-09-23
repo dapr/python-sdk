@@ -1,25 +1,14 @@
 import json
 
-from grpc import StreamStreamMultiCallable, RpcError, StatusCode  # type: ignore
+from grpc import RpcError, StatusCode, Call  # type: ignore
 
 from dapr.clients.exceptions import StreamInactiveError
 from dapr.clients.grpc._response import TopicEventResponse
+from dapr.clients.health import DaprHealth
 from dapr.proto import api_v1, appcallback_v1
 import queue
 import threading
 from typing import Optional
-
-
-def success():
-    return appcallback_v1.TopicEventResponse.SUCCESS
-
-
-def retry():
-    return appcallback_v1.TopicEventResponse.RETRY
-
-
-def drop():
-    return appcallback_v1.TopicEventResponse.DROP
 
 
 class Subscription:
@@ -29,10 +18,10 @@ class Subscription:
         self.topic = topic
         self.metadata = metadata or {}
         self.dead_letter_topic = dead_letter_topic or ''
-        self._stream: Optional[StreamStreamMultiCallable] = None  # Type annotation for gRPC stream
-        self._response_thread: Optional[threading.Thread] = None  # Type for thread
-        self._send_queue: queue.Queue = queue.Queue()  # Type annotation for send queue
-        self._receive_queue: queue.Queue = queue.Queue()  # Type annotation for receive queue
+        self._stream: Optional[Call] = None
+        self._response_thread: Optional[threading.Thread] = None
+        self._send_queue: queue.Queue = queue.Queue()
+        self._receive_queue: queue.Queue = queue.Queue()
         self._stream_active: bool = False
         self._stream_lock = threading.Lock()  # Protects _stream_active
 
@@ -56,7 +45,7 @@ class Subscription:
                 # Start sending back acknowledgement messages from the send queue
                 while self._is_stream_active():
                     try:
-                        response = self._send_queue.get(timeout=1)
+                        response = self._send_queue.get()
                         # Check again if the stream is still active
                         if not self._is_stream_active():
                             break
@@ -75,6 +64,7 @@ class Subscription:
         self._response_thread.start()
 
     def _handle_incoming_messages(self):
+        reconnect = False
         try:
             # Check if the stream is not None
             if self._stream is not None:
@@ -83,17 +73,26 @@ class Subscription:
 
                 # Read messages from the stream and put them in the receive queue
                 for message in self._stream:
-                    if self._is_stream_active():
-                        self._receive_queue.put(message.event_message)
-                    else:
-                        break
+                    self._receive_queue.put(message.event_message)
         except RpcError as e:
-            if e.code() != StatusCode.CANCELLED:
+            if e.code() == StatusCode.UNAVAILABLE:
+                print('Stream unavailable, attempting to reconnect...')
+                reconnect = True
+            elif e.code() != StatusCode.CANCELLED:
                 print(f'gRPC error in stream: {e.details()}, Status Code: {e.code()}')
+
         except Exception as e:
             raise Exception(f'Error while handling responses: {e}')
         finally:
             self._set_stream_inactive()
+            if reconnect:
+                self.reconnect_stream()
+
+    def reconnect_stream(self):
+        DaprHealth.wait_until_ready()
+        print('Attempting to reconnect...')
+        self.close()
+        self.start()
 
     def next_message(self, timeout=None):
         msg = self.read_message_from_queue(self._receive_queue, timeout=timeout)

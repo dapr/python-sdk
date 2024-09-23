@@ -1,6 +1,4 @@
 from dapr.clients import DaprClient
-from dapr.clients.grpc._response import TopicEventResponse
-from dapr.clients.grpc.subscription import success, retry, drop
 
 
 def process_message(message):
