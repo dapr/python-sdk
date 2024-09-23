@@ -34,9 +34,13 @@ from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc._response import (ConfigurationItem, ConfigurationResponse,
-                                         ConfigurationWatcher, UnlockResponseStatus,
-                                         WorkflowRuntimeStatus, TopicEventResponse, )
+from dapr.clients.grpc._response import (
+    ConfigurationItem,
+    ConfigurationResponse,
+    ConfigurationWatcher,
+    UnlockResponseStatus,
+    WorkflowRuntimeStatus,
+)
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -263,20 +267,33 @@ class DaprGrpcClientTests(unittest.TestCase):
         subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
 
         # First message
-        message1 = subscription.next_message(timeout=5)
+        message1 = subscription.next_message()
         subscription.respond_success(message1)
 
-        self.assertEqual('123', message1.id)
-        self.assertEqual(b'hello1', message1.data)
-        self.assertEqual('TOPIC_A', message1.topic)
+        self.assertEqual('123', message1.id())
+        self.assertEqual('app1', message1.source())
+        self.assertEqual('com.example.type2', message1.type())
+        self.assertEqual('1.0', message1.spec_version())
+        self.assertEqual('text/plain', message1.data_content_type())
+        self.assertEqual('TOPIC_A', message1.topic())
+        self.assertEqual('pubsub', message1.pubsub_name())
+        self.assertEqual(b'hello2', message1.raw_data())
+        self.assertEqual('text/plain', message1.data_content_type())
+        self.assertEqual('hello2', message1.data())
 
         # Second message
-        message2 = subscription.next_message(timeout=5)
+        message2 = subscription.next_message()
         subscription.respond_success(message2)
 
-        self.assertEqual('456', message2.id)
-        self.assertEqual(b'hello2', message2.data)
-        self.assertEqual('TOPIC_A', message2.topic)
+        self.assertEqual('456', message2.id())
+        self.assertEqual('app1', message2.source())
+        self.assertEqual('com.example.type2', message2.type())
+        self.assertEqual('1.0', message2.spec_version())
+        self.assertEqual('TOPIC_A', message2.topic())
+        self.assertEqual('pubsub', message2.pubsub_name())
+        self.assertEqual(b'{"a": 1}', message2.raw_data())
+        self.assertEqual('application/json', message2.data_content_type())
+        self.assertEqual({'a': 1}, message2.data())
 
     def test_subscribe_topic_early_close(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
@@ -284,8 +301,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         subscription.close()
 
         with self.assertRaises(StreamInactiveError):
-            subscription.next_message(timeout=5)
-
+            subscription.next_message()
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     def test_dapr_api_token_insertion(self):

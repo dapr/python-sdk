@@ -27,15 +27,22 @@ ERROR_CODE_DOES_NOT_EXIST = 'ERR_DOES_NOT_EXIST'
 class DaprInternalError(Exception):
     """DaprInternalError encapsulates all Dapr exceptions"""
 
-    def __init__(self, message: Optional[str], error_code: Optional[str] = ERROR_CODE_UNKNOWN,
-            raw_response_bytes: Optional[bytes] = None, ):
+    def __init__(
+        self,
+        message: Optional[str],
+        error_code: Optional[str] = ERROR_CODE_UNKNOWN,
+        raw_response_bytes: Optional[bytes] = None,
+    ):
         self._message = message
         self._error_code = error_code
         self._raw_response_bytes = raw_response_bytes
 
     def as_dict(self):
-        return {'message': self._message, 'errorCode': self._error_code,
-            'raw_response_bytes': self._raw_response_bytes, }
+        return {
+            'message': self._message,
+            'errorCode': self._error_code,
+            'raw_response_bytes': self._raw_response_bytes,
+        }
 
 
 class StatusDetails:
@@ -112,8 +119,12 @@ class DaprGrpcError(RpcError):
         return self._grpc_status
 
     def json(self):
-        error_details = {'status_code': self.code().name, 'message': self.details(),
-            'error_code': self.error_code(), 'details': self._details.as_dict(), }
+        error_details = {
+            'status_code': self.code().name,
+            'message': self.details(),
+            'error_code': self.error_code(),
+            'details': self._details.as_dict(),
+        }
         return json.dumps(error_details)
 
 
