@@ -24,9 +24,10 @@ from unittest.mock import patch
 
 from google.rpc import status_pb2, code_pb2
 
-from dapr.clients.exceptions import DaprGrpcError, StreamInactiveError
+from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
+from dapr.clients.grpc.subscription import StreamInactiveError
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
@@ -294,6 +295,10 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(b'{"a": 1}', message2.raw_data())
         self.assertEqual('application/json', message2.data_content_type())
         self.assertEqual({'a': 1}, message2.data())
+
+        # Third call with timeout
+        message3 = subscription.next_message(1)
+        self.assertIsNone(message3)
 
     def test_subscribe_topic_early_close(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')

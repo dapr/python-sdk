@@ -2,7 +2,6 @@ import json
 
 from grpc import RpcError, StatusCode, Call  # type: ignore
 
-from dapr.clients.exceptions import StreamInactiveError
 from dapr.clients.grpc._response import TopicEventResponse
 from dapr.clients.health import DaprHealth
 from dapr.proto import api_v1, appcallback_v1
@@ -95,6 +94,13 @@ class Subscription:
         self.start()
 
     def next_message(self, timeout=None):
+        """
+        Get the next message from the receive queue.
+        @param timeout: The time in seconds to wait for a message before returning None.
+                        If None, wait indefinitely.
+        @return: The next message from the queue,
+                 or None if no message is received within the timeout.
+        """
         msg = self.read_message_from_queue(self._receive_queue, timeout=timeout)
 
         if msg is None:
@@ -241,3 +247,7 @@ class SubscriptionMessage:
         except Exception as e:
             # Log or handle any unexpected exceptions
             print(f'Error parsing media type: {e}')
+
+
+class StreamInactiveError(Exception):
+    pass

@@ -132,7 +132,3 @@ def serialize_status_detail(status_detail):
     if not status_detail:
         return None
     return MessageToDict(status_detail, preserving_proto_field_name=True)
-
-
-class StreamInactiveError(Exception):
-    pass

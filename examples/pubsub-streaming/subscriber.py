@@ -1,4 +1,7 @@
+import time
+
 from dapr.clients import DaprClient
+from dapr.clients.grpc.subscription import StreamInactiveError
 
 
 def process_message(message):
@@ -14,8 +17,14 @@ def main():
         )
 
         try:
-            for i in range(5):
-                message = subscription.next_message()
+            i = 0
+            while i < 5:
+                try:
+                    message = subscription.next_message(1)
+                except StreamInactiveError as e:
+                    print('Stream is inactive. Retrying...')
+                    time.sleep(5)
+                    continue
                 if message is None:
                     print('No message received within timeout period.')
                     continue
@@ -29,6 +38,8 @@ def main():
                     subscription.respond_retry(message)
                 elif response_status == 'drop':
                     subscription.respond_drop(message)
+
+                i += 1
 
         finally:
             subscription.close()
