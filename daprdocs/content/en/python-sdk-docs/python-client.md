@@ -263,27 +263,37 @@ When done using the subscription, you should call the `close` method to stop the
 
 ```python
     with DaprClient() as client:
-        subscription = client.subscribe(
-            pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
-        )
-    
-        try:
-            for i in range(5):
+    subscription = client.subscribe(
+        pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
+    )
+
+    try:
+        i = 0
+        while i < 5:
+            try:
                 message = subscription.next_message(1)
-                if message is None:
-                    print('No message received within timeout period.')
-                    continue
-    
-                # Process the message
-                # ...
-                
-                # Return the status based on the processing result
+            except StreamInactiveError as e:
+                print('Stream is inactive. Retrying...')
+                time.sleep(5)
+                continue
+            if message is None:
+                print('No message received within timeout period.')
+                continue
+
+            # Process the message
+            response_status = process_message(message)
+
+            if response_status == 'success':
                 subscription.respond_success(message)
-                # or subscription.respond_retry(message)
-                # or subscription.respond_drop(message)
-    
-        finally:
-            subscription.close()
+            elif response_status == 'retry':
+                subscription.respond_retry(message)
+            elif response_status == 'drop':
+                subscription.respond_drop(message)
+
+            i += 1
+
+    finally:
+        subscription.close()
 ```
 
 ### Interact with output bindings
