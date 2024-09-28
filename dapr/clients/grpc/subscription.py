@@ -177,7 +177,8 @@ class Subscription:
 
 
 class SubscriptionMessage:
-    def __init__(self, msg):
+
+    def __init__(self, msg: TopicEventRequest):
         self._id = msg.id
         self._source = msg.source
         self._type = msg.type
@@ -188,6 +189,11 @@ class SubscriptionMessage:
         self._raw_data = msg.data
         self._extensions = msg.extensions
         self._data = None
+        try:
+            self._extensions = MessageToDict(msg.extensions)
+        except Exception as e:
+            self._extensions = {}
+            print(f'Error parsing extensions: {e}')
 
         # Parse the content based on its media type
         if self._raw_data and len(self._raw_data) > 0:
@@ -235,7 +241,7 @@ class SubscriptionMessage:
                 try:
                     self._data = self._raw_data.decode('utf-8')
                 except UnicodeDecodeError:
-                    pass
+                    print(f'Error decoding message data from topic {self._topic} as UTF-8')
             elif self._data_content_type.startswith(
                 'application/'
             ) and self._data_content_type.endswith('+json'):
