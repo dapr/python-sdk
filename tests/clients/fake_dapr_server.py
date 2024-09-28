@@ -3,7 +3,8 @@ import json
 
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
-from google.protobuf import empty_pb2
+from google.protobuf import empty_pb2, struct_pb2
+from google.rpc import status_pb2, code_pb2
 from grpc_status import rpc_status
 
 from dapr.clients.grpc._helpers import to_bytes
@@ -182,29 +183,38 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             initial_response=api_v1.SubscribeTopicEventsResponseInitialAlpha1()
         )
 
-        msg2 = appcallback_v1.TopicEventRequest(
-            id='123',
+        extensions = struct_pb2.Struct()
+        extensions["field1"] = "value1"
+        extensions["field2"] = 42
+        extensions["field3"] = True
+
+        msg1 = appcallback_v1.TopicEventRequest(
+            id='111',
             topic='TOPIC_A',
             data=b'hello2',
             source='app1',
             data_content_type='text/plain',
             type='com.example.type2',
             pubsub_name='pubsub',
-            spec_version='1.0',
+            spec_version='1.0', extensions=extensions
         )
-        yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg2)
+        yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg1)
 
-        msg3 = appcallback_v1.TopicEventRequest(
-            id='456',
+        msg2 = appcallback_v1.TopicEventRequest(
+            id='222',
             topic='TOPIC_A',
             data=b'{"a": 1}',
             source='app1',
             data_content_type='application/json',
             type='com.example.type2',
             pubsub_name='pubsub',
-            spec_version='1.0',
+            spec_version='1.0', extensions=extensions
         )
-        yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg3)
+        yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg2)
+
+        # On the third message simulate a disconnection
+        status = status_pb2.Status(code=code_pb2.UNAVAILABLE, message='Simulated disconnection')
+        context.abort_with_status(rpc_status.to_status(status))
 
     def SaveState(self, request, context):
         self.check_for_exception(context)

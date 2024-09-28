@@ -482,20 +482,30 @@ class DaprGrpcClient:
 
         return DaprResponse(call.initial_metadata())
 
-    def subscribe(self, pubsub_name, topic, metadata=None, dead_letter_topic=None):
+    def subscribe(self,
+                  pubsub_name: str,
+                  topic: str,
+                  metadata: Optional[MetadataTuple] = None,
+                  dead_letter_topic: Optional[str] = None,
+                  timeout: Optional[int] = None
+    ) -> Subscription:
         """
         Subscribe to a topic with a bidirectional stream
 
         Args:
             pubsub_name (str): The name of the pubsub component.
             topic (str): The name of the topic.
-            metadata (Optional[Dict]): Additional metadata for the subscription.
+            metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+            timeout (Optional[int]): The time in seconds to wait for a message before returning None
+                                     If not set, the `next_message` method will block indefinitely
+                                     until a message is received.
 
         Returns:
             Subscription: The Subscription object managing the stream.
         """
-        subscription = Subscription(self._stub, pubsub_name, topic, metadata, dead_letter_topic)
+        subscription = Subscription(self._stub, pubsub_name, topic, metadata, dead_letter_topic,
+                                    timeout)
         subscription.start()
         return subscription
 

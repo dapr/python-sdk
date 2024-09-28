@@ -13,7 +13,7 @@ def process_message(message):
 def main():
     with DaprClient() as client:
         subscription = client.subscribe(
-            pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
+            pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD', timeout=2
         )
 
         try:
@@ -21,7 +21,7 @@ def main():
             while i < 5:
                 i += 1
                 try:
-                    message = subscription.next_message(1)
+                    message = subscription.next_message()
                 except StreamInactiveError as e:
                     print('Stream is inactive. Retrying...')
                     time.sleep(5)
