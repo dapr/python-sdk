@@ -19,6 +19,7 @@ def main():
         try:
             i = 0
             while i < 5:
+                i += 1
                 try:
                     message = subscription.next_message(1)
                 except StreamInactiveError as e:
@@ -39,7 +40,6 @@ def main():
                 elif response_status == 'drop':
                     subscription.respond_drop(message)
 
-                i += 1
 
         finally:
             subscription.close()
