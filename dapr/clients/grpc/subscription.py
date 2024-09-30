@@ -8,24 +8,27 @@ from dapr.clients.health import DaprHealth
 from dapr.proto import api_v1, appcallback_v1
 import queue
 import threading
-from typing import Optional
+from typing import Optional, Union
 
 from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 
 
 class Subscription:
-    def __init__(self, stub, pubsub_name, topic, metadata=None, dead_letter_topic=None, timeout=None):
+    SUCCESS = TopicEventResponse('success').status
+    RETRY = TopicEventResponse('retry').status
+    DROP = TopicEventResponse('drop').status
+
+    def __init__(self, stub, pubsub_name, topic, metadata=None, dead_letter_topic=None):
         self._stub = stub
-        self.pubsub_name = pubsub_name
-        self.topic = topic
-        self.metadata = metadata or {}
-        self.dead_letter_topic = dead_letter_topic or ''
+        self._pubsub_name = pubsub_name
+        self._topic = topic
+        self._metadata = metadata or {}
+        self._dead_letter_topic = dead_letter_topic or ''
         self._stream: Optional[Call] = None
         self._response_thread: Optional[threading.Thread] = None
         self._send_queue: queue.Queue = queue.Queue()
         self._stream_active: bool = False
         self._stream_lock = threading.Lock()  # Protects _stream_active
-        self._timeout = timeout
 
     def start(self):
         def outgoing_request_iterator():
@@ -37,25 +40,27 @@ class Subscription:
                 # Send InitialRequest needed to establish the stream
                 initial_request = api_v1.SubscribeTopicEventsRequestAlpha1(
                     initial_request=api_v1.SubscribeTopicEventsRequestInitialAlpha1(
-                        pubsub_name=self.pubsub_name, topic=self.topic,
-                        metadata=self.metadata or {},
-                        dead_letter_topic=self.dead_letter_topic or '', ))
+                        pubsub_name=self._pubsub_name,
+                        topic=self._topic,
+                        metadata=self._metadata or {},
+                        dead_letter_topic=self._dead_letter_topic or '',
+                    )
+                )
                 yield initial_request
 
                 # Start sending back acknowledgement messages from the send queue
-                while self._is_stream_active():  # TODO check if this is correct
+                while self._is_stream_active():
                     try:
                         # Wait for responses/acknowledgements to send from the send queue.
-                        response = self._send_queue.get()  # TODO check timeout
+                        response = self._send_queue.get()
                         yield response
                     except queue.Empty:
                         continue
             except Exception as e:
-                raise Exception(f'Error in request iterator: {e}')
+                raise Exception(f'Error while writing to stream: {e}')
 
         # Create the bidirectional stream
-        self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator(),
-                                                             timeout=self._timeout)
+        self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
         self._set_stream_active()
         next(self._stream)  # discard the initial message
 
@@ -72,7 +77,7 @@ class Subscription:
                  or None if no message is received within the timeout.
         """
         if not self._is_stream_active():
-            raise StreamInactiveError("Stream is not active")
+            raise StreamInactiveError('Stream is not active')
 
         try:
             # Read the next message from the stream directly
@@ -84,15 +89,14 @@ class Subscription:
         except RpcError as e:
             if e.code() == StatusCode.UNAVAILABLE:
                 print(
-                    f'gRPC error while reading from stream: {e.details()}, Status Code: {e.code()}')
+                    f'gRPC error while reading from stream: {e.details()}, Status Code: {e.code()}'
+                )
                 self.reconnect_stream()
-            elif e.code() == StatusCode.DEADLINE_EXCEEDED:
-                # A message hasn't been received on the stream in `self._timeout` seconds
-                # so return control back to app
-                return None
             elif e.code() != StatusCode.CANCELLED:
-                raise Exception(f'gRPC error while reading from subscription stream: {e.details()} '
-                       f'Status Code: {e.code()}')
+                raise Exception(
+                    f'gRPC error while reading from subscription stream: {e.details()} '
+                    f'Status Code: {e.code()}'
+                )
         except Exception as e:
             raise Exception(f'Error while fetching message: {e}')
 
@@ -109,16 +113,16 @@ class Subscription:
                 raise StreamInactiveError('Stream is not active')
             self._send_queue.put(msg)
         except Exception as e:
-            print(f'Exception in send_message: {e}')
+            print(f"Can't send message on inactive stream: {e}")
 
     def respond_success(self, message):
-        self._respond(message, TopicEventResponse('success').status)
+        self._respond(message, self.SUCCESS)
 
     def respond_retry(self, message):
-        self._respond(message, TopicEventResponse('retry').status)
+        self._respond(message, self.RETRY)
 
     def respond_drop(self, message):
-        self._respond(message, TopicEventResponse('drop').status)
+        self._respond(message, self.DROP)
 
     def _set_stream_active(self):
         with self._stream_lock:
@@ -133,14 +137,10 @@ class Subscription:
             return self._stream_active
 
     def close(self):
-        if not self._is_stream_active():
-            return
-
-        self._set_stream_inactive()
-
         if self._stream:
             try:
                 self._stream.cancel()
+                self._set_stream_inactive()
             except RpcError as e:
                 if e.code() != StatusCode.CANCELLED:
                     raise Exception(f'Error while closing stream: {e}')
@@ -149,18 +149,17 @@ class Subscription:
 
 
 class SubscriptionMessage:
-
     def __init__(self, msg: TopicEventRequest):
-        self._id = msg.id
-        self._source = msg.source
-        self._type = msg.type
-        self._spec_version = msg.spec_version
-        self._data_content_type = msg.data_content_type
-        self._topic = msg.topic
-        self._pubsub_name = msg.pubsub_name
-        self._raw_data = msg.data
-        self._extensions = msg.extensions
-        self._data = None
+        self._id: str = msg.id
+        self._source: str = msg.source
+        self._type: str = msg.type
+        self._spec_version: str = msg.spec_version
+        self._data_content_type: str = msg.data_content_type
+        self._topic: str = msg.topic
+        self._pubsub_name: str = msg.pubsub_name
+        self._raw_data: bytes = msg.data
+        self._data: Optional[Union[dict, str]] = None
+
         try:
             self._extensions = MessageToDict(msg.extensions)
         except Exception as e:
@@ -207,6 +206,7 @@ class SubscriptionMessage:
                 try:
                     self._data = json.loads(self._raw_data)
                 except json.JSONDecodeError:
+                    print(f'Error parsing json message data from topic {self._topic}')
                     pass  # If JSON parsing fails, keep `data` as None
             elif self._data_content_type == 'text/plain':
                 # Assume UTF-8 encoding
@@ -221,6 +221,7 @@ class SubscriptionMessage:
                 try:
                     self._data = json.loads(self._raw_data)
                 except json.JSONDecodeError:
+                    print(f'Error parsing json message data from topic {self._topic}')
                     pass  # If JSON parsing fails, keep `data` as None
         except Exception as e:
             # Log or handle any unexpected exceptions

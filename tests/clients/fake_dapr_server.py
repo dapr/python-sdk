@@ -184,9 +184,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         )
 
         extensions = struct_pb2.Struct()
-        extensions["field1"] = "value1"
-        extensions["field2"] = 42
-        extensions["field3"] = True
+        extensions['field1'] = 'value1'
+        extensions['field2'] = 42
+        extensions['field3'] = True
 
         msg1 = appcallback_v1.TopicEventRequest(
             id='111',
@@ -196,7 +196,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             data_content_type='text/plain',
             type='com.example.type2',
             pubsub_name='pubsub',
-            spec_version='1.0', extensions=extensions
+            spec_version='1.0',
+            extensions=extensions,
         )
         yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg1)
 
@@ -208,7 +209,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             data_content_type='application/json',
             type='com.example.type2',
             pubsub_name='pubsub',
-            spec_version='1.0', extensions=extensions
+            spec_version='1.0',
+            extensions=extensions,
         )
         yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg2)
 
