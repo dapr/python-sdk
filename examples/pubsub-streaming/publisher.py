@@ -28,7 +28,7 @@ with DaprClient() as d:
             topic_name='TOPIC_A',
             data=json.dumps(req_data),
             data_content_type='application/json',
-            publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'}
+            publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'},
         )
 
         # Print the request
