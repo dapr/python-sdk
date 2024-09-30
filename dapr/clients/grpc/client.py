@@ -86,7 +86,6 @@ from dapr.clients.grpc._response import (
     StartWorkflowResponse,
     EncryptResponse,
     DecryptResponse,
-    TopicEventResponseStatus,
     TopicEventResponse,
 )
 
