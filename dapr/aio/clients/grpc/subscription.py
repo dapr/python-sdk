@@ -68,14 +68,13 @@ class Subscription:
                       f'Attempting to reconnect...')
                 await self.reconnect_stream()
             elif e.code() != StatusCode.CANCELLED:
-                raise Exception(f'gRPC error while reading from subscription stream: {e.details()} '
-                                f'Status Code: {e.code()}')
+                raise Exception(f'gRPC error while reading from subscription stream: {e} ')
         except Exception as e:
             raise Exception(f'Error while fetching message: {e}')
 
         return None
 
-    async def _respond(self, message, status):
+    async def respond(self, message, status):
         try:
             status = appcallback_v1.TopicEventResponse(status=status.value)
             response = api_v1.SubscribeTopicEventsRequestProcessedAlpha1(
@@ -86,16 +85,16 @@ class Subscription:
                 raise StreamInactiveError('Stream is not active')
             await self._send_queue.put(msg)
         except Exception as e:
-            print(f"Can't send message on inactive stream: {e}")
+            print(f"Can't send message: {e}")
 
     async def respond_success(self, message):
-        await self._respond(message, TopicEventResponse('success').status)
+        await self.respond(message, TopicEventResponse('success').status)
 
     async def respond_retry(self, message):
-        await self._respond(message, TopicEventResponse('retry').status)
+        await self.respond(message, TopicEventResponse('retry').status)
 
     async def respond_drop(self, message):
-        await self._respond(message, TopicEventResponse('drop').status)
+        await self.respond(message, TopicEventResponse('drop').status)
 
     async def close(self):
         if self._stream:

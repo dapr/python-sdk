@@ -36,13 +36,9 @@ from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc._response import (
-    ConfigurationItem,
-    ConfigurationResponse,
-    ConfigurationWatcher,
-    UnlockResponseStatus,
-    WorkflowRuntimeStatus,
-)
+from dapr.clients.grpc._response import (ConfigurationItem, ConfigurationResponse,
+                                         ConfigurationWatcher, UnlockResponseStatus,
+                                         WorkflowRuntimeStatus, TopicEventResponse, )
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -376,7 +372,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
             counter += 1
 
-            return Subscription.SUCCESS
+            return TopicEventResponse("success")
 
         close_fn = dapr.subscribe_with_handler(
             pubsub_name='pubsub', topic='example', handler_fn=handler
