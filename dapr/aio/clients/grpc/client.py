@@ -515,7 +515,7 @@ class DaprGrpcClientAsync:
                     if message:
                         response = await handler_fn(message)
                         if response:
-                            await subscription._respond(message, response.status)
+                            await subscription.respond(message, response.status)
                     else:
                         continue
                 except StreamInactiveError:
