@@ -1,7 +1,7 @@
 import time
 
 from dapr.clients import DaprClient
-from dapr.clients.grpc.subscription import Subscription
+from dapr.clients.grpc._response import TopicEventResponse
 
 counter = 0
 
@@ -11,7 +11,7 @@ def process_message(message):
     global counter
     counter += 1
     print(f'Processing message: {message.data()} from {message.topic()}...')
-    return Subscription.SUCCESS
+    return TopicEventResponse('success')
 
 
 def main():

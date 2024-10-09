@@ -523,7 +523,7 @@ class DaprGrpcClient:
         Args:
             pubsub_name (str): The name of the pubsub component.
             topic (str): The name of the topic.
-            handler_fn (Callable[..., TopicEventResponseStatus]): The function to call when a message is received.
+            handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
             timeout (Optional[int]): The time in seconds to wait for a message before returning None
@@ -540,7 +540,7 @@ class DaprGrpcClient:
                         # Process the message
                         response = handler_fn(message)
                         if response:
-                            subscription._respond(message, response)
+                            subscription.respond(message, response.status)
                     else:
                         # No message received
                         continue

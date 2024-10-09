@@ -216,7 +216,7 @@ with DaprClient() as d:
 - For a full list of state store query options visit [How-To: Query state]({{< ref howto-state-query-api.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store_query) for code samples and instructions to try out state store querying.
 
-### Publish & subscribe to messages
+### Publish & subscribe
 
 #### Publish messages
 
@@ -269,14 +269,11 @@ subscription and stop receiving messages.
 The `subscribe_with_handler` method accepts a callback function that is executed for each message
 received from the stream.
 It runs in a separate thread, so it doesn't block the main thread. The callback should return a
-`TopicEventResponseStatus`, indicating whether the message was processed successfully, should be
-retried, or should be discarded. You can return these statuses using the `Subscription.SUCCESS`,
-`Subscription.RETRY`, and `Subscription.DROP` class properties. The method will automatically manage
-message acknowledgments based on the returned status. When done, the subscription will automatically
-close, and you don't need to manually stop it.
-
-The call to `subscribe_with_handler` method returns a close function, which should be called to
-terminate the subscription when you're done.
+`TopicEventResponse` (ex. `TopicEventResponse('success')`), indicating whether the message was
+processed successfully, should be retried, or should be discarded. The method will automatically
+manage message acknowledgements based on the returned status. The call to `subscribe_with_handler`
+method returns a close function, which should be called to terminate the subscription when you're
+done.
 
 Here's an example of using the `subscribe` method: 
 
@@ -343,7 +340,7 @@ And here's an example of using the `subscribe_with_handler` method:
 import time
 
 from dapr.clients import DaprClient
-from dapr.clients.grpc.subscription import Subscription
+from dapr.clients.grpc._response import TopicEventResponse
 
 counter = 0
 
@@ -353,7 +350,7 @@ def process_message(message):
     global counter
     counter += 1
     print(f'Processing message: {message.data()} from {message.topic()}...')
-    return Subscription.SUCCESS
+    return TopicEventResponse('success')
 
 
 def main():
@@ -376,6 +373,9 @@ if __name__ == '__main__':
     main()
 ```
 
+- For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/pubsub-simple) for code samples and instructions to try out streaming pub/sub.
+
 ### Interact with output bindings
 
 ```python
@@ -386,7 +386,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on output bindings visit [How-To: Use bindings]({{< ref howto-bindings.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-binding) for code samples and instructions to try out output bindings.
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/invoke-binding) for code samples and instructions to try out output bindings.
 
 ### Retrieve secrets
 
