@@ -116,6 +116,103 @@ dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --e
 
 <!-- END_STEP --> 
 
+## Run async example where users control reading messages off the stream
+
+Run the following command in a terminal/command prompt:
+
+<!-- STEP
+name: Run subscriber
+expected_stdout_lines:
+    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Closing subscription..."
+output_match_mode: substring
+background: true
+match_order: none
+sleep: 3 
+-->
+
+```bash
+# 1. Start Subscriber
+dapr run --app-id python-subscriber --app-protocol grpc python3 async-subscriber.py
+```
+
+<!-- END_STEP -->
+
+In another terminal/command prompt run:
+
+<!-- STEP
+name: Run publisher
+expected_stdout_lines:
+  - "== APP == {'id': 1, 'message': 'hello world'}"
+  - "== APP == {'id': 2, 'message': 'hello world'}"
+  - "== APP == {'id': 3, 'message': 'hello world'}"
+  - "== APP == {'id': 4, 'message': 'hello world'}"
+  - "== APP == {'id': 5, 'message': 'hello world'}"
+background: true
+output_match_mode: substring
+sleep: 15
+-->
+
+```bash
+# 2. Start Publisher
+dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check python3 publisher.py
+```
+
+<!-- END_STEP -->
+
+## Run async example with a handler function
+
+Run the following command in a terminal/command prompt:
+
+<!-- STEP
+name: Run subscriber
+expected_stdout_lines:
+    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Closing subscription..."
+output_match_mode: substring
+background: true
+match_order: none
+sleep: 3 
+-->
+
+```bash
+# 1. Start Subscriber
+dapr run --app-id python-subscriber --app-protocol grpc python3 async-subscriber-handler.py
+```
+
+<!-- END_STEP -->
+
+In another terminal/command prompt run:
+
+<!-- STEP
+name: Run publisher
+expected_stdout_lines:
+  - "== APP == {'id': 1, 'message': 'hello world'}"
+  - "== APP == {'id': 2, 'message': 'hello world'}"
+  - "== APP == {'id': 3, 'message': 'hello world'}"
+  - "== APP == {'id': 4, 'message': 'hello world'}"
+  - "== APP == {'id': 5, 'message': 'hello world'}"
+background: true
+output_match_mode: substring
+sleep: 15
+-->
+
+```bash
+# 2. Start Publisher
+dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check python3 publisher.py
+```
+
+<!-- END_STEP --> 
+
+
 ## Cleanup
 
 
