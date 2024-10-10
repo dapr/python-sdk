@@ -20,7 +20,7 @@ In the s`subscriber.py` file it creates a subscriber object that can call the `n
 pip3 install dapr
 ```
 
-## Run example where users control reading messages off the stream
+## Run async example where users control reading messages off the stream
 
 Run the following command in a terminal/command prompt:
 
@@ -68,7 +68,7 @@ dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --e
 
 <!-- END_STEP -->
 
-## Run example with a handler function
+## Run async example with a handler function
 
 Run the following command in a terminal/command prompt:
 
@@ -115,6 +115,7 @@ dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --e
 ```
 
 <!-- END_STEP --> 
+
 
 ## Cleanup
 
