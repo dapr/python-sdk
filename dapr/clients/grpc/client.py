@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import threading
 import time
 import socket
 import json
@@ -41,6 +41,7 @@ from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
@@ -85,6 +86,7 @@ from dapr.clients.grpc._response import (
     StartWorkflowResponse,
     EncryptResponse,
     DecryptResponse,
+    TopicEventResponse,
 )
 
 
@@ -480,6 +482,78 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
         return DaprResponse(call.initial_metadata())
+
+    def subscribe(
+        self,
+        pubsub_name: str,
+        topic: str,
+        metadata: Optional[MetadataTuple] = None,
+        dead_letter_topic: Optional[str] = None,
+    ) -> Subscription:
+        """
+        Subscribe to a topic with a bidirectional stream
+
+        Args:
+            pubsub_name (str): The name of the pubsub component.
+            topic (str): The name of the topic.
+            metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
+            dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+            timeout (Optional[int]): The time in seconds to wait for a message before returning None
+                                     If not set, the `next_message` method will block indefinitely
+                                     until a message is received.
+
+        Returns:
+            Subscription: The Subscription object managing the stream.
+        """
+        subscription = Subscription(self._stub, pubsub_name, topic, metadata, dead_letter_topic)
+        subscription.start()
+        return subscription
+
+    def subscribe_with_handler(
+        self,
+        pubsub_name: str,
+        topic: str,
+        handler_fn: Callable[..., TopicEventResponse],
+        metadata: Optional[MetadataTuple] = None,
+        dead_letter_topic: Optional[str] = None,
+    ) -> Callable:
+        """
+        Subscribe to a topic with a bidirectional stream and a message handler function
+
+        Args:
+            pubsub_name (str): The name of the pubsub component.
+            topic (str): The name of the topic.
+            handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
+            metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
+            dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+            timeout (Optional[int]): The time in seconds to wait for a message before returning None
+                                     If not set, the `next_message` method will block indefinitely
+                                     until a message is received.
+        """
+        subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
+
+        def stream_messages(sub):
+            while True:
+                try:
+                    message = sub.next_message()
+                    if message:
+                        # Process the message
+                        response = handler_fn(message)
+                        if response:
+                            subscription.respond(message, response.status)
+                    else:
+                        # No message received
+                        continue
+                except StreamInactiveError:
+                    break
+
+        def close_subscription():
+            subscription.close()
+
+        streaming_thread = threading.Thread(target=stream_messages, args=(subscription,))
+        streaming_thread.start()
+
+        return close_subscription
 
     def get_state(
         self,

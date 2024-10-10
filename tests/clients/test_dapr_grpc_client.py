@@ -16,6 +16,7 @@ limitations under the License.
 import json
 import socket
 import tempfile
+import time
 import unittest
 import uuid
 import asyncio
@@ -27,6 +28,7 @@ from google.rpc import status_pb2, code_pb2
 from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
+from dapr.clients.grpc.subscription import StreamInactiveError
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
@@ -40,6 +42,7 @@ from dapr.clients.grpc._response import (
     ConfigurationWatcher,
     UnlockResponseStatus,
     WorkflowRuntimeStatus,
+    TopicEventResponse,
 )
 
 
@@ -261,6 +264,128 @@ class DaprGrpcClientTests(unittest.TestCase):
                 topic_name='example',
                 data=111,
             )
+
+    def test_subscribe_topic(self):
+        # The fake server we're using sends two messages and then closes the stream
+        # The client should be able to read both messages, handle the stream closure and reconnect
+        # which will result in reading the same two messages again.
+        # That's why message 3 should be the same as message 1
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
+
+        # First message - text
+        message1 = subscription.next_message()
+        subscription.respond_success(message1)
+
+        self.assertEqual('111', message1.id())
+        self.assertEqual('app1', message1.source())
+        self.assertEqual('com.example.type2', message1.type())
+        self.assertEqual('1.0', message1.spec_version())
+        self.assertEqual('text/plain', message1.data_content_type())
+        self.assertEqual('TOPIC_A', message1.topic())
+        self.assertEqual('pubsub', message1.pubsub_name())
+        self.assertEqual(b'hello2', message1.raw_data())
+        self.assertEqual('text/plain', message1.data_content_type())
+        self.assertEqual('hello2', message1.data())
+
+        # Second message - json
+        message2 = subscription.next_message()
+        subscription.respond_success(message2)
+
+        self.assertEqual('222', message2.id())
+        self.assertEqual('app1', message2.source())
+        self.assertEqual('com.example.type2', message2.type())
+        self.assertEqual('1.0', message2.spec_version())
+        self.assertEqual('TOPIC_A', message2.topic())
+        self.assertEqual('pubsub', message2.pubsub_name())
+        self.assertEqual(b'{"a": 1}', message2.raw_data())
+        self.assertEqual('application/json', message2.data_content_type())
+        self.assertEqual({'a': 1}, message2.data())
+
+        # On this call the stream will be closed and return an error, so the message will be none
+        # but the client will try to reconnect
+        message3 = subscription.next_message()
+        self.assertIsNone(message3)
+
+        # The client already reconnected and will start reading the messages again
+        # Since we're working with a fake server, the messages will be the same
+        message4 = subscription.next_message()
+        subscription.respond_success(message4)
+        self.assertEqual('111', message4.id())
+        self.assertEqual('app1', message4.source())
+        self.assertEqual('com.example.type2', message4.type())
+        self.assertEqual('1.0', message4.spec_version())
+        self.assertEqual('text/plain', message4.data_content_type())
+        self.assertEqual('TOPIC_A', message4.topic())
+        self.assertEqual('pubsub', message4.pubsub_name())
+        self.assertEqual(b'hello2', message4.raw_data())
+        self.assertEqual('text/plain', message4.data_content_type())
+        self.assertEqual('hello2', message4.data())
+
+        subscription.close()
+
+    def test_subscribe_topic_early_close(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
+        subscription.close()
+
+        with self.assertRaises(StreamInactiveError):
+            subscription.next_message()
+
+    def test_subscribe_topic_with_handler(self):
+        # The fake server we're using sends two messages and then closes the stream
+        # The client should be able to read both messages, handle the stream closure and reconnect
+        # which will result in reading the same two messages again.
+        # That's why message 3 should be the same as message 1
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        counter = 0
+
+        def handler(message):
+            nonlocal counter
+            if counter == 0:
+                self.assertEqual('111', message.id())
+                self.assertEqual('app1', message.source())
+                self.assertEqual('com.example.type2', message.type())
+                self.assertEqual('1.0', message.spec_version())
+                self.assertEqual('text/plain', message.data_content_type())
+                self.assertEqual('TOPIC_A', message.topic())
+                self.assertEqual('pubsub', message.pubsub_name())
+                self.assertEqual(b'hello2', message.raw_data())
+                self.assertEqual('text/plain', message.data_content_type())
+                self.assertEqual('hello2', message.data())
+            elif counter == 1:
+                self.assertEqual('222', message.id())
+                self.assertEqual('app1', message.source())
+                self.assertEqual('com.example.type2', message.type())
+                self.assertEqual('1.0', message.spec_version())
+                self.assertEqual('TOPIC_A', message.topic())
+                self.assertEqual('pubsub', message.pubsub_name())
+                self.assertEqual(b'{"a": 1}', message.raw_data())
+                self.assertEqual('application/json', message.data_content_type())
+                self.assertEqual({'a': 1}, message.data())
+            elif counter == 2:
+                self.assertEqual('111', message.id())
+                self.assertEqual('app1', message.source())
+                self.assertEqual('com.example.type2', message.type())
+                self.assertEqual('1.0', message.spec_version())
+                self.assertEqual('text/plain', message.data_content_type())
+                self.assertEqual('TOPIC_A', message.topic())
+                self.assertEqual('pubsub', message.pubsub_name())
+                self.assertEqual(b'hello2', message.raw_data())
+                self.assertEqual('text/plain', message.data_content_type())
+                self.assertEqual('hello2', message.data())
+
+            counter += 1
+
+            return TopicEventResponse('success')
+
+        close_fn = dapr.subscribe_with_handler(
+            pubsub_name='pubsub', topic='example', handler_fn=handler
+        )
+
+        while counter < 3:
+            time.sleep(0.1)  # Use sleep to prevent a busy-wait loop
+        close_fn()
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     def test_dapr_api_token_insertion(self):

@@ -737,33 +737,33 @@ class SubscribeTopicEventsRequestAlpha1(google.protobuf.message.Message):
     """SubscribeTopicEventsRequestAlpha1 is a message containing the details for
     subscribing to a topic via streaming.
     The first message must always be the initial request. All subsequent
-    messages must be event responses.
+    messages must be event processed responses.
     """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     INITIAL_REQUEST_FIELD_NUMBER: builtins.int
-    EVENT_RESPONSE_FIELD_NUMBER: builtins.int
+    EVENT_PROCESSED_FIELD_NUMBER: builtins.int
     @property
-    def initial_request(self) -> global___SubscribeTopicEventsInitialRequestAlpha1: ...
+    def initial_request(self) -> global___SubscribeTopicEventsRequestInitialAlpha1: ...
     @property
-    def event_response(self) -> global___SubscribeTopicEventsResponseAlpha1: ...
+    def event_processed(self) -> global___SubscribeTopicEventsRequestProcessedAlpha1: ...
     def __init__(
         self,
         *,
-        initial_request: global___SubscribeTopicEventsInitialRequestAlpha1 | None = ...,
-        event_response: global___SubscribeTopicEventsResponseAlpha1 | None = ...,
+        initial_request: global___SubscribeTopicEventsRequestInitialAlpha1 | None = ...,
+        event_processed: global___SubscribeTopicEventsRequestProcessedAlpha1 | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["event_response", b"event_response", "initial_request", b"initial_request", "subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["event_response", b"event_response", "initial_request", b"initial_request", "subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing.Literal["subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]) -> typing.Literal["initial_request", "event_response"] | None: ...
+    def HasField(self, field_name: typing.Literal["event_processed", b"event_processed", "initial_request", b"initial_request", "subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["event_processed", b"event_processed", "initial_request", b"initial_request", "subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing.Literal["subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]) -> typing.Literal["initial_request", "event_processed"] | None: ...
 
 global___SubscribeTopicEventsRequestAlpha1 = SubscribeTopicEventsRequestAlpha1
 
 @typing.final
-class SubscribeTopicEventsInitialRequestAlpha1(google.protobuf.message.Message):
-    """SubscribeTopicEventsInitialRequestAlpha1 is the initial message containing the
-    details for subscribing to a topic via streaming.
+class SubscribeTopicEventsRequestInitialAlpha1(google.protobuf.message.Message):
+    """SubscribeTopicEventsRequestInitialAlpha1 is the initial message containing
+    the details for subscribing to a topic via streaming.
     """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -816,11 +816,11 @@ class SubscribeTopicEventsInitialRequestAlpha1(google.protobuf.message.Message):
     def ClearField(self, field_name: typing.Literal["_dead_letter_topic", b"_dead_letter_topic", "dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "topic", b"topic"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["_dead_letter_topic", b"_dead_letter_topic"]) -> typing.Literal["dead_letter_topic"] | None: ...
 
-global___SubscribeTopicEventsInitialRequestAlpha1 = SubscribeTopicEventsInitialRequestAlpha1
+global___SubscribeTopicEventsRequestInitialAlpha1 = SubscribeTopicEventsRequestInitialAlpha1
 
 @typing.final
-class SubscribeTopicEventsResponseAlpha1(google.protobuf.message.Message):
-    """SubscribeTopicEventsResponseAlpha1 is a message containing the result of a
+class SubscribeTopicEventsRequestProcessedAlpha1(google.protobuf.message.Message):
+    """SubscribeTopicEventsRequestProcessedAlpha1 is the message containing the
     subscription to a topic.
     """
 
@@ -843,7 +843,47 @@ class SubscribeTopicEventsResponseAlpha1(google.protobuf.message.Message):
     def HasField(self, field_name: typing.Literal["status", b"status"]) -> builtins.bool: ...
     def ClearField(self, field_name: typing.Literal["id", b"id", "status", b"status"]) -> None: ...
 
+global___SubscribeTopicEventsRequestProcessedAlpha1 = SubscribeTopicEventsRequestProcessedAlpha1
+
+@typing.final
+class SubscribeTopicEventsResponseAlpha1(google.protobuf.message.Message):
+    """SubscribeTopicEventsResponseAlpha1 is a message returned from daprd
+    when subscribing to a topic via streaming.
+    """
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    INITIAL_RESPONSE_FIELD_NUMBER: builtins.int
+    EVENT_MESSAGE_FIELD_NUMBER: builtins.int
+    @property
+    def initial_response(self) -> global___SubscribeTopicEventsResponseInitialAlpha1: ...
+    @property
+    def event_message(self) -> dapr.proto.runtime.v1.appcallback_pb2.TopicEventRequest: ...
+    def __init__(
+        self,
+        *,
+        initial_response: global___SubscribeTopicEventsResponseInitialAlpha1 | None = ...,
+        event_message: dapr.proto.runtime.v1.appcallback_pb2.TopicEventRequest | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["event_message", b"event_message", "initial_response", b"initial_response", "subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["event_message", b"event_message", "initial_response", b"initial_response", "subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing.Literal["subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]) -> typing.Literal["initial_response", "event_message"] | None: ...
+
 global___SubscribeTopicEventsResponseAlpha1 = SubscribeTopicEventsResponseAlpha1
+
+@typing.final
+class SubscribeTopicEventsResponseInitialAlpha1(google.protobuf.message.Message):
+    """SubscribeTopicEventsResponseInitialAlpha1 is the initial response from daprd
+    when subscribing to a topic.
+    """
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+global___SubscribeTopicEventsResponseInitialAlpha1 = SubscribeTopicEventsResponseInitialAlpha1
 
 @typing.final
 class InvokeBindingRequest(google.protobuf.message.Message):
@@ -3088,7 +3128,9 @@ global___ShutdownRequest = ShutdownRequest
 
 @typing.final
 class Job(google.protobuf.message.Message):
-    """Job is the definition of a job."""
+    """Job is the definition of a job. At least one of schedule or due_time must be
+    provided but can also be provided together.
+    """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -3101,16 +3143,47 @@ class Job(google.protobuf.message.Message):
     name: builtins.str
     """The unique name for the job."""
     schedule: builtins.str
-    """The schedule for the job."""
+    """schedule is an optional schedule at which the job is to be run.
+    Accepts both systemd timer style cron expressions, as well as human
+    readable '@' prefixed period strings as defined below.
+
+    Systemd timer style cron accepts 6 fields:
+    seconds | minutes | hours | day of month | month        | day of week
+    0-59    | 0-59    | 0-23  | 1-31         | 1-12/jan-dec | 0-7/sun-sat
+
+    "0 30 * * * *" - every hour on the half hour
+    "0 15 3 * * *" - every day at 03:15
+
+    Period string expressions:
+    Entry                  | Description                                | Equivalent To
+    -----                  | -----------                                | -------------
+    @every <duration>      | Run every <duration> (e.g. '@every 1h30m') | N/A
+    @yearly (or @annually) | Run once a year, midnight, Jan. 1st        | 0 0 0 1 1 *
+    @monthly               | Run once a month, midnight, first of month | 0 0 0 1 * *
+    @weekly                | Run once a week, midnight on Sunday        | 0 0 0 * * 0
+    @daily (or @midnight)  | Run once a day, midnight                   | 0 0 0 * * *
+    @hourly                | Run once an hour, beginning of hour        | 0 0 * * * *
+    """
     repeats: builtins.int
-    """Optional: jobs with fixed repeat counts (accounting for Actor Reminders)."""
+    """repeats is the optional number of times in which the job should be
+    triggered. If not set, the job will run indefinitely or until expiration.
+    """
     due_time: builtins.str
-    """Optional: sets time at which or time interval before the callback is invoked for the first time."""
+    """due_time is the optional time at which the job should be active, or the
+    "one shot" time if other scheduling type fields are not provided. Accepts
+    a "point in time" string in the format of RFC3339, Go duration string
+    (calculated from job creation time), or non-repeating ISO8601.
+    """
     ttl: builtins.str
-    """Optional: Time To Live to allow for auto deletes (accounting for Actor Reminders)."""
+    """ttl is the optional time to live or expiration of the job. Accepts a
+    "point in time" string in the format of RFC3339, Go duration string
+    (calculated from job creation time), or non-repeating ISO8601.
+    """
     @property
     def data(self) -> google.protobuf.any_pb2.Any:
-        """Job data."""
+        """payload is the serialized job payload that will be sent to the recipient
+        when the job is triggered.
+        """
 
     def __init__(
         self,

@@ -24,7 +24,7 @@ from urllib.parse import urlencode
 
 from warnings import warn
 
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any
+from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any, Awaitable
 from typing_extensions import Self
 
 from google.protobuf.message import Message as GrpcMessage
@@ -39,12 +39,14 @@ from grpc.aio import (  # type: ignore
     AioRpcError,
 )
 
+from dapr.aio.clients.grpc.subscription import Subscription
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
+from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
@@ -94,6 +96,7 @@ from dapr.clients.grpc._response import (
     UnlockResponse,
     GetWorkflowResponse,
     StartWorkflowResponse,
+    TopicEventResponse,
 )
 
 
@@ -481,6 +484,72 @@ class DaprGrpcClientAsync:
             raise DaprGrpcError(err) from err
 
         return DaprResponse(await call.initial_metadata())
+
+    async def subscribe(
+        self,
+        pubsub_name: str,
+        topic: str,
+        metadata: Optional[dict] = None,
+        dead_letter_topic: Optional[str] = None,
+    ) -> Subscription:
+        """
+        Subscribe to a topic with a bidirectional stream
+
+        Args:
+            pubsub_name (str): The name of the pubsub component.
+            topic (str): The name of the topic.
+            metadata (Optional[dict]): Additional metadata for the subscription.
+            dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+
+        Returns:
+            Subscription: The Subscription object managing the stream.
+        """
+        subscription = Subscription(self._stub, pubsub_name, topic, metadata, dead_letter_topic)
+        await subscription.start()
+        return subscription
+
+    async def subscribe_with_handler(
+        self,
+        pubsub_name: str,
+        topic: str,
+        handler_fn: Callable[..., TopicEventResponse],
+        metadata: Optional[dict] = None,
+        dead_letter_topic: Optional[str] = None,
+    ) -> Callable[[], Awaitable[None]]:
+        """
+        Subscribe to a topic with a bidirectional stream and a message handler function
+
+        Args:
+            pubsub_name (str): The name of the pubsub component.
+            topic (str): The name of the topic.
+            handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
+            metadata (Optional[dict]): Additional metadata for the subscription.
+            dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+
+        Returns:
+            Callable[[], Awaitable[None]]: An async function to close the subscription.
+        """
+        subscription = await self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
+
+        async def stream_messages(sub: Subscription):
+            while True:
+                try:
+                    message = await sub.next_message()
+                    if message:
+                        response = await handler_fn(message)
+                        if response:
+                            await subscription.respond(message, response.status)
+                    else:
+                        continue
+                except StreamInactiveError:
+                    break
+
+        async def close_subscription():
+            await subscription.close()
+
+        asyncio.create_task(stream_messages(subscription))
+
+        return close_subscription
 
     async def get_state(
         self,
