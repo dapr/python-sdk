@@ -49,6 +49,5 @@ async def main():
             await subscription.close()
 
 
-
 if __name__ == '__main__':
     asyncio.run(main())

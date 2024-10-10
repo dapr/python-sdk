@@ -7,8 +7,8 @@ from dapr.clients.health import DaprHealth
 from dapr.common.pubsub.subscription import StreamInactiveError, SubscriptionMessage
 from dapr.proto import api_v1, appcallback_v1
 
-class Subscription:
 
+class Subscription:
     def __init__(self, stub, pubsub_name, topic, metadata=None, dead_letter_topic=None):
         self._stub = stub
         self._pubsub_name = pubsub_name
@@ -63,9 +63,11 @@ class Subscription:
                 return SubscriptionMessage(message.event_message)
         except AioRpcError as e:
             if e.code() == StatusCode.UNAVAILABLE:
-                print(f'gRPC error while reading from stream: {e.details()}, '
-                      f'Status Code: {e.code()}. '
-                      f'Attempting to reconnect...')
+                print(
+                    f'gRPC error while reading from stream: {e.details()}, '
+                    f'Status Code: {e.code()}. '
+                    f'Attempting to reconnect...'
+                )
                 await self.reconnect_stream()
             elif e.code() != StatusCode.CANCELLED:
                 raise Exception(f'gRPC error while reading from subscription stream: {e} ')

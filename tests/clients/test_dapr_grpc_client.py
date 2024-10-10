@@ -28,7 +28,7 @@ from google.rpc import status_pb2, code_pb2
 from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
-from dapr.clients.grpc.subscription import StreamInactiveError, Subscription
+from dapr.clients.grpc.subscription import StreamInactiveError
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
@@ -36,9 +36,14 @@ from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc._response import (ConfigurationItem, ConfigurationResponse,
-                                         ConfigurationWatcher, UnlockResponseStatus,
-                                         WorkflowRuntimeStatus, TopicEventResponse, )
+from dapr.clients.grpc._response import (
+    ConfigurationItem,
+    ConfigurationResponse,
+    ConfigurationWatcher,
+    UnlockResponseStatus,
+    WorkflowRuntimeStatus,
+    TopicEventResponse,
+)
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -372,7 +377,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
             counter += 1
 
-            return TopicEventResponse("success")
+            return TopicEventResponse('success')
 
         close_fn = dapr.subscribe_with_handler(
             pubsub_name='pubsub', topic='example', handler_fn=handler
