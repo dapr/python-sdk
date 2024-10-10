@@ -12,13 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import asyncio
 import json
 import socket
 import tempfile
 import unittest
 import uuid
-import time
 from unittest.mock import patch
 
 from google.rpc import status_pb2, code_pb2
@@ -34,9 +32,12 @@ from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc._response import (ConfigurationItem, ConfigurationWatcher,
-                                         ConfigurationResponse, UnlockResponseStatus,
-                                         TopicEventResponse, )
+from dapr.clients.grpc._response import (
+    ConfigurationItem,
+    ConfigurationWatcher,
+    ConfigurationResponse,
+    UnlockResponseStatus,
+)
 
 
 class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
@@ -381,7 +382,6 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     #     while counter < 3:
     #         await asyncio.sleep(0.1)  # sleep to prevent a busy loop
     #     await close_fn()
-
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     async def test_dapr_api_token_insertion(self):

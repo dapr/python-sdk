@@ -9,9 +9,7 @@ import threading
 from typing import Optional
 
 
-
 class Subscription:
-
     def __init__(self, stub, pubsub_name, topic, metadata=None, dead_letter_topic=None):
         self._stub = stub
         self._pubsub_name = pubsub_name

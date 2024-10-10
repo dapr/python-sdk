@@ -76,14 +76,28 @@ from dapr.clients.grpc._request import (
     BindingRequest,
     TransactionalStateOperation,
 )
-from dapr.clients.grpc._response import (BindingResponse, DaprResponse, GetSecretResponse,
-                                         GetBulkSecretResponse, GetMetadataResponse,
-                                         InvokeMethodResponse, UnlockResponseStatus, StateResponse,
-                                         BulkStatesResponse, BulkStateItem, ConfigurationResponse,
-                                         QueryResponse, QueryResponseItem, RegisteredComponents,
-                                         ConfigurationWatcher, TryLockResponse, UnlockResponse,
-                                         GetWorkflowResponse, StartWorkflowResponse,
-                                         TopicEventResponse, )
+from dapr.clients.grpc._response import (
+    BindingResponse,
+    DaprResponse,
+    GetSecretResponse,
+    GetBulkSecretResponse,
+    GetMetadataResponse,
+    InvokeMethodResponse,
+    UnlockResponseStatus,
+    StateResponse,
+    BulkStatesResponse,
+    BulkStateItem,
+    ConfigurationResponse,
+    QueryResponse,
+    QueryResponseItem,
+    RegisteredComponents,
+    ConfigurationWatcher,
+    TryLockResponse,
+    UnlockResponse,
+    GetWorkflowResponse,
+    StartWorkflowResponse,
+    TopicEventResponse,
+)
 
 
 class DaprGrpcClientAsync:
@@ -471,8 +485,13 @@ class DaprGrpcClientAsync:
 
         return DaprResponse(await call.initial_metadata())
 
-    async def subscribe(self, pubsub_name: str, topic: str, metadata: Optional[dict] = None,
-            dead_letter_topic: Optional[str] = None, ) -> Subscription:
+    async def subscribe(
+        self,
+        pubsub_name: str,
+        topic: str,
+        metadata: Optional[dict] = None,
+        dead_letter_topic: Optional[str] = None,
+    ) -> Subscription:
         """
         Subscribe to a topic with a bidirectional stream
 
@@ -485,14 +504,18 @@ class DaprGrpcClientAsync:
         Returns:
             Subscription: The Subscription object managing the stream.
         """
-        subscription = Subscription(self._stub, pubsub_name, topic, metadata,
-                                         dead_letter_topic)
+        subscription = Subscription(self._stub, pubsub_name, topic, metadata, dead_letter_topic)
         await subscription.start()
         return subscription
 
-    async def subscribe_with_handler(self, pubsub_name: str, topic: str,
-            handler_fn: Callable[..., TopicEventResponse], metadata: Optional[dict] = None,
-            dead_letter_topic: Optional[str] = None, ) -> Callable[[], Awaitable[None]]:
+    async def subscribe_with_handler(
+        self,
+        pubsub_name: str,
+        topic: str,
+        handler_fn: Callable[..., TopicEventResponse],
+        metadata: Optional[dict] = None,
+        dead_letter_topic: Optional[str] = None,
+    ) -> Callable[[], Awaitable[None]]:
         """
         Subscribe to a topic with a bidirectional stream and a message handler function
 

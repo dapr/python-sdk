@@ -32,7 +32,7 @@ async def main():
         # Wait until 5 messages are processed
         global counter
         while counter < 5:
-            print("Counter: ", counter)
+            print('Counter: ', counter)
             await asyncio.sleep(1)
 
         print('Closing subscription...')

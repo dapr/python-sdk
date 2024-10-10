@@ -3,6 +3,7 @@ from google.protobuf.json_format import MessageToDict
 from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 from typing import Optional, Union
 
+
 class SubscriptionMessage:
     def __init__(self, msg: TopicEventRequest):
         self._id: str = msg.id
@@ -85,6 +86,7 @@ class SubscriptionMessage:
 
 class StreamInactiveError(Exception):
     pass
+
 
 class PubSubEventStatus:
     SUCCESS = 'success'
