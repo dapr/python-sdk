@@ -15,6 +15,7 @@ import json
 
 from dapr.aio.clients import DaprClient
 
+
 async def publish_events():
     """
     Publishes events to a pubsub topic asynchronously
@@ -39,5 +40,6 @@ async def publish_events():
             print(req_data, flush=True)
 
             await asyncio.sleep(1)
+
 
 asyncio.run(publish_events())
