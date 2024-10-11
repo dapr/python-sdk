@@ -59,7 +59,6 @@ class Subscription:
         except Exception as e:
             raise Exception(f'Error while initializing stream: {e}')
 
-
     def reconnect_stream(self):
         self.close()
         DaprHealth.wait_until_ready()
