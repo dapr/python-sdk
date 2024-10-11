@@ -103,7 +103,6 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor, StreamStreamClientInter
         Returns:
             A response object after invoking the continuation callable
         """
-        # Pre-process or intercept call
         new_call_details = self._intercept_call(client_call_details)
         # Call continuation
         response = continuation(new_call_details, request)
@@ -122,8 +121,6 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor, StreamStreamClientInter
         Returns:
             A response object after invoking the continuation callable
         """
-        # Pre-process or intercept call
-
         new_call_details = self._intercept_call(client_call_details)
         # Call continuation
         response = continuation(new_call_details, request_iterator)
