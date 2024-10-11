@@ -18,9 +18,13 @@ def main():
     with DaprClient() as client:
         global counter
 
-        subscription = client.subscribe(
-            pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
-        )
+        try:
+            subscription = client.subscribe(
+                pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
+            )
+        except Exception as e:
+            print(f'Error occurred: {e}')
+            return
 
         try:
             while counter < 5:
@@ -31,6 +35,9 @@ def main():
                     print('Stream is inactive. Retrying...')
                     time.sleep(1)
                     continue
+                except Exception as e:
+                    print(f'Error occurred: {e}')
+                    pass
                 if message is None:
                     print('No message received within timeout period.')
                     continue

@@ -54,7 +54,11 @@ class Subscription:
         # Create the bidirectional stream
         self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
         self._set_stream_active()
-        next(self._stream)  # discard the initial message
+        try:
+            next(self._stream)  # discard the initial message
+        except Exception as e:
+            raise Exception(f'Error while initializing stream: {e}')
+
 
     def reconnect_stream(self):
         self.close()

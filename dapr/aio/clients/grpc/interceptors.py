@@ -16,7 +16,7 @@ limitations under the License.
 from collections import namedtuple
 from typing import List, Tuple
 
-from grpc.aio import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
+from grpc.aio import UnaryUnaryClientInterceptor, StreamStreamClientInterceptor, ClientCallDetails  # type: ignore
 
 from dapr.conf import settings
 
@@ -50,8 +50,7 @@ class DaprClientTimeoutInterceptorAsync(UnaryUnaryClientInterceptor):
 
         return continuation(client_call_details, request)
 
-
-class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
+class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClientInterceptor):
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
 
@@ -115,8 +114,24 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor):
         Returns:
             A response object after invoking the continuation callable
         """
+        new_call_details = await self._intercept_call(client_call_details)
+        # Call continuation
+        response = await continuation(new_call_details, request)
+        return response
 
-        # Pre-process or intercept call
+    async def intercept_stream_stream(self, continuation, client_call_details, request):
+        """This method intercepts a stream-stream gRPC call. This is the implementation of the
+        abstract method defined in StreamStreamClientInterceptor defined in grpc. This is invoked
+        automatically by grpc based on the order in which interceptors are added to the channel.
+
+        Args:
+            continuation: a callable to be invoked to continue with the RPC or next interceptor
+            client_call_details: a ClientCallDetails object describing the outgoing RPC
+            request: the request value for the RPC
+
+        Returns:
+            A response object after invoking the continuation callable
+        """
         new_call_details = await self._intercept_call(client_call_details)
         # Call continuation
         response = await continuation(new_call_details, request)
