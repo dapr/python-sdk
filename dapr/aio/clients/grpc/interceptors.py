@@ -50,6 +50,7 @@ class DaprClientTimeoutInterceptorAsync(UnaryUnaryClientInterceptor):
 
         return continuation(client_call_details, request)
 
+
 class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClientInterceptor):
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.

@@ -86,9 +86,3 @@ class SubscriptionMessage:
 
 class StreamInactiveError(Exception):
     pass
-
-
-class PubSubEventStatus:
-    SUCCESS = 'success'
-    RETRY = 'retry'
-    DROP = 'drop'
