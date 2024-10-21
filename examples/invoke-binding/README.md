@@ -26,7 +26,7 @@ name: Kafka install
 sleep: 30
 -->
 
-1. Start the kafka containers using docker-compose 
+1. Start the kafka containers using docker compose 
 
 ```bash
 docker compose -f ./docker-compose-single-kafka.yml up -d
