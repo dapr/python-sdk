@@ -10,10 +10,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ------------------------------------------------------------
+import argparse
 import asyncio
 import json
 
 from dapr.aio.clients import DaprClient
+
+parser = argparse.ArgumentParser(description='Publish events to a Dapr pub/sub topic.')
+parser.add_argument('--topic', type=str, required=True, help='The topic name to publish to.')
+args = parser.parse_args()
+
+topic_name = args.topic
 
 
 async def publish_events():
@@ -30,7 +37,7 @@ async def publish_events():
             # Create a typed message with content type and body
             await d.publish_event(
                 pubsub_name='pubsub',
-                topic_name='TOPIC_A',
+                topic_name=topic_name,
                 data=json.dumps(req_data),
                 data_content_type='application/json',
                 publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'},

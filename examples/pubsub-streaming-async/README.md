@@ -27,11 +27,11 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_A..."
-    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_A..."
-    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_A..."
-    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_A..."
-    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_B1..."
+    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_B1..."
+    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_B1..."
+    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_B1..."
+    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_B1..."
     - "== APP == Closing subscription..."
 output_match_mode: substring
 background: true
@@ -41,7 +41,7 @@ sleep: 3
 
 ```bash
 # 1. Start Subscriber
-dapr run --app-id python-subscriber --app-protocol grpc python3 subscriber.py
+dapr run --app-id python-subscriber --app-protocol grpc -- python3 subscriber.py --topic=TOPIC_B1
 ```
 
 <!-- END_STEP -->
@@ -63,7 +63,7 @@ sleep: 15
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check python3 publisher.py
+dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check -- python3 publisher.py --topic=TOPIC_B1
 ```
 
 <!-- END_STEP -->
@@ -75,11 +75,11 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_A..."
-    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_A..."
-    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_A..."
-    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_A..."
-    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_A..."
+    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_B2..."
+    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_B2..."
+    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_B2..."
+    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_B2..."
+    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_B2..."
     - "== APP == Closing subscription..."
 output_match_mode: substring
 background: true
@@ -89,7 +89,7 @@ sleep: 3
 
 ```bash
 # 1. Start Subscriber
-dapr run --app-id python-subscriber --app-protocol grpc python3 subscriber-handler.py
+dapr run --app-id python-subscriber --app-protocol grpc -- python3 subscriber-handler.py --topic=TOPIC_B2
 ```
 
 <!-- END_STEP -->
@@ -111,7 +111,7 @@ sleep: 15
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check python3 publisher.py
+dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check -- python3 publisher.py --topic=TOPIC_B2
 ```
 
 <!-- END_STEP --> 

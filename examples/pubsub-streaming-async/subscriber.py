@@ -1,7 +1,15 @@
+import argparse
 import asyncio
 
 from dapr.aio.clients import DaprClient
 from dapr.clients.grpc.subscription import StreamInactiveError
+
+parser = argparse.ArgumentParser(description='Publish events to a Dapr pub/sub topic.')
+parser.add_argument('--topic', type=str, required=True, help='The topic name to publish to.')
+args = parser.parse_args()
+
+topic_name = args.topic
+dlq_topic_name = topic_name + '_DEAD'
 
 counter = 0
 
@@ -18,7 +26,7 @@ async def main():
     async with DaprClient() as client:
         global counter
         subscription = await client.subscribe(
-            pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
+            pubsub_name='pubsub', topic=topic_name, dead_letter_topic=dlq_topic_name
         )
 
         try:
