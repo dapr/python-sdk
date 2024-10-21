@@ -71,17 +71,16 @@ class Subscription:
         @return: The next message from the queue,
                  or None if no message is received within the timeout.
         """
-        if not self._is_stream_active():
+        if not self._is_stream_active() or self._stream is None:
             raise StreamInactiveError('Stream is not active')
+
 
         try:
             # Read the next message from the stream directly
-            if self._stream is not None:
-                message = next(self._stream, None)
-                if message is None:
-                    return None
-                return SubscriptionMessage(message.event_message)
+            message = next(self._stream)
+            return SubscriptionMessage(message.event_message)
         except RpcError as e:
+            # If Dapr can't be reached, wait until it's ready and reconnect the stream
             if e.code() == StatusCode.UNAVAILABLE:
                 print(
                     f'gRPC error while reading from stream: {e.details()}, Status Code: {e.code()}'
@@ -95,7 +94,6 @@ class Subscription:
         except Exception as e:
             raise Exception(f'Error while fetching message: {e}')
 
-        return None
 
     def respond(self, message, status):
         try:
