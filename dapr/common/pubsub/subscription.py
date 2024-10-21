@@ -86,3 +86,6 @@ class SubscriptionMessage:
 
 class StreamInactiveError(Exception):
     pass
+
+class StreamCancelledError(Exception):
+    pass

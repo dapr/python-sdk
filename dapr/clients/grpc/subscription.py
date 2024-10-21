@@ -2,7 +2,8 @@ from grpc import RpcError, StatusCode, Call  # type: ignore
 
 from dapr.clients.grpc._response import TopicEventResponse
 from dapr.clients.health import DaprHealth
-from dapr.common.pubsub.subscription import StreamInactiveError, SubscriptionMessage
+from dapr.common.pubsub.subscription import StreamInactiveError, SubscriptionMessage, \
+    StreamCancelledError
 from dapr.proto import api_v1, appcallback_v1
 import queue
 import threading
@@ -85,7 +86,9 @@ class Subscription:
                     f'gRPC error while reading from stream: {e.details()}, Status Code: {e.code()}'
                 )
                 self.reconnect_stream()
-            elif e.code() != StatusCode.CANCELLED:
+            elif e.code() == StatusCode.CANCELLED:
+                raise StreamCancelledError('Stream has been cancelled')
+            else:
                 raise Exception(
                     f'gRPC error while reading from subscription stream: {e.details()} '
                     f'Status Code: {e.code()}'

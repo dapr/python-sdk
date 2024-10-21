@@ -3,6 +3,7 @@ import time
 
 from dapr.clients import DaprClient
 from dapr.clients.grpc.subscription import StreamInactiveError
+from dapr.common.pubsub.subscription import StreamCancelledError
 
 counter = 0
 
@@ -38,17 +39,22 @@ def main():
             while counter < 5:
                 try:
                     message = subscription.next_message()
+                    if message is None:
+                        print('No message received within timeout period. '
+                              'The stream might have been cancelled.')
+                        continue
 
                 except StreamInactiveError as e:
                     print('Stream is inactive. Retrying...')
                     time.sleep(1)
                     continue
+                except StreamCancelledError as e:
+                    print('Stream was cancelled')
+                    break
                 except Exception as e:
                     print(f'Error occurred: {e}')
                     pass
-                if message is None:
-                    print('No message received within timeout period.')
-                    continue
+
 
                 # Process the message
                 response_status = process_message(message)

@@ -3,6 +3,7 @@ import asyncio
 
 from dapr.aio.clients import DaprClient
 from dapr.clients.grpc.subscription import StreamInactiveError
+from dapr.common.pubsub.subscription import StreamCancelledError
 
 parser = argparse.ArgumentParser(description='Publish events to a Dapr pub/sub topic.')
 parser.add_argument('--topic', type=str, required=True, help='The topic name to publish to.')
@@ -33,15 +34,18 @@ async def main():
             while counter < 5:
                 try:
                     message = await subscription.next_message()
+                    if message is None:
+                        print('No message received within timeout period. '
+                              'The stream might have been cancelled.')
+                        continue
 
                 except StreamInactiveError:
                     print('Stream is inactive. Retrying...')
                     await asyncio.sleep(1)
                     continue
-                if message is None:
-                    print('No message received within timeout period.')
-                    continue
-
+                except StreamCancelledError as e:
+                    print('Stream was cancelled')
+                    break
                 # Process the message
                 response_status = process_message(message)
 
