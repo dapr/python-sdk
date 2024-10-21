@@ -74,7 +74,6 @@ class Subscription:
         if not self._is_stream_active() or self._stream is None:
             raise StreamInactiveError('Stream is not active')
 
-
         try:
             # Read the next message from the stream directly
             message = next(self._stream)
@@ -93,7 +92,6 @@ class Subscription:
                 )
         except Exception as e:
             raise Exception(f'Error while fetching message: {e}')
-
 
     def respond(self, message, status):
         try:
