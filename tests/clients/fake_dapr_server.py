@@ -179,14 +179,15 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return empty_pb2.Empty()
 
     def SubscribeTopicEventsAlpha1(self, request_iterator, context):
-        yield api_v1.SubscribeTopicEventsResponseAlpha1(
-            initial_response=api_v1.SubscribeTopicEventsResponseInitialAlpha1()
-        )
+        for request in request_iterator:
+            if request.HasField('initial_request'):
+                yield api_v1.SubscribeTopicEventsResponseAlpha1(
+                    initial_response=api_v1.SubscribeTopicEventsResponseInitialAlpha1()
+                )
+                break
 
         extensions = struct_pb2.Struct()
-        extensions['field1'] = 'value1'
-        extensions['field2'] = 42
-        extensions['field3'] = True
+        extensions.update({'field1': 'value1', 'field2': 42, 'field3': True})
 
         msg1 = appcallback_v1.TopicEventRequest(
             id='111',
@@ -201,6 +202,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         )
         yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg1)
 
+        for request in request_iterator:
+            if request.HasField('event_processed'):
+                break
+
         msg2 = appcallback_v1.TopicEventRequest(
             id='222',
             topic='TOPIC_A',
@@ -214,9 +219,16 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         )
         yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg2)
 
+        for request in request_iterator:
+            if request.HasField('event_processed'):
+                break
+
         # On the third message simulate a disconnection
-        status = status_pb2.Status(code=code_pb2.UNAVAILABLE, message='Simulated disconnection')
-        context.abort_with_status(rpc_status.to_status(status))
+        context.abort_with_status(
+            rpc_status.to_status(
+                status_pb2.Status(code=code_pb2.UNAVAILABLE, message='Simulated disconnection')
+            )
+        )
 
     def SaveState(self, request, context):
         self.check_for_exception(context)

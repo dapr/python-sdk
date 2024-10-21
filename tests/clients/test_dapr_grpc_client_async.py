@@ -305,18 +305,18 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         # # The client already reconnected and will start reading the messages again
         # # Since we're working with a fake server, the messages will be the same
-        # message4 = await subscription.next_message()
-        # await subscription.respond_success(message4)
-        # self.assertEqual('111', message4.id())
-        # self.assertEqual('app1', message4.source())
-        # self.assertEqual('com.example.type2', message4.type())
-        # self.assertEqual('1.0', message4.spec_version())
-        # self.assertEqual('text/plain', message4.data_content_type())
-        # self.assertEqual('TOPIC_A', message4.topic())
-        # self.assertEqual('pubsub', message4.pubsub_name())
-        # self.assertEqual(b'hello2', message4.raw_data())
-        # self.assertEqual('text/plain', message4.data_content_type())
-        # self.assertEqual('hello2', message4.data())
+        message4 = await subscription.next_message()
+        await subscription.respond_success(message4)
+        self.assertEqual('111', message4.id())
+        self.assertEqual('app1', message4.source())
+        self.assertEqual('com.example.type2', message4.type())
+        self.assertEqual('1.0', message4.spec_version())
+        self.assertEqual('text/plain', message4.data_content_type())
+        self.assertEqual('TOPIC_A', message4.topic())
+        self.assertEqual('pubsub', message4.pubsub_name())
+        self.assertEqual(b'hello2', message4.raw_data())
+        self.assertEqual('text/plain', message4.data_content_type())
+        self.assertEqual('hello2', message4.data())
 
         await subscription.close()
 
