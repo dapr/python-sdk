@@ -1,9 +1,17 @@
+import argparse
 import time
 
 from dapr.clients import DaprClient
 from dapr.clients.grpc.subscription import StreamInactiveError
 
 counter = 0
+
+parser = argparse.ArgumentParser(description='Publish events to a Dapr pub/sub topic.')
+parser.add_argument('--topic', type=str, required=True, help='The topic name to publish to.')
+args = parser.parse_args()
+
+topic_name = args.topic
+dlq_topic_name = topic_name + '_DEAD'
 
 
 def process_message(message):
@@ -20,7 +28,7 @@ def main():
 
         try:
             subscription = client.subscribe(
-                pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
+                pubsub_name='pubsub', topic=topic_name, dead_letter_topic=dlq_topic_name
             )
         except Exception as e:
             print(f'Error occurred: {e}')
