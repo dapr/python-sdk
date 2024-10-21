@@ -13,6 +13,7 @@ args = parser.parse_args()
 topic_name = args.topic
 dlq_topic_name = topic_name + '_DEAD'
 
+
 def process_message(message):
     # Process the message here
     global counter
