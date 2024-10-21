@@ -261,10 +261,10 @@ You can create a streaming subscription to a PubSub topic using either the `subs
 or `subscribe_handler` methods.
 
 The `subscribe` method returns a `Subscription` object, which allows you to pull messages from the
-stream by calling the `next_message` method. This will block on the main thread while waiting for
-messages.
-When done, you should call the close method to terminate the subscription and stop receiving
-messages.
+stream by
+calling the `next_message` method. This will block on the main thread while waiting for messages.
+When done, you should call the close method to terminate the
+subscription and stop receiving messages.
 
 The `subscribe_with_handler` method accepts a callback function that is executed for each message
 received from the stream.
