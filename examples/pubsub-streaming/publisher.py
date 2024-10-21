@@ -10,11 +10,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ------------------------------------------------------------
-
+import argparse
 import json
 import time
 
 from dapr.clients import DaprClient
+
+parser = argparse.ArgumentParser(description='Publish events to a Dapr pub/sub topic.')
+parser.add_argument('--topic', type=str, required=True, help='The topic name to publish to.')
+args = parser.parse_args()
+
+topic_name = args.topic
 
 with DaprClient() as d:
     id = 0
@@ -25,7 +31,7 @@ with DaprClient() as d:
         # Create a typed message with content type and body
         resp = d.publish_event(
             pubsub_name='pubsub',
-            topic_name='TOPIC_A',
+            topic_name=topic_name,
             data=json.dumps(req_data),
             data_content_type='application/json',
             publish_metadata={'ttlInSeconds': '100', 'rawPayload': 'false'},

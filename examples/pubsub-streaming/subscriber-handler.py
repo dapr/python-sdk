@@ -1,3 +1,4 @@
+import argparse
 import time
 
 from dapr.clients import DaprClient
@@ -5,6 +6,12 @@ from dapr.clients.grpc._response import TopicEventResponse
 
 counter = 0
 
+parser = argparse.ArgumentParser(description='Publish events to a Dapr pub/sub topic.')
+parser.add_argument('--topic', type=str, required=True, help='The topic name to publish to.')
+args = parser.parse_args()
+
+topic_name = args.topic
+dlq_topic_name = topic_name + '_DEAD'
 
 def process_message(message):
     # Process the message here
@@ -20,9 +27,9 @@ def main():
         # and process them in the `process_message` function
         close_fn = client.subscribe_with_handler(
             pubsub_name='pubsub',
-            topic='TOPIC_A',
+            topic=topic_name,
             handler_fn=process_message,
-            dead_letter_topic='TOPIC_A_DEAD',
+            dead_letter_topic=dlq_topic_name,
         )
 
         while counter < 5:
