@@ -4,8 +4,11 @@ from grpc.aio import AioRpcError
 
 from dapr.clients.grpc._response import TopicEventResponse
 from dapr.clients.health import DaprHealth
-from dapr.common.pubsub.subscription import StreamInactiveError, SubscriptionMessage, \
-    StreamCancelledError
+from dapr.common.pubsub.subscription import (
+    StreamInactiveError,
+    SubscriptionMessage,
+    StreamCancelledError,
+)
 from dapr.proto import api_v1, appcallback_v1
 
 

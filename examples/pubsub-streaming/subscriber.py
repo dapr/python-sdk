@@ -40,8 +40,10 @@ def main():
                 try:
                     message = subscription.next_message()
                     if message is None:
-                        print('No message received within timeout period. '
-                              'The stream might have been cancelled.')
+                        print(
+                            'No message received within timeout period. '
+                            'The stream might have been cancelled.'
+                        )
                         continue
 
                 except StreamInactiveError as e:
@@ -54,7 +56,6 @@ def main():
                 except Exception as e:
                     print(f'Error occurred: {e}')
                     pass
-
 
                 # Process the message
                 response_status = process_message(message)
