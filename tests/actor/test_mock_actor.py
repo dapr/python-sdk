@@ -71,7 +71,7 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
         else:
             await self.unregister_reminder(name)
 
-    async def toggle_timer(self, name:str, enabled:bool) -> None:
+    async def toggle_timer(self, name: str, enabled: bool) -> None:
         if enabled:
             await self.register_timer(
                 name,
@@ -97,13 +97,66 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
     async def timer_callback(self, state) -> None:
         print('Timer triggered')
 
+
 class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
     def test_create_actor(self):
-        mockactor = create_mock_actor(DemoActor, "1")
-        self.assertEqual(mockactor.id.id, "1")
+        mockactor = create_mock_actor(DemoActor, '1')
+        self.assertEqual(mockactor.id.id, '1')
 
     async def test_on_activate(self):
-        mockactor = create_mock_actor(DemoActor, "1")
+        mockactor = create_mock_actor(DemoActor, '1')
         await mockactor._on_activate()
-        self.assertTrue("state" in mockactor._mock_state)
-        self.assertEqual(mockactor._mock_state["state"], {'test': 5})
+        self.assertTrue('state' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 5})
+
+    async def test_get_data(self):
+        mockactor = create_mock_actor(DemoActor, '1')
+        await mockactor._on_activate()
+        out1 = await mockactor.get_data()
+        self.assertEqual(out1, {'test': 5})
+
+    async def test_set_data(self):
+        mockactor = create_mock_actor(DemoActor, '1')
+        await mockactor._on_activate()
+        self.assertTrue('state' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 5})
+        await mockactor.set_data({'test': 10})
+        self.assertTrue('state' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 10})
+        out1 = await mockactor.get_data()
+        self.assertEqual(out1, {'test': 10})
+
+    async def test_clear_data(self):
+        mockactor = create_mock_actor(DemoActor, '1')
+        await mockactor._on_activate()
+        self.assertTrue('state' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 5})
+        await mockactor.clear_data()
+        self.assertFalse('state' in mockactor._state_manager._mock_state)
+        self.assertIsNone(mockactor._state_manager._mock_state.get('state'))
+        out1 = await mockactor.get_data()
+        self.assertIsNone(out1)
+
+    async def test_toggle_reminder(self):
+        mockactor = create_mock_actor(DemoActor, '1')
+        await mockactor._on_activate()
+        self.assertEqual(len(mockactor._state_manager._mock_reminders), 0)
+        await mockactor.toggle_reminder('test', True)
+        self.assertEqual(len(mockactor._state_manager._mock_reminders), 1)
+        self.assertTrue('test' in mockactor._state_manager._mock_reminders)
+        reminderstate = mockactor._state_manager._mock_reminders['test']
+        self.assertTrue(reminderstate.reminder_name, 'test')
+        await mockactor.toggle_reminder('test', False)
+        self.assertEqual(len(mockactor._state_manager._mock_reminders), 0)
+
+    async def test_toggle_timer(self):
+        mockactor = create_mock_actor(DemoActor, '1')
+        await mockactor._on_activate()
+        self.assertEqual(len(mockactor._state_manager._mock_timers), 0)
+        await mockactor.toggle_timer('test', True)
+        self.assertEqual(len(mockactor._state_manager._mock_timers), 1)
+        self.assertTrue('test' in mockactor._state_manager._mock_timers)
+        timerstate = mockactor._state_manager._mock_timers['test']
+        self.assertTrue(timerstate.timer_name, 'test')
+        await mockactor.toggle_timer('test', False)
+        self.assertEqual(len(mockactor._state_manager._mock_timers), 0)

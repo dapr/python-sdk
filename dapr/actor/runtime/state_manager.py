@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +13,12 @@ limitations under the License.
 
 import asyncio
 from contextvars import ContextVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
-from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
+from dapr.actor.runtime._reminder_data import ActorReminderData
+from dapr.actor.runtime._timer_data import ActorTimerData
 from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
-
-from typing import Any, Callable, Dict, Generic, List, Tuple, TypeVar, Optional, TYPE_CHECKING
+from dapr.actor.runtime.state_change import ActorStateChange, StateChangeKind
 
 if TYPE_CHECKING:
     from dapr.actor.runtime.actor import Actor
@@ -67,8 +66,10 @@ class ActorStateManager(Generic[T]):
         if not actor.runtime_ctx:
             raise AttributeError('runtime context was not set')
         self._type_name = actor.runtime_ctx.actor_type_info.type_name
-
         self._default_state_change_tracker: Dict[str, StateMetadata] = {}
+        self._mock_state: dict[str, Any]
+        self._mock_timers: dict[str, ActorTimerData]
+        self._mock_reminders: dict[str, ActorReminderData]
 
     async def add_state(self, state_name: str, value: T) -> None:
         if not await self.try_add_state(state_name, value):

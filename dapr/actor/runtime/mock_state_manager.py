@@ -15,6 +15,8 @@ import asyncio
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
+from dapr.actor.runtime._reminder_data import ActorReminderData
+from dapr.actor.runtime._timer_data import ActorTimerData
 from dapr.actor.runtime.state_change import ActorStateChange, StateChangeKind
 from dapr.actor.runtime.state_manager import ActorStateManager, StateMetadata
 
@@ -29,6 +31,9 @@ class MockStateManager(ActorStateManager):
     def __init__(self, actor: 'MockActor'):
         self._actor = actor
         self.state_change_tracker: Dict[str, StateMetadata] = {}
+        self._mock_state: dict[str, Any] = {}
+        self._mock_timers: dict[str, ActorTimerData] = {}
+        self._mock_reminders: dict[str, ActorReminderData] = {}
 
     async def add_state(self, state_name: str, value: T) -> None:
         if not await self.try_add_state(state_name, value):
@@ -41,7 +46,7 @@ class MockStateManager(ActorStateManager):
                 self.state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
                 return True
             return False
-        existed = state_name in self._actor._mock_state
+        existed = state_name in self._mock_state
         if not existed:
             return False
         self.state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
@@ -61,8 +66,8 @@ class MockStateManager(ActorStateManager):
             if state_metadata.change_kind == StateChangeKind.remove:
                 return False, None
             return True, state_metadata.value
-        has_value = state_name in self._actor._mock_state
-        val = self._actor._mock_state.get(state_name)
+        has_value = state_name in self._mock_state
+        val = self._mock_state.get(state_name)
         if has_value:
             self.state_change_tracker[state_name] = StateMetadata(val, StateChangeKind.none)
         return has_value, val
@@ -85,10 +90,10 @@ class MockStateManager(ActorStateManager):
             ):
                 state_metadata.change_kind = StateChangeKind.update
             self.state_change_tracker[state_name] = state_metadata
-            self._actor._mock_state[state_name] = value
+            self._mock_state[state_name] = value
             return
 
-        existed = state_name in self._actor._mock_state
+        existed = state_name in self._mock_state
         if existed:
             self.state_change_tracker[state_name] = StateMetadata(
                 value, StateChangeKind.update, ttl_in_seconds
@@ -97,7 +102,7 @@ class MockStateManager(ActorStateManager):
             self.state_change_tracker[state_name] = StateMetadata(
                 value, StateChangeKind.add, ttl_in_seconds
             )
-        self._actor._mock_state[state_name] = value
+        self._mock_state[state_name] = value
 
     async def remove_state(self, state_name: str) -> None:
         if not await self.try_remove_state(state_name):
@@ -110,15 +115,16 @@ class MockStateManager(ActorStateManager):
                 return False
             elif state_metadata.change_kind == StateChangeKind.add:
                 self.state_change_tracker.pop(state_name, None)
-                self._actor._mock_state.pop(state_name, None)
+                self._mock_state.pop(state_name, None)
                 return True
+            self._mock_state.pop(state_name, None)
             state_metadata.change_kind = StateChangeKind.remove
             return True
 
-        existed = state_name in self._actor._mock_state
+        existed = state_name in self._mock_state
         if existed:
             self.state_change_tracker[state_name] = StateMetadata(None, StateChangeKind.remove)
-            self._actor._mock_state.pop(state_name, None)
+            self._mock_state.pop(state_name, None)
             return True
         return False
 
@@ -126,7 +132,7 @@ class MockStateManager(ActorStateManager):
         if state_name in self.state_change_tracker:
             state_metadata = self.state_change_tracker[state_name]
             return state_metadata.change_kind != StateChangeKind.remove
-        return state_name in self._actor._mock_state
+        return state_name in self._mock_state
 
     async def get_or_add_state(self, state_name: str, value: T) -> Optional[T]:
         has_value, val = await self.try_get_state(state_name)
@@ -150,18 +156,18 @@ class MockStateManager(ActorStateManager):
             state_metadata = self.state_change_tracker[state_name]
             if state_metadata.change_kind == StateChangeKind.remove:
                 self.state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
-                self._actor._mock_state[state_name] = value
+                self._mock_state[state_name] = value
                 return value
             new_value = update_value_factory(state_name, state_metadata.value)
             state_metadata.value = new_value
             if state_metadata.change_kind == StateChangeKind.none:
                 state_metadata.change_kind = StateChangeKind.update
             self.state_change_tracker[state_name] = state_metadata
-            self._actor._mock_state[state_name] = value
+            self._mock_state[state_name] = value
             return new_value
 
-        has_value = state_name in self._actor._mock_state
-        val: Any = self._actor._mock_state.get(state_name)
+        has_value = state_name in self._mock_state
+        val: Any = self._mock_state.get(state_name)
         if has_value:
             new_value = update_value_factory(state_name, val)
             self.state_change_tracker[state_name] = StateMetadata(new_value, StateChangeKind.update)

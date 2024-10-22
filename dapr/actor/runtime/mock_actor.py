@@ -12,7 +12,7 @@ limitations under the License.
 """
 
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._reminder_data import ActorReminderData
@@ -53,9 +53,6 @@ class MockActor(Actor):
     def __init__(self, actor_id: str, initstate: Optional[dict]):
         self.id = ActorId(actor_id)
         self._runtime_ctx = None
-        self._mock_state = {}
-        self._mock_timers = {}
-        self._mock_reminders = {}
         if initstate is not None:
             self._mock_state = initstate
         self._state_manager: ActorStateManager = MockStateManager(self)
@@ -85,7 +82,7 @@ class MockActor(Actor):
         """
         name = name or self.__get_new_timer_name()
         timer = ActorTimerData(name, callback, state, due_time, period, ttl)
-        self._mock_timers[name] = timer
+        self._state_manager._mock_timers[name] = timer
 
     async def unregister_timer(self, name: str) -> None:
         """Unregisters actor timer.
@@ -93,7 +90,7 @@ class MockActor(Actor):
         Args:
             name (str): the name of the timer to unregister.
         """
-        self._mock_timers.pop(name, None)
+        self._state_manager._mock_timers.pop(name, None)
 
     async def register_reminder(
         self,
@@ -123,7 +120,7 @@ class MockActor(Actor):
             ttl (datetime.timedelta): the time interval before the reminder stops firing
         """
         reminder = ActorReminderData(name, state, due_time, period, ttl)
-        self._mock_reminders[name] = reminder
+        self._state_manager._mock_reminders[name] = reminder
 
     async def unregister_reminder(self, name: str) -> None:
         """Unregisters actor reminder.
@@ -131,13 +128,14 @@ class MockActor(Actor):
         Args:
             name (str): the name of the reminder to unregister.
         """
-        self._mock_reminders.pop(name, None)
+        self._state_manager._mock_reminders.pop(name, None)
 
 
-def create_mock_actor(
-    actor: type[Actor], actor_id: str, initstate: Optional[dict] = None
-) -> MockActor:
-    class MockActorClass(MockActor, actor):
+T = TypeVar('T', bound=Actor)
+
+
+def create_mock_actor(cls1: type[T], actor_id: str, initstate: Optional[dict] = None) -> T:
+
+    class MockSuperClass(MockActor, cls1):
         pass
-
-    return MockActorClass(actor_id, initstate)
+    return MockSuperClass(actor_id, initstate)  # type: ignore
