@@ -135,7 +135,6 @@ T = TypeVar('T', bound=Actor)
 
 
 def create_mock_actor(cls1: type[T], actor_id: str, initstate: Optional[dict] = None) -> T:
-
     class MockSuperClass(MockActor, cls1):
         pass
     return MockSuperClass(actor_id, initstate)  # type: ignore
