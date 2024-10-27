@@ -43,7 +43,9 @@ class MockStateManager(ActorStateManager):
         if state_name in self._default_state_change_tracker:
             state_metadata = self._default_state_change_tracker[state_name]
             if state_metadata.change_kind == StateChangeKind.remove:
-                self._default_state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
+                self._default_state_change_tracker[state_name] = StateMetadata(
+                    value, StateChangeKind.update
+                )
                 return True
             return False
         existed = state_name in self._mock_state
@@ -69,7 +71,9 @@ class MockStateManager(ActorStateManager):
         has_value = state_name in self._mock_state
         val = self._mock_state.get(state_name)
         if has_value:
-            self._default_state_change_tracker[state_name] = StateMetadata(val, StateChangeKind.none)
+            self._default_state_change_tracker[state_name] = StateMetadata(
+                val, StateChangeKind.none
+            )
         return has_value, val
 
     async def set_state(self, state_name: str, value: T) -> None:
@@ -123,7 +127,9 @@ class MockStateManager(ActorStateManager):
 
         existed = state_name in self._mock_state
         if existed:
-            self._default_state_change_tracker[state_name] = StateMetadata(None, StateChangeKind.remove)
+            self._default_state_change_tracker[state_name] = StateMetadata(
+                None, StateChangeKind.remove
+            )
             self._mock_state.pop(state_name, None)
             return True
         return False
@@ -155,7 +161,9 @@ class MockStateManager(ActorStateManager):
         if state_name in self._default_state_change_tracker:
             state_metadata = self._default_state_change_tracker[state_name]
             if state_metadata.change_kind == StateChangeKind.remove:
-                self._default_state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
+                self._default_state_change_tracker[state_name] = StateMetadata(
+                    value, StateChangeKind.update
+                )
                 self._mock_state[state_name] = value
                 return value
             new_value = update_value_factory(state_name, state_metadata.value)
@@ -170,7 +178,9 @@ class MockStateManager(ActorStateManager):
         val: Any = self._mock_state.get(state_name)
         if has_value:
             new_value = update_value_factory(state_name, val)
-            self._default_state_change_tracker[state_name] = StateMetadata(new_value, StateChangeKind.update)
+            self._default_state_change_tracker[state_name] = StateMetadata(
+                new_value, StateChangeKind.update
+            )
             return new_value
         self._default_state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
         return value

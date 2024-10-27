@@ -1,6 +1,5 @@
 import datetime
 import unittest
-from abc import abstractmethod
 from typing import Optional
 
 from dapr.actor import Actor, ActorInterface, Remindable, actormethod
@@ -9,41 +8,41 @@ from dapr.actor.runtime.state_change import StateChangeKind
 
 
 class MockTestActorInterface(ActorInterface):
-    @abstractmethod
     @actormethod(name='GetData')
-    async def get_data(self) -> object: ...
+    async def get_data(self) -> object:
+        ...
 
-    @abstractmethod
     @actormethod(name='SetData')
-    async def set_data(self, data: object) -> None: ...
+    async def set_data(self, data: object) -> None:
+        ...
 
-    @abstractmethod
     @actormethod(name='ClearData')
-    async def clear_data(self) -> None: ...
+    async def clear_data(self) -> None:
+        ...
 
-    @abstractmethod
     @actormethod(name='TestData')
-    async def test_data(self) -> int: ...
+    async def test_data(self) -> int:
+        ...
 
-    @abstractmethod
     @actormethod(name='AddDataNoSave')
-    async def add_data_no_save(self, data: object) -> None: ...
+    async def add_data_no_save(self, data: object) -> None:
+        ...
 
-    @abstractmethod
     @actormethod(name='RemoveDataNoSave')
-    async def remove_data_no_save(self) -> None: ...
+    async def remove_data_no_save(self) -> None:
+        ...
 
-    @abstractmethod
     @actormethod(name='SaveState')
-    async def save_state(self) -> None: ...
+    async def save_state(self) -> None:
+        ...
 
-    @abstractmethod
     @actormethod(name='ToggleReminder')
-    async def toggle_reminder(self, name: str, enabled: bool) -> None: ...
+    async def toggle_reminder(self, name: str, enabled: bool) -> None:
+        ...
 
-    @abstractmethod
     @actormethod(name='ToggleTimer')
-    async def toggle_timer(self, name: str, enabled: bool) -> None: ...
+    async def toggle_timer(self, name: str, enabled: bool) -> None:
+        ...
 
 
 class MockTestActor(Actor, MockTestActorInterface, Remindable):

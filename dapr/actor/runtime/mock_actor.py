@@ -24,7 +24,7 @@ from dapr.actor.runtime.state_manager import ActorStateManager
 
 class MockActor(Actor):
     """A mock actor class to be used to override certain Actor methods for unit testing.
-        To be used only via the create_mock_actor function, which takes in a class and returns a 
+        To be used only via the create_mock_actor function, which takes in a class and returns a
         mock actor object for that class.
 
     Examples:
