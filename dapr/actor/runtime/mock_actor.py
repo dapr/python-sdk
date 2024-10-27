@@ -46,9 +46,7 @@ class MockActor(Actor):
     def __init__(self, actor_id: str, initstate: Optional[dict]):
         self.id = ActorId(actor_id)
         self._runtime_ctx = None
-        if initstate is not None:
-            self._mock_state = initstate
-        self._state_manager: ActorStateManager = MockStateManager(self)
+        self._state_manager: ActorStateManager = MockStateManager(self, initstate)
 
     async def register_timer(
         self,

@@ -9,40 +9,31 @@ from dapr.actor.runtime.state_change import StateChangeKind
 
 class MockTestActorInterface(ActorInterface):
     @actormethod(name='GetData')
-    async def get_data(self) -> object:
-        ...
+    async def get_data(self) -> object: ...
 
     @actormethod(name='SetData')
-    async def set_data(self, data: object) -> None:
-        ...
+    async def set_data(self, data: object) -> None: ...
 
     @actormethod(name='ClearData')
-    async def clear_data(self) -> None:
-        ...
+    async def clear_data(self) -> None: ...
 
     @actormethod(name='TestData')
-    async def test_data(self) -> int:
-        ...
+    async def test_data(self) -> int: ...
 
     @actormethod(name='AddDataNoSave')
-    async def add_data_no_save(self, data: object) -> None:
-        ...
+    async def add_data_no_save(self, data: object) -> None: ...
 
     @actormethod(name='RemoveDataNoSave')
-    async def remove_data_no_save(self) -> None:
-        ...
+    async def remove_data_no_save(self) -> None: ...
 
     @actormethod(name='SaveState')
-    async def save_state(self) -> None:
-        ...
+    async def save_state(self) -> None: ...
 
     @actormethod(name='ToggleReminder')
-    async def toggle_reminder(self, name: str, enabled: bool) -> None:
-        ...
+    async def toggle_reminder(self, name: str, enabled: bool) -> None: ...
 
     @actormethod(name='ToggleTimer')
-    async def toggle_timer(self, name: str, enabled: bool) -> None:
-        ...
+    async def toggle_timer(self, name: str, enabled: bool) -> None: ...
 
 
 class MockTestActor(Actor, MockTestActorInterface, Remindable):
@@ -119,7 +110,8 @@ class MockTestActor(Actor, MockTestActorInterface, Remindable):
         period: datetime.timedelta,
         ttl: Optional[datetime.timedelta] = None,
     ) -> None:
-        print('Reminder triggered')
+        await self._state_manager.set_state(name, True)
+        await self._state_manager.save_state()
 
     async def timer_callback(self, state) -> None:
         print('Timer triggered')
@@ -129,6 +121,11 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
     def test_create_actor(self):
         mockactor = create_mock_actor(MockTestActor, '1')
         self.assertEqual(mockactor.id.id, '1')
+
+    async def test_inistate(self):
+        mockactor = create_mock_actor(MockTestActor, '1', initstate={'state': 5})
+        self.assertTrue('state' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['state'], 5)
 
     async def test_on_activate(self):
         mockactor = create_mock_actor(MockTestActor, '1')
@@ -141,6 +138,11 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
         await mockactor._on_activate()
         out1 = await mockactor.get_data()
         self.assertEqual(out1, {'test': 5})
+
+    async def test_get_data_initstate(self):
+        mockactor = create_mock_actor(MockTestActor, '1', initstate={'state': {'test': 6}})
+        out1 = await mockactor.get_data()
+        self.assertEqual(out1, {'test': 6})
 
     async def test_set_data(self):
         mockactor = create_mock_actor(MockTestActor, '1')
@@ -187,6 +189,17 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(timerstate.timer_name, 'test')
         await mockactor.toggle_timer('test', False)
         self.assertEqual(len(mockactor._state_manager._mock_timers), 0)
+
+    async def test_activate_reminder(self):
+        mockactor = create_mock_actor(MockTestActor, '1')
+        await mockactor.receive_reminder(
+            'test',
+            b'test1',
+            datetime.timedelta(days=1),
+            datetime.timedelta(days=1),
+            datetime.timedelta(days=1),
+        )
+        self.assertEqual(mockactor._state_manager._mock_state['test'], True)
 
     async def test_test_data(self):
         mockactor = create_mock_actor(MockTestActor, '1')

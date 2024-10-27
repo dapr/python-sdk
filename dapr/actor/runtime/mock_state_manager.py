@@ -28,12 +28,14 @@ CONTEXT: ContextVar[Optional[Dict[str, Any]]] = ContextVar('state_tracker_contex
 
 
 class MockStateManager(ActorStateManager):
-    def __init__(self, actor: 'MockActor'):
+    def __init__(self, actor: 'MockActor', initstate: Optional[dict]):
         self._actor = actor
         self._default_state_change_tracker: Dict[str, StateMetadata] = {}
         self._mock_state: dict[str, Any] = {}
         self._mock_timers: dict[str, ActorTimerData] = {}
         self._mock_reminders: dict[str, ActorReminderData] = {}
+        if initstate:
+            self._mock_state = initstate
 
     async def add_state(self, state_name: str, value: T) -> None:
         if not await self.try_add_state(state_name, value):
@@ -52,7 +54,7 @@ class MockStateManager(ActorStateManager):
         if not existed:
             return False
         self._default_state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
-        self._actor._mock_state[state_name] = value
+        self._mock_state[state_name] = value
         return True
 
     async def get_state(self, state_name: str) -> Optional[T]:
