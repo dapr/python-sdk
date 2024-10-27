@@ -3,11 +3,12 @@ import json
 
 from concurrent import futures
 from google.protobuf.any_pb2 import Any as GrpcAny
-from google.protobuf import empty_pb2
+from google.protobuf import empty_pb2, struct_pb2
+from google.rpc import status_pb2, code_pb2
 from grpc_status import rpc_status
 
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.proto import api_service_v1, common_v1, api_v1
+from dapr.proto import api_service_v1, common_v1, api_v1, appcallback_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
 from dapr.clients.grpc._response import WorkflowRuntimeStatus
 from dapr.proto.runtime.v1.dapr_pb2 import (
@@ -176,6 +177,58 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
+
+    def SubscribeTopicEventsAlpha1(self, request_iterator, context):
+        for request in request_iterator:
+            if request.HasField('initial_request'):
+                yield api_v1.SubscribeTopicEventsResponseAlpha1(
+                    initial_response=api_v1.SubscribeTopicEventsResponseInitialAlpha1()
+                )
+                break
+
+        extensions = struct_pb2.Struct()
+        extensions.update({'field1': 'value1', 'field2': 42, 'field3': True})
+
+        msg1 = appcallback_v1.TopicEventRequest(
+            id='111',
+            topic='TOPIC_A',
+            data=b'hello2',
+            source='app1',
+            data_content_type='text/plain',
+            type='com.example.type2',
+            pubsub_name='pubsub',
+            spec_version='1.0',
+            extensions=extensions,
+        )
+        yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg1)
+
+        for request in request_iterator:
+            if request.HasField('event_processed'):
+                break
+
+        msg2 = appcallback_v1.TopicEventRequest(
+            id='222',
+            topic='TOPIC_A',
+            data=b'{"a": 1}',
+            source='app1',
+            data_content_type='application/json',
+            type='com.example.type2',
+            pubsub_name='pubsub',
+            spec_version='1.0',
+            extensions=extensions,
+        )
+        yield api_v1.SubscribeTopicEventsResponseAlpha1(event_message=msg2)
+
+        for request in request_iterator:
+            if request.HasField('event_processed'):
+                break
+
+        # On the third message simulate a disconnection
+        context.abort_with_status(
+            rpc_status.to_status(
+                status_pb2.Status(code=code_pb2.UNAVAILABLE, message='Simulated disconnection')
+            )
+        )
 
     def SaveState(self, request, context):
         self.check_for_exception(context)

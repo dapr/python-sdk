@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import List, Tuple
 
-from grpc import UnaryUnaryClientInterceptor, ClientCallDetails  # type: ignore
+from grpc import UnaryUnaryClientInterceptor, ClientCallDetails, StreamStreamClientInterceptor  # type: ignore
 
 from dapr.conf import settings
 
@@ -38,7 +38,7 @@ class DaprClientTimeoutInterceptor(UnaryUnaryClientInterceptor):
         return continuation(client_call_details, request)
 
 
-class DaprClientInterceptor(UnaryUnaryClientInterceptor):
+class DaprClientInterceptor(UnaryUnaryClientInterceptor, StreamStreamClientInterceptor):
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
 
@@ -91,8 +91,8 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         return new_call_details
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
-        """This method intercepts a unary-unary gRPC call. This is the implementation of the
-        abstract method defined in UnaryUnaryClientInterceptor defined in grpc. This is invoked
+        """This method intercepts a unary-unary gRPC call. It is the implementation of the
+        abstract method defined in UnaryUnaryClientInterceptor defined in grpc. It's invoked
         automatically by grpc based on the order in which interceptors are added to the channel.
 
         Args:
@@ -103,8 +103,25 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor):
         Returns:
             A response object after invoking the continuation callable
         """
-        # Pre-process or intercept call
         new_call_details = self._intercept_call(client_call_details)
         # Call continuation
         response = continuation(new_call_details, request)
+        return response
+
+    def intercept_stream_stream(self, continuation, client_call_details, request_iterator):
+        """This method intercepts a stream-stream gRPC call. It is the implementation of the
+        abstract method defined in StreamStreamClientInterceptor defined in grpc. It's invoked
+        automatically by grpc based on the order in which interceptors are added to the channel.
+
+        Args:
+            continuation: a callable to be invoked to continue with the RPC or next interceptor
+            client_call_details: a ClientCallDetails object describing the outgoing RPC
+            request_iterator: the request value for the RPC
+
+        Returns:
+            A response object after invoking the continuation callable
+        """
+        new_call_details = self._intercept_call(client_call_details)
+        # Call continuation
+        response = continuation(new_call_details, request_iterator)
         return response

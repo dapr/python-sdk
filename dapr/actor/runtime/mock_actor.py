@@ -23,31 +23,24 @@ from dapr.actor.runtime.state_manager import ActorStateManager
 
 
 class MockActor(Actor):
-    """A base class of Actors that provides the common functionality of actors.
+    """A mock actor class to be used to override certain Actor methods for unit testing.
+        To be used only via the create_mock_actor function, which takes in a class and returns a 
+        mock actor object for that class.
 
     Examples:
-
-        class DaprActorInterface(ActorInterface):
+        class SomeActorInterface(ActorInterface):
             @actor_method(name="method")
-            async def method_invoke(self, arg: str) -> str:
-                ...
+            async def set_state(self, data: dict) -> None:
 
-        class DaprActor(Actor, DaprActorInterface):
-            def __init__(self, ctx, actor_id):
-                super(DaprActor, self).__init__(ctx, actor_id)
+        class SomeActor(Actor, SomeActorInterface):
+            async def set_state(self, data: dict) -> None:
+                await self._state_manager.set_state('state', data)
+                await self._state_manager.save_state()
 
-            async def method_invoke(self, arg: str) -> str:
-                return arg
-
-            async def _on_activate(self):
-                pass
-
-            async def _on_deactivate(self):
-                pass
-
-    Attributes:
-        runtime_ctx: the :class:`ActorRuntimeContext` object served for
-            the actor implementation.
+        mock_actor = create_mock_actor(SomeActor)
+        assert mock_actor._state_manager._mock_state == {}
+        await mock_actor.set_state({"test":10})
+        assert mock_actor._state_manager._mock_state == {"test":10}
     """
 
     def __init__(self, actor_id: str, initstate: Optional[dict]):
@@ -66,10 +59,7 @@ class MockActor(Actor):
         period: timedelta,
         ttl: Optional[timedelta] = None,
     ) -> None:
-        """Registers actor timer.
-
-        All timers are stopped when the actor is deactivated as part of garbage collection.
-
+        """Adds actor timer to self._state_manager._mock_timers.
         Args:
             name (str): the name of the timer to register.
             callback (Callable): An awaitable callable which will be called when the timer fires.
@@ -85,7 +75,7 @@ class MockActor(Actor):
         self._state_manager._mock_timers[name] = timer
 
     async def unregister_timer(self, name: str) -> None:
-        """Unregisters actor timer.
+        """Unregisters actor timer from self._state_manager._mock_timers.
 
         Args:
             name (str): the name of the timer to unregister.
@@ -100,15 +90,7 @@ class MockActor(Actor):
         period: timedelta,
         ttl: Optional[timedelta] = None,
     ) -> None:
-        """Registers actor reminder.
-
-        Reminders are a mechanism to trigger persistent callbacks on an actor at specified times.
-        Their functionality is similar to timers. But unlike timers, reminders are triggered under
-        all circumstances until the actor explicitly unregisters them or the actor is explicitly
-        deleted. Specifically, reminders are triggered across actor deactivations and failovers
-        because the Actors runtime persists information about the actor's reminders using actor
-        state provider. Also existing reminders can be updated by calling this registration method
-        again using the same reminderName.
+        """Adds actor reminder to self._state_manager._mock_reminders.
 
         Args:
             name (str): the name of the reminder to register. the name must be unique per actor.
@@ -123,7 +105,7 @@ class MockActor(Actor):
         self._state_manager._mock_reminders[name] = reminder
 
     async def unregister_reminder(self, name: str) -> None:
-        """Unregisters actor reminder.
+        """Unregisters actor reminder from self._state_manager._mock_reminders..
 
         Args:
             name (str): the name of the reminder to unregister.
@@ -137,4 +119,5 @@ T = TypeVar('T', bound=Actor)
 def create_mock_actor(cls1: type[T], actor_id: str, initstate: Optional[dict] = None) -> T:
     class MockSuperClass(MockActor, cls1):
         pass
+
     return MockSuperClass(actor_id, initstate)  # type: ignore

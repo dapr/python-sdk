@@ -216,7 +216,7 @@ with DaprClient() as d:
 - For a full list of state store query options visit [How-To: Query state]({{< ref howto-state-query-api.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store_query) for code samples and instructions to try out state store querying.
 
-### Publish & subscribe to messages
+### Publish & subscribe
 
 #### Publish messages
 
@@ -255,6 +255,126 @@ def mytopic_important(event: v1.Event) -> None:
 - For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/pubsub-simple) for code samples and instructions to try out pub/sub.
 
+#### Streaming message subscription
+
+You can create a streaming subscription to a PubSub topic using either the `subscribe`
+or `subscribe_handler` methods.
+
+The `subscribe` method returns a `Subscription` object, which allows you to pull messages from the
+stream by
+calling the `next_message` method. This will block on the main thread while waiting for messages.
+When done, you should call the close method to terminate the
+subscription and stop receiving messages.
+
+The `subscribe_with_handler` method accepts a callback function that is executed for each message
+received from the stream.
+It runs in a separate thread, so it doesn't block the main thread. The callback should return a
+`TopicEventResponse` (ex. `TopicEventResponse('success')`), indicating whether the message was
+processed successfully, should be retried, or should be discarded. The method will automatically
+manage message acknowledgements based on the returned status. The call to `subscribe_with_handler`
+method returns a close function, which should be called to terminate the subscription when you're
+done.
+
+Here's an example of using the `subscribe` method: 
+
+```python
+import time
+
+from dapr.clients import DaprClient
+from dapr.clients.grpc.subscription import StreamInactiveError
+
+counter = 0
+
+
+def process_message(message):
+    global counter
+    counter += 1
+    # Process the message here
+    print(f'Processing message: {message.data()} from {message.topic()}...')
+    return 'success'
+
+
+def main():
+    with DaprClient() as client:
+        global counter
+
+        subscription = client.subscribe(
+            pubsub_name='pubsub', topic='TOPIC_A', dead_letter_topic='TOPIC_A_DEAD'
+        )
+
+        try:
+            while counter < 5:
+                try:
+                    message = subscription.next_message()
+
+                except StreamInactiveError as e:
+                    print('Stream is inactive. Retrying...')
+                    time.sleep(1)
+                    continue
+                if message is None:
+                    print('No message received within timeout period.')
+                    continue
+
+                # Process the message
+                response_status = process_message(message)
+
+                if response_status == 'success':
+                    subscription.respond_success(message)
+                elif response_status == 'retry':
+                    subscription.respond_retry(message)
+                elif response_status == 'drop':
+                    subscription.respond_drop(message)
+
+        finally:
+            print("Closing subscription...")
+            subscription.close()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+And here's an example of using the `subscribe_with_handler` method:
+
+```python
+import time
+
+from dapr.clients import DaprClient
+from dapr.clients.grpc._response import TopicEventResponse
+
+counter = 0
+
+
+def process_message(message):
+    # Process the message here
+    global counter
+    counter += 1
+    print(f'Processing message: {message.data()} from {message.topic()}...')
+    return TopicEventResponse('success')
+
+
+def main():
+    with (DaprClient() as client):
+        # This will start a new thread that will listen for messages
+        # and process them in the `process_message` function
+        close_fn = client.subscribe_with_handler(
+            pubsub_name='pubsub', topic='TOPIC_A', handler_fn=process_message,
+            dead_letter_topic='TOPIC_A_DEAD'
+        )
+
+        while counter < 5:
+            time.sleep(1)
+
+        print("Closing subscription...")
+        close_fn()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+- For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/pubsub-simple) for code samples and instructions to try out streaming pub/sub.
 
 ### Interact with output bindings
 
@@ -266,7 +386,7 @@ with DaprClient() as d:
 ```
 
 - For a full guide on output bindings visit [How-To: Use bindings]({{< ref howto-bindings.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-binding) for code samples and instructions to try out output bindings.
+- Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/invoke-binding) for code samples and instructions to try out output bindings.
 
 ### Retrieve secrets
 

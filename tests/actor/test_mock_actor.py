@@ -5,9 +5,10 @@ from typing import Optional
 
 from dapr.actor import Actor, ActorInterface, Remindable, actormethod
 from dapr.actor.runtime.mock_actor import create_mock_actor
+from dapr.actor.runtime.state_change import StateChangeKind
 
 
-class DemoActorInterface(ActorInterface):
+class MockTestActorInterface(ActorInterface):
     @abstractmethod
     @actormethod(name='GetData')
     async def get_data(self) -> object: ...
@@ -21,6 +22,22 @@ class DemoActorInterface(ActorInterface):
     async def clear_data(self) -> None: ...
 
     @abstractmethod
+    @actormethod(name='TestData')
+    async def test_data(self) -> int: ...
+
+    @abstractmethod
+    @actormethod(name='AddDataNoSave')
+    async def add_data_no_save(self, data: object) -> None: ...
+
+    @abstractmethod
+    @actormethod(name='RemoveDataNoSave')
+    async def remove_data_no_save(self) -> None: ...
+
+    @abstractmethod
+    @actormethod(name='SaveState')
+    async def save_state(self) -> None: ...
+
+    @abstractmethod
     @actormethod(name='ToggleReminder')
     async def toggle_reminder(self, name: str, enabled: bool) -> None: ...
 
@@ -29,17 +46,7 @@ class DemoActorInterface(ActorInterface):
     async def toggle_timer(self, name: str, enabled: bool) -> None: ...
 
 
-class DemoActor(Actor, DemoActorInterface, Remindable):
-    """Implements DemoActor actor service
-
-    This shows the usage of the below actor features:
-
-    1. Actor method invocation
-    2. Actor state store management
-    3. Actor reminder
-    4. Actor timer
-    """
-
+class MockTestActor(Actor, MockTestActorInterface, Remindable):
     def __init__(self, ctx, actor_id):
         super().__init__(ctx, actor_id)
 
@@ -57,6 +64,27 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
 
     async def clear_data(self) -> None:
         await self._state_manager.remove_state('state')
+        await self._state_manager.save_state()
+
+    async def test_data(self) -> int:
+        _, val = await self._state_manager.try_get_state('state')
+        if val is None:
+            return 0
+        if 'test' not in val:
+            return 1
+        if val['test'] % 2 == 1:
+            return 2
+        elif val['test'] % 2 == 0:
+            return 3
+        return 4
+
+    async def add_data_no_save(self, data: object) -> None:
+        await self._state_manager.set_state('state', data)
+
+    async def remove_data_no_save(self) -> None:
+        await self._state_manager.remove_state('state')
+
+    async def save_state(self) -> None:
         await self._state_manager.save_state()
 
     async def toggle_reminder(self, name: str, enabled: bool) -> None:
@@ -100,23 +128,23 @@ class DemoActor(Actor, DemoActorInterface, Remindable):
 
 class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
     def test_create_actor(self):
-        mockactor = create_mock_actor(DemoActor, '1')
+        mockactor = create_mock_actor(MockTestActor, '1')
         self.assertEqual(mockactor.id.id, '1')
 
     async def test_on_activate(self):
-        mockactor = create_mock_actor(DemoActor, '1')
+        mockactor = create_mock_actor(MockTestActor, '1')
         await mockactor._on_activate()
         self.assertTrue('state' in mockactor._state_manager._mock_state)
         self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 5})
 
     async def test_get_data(self):
-        mockactor = create_mock_actor(DemoActor, '1')
+        mockactor = create_mock_actor(MockTestActor, '1')
         await mockactor._on_activate()
         out1 = await mockactor.get_data()
         self.assertEqual(out1, {'test': 5})
 
     async def test_set_data(self):
-        mockactor = create_mock_actor(DemoActor, '1')
+        mockactor = create_mock_actor(MockTestActor, '1')
         await mockactor._on_activate()
         self.assertTrue('state' in mockactor._state_manager._mock_state)
         self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 5})
@@ -127,7 +155,7 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(out1, {'test': 10})
 
     async def test_clear_data(self):
-        mockactor = create_mock_actor(DemoActor, '1')
+        mockactor = create_mock_actor(MockTestActor, '1')
         await mockactor._on_activate()
         self.assertTrue('state' in mockactor._state_manager._mock_state)
         self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 5})
@@ -138,7 +166,7 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(out1)
 
     async def test_toggle_reminder(self):
-        mockactor = create_mock_actor(DemoActor, '1')
+        mockactor = create_mock_actor(MockTestActor, '1')
         await mockactor._on_activate()
         self.assertEqual(len(mockactor._state_manager._mock_reminders), 0)
         await mockactor.toggle_reminder('test', True)
@@ -150,7 +178,7 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(mockactor._state_manager._mock_reminders), 0)
 
     async def test_toggle_timer(self):
-        mockactor = create_mock_actor(DemoActor, '1')
+        mockactor = create_mock_actor(MockTestActor, '1')
         await mockactor._on_activate()
         self.assertEqual(len(mockactor._state_manager._mock_timers), 0)
         await mockactor.toggle_timer('test', True)
@@ -160,3 +188,65 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(timerstate.timer_name, 'test')
         await mockactor.toggle_timer('test', False)
         self.assertEqual(len(mockactor._state_manager._mock_timers), 0)
+
+    async def test_test_data(self):
+        mockactor = create_mock_actor(MockTestActor, '1')
+        result = await mockactor.test_data()
+        self.assertEqual(result, 0)
+        await mockactor.set_data('lol')
+        result = await mockactor.test_data()
+        self.assertEqual(result, 1)
+        await mockactor.set_data({'test': 'lol'})
+        with self.assertRaises(TypeError):
+            await mockactor.test_data()
+        await mockactor.set_data({'test': 1})
+        result = await mockactor.test_data()
+        self.assertEqual(result, 2)
+        await mockactor.set_data({'test': 2})
+        result = await mockactor.test_data()
+        self.assertEqual(result, 3)
+
+    async def test_state_change_tracker(self):
+        mockactor = create_mock_actor(MockTestActor, '1')
+        self.assertEqual(len(mockactor._state_manager._default_state_change_tracker), 0)
+        await mockactor._on_activate()
+        self.assertEqual(len(mockactor._state_manager._default_state_change_tracker), 1)
+        self.assertTrue('state' in mockactor._state_manager._default_state_change_tracker)
+        self.assertEqual(
+            mockactor._state_manager._default_state_change_tracker['state'].change_kind,
+            StateChangeKind.none,
+        )
+        self.assertEqual(
+            mockactor._state_manager._default_state_change_tracker['state'].value, {'test': 5}
+        )
+        self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 5})
+        await mockactor.remove_data_no_save()
+        self.assertEqual(
+            mockactor._state_manager._default_state_change_tracker['state'].change_kind,
+            StateChangeKind.remove,
+        )
+        self.assertEqual(
+            mockactor._state_manager._default_state_change_tracker['state'].value, {'test': 5}
+        )
+        self.assertTrue('state' not in mockactor._state_manager._mock_state)
+        await mockactor.save_state()
+        self.assertEqual(len(mockactor._state_manager._default_state_change_tracker), 0)
+        self.assertTrue('state' not in mockactor._state_manager._mock_state)
+        await mockactor.add_data_no_save({'test': 6})
+        self.assertEqual(
+            mockactor._state_manager._default_state_change_tracker['state'].change_kind,
+            StateChangeKind.add,
+        )
+        self.assertEqual(
+            mockactor._state_manager._default_state_change_tracker['state'].value, {'test': 6}
+        )
+        self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 6})
+        await mockactor.save_state()
+        self.assertEqual(
+            mockactor._state_manager._default_state_change_tracker['state'].change_kind,
+            StateChangeKind.none,
+        )
+        self.assertEqual(
+            mockactor._state_manager._default_state_change_tracker['state'].value, {'test': 6}
+        )
+        self.assertEqual(mockactor._state_manager._mock_state['state'], {'test': 6})
