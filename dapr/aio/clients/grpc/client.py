@@ -1408,6 +1408,7 @@ class DaprGrpcClientAsync:
         send_raw_bytes: bool = False,
     ) -> StartWorkflowResponse:
         """Starts a workflow.
+        Deprecated: use dapr-ext-workflow instead
 
         Args:
             workflow_component (str): the name of the workflow component
@@ -1469,6 +1470,7 @@ class DaprGrpcClientAsync:
 
     async def get_workflow(self, instance_id: str, workflow_component: str) -> GetWorkflowResponse:
         """Gets information on a workflow.
+        Deprecated: use dapr-ext-workflow instead
 
         Args:
             instance_id (str): the ID of the workflow instance,
@@ -1510,6 +1512,7 @@ class DaprGrpcClientAsync:
 
     async def terminate_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
         """Terminates a workflow.
+        Deprecated: use dapr-ext-workflow instead
 
         Args:
             instance_id (str): the ID of the workflow instance, e.g.
@@ -1547,6 +1550,7 @@ class DaprGrpcClientAsync:
         send_raw_bytes: bool = False,
     ) -> DaprResponse:
         """Raises an event on a workflow.
+        Deprecated: use dapr-ext-workflow instead
 
         Args:
             instance_id (str): the ID of the workflow instance,
@@ -1610,6 +1614,7 @@ class DaprGrpcClientAsync:
 
     async def pause_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
         """Pause a workflow.
+        Deprecated: use dapr-ext-workflow instead
 
             Args:
                 instance_id (str): the ID of the workflow instance,
@@ -1642,6 +1647,7 @@ class DaprGrpcClientAsync:
 
     async def resume_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
         """Resumes a workflow.
+        Deprecated: use dapr-ext-workflow instead
 
         Args:
             instance_id (str): the ID of the workflow instance,
@@ -1673,6 +1679,7 @@ class DaprGrpcClientAsync:
 
     async def purge_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
         """Purges a workflow.
+        Deprecated: use dapr-ext-workflow instead
 
             Args:
                 instance_id (str): the ID of the workflow instance,

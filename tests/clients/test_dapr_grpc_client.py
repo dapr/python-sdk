@@ -864,7 +864,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     # Tests for workflow
     #
 
-    def test_workflow(self):
+    def test_workflow_deprecated(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         # Sane parameters
         workflow_name = 'test_workflow'

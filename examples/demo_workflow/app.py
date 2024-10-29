@@ -13,6 +13,7 @@
 from datetime import timedelta
 from time import sleep
 from dapr.ext.workflow import (
+    DaprWorkflowClient,
     WorkflowRuntime,
     DaprWorkflowContext,
     WorkflowActivityContext,
@@ -106,7 +107,7 @@ def act_for_child_wf(ctx: WorkflowActivityContext, inp):
 
 
 def main():
-    with DaprClient() as d:
+    with DaprWorkflowClient() as wfc:
         workflow_runtime = WorkflowRuntime()
         workflow_runtime.register_workflow(hello_world_wf)
         workflow_runtime.register_workflow(child_retryable_wf)
@@ -119,14 +120,11 @@ def main():
         sleep(2)
 
         print('==========Start Counter Increase as per Input:==========')
-        start_resp = d.start_workflow(
+        instance_id = wfc.schedule_new_workflow(
             instance_id=instance_id,
-            workflow_component=workflow_component,
-            workflow_name=workflow_name,
-            input=input_data,
-            workflow_options=workflow_options,
-        )
-        print(f'start_resp {start_resp.instance_id}')
+            workflow=hello_world_wf,
+            input=input_data)
+        print(f'start_resp {instance_id}')
 
         # Sleep for a while to let the workflow run
         sleep(12)
@@ -135,62 +133,56 @@ def main():
         assert child_orchestrator_string == '1aa2bb3cc'
 
         # Pause Test
-        d.pause_workflow(instance_id=instance_id, workflow_component=workflow_component)
-        get_response = d.get_workflow(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
+        wfc.pause_workflow(instance_id=instance_id)
+        get_response = wfc.get_workflow_state(instance_id=instance_id, fetch_payloads=True)
         print(f'Get response from {workflow_name} after pause call: {get_response.runtime_status}')
 
         # Resume Test
-        d.resume_workflow(instance_id=instance_id, workflow_component=workflow_component)
-        get_response = d.get_workflow(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
+        wfc.resume_workflow(instance_id=instance_id)
+        get_response = wfc.get_workflow_state(instance_id=instance_id, fetch_payloads=True)
         print(f'Get response from {workflow_name} after resume call: {get_response.runtime_status}')
 
         sleep(1)
         # Raise event
-        d.raise_workflow_event(
-            instance_id=child_instance_id,
-            workflow_component=workflow_component,
+        wfc.raise_workflow_event(
+            instance_id=instance_id,
             event_name=event_name,
-            event_data=event_data,
+            data=event_data,
         )
 
         sleep(5)
         # Purge Test
-        d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        # // TODO IMPLEMENT PURGE
+        # d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
         try:
-            d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
-        except DaprInternalError as err:
+            wfc.get_workflow_state(instance_id=instance_id, fetch_payloads=True)
+        except Exception as err:
+            # TODO temporary print
+            print(f'got error {err}')
             if non_existent_id_error in err._message:
                 print('Instance Successfully Purged')
 
         # Kick off another workflow for termination purposes
         # This will also test using the same instance ID on a new workflow after
         # the old instance was purged
-        start_resp = d.start_workflow(
+        instance_id = wfc.schedule_new_workflow(
             instance_id=instance_id,
-            workflow_component=workflow_component,
-            workflow_name=workflow_name,
-            input=input_data,
-            workflow_options=workflow_options,
+            workflow=hello_world_wf,
+            input=input_data
         )
-        print(f'start_resp {start_resp.instance_id}')
+        print(f'start_resp {instance_id}')
 
         sleep(5)
         # Terminate Test
-        d.terminate_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        wfc.terminate_workflow(instance_id=instance_id)
         sleep(1)
-        get_response = d.get_workflow(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
+        get_response = wfc.get_workflow_state(instance_id=instance_id, fetch_payloads=True)
         print(
             f'Get response from {workflow_name} '
             f'after terminate call: {get_response.runtime_status}'
         )
-        child_get_response = d.get_workflow(
-            instance_id=child_instance_id, workflow_component=workflow_component
+        child_get_response = wfc.get_workflow_state(
+            instance_id=child_instance_id, fetch_payloads=True
         )
         print(
             f'Get response from {child_workflow_name} '
@@ -198,12 +190,13 @@ def main():
         )
 
         # Purge Test
-        d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
-        try:
-            d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
-        except DaprInternalError as err:
-            if non_existent_id_error in err._message:
-                print('Instance Successfully Purged')
+        # TODO IMPLEMENT PURGE
+        # d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        # try:
+        #     d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        # except DaprInternalError as err:
+        #     if non_existent_id_error in err._message:
+        #         print('Instance Successfully Purged')
 
         workflow_runtime.shutdown()
 
