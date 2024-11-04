@@ -508,9 +508,16 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
 
-        dapr.execute_state_transaction(store_name='statestore',
-            operations=[TransactionalStateOperation(key=key, operation_type=TransactionOperationType.delete),
-                TransactionalStateOperation(key=another_key, operation_type=TransactionOperationType.delete), ],
+        dapr.execute_state_transaction(
+            store_name='statestore',
+            operations=[
+                TransactionalStateOperation(
+                    key=key, operation_type=TransactionOperationType.delete
+                ),
+                TransactionalStateOperation(
+                    key=another_key, operation_type=TransactionOperationType.delete
+                ),
+            ],
         )
         resp = dapr.get_state(store_name='statestore', key=key)
         self.assertEqual(resp.data, b'')

@@ -884,7 +884,6 @@ class DaprGrpcClient:
         transactional_metadata: Optional[Dict[str, str]] = dict(),
         metadata: Optional[MetadataTuple] = None,
     ) -> DaprResponse:
-
         """Saves or deletes key-value pairs to a statestore as a transaction
 
         This saves or deletes key-values to the statestore as part of a single transaction,

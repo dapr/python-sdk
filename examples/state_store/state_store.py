@@ -89,16 +89,25 @@ with DaprClient() as d:
     print(f'Got items with etags: {[(i.data, i.etag) for i in items]}')
 
     # Transaction delete
-    d.execute_state_transaction(store_name=storeName, operations=[
-        TransactionalStateOperation(operation_type=TransactionOperationType.delete, key=key),
-        TransactionalStateOperation(operation_type=TransactionOperationType.delete, key=another_key),])
+    d.execute_state_transaction(
+        store_name=storeName,
+        operations=[
+            TransactionalStateOperation(operation_type=TransactionOperationType.delete, key=key),
+            TransactionalStateOperation(
+                operation_type=TransactionOperationType.delete, key=another_key
+            ),
+        ],
+    )
 
     # Batch get
-    items = d.get_bulk_state(store_name=storeName, keys=[key, another_key],
-        states_metadata={'metakey': 'metavalue'}).items
+    items = d.get_bulk_state(
+        store_name=storeName, keys=[key, another_key], states_metadata={'metakey': 'metavalue'}
+    ).items
     print(f'Got values after transaction delete: {[data.data for data in items]}')
 
     # Delete one state by key.
-    d.delete_state(store_name=storeName, key=yet_another_key, state_metadata={'metakey': 'metavalue'})
+    d.delete_state(
+        store_name=storeName, key=yet_another_key, state_metadata={'metakey': 'metavalue'}
+    )
     data = d.get_state(store_name=storeName, key=yet_another_key).data
     print(f'Got value after delete: {data}')
