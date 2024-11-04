@@ -22,6 +22,7 @@ def process_message(message):
     print(f'Processing message: {message.data()} from {message.topic()}...', flush=True)
     return 'success'
 
+
 def main():
     with DaprClient() as client:
         global counter
@@ -65,6 +66,7 @@ def main():
         finally:
             print('Closing subscription...')
             subscription.close()
+
 
 if __name__ == '__main__':
     main()

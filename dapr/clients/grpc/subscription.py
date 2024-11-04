@@ -149,4 +149,3 @@ class Subscription:
 
     def __next__(self):
         return self.next_message()
-

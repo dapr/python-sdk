@@ -33,8 +33,10 @@ async def main():
         try:
             async for message in subscription:
                 if message is None:
-                    print('No message received within timeout period. '
-                          'The stream might have been cancelled.')
+                    print(
+                        'No message received within timeout period. '
+                        'The stream might have been cancelled.'
+                    )
                     continue
 
                 try:
