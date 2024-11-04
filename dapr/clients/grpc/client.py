@@ -884,6 +884,7 @@ class DaprGrpcClient:
         transactional_metadata: Optional[Dict[str, str]] = dict(),
         metadata: Optional[MetadataTuple] = None,
     ) -> DaprResponse:
+
         """Saves or deletes key-value pairs to a statestore as a transaction
 
         This saves or deletes key-values to the statestore as part of a single transaction,
@@ -929,7 +930,7 @@ class DaprGrpcClient:
                 operationType=o.operation_type.value,
                 request=common_v1.StateItem(
                     key=o.key,
-                    value=to_bytes(o.data),
+                    value=to_bytes(o.data) if o.data is not None else None,
                     etag=common_v1.Etag(value=o.etag) if o.etag is not None else None,
                 ),
             )
