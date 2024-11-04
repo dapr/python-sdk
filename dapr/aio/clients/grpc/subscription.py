@@ -114,3 +114,10 @@ class Subscription:
                     raise Exception(f'Error while closing stream: {e}')
             except Exception as e:
                 raise Exception(f'Error while closing stream: {e}')
+
+    def __aiter__(self):
+        """Make the subscription async iterable."""
+        return self
+
+    async def __anext__(self):
+        return await self.next_message()
