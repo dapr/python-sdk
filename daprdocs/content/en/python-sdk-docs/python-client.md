@@ -260,8 +260,8 @@ def mytopic_important(event: v1.Event) -> None:
 You can create a streaming subscription to a PubSub topic using either the `subscribe`
 or `subscribe_handler` methods.
 
-The `subscribe` method returns a `Subscription` object, which allows you to pull messages from the
-stream by
+The `subscribe` method returns an iterable `Subscription` object, which allows you to pull messages from the
+stream by using a `for` loop (ex. `for message in subscription`) or by 
 calling the `next_message` method. This will block on the main thread while waiting for messages.
 When done, you should call the close method to terminate the
 subscription and stop receiving messages.
@@ -281,7 +281,7 @@ Here's an example of using the `subscribe` method:
 import time
 
 from dapr.clients import DaprClient
-from dapr.clients.grpc.subscription import StreamInactiveError
+from dapr.clients.grpc.subscription import StreamInactiveError, StreamCancelledError
 
 counter = 0
 
@@ -303,30 +303,35 @@ def main():
         )
 
         try:
-            while counter < 5:
-                try:
-                    message = subscription.next_message()
+            for message in subscription:
+                if message is None:
+                    print('No message received. The stream might have been cancelled.')
+                    continue
 
-                except StreamInactiveError as e:
+                try:
+                    response_status = process_message(message)
+
+                    if response_status == 'success':
+                        subscription.respond_success(message)
+                    elif response_status == 'retry':
+                        subscription.respond_retry(message)
+                    elif response_status == 'drop':
+                        subscription.respond_drop(message)
+
+                    if counter >= 5:
+                        break
+                except StreamInactiveError:
                     print('Stream is inactive. Retrying...')
                     time.sleep(1)
                     continue
-                if message is None:
-                    print('No message received within timeout period.')
-                    continue
-
-                # Process the message
-                response_status = process_message(message)
-
-                if response_status == 'success':
-                    subscription.respond_success(message)
-                elif response_status == 'retry':
-                    subscription.respond_retry(message)
-                elif response_status == 'drop':
-                    subscription.respond_drop(message)
+                except StreamCancelledError:
+                    print('Stream was cancelled')
+                    break
+                except Exception as e:
+                    print(f'Error occurred during message processing: {e}')
 
         finally:
-            print("Closing subscription...")
+            print('Closing subscription...')
             subscription.close()
 
 

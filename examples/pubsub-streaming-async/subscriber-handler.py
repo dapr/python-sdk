@@ -18,7 +18,7 @@ async def process_message(message) -> TopicEventResponse:
     Asynchronously processes the message and returns a TopicEventResponse.
     """
 
-    print(f'Processing message: {message.data()} from {message.topic()}...')
+    print(f'Processing message: {message.data()} from {message.topic()}...', flush=True)
     global counter
     counter += 1
     return TopicEventResponse('success')
