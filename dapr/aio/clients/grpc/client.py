@@ -534,13 +534,14 @@ class DaprGrpcClientAsync:
         async def stream_messages(sub: Subscription):
             while True:
                 try:
-                    message = await sub.next_message()
-                    if message:
-                        response = await handler_fn(message)
-                        if response:
-                            await subscription.respond(message, response.status)
-                    else:
-                        continue
+                    async for message in subscription:
+                        if message:
+                            response = await handler_fn(message)
+                            if response:
+                                await subscription.respond(message, response.status)
+                        else:
+                            continue
+
                 except StreamInactiveError:
                     break
 
