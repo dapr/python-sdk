@@ -311,7 +311,7 @@ class TransactionalStateOperation:
         return self._key
 
     @property
-    def data(self) -> Union[bytes, str]:
+    def data(self) -> Union[bytes, str, None]:
         """Gets raw data."""
         return self._data
 
