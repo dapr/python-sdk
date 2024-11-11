@@ -1430,7 +1430,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            'The Workflow API is a Beta version and is subject to change.',
+            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.ject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1483,7 +1483,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            'The Workflow API is a Beta version and is subject to change.',
+            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.ject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1525,7 +1525,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            'The Workflow API is a Beta version and is subject to change.',
+            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.ject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1571,7 +1571,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            'The Workflow API is a Beta version and is subject to change.',
+            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.ject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1628,7 +1628,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            'The Workflow API is a Beta version and is subject to change.',
+            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.',
             UserWarning,
             stacklevel=2,
         )
@@ -1660,7 +1660,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            'The Workflow API is a Beta version and is subject to change.',
+            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.ject to change.',
             UserWarning,
             stacklevel=2,
         )
@@ -1692,7 +1692,7 @@ class DaprGrpcClientAsync:
         """
         # Warnings and input validation
         warn(
-            'The Workflow API is a Beta version and is subject to change.',
+            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.ject to change.',
             UserWarning,
             stacklevel=2,
         )
