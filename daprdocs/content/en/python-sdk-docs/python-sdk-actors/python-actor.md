@@ -1,14 +1,71 @@
 ---
 type: docs
-title: "Dapr Python SDK mock actor unit tests"
-linkTitle: "Mock Actors"
-weight: 200000
-description: How to unit test actor methods using mock actors
+title: "Getting started with the Dapr actor Python SDK"
+linkTitle: "Actor"
+weight: 20000
+description: How to get up and running with the Dapr Python SDK
 ---
+
+The Dapr actor package allows you to interact with Dapr virtual actors from a Python application.
+
+## Pre-requisites
+
+- [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
+- Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
+- [Python 3.8+](https://www.python.org/downloads/) installed
+- [Dapr Python package]({{< ref "python#installation" >}}) installed
+
+## Actor interface
+
+The interface defines the actor contract that is shared between the actor implementation and the clients calling the actor. Because a client may depend on it, it typically makes sense to define it in an assembly that is separate from the actor implementation.
+
+```python
+from dapr.actor import ActorInterface, actormethod
+
+class DemoActorInterface(ActorInterface):
+    @actormethod(name="GetMyData")
+    async def get_my_data(self) -> object:
+        ...
+```
+
+## Actor services
+
+An actor service hosts the virtual actor. It is implemented a class that derives from the base type `Actor` and implements the interfaces defined in the actor interface.
+
+Actors can be created using one of the Dapr actor extensions:
+   - [FastAPI actor extension]({{< ref python-fastapi.md >}})
+   - [Flask actor extension]({{< ref python-flask.md >}})
+
+## Actor client
+
+An actor client contains the implementation of the actor client which calls the actor methods defined in the actor interface.
+
+```python
+import asyncio
+
+from dapr.actor import ActorProxy, ActorId
+from demo_actor_interface import DemoActorInterface
+
+async def main():
+    # Create proxy client
+    proxy = ActorProxy.create('DemoActor', ActorId('1'), DemoActorInterface)
+
+    # Call method on client
+    resp = await proxy.GetMyData()
+```
+
+## Sample
+
+Visit [this page](https://github.com/dapr/python-sdk/tree/release-1.0/examples/demo_actor) for a runnable actor sample.
+
+
+## Mock Actor Testing
 
 The Dapr Python SDK provides the ability to create mock actors to unit test your actor methods and how they interact with the actor state.
 
-## Basic Usage
+### Sample Usage 
+
+
 ```
 from dapr.actor.runtime.mock_actor import create_mock_actor
 
@@ -40,7 +97,7 @@ result = await mock_actor.recieve_reminder(name, state, due_time, period, _ttl)
 # Test the result directly or test for side effects (like changing state) by querying _state_manager._mock_state
 ```
 
-## Usage and Limitations
+### Usage and Limitations
 
 **The \_on\_activate method will not be called automatically the way it is when Dapr initializes a new Actor instance. You should call it manually as needed as part of your tests.**
 
@@ -57,7 +114,7 @@ The actor _runtime_ctx variable is set to None. Obviously all the normal actor m
 
 The actor _state_manager is overwritten with an instance of MockStateManager. This has all the same methods and functionality of the base ActorStateManager, except for using the various _mock variables for storing data instead of the _runtime_ctx. If your code implements its own custom state manager it will be overwritten and your code will likely break.
 
-## Type Hinting
+### Type Hinting
 
 Because of Python's lack of a unified method for type hinting type intersections (see: [python/typing #213](https://github.com/python/typing/issues/213)), type hinting is unfortunately mostly broken with Mock Actors. The return type is type hinted as "instance of Actor subclass T" when it should really be type hinted as "instance of MockActor subclass T" or "instance of type intersection [Actor subclass T, MockActor]" (where, it is worth noting, MockActor is itself a subclass of Actor).
 
