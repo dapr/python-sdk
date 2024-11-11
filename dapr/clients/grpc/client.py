@@ -45,6 +45,7 @@ from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
+from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
@@ -535,16 +536,19 @@ class DaprGrpcClient:
         def stream_messages(sub):
             while True:
                 try:
-                    message = sub.next_message()
-                    if message:
-                        # Process the message
-                        response = handler_fn(message)
-                        if response:
-                            subscription.respond(message, response.status)
-                    else:
-                        # No message received
-                        continue
+                    for message in sub:
+                        if message:
+                            # Process the message
+                            response = handler_fn(message)
+                            if response:
+                                subscription.respond(message, response.status)
+                        else:
+                            # No message received
+                            continue
+
                 except StreamInactiveError:
+                    break
+                except StreamCancelledError:
                     break
 
         def close_subscription():

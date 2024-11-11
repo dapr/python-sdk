@@ -18,7 +18,7 @@ def process_message(message):
     # Process the message here
     global counter
     counter += 1
-    print(f'Processing message: {message.data()} from {message.topic()}...')
+    print(f'Processing message: {message.data()} from {message.topic()}...', flush=True)
     return TopicEventResponse('success')
 
 

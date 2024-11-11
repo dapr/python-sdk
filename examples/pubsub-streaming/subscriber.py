@@ -19,7 +19,7 @@ def process_message(message):
     global counter
     counter += 1
     # Process the message here
-    print(f'Processing message: {message.data()} from {message.topic()}...')
+    print(f'Processing message: {message.data()} from {message.topic()}...', flush=True)
     return 'success'
 
 
@@ -36,36 +36,32 @@ def main():
             return
 
         try:
-            while counter < 5:
-                try:
-                    message = subscription.next_message()
-                    if message is None:
-                        print(
-                            'No message received within timeout period. '
-                            'The stream might have been cancelled.'
-                        )
-                        continue
+            for message in subscription:
+                if message is None:
+                    print('No message received. The stream might have been cancelled.')
+                    continue
 
-                except StreamInactiveError as e:
+                try:
+                    response_status = process_message(message)
+
+                    if response_status == 'success':
+                        subscription.respond_success(message)
+                    elif response_status == 'retry':
+                        subscription.respond_retry(message)
+                    elif response_status == 'drop':
+                        subscription.respond_drop(message)
+
+                    if counter >= 5:
+                        break
+                except StreamInactiveError:
                     print('Stream is inactive. Retrying...')
                     time.sleep(1)
                     continue
-                except StreamCancelledError as e:
+                except StreamCancelledError:
                     print('Stream was cancelled')
                     break
                 except Exception as e:
-                    print(f'Error occurred: {e}')
-                    pass
-
-                # Process the message
-                response_status = process_message(message)
-
-                if response_status == 'success':
-                    subscription.respond_success(message)
-                elif response_status == 'retry':
-                    subscription.respond_retry(message)
-                elif response_status == 'drop':
-                    subscription.respond_drop(message)
+                    print(f'Error occurred during message processing: {e}')
 
         finally:
             print('Closing subscription...')
