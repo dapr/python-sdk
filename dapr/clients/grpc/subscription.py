@@ -143,3 +143,9 @@ class Subscription:
                     raise Exception(f'Error while closing stream: {e}')
             except Exception as e:
                 raise Exception(f'Error while closing stream: {e}')
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next_message()
