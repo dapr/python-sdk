@@ -11,6 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from __future__ import annotations
+
 from datetime import timedelta
 from typing import Any, Optional, TypeVar
 
@@ -45,7 +47,7 @@ class MockActor(Actor):
 
     def __init__(self, actor_id: str, initstate: Optional[dict]):
         self.id = ActorId(actor_id)
-        self._runtime_ctx = None
+        self._runtime_ctx = None  # type: ignore
         self._state_manager: ActorStateManager = MockStateManager(self, initstate)
 
     async def register_timer(
@@ -115,7 +117,7 @@ T = TypeVar('T', bound=Actor)
 
 
 def create_mock_actor(cls1: type[T], actor_id: str, initstate: Optional[dict] = None) -> T:
-    class MockSuperClass(MockActor, cls1):
+    class MockSuperClass(MockActor, cls1):  # type: ignore
         pass
 
     return MockSuperClass(actor_id, initstate)  # type: ignore

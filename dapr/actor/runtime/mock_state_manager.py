@@ -31,9 +31,9 @@ class MockStateManager(ActorStateManager):
     def __init__(self, actor: 'MockActor', initstate: Optional[dict]):
         self._actor = actor
         self._default_state_change_tracker: Dict[str, StateMetadata] = {}
-        self._mock_state: dict[str, Any] = {}
-        self._mock_timers: dict[str, ActorTimerData] = {}
-        self._mock_reminders: dict[str, ActorReminderData] = {}
+        self._mock_state: Dict[str, Any] = {}
+        self._mock_timers: Dict[str, ActorTimerData] = {}
+        self._mock_reminders: Dict[str, ActorReminderData] = {}
         if initstate:
             self._mock_state = initstate
 
