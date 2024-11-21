@@ -33,7 +33,7 @@ from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.clients.grpc._request import TransactionalStateOperation
+from dapr.clients.grpc._request import TransactionalStateOperation, TransactionOperationType
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._response import (
@@ -507,6 +507,23 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(resp.items[0].data, to_bytes(value.upper()))
         self.assertEqual(resp.items[1].key, another_key)
         self.assertEqual(resp.items[1].data, to_bytes(another_value.upper()))
+
+        dapr.execute_state_transaction(
+            store_name='statestore',
+            operations=[
+                TransactionalStateOperation(
+                    key=key, operation_type=TransactionOperationType.delete
+                ),
+                TransactionalStateOperation(
+                    key=another_key, operation_type=TransactionOperationType.delete
+                ),
+            ],
+        )
+        resp = dapr.get_state(store_name='statestore', key=key)
+        self.assertEqual(resp.data, b'')
+
+        resp = dapr.get_state(store_name='statestore', key=another_key)
+        self.assertEqual(resp.data, b'')
 
         self._fake_dapr_server.raise_exception_on_next_call(
             status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='my invalid argument message')

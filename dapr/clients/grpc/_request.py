@@ -281,7 +281,7 @@ class TransactionalStateOperation:
     def __init__(
         self,
         key: str,
-        data: Union[bytes, str],
+        data: Optional[Union[bytes, str]] = None,
         etag: Optional[str] = None,
         operation_type: TransactionOperationType = TransactionOperationType.upsert,
     ):
@@ -297,7 +297,7 @@ class TransactionalStateOperation:
         Raises:
             ValueError: data is not bytes or str.
         """
-        if not isinstance(data, (bytes, str)):
+        if operation_type != TransactionOperationType.delete and not isinstance(data, (bytes, str)):
             raise ValueError(f'invalid type for data {type(data)}')
 
         self._key = key
@@ -311,7 +311,7 @@ class TransactionalStateOperation:
         return self._key
 
     @property
-    def data(self) -> Union[bytes, str]:
+    def data(self) -> Union[bytes, str, None]:
         """Gets raw data."""
         return self._data
 
