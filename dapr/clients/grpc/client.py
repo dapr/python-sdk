@@ -933,7 +933,7 @@ class DaprGrpcClient:
                 operationType=o.operation_type.value,
                 request=common_v1.StateItem(
                     key=o.key,
-                    value=to_bytes(o.data),
+                    value=to_bytes(o.data) if o.data is not None else to_bytes(''),
                     etag=common_v1.Etag(value=o.etag) if o.etag is not None else None,
                 ),
             )
