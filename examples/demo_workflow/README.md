@@ -2,10 +2,10 @@
 
 This document describes how to register a workflow and activities inside it and start running it.
 It demonstrates the following APIs:
-- **start_workflow**: Start an instance of a workflow
-- **get_workflow**: Get information on a single workflow
+- **schedule_new_workflow**: Start an instance of a workflow
+- **get_workflow_state**: Get information on a single workflow
 - **terminate_workflow**: Terminate or stop a particular instance of a workflow
-- **raise_event**: Raise an event on a workflow
+- **raise_workflow_event**: Raise an event on a workflow
 - **pause_workflow**: Pauses or suspends a workflow instance that can later be resumed
 - **resume_workflow**: Resumes a paused workflow instance
 - **purge_workflow**: Removes all metadata related to a specific workflow instance from the state store
