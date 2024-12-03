@@ -208,7 +208,7 @@ class DaprWorkflowClient:
         """
         return self.__obj.raise_orchestration_event(instance_id, event_name, data=data)
 
-    def terminate_workflow(self, instance_id: str, *, output: Optional[Any] = None):
+    def terminate_workflow(self, instance_id: str, *, output: Optional[Any] = None, recursive: bool = True):
         """Terminates a running workflow instance and updates its runtime status to
            WorkflowRuntimeStatus.Terminated This method internally enqueues a "terminate" message in
            the task hub. When the task hub worker processes this message, it will update the runtime
@@ -226,9 +226,10 @@ class DaprWorkflowClient:
         Args:
             instance_id: The ID of the workflow instance to terminate.
             output: The optional output to set for the terminated workflow instance.
+            recursive: The optional flag to terminate all child workflows.
 
         """
-        return self.__obj.terminate_orchestration(instance_id, output=output)
+        return self.__obj.terminate_orchestration(instance_id, output=output, recursive=recursive)
 
     def pause_workflow(self, instance_id: str):
         """Suspends a workflow instance, halting processing of it until resume_workflow is used to
@@ -246,3 +247,12 @@ class DaprWorkflowClient:
             instance_id: The instance ID of the workflow to resume.
         """
         return self.__obj.resume_orchestration(instance_id)
+
+    def purge_workflow(self, instance_id: str, recursive: bool = True):
+        """Purge data from a workflow instance.
+
+        Args:
+            instance_id: The instance ID of the workflow to purge.
+            recursive: The optional flag to also purge data from all child workflows.
+        """
+        return self.__obj.purge_orchestration(instance_id, recursive)

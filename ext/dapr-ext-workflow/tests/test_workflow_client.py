@@ -26,6 +26,7 @@ mock_raise_event_result = 'event001'
 mock_terminate_result = 'terminate001'
 mock_suspend_result = 'suspend001'
 mock_resume_result = 'resume001'
+mock_purge_result = 'purge001'
 mockInstanceId = 'instance001'
 
 
@@ -57,6 +58,9 @@ class FakeTaskHubGrpcClient:
 
     def resume_orchestration(self, instance_id: str):
         return mock_resume_result
+
+    def purge_workflow(self, instance_id: str, recursive: bool = True):
+        return mock_purge_result
 
     def _inner_get_orchestration_state(self, instance_id, state: client.OrchestrationStatus):
         return client.OrchestrationState(
@@ -119,3 +123,6 @@ class WorkflowClientTest(unittest.TestCase):
 
             actual_resume_result = wfClient.resume_workflow(instance_id=mockInstanceId)
             assert actual_resume_result == mock_resume_result
+
+            actual_purge_result = wfClient.purge_workflow(instance_id=mockInstanceId)
+            assert actual_purge_result == mock_purge_result
