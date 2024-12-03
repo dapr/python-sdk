@@ -51,7 +51,7 @@ class MockStateManager(ActorStateManager):
                 return True
             return False
         existed = state_name in self._mock_state
-        if not existed:
+        if existed:
             return False
         self._default_state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
         self._mock_state[state_name] = value
