@@ -39,7 +39,7 @@ class MockActor(Actor):
                 await self._state_manager.set_state('state', data)
                 await self._state_manager.save_state()
 
-        mock_actor = create_mock_actor(SomeActor)
+        mock_actor = create_mock_actor(SomeActor, "actor_1")
         assert mock_actor._state_manager._mock_state == {}
         await mock_actor.set_state({"test":10})
         assert mock_actor._state_manager._mock_state == {"test":10}
