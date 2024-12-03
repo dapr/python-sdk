@@ -69,6 +69,7 @@ if __name__ == '__main__':
     except Exception:
         pass
     if not status or status.runtime_status.name != 'RUNNING':
+        # TODO update to use reuse_id_policy
         instance_id = wf_client.schedule_new_workflow(
             workflow=status_monitor_workflow,
             input=JobStatus(job_id=job_id, is_healthy=True),
