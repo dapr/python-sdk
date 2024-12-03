@@ -108,11 +108,11 @@ The `__init__`, `register_timer`, `unregister_timer`, `register_reminder`, `unre
     def __init__(self, ctx, actor_id):
         super().__init__(ctx, actor_id)
 ```
-*Mock actors work fine with this, but if you have added any extra logic into \_\_init\_\_, it will be overwritten. It is worth noting that the correct way to apply logic on initialization is via \_on\_activate (which can also be safely used with mock actors) instead of \_\_init\_\_.*
+*Mock actors work fine with this, but if you have added any extra logic into `__init__`, it will be overwritten. It is worth noting that the correct way to apply logic on initialization is via `_on_activate` (which can also be safely used with mock actors) instead of `__init__`.*
 
-The actor _runtime_ctx variable is set to None. Obviously all the normal actor methods have been overwritten such as to not call it, but if your code itself interacts directly with _runtime_ctx, it will likely break.
+The actor `_runtime_ctx` variable is set to None. All the normal actor methods have been overwritten such as to not call it, but if your code itself interacts directly with `_runtime_ctx`, it will likely break.
 
-The actor _state_manager is overwritten with an instance of MockStateManager. This has all the same methods and functionality of the base ActorStateManager, except for using the various _mock variables for storing data instead of the _runtime_ctx. If your code implements its own custom state manager it will be overwritten and your code will likely break.
+The actor _state_manager is overwritten with an instance of `MockStateManager`. This has all the same methods and functionality of the base `ActorStateManager`, except for using the various `_mock` variables for storing data instead of the `_runtime_ctx`. If your code implements its own custom state manager it will be overwritten and your code will likely break.
 
 ### Type Hinting
 
