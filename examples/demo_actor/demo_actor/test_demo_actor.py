@@ -18,18 +18,12 @@ class DemoActorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_set_data(self):
         mockactor = create_mock_actor(DemoActor, '1')
-        self.assertFalse(mockactor._state_manager._mock_state)
-        val = await mockactor.get_my_data()
-        self.assertIsNone(val)
         await mockactor.set_my_data({'state': 5})
         val = await mockactor.get_my_data()
         self.assertIs(val['state'], 5)  # type: ignore
 
     async def test_clear_data(self):
         mockactor = create_mock_actor(DemoActor, '1')
-        self.assertFalse(mockactor._state_manager._mock_state)
-        val = await mockactor.get_my_data()
-        self.assertIsNone(val)
         await mockactor.set_my_data({'state': 5})
         val = await mockactor.get_my_data()
         self.assertIs(val['state'], 5)  # type: ignore

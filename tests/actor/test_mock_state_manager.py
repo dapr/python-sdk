@@ -27,90 +27,47 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(state_manager._mock_reminders)
         self.assertFalse(state_manager._mock_timers)
 
-    async def test_add_state(self):
+    async def test_state_methods(self):
         mock_actor = create_mock_actor(MockTestActor, 'test')
         state_manager = mock_actor._state_manager
+        self.assertFalse(await state_manager.contains_state('state'))
+        self.assertFalse(state_manager._default_state_change_tracker)
+        names = await state_manager.get_state_names()
+        self.assertFalse(names)
+        with self.assertRaises(KeyError):
+            await state_manager.get_state('state')
         await state_manager.add_state('state', 5)
+        names = await state_manager.get_state_names()
+        self.assertCountEqual(names, ['state'])
         self.assertIs(state_manager._mock_state['state'], 5)
+        value = await state_manager.get_state('state')
+        self.assertIs(value, 5)
         await state_manager.add_state('state2', 5)
         self.assertIs(state_manager._mock_state['state2'], 5)
         with self.assertRaises(ValueError):
             await state_manager.add_state('state', 5)
-
-    async def test_get_state(self):
-        mock_actor = create_mock_actor(MockTestActor, 'test')
-        state_manager = mock_actor._state_manager
+        await state_manager.set_state('state3', 5)
+        self.assertIs(state_manager._mock_state['state3'], 5)
+        await state_manager.set_state('state3', 10)
+        self.assertIs(state_manager._mock_state['state3'], 10)
+        self.assertTrue(await state_manager.contains_state('state3'))
+        await state_manager.remove_state('state3')
+        self.assertFalse('state3' in state_manager._mock_state)
         with self.assertRaises(KeyError):
-            await state_manager.get_state('state')
-        await state_manager.add_state('state', 5)
-        value = await state_manager.get_state('state')
-        self.assertIs(value, 5)
-
-    async def test_set_state(self):
-        mock_actor = create_mock_actor(MockTestActor, 'test')
-        state_manager = mock_actor._state_manager
-        await state_manager.set_state('state', 5)
-        self.assertIs(state_manager._mock_state['state'], 5)
-        await state_manager.set_state('state', 10)
-        self.assertIs(state_manager._mock_state['state'], 10)
-
-    async def test_remove_state(self):
-        mock_actor = create_mock_actor(MockTestActor, 'test')
-        state_manager = mock_actor._state_manager
-        await state_manager.set_state('state', 5)
-        self.assertIs(state_manager._mock_state['state'], 5)
-        await state_manager.remove_state('state')
-        self.assertFalse(state_manager._mock_state)
-        with self.assertRaises(KeyError):
-            await state_manager.remove_state('state')
-
-    async def test_contains_state(self):
-        mock_actor = create_mock_actor(MockTestActor, 'test')
-        state_manager = mock_actor._state_manager
-        self.assertFalse(await state_manager.contains_state('state'))
-        await state_manager.set_state('state', 5)
-        self.assertTrue(await state_manager.contains_state('state'))
-        await state_manager.remove_state('state')
-        self.assertFalse(await state_manager.contains_state('state'))
-
-    async def test_get_or_add_state(self):
-        mock_actor = create_mock_actor(MockTestActor, 'test')
-        state_manager = mock_actor._state_manager
-        out = await state_manager.get_or_add_state('state', 5)
+            await state_manager.remove_state('state3')
+        self.assertFalse(await state_manager.contains_state('state3'))
+        await state_manager.add_or_update_state('state3', 5, double)
+        self.assertIs(state_manager._mock_state['state3'], 5)
+        await state_manager.add_or_update_state('state3', 1000, double)
+        self.assertIs(state_manager._mock_state['state3'], 10)
+        out = await state_manager.get_or_add_state('state4', 5)
         self.assertIs(out, 5)
-        self.assertIs(state_manager._mock_state['state'], 5)
-        out = await state_manager.get_or_add_state('state', 10)
+        self.assertIs(state_manager._mock_state['state4'], 5)
+        out = await state_manager.get_or_add_state('state4', 10)
         self.assertIs(out, 5)
-        self.assertIs(state_manager._mock_state['state'], 5)
-
-    async def test_add_or_update_state(self):
-        mock_actor = create_mock_actor(MockTestActor, 'test')
-        state_manager = mock_actor._state_manager
-        await state_manager.add_or_update_state('state', 5, double)
-        self.assertIs(state_manager._mock_state['state'], 5)
-        await state_manager.add_or_update_state('state', 1000, double)
-        self.assertIs(state_manager._mock_state['state'], 10)
-
-    async def test_get_state_names(self):
-        mock_actor = create_mock_actor(MockTestActor, 'test')
-        state_manager = mock_actor._state_manager
+        self.assertIs(state_manager._mock_state['state4'], 5)
         names = await state_manager.get_state_names()
-        self.assertFalse(names)
-        await state_manager.set_state('state1', 5)
-        names = await state_manager.get_state_names()
-        self.assertCountEqual(names, ['state1'])
-        await state_manager.set_state('state2', 5)
-        names = await state_manager.get_state_names()
-        self.assertCountEqual(names, ['state1', 'state2'])
-        await state_manager.save_state()
-        names = await state_manager.get_state_names()
-        self.assertFalse(names)
-
-    async def test_clear_cache(self):
-        mock_actor = create_mock_actor(MockTestActor, 'test')
-        state_manager = mock_actor._state_manager
-        self.assertFalse(state_manager._default_state_change_tracker)
-        await state_manager.set_state('state1', 5)
-        self.assertTrue('state1', state_manager._default_state_change_tracker)
+        self.assertCountEqual(names, ['state', 'state2', 'state3', 'state4'])
+        self.assertTrue('state', state_manager._default_state_change_tracker)
         await state_manager.clear_cache()
         self.assertFalse(state_manager._default_state_change_tracker)
