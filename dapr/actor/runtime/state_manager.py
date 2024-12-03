@@ -90,7 +90,7 @@ class ActorStateManager(Generic[T]):
         existed = await self._actor.runtime_ctx.state_provider.contains_state(
             self._type_name, self._actor.id.id, state_name
         )
-        if existed:
+        if not existed:
             return False
 
         state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)

@@ -46,7 +46,7 @@ class ActorStateManagerTests(unittest.TestCase):
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(),
+        new=_async_mock(return_value=base64.b64encode(b'"value1"')),
     )
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
@@ -64,20 +64,6 @@ class ActorStateManagerTests(unittest.TestCase):
         self.assertEqual(StateChangeKind.add, state.change_kind)
 
         # Add 'state1' again
-        added = _run(state_manager.try_add_state('state1', 'value1'))
-        self.assertFalse(added)
-
-    @mock.patch(
-        'tests.actor.fake_client.FakeDaprActorClient.get_state',
-        new=_async_mock(return_value=base64.b64encode(b'"value1"')),
-    )
-    @mock.patch(
-        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
-    )
-    def test_add_state_with_existing_state(self):
-        state_manager = ActorStateManager(self._fake_actor)
-
-        # Add first 'state1'
         added = _run(state_manager.try_add_state('state1', 'value1'))
         self.assertFalse(added)
 
