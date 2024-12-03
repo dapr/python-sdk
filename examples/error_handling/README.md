@@ -38,7 +38,7 @@ timeout_seconds: 5
 -->
 
 ```bash
-dapr run -- python3 error_handling.py
+dapr run --resources-path components  -- python3 error_handling.py
 ```
 <!-- END_STEP -->
 
