@@ -71,13 +71,13 @@ from dapr.actor.runtime.mock_actor import create_mock_actor
 
 class MyActor(Actor, MyActorInterface):
     async def save_state(self, data) -> None:
-        await self._state_manager.set_state('state', data)
+        await self._state_manager.set_state('mystate', data)
         await self._state_manager.save_state()
 
 mock_actor = create_mock_actor(MyActor, "id")
 
 await mock_actor.save_state(5)
-assert mockactor._state_manager._mock_state == 5 #True
+assert mockactor._state_manager._mock_state['mystate'] == 5 #True
 ```
 Mock actors are created by passing your actor class and an actor ID (a string) to the create_mock_actor function. This function returns an instance of the actor with many internal methods overridden. Instead of interacting with Dapr for tasks like saving state or managing timers, the mock actor uses in-memory state to simulate these behaviors.
 
