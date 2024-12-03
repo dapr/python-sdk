@@ -151,6 +151,7 @@ class MockStateManager(ActorStateManager):
             if self.is_state_marked_for_remove(state_name)
             else StateChangeKind.add
         )
+        self._mock_state[state_name] = value
         self._default_state_change_tracker[state_name] = StateMetadata(value, change_kind)
         return value
 
@@ -173,7 +174,7 @@ class MockStateManager(ActorStateManager):
             if state_metadata.change_kind == StateChangeKind.none:
                 state_metadata.change_kind = StateChangeKind.update
             self._default_state_change_tracker[state_name] = state_metadata
-            self._mock_state[state_name] = value
+            self._mock_state[state_name] = new_value
             return new_value
 
         has_value = state_name in self._mock_state

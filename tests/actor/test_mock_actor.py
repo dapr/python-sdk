@@ -246,7 +246,6 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_add_state(self):
         mockactor = create_mock_actor(MockTestActor, '1')
-        print(mockactor._state_manager._mock_state)
         self.assertFalse(mockactor._state_manager._mock_state)
         await mockactor.add_state('test', 5)
         self.assertTrue('test' in mockactor._state_manager._mock_state)
