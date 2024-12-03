@@ -200,7 +200,7 @@ timeout_seconds: 60
 
     ```bash
     cd demo_actor
-    unittest test_demo_actor.py
+    python -m unittest test_demo_actor.py
     ```
    
    Expected output (note that the unit test print outputs might not necessarily be in this order - what really matters is that all tests pass anyway):
