@@ -81,14 +81,14 @@ assert mockactor._state_manager._mock_state == 5 #True
 ```
 Mock actors are created by passing your actor class and an actor ID (a string) to the create_mock_actor function. This function returns an instance of the actor with many internal methods overridden. Instead of interacting with Dapr for tasks like saving state or managing timers, the mock actor uses in-memory state to simulate these behaviors.
 
-Those variables are:
-* **_state_manager._mock_state()**
-A [str, object] dict where all the actor state is stored. Any variable saved via _state_manager.save_state(key, value), or any other statemanager method is stored in the dict as that key, value combo. Any value loaded via try_get_state or any other statemanager method is taken from this dict.
+This state can be accessed through the following variables:
+- **_state_manager._mock_state()**  
+A `[str, object]` dict where all the actor state is stored. Any variable saved via `_state_manager.save_state(key, value)`, or any other statemanager method is stored in the dict as that key, value pair. Any value loaded via `try_get_state` or any other statemanager method is taken from this dict.
 
-* **_state_manager._mock_timers()**
-A [str, ActorTimerData] dict which holds the active actor timers. Any actor method which would add or remove a timer adds or pops the appropriate ActorTimerData object from this dict.
+- **_state_manager._mock_timers()**  
+A `[str, ActorTimerData]` dict which holds the active actor timers. Any actor method which would add or remove a timer adds or pops the appropriate `ActorTimerData` object from this dict.
 
-* **_state_manager._mock_reminders()**
+- **_state_manager._mock_reminders()**  
 A [str, ActorReminderData] dict which holds the active actor reminders. Any actor method which would add or remove a timer adds or pops the appropriate ActorReminderData object from this dict.
 
 **Note: The timers and reminders will never actually trigger. The dictionaries exist only so methods that should add or remove timers/reminders can be tested. If you need to test the callbacks they should activate, you should call them directly with the appropriate values:**
