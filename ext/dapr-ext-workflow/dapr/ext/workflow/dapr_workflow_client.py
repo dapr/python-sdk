@@ -15,9 +15,11 @@ limitations under the License.
 
 from __future__ import annotations
 from datetime import datetime
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
+
 
 from durabletask import client
+import durabletask.internal.orchestrator_service_pb2 as pb
 
 from dapr.ext.workflow.workflow_state import WorkflowState
 from dapr.ext.workflow.workflow_context import Workflow
@@ -78,6 +80,7 @@ class DaprWorkflowClient:
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
+        reuse_id_policy: Optional[pb.OrchestrationIdReusePolicy] = None,
     ) -> str:
         """Schedules a new workflow instance for execution.
 
@@ -90,6 +93,8 @@ class DaprWorkflowClient:
             start_at: The time when the workflow instance should start executing.
             If not specified or if a date-time in the past is specified, the workflow instance will
             be scheduled immediately.
+            reuse_id_policy: Optional policy to reuse the workflow id when there is a conflict with
+            an existing workflow instance.
 
         Returns:
             The ID of the scheduled workflow instance.
@@ -100,9 +105,10 @@ class DaprWorkflowClient:
                 input=input,
                 instance_id=instance_id,
                 start_at=start_at,
+                reuse_id_policy=Union(reuse_id_policy),
             )
         return self.__obj.schedule_new_orchestration(
-            workflow.__name__, input=input, instance_id=instance_id, start_at=start_at
+            workflow.__name__, input=input, instance_id=instance_id, start_at=start_at, reuse_id_policy=Union(reuse_id_policy),
         )
 
     def get_workflow_state(
