@@ -61,7 +61,7 @@ Visit [this page](https://github.com/dapr/python-sdk/tree/v1.14.0/examples/demo_
 
 ## Mock Actor Testing
 
-The Dapr Python SDK provides the ability to create mock actors to unit test your actor methods and how they interact with the actor state.
+The Dapr Python SDK provides the ability to create mock actors to unit test your actor methods and see how they interact with the actor state.
 
 ### Sample Usage 
 
