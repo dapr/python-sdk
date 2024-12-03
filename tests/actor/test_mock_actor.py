@@ -24,6 +24,14 @@ class MockTestActorInterface(ActorInterface):
     async def test_data(self) -> int:
         ...
 
+    @actormethod(name='AddState')
+    async def add_state(self, name: str, data: object) -> None:
+        ...
+
+    @actormethod(name='UpdateState')
+    async def update_state(self, name: str, data: object) -> None:
+        ...
+
     @actormethod(name='AddDataNoSave')
     async def add_data_no_save(self, data: object) -> None:
         ...
@@ -76,6 +84,15 @@ class MockTestActor(Actor, MockTestActorInterface, Remindable):
         elif val['test'] % 2 == 0:
             return 3
         return 4
+
+    async def add_state(self, name: str, data: object) -> None:
+        await self._state_manager.add_state(name, data)
+
+    async def update_state(self, name: str, data: object) -> None:
+        def double(_: str, x: int) -> int:
+            return 2 * x
+
+        await self._state_manager.add_or_update_state(name, data, double)
 
     async def add_data_no_save(self, data: object) -> None:
         await self._state_manager.set_state('state', data)
@@ -226,6 +243,31 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
         await mockactor.set_data({'test': 2})
         result = await mockactor.test_data()
         self.assertEqual(result, 3)
+
+    async def test_add_state(self):
+        mockactor = create_mock_actor(MockTestActor, '1')
+        print(mockactor._state_manager._mock_state)
+        self.assertFalse(mockactor._state_manager._mock_state)
+        await mockactor.add_state('test', 5)
+        self.assertTrue('test' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['test'], 5)
+        await mockactor.add_state('test2', 10)
+        self.assertTrue('test2' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['test2'], 10)
+        self.assertEqual(len(mockactor._state_manager._mock_state), 2)
+        with self.assertRaises(ValueError):
+            await mockactor.add_state('test', 10)
+
+    async def test_update_state(self):
+        mockactor = create_mock_actor(MockTestActor, '1')
+        self.assertFalse(mockactor._state_manager._mock_state)
+        await mockactor.update_state('test', 10)
+        self.assertTrue('test' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['test'], 10)
+        await mockactor.update_state('test', 10)
+        self.assertTrue('test' in mockactor._state_manager._mock_state)
+        self.assertEqual(mockactor._state_manager._mock_state['test'], 20)
+        self.assertEqual(len(mockactor._state_manager._mock_state), 1)
 
     async def test_state_change_tracker(self):
         mockactor = create_mock_actor(MockTestActor, '1')

@@ -183,8 +183,10 @@ class MockStateManager(ActorStateManager):
             self._default_state_change_tracker[state_name] = StateMetadata(
                 new_value, StateChangeKind.update
             )
+            self._mock_state[state_name] = new_value
             return new_value
         self._default_state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
+        self._mock_state[state_name] = value
         return value
 
     async def get_state_names(self) -> List[str]:
