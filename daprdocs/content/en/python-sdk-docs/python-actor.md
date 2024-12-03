@@ -79,7 +79,7 @@ mock_actor = create_mock_actor(MyActor, "id")
 await mock_actor.save_state(5)
 assert mockactor._state_manager._mock_state == 5 #True
 ```
-Mock actors work by passing your actor class as well as the actor id (str) into the function create_mock_actor, which returns an instance of the actor with a bunch of the internal actor methods overwritten, such that instead of attempting to interact with Dapr to save state, manage timers, etc it instead only uses local variables.
+Mock actors are created by passing your actor class and an actor ID (a string) to the create_mock_actor function. This function returns an instance of the actor with many internal methods overridden. Instead of interacting with Dapr for tasks like saving state or managing timers, the mock actor uses in-memory state to simulate these behaviors.
 
 Those variables are:
 * **_state_manager._mock_state()**
