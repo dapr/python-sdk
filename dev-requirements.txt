@@ -15,4 +15,4 @@ Flask>=1.1
 # needed for auto fix
 ruff===0.2.2
 # needed for dapr-ext-workflow
-durabletask>=0.1.1a1
+durabletask-dapr >= 0.2.0a3
