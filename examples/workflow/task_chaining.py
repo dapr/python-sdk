@@ -27,6 +27,7 @@ def task_chain_workflow(ctx: wf.DaprWorkflowContext, wf_input: int):
     except Exception as e:
         yield ctx.call_activity(error_handler, input=str(e))
         raise
+    # TODO update to set custom status
     return [result1, result2, result3]
 
 
