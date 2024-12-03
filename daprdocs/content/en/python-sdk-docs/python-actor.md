@@ -116,8 +116,8 @@ The actor _state_manager is overwritten with an instance of MockStateManager. Th
 
 ### Type Hinting
 
-Because of Python's lack of a unified method for type hinting type intersections (see: [python/typing #213](https://github.com/python/typing/issues/213)), type hinting is unfortunately mostly broken with Mock Actors. The return type is type hinted as "instance of Actor subclass T" when it should really be type hinted as "instance of MockActor subclass T" or "instance of type intersection [Actor subclass T, MockActor]" (where, it is worth noting, MockActor is itself a subclass of Actor).
+Because of Python's lack of a unified method for type hinting type intersections (see: [python/typing #213](https://github.com/python/typing/issues/213)), type hinting unfortunately doesn't work with Mock Actors. The return type is type hinted as "instance of Actor subclass T" when it should really be type hinted as "instance of MockActor subclass T" or "instance of type intersection `[Actor subclass T, MockActor]`" (where, it is worth noting, `MockActor` is itself a subclass of `Actor`).
 
-This means that, for example, if you hover over ```mockactor._state_manager``` in a code editor, it will come up as an instance of ActorStateManager (instead of MockStateManager), and various IDE helper functions (like VSCode's ```Go to Definition```, which will bring you to the definition of ActorStateManager instead of MockStateManager) won't work properly.
+This means that, for example, if you hover over `mockactor._state_manager` in a code editor, it will come up as an instance of ActorStateManager (instead of MockStateManager), and various IDE helper functions (like VSCode's `Go to Definition`, which will bring you to the definition of ActorStateManager instead of MockStateManager) won't work properly.
 
 For now, this issue is unfixable, so it's merely something to be noted because of the confusion it might cause. If in the future it becomes possible to accurately type hint cases like this feel free to open an issue about implementing it.
