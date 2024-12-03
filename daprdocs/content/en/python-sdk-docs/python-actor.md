@@ -99,11 +99,11 @@ result = await mock_actor.recieve_reminder(name, state, due_time, period, _ttl)
 
 ### Usage and Limitations
 
-**The \_on\_activate method will not be called automatically the way it is when Dapr initializes a new Actor instance. You should call it manually as needed as part of your tests.**
+**The `_on_activate` method will not be called automatically the way it is when Dapr initializes a new Actor instance. You should call it manually as needed as part of your tests.**
 
-The \_\_init\_\_, register_timer, unregister_timer, register_reminder, unregister_reminder methods are all overwritten by the MockActor class that gets applied as a mixin via create_mock_actor. If your actor itself overwrites these methods, those modifications will themselves be overwritten and the actor will likely not behave as you expect.
+The `__init__`, `register_timer`, `unregister_timer`, `register_reminder`, `unregister_reminder` methods are all overwritten by the MockActor class that gets applied as a mixin via `create_mock_actor`. If your actor itself overwrites these methods, those modifications will themselves be overwritten and the actor will likely not behave as you expect.
 
-*note: \_\_init\_\_ is a special case where you are expected to define it as*
+*note: `__init__` is a special case where you are expected to define it as*
 ```
     def __init__(self, ctx, actor_id):
         super().__init__(ctx, actor_id)
