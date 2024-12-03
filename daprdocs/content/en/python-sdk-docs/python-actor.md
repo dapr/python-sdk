@@ -56,7 +56,7 @@ async def main():
 
 ## Sample
 
-Visit [this page](https://github.com/dapr/python-sdk/tree/release-1.0/examples/demo_actor) for a runnable actor sample.
+Visit [this page](https://github.com/dapr/python-sdk/tree/v1.14.0/examples/demo_actor) for a runnable actor sample.
 
 
 ## Mock Actor Testing
