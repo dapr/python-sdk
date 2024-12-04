@@ -20,6 +20,7 @@ from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from unittest import mock
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from durabletask import client
+import durabletask.internal.orchestrator_service_pb2 as pb
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
@@ -27,11 +28,11 @@ mock_terminate_result = 'terminate001'
 mock_suspend_result = 'suspend001'
 mock_resume_result = 'resume001'
 mock_purge_result = 'purge001'
-mockInstanceId = 'instance001'
+mock_instance_id = 'instance001'
 
 
 class FakeTaskHubGrpcClient:
-    def schedule_new_orchestration(self, workflow, input, instance_id, start_at):
+    def schedule_new_orchestration(self, workflow, input, instance_id, start_at, reuse_id_policy: Union[pb.OrchestrationIdReusePolicy, None] = None):
         return mock_schedule_result
 
     def get_orchestration_state(self, instance_id, fetch_payloads):
@@ -50,7 +51,7 @@ class FakeTaskHubGrpcClient:
     ):
         return mock_raise_event_result
 
-    def terminate_orchestration(self, instance_id: str, *, output: Union[Any, None] = None):
+    def terminate_orchestration(self, instance_id: str, *, output: Union[Any, None] = None, recursive: bool = True):
         return mock_terminate_result
 
     def suspend_orchestration(self, instance_id: str):
@@ -91,38 +92,38 @@ class WorkflowClientTest(unittest.TestCase):
             assert actual_schedule_result == mock_schedule_result
 
             actual_get_result = wfClient.get_workflow_state(
-                instance_id=mockInstanceId, fetch_payloads=True
+                instance_id=mock_instance_id, fetch_payloads=True
             )
             assert actual_get_result.runtime_status.name == 'PENDING'
-            assert actual_get_result.instance_id == mockInstanceId
+            assert actual_get_result.instance_id == mock_instance_id
 
             actual_wait_start_result = wfClient.wait_for_workflow_start(
-                instance_id=mockInstanceId, timeout_in_seconds=30
+                instance_id=mock_instance_id, timeout_in_seconds=30
             )
             assert actual_wait_start_result.runtime_status.name == 'RUNNING'
-            assert actual_wait_start_result.instance_id == mockInstanceId
+            assert actual_wait_start_result.instance_id == mock_instance_id
 
             actual_wait_completion_result = wfClient.wait_for_workflow_completion(
-                instance_id=mockInstanceId, timeout_in_seconds=30
+                instance_id=mock_instance_id, timeout_in_seconds=30
             )
             assert actual_wait_completion_result.runtime_status.name == 'COMPLETED'
-            assert actual_wait_completion_result.instance_id == mockInstanceId
+            assert actual_wait_completion_result.instance_id == mock_instance_id
 
             actual_raise_event_result = wfClient.raise_workflow_event(
-                instance_id=mockInstanceId, event_name='test_event', data='test_data'
+                instance_id=mock_instance_id, event_name='test_event', data='test_data'
             )
             assert actual_raise_event_result == mock_raise_event_result
 
             actual_terminate_result = wfClient.terminate_workflow(
-                instance_id=mockInstanceId, output='test_output'
+                instance_id=mock_instance_id, output='test_output'
             )
             assert actual_terminate_result == mock_terminate_result
 
-            actual_suspend_result = wfClient.pause_workflow(instance_id=mockInstanceId)
+            actual_suspend_result = wfClient.pause_workflow(instance_id=mock_instance_id)
             assert actual_suspend_result == mock_suspend_result
 
-            actual_resume_result = wfClient.resume_workflow(instance_id=mockInstanceId)
+            actual_resume_result = wfClient.resume_workflow(instance_id=mock_instance_id)
             assert actual_resume_result == mock_resume_result
 
-            actual_purge_result = wfClient.purge_workflow(instance_id=mockInstanceId)
+            actual_purge_result = wfClient.purge_workflow(instance_id=mock_instance_id)
             assert actual_purge_result == mock_purge_result
