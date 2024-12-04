@@ -94,7 +94,7 @@ A [str, ActorReminderData] dict which holds the active actor reminders. Any acto
 **Note: The timers and reminders will never actually trigger. The dictionaries exist only so methods that should add or remove timers/reminders can be tested. If you need to test the callbacks they should activate, you should call them directly with the appropriate values:**
 ```
 result = await mock_actor.recieve_reminder(name, state, due_time, period, _ttl)
-# Test the result directly or test for side effects (like changing state) by querying _state_manager._mock_state
+# Test the result directly or test for side effects (like changing state) by querying `_state_manager._mock_state`
 ```
 
 ### Usage and Limitations
