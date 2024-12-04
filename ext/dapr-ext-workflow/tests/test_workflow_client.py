@@ -59,7 +59,7 @@ class FakeTaskHubGrpcClient:
     def resume_orchestration(self, instance_id: str):
         return mock_resume_result
 
-    def purge_workflow(self, instance_id: str, recursive: bool = True):
+    def purge_orchestration(self, instance_id: str, recursive: bool = True):
         return mock_purge_result
 
     def _inner_get_orchestration_state(self, instance_id, state: client.OrchestrationStatus):
