@@ -85,6 +85,11 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
+    def set_custom_status(self, custom_status: str) -> None:
+        """Set the custom status."""
+        pass
+
+    @abstractmethod
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
         """Create a Timer Task to fire after at the specified deadline.
 
