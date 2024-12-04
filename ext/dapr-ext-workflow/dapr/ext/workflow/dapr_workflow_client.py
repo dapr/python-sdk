@@ -15,7 +15,7 @@ limitations under the License.
 
 from __future__ import annotations
 from datetime import datetime
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar
 
 
 from durabletask import client
