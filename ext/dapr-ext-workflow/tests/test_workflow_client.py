@@ -32,7 +32,14 @@ mock_instance_id = 'instance001'
 
 
 class FakeTaskHubGrpcClient:
-    def schedule_new_orchestration(self, workflow, input, instance_id, start_at, reuse_id_policy: Union[pb.OrchestrationIdReusePolicy, None] = None):
+    def schedule_new_orchestration(
+        self,
+        workflow,
+        input,
+        instance_id,
+        start_at,
+        reuse_id_policy: Union[pb.OrchestrationIdReusePolicy, None] = None,
+    ):
         return mock_schedule_result
 
     def get_orchestration_state(self, instance_id, fetch_payloads):
@@ -51,7 +58,9 @@ class FakeTaskHubGrpcClient:
     ):
         return mock_raise_event_result
 
-    def terminate_orchestration(self, instance_id: str, *, output: Union[Any, None] = None, recursive: bool = True):
+    def terminate_orchestration(
+        self, instance_id: str, *, output: Union[Any, None] = None, recursive: bool = True
+    ):
         return mock_terminate_result
 
     def suspend_orchestration(self, instance_id: str):
