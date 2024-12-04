@@ -105,7 +105,7 @@ class DaprWorkflowClient:
                 input=input,
                 instance_id=instance_id,
                 start_at=start_at,
-                reuse_id_policy=Union(reuse_id_policy),
+                reuse_id_policy=reuse_id_policy,
             )
         return self.__obj.schedule_new_orchestration(
             workflow.__name__, input=input, instance_id=instance_id, start_at=start_at, reuse_id_policy=Union(reuse_id_policy),
