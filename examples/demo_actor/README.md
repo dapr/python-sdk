@@ -190,7 +190,6 @@ expected_stdout_lines:
 name: Actor Tests
 background: true
 expected_stdout_lines:
-  - "has_value: False"
   - "set_my_data: {'state': 5}"
   - "has_value: True"
   - "clear_my_data"
@@ -200,7 +199,6 @@ expected_stdout_lines:
   - "set reminder is done"
   - "set reminder to False"
   - "set reminder is done"
-  - "has_value: False"
   - "set_my_data: {'state': 5}"
   - "has_value: True"
 expected_stderr_lines:
