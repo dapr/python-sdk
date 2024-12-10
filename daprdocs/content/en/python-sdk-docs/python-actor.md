@@ -99,7 +99,7 @@ result = await mock_actor.recieve_reminder(name, state, due_time, period, _ttl)
 
 ### Usage and Limitations
 
-**The `_on_activate` method will not be called automatically the way it is when Dapr initializes a new Actor instance. You should call it manually as needed as part of your tests.**
+**To allow for more fine-grained control, the `_on_activate` method will not be called automatically the way it is when Dapr initializes a new Actor instance. You should call it manually as needed as part of your tests.**
 
 The `__init__`, `register_timer`, `unregister_timer`, `register_reminder`, `unregister_reminder` methods are all overwritten by the MockActor class that gets applied as a mixin via `create_mock_actor`. If your actor itself overwrites these methods, those modifications will themselves be overwritten and the actor will likely not behave as you expect.
 
@@ -110,9 +110,11 @@ The `__init__`, `register_timer`, `unregister_timer`, `register_reminder`, `unre
 ```
 *Mock actors work fine with this, but if you have added any extra logic into `__init__`, it will be overwritten. It is worth noting that the correct way to apply logic on initialization is via `_on_activate` (which can also be safely used with mock actors) instead of `__init__`.*
 
-The actor `_runtime_ctx` variable is set to None. All the normal actor methods have been overwritten such as to not call it, but if your code itself interacts directly with `_runtime_ctx`, it will likely break.
+*If you have an actor which does override default Dapr actor methods, your best bet is likely to create a custom subclass of the MockActor class (from MockActor.py) which implements whatever custom logic you have along with interacting with `_mock_state`, `_mock_timers`, and `_mock_reminders` as normal, and then appyling that custom class as a mixin via a `create_mock_actor` function you define yourself.*
 
-The actor _state_manager is overwritten with an instance of `MockStateManager`. This has all the same methods and functionality of the base `ActorStateManager`, except for using the various `_mock` variables for storing data instead of the `_runtime_ctx`. If your code implements its own custom state manager it will be overwritten and your code will likely break.
+The actor `_runtime_ctx` variable is set to None. All the normal actor methods have been overwritten such as to not call it, but if your code itself interacts directly with `_runtime_ctx`, tests may fail.
+
+The actor _state_manager is overwritten with an instance of `MockStateManager`. This has all the same methods and functionality of the base `ActorStateManager`, except for using the various `_mock` variables for storing data instead of the `_runtime_ctx`. If your code implements its own custom state manager it will be overwritten and tests will likely fail.
 
 ### Type Hinting
 
