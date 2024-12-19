@@ -119,5 +119,3 @@ class WorkflowClientTest(unittest.TestCase):
 
             actual_resume_result = wfClient.resume_workflow(instance_id=mockInstanceId)
             assert actual_resume_result == mock_resume_result
-
-            # TODO add purge support
