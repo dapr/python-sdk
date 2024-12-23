@@ -11,7 +11,7 @@ It creates a client using `DaprClient`, uses a local store defined in
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.8+](https://www.python.org/downloads/)
+- [Install Python 3.9+](https://www.python.org/downloads/)
 
 > In order to run this sample, make sure that OpenSSL is available on your system.
 
