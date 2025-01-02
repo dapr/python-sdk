@@ -9,7 +9,7 @@ This example also illustrates the use of access control for secrets.
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.8+](https://www.python.org/downloads/)
+- [Install Python 3.9+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 

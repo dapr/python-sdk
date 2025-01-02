@@ -6,10 +6,6 @@ weight: 30000
 description: How to get up and running with workflows using the Dapr Python SDK
 ---
 
-{{% alert title="Note" color="primary" %}}
-Dapr Workflow is currently in alpha.
-{{% /alert %}}
-
 Let’s create a Dapr workflow and invoke it using the console. With the [provided hello world workflow example](https://github.com/dapr/python-sdk/tree/master/examples/demo_workflow), you will:
 
 - Run a [Python console application using `DaprClient`](https://github.com/dapr/python-sdk/blob/master/examples/demo_workflow/app.py)
@@ -25,7 +21,7 @@ In the Python example project, the `app.py` file contains the setup of the app, 
 ## Prerequisites
 - [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
 - Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
-- [Python 3.8+](https://www.python.org/downloads/) installed
+- [Python 3.9+](https://www.python.org/downloads/) installed
 - [Dapr Python package]({{< ref "python#installation" >}}) and the [workflow extension]({{< ref "python-workflow/_index.md" >}}) installed
 - Verify you're using the latest proto bindings
 
