@@ -82,6 +82,9 @@ assert mockactor._state_manager._mock_state['mystate'] == 5 #True
 Mock actors are created by passing your actor class and an actor ID (a string) to the create_mock_actor function. This function returns an instance of the actor with many internal methods overridden. Instead of interacting with Dapr for tasks like saving state or managing timers, the mock actor uses in-memory state to simulate these behaviors.
 
 This state can be accessed through the following variables:
+
+**IMPORTANT NOTE: Due to type hinting issues as discussed further down, these variables will not be visible to type hinters/linters/etc, who will think they are invalid variables. You will need to use them with #type: ignore in order to satisfy any such systems.**
+
 - **_state_manager._mock_state()**  
 A `[str, object]` dict where all the actor state is stored. Any variable saved via `_state_manager.save_state(key, value)`, or any other statemanager method is stored in the dict as that key, value pair. Any value loaded via `try_get_state` or any other statemanager method is taken from this dict.
 

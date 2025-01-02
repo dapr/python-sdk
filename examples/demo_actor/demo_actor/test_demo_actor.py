@@ -12,7 +12,7 @@ class DemoActorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_data(self):
         mockactor = create_mock_actor(DemoActor, '1')
-        self.assertFalse(mockactor._state_manager._mock_state)
+        self.assertFalse(mockactor._state_manager._mock_state)  # type: ignore
         val = await mockactor.get_my_data()
         self.assertIsNone(val)
 
@@ -33,8 +33,8 @@ class DemoActorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_reminder(self):
         mockactor = create_mock_actor(DemoActor, '1')
-        self.assertFalse(mockactor._state_manager._mock_reminders)
+        self.assertFalse(mockactor._state_manager._mock_reminders)  # type: ignore
         await mockactor.set_reminder(True)
-        self.assertTrue('demo_reminder' in mockactor._state_manager._mock_reminders)
+        self.assertTrue('demo_reminder' in mockactor._state_manager._mock_reminders)  # type: ignore
         await mockactor.set_reminder(False)
-        self.assertFalse(mockactor._state_manager._mock_reminders)
+        self.assertFalse(mockactor._state_manager._mock_reminders)  # type: ignore

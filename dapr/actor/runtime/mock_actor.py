@@ -21,7 +21,6 @@ from dapr.actor.runtime._reminder_data import ActorReminderData
 from dapr.actor.runtime._timer_data import TIMER_CALLBACK, ActorTimerData
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.mock_state_manager import MockStateManager
-from dapr.actor.runtime.state_manager import ActorStateManager
 
 
 class MockActor(Actor):
@@ -72,7 +71,7 @@ class MockActor(Actor):
         """
         name = name or self.__get_new_timer_name()
         timer = ActorTimerData(name, callback, state, due_time, period, ttl)
-        self._state_manager._mock_timers[name] = timer
+        self._state_manager._mock_timers[name] = timer  # type: ignore
 
     async def unregister_timer(self, name: str) -> None:
         """Unregisters actor timer from self._state_manager._mock_timers.
@@ -80,7 +79,7 @@ class MockActor(Actor):
         Args:
             name (str): the name of the timer to unregister.
         """
-        self._state_manager._mock_timers.pop(name, None)
+        self._state_manager._mock_timers.pop(name, None)  # type: ignore
 
     async def register_reminder(
         self,
@@ -102,7 +101,7 @@ class MockActor(Actor):
             ttl (datetime.timedelta): the time interval before the reminder stops firing
         """
         reminder = ActorReminderData(name, state, due_time, period, ttl)
-        self._state_manager._mock_reminders[name] = reminder
+        self._state_manager._mock_reminders[name] = reminder  # type: ignore
 
     async def unregister_reminder(self, name: str) -> None:
         """Unregisters actor reminder from self._state_manager._mock_reminders..
@@ -110,7 +109,7 @@ class MockActor(Actor):
         Args:
             name (str): the name of the reminder to unregister.
         """
-        self._state_manager._mock_reminders.pop(name, None)
+        self._state_manager._mock_reminders.pop(name, None)  # type: ignore
 
 
 T = TypeVar('T', bound=Actor)
