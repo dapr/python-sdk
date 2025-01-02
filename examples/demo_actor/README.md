@@ -6,6 +6,7 @@ This document describes how to create an Actor(DemoActor) and invoke its methods
 - **The actor service(demo_actor_service.py).** This implements FastAPI service that is going to host the actor. It contains the implementation of the actor, `demo_actor.py`. An actor implementation is a class that derives from the base type `Actor` and implements the interfaces defined in `demo_actor_interface.py`.
 - **The actor service for flask(demo_actor_flask.py).** This implements Flask web service that is going to host the actor.
 - **The actor client(demo_actor_client.py)** This contains the implementation of the actor client which calls DemoActor's method defined in Actor Interfaces.
+- **Actor tests(test_demo_actor.py)** This contains actor unit tests using mock actor testing functionality.
 
 ## Pre-requisites
 
@@ -182,4 +183,58 @@ expected_stdout_lines:
    ```
    kubectl logs -l app="demoactor-client" -c demoactor-client
    ```
+
+## Run DemoActor mock actor tests
+
+<!-- STEP
+name: Actor Tests
+background: true
+expected_stdout_lines:
+  - "set_my_data: {'state': 5}"
+  - "has_value: True"
+  - "clear_my_data"
+  - "has_value: False"
+  - "has_value: False"
+  - "set reminder to True"
+  - "set reminder is done"
+  - "set reminder to False"
+  - "set reminder is done"
+  - "set_my_data: {'state': 5}"
+  - "has_value: True"
+expected_stderr_lines:
+  - "----------------------------------------------------------------------"
+  - "Ran 5 tests in"
+  - "OK"
+output_match_mode: substring
+timeout_seconds: 60
+-->
+
+1. Run Tests
+
+    ```bash
+    cd demo_actor
+    python -m unittest test_demo_actor.py
+    ```
+   
+   Expected output (note that the unit test print outputs might not necessarily be in this order - what really matters is that all tests pass anyway):
+   
+   ```
+   set_my_data: {'state': 5}
+   has_value: True
+   clear_my_data
+   has_value: False
+   has_value: False
+   set reminder to True
+   set reminder is done
+   set reminder to False
+   set reminder is done
+   set_my_data: {'state': 5}
+   has_value: True
+   ----------------------------------------------------------------------
+   Ran 5 tests in 0.052s
+    
+   OK
+   ```
+
+<!-- END_STEP -->
 
