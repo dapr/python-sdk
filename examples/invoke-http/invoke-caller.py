@@ -6,18 +6,29 @@ from dapr.clients import DaprClient
 with DaprClient() as d:
     req_data = {'id': 1, 'message': 'hello world'}
 
-    while True:
-        # Create a typed message with content type and body
-        resp = d.invoke_method(
+    # First message: success
+    # Create a typed message with content type and body
+    resp1 = d.invoke_method(
+        'invoke-receiver',
+        'my-method',
+        http_verb='POST',
+        data=json.dumps(req_data),
+    )
+
+    # Print the response
+    print(resp1.content_type, flush=True)
+    print(resp1.text(), flush=True)
+    print(str(resp1.status_code), flush=True)
+
+    # Second message: error
+    req_data = {'id': 2, 'message': 'hello world'}
+    try:
+        resp2 = d.invoke_method(
             'invoke-receiver',
-            'my-method',
+            'my-method-err',
             http_verb='POST',
             data=json.dumps(req_data),
         )
-
-        # Print the response
-        print(resp.content_type, flush=True)
-        print(resp.text(), flush=True)
-        print(str(resp.status_code), flush=True)
-
-        time.sleep(2)
+    except Exception as e:
+        print(e._message, flush=True)
+        print(e._error_code, flush=True)
