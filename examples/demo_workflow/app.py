@@ -106,6 +106,9 @@ def act_for_child_wf(ctx: WorkflowActivityContext, inp):
 
 
 def main():
+    # DEPRECATION NOTICE!
+    # The workflow methods in the DaprClient are deprecated, instead use the client provided in dapr-ext-workflow
+    # You can use the examples in https://github.com/dapr/python-sdk/tree/main/examples/workflow
     with DaprClient() as d:
         workflow_runtime = WorkflowRuntime()
         workflow_runtime.register_workflow(hello_world_wf)
