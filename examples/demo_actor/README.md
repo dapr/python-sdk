@@ -218,26 +218,23 @@ timeout_seconds: 60
    
    Expected output (note that the unit test print outputs might not necessarily be in this order - what really matters is that all tests pass anyway):
    
-    ```
-    has_value: False
-    set_my_data: {'state': 5}
-    has_value: True
-    clear_my_data
-    has_value: False
-    ..has_value: False
-    .set reminder to True
-    set reminder is done
-    set reminder to False
-    set reminder is done
-    .has_value: False
-    set_my_data: {'state': 5}
-    has_value: True
-    .
-    ----------------------------------------------------------------------
-    Ran 5 tests in 0.052s
+   ```
+   set_my_data: {'state': 5}
+   has_value: True
+   clear_my_data
+   has_value: False
+   has_value: False
+   set reminder to True
+   set reminder is done
+   set reminder to False
+   set reminder is done
+   set_my_data: {'state': 5}
+   has_value: True
+   ----------------------------------------------------------------------
+   Ran 5 tests in 0.052s
     
-    OK
-    ```
+   OK
+   ```
 
 <!-- END_STEP -->
 

@@ -113,7 +113,7 @@ The `__init__`, `register_timer`, `unregister_timer`, `register_reminder`, `unre
 ```
 *Mock actors work fine with this, but if you have added any extra logic into `__init__`, it will be overwritten. It is worth noting that the correct way to apply logic on initialization is via `_on_activate` (which can also be safely used with mock actors) instead of `__init__`.*
 
-*If you have an actor which does override default Dapr actor methods, your best bet is likely to create a custom subclass of the MockActor class (from MockActor.py) which implements whatever custom logic you have along with interacting with `_mock_state`, `_mock_timers`, and `_mock_reminders` as normal, and then appyling that custom class as a mixin via a `create_mock_actor` function you define yourself.*
+*If you have an actor which does override default Dapr actor methods, you can create a custom subclass of the MockActor class (from MockActor.py) which implements whatever custom logic you have along with interacting with `_mock_state`, `_mock_timers`, and `_mock_reminders` as normal, and then applying that custom class as a mixin via a `create_mock_actor` function you define yourself.*
 
 The actor `_runtime_ctx` variable is set to None. All the normal actor methods have been overwritten such as to not call it, but if your code itself interacts directly with `_runtime_ctx`, tests may fail.
 
