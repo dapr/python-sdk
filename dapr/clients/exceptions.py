@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import base64
 import json
 from typing import Optional
 
@@ -43,6 +44,17 @@ class DaprInternalError(Exception):
             'errorCode': self._error_code,
             'raw_response_bytes': self._raw_response_bytes,
         }
+
+    def as_json_safe_dict(self):
+        error_dict = self.as_dict()
+
+        if self._raw_response_bytes is not None:
+            # Encode bytes to base64 for JSON compatibility
+            error_dict['raw_response_bytes'] = base64.b64encode(self._raw_response_bytes).decode(
+                'utf-8'
+            )
+
+        return error_dict
 
 
 class StatusDetails:
