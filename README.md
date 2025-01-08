@@ -137,8 +137,7 @@ The generated files will be found in `docs/_build`.
 ## Generate gRPC Protobuf client
 
 ```sh
-pip3 install -r dev-requirements.txt
-
+pip3 install -r tools/requirements.txt
 ./tools/regen_grpcclient.sh
 ```
 
