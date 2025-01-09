@@ -1,3 +1,5 @@
+import base64
+import json
 import unittest
 
 import grpc
@@ -6,7 +8,7 @@ from google.protobuf.any_pb2 import Any
 from google.protobuf.duration_pb2 import Duration
 
 from dapr.clients import DaprGrpcClient
-from dapr.clients.exceptions import DaprGrpcError
+from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
 from dapr.conf import settings
 
 from .fake_dapr_server import FakeDaprSidecar
@@ -216,3 +218,30 @@ class DaprExceptionsTestCase(unittest.TestCase):
         dapr_error = context.exception
 
         self.assertEqual(dapr_error.error_code(), 'UNKNOWN')
+
+    def test_dapr_internal_error_as_json_safe_dict_no_bytes(self):
+        message = 'Test DaprInternalError.as_json_safe_dict with no raw bytes'
+        dapr_error = DaprInternalError(message=message)
+
+        safe_dict = dapr_error.as_json_safe_dict()
+        self.assertEqual(safe_dict['message'], message)
+        self.assertEqual(safe_dict['errorCode'], 'UNKNOWN')
+        self.assertIsNone(safe_dict['raw_response_bytes'])
+
+        # Also check that the safe dict can be serialised to JSON
+        _ = json.dumps(safe_dict)
+
+    def test_dapr_internal_error_as_json_safe_dict_bytes_are_encoded(self):
+        message = 'Test DaprInternalError.as_json_safe_dict with encoded raw bytes'
+        raw_bytes = message.encode('utf-8')
+        dapr_error = DaprInternalError(message=message, raw_response_bytes=raw_bytes)
+
+        safe_dict = dapr_error.as_json_safe_dict()
+        self.assertEqual(safe_dict['message'], message)
+        self.assertEqual(safe_dict['errorCode'], 'UNKNOWN')
+
+        decoded_bytes = base64.b64decode(safe_dict['raw_response_bytes'])
+        self.assertEqual(decoded_bytes, raw_bytes)
+
+        # Also check that the safe dict can be serialised to JSON
+        _ = json.dumps(safe_dict)
