@@ -12,7 +12,7 @@ source <env_name>/bin/activate
 Run the following commands:
 
 ```sh
-pip3 install -r dev-requirements.txt
+pip3 install -r tools/requirements.txt
 ./tools/regen_grpcclient.sh
 ```
 
