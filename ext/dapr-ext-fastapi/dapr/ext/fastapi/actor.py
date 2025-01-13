@@ -15,13 +15,12 @@ limitations under the License.
 
 from typing import Any, Optional, Type, List
 
+from dapr.actor import Actor, ActorRuntime
+from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
+from dapr.serializers import DefaultJSONSerializer
 from fastapi import FastAPI, APIRouter, Request, Response, status  # type: ignore
 from fastapi.logger import logger
 from fastapi.responses import JSONResponse
-
-from dapr.actor import Actor, ActorRuntime
-from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
-from dapr.serializers import DefaultJSONSerializer
 
 DEFAULT_CONTENT_TYPE = 'application/json; utf-8'
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
@@ -72,7 +71,7 @@ class DaprActor(object):
             try:
                 await ActorRuntime.deactivate(actor_type_name, actor_id)
             except DaprInternalError as ex:
-                return _wrap_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_dict())
+                return _wrap_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_json_safe_dict())
             except Exception as ex:
                 return _wrap_response(
                     status.HTTP_500_INTERNAL_SERVER_ERROR, repr(ex), ERROR_CODE_UNKNOWN
@@ -96,7 +95,7 @@ class DaprActor(object):
                     actor_type_name, actor_id, method_name, req_body, reentrancy_id
                 )
             except DaprInternalError as ex:
-                return _wrap_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_dict())
+                return _wrap_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_json_safe_dict())
             except Exception as ex:
                 return _wrap_response(
                     status.HTTP_500_INTERNAL_SERVER_ERROR, repr(ex), ERROR_CODE_UNKNOWN
@@ -117,7 +116,7 @@ class DaprActor(object):
                 req_body = await request.body()
                 await ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name, req_body)
             except DaprInternalError as ex:
-                return _wrap_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_dict())
+                return _wrap_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_json_safe_dict())
             except Exception as ex:
                 return _wrap_response(
                     status.HTTP_500_INTERNAL_SERVER_ERROR, repr(ex), ERROR_CODE_UNKNOWN
@@ -139,7 +138,7 @@ class DaprActor(object):
                 req_body = await request.body()
                 await ActorRuntime.fire_reminder(actor_type_name, actor_id, reminder_name, req_body)
             except DaprInternalError as ex:
-                return _wrap_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_dict())
+                return _wrap_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ex.as_json_safe_dict())
             except Exception as ex:
                 return _wrap_response(
                     status.HTTP_500_INTERNAL_SERVER_ERROR, repr(ex), ERROR_CODE_UNKNOWN
