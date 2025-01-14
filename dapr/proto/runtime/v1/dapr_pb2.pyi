@@ -3261,8 +3261,8 @@ class DeleteJobResponse(google.protobuf.message.Message):
 global___DeleteJobResponse = DeleteJobResponse
 
 @typing_extensions.final
-class ConversationAlpha1Request(google.protobuf.message.Message):
-    """ConversationAlpha1Request is the request object for Conversation."""
+class ConversationRequest(google.protobuf.message.Message):
+    """ConversationRequest is the request object for Conversation."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -3308,7 +3308,7 @@ class ConversationAlpha1Request(google.protobuf.message.Message):
     SCRUBPII_FIELD_NUMBER: builtins.int
     TEMPERATURE_FIELD_NUMBER: builtins.int
     name: builtins.str
-    """The name of Coverstaion component"""
+    """The name of Conversation component"""
     contextID: builtins.str
     """The ID of an existing chat (like in ChatGPT)"""
     @property
@@ -3344,7 +3344,7 @@ class ConversationAlpha1Request(google.protobuf.message.Message):
     @typing.overload
     def WhichOneof(self, oneof_group: typing_extensions.Literal["_temperature", b"_temperature"]) -> typing_extensions.Literal["temperature"] | None: ...
 
-global___ConversationAlpha1Request = ConversationAlpha1Request
+global___ConversationRequest = ConversationRequest
 
 @typing_extensions.final
 class ConversationInput(google.protobuf.message.Message):
@@ -3376,8 +3376,8 @@ class ConversationInput(google.protobuf.message.Message):
 global___ConversationInput = ConversationInput
 
 @typing_extensions.final
-class ConversationAlpha1Result(google.protobuf.message.Message):
-    """ConversationAlpha1Result is the result for one input."""
+class ConversationResult(google.protobuf.message.Message):
+    """ConversationResult is the result for one input."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -3414,11 +3414,11 @@ class ConversationAlpha1Result(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["parameters", b"parameters", "result", b"result"]) -> None: ...
 
-global___ConversationAlpha1Result = ConversationAlpha1Result
+global___ConversationResult = ConversationResult
 
 @typing_extensions.final
-class ConversationAlpha1Response(google.protobuf.message.Message):
-    """ConversationAlpha1Response is the response for Conversation."""
+class ConversationResponse(google.protobuf.message.Message):
+    """ConversationResponse is the response for Conversation."""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -3427,16 +3427,16 @@ class ConversationAlpha1Response(google.protobuf.message.Message):
     contextID: builtins.str
     """The ID of an existing chat (like in ChatGPT)"""
     @property
-    def outputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ConversationAlpha1Result]:
+    def outputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ConversationResult]:
         """An array of results."""
     def __init__(
         self,
         *,
         contextID: builtins.str | None = ...,
-        outputs: collections.abc.Iterable[global___ConversationAlpha1Result] | None = ...,
+        outputs: collections.abc.Iterable[global___ConversationResult] | None = ...,
     ) -> None: ...
     def HasField(self, field_name: typing_extensions.Literal["_contextID", b"_contextID", "contextID", b"contextID"]) -> builtins.bool: ...
     def ClearField(self, field_name: typing_extensions.Literal["_contextID", b"_contextID", "contextID", b"contextID", "outputs", b"outputs"]) -> None: ...
     def WhichOneof(self, oneof_group: typing_extensions.Literal["_contextID", b"_contextID"]) -> typing_extensions.Literal["contextID"] | None: ...
 
-global___ConversationAlpha1Response = ConversationAlpha1Response
+global___ConversationResponse = ConversationResponse

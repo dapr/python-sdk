@@ -309,8 +309,8 @@ class DaprStub(object):
                 )
         self.ConverseAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/ConverseAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationAlpha1Request.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationAlpha1Response.FromString,
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.FromString,
                 )
 
 
@@ -1028,8 +1028,8 @@ def add_DaprServicer_to_server(servicer, server):
             ),
             'ConverseAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.ConverseAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationAlpha1Request.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationAlpha1Response.SerializeToString,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -2040,7 +2040,7 @@ class Dapr(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/ConverseAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationAlpha1Request.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationAlpha1Response.FromString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

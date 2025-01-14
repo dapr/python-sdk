@@ -19,7 +19,7 @@ from typing import Any, Optional, Type
 from flask import jsonify, make_response, request
 
 from dapr.actor import Actor, ActorRuntime
-from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
+from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
 from dapr.serializers import DefaultJSONSerializer
 
 DEFAULT_CONTENT_TYPE = 'application/json; utf-8'
@@ -80,7 +80,7 @@ class DaprActor(object):
         try:
             asyncio.run(ActorRuntime.deactivate(actor_type_name, actor_id))
         except DaprInternalError as ex:
-            return wrap_response(500, ex.as_dict())
+            return wrap_response(500, ex.as_json_safe_dict())
         except Exception as ex:
             return wrap_response(500, repr(ex), ERROR_CODE_UNKNOWN)
 
@@ -99,7 +99,7 @@ class DaprActor(object):
                 )
             )
         except DaprInternalError as ex:
-            return wrap_response(500, ex.as_dict())
+            return wrap_response(500, ex.as_json_safe_dict())
         except Exception as ex:
             return wrap_response(500, repr(ex), ERROR_CODE_UNKNOWN)
 
@@ -113,7 +113,7 @@ class DaprActor(object):
             req_body = request.stream.read()
             asyncio.run(ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name, req_body))
         except DaprInternalError as ex:
-            return wrap_response(500, ex.as_dict())
+            return wrap_response(500, ex.as_json_safe_dict())
         except Exception as ex:
             return wrap_response(500, repr(ex), ERROR_CODE_UNKNOWN)
 
@@ -129,7 +129,7 @@ class DaprActor(object):
                 ActorRuntime.fire_reminder(actor_type_name, actor_id, reminder_name, req_body)
             )
         except DaprInternalError as ex:
-            return wrap_response(500, ex.as_dict())
+            return wrap_response(500, ex.as_json_safe_dict())
         except Exception as ex:
             return wrap_response(500, repr(ex), ERROR_CODE_UNKNOWN)
 
