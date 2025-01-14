@@ -25,11 +25,13 @@ mock_instance_id = 'instance001'
 mock_create_timer = 'create_timer'
 mock_call_activity = 'call_activity'
 mock_call_sub_orchestrator = 'call_sub_orchestrator'
+mock_custom_status = 'custom_status'
 
 
 class FakeOrchestrationContext:
     def __init__(self):
         self.instance_id = mock_instance_id
+        self.custom_status = None
 
     def create_timer(self, fire_at):
         return mock_create_timer
@@ -39,6 +41,9 @@ class FakeOrchestrationContext:
 
     def call_sub_orchestrator(self, orchestrator, input, instance_id):
         return mock_call_sub_orchestrator
+
+    def set_custom_status(self, custom_status):
+        self.custom_status = custom_status
 
 
 class DaprWorkflowContextTest(unittest.TestCase):
@@ -65,3 +70,6 @@ class DaprWorkflowContextTest(unittest.TestCase):
 
             create_timer_result = dapr_wf_ctx.create_timer(mock_date_time)
             assert create_timer_result == mock_create_timer
+
+            dapr_wf_ctx.set_custom_status(mock_custom_status)
+            assert fakeContext.custom_status == mock_custom_status
