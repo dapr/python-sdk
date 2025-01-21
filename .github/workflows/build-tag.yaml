@@ -8,7 +8,6 @@ on:
       - grpc-v*
       - flask-v*
       - fastapi-v*
-  workflow_dispatch: # Add manual trigger
 
 jobs:
   lint:
