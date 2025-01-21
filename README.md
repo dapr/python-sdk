@@ -51,7 +51,7 @@ pip3 install dapr-ext-fastapi
 
 ```sh
 # Install Dapr client sdk
-pip3 install dapr
+pip3 install dapr-dev
 
 # Install Dapr gRPC AppCallback service extension
 pip3 install dapr-ext-grpc-dev
