@@ -82,7 +82,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools wheel twine tox
       - name: Set up Dapr CLI
-        run: wget -q ${{ env.DAPR_INSTALL_URL }} -O - | /bin/bash -s ${{ env.DAPR_CLI_VER }}
+        run: wget -q ${{ env.DAPR_INSTALL_URL }} -O - | /bin/bash -s 1.15.0-rc.1
       - name: Set up Go ${{ env.GOVER }}
         if: env.DAPR_REF != '' || env.DAPR_CLI_REF != ''
         uses: actions/setup-go@v5
@@ -109,10 +109,10 @@ jobs:
           make
           sudo cp dist/linux_amd64/release/dapr /usr/local/bin/dapr
           cd ..
-      - name: Initialize Dapr runtime ${{ env.DAPR_RUNTIME_VER }}
+      - name: Initialize Dapr runtime 1.15.0-rc.5
         run: |
           dapr uninstall --all
-          dapr init --runtime-version ${{ env.DAPR_RUNTIME_VER }}
+          dapr init --runtime-version 1.15.0-rc.5
       - name: Build and override daprd with referenced commit.
         if: env.DAPR_REF != ''
         run: |
