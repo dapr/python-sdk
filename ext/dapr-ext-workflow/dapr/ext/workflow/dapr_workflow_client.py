@@ -124,7 +124,7 @@ class DaprWorkflowClient:
         Args:
             instanceId: The unique ID of the workflow instance to fetch.
             fetch_payloads: If true, fetches the input, output payloads and custom status
-            for the workflow instance. Defaults to false.
+            for the workflow instance. Defaults to true.
 
         Returns:
             The current state of the workflow instance, or None if the workflow instance does not
