@@ -21,7 +21,7 @@ from unittest import mock
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from durabletask import client
 import durabletask.internal.orchestrator_service_pb2 as pb
-from grpc import StatusCode, RpcError
+from grpc import RpcError
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
@@ -31,6 +31,7 @@ mock_resume_result = 'resume001'
 mock_purge_result = 'purge001'
 mock_instance_id = 'instance001'
 wf_exists = False
+
 
 class SimulatedRpcError(RpcError):
     def __init__(self, code, details):
@@ -58,10 +59,9 @@ class FakeTaskHubGrpcClient:
     def get_orchestration_state(self, instance_id, fetch_payloads):
         global wf_exists
         if not wf_exists:
-            raise SimulatedRpcError(code="UNKNOWN", details="no such instance exists")
+            raise SimulatedRpcError(code='UNKNOWN', details='no such instance exists')
 
         return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.PENDING)
-
 
     def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout):
         return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.RUNNING)
@@ -118,10 +118,10 @@ class WorkflowClientTest(unittest.TestCase):
             )
             assert actual_schedule_result == mock_schedule_result
 
-            actual_get_result = wfClient.get_workflow_state(instance_id=mock_instance_id,
-                fetch_payloads=True)
+            actual_get_result = wfClient.get_workflow_state(
+                instance_id=mock_instance_id, fetch_payloads=True
+            )
             assert actual_get_result is None
-
 
             global wf_exists
             wf_exists = True

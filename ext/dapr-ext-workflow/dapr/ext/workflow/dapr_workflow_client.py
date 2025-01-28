@@ -136,9 +136,11 @@ class DaprWorkflowClient:
             return WorkflowState(state) if state else None
         except RpcError as error:
             if 'no such instance exists' in error.details():
-                self._logger.warning(f"Workflow instance not found: {instance_id}")
+                self._logger.warning(f'Workflow instance not found: {instance_id}')
                 return None
-            self._logger.error(f"Unhandled RPC error while fetching workflow state: {error.code()} - {error.details()}")
+            self._logger.error(
+                f'Unhandled RPC error while fetching workflow state: {error.code()} - {error.details()}'
+            )
             raise
 
     def wait_for_workflow_start(
