@@ -130,8 +130,12 @@ class DaprWorkflowClient:
             exist.
 
         """
-        state = self.__obj.get_orchestration_state(instance_id, fetch_payloads=fetch_payloads)
-        return WorkflowState(state) if state else None
+        try:
+            state = self.__obj.get_orchestration_state(instance_id, fetch_payloads=fetch_payloads)
+            return WorkflowState(state) if state else None
+        except Exception as error:
+            self._logger.error(f'Error fetching workflow state: {error}')
+            return None
 
     def wait_for_workflow_start(
         self, instance_id: str, *, fetch_payloads: bool = False, timeout_in_seconds: int = 60

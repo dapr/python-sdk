@@ -63,11 +63,7 @@ if __name__ == '__main__':
 
     wf_client = wf.DaprWorkflowClient()
     job_id = 'job1'
-    status = None
-    try:
-        status = wf_client.get_workflow_state(job_id)
-    except Exception:
-        pass
+    status = wf_client.get_workflow_state(job_id)
     if not status or status.runtime_status.name != 'RUNNING':
         # TODO update to use reuse_id_policy
         instance_id = wf_client.schedule_new_workflow(
