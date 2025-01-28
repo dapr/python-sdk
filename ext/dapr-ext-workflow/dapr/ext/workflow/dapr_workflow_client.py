@@ -139,7 +139,7 @@ class DaprWorkflowClient:
                 self._logger.warning(f"Workflow instance not found: {instance_id}")
                 return None
             self._logger.error(f"Unhandled RPC error while fetching workflow state: {error.code()} - {error.details()}")
-            raise error
+            raise
 
     def wait_for_workflow_start(
         self, instance_id: str, *, fetch_payloads: bool = False, timeout_in_seconds: int = 60
