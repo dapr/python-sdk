@@ -24,6 +24,7 @@ import durabletask.internal.orchestrator_service_pb2 as pb
 from dapr.ext.workflow.workflow_state import WorkflowState
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.util import getAddress
+from grpc import RpcError
 
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
@@ -123,15 +124,24 @@ class DaprWorkflowClient:
         Args:
             instanceId: The unique ID of the workflow instance to fetch.
             fetch_payloads: If true, fetches the input, output payloads and custom status
-            for the workflow instance. Defaults to false.
+            for the workflow instance. Defaults to true.
 
         Returns:
             The current state of the workflow instance, or None if the workflow instance does not
             exist.
 
         """
-        state = self.__obj.get_orchestration_state(instance_id, fetch_payloads=fetch_payloads)
-        return WorkflowState(state) if state else None
+        try:
+            state = self.__obj.get_orchestration_state(instance_id, fetch_payloads=fetch_payloads)
+            return WorkflowState(state) if state else None
+        except RpcError as error:
+            if 'no such instance exists' in error.details():
+                self._logger.warning(f'Workflow instance not found: {instance_id}')
+                return None
+            self._logger.error(
+                f'Unhandled RPC error while fetching workflow state: {error.code()} - {error.details()}'
+            )
+            raise
 
     def wait_for_workflow_start(
         self, instance_id: str, *, fetch_payloads: bool = False, timeout_in_seconds: int = 60

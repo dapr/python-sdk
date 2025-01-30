@@ -68,6 +68,7 @@ if __name__ == '__main__':
         status = wf_client.get_workflow_state(job_id)
     except Exception:
         pass
+
     if not status or status.runtime_status.name != 'RUNNING':
         # TODO update to use reuse_id_policy
         instance_id = wf_client.schedule_new_workflow(
