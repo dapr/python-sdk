@@ -109,10 +109,10 @@ jobs:
           make
           sudo cp dist/linux_amd64/release/dapr /usr/local/bin/dapr
           cd ..
-      - name: Initialize Dapr runtime 1.15.0-rc.7
+      - name: Initialize Dapr runtime 1.15.0-rc.8
         run: |
           dapr uninstall --all
-          dapr init --runtime-version 1.15.0-rc.7
+          dapr init --runtime-version 1.15.0-rc.8
       - name: Build and override daprd with referenced commit.
         if: env.DAPR_REF != ''
         run: |
