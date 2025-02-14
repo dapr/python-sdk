@@ -139,6 +139,7 @@ def main():
 
         # Pause Test
         d.pause_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        sleep(5)
         get_response = d.get_workflow(
             instance_id=instance_id, workflow_component=workflow_component
         )
@@ -146,6 +147,7 @@ def main():
 
         # Resume Test
         d.resume_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        sleep(5)
         get_response = d.get_workflow(
             instance_id=instance_id, workflow_component=workflow_component
         )
