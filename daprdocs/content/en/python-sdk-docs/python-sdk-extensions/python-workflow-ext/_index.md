@@ -7,7 +7,7 @@ description: How to get up and running with the Dapr Workflow extension
 no_list: true
 ---
 
-The Dapr Python SDK provides a built-in Dapr Workflow extension, `dapr.ext.workflow`, for creating Dapr services. The extension is currently in alpha.
+The Dapr Python SDK provides a built-in Dapr Workflow extension, `dapr.ext.workflow`, for creating Dapr services.
 
 ## Installation
 
