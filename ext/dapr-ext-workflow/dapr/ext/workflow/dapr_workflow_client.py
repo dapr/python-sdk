@@ -122,7 +122,7 @@ class DaprWorkflowClient:
         """Fetches runtime state for the specified workflow instance.
 
         Args:
-            instanceId: The unique ID of the workflow instance to fetch.
+            instance_id: The unique ID of the workflow instance to fetch.
             fetch_payloads: If true, fetches the input, output payloads and custom status
             for the workflow instance. Defaults to true.
 
@@ -144,7 +144,7 @@ class DaprWorkflowClient:
             raise
 
     def wait_for_workflow_start(
-        self, instance_id: str, *, fetch_payloads: bool = False, timeout_in_seconds: int = 60
+        self, instance_id: str, *, fetch_payloads: bool = False, timeout_in_seconds: int = 0
     ) -> Optional[WorkflowState]:
         """Waits for a workflow to start running and returns a WorkflowState object that contains
            metadata about the started workflow.
@@ -158,7 +158,7 @@ class DaprWorkflowClient:
             fetch_payloads: If true, fetches the input, output payloads and custom status for
             the workflow instance. Defaults to false.
             timeout_in_seconds: The maximum time to wait for the workflow instance to start running.
-            Defaults to 60 seconds.
+            Defaults to meaning no timeout.
 
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
@@ -170,7 +170,7 @@ class DaprWorkflowClient:
         return WorkflowState(state) if state else None
 
     def wait_for_workflow_completion(
-        self, instance_id: str, *, fetch_payloads: bool = True, timeout_in_seconds: int = 60
+        self, instance_id: str, *, fetch_payloads: bool = True, timeout_in_seconds: int = 0
     ) -> Optional[WorkflowState]:
         """Waits for a workflow to complete and returns a WorkflowState object that contains
            metadata about the started instance.
@@ -192,7 +192,7 @@ class DaprWorkflowClient:
             fetch_payloads: If true, fetches the input, output payloads and custom status
             for the workflow instance. Defaults to true.
             timeout_in_seconds: The maximum time in seconds to wait for the workflow instance to
-            complete. Defaults to 60 seconds.
+            complete. Defaults to 0 seconds, meaning no timeout.
 
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
@@ -222,8 +222,8 @@ class DaprWorkflowClient:
            discarded.
 
         Args:
-            instanceId: The ID of the workflow instance that will handle the event.
-            eventName: The name of the event. Event names are case-insensitive.
+            instance_id: The ID of the workflow instance that will handle the event.
+            event_name: The name of the event. Event names are case-insensitive.
             data: The serializable data payload to include with the event.
         """
         return self.__obj.raise_orchestration_event(instance_id, event_name, data=data)
