@@ -150,7 +150,7 @@ def main():
     try:
         state = wf_client.wait_for_workflow_completion(instance_id, timeout_in_seconds=30)
         if state.runtime_status.name == 'COMPLETED':
-            print("Workflow completed! Result: {}".format(state.serialized_output.strip('"')))
+            print('Workflow completed! Result: {}'.format(state.serialized_output.strip('"')))
         else:
             print(f'Workflow failed! Status: {state.runtime_status.name}')
     except TimeoutError:
