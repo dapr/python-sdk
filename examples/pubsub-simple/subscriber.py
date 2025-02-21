@@ -40,6 +40,42 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
     return TopicEventResponse('success')
 
 
+@app.subscribe(pubsub_name='pubsub', topic='TOPIC_CE')
+def receive_cloud_events(event: v1.Event) -> TopicEventResponse:
+    print('Subscriber received: ' + event.Subject(), flush=True)
+
+    content_type = event.content_type
+    data = event.Data()
+
+    try:
+        if content_type == 'application/json':
+            # Handle JSON data
+            json_data = json.loads(data)
+            print(
+                f'Subscriber received a json cloud event: id={json_data["id"]}, message="{json_data["message"]}", '
+                f'content_type="{event.content_type}"',
+                flush=True,
+            )
+        elif content_type == 'text/plain':
+            # Handle plain text data
+            if isinstance(data, bytes):
+                data = data.decode('utf-8')
+            print(
+                f'Subscriber received plain text cloud event: {data}, '
+                f'content_type="{content_type}"',
+                flush=True,
+            )
+        else:
+            print(f'Received unknown content type: {content_type}', flush=True)
+            return TopicEventResponse('fail')
+
+    except Exception as e:
+        print('Failed to process event data:', e, flush=True)
+        return TopicEventResponse('fail')
+
+    return TopicEventResponse('success')
+
+
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_D', dead_letter_topic='TOPIC_D_DEAD')
 def fail_and_send_to_dead_topic(event: v1.Event) -> TopicEventResponse:
     return TopicEventResponse('retry')
