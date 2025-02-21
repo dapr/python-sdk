@@ -66,3 +66,51 @@ with DaprClient() as d:
 
     # Print the request
     print(req_data, flush=True)
+
+    ## Send a cloud event with json data
+    id = 8
+    cloud_event = {
+        'specversion': '1.0',
+        'type': 'com.example.event',
+        'source': 'my-service',
+        'id': f'abc-{id}',
+        'data': {'id': id, 'message': 'hello world'},
+        'datacontenttype': 'application/json',
+    }
+
+    # Set the data content type to 'application/cloudevents+json'
+    resp = d.publish_event(
+        pubsub_name='pubsub',
+        topic_name='TOPIC_CE',
+        data=json.dumps(cloud_event),
+        data_content_type='application/cloudevents+json',
+    )
+
+    # Print the request
+    print(cloud_event, flush=True)
+
+    time.sleep(0.5)
+
+    # Send a cloud event with plain text data
+    id = 10
+    cloud_event = {
+        'specversion': '1.0',
+        'type': 'com.example.event',
+        'source': 'my-service',
+        'id': f'abc-{id}',
+        'data': 'hello world',
+        'datacontenttype': 'text/plain',
+    }
+
+    # Set the data content type to 'application/cloudevents+json'
+    resp = d.publish_event(
+        pubsub_name='pubsub',
+        topic_name='TOPIC_CE',
+        data=json.dumps(cloud_event),
+        data_content_type='application/cloudevents+json',
+    )
+
+    # Print the request
+    print(cloud_event, flush=True)
+
+    time.sleep(0.5)
