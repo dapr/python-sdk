@@ -227,6 +227,56 @@ with DaprClient() as d:
     resp = d.publish_event(pubsub_name='pubsub', topic_name='TOPIC_A', data='{"message":"Hello World"}')
 ```
 
+
+Send [CloudEvents](https://cloudevents.io/) messages with a json payload:
+```python
+from dapr.clients import DaprClient
+import json
+
+with DaprClient() as d:
+    cloud_event = {
+        'specversion': '1.0',
+        'type': 'com.example.event',
+        'source': 'my-service',
+        'id': 'myid',
+        'data': {'id': 1, 'message': 'hello world'},
+        'datacontenttype': 'application/json',
+    }
+
+    # Set the data content type to 'application/cloudevents+json'
+    resp = d.publish_event(
+        pubsub_name='pubsub',
+        topic_name='TOPIC_CE',
+        data=json.dumps(cloud_event),
+        data_content_type='application/cloudevents+json',
+    )
+```
+
+Publish [CloudEvents](https://cloudevents.io/) messages with plain text payload:
+```python
+from dapr.clients import DaprClient
+import json
+
+with DaprClient() as d:
+    cloud_event = {
+        'specversion': '1.0',
+        'type': 'com.example.event',
+        'source': 'my-service',
+        'id': "myid",
+        'data': 'hello world',
+        'datacontenttype': 'text/plain',
+    }
+
+    # Set the data content type to 'application/cloudevents+json'
+    resp = d.publish_event(
+        pubsub_name='pubsub',
+        topic_name='TOPIC_CE',
+        data=json.dumps(cloud_event),
+        data_content_type='application/cloudevents+json',
+    )
+```
+
+
 #### Subscribe to messages
 
 ```python
