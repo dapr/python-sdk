@@ -1116,29 +1116,37 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     async def test_converse_alpha1_basic(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
-        inputs = [ConversationInput(message="Hello", role="user"),
-            ConversationInput(message="How are you?", role="user")]
+        inputs = [
+            ConversationInput(message='Hello', role='user'),
+            ConversationInput(message='How are you?', role='user'),
+        ]
 
-        response = await dapr.converse_alpha1(name="test-llm", inputs=inputs)
+        response = await dapr.converse_alpha1(name='test-llm', inputs=inputs)
 
         # Check response structure
         self.assertIsNotNone(response)
         self.assertEqual(len(response.outputs), 2)
-        self.assertEqual(response.outputs[0].result, "Response to: Hello")
-        self.assertEqual(response.outputs[1].result, "Response to: How are you?")
+        self.assertEqual(response.outputs[0].result, 'Response to: Hello')
+        self.assertEqual(response.outputs[1].result, 'Response to: How are you?')
         await dapr.close()
 
     async def test_converse_alpha1_with_options(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
-        inputs = [ConversationInput(message="Hello", role="user", scrub_pii=True)]
+        inputs = [ConversationInput(message='Hello', role='user', scrub_pii=True)]
 
-        response = await dapr.converse_alpha1(name="test-llm", inputs=inputs, context_id="chat-123",
-            temperature=0.7, scrub_pii=True, metadata={"key": "value"})
+        response = await dapr.converse_alpha1(
+            name='test-llm',
+            inputs=inputs,
+            context_id='chat-123',
+            temperature=0.7,
+            scrub_pii=True,
+            metadata={'key': 'value'},
+        )
 
         self.assertIsNotNone(response)
         self.assertEqual(len(response.outputs), 1)
-        self.assertEqual(response.outputs[0].result, "Response to: Hello")
+        self.assertEqual(response.outputs[0].result, 'Response to: Hello')
         await dapr.close()
 
     async def test_converse_alpha1_error_handling(self):
@@ -1146,20 +1154,21 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         # Setup server to raise an exception
         self._fake_dapr_server.raise_exception_on_next_call(
-            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message="Invalid argument"))
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Invalid argument')
+        )
 
-        inputs = [ConversationInput(message="Hello", role="user")]
+        inputs = [ConversationInput(message='Hello', role='user')]
 
         with self.assertRaises(DaprInternalError) as context:
-            await dapr.converse_alpha1(name="test-llm", inputs=inputs)
-        self.assertTrue("Invalid argument" in str(context.exception))
+            await dapr.converse_alpha1(name='test-llm', inputs=inputs)
+        self.assertTrue('Invalid argument' in str(context.exception))
         await dapr.close()
 
     async def test_converse_alpha1_empty_inputs(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
         # Test with empty inputs list
-        response = await dapr.converse_alpha1(name="test-llm", inputs=[])
+        response = await dapr.converse_alpha1(name='test-llm', inputs=[])
 
         self.assertIsNotNone(response)
         self.assertEqual(len(response.outputs), 0)
