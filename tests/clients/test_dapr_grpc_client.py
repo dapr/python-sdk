@@ -1189,8 +1189,8 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
         inputs = [
-            ConversationInput(message='Hello', role='user'),
-            ConversationInput(message='How are you?', role='user'),
+            ConversationInput(content='Hello', role='user'),
+            ConversationInput(content='How are you?', role='user'),
         ]
 
         response = dapr.converse_alpha1(name='test-llm', inputs=inputs)
@@ -1204,7 +1204,7 @@ class DaprGrpcClientTests(unittest.TestCase):
     def test_converse_alpha1_with_options(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
-        inputs = [ConversationInput(message='Hello', role='user', scrub_pii=True)]
+        inputs = [ConversationInput(content='Hello', role='user', scrub_pii=True)]
 
         response = dapr.converse_alpha1(
             name='test-llm',
@@ -1227,7 +1227,7 @@ class DaprGrpcClientTests(unittest.TestCase):
             status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Invalid argument')
         )
 
-        inputs = [ConversationInput(message='Hello', role='user')]
+        inputs = [ConversationInput(content='Hello', role='user')]
 
         with self.assertRaises(DaprInternalError) as context:
             dapr.converse_alpha1(name='test-llm', inputs=inputs)

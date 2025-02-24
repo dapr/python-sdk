@@ -531,7 +531,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         # Echo back the input messages as outputs
         outputs = []
         for input in request.inputs:
-            result = f'Response to: {input.message}'
+            result = f'Response to: {input.content}'
             outputs.append(api_v1.ConversationResult(result=result, parameters={}))
 
         return api_v1.ConversationResponse(contextID=request.contextID, outputs=outputs)

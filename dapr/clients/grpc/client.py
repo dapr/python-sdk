@@ -1747,7 +1747,7 @@ class DaprGrpcClient:
         """
 
         inputs_pb = [
-            api_v1.ConversationInput(message=inp.message, role=inp.role, scrubPII=inp.scrub_pii)
+            api_v1.ConversationInput(content=inp.content, role=inp.role, scrubPII=inp.scrub_pii)
             for inp in inputs
         ]
 

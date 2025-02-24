@@ -445,8 +445,8 @@ from dapr.clients.grpc._request import ConversationInput
 
 with DaprClient() as d:
     inputs = [
-        ConversationInput(message="What's Dapr?", role='user', scrub_pii=True),
-        ConversationInput(message='Give a brief overview.', role='user', scrub_pii=True),
+        ConversationInput(content="What's Dapr?", role='user', scrub_pii=True),
+        ConversationInput(content='Give a brief overview.', role='user', scrub_pii=True),
     ]
 
     metadata = {

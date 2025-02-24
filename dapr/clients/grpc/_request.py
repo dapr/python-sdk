@@ -425,6 +425,6 @@ class DecryptRequestIterator(DaprRequest):
 class ConversationInput:
     """A single input message for the conversation."""
 
-    message: str
+    content: str
     role: Optional[str] = None
     scrub_pii: Optional[bool] = None

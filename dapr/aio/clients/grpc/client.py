@@ -1744,7 +1744,7 @@ class DaprGrpcClientAsync:
             DaprInternalError: If the Dapr runtime returns an error
         """
         inputs_pb = [
-            api_v1.ConversationInput(message=inp.message, role=inp.role, scrubPII=inp.scrub_pii)
+            api_v1.ConversationInput(content=inp.content, role=inp.role, scrubPII=inp.scrub_pii)
             for inp in inputs
         ]
 
