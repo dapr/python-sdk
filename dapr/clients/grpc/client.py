@@ -1722,7 +1722,6 @@ class DaprGrpcClient:
         name: str,
         inputs: List[ConversationInput],
         *,
-        # Force remaining args to be keyword-only
         context_id: Optional[str] = None,
         parameters: Optional[Dict[str, GrpcAny]] = None,
         metadata: Optional[Dict[str, str]] = None,
@@ -1772,8 +1771,8 @@ class DaprGrpcClient:
 
             return ConversationResponse(context_id=response.contextID, outputs=outputs)
 
-        except Exception as ex:
-            raise DaprInternalError(f'Error invoking conversation API: {str(ex)}')
+        except Exception as e:
+            raise DaprInternalError(f'Error invoking conversation API: {e}')
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.

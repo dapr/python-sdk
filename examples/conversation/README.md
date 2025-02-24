@@ -10,7 +10,6 @@
 
 <!-- STEP
 name: Run Conversation
-output_match_mode: substring
 expected_stdout_lines:
   - "== APP == Result: What's Dapr?"
   - "== APP == Result: Give a brief overview."

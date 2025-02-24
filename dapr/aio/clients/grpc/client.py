@@ -1720,7 +1720,6 @@ class DaprGrpcClientAsync:
         name: str,
         inputs: List[ConversationInput],
         *,
-        # Force remaining args to be keyword-only
         context_id: Optional[str] = None,
         parameters: Optional[Dict[str, GrpcAny]] = None,
         metadata: Optional[Dict[str, str]] = None,
@@ -1736,9 +1735,7 @@ class DaprGrpcClientAsync:
             parameters: Optional custom parameters for the request
             metadata: Optional metadata for the component
             scrub_pii: Optional flag to scrub PII from outputs
-            temperature: Optional temperature setting (0.0 to 1.0) where
-                        lower values give more deterministic responses and
-                        higher values enable more creative responses
+            temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
 
         Returns:
             ConversationResponse containing the conversation results
@@ -1771,8 +1768,8 @@ class DaprGrpcClientAsync:
 
             return ConversationResponse(context_id=response.contextID, outputs=outputs)
 
-        except Exception as ex:
-            raise DaprInternalError(f'Error invoking conversation API: {str(ex)}')
+        except Exception as e:
+            raise DaprInternalError(f'Error invoking conversation API: {e}')
 
     async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
