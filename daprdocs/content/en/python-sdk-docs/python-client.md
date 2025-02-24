@@ -431,6 +431,38 @@ if __name__ == '__main__':
 - For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/pubsub-simple) for code samples and instructions to try out streaming pub/sub.
 
+### Conversation (Alpha)
+ 
+{{% alert title="Note" color="primary" %}}
+The Dapr Conversation API is currently in alpha.
+{{% /alert %}}
+
+Since version 1.15 Dapr offers developers the capability to securely and reliably interact with Large Language Models (LLM) through the [Conversation API]({{< ref conversation-overview.md >}}).
+
+```python
+from dapr.clients import DaprClient
+from dapr.clients.grpc._request import ConversationInput
+
+with DaprClient() as d:
+    inputs = [
+        ConversationInput(message="What's Dapr?", role='user', scrub_pii=True),
+        ConversationInput(message='Give a brief overview.', role='user', scrub_pii=True),
+    ]
+
+    metadata = {
+        'model': 'foo',
+        'key': 'authKey',
+        'cacheTTL': '10m',
+    }
+
+    response = d.converse_alpha1(
+        name='echo', inputs=inputs, temperature=0.7, context_id='chat-123', metadata=metadata
+    )
+
+    for output in response.outputs:
+        print(f'Result: {output.result}')
+```
+
 ### Interact with output bindings
 
 ```python
