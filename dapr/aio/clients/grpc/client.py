@@ -29,6 +29,7 @@ from typing_extensions import Self
 
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
+from google.protobuf.any_pb2 import Any as GrpcAny
 
 import grpc.aio  # type: ignore
 from grpc.aio import (  # type: ignore
@@ -75,9 +76,12 @@ from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
     TransactionalStateOperation,
+    ConversationInput,
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
+    ConversationResponse,
+    ConversationResult,
     DaprResponse,
     GetSecretResponse,
     GetBulkSecretResponse,
@@ -1710,6 +1714,65 @@ class DaprGrpcClientAsync:
 
         except grpc.aio.AioRpcError as err:
             raise DaprInternalError(err.details())
+
+    async def converse_alpha1(
+        self,
+        name: str,
+        inputs: List[ConversationInput],
+        *,
+        # Force remaining args to be keyword-only
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, GrpcAny]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
+    ) -> ConversationResponse:
+        """Invoke an LLM using the conversation API (Alpha).
+
+        Args:
+            name: Name of the LLM component to invoke
+            inputs: List of conversation inputs
+            context_id: Optional ID for continuing an existing chat
+            parameters: Optional custom parameters for the request
+            metadata: Optional metadata for the component
+            scrub_pii: Optional flag to scrub PII from outputs
+            temperature: Optional temperature setting (0.0 to 1.0) where
+                        lower values give more deterministic responses and
+                        higher values enable more creative responses
+
+        Returns:
+            ConversationResponse containing the conversation results
+
+        Raises:
+            DaprInternalError: If the Dapr runtime returns an error
+        """
+        inputs_pb = [
+            api_v1.ConversationInput(message=inp.message, role=inp.role, scrubPII=inp.scrub_pii)
+            for inp in inputs
+        ]
+
+        request = api_v1.ConversationRequest(
+            name=name,
+            inputs=inputs_pb,
+            contextID=context_id,
+            parameters=parameters or {},
+            metadata=metadata or {},
+            scrubPII=scrub_pii,
+            temperature=temperature,
+        )
+
+        try:
+            response = await self._stub.ConverseAlpha1(request)
+
+            outputs = [
+                ConversationResult(result=output.result, parameters=output.parameters)
+                for output in response.outputs
+            ]
+
+            return ConversationResponse(context_id=response.contextID, outputs=outputs)
+
+        except Exception as ex:
+            raise DaprInternalError(f'Error invoking conversation API: {str(ex)}')
 
     async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
