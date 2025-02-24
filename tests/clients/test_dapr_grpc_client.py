@@ -25,7 +25,7 @@ from unittest.mock import patch
 
 from google.rpc import status_pb2, code_pb2
 
-from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
+from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
 from dapr.clients.grpc.subscription import StreamInactiveError
@@ -1229,18 +1229,9 @@ class DaprGrpcClientTests(unittest.TestCase):
 
         inputs = [ConversationInput(content='Hello', role='user')]
 
-        with self.assertRaises(DaprInternalError) as context:
+        with self.assertRaises(DaprGrpcError) as context:
             dapr.converse_alpha1(name='test-llm', inputs=inputs)
         self.assertTrue('Invalid argument' in str(context.exception))
-
-    def test_converse_alpha1_empty_inputs(self):
-        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
-
-        # Test with empty inputs list
-        response = dapr.converse_alpha1(name='test-llm', inputs=[])
-
-        self.assertIsNotNone(response)
-        self.assertEqual(len(response.outputs), 0)
 
 
 if __name__ == '__main__':

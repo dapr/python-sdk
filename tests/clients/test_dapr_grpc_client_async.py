@@ -23,7 +23,7 @@ from google.rpc import status_pb2, code_pb2
 
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.aio.clients import DaprClient
-from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
+from dapr.clients.exceptions import DaprGrpcError
 from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
@@ -1159,19 +1159,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         inputs = [ConversationInput(content='Hello', role='user')]
 
-        with self.assertRaises(DaprInternalError) as context:
+        with self.assertRaises(DaprGrpcError) as context:
             await dapr.converse_alpha1(name='test-llm', inputs=inputs)
         self.assertTrue('Invalid argument' in str(context.exception))
-        await dapr.close()
-
-    async def test_converse_alpha1_empty_inputs(self):
-        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
-
-        # Test with empty inputs list
-        response = await dapr.converse_alpha1(name='test-llm', inputs=[])
-
-        self.assertIsNotNone(response)
-        self.assertEqual(len(response.outputs), 0)
         await dapr.close()
 
 

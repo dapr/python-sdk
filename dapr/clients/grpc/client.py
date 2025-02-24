@@ -1743,7 +1743,7 @@ class DaprGrpcClient:
             ConversationResponse containing the conversation results
 
         Raises:
-            DaprInternalError: If the Dapr runtime returns an error
+            DaprGrpcError: If the Dapr runtime returns an error
         """
 
         inputs_pb = [
@@ -1770,9 +1770,8 @@ class DaprGrpcClient:
             ]
 
             return ConversationResponse(context_id=response.contextID, outputs=outputs)
-
-        except Exception as e:
-            raise DaprInternalError(f'Error invoking conversation API: {e}')
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
