@@ -8,7 +8,9 @@
 [![GitHub issue custom search in repo](https://img.shields.io/github/issues-search/dapr/python-sdk?query=type%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22&label=Good%20first%20issues&style=flat&logo=github)](https://github.com/dapr/python-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 
 [![Discord](https://img.shields.io/discord/778680217417809931?label=Discord&style=flat&logo=discord)](http://bit.ly/dapr-discord) 
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCtpSQ9BLB_3EXdWAUQYwnRA?style=flat&label=YouTube%20views&logo=youtube)](https://youtube.com/@daprdev) 
+<!-- IGNORE_LINKS -->
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/daprdev?logo=x&style=flat)](https://twitter.com/daprdev)
+<!-- END_IGNORE -->
 
 [Dapr](https://docs.dapr.io/concepts/overview/) is a portable, event-driven, serverless runtime for building distributed applications across cloud and edge.
 
