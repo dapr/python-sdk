@@ -1734,7 +1734,7 @@ class DaprGrpcClientAsync:
             context_id: Optional ID for continuing an existing chat
             parameters: Optional custom parameters for the request
             metadata: Optional metadata for the component
-            scrub_pii: Optional flag to scrub PII from outputs
+            scrub_pii: Optional flag to scrub PII from inputs and outputs
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
 
         Returns:
