@@ -25,7 +25,7 @@ from unittest.mock import patch
 
 from google.rpc import status_pb2, code_pb2
 
-from dapr.clients.exceptions import DaprGrpcError
+from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
 from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
 from dapr.clients.grpc.subscription import StreamInactiveError
@@ -33,7 +33,11 @@ from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.clients.grpc._request import TransactionalStateOperation, TransactionOperationType
+from dapr.clients.grpc._request import (
+    TransactionalStateOperation,
+    TransactionOperationType,
+    ConversationInput,
+)
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._response import (
@@ -1180,6 +1184,63 @@ class DaprGrpcClientTests(unittest.TestCase):
             )
             self.assertEqual(resp.read(5), b'hello')
             self.assertEqual(resp.read(5), b' dapr')
+
+    def test_converse_alpha1_basic(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        inputs = [
+            ConversationInput(message='Hello', role='user'),
+            ConversationInput(message='How are you?', role='user'),
+        ]
+
+        response = dapr.converse_alpha1(name='test-llm', inputs=inputs)
+
+        # Check response structure
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 2)
+        self.assertEqual(response.outputs[0].result, 'Response to: Hello')
+        self.assertEqual(response.outputs[1].result, 'Response to: How are you?')
+
+    def test_converse_alpha1_with_options(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        inputs = [ConversationInput(message='Hello', role='user', scrub_pii=True)]
+
+        response = dapr.converse_alpha1(
+            name='test-llm',
+            inputs=inputs,
+            context_id='chat-123',
+            temperature=0.7,
+            scrub_pii=True,
+            metadata={'key': 'value'},
+        )
+
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        self.assertEqual(response.outputs[0].result, 'Response to: Hello')
+
+    def test_converse_alpha1_error_handling(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Setup server to raise an exception
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Invalid argument')
+        )
+
+        inputs = [ConversationInput(message='Hello', role='user')]
+
+        with self.assertRaises(DaprInternalError) as context:
+            dapr.converse_alpha1(name='test-llm', inputs=inputs)
+        self.assertTrue('Invalid argument' in str(context.exception))
+
+    def test_converse_alpha1_empty_inputs(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Test with empty inputs list
+        response = dapr.converse_alpha1(name='test-llm', inputs=[])
+
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 0)
 
 
 if __name__ == '__main__':

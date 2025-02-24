@@ -524,6 +524,18 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             extended_metadata=self.metadata,
         )
 
+    def ConverseAlpha1(self, request, context):
+        """Mock implementation of the ConverseAlpha1 endpoint."""
+        self.check_for_exception(context)
+
+        # Echo back the input messages as outputs
+        outputs = []
+        for input in request.inputs:
+            result = f'Response to: {input.message}'
+            outputs.append(api_v1.ConversationResult(result=result, parameters={}))
+
+        return api_v1.ConversationResponse(contextID=request.contextID, outputs=outputs)
+
     def SetMetadata(self, request: SetMetadataRequest, context):
         self.metadata[request.key] = request.value
         return empty_pb2.Empty()
