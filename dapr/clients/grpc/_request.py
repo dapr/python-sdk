@@ -15,6 +15,7 @@ limitations under the License.
 
 import io
 from enum import Enum
+from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -418,3 +419,12 @@ class DecryptRequestIterator(DaprRequest):
 
         self.seq += 1
         return request_proto
+
+
+@dataclass
+class ConversationInput:
+    """A single input message for the conversation."""
+
+    content: str
+    role: Optional[str] = None
+    scrub_pii: Optional[bool] = None
