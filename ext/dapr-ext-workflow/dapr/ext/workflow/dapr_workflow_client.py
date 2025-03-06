@@ -158,7 +158,7 @@ class DaprWorkflowClient:
             fetch_payloads: If true, fetches the input, output payloads and custom status for
             the workflow instance. Defaults to false.
             timeout_in_seconds: The maximum time to wait for the workflow instance to start running.
-            Defaults to meaning no timeout.
+            Defaults to 0 seconds, meaning no timeout.
 
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
