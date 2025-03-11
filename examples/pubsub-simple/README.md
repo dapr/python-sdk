@@ -37,6 +37,11 @@ expected_stdout_lines:
   - '== APP == Dead-Letter Subscriber received: id=7, message="hello world", content_type="application/json"'
   - '== APP == Dead-Letter Subscriber. Received via deadletter topic: TOPIC_D_DEAD'
   - '== APP == Dead-Letter Subscriber. Originally intended topic: TOPIC_D'
+  - '== APP == Subscriber received: TOPIC_CE'
+  - '== APP == Subscriber received a json cloud event: id=8, message="hello world", content_type="application/json"'
+  - '== APP == Subscriber received: TOPIC_CE'
+  - '== APP == Subscriber received plain text cloud event: hello world, content_type="text/plain"'
+    
 output_match_mode: substring
 background: true
 match_order: none
@@ -45,7 +50,7 @@ sleep: 3
 
 ```bash
 # 1. Start Subscriber (expose gRPC server receiver on port 50051)
-dapr run --app-id python-subscriber --app-protocol grpc --app-port 50051 python3 subscriber.py
+dapr run --app-id python-subscriber --app-protocol grpc --app-port 50051 -- python3 subscriber.py
 ```
 
 <!-- END_STEP -->
@@ -60,6 +65,10 @@ expected_stdout_lines:
   - "== APP == {'id': 3, 'message': 'hello world'}"
   - "== APP == {'id': 4, 'message': 'hello world'}"
   - "== APP == {'id': 5, 'message': 'hello world'}"
+  - "== APP == {'id': 6, 'message': 'hello world'}"
+  - "== APP == {'id': 7, 'message': 'hello world'}"
+  - "== APP == {'specversion': '1.0', 'type': 'com.example.event', 'source': 'my-service', 'id': 'abc-8', 'data': {'id': 8, 'message': 'hello world'}, 'datacontenttype': 'application/json'}"
+  - "== APP == {'specversion': '1.0', 'type': 'com.example.event', 'source': 'my-service', 'id': 'abc-10', 'data': 'hello world', 'datacontenttype': 'text/plain'}"
 background: true
 sleep: 15
 -->
