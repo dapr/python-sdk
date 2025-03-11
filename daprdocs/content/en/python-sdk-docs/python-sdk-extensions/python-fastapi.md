@@ -47,7 +47,7 @@ class RawEventModel(BaseModel):
 
 class User(BaseModel):
     id: int
-    name = 'Jane Doe'
+    name: str
 
 class CloudEventModel(BaseModel):
     data: User
