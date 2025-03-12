@@ -41,13 +41,15 @@ expected_stdout_lines:
   - "== APP == Cannot save bulk due to bad etags. ErrorCode=StatusCode.ABORTED"
   - "== APP == Got value=b'value_1' eTag=1"
   - "== APP == Got items with etags: [(b'value_1_updated', '2'), (b'value_2', '2')]"
+  - "== APP == Transaction with outbox pattern executed successfully!"
+  - "== APP == Got value after outbox pattern: b'val1'"
   - "== APP == Got values after transaction delete: [b'', b'']"
   - "== APP == Got value after delete: b''"
 timeout_seconds: 5
 -->
 
 ```bash
-dapr run -- python3 state_store.py
+dapr run --resources-path components/ -- python3 state_store.py
 ```
 <!-- END_STEP -->
 
@@ -67,6 +69,10 @@ The output should be as follows:
 == APP == Got value=b'value_1' eTag=1
 
 == APP == Got items with etags: [(b'value_1_updated', '2'), (b'value_2', '2')]
+
+== APP == Transaction with outbox pattern executed successfully!
+
+== APP == Got value after outbox pattern: b'val1'
 
 == APP == Got values after transaction delete: [b'', b'']
 
