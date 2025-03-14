@@ -106,22 +106,39 @@ class DaprHttpClient:
         try:
             error_body = await response.read()
             if (error_body is None or len(error_body) == 0) and response.status == 404:
-                return DaprInternalError('Not Found', ERROR_CODE_DOES_NOT_EXIST)
+                return DaprInternalError(
+                    f'HTTP status code: {response.status}',
+                    error_code=ERROR_CODE_DOES_NOT_EXIST,
+                    status_code=response.status,
+                    reason=response.reason)
             error_info = self._serializer.deserialize(error_body)
         except Exception:
             return DaprInternalError(
-                f'Unknown Dapr Error. HTTP status code: {response.status}',
+                f'HTTP status code: {response.status}',
+                error_code=ERROR_CODE_UNKNOWN,
                 raw_response_bytes=error_body,
+                status_code=response.status,
+                reason=response.reason
             )
 
         if error_info and isinstance(error_info, dict):
             message = error_info.get('message')
             error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
-            return DaprInternalError(message, error_code, raw_response_bytes=error_body)
+            status_code = response.status
+            reason = response.reason
+            return DaprInternalError(
+                message or f'HTTP status code: {response.status}',
+                error_code,
+                raw_response_bytes=error_body,
+                status_code=status_code,
+                reason=reason)
 
         return DaprInternalError(
-            f'Unknown Dapr Error. HTTP status code: {response.status}',
+            f'HTTP status code: {response.status}',
+            error_code=ERROR_CODE_UNKNOWN,
             raw_response_bytes=error_body,
+            status_code=response.status,
+            reason=response.reason
         )
 
     def get_ssl_context(self):
