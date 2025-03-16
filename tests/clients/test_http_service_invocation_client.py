@@ -223,7 +223,7 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         error_response = b'UNPARSABLE_ERROR'
         self.server.set_response(error_response, 500)
 
-        expected_msg = 'Unknown Dapr Error. HTTP status code: 500'
+        expected_msg = 'Unknown Dapr Error. HTTP status code: 500.'
 
         with self.assertRaises(DaprInternalError) as ctx:
             self.client.invoke_method(

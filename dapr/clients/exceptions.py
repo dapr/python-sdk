@@ -106,7 +106,7 @@ class DaprHttpError(DaprInternalError):
         if self._error_code != ERROR_CODE_UNKNOWN:
             return super(__class__, self).__str__()
         else:
-            return f"Unknown Dapr Error. HTTP status code: {self._status_code}"
+            return f"Unknown Dapr Error. HTTP status code: {self._status_code}."
        
 
 class DaprGrpcError(RpcError):
