@@ -33,22 +33,16 @@ class DaprInternalError(Exception):
         message: Optional[str],
         error_code: Optional[str] = ERROR_CODE_UNKNOWN,
         raw_response_bytes: Optional[bytes] = None,
-        status_code: Optional[int] = None,
-        reason: Optional[str] = None,
     ):
         self._message = message
         self._error_code = error_code
         self._raw_response_bytes = raw_response_bytes
-        self._status_code = status_code
-        self._reason = reason
 
     def as_dict(self):
         return {
             'message': self._message,
             'errorCode': self._error_code,
             'raw_response_bytes': self._raw_response_bytes,
-            'status_code': self._status_code,
-            'reason': self._reason,
         }
 
     def as_json_safe_dict(self):
@@ -61,6 +55,11 @@ class DaprInternalError(Exception):
             )
 
         return error_dict
+
+    def __str__(self):
+        if self._error_code != ERROR_CODE_UNKNOWN:
+            return f"('{self._message}', '{self._error_code}')"
+        return self._message or 'Unknown Dapr Error.'
 
 
 class StatusDetails:
@@ -79,6 +78,36 @@ class StatusDetails:
     def as_dict(self):
         return {attr: getattr(self, attr) for attr in self.__dict__}
 
+
+class DaprHttpError(DaprInternalError):
+    """DaprHttpError encapsulates all Dapr HTTP exceptions"""
+    def __init__(
+            self,
+            message: Optional[str] = None,
+            error_code: Optional[str] = ERROR_CODE_UNKNOWN,
+            raw_response_bytes: Optional[bytes] = None,
+            status_code: Optional[int] = None,
+            reason: Optional[str] = None,
+    ):
+        self._status_code = status_code
+        self._reason = reason
+        super(__class__, self).__init__(
+            message or f'HTTP status code: {status_code}',
+            error_code,
+            raw_response_bytes)
+   
+    def as_dict(self):
+        error_dict = super(__class__, self).as_dict()
+        error_dict['status_code'] = self._status_code
+        error_dict['reason'] = self._reason
+        return error_dict
+  
+    def __str__(self):
+        if self._error_code != ERROR_CODE_UNKNOWN:
+            return super(__class__, self).__str__()
+        else:
+            return f"Unknown Dapr Error. HTTP status code: {self._status_code}"
+       
 
 class DaprGrpcError(RpcError):
     def __init__(self, err: RpcError):
