@@ -84,7 +84,7 @@ class Subscription:
             return SubscriptionMessage(message.event_message)
         except RpcError as e:
             # If Dapr can't be reached, wait until it's ready and reconnect the stream
-            if e.code() == StatusCode.UNAVAILABLE:
+            if e.code() == StatusCode.UNAVAILABLE or e.code() == StatusCode.UNKNOWN:
                 print(
                     f'gRPC error while reading from stream: {e.details()}, Status Code: {e.code()}'
                 )

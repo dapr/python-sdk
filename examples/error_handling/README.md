@@ -1,6 +1,6 @@
 # Example - Error handling
 
-This guide demonstrates handling `DaprGrpcError` errors when using the Dapr python-SDK. It's important to note that not all Dapr gRPC status errors are currently captured and transformed into a `DaprGrpcError` by the SDK. Efforts are ongoing to enhance this aspect, and contributions are welcome. For detailed information on error handling in Dapr, refer to the [official documentation](https://docs.dapr.io/reference/errors).
+This guide demonstrates handling `DaprGrpcError` errors when using the Dapr python-SDK. It's important to note that not all Dapr gRPC status errors are currently captured and transformed into a `DaprGrpcError` by the SDK. Efforts are ongoing to enhance this aspect, and contributions are welcome. For detailed information on error handling in Dapr, refer to the [official documentation](https://docs.dapr.io/developing-applications/error-codes/).
 
 The example involves creating a DaprClient and invoking the save_state method. 
 It uses the default configuration from Dapr init in [self-hosted mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-self-hosted). 
