@@ -18,6 +18,7 @@ from __future__ import annotations
 import contextlib
 import json
 import threading
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -1070,3 +1071,19 @@ class EncryptResponse(CryptoResponse[TCryptoResponse]):
 
 class DecryptResponse(CryptoResponse[TCryptoResponse]):
     ...
+
+
+@dataclass
+class ConversationResult:
+    """Result from a single conversation input."""
+
+    result: str
+    parameters: Dict[str, GrpcAny] = field(default_factory=dict)
+
+
+@dataclass
+class ConversationResponse:
+    """Response from the conversation API."""
+
+    context_id: Optional[str]
+    outputs: List[ConversationResult]

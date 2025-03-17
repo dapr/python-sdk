@@ -227,6 +227,56 @@ with DaprClient() as d:
     resp = d.publish_event(pubsub_name='pubsub', topic_name='TOPIC_A', data='{"message":"Hello World"}')
 ```
 
+
+Send [CloudEvents](https://cloudevents.io/) messages with a json payload:
+```python
+from dapr.clients import DaprClient
+import json
+
+with DaprClient() as d:
+    cloud_event = {
+        'specversion': '1.0',
+        'type': 'com.example.event',
+        'source': 'my-service',
+        'id': 'myid',
+        'data': {'id': 1, 'message': 'hello world'},
+        'datacontenttype': 'application/json',
+    }
+
+    # Set the data content type to 'application/cloudevents+json'
+    resp = d.publish_event(
+        pubsub_name='pubsub',
+        topic_name='TOPIC_CE',
+        data=json.dumps(cloud_event),
+        data_content_type='application/cloudevents+json',
+    )
+```
+
+Publish [CloudEvents](https://cloudevents.io/) messages with plain text payload:
+```python
+from dapr.clients import DaprClient
+import json
+
+with DaprClient() as d:
+    cloud_event = {
+        'specversion': '1.0',
+        'type': 'com.example.event',
+        'source': 'my-service',
+        'id': "myid",
+        'data': 'hello world',
+        'datacontenttype': 'text/plain',
+    }
+
+    # Set the data content type to 'application/cloudevents+json'
+    resp = d.publish_event(
+        pubsub_name='pubsub',
+        topic_name='TOPIC_CE',
+        data=json.dumps(cloud_event),
+        data_content_type='application/cloudevents+json',
+    )
+```
+
+
 #### Subscribe to messages
 
 ```python
@@ -381,6 +431,38 @@ if __name__ == '__main__':
 - For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/pubsub-simple) for code samples and instructions to try out streaming pub/sub.
 
+### Conversation (Alpha)
+ 
+{{% alert title="Note" color="primary" %}}
+The Dapr Conversation API is currently in alpha.
+{{% /alert %}}
+
+Since version 1.15 Dapr offers developers the capability to securely and reliably interact with Large Language Models (LLM) through the [Conversation API]({{< ref conversation-overview.md >}}).
+
+```python
+from dapr.clients import DaprClient
+from dapr.clients.grpc._request import ConversationInput
+
+with DaprClient() as d:
+    inputs = [
+        ConversationInput(content="What's Dapr?", role='user', scrub_pii=True),
+        ConversationInput(content='Give a brief overview.', role='user', scrub_pii=True),
+    ]
+
+    metadata = {
+        'model': 'foo',
+        'key': 'authKey',
+        'cacheTTL': '10m',
+    }
+
+    response = d.converse_alpha1(
+        name='echo', inputs=inputs, temperature=0.7, context_id='chat-123', metadata=metadata
+    )
+
+    for output in response.outputs:
+        print(f'Result: {output.result}')
+```
+
 ### Interact with output bindings
 
 ```python
@@ -514,90 +596,6 @@ def main():
 
 - For a full list of state operations visit [How-To: Use the cryptography APIs]({{< ref howto-cryptography.md >}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/crypto) for code samples and instructions to try out cryptography
-
-### Workflow
-
-```python
-from dapr.ext.workflow import WorkflowRuntime, DaprWorkflowContext, WorkflowActivityContext
-from dapr.clients import DaprClient
-
-instanceId = "exampleInstanceID"
-workflowComponent = "dapr"
-workflowName = "hello_world_wf"
-eventName = "event1"
-eventData = "eventData"
-
-def main():
-    with DaprClient() as d:
-        host = settings.DAPR_RUNTIME_HOST
-        port = settings.DAPR_GRPC_PORT
-        workflowRuntime = WorkflowRuntime(host, port)
-        workflowRuntime = WorkflowRuntime()
-        workflowRuntime.register_workflow(hello_world_wf)
-        workflowRuntime.register_activity(hello_act)
-        workflowRuntime.start()
-
-        # Start the workflow
-        start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
-                        workflow_name=workflowName, input=inputData, workflow_options=workflowOptions)
-        print(f"start_resp {start_resp.instance_id}")
-
-        # ...
-
-        # Pause Test
-        d.pause_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        print(f"Get response from {workflowName} after pause call: {getResponse.runtime_status}")
-
-        # Resume Test
-        d.resume_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        print(f"Get response from {workflowName} after resume call: {getResponse.runtime_status}")
-        
-        sleep(1)
-        # Raise event
-        d.raise_workflow_event(instance_id=instanceId, workflow_component=workflowComponent,
-                    event_name=eventName, event_data=eventData)
-
-        sleep(5)
-        # Purge Test
-        d.purge_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        try:
-            getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        except DaprInternalError as err:
-            if nonExistentIDError in err._message:
-                print("Instance Successfully Purged")
-
-        
-        # Kick off another workflow for termination purposes 
-        # This will also test using the same instance ID on a new workflow after
-        # the old instance was purged
-        start_resp = d.start_workflow(instance_id=instanceId, workflow_component=workflowComponent,
-                        workflow_name=workflowName, input=inputData, workflow_options=workflowOptions)
-        print(f"start_resp {start_resp.instance_id}")
-
-        # Terminate Test
-        d.terminate_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        sleep(1)
-        getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        print(f"Get response from {workflowName} after terminate call: {getResponse.runtime_status}")
-
-        # Purge Test
-        d.purge_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        try:
-            getResponse = d.get_workflow(instance_id=instanceId, workflow_component=workflowComponent)
-        except DaprInternalError as err:
-            if nonExistentIDError in err._message:
-                print("Instance Successfully Purged")
-
-        workflowRuntime.shutdown()
-```
-
-- Learn more about authoring and managing workflows: 
-  - [How-To: Author a workflow]({{< ref howto-author-workflow.md >}}).
-  - [How-To: Manage a workflow]({{< ref howto-manage-workflow.md >}}).
-- Visit [Python SDK examples](https://github.com/dapr/python-sdk/blob/master/examples/demo_workflow/app.py) for code samples and instructions to try out Dapr Workflow.
-
 
 ## Related links
 [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples)
