@@ -21,6 +21,7 @@ from unittest import mock
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from durabletask import client
 import durabletask.internal.orchestrator_service_pb2 as pb
+from grpc import RpcError
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
@@ -29,6 +30,19 @@ mock_suspend_result = 'suspend001'
 mock_resume_result = 'resume001'
 mock_purge_result = 'purge001'
 mock_instance_id = 'instance001'
+wf_status = 'not-found'
+
+
+class SimulatedRpcError(RpcError):
+    def __init__(self, code, details):
+        self._code = code
+        self._details = details
+
+    def code(self):
+        return self._code
+
+    def details(self):
+        return self._details
 
 
 class FakeTaskHubGrpcClient:
@@ -43,7 +57,15 @@ class FakeTaskHubGrpcClient:
         return mock_schedule_result
 
     def get_orchestration_state(self, instance_id, fetch_payloads):
-        return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.PENDING)
+        global wf_status
+        if wf_status == 'not-found':
+            raise SimulatedRpcError(code='UNKNOWN', details='no such instance exists')
+        elif wf_status == 'found':
+            return self._inner_get_orchestration_state(
+                instance_id, client.OrchestrationStatus.PENDING
+            )
+        else:
+            raise SimulatedRpcError(code='UNKNOWN', details='unknown error')
 
     def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout):
         return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.RUNNING)
@@ -100,6 +122,20 @@ class WorkflowClientTest(unittest.TestCase):
             )
             assert actual_schedule_result == mock_schedule_result
 
+            global wf_status
+            wf_status = 'not-found'
+            actual_get_result = wfClient.get_workflow_state(
+                instance_id=mock_instance_id, fetch_payloads=True
+            )
+            assert actual_get_result is None
+
+            wf_status = 'error'
+            with self.assertRaises(RpcError):
+                wfClient.get_workflow_state(instance_id=mock_instance_id, fetch_payloads=True)
+
+            assert actual_get_result is None
+
+            wf_status = 'found'
             actual_get_result = wfClient.get_workflow_state(
                 instance_id=mock_instance_id, fetch_payloads=True
             )

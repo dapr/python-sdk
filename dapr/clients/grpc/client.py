@@ -27,6 +27,7 @@ from typing_extensions import Self
 from datetime import datetime
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
+from google.protobuf.any_pb2 import Any as GrpcAny
 
 import grpc  # type: ignore
 from grpc import (  # type: ignore
@@ -64,6 +65,7 @@ from dapr.clients.grpc._request import (
     TransactionalStateOperation,
     EncryptRequestIterator,
     DecryptRequestIterator,
+    ConversationInput,
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
@@ -88,6 +90,8 @@ from dapr.clients.grpc._response import (
     EncryptResponse,
     DecryptResponse,
     TopicEventResponse,
+    ConversationResponse,
+    ConversationResult,
 )
 
 
@@ -1712,6 +1716,62 @@ class DaprGrpcClient:
 
         except RpcError as err:
             raise DaprInternalError(err.details())
+
+    def converse_alpha1(
+        self,
+        name: str,
+        inputs: List[ConversationInput],
+        *,
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, GrpcAny]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
+    ) -> ConversationResponse:
+        """Invoke an LLM using the conversation API (Alpha).
+
+        Args:
+            name: Name of the LLM component to invoke
+            inputs: List of conversation inputs
+            context_id: Optional ID for continuing an existing chat
+            parameters: Optional custom parameters for the request
+            metadata: Optional metadata for the component
+            scrub_pii: Optional flag to scrub PII from inputs and outputs
+            temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+
+        Returns:
+            ConversationResponse containing the conversation results
+
+        Raises:
+            DaprGrpcError: If the Dapr runtime returns an error
+        """
+
+        inputs_pb = [
+            api_v1.ConversationInput(content=inp.content, role=inp.role, scrubPII=inp.scrub_pii)
+            for inp in inputs
+        ]
+
+        request = api_v1.ConversationRequest(
+            name=name,
+            inputs=inputs_pb,
+            contextID=context_id,
+            parameters=parameters or {},
+            metadata=metadata or {},
+            scrubPII=scrub_pii,
+            temperature=temperature,
+        )
+
+        try:
+            response, call = self.retry_policy.run_rpc(self._stub.ConverseAlpha1.with_call, request)
+
+            outputs = [
+                ConversationResult(result=output.result, parameters=output.parameters)
+                for output in response.outputs
+            ]
+
+            return ConversationResponse(context_id=response.contextID, outputs=outputs)
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
 
     def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
