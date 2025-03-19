@@ -14,8 +14,11 @@ limitations under the License.
 """
 import base64
 import json
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
+if TYPE_CHECKING:
+    from dapr.serializers import Serializer
+    
 from google.protobuf.json_format import MessageToDict
 from grpc import RpcError  # type: ignore
 from grpc_status import rpc_status  # type: ignore
@@ -83,14 +86,31 @@ class DaprHttpError(DaprInternalError):
     """DaprHttpError encapsulates all Dapr HTTP exceptions"""
     def __init__(
             self,
-            message: Optional[str] = None,
-            error_code: Optional[str] = ERROR_CODE_UNKNOWN,
+            serializer: 'Serializer',
             raw_response_bytes: Optional[bytes] = None,
             status_code: Optional[int] = None,
             reason: Optional[str] = None,
     ):
         self._status_code = status_code
         self._reason = reason
+        error_code: str = ERROR_CODE_UNKNOWN
+        message: Optional[str] = None
+        error_info: dict = None
+
+        if (raw_response_bytes is None or len(raw_response_bytes) == 0) and status_code == 404:
+            error_code = ERROR_CODE_DOES_NOT_EXIST
+            raw_response_bytes = None
+        elif raw_response_bytes:
+            try:
+                error_info = serializer.deserialize(raw_response_bytes)
+            except Exception:
+                pass
+                # ignore any errors during deserialization
+
+            if error_info and isinstance(error_info, dict):
+                message = error_info.get('message')
+                error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
+
         super(__class__, self).__init__(
             message or f'HTTP status code: {status_code}',
             error_code,

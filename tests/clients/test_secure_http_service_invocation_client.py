@@ -164,6 +164,18 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
         self.assertEqual(None, error_dict.get('raw_response_bytes'))
         self.assertEqual(404, error_dict.get('status_code'))
         self.assertEqual('Not Found', error_dict.get('reason'))
+
+    def test_internal_error_no_body_exception_thrown_with_status_code_and_reason(self):
+        self.server.set_response(b'', code=500)
+        with self.assertRaises(DaprInternalError) as context:
+            self.client.invoke_method(self.app_id, self.method_name, '')
+
+        error_dict = context.exception.as_dict()
+        self.assertEqual("HTTP status code: 500", error_dict.get('message'))
+        self.assertEqual("UNKNOWN", error_dict.get('errorCode'))
+        self.assertEqual(b'', error_dict.get('raw_response_bytes'))
+        self.assertEqual(500, error_dict.get('status_code'))
+        self.assertEqual('Internal Server Error', error_dict.get('reason'))
     
     def test_notfound_no_json_body_exception_thrown_with_status_code_and_reason(self):
         self.server.set_response(b"Not found", code=404)

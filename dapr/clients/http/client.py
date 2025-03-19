@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 from dapr.conf import settings
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.exceptions import DaprHttpError, DaprInternalError, ERROR_CODE_DOES_NOT_EXIST, ERROR_CODE_UNKNOWN
+from dapr.clients.exceptions import DaprHttpError, DaprInternalError
 
 
 class DaprHttpClient:
@@ -102,33 +102,9 @@ class DaprHttpClient:
             raise (await self.convert_to_error(r))
 
     async def convert_to_error(self, response: aiohttp.ClientResponse) -> DaprInternalError:
-        error_info = None
-        try:
-            error_body = await response.read()
-            if (error_body is None or len(error_body) == 0) and response.status == 404:
-                return DaprHttpError(
-                    error_code=ERROR_CODE_DOES_NOT_EXIST,
-                    status_code=response.status,
-                    reason=response.reason,
-                )
-            error_info = self._serializer.deserialize(error_body)
-        except Exception:
-            ...
-            # Ignore any errors during deserialization
-
-        if error_info and isinstance(error_info, dict):
-            message = error_info.get('message')
-            error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
-            return DaprHttpError(
-                message=message,
-                error_code=error_code,
-                raw_response_bytes=error_body,
-                status_code=response.status,
-                reason=response.reason,
-            )
-
+        error_body = await response.read()
         return DaprHttpError(
-            error_code=ERROR_CODE_UNKNOWN,
+            self._serializer,
             raw_response_bytes=error_body,
             status_code=response.status,
             reason=response.reason,
