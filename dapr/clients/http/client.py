@@ -113,12 +113,8 @@ class DaprHttpClient:
                 )
             error_info = self._serializer.deserialize(error_body)
         except Exception:
-            return DaprHttpError(
-                error_code=ERROR_CODE_UNKNOWN,
-                raw_response_bytes=error_body,
-                status_code=response.status,
-                reason=response.reason,
-            )
+            ...
+            # Ignore any errors during deserialization
 
         if error_info and isinstance(error_info, dict):
             message = error_info.get('message')
