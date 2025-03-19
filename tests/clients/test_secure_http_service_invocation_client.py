@@ -147,8 +147,8 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
             self.client.invoke_method(self.app_id, self.method_name, '')
 
         error_dict = context.exception.as_dict()
-        self.assertEqual("HTTP status code: 404", error_dict.get('message'))
-        self.assertEqual("UNKNOWN", error_dict.get('errorCode'))
+        self.assertEqual('HTTP status code: 404', error_dict.get('message'))
+        self.assertEqual('UNKNOWN', error_dict.get('errorCode'))
         self.assertEqual(b'{"error": "Not found"}', error_dict.get('raw_response_bytes'))
         self.assertEqual(404, error_dict.get('status_code'))
         self.assertEqual('Not Found', error_dict.get('reason'))
@@ -159,8 +159,8 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
             self.client.invoke_method(self.app_id, self.method_name, '')
 
         error_dict = context.exception.as_dict()
-        self.assertEqual("HTTP status code: 404", error_dict.get('message'))
-        self.assertEqual("ERR_DOES_NOT_EXIST", error_dict.get('errorCode'))
+        self.assertEqual('HTTP status code: 404', error_dict.get('message'))
+        self.assertEqual('ERR_DOES_NOT_EXIST', error_dict.get('errorCode'))
         self.assertEqual(None, error_dict.get('raw_response_bytes'))
         self.assertEqual(404, error_dict.get('status_code'))
         self.assertEqual('Not Found', error_dict.get('reason'))
@@ -171,32 +171,37 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
             self.client.invoke_method(self.app_id, self.method_name, '')
 
         error_dict = context.exception.as_dict()
-        self.assertEqual("HTTP status code: 500", error_dict.get('message'))
-        self.assertEqual("UNKNOWN", error_dict.get('errorCode'))
+        self.assertEqual('HTTP status code: 500', error_dict.get('message'))
+        self.assertEqual('UNKNOWN', error_dict.get('errorCode'))
         self.assertEqual(b'', error_dict.get('raw_response_bytes'))
         self.assertEqual(500, error_dict.get('status_code'))
         self.assertEqual('Internal Server Error', error_dict.get('reason'))
-    
+
     def test_notfound_no_json_body_exception_thrown_with_status_code_and_reason(self):
-        self.server.set_response(b"Not found", code=404)
+        self.server.set_response(b'Not found', code=404)
         with self.assertRaises(DaprInternalError) as context:
             self.client.invoke_method(self.app_id, self.method_name, '')
 
         error_dict = context.exception.as_dict()
-        self.assertEqual("HTTP status code: 404", error_dict.get('message'))
-        self.assertEqual("UNKNOWN", error_dict.get('errorCode'))
-        self.assertEqual(b"Not found", error_dict.get('raw_response_bytes'))
+        self.assertEqual('HTTP status code: 404', error_dict.get('message'))
+        self.assertEqual('UNKNOWN', error_dict.get('errorCode'))
+        self.assertEqual(b'Not found', error_dict.get('raw_response_bytes'))
         self.assertEqual(404, error_dict.get('status_code'))
         self.assertEqual('Not Found', error_dict.get('reason'))
 
     def test_notfound_json_body_w_message_exception_thrown_with_status_code_and_reason(self):
-        self.server.set_response(b'{"message": "My message", "errorCode": "MY_ERROR_CODE"}', code=404)
+        self.server.set_response(
+            b'{"message": "My message", "errorCode": "MY_ERROR_CODE"}', code=404
+        )
         with self.assertRaises(DaprInternalError) as context:
             self.client.invoke_method(self.app_id, self.method_name, '')
 
         error_dict = context.exception.as_dict()
-        self.assertEqual("My message", error_dict.get('message'))
-        self.assertEqual("MY_ERROR_CODE", error_dict.get('errorCode'))
-        self.assertEqual(b'{"message": "My message", "errorCode": "MY_ERROR_CODE"}', error_dict.get('raw_response_bytes'))
+        self.assertEqual('My message', error_dict.get('message'))
+        self.assertEqual('MY_ERROR_CODE', error_dict.get('errorCode'))
+        self.assertEqual(
+            b'{"message": "My message", "errorCode": "MY_ERROR_CODE"}',
+            error_dict.get('raw_response_bytes'),
+        )
         self.assertEqual(404, error_dict.get('status_code'))
         self.assertEqual('Not Found', error_dict.get('reason'))

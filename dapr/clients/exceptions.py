@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
-    
+
 from google.protobuf.json_format import MessageToDict
 from grpc import RpcError  # type: ignore
 from grpc_status import rpc_status  # type: ignore
@@ -84,12 +84,13 @@ class StatusDetails:
 
 class DaprHttpError(DaprInternalError):
     """DaprHttpError encapsulates all Dapr HTTP exceptions"""
+
     def __init__(
-            self,
-            serializer: 'Serializer',
-            raw_response_bytes: Optional[bytes] = None,
-            status_code: Optional[int] = None,
-            reason: Optional[str] = None,
+        self,
+        serializer: 'Serializer',
+        raw_response_bytes: Optional[bytes] = None,
+        status_code: Optional[int] = None,
+        reason: Optional[str] = None,
     ):
         self._status_code = status_code
         self._reason = reason
@@ -112,22 +113,21 @@ class DaprHttpError(DaprInternalError):
                 error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
 
         super(__class__, self).__init__(
-            message or f'HTTP status code: {status_code}',
-            error_code,
-            raw_response_bytes)
-   
+            message or f'HTTP status code: {status_code}', error_code, raw_response_bytes
+        )
+
     def as_dict(self):
         error_dict = super(__class__, self).as_dict()
         error_dict['status_code'] = self._status_code
         error_dict['reason'] = self._reason
         return error_dict
-  
+
     def __str__(self):
         if self._error_code != ERROR_CODE_UNKNOWN:
             return super(__class__, self).__str__()
         else:
-            return f"Unknown Dapr Error. HTTP status code: {self._status_code}."
-       
+            return f'Unknown Dapr Error. HTTP status code: {self._status_code}.'
+
 
 class DaprGrpcError(RpcError):
     def __init__(self, err: RpcError):
