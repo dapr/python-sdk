@@ -58,6 +58,7 @@ class DaprInternalError(Exception):
             )
 
         return error_dict
+
     @property
     def message(self) -> Optional[str]:
         """Get the error message"""
@@ -72,6 +73,7 @@ class DaprInternalError(Exception):
     def raw_response_bytes(self) -> Optional[bytes]:
         """Get the raw response bytes"""
         return self._raw_response_bytes
+
     def __str__(self):
         if self._error_code != ERROR_CODE_UNKNOWN:
             return f"('{self._message}', '{self._error_code}')"
@@ -130,8 +132,12 @@ class DaprHttpError(DaprInternalError):
                 message = error_info.get('message')
                 error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
 
-        super().__init__(message or f'HTTP status code: {status_code}', error_code,
-            raw_response_bytes)
+        super().__init__(
+            message or f'HTTP status code: {status_code}',
+            error_code,
+            raw_response_bytes
+        )
+
     @property
     def status_code(self) -> Optional[int]:
         return self._status_code
@@ -139,6 +145,7 @@ class DaprHttpError(DaprInternalError):
     @property
     def reason(self) -> Optional[str]:
         return self._reason
+
     def as_dict(self):
         error_dict = super().as_dict()
         error_dict['status_code'] = self._status_code
