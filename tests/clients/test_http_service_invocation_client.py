@@ -205,10 +205,10 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.assertEqual('resp', new_resp.key)
 
     def test_invoke_method_error_returned(self):
-        error_response = b'{"errorCode":"ERR_DIRECT_INVOKE","message":"Something bad happend"}'
+        error_response = b'{"errorCode":"ERR_DIRECT_INVOKE","message":"Something bad happened"}'
         self.server.set_response(error_response, 500)
 
-        expected_msg = "('Something bad happend', 'ERR_DIRECT_INVOKE')"
+        expected_msg = "Something bad happened (Error Code: ERR_DIRECT_INVOKE, Status Code: 500)"
 
         with self.assertRaises(DaprInternalError) as ctx:
             self.client.invoke_method(
