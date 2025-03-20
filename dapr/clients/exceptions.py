@@ -58,7 +58,20 @@ class DaprInternalError(Exception):
             )
 
         return error_dict
+    @property
+    def message(self) -> Optional[str]:
+        """Get the error message"""
+        return self._message
 
+    @property
+    def error_code(self) -> Optional[str]:
+        """Get the error code"""
+        return self._error_code
+
+    @property
+    def raw_response_bytes(self) -> Optional[bytes]:
+        """Get the raw response bytes"""
+        return self._raw_response_bytes
     def __str__(self):
         if self._error_code != ERROR_CODE_UNKNOWN:
             return f"('{self._message}', '{self._error_code}')"
