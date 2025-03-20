@@ -83,7 +83,12 @@ class StatusDetails:
 
 
 class DaprHttpError(DaprInternalError):
-    """DaprHttpError encapsulates all Dapr HTTP exceptions"""
+    """DaprHttpError encapsulates all Dapr HTTP exceptions
+
+    Attributes:
+        _status_code: HTTP status code
+        _reason: HTTP reason phrase
+    """
 
     def __init__(
         self,
@@ -112,19 +117,24 @@ class DaprHttpError(DaprInternalError):
                 message = error_info.get('message')
                 error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
 
-        super(__class__, self).__init__(
-            message or f'HTTP status code: {status_code}', error_code, raw_response_bytes
-        )
+        super().__init__(message or f'HTTP status code: {status_code}', error_code,
+            raw_response_bytes)
+    @property
+    def status_code(self) -> Optional[int]:
+        return self._status_code
 
+    @property
+    def reason(self) -> Optional[str]:
+        return self._reason
     def as_dict(self):
-        error_dict = super(__class__, self).as_dict()
+        error_dict = super().as_dict()
         error_dict['status_code'] = self._status_code
         error_dict['reason'] = self._reason
         return error_dict
 
     def __str__(self):
         if self._error_code != ERROR_CODE_UNKNOWN:
-            return super(__class__, self).__str__()
+            return f"{self._message} (Error Code: {self._error_code}, Status Code: {self._status_code})"
         else:
             return f'Unknown Dapr Error. HTTP status code: {self._status_code}.'
 
