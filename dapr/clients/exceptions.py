@@ -133,9 +133,7 @@ class DaprHttpError(DaprInternalError):
                 error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
 
         super().__init__(
-            message or f'HTTP status code: {status_code}',
-            error_code,
-            raw_response_bytes
+            message or f'HTTP status code: {status_code}', error_code, raw_response_bytes
         )
 
     @property
@@ -154,7 +152,7 @@ class DaprHttpError(DaprInternalError):
 
     def __str__(self):
         if self._error_code != ERROR_CODE_UNKNOWN:
-            return f"{self._message} (Error Code: {self._error_code}, Status Code: {self._status_code})"
+            return f'{self._message} (Error Code: {self._error_code}, Status Code: {self._status_code})'
         else:
             return f'Unknown Dapr Error. HTTP status code: {self._status_code}.'
 
