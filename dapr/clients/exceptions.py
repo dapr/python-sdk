@@ -116,7 +116,7 @@ class DaprHttpError(DaprInternalError):
         self._reason = reason
         error_code: str = ERROR_CODE_UNKNOWN
         message: Optional[str] = None
-        error_info: dict = None
+        error_info: Optional[dict] = None
 
         if (raw_response_bytes is None or len(raw_response_bytes) == 0) and status_code == 404:
             error_code = ERROR_CODE_DOES_NOT_EXIST
