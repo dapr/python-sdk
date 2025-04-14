@@ -9,7 +9,8 @@ wheel
 opentelemetry-sdk
 opentelemetry-instrumentation-grpc
 httpx>=0.24
-pyOpenSSL>=23.3.0
+pyOpenSSL>=24.3.0
+cryptography>=44.0.1
 # needed for type checking
 Flask>=1.1
 # needed for auto fix
