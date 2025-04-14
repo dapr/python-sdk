@@ -57,7 +57,6 @@ class FakeTaskHubGrpcClient:
         return mock_schedule_result
 
     def get_orchestration_state(self, instance_id, fetch_payloads):
-        global wf_status
         if wf_status == 'not-found':
             raise SimulatedRpcError(code='UNKNOWN', details='no such instance exists')
         elif wf_status == 'found':
