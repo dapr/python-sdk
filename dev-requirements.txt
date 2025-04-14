@@ -1,7 +1,7 @@
 mypy>=1.2.0
 mypy-extensions>=0.4.3
 mypy-protobuf>=2.9
-flake8>=7.2.0
+flake8>=3.7.9
 tox>=4.3.0
 coverage>=5.3
 wheel
@@ -9,8 +9,7 @@ wheel
 opentelemetry-sdk
 opentelemetry-instrumentation-grpc
 httpx>=0.24
-pyOpenSSL>=24.3.0
-cryptography>=44.0.1
+pyOpenSSL>=23.2.0
 # needed for type checking
 Flask>=1.1
 # needed for auto fix
