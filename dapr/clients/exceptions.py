@@ -14,7 +14,10 @@ limitations under the License.
 """
 import base64
 import json
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from dapr.serializers import Serializer
 
 from google.protobuf.json_format import MessageToDict
 from grpc import RpcError  # type: ignore
@@ -56,6 +59,26 @@ class DaprInternalError(Exception):
 
         return error_dict
 
+    @property
+    def message(self) -> Optional[str]:
+        """Get the error message"""
+        return self._message
+
+    @property
+    def error_code(self) -> Optional[str]:
+        """Get the error code"""
+        return self._error_code
+
+    @property
+    def raw_response_bytes(self) -> Optional[bytes]:
+        """Get the raw response bytes"""
+        return self._raw_response_bytes
+
+    def __str__(self):
+        if self._error_code != ERROR_CODE_UNKNOWN:
+            return f"('{self._message}', '{self._error_code}')"
+        return self._message or 'Unknown Dapr Error.'
+
 
 class StatusDetails:
     def __init__(self):
@@ -72,6 +95,66 @@ class StatusDetails:
 
     def as_dict(self):
         return {attr: getattr(self, attr) for attr in self.__dict__}
+
+
+class DaprHttpError(DaprInternalError):
+    """DaprHttpError encapsulates all Dapr HTTP exceptions
+
+    Attributes:
+        _status_code: HTTP status code
+        _reason: HTTP reason phrase
+    """
+
+    def __init__(
+        self,
+        serializer: 'Serializer',
+        raw_response_bytes: Optional[bytes] = None,
+        status_code: Optional[int] = None,
+        reason: Optional[str] = None,
+    ):
+        self._status_code = status_code
+        self._reason = reason
+        error_code: str = ERROR_CODE_UNKNOWN
+        message: Optional[str] = None
+        error_info: Optional[dict] = None
+
+        if (raw_response_bytes is None or len(raw_response_bytes) == 0) and status_code == 404:
+            error_code = ERROR_CODE_DOES_NOT_EXIST
+            raw_response_bytes = None
+        elif raw_response_bytes:
+            try:
+                error_info = serializer.deserialize(raw_response_bytes)
+            except Exception:
+                pass
+                # ignore any errors during deserialization
+
+            if error_info and isinstance(error_info, dict):
+                message = error_info.get('message')
+                error_code = error_info.get('errorCode') or ERROR_CODE_UNKNOWN
+
+        super().__init__(
+            message or f'HTTP status code: {status_code}', error_code, raw_response_bytes
+        )
+
+    @property
+    def status_code(self) -> Optional[int]:
+        return self._status_code
+
+    @property
+    def reason(self) -> Optional[str]:
+        return self._reason
+
+    def as_dict(self):
+        error_dict = super().as_dict()
+        error_dict['status_code'] = self._status_code
+        error_dict['reason'] = self._reason
+        return error_dict
+
+    def __str__(self):
+        if self._error_code != ERROR_CODE_UNKNOWN:
+            return f'{self._message} (Error Code: {self._error_code}, Status Code: {self._status_code})'
+        else:
+            return f'Unknown Dapr Error. HTTP status code: {self._status_code}.'
 
 
 class DaprGrpcError(RpcError):

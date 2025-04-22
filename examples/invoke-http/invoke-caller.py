@@ -2,6 +2,7 @@ import json
 import time
 
 from dapr.clients import DaprClient
+from dapr.clients.exceptions import DaprHttpError
 
 with DaprClient() as d:
     req_data = {'id': 1, 'message': 'hello world'}
@@ -29,6 +30,9 @@ with DaprClient() as d:
             http_verb='POST',
             data=json.dumps(req_data),
         )
-    except Exception as e:
-        print(e._message, flush=True)
-        print(e._error_code, flush=True)
+    except DaprHttpError as e:
+        print(e.message, flush=True)
+        print(e.error_code, flush=True)
+        print(e.raw_response_bytes, flush=True)
+        print(str(e.status_code), flush=True)
+        print(e.reason, flush=True)
