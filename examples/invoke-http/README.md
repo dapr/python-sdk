@@ -51,6 +51,9 @@ expected_stdout_lines:
   - '== APP == 200'
   - '== APP == error occurred'
   - '== APP == MY_CODE'
+  - '== APP == {"message": "error occurred", "errorCode": "MY_CODE"}'
+  - '== APP == 503'
+  - '== APP == Internal Server Error'
 background: true
 sleep: 5 
 -->
