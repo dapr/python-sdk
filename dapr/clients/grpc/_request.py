@@ -331,7 +331,8 @@ class TransactionalStateOperation:
     @property
     def metadata(self) -> Dict[str, str]:
         """Gets metadata."""
-        return self._metadata
+        return {} if self._metadata is None else self._metadata
+
 
 class EncryptRequestIterator(DaprRequest):
     """An iterator for cryptography encrypt API requests.
