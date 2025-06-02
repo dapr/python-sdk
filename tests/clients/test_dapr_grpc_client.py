@@ -38,12 +38,14 @@ from dapr.clients.grpc._request import (
     TransactionOperationType,
     ConversationInput,
 )
+from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._response import (
     ConfigurationItem,
     ConfigurationResponse,
     ConfigurationWatcher,
+    DaprResponse,
     UnlockResponseStatus,
     WorkflowRuntimeStatus,
     TopicEventResponse,
@@ -1232,6 +1234,154 @@ class DaprGrpcClientTests(unittest.TestCase):
         with self.assertRaises(DaprGrpcError) as context:
             dapr.converse_alpha1(name='test-llm', inputs=inputs)
         self.assertTrue('Invalid argument' in str(context.exception))
+
+    #
+    # Tests for Jobs API (Alpha)
+    #
+
+    def test_schedule_job_alpha1_success(self):
+        """Test successful job scheduling."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        job = Job(name="test-job", schedule="@every 1m")
+
+        # Schedule the job
+        response = dapr.schedule_job_alpha1(job)
+
+        # Verify response type
+        self.assertIsInstance(response, DaprResponse)
+
+        # Verify job was stored in fake server
+        self.assertIn("test-job", self._fake_dapr_server.jobs)
+        stored_job = self._fake_dapr_server.jobs["test-job"]
+        self.assertEqual(stored_job.name, "test-job")
+        self.assertEqual(stored_job.schedule, "@every 1m")
+        self.assertEqual(stored_job.overwrite, False)
+        # Verify data field is always set (even if empty)
+        self.assertTrue(stored_job.HasField('data'))
+
+    def test_schedule_job_alpha1_success_with_data(self):
+        """Test successful job scheduling with data payload."""
+        from google.protobuf.any_pb2 import Any as GrpcAny
+
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create job data
+        data = GrpcAny()
+        data.value = b'{"message": "Hello from job!", "priority": "high"}'
+
+        job = Job(
+            name="test-job-with-data",
+            schedule="@every 2m",
+            data=data,
+            repeats=3,
+            ttl="10m"
+        )
+
+        # Schedule the job
+        response = dapr.schedule_job_alpha1(job)
+
+        # Verify response type
+        self.assertIsInstance(response, DaprResponse)
+
+        # Verify job was stored in fake server with all data
+        self.assertIn("test-job-with-data", self._fake_dapr_server.jobs)
+        stored_job = self._fake_dapr_server.jobs["test-job-with-data"]
+        self.assertEqual(stored_job.name, "test-job-with-data")
+        self.assertEqual(stored_job.schedule, "@every 2m")
+        self.assertEqual(stored_job.repeats, 3)
+        self.assertEqual(stored_job.ttl, "10m")
+        self.assertEqual(stored_job.overwrite, False)
+
+        # Verify data field contains the payload
+        self.assertTrue(stored_job.HasField('data'))
+        self.assertEqual(stored_job.data.value, b'{"message": "Hello from job!", "priority": "high"}')
+
+    def test_schedule_job_alpha1_validation_error(self):
+        """Test validation error in job scheduling."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Test empty job name - this should be caught by client validation
+        with self.assertRaises(ValueError):
+            job = Job(name="", schedule="@every 1m")
+            dapr.schedule_job_alpha1(job)
+
+    def test_get_job_alpha1_success(self):
+        """Test successful job retrieval."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # First schedule a job
+        original_job = Job(name="test-job", schedule="@every 1m", repeats=5, ttl="1h")
+        dapr.schedule_job_alpha1(original_job)
+
+        # Now retrieve it
+        retrieved_job = dapr.get_job_alpha1("test-job")
+
+        # Verify response
+        self.assertIsInstance(retrieved_job, Job)
+        self.assertEqual(retrieved_job.name, "test-job")
+        self.assertEqual(retrieved_job.schedule, "@every 1m")
+        self.assertEqual(retrieved_job.repeats, 5)
+        self.assertEqual(retrieved_job.ttl, "1h")
+        self.assertEqual(retrieved_job.overwrite, False)
+
+    def test_get_job_alpha1_validation_error(self):
+        """Test validation error in job retrieval."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        with self.assertRaises(ValueError):
+            dapr.get_job_alpha1("")
+
+    def test_get_job_alpha1_not_found(self):
+        """Test getting a job that doesn't exist."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        with self.assertRaises(DaprGrpcError):
+            dapr.get_job_alpha1("non-existent-job")
+
+    def test_delete_job_alpha1_success(self):
+        """Test successful job deletion."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # First schedule a job
+        job = Job(name="test-job", schedule="@every 1m")
+        dapr.schedule_job_alpha1(job)
+
+        # Verify job exists
+        self.assertIn("test-job", self._fake_dapr_server.jobs)
+
+        # Delete the job
+        response = dapr.delete_job_alpha1("test-job")
+
+        # Verify response
+        self.assertIsInstance(response, DaprResponse)
+
+        # Verify job was removed from fake server
+        self.assertNotIn("test-job", self._fake_dapr_server.jobs)
+
+    def test_delete_job_alpha1_validation_error(self):
+        """Test validation error in job deletion."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        with self.assertRaises(ValueError):
+            dapr.delete_job_alpha1("")
+
+    def test_jobs_error_handling(self):
+        """Test error handling for Jobs API using fake server's exception mechanism."""
+        from google.rpc import status_pb2, code_pb2
+
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Set up fake server to raise an exception on next call
+        error_status = status_pb2.Status(
+            code=code_pb2.INTERNAL,
+            message="Simulated server error"
+        )
+        self._fake_dapr_server.raise_exception_on_next_call(error_status)
+
+        # Try to schedule a job - should raise DaprGrpcError
+        job = Job(name="error-test", schedule="@every 1m")
+        with self.assertRaises(DaprGrpcError):
+            dapr.schedule_job_alpha1(job)
 
 
 if __name__ == '__main__':
