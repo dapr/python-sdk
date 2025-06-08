@@ -1,6 +1,6 @@
 # Example - Jobs API
 
-This example demonstrates the [Jobs API](https://docs.dapr.io/developing-applications/building-blocks/scheduler/) in Dapr.
+This example demonstrates the [Jobs API](https://docs.dapr.io/developing-applications/building-blocks/jobs/) in Dapr.
 It demonstrates the following APIs:
 - **schedule_job_alpha1**: Schedule a job to run at specified times
 - **get_job_alpha1**: Retrieve details about a scheduled job

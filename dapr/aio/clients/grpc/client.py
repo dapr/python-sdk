@@ -78,6 +78,7 @@ from dapr.clients.grpc._request import (
     TransactionalStateOperation,
     ConversationInput,
 )
+from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
     BindingResponse,
     ConversationResponse,
@@ -1846,6 +1847,107 @@ class DaprGrpcClientAsync:
             extended_metadata=extended_metadata,
             headers=await call.initial_metadata(),
         )
+
+    async def schedule_job_alpha1(self, job: Job) -> DaprResponse:
+        """Schedules a job to be triggered at a specified time or interval.
+
+        This is an Alpha API and is subject to change.
+
+        Args:
+            job (Job): The job to schedule. Must have a name and either schedule or due_time.
+
+        Returns:
+            DaprResponse: Empty response indicating successful scheduling.
+
+        Raises:
+            ValueError: If job name is empty or both schedule and due_time are missing.
+            DaprGrpcError: If the Dapr runtime returns an error.
+        """
+        # Warnings and input validation
+        warn(
+            'The Jobs API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(job_name=job.name)
+
+        if not job.schedule and not job.due_time:
+            raise ValueError('Job must have either schedule or due_time specified')
+
+        # Convert job to proto using the Job class private method
+        job_proto = job._get_proto()
+        request = api_v1.ScheduleJobRequest(job=job_proto)
+
+        try:
+            call = self._stub.ScheduleJobAlpha1(request)
+            await call
+            return DaprResponse(headers=await call.initial_metadata())
+        except grpc.aio.AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
+    async def get_job_alpha1(self, name: str) -> Job:
+        """Gets a scheduled job by name.
+
+        This is an Alpha API and is subject to change.
+
+        Args:
+            name (str): The name of the job to retrieve.
+
+        Returns:
+            Job: The job details retrieved from the scheduler.
+
+        Raises:
+            ValueError: If job name is empty.
+            DaprGrpcError: If the Dapr runtime returns an error.
+        """
+        # Warnings and input validation
+        warn(
+            'The Jobs API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(job_name=name)
+
+        request = api_v1.GetJobRequest(name=name)
+
+        try:
+            call = self._stub.GetJobAlpha1(request)
+            response = await call
+            return Job._from_proto(response.job)
+        except grpc.aio.AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
+    async def delete_job_alpha1(self, name: str) -> DaprResponse:
+        """Deletes a scheduled job by name.
+
+        This is an Alpha API and is subject to change.
+
+        Args:
+            name (str): The name of the job to delete.
+
+        Returns:
+            DaprResponse: Empty response indicating successful deletion.
+
+        Raises:
+            ValueError: If job name is empty.
+            DaprGrpcError: If the Dapr runtime returns an error.
+        """
+        # Warnings and input validation
+        warn(
+            'The Jobs API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validateNotBlankString(job_name=name)
+
+        request = api_v1.DeleteJobRequest(name=name)
+
+        try:
+            call = self._stub.DeleteJobAlpha1(request)
+            await call
+            return DaprResponse(headers=await call.initial_metadata())
+        except grpc.aio.AioRpcError as err:
+            raise DaprGrpcError(err) from err
 
     async def set_metadata(self, attributeName: str, attributeValue: str) -> DaprResponse:
         """Adds a custom (extended) metadata attribute to the Dapr sidecar

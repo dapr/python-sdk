@@ -18,6 +18,7 @@ from typing import Callable, Dict, List, Optional, Union
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync, MetadataTuple, InvokeMethodResponse
+from dapr.clients.grpc._jobs import Job
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClient
 from dapr.conf import settings
@@ -29,6 +30,7 @@ __all__ = [
     'DaprActorHttpClient',
     'DaprInternalError',
     'ERROR_CODE_UNKNOWN',
+    'Job',
 ]
 
 from grpc.aio import (  # type: ignore
