@@ -127,7 +127,7 @@ class InvokeMethodRequest(DaprRequest):
     @http_verb.setter
     def http_verb(self, val: Optional[str]) -> None:
         """Sets HTTP method to Dapr invocation request."""
-        if val not in self.HTTP_METHODS:
+        if val is not None and val not in self.HTTP_METHODS:
             raise ValueError(f'{val} is the invalid HTTP verb.')
         self._http_verb = val
 
