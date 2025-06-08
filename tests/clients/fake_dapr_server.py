@@ -54,7 +54,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.workflow_status = {}
         self.workflow_options: Dict[str, str] = {}
         self.metadata: Dict[str, str] = {}
-        self.jobs: Dict[str, api_v1.Job] = {} 
+        self.jobs: Dict[str, api_v1.Job] = {}
         self._next_exception = None
 
     def start(self):
@@ -543,6 +543,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         # Validate job name
         if not request.job.name:
             raise ValueError('Job name is required')
+
+        # Validate job name
+        if not request.job.schedule and not request.job.due_time:
+            raise ValueError('Schedule is empty')
 
         # Store the job
         self.jobs[request.job.name] = request.job

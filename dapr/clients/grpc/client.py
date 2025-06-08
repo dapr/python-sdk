@@ -1797,6 +1797,9 @@ class DaprGrpcClient:
         )
         validateNotBlankString(job_name=job.name)
 
+        if not job.schedule and not job.due_time:
+            raise ValueError('Job must have either schedule or due_time specified')
+
         # Convert job to proto using the Job class private method
         job_proto = job._get_proto()
         request = api_v1.ScheduleJobRequest(job=job_proto)
