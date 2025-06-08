@@ -1301,6 +1301,11 @@ class DaprGrpcClientTests(unittest.TestCase):
             job = Job(name='', schedule='@every 1m')
             dapr.schedule_job_alpha1(job)
 
+        # Test missing schedule and due_time - this should be caught by client validation
+        with self.assertRaises(ValueError):
+            job = Job(name='test-job')
+            dapr.schedule_job_alpha1(job)
+
     def test_get_job_alpha1_success(self):
         """Test successful job retrieval."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')

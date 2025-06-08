@@ -105,6 +105,6 @@ class Job:
             repeats=job_proto.repeats if job_proto.HasField('repeats') else None,
             due_time=job_proto.due_time if job_proto.HasField('due_time') else None,
             ttl=job_proto.ttl if job_proto.HasField('ttl') else None,
-            data=job_proto.data if job_proto.HasField('data') else None,
+            data=job_proto.data if job_proto.HasField('data') and job_proto.data.value else None,
             overwrite=job_proto.overwrite,
         )

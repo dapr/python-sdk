@@ -111,5 +111,5 @@ The Jobs API supports multiple schedule formats:
 - Requires Dapr runtime v1.14+ for Jobs API support
 
 For more information about the Jobs API, see:
-- [Dapr Scheduler Building Block](https://docs.dapr.io/developing-applications/building-blocks/scheduler/)
+- [Dapr Jobs Building Block](https://docs.dapr.io/developing-applications/building-blocks/jobs/)
 - [Dapr Jobs API Proposal](https://github.com/dapr/proposals/blob/main/0012-BIRS-distributed-scheduler.md)
