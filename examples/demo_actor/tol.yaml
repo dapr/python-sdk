@@ -1,0 +1,5 @@
+global:
+  tolerations:
+    - effect: NoSchedule
+      key: kubernetes.io/arch
+      value: arm64

@@ -50,6 +50,7 @@ coverage.xml
 # Editor config
 .idea
 .vscode
+.cursor
 
 # Translations
 *.mo
