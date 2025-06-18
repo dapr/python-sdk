@@ -31,3 +31,9 @@ with DaprClient() as d:
 
     for output in response.outputs:
         print(f'Result: {output.result}')
+    
+    # Check for usage information
+    if response.usage:
+        print(f'Usage: {response.usage.prompt_tokens} prompt + {response.usage.completion_tokens} completion = {response.usage.total_tokens} total tokens')
+    else:
+        print('No usage information available (echo component doesn\'t provide token counts)')

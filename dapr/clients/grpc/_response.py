@@ -1087,3 +1087,22 @@ class ConversationResponse:
 
     context_id: Optional[str]
     outputs: List[ConversationResult]
+    usage: Optional[ConversationUsage] = None
+
+
+@dataclass
+class ConversationUsage:
+    """Token usage statistics from conversation API."""
+    
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
+@dataclass
+class ConversationStreamResponse:
+    """Single response chunk from the streaming conversation API."""
+
+    context_id: Optional[str]
+    result: Optional[ConversationResult] = None
+    usage: Optional[ConversationUsage] = None

@@ -22,7 +22,7 @@ from urllib.parse import urlencode
 
 from warnings import warn
 
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any
+from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any, Iterator
 from typing_extensions import Self
 from datetime import datetime
 from google.protobuf.message import Message as GrpcMessage
@@ -92,6 +92,8 @@ from dapr.clients.grpc._response import (
     TopicEventResponse,
     ConversationResponse,
     ConversationResult,
+    ConversationStreamResponse,
+    ConversationUsage,
 )
 
 
@@ -1770,6 +1772,86 @@ class DaprGrpcClient:
             ]
 
             return ConversationResponse(context_id=response.contextID, outputs=outputs)
+        except RpcError as err:
+            raise DaprGrpcError(err) from err
+
+    def converse_stream_alpha1(
+        self,
+        name: str,
+        inputs: List[ConversationInput],
+        *,
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, GrpcAny]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
+    ) -> Iterator[ConversationStreamResponse]:
+        """Invoke an LLM using the streaming conversation API (Alpha).
+
+        Args:
+            name: Name of the LLM component to invoke
+            inputs: List of conversation inputs
+            context_id: Optional ID for continuing an existing chat
+            parameters: Optional custom parameters for the request
+            metadata: Optional metadata for the component
+            scrub_pii: Optional flag to scrub PII from inputs and outputs
+            temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+
+        Yields:
+            ConversationStreamResponse containing conversation result chunks
+
+        Raises:
+            DaprGrpcError: If the Dapr runtime returns an error
+        """
+        from dapr.clients.grpc._response import ConversationStreamResponse
+
+        inputs_pb = [
+            api_v1.ConversationInput(content=inp.content, role=inp.role, scrubPII=inp.scrub_pii)
+            for inp in inputs
+        ]
+
+        request = api_v1.ConversationRequest(
+            name=name,
+            inputs=inputs_pb,
+            contextID=context_id,
+            parameters=parameters or {},
+            metadata=metadata or {},
+            scrubPII=scrub_pii,
+            temperature=temperature,
+        )
+
+        try:
+            response_stream = self.retry_policy.run_rpc(self._stub.ConverseStreamAlpha1, request)
+
+            for response in response_stream:
+                context_id = None
+                result = None
+                usage = None
+                
+                # Handle chunk response
+                if response.HasField('chunk'):
+                    result = ConversationResult(
+                        result=response.chunk.content,
+                        parameters={}
+                    )
+                
+                # Handle completion response
+                elif response.HasField('complete'):
+                    context_id = response.complete.contextID
+                    
+                    # Extract usage information if available
+                    if response.complete.HasField('usage'):
+                        usage = ConversationUsage(
+                            prompt_tokens=response.complete.usage.prompt_tokens,
+                            completion_tokens=response.complete.usage.completion_tokens,
+                            total_tokens=response.complete.usage.total_tokens
+                        )
+                
+                yield ConversationStreamResponse(
+                    context_id=context_id,
+                    result=result,
+                    usage=usage
+                )
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
