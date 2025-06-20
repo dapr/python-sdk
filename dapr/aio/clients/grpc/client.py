@@ -1853,6 +1853,99 @@ class DaprGrpcClientAsync:
         except grpc.aio.AioRpcError as err:
             raise DaprGrpcError(err) from err
 
+    async def converse_stream_json(
+        self,
+        name: str,
+        inputs: List[ConversationInput],
+        *,
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, GrpcAny]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """Invoke an LLM using the streaming conversation API with JSON response format (Alpha).
+
+        This method provides a JSON-formatted streaming interface that's compatible with
+        common LLM response formats, making it easier to integrate with existing tools
+        and frameworks that expect JSON responses.
+
+        Args:
+            name: Name of the LLM component to invoke
+            inputs: List of conversation inputs
+            context_id: Optional ID for continuing an existing chat
+            parameters: Optional custom parameters for the request
+            metadata: Optional metadata for the component
+            scrub_pii: Optional flag to scrub PII from inputs and outputs
+            temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+
+        Yields:
+            Dict[str, Any]: JSON-formatted conversation response chunks with structure:
+                {
+                    "choices": [
+                        {
+                            "delta": {
+                                "content": "chunk content",
+                                "role": "assistant"
+                            },
+                            "index": 0,
+                            "finish_reason": None
+                        }
+                    ],
+                    "context_id": "optional context ID",
+                    "usage": {
+                        "prompt_tokens": 0,
+                        "completion_tokens": 0,
+                        "total_tokens": 0
+                    }
+                }
+
+        Raises:
+            DaprGrpcError: If the Dapr runtime returns an error
+        """
+        async for chunk in self.converse_stream_alpha1(
+            name=name,
+            inputs=inputs,
+            context_id=context_id,
+            parameters=parameters,
+            metadata=metadata,
+            scrub_pii=scrub_pii,
+            temperature=temperature,
+        ):
+            # Transform the chunk to JSON format compatible with common LLM APIs
+            chunk_dict = {
+                'choices': [],
+                'context_id': None,
+                'usage': None,
+            }
+
+            # Handle streaming result chunks
+            if chunk.result and chunk.result.result:
+                chunk_dict['choices'] = [
+                    {
+                        'delta': {
+                            'content': chunk.result.result,
+                            'role': 'assistant'
+                        },
+                        'index': 0,
+                        'finish_reason': None
+                    }
+                ]
+
+            # Handle context ID
+            if chunk.context_id:
+                chunk_dict['context_id'] = chunk.context_id
+
+            # Handle usage information (typically in the final chunk)
+            if chunk.usage:
+                chunk_dict['usage'] = {
+                    'prompt_tokens': chunk.usage.prompt_tokens,
+                    'completion_tokens': chunk.usage.completion_tokens,
+                    'total_tokens': chunk.usage.total_tokens,
+                }
+
+            yield chunk_dict
+
     async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
 
