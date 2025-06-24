@@ -112,7 +112,7 @@ class Actor:
         name: str,
         state: bytes,
         due_time: timedelta,
-        period: timedelta,
+        period: Optional[timedelta] = None,
         ttl: Optional[timedelta] = None,
     ) -> None:
         """Registers actor reminder.
