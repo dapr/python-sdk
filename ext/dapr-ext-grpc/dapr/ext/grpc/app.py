@@ -58,6 +58,7 @@ class App:
         else:
             self._server = grpc.server(**kwargs)  # type: ignore
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
+        appcallback_service_v1.add_AppCallbackAlphaServicer_to_server(self._servicer, self._server)
         appcallback_service_v1.add_AppCallbackHealthCheckServicer_to_server(
             self._health_check_servicer, self._server
         )
@@ -196,5 +197,31 @@ class App:
 
         def decorator(func):
             self._servicer.register_binding(name, func)
+
+        return decorator
+
+    def job_event(self, name: str):
+        """A decorator that is used to register job event handler.
+
+        This decorator registers a handler for job events triggered by the Dapr scheduler.
+        The handler will be called when a job with the specified name is triggered.
+
+        The below registers a job event handler for jobs named 'my-job':
+
+            from dapr.ext.grpc import JobEvent
+
+            @app.job_event('my-job')
+            def handle_my_job(job_event: JobEvent) -> None:
+                print(f"Job {job_event.name} triggered")
+                data_str = job_event.get_data_as_string()
+                print(f"Job data: {data_str}")
+                # Process the job...
+
+        Args:
+            name (str): the name of the job to handle events for
+        """
+
+        def decorator(func):
+            self._servicer.register_job_event(name, func)
 
         return decorator
