@@ -285,6 +285,7 @@ class TransactionalStateOperation:
         data: Optional[Union[bytes, str]] = None,
         etag: Optional[str] = None,
         operation_type: TransactionOperationType = TransactionOperationType.upsert,
+        metadata: Optional[Dict[str, str]] = None,
     ):
         """Initializes TransactionalStateOperation item from
         :obj:`runtime_v1.TransactionalStateOperation`.
@@ -305,6 +306,7 @@ class TransactionalStateOperation:
         self._data = data  # type: ignore
         self._etag = etag
         self._operation_type = operation_type
+        self._metadata = metadata
 
     @property
     def key(self) -> str:
@@ -325,6 +327,11 @@ class TransactionalStateOperation:
     def operation_type(self) -> TransactionOperationType:
         """Gets etag."""
         return self._operation_type
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        """Gets metadata."""
+        return {} if self._metadata is None else self._metadata
 
 
 class EncryptRequestIterator(DaprRequest):
