@@ -1613,6 +1613,7 @@ class GetMetadataResponse(google.protobuf.message.Message):
     RUNTIME_VERSION_FIELD_NUMBER: builtins.int
     ENABLED_FEATURES_FIELD_NUMBER: builtins.int
     ACTOR_RUNTIME_FIELD_NUMBER: builtins.int
+    SCHEDULER_FIELD_NUMBER: builtins.int
     id: builtins.str
     runtime_version: builtins.str
     @property
@@ -1632,9 +1633,9 @@ class GetMetadataResponse(google.protobuf.message.Message):
     @property
     def enabled_features(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]: ...
     @property
-    def actor_runtime(self) -> global___ActorRuntime:
-        """TODO: Cassie: probably add scheduler runtime status"""
-
+    def actor_runtime(self) -> global___ActorRuntime: ...
+    @property
+    def scheduler(self) -> global___MetadataScheduler: ...
     def __init__(
         self,
         *,
@@ -1648,11 +1649,35 @@ class GetMetadataResponse(google.protobuf.message.Message):
         runtime_version: builtins.str = ...,
         enabled_features: collections.abc.Iterable[builtins.str] | None = ...,
         actor_runtime: global___ActorRuntime | None = ...,
+        scheduler: global___MetadataScheduler | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "subscriptions", b"subscriptions"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["_scheduler", b"_scheduler", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "scheduler", b"scheduler"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_scheduler", b"_scheduler", "active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "scheduler", b"scheduler", "subscriptions", b"subscriptions"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing.Literal["_scheduler", b"_scheduler"]) -> typing.Literal["scheduler"] | None: ...
 
 global___GetMetadataResponse = GetMetadataResponse
+
+@typing.final
+class MetadataScheduler(google.protobuf.message.Message):
+    """MetadataScheduler is a message that contains the list of addresses of the
+    scheduler connections.
+    """
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    CONNECTED_ADDRESSES_FIELD_NUMBER: builtins.int
+    @property
+    def connected_addresses(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+        """connected_addresses the list of addresses of the scheduler connections."""
+
+    def __init__(
+        self,
+        *,
+        connected_addresses: collections.abc.Iterable[builtins.str] | None = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing.Literal["connected_addresses", b"connected_addresses"]) -> None: ...
+
+global___MetadataScheduler = MetadataScheduler
 
 @typing.final
 class ActorRuntime(google.protobuf.message.Message):
@@ -3141,6 +3166,7 @@ class Job(google.protobuf.message.Message):
     DUE_TIME_FIELD_NUMBER: builtins.int
     TTL_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
+    OVERWRITE_FIELD_NUMBER: builtins.int
     name: builtins.str
     """The unique name for the job."""
     schedule: builtins.str
@@ -3180,6 +3206,8 @@ class Job(google.protobuf.message.Message):
     "point in time" string in the format of RFC3339, Go duration string
     (calculated from job creation time), or non-repeating ISO8601.
     """
+    overwrite: builtins.bool
+    """If true, allows this job to overwrite an existing job with the same name."""
     @property
     def data(self) -> google.protobuf.any_pb2.Any:
         """payload is the serialized job payload that will be sent to the recipient
@@ -3195,9 +3223,10 @@ class Job(google.protobuf.message.Message):
         due_time: builtins.str | None = ...,
         ttl: builtins.str | None = ...,
         data: google.protobuf.any_pb2.Any | None = ...,
+        overwrite: builtins.bool = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["_due_time", b"_due_time", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_due_time", b"_due_time", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "name", b"name", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["_due_time", b"_due_time", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "name", b"name", "overwrite", b"overwrite", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> None: ...
     @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["_due_time", b"_due_time"]) -> typing.Literal["due_time"] | None: ...
     @typing.overload
@@ -3500,3 +3529,107 @@ class ConversationResponse(google.protobuf.message.Message):
     def WhichOneof(self, oneof_group: typing.Literal["_contextID", b"_contextID"]) -> typing.Literal["contextID"] | None: ...
 
 global___ConversationResponse = ConversationResponse
+
+@typing.final
+class ConversationStreamResponse(google.protobuf.message.Message):
+    """ConversationStreamResponse is the streaming response for Conversation."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    CHUNK_FIELD_NUMBER: builtins.int
+    COMPLETE_FIELD_NUMBER: builtins.int
+    @property
+    def chunk(self) -> global___ConversationStreamChunk: ...
+    @property
+    def complete(self) -> global___ConversationStreamComplete: ...
+    def __init__(
+        self,
+        *,
+        chunk: global___ConversationStreamChunk | None = ...,
+        complete: global___ConversationStreamComplete | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["chunk", b"chunk", "complete", b"complete", "response_type", b"response_type"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["chunk", b"chunk", "complete", b"complete", "response_type", b"response_type"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing.Literal["response_type", b"response_type"]) -> typing.Literal["chunk", "complete"] | None: ...
+
+global___ConversationStreamResponse = ConversationStreamResponse
+
+@typing.final
+class ConversationStreamChunk(google.protobuf.message.Message):
+    """ConversationStreamChunk represents a streaming content chunk."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    CONTENT_FIELD_NUMBER: builtins.int
+    content: builtins.str
+    """Streaming content chunk"""
+    def __init__(
+        self,
+        *,
+        content: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing.Literal["content", b"content"]) -> None: ...
+
+global___ConversationStreamChunk = ConversationStreamChunk
+
+@typing.final
+class ConversationStreamComplete(google.protobuf.message.Message):
+    """ConversationStreamComplete indicates the streaming conversation has completed."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    CONTEXTID_FIELD_NUMBER: builtins.int
+    USAGE_FIELD_NUMBER: builtins.int
+    contextID: builtins.str
+    """Final context ID"""
+    @property
+    def usage(self) -> global___ConversationUsage:
+        """Usage statistics if available"""
+
+    def __init__(
+        self,
+        *,
+        contextID: builtins.str | None = ...,
+        usage: global___ConversationUsage | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["_contextID", b"_contextID", "_usage", b"_usage", "contextID", b"contextID", "usage", b"usage"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_contextID", b"_contextID", "_usage", b"_usage", "contextID", b"contextID", "usage", b"usage"]) -> None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing.Literal["_contextID", b"_contextID"]) -> typing.Literal["contextID"] | None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing.Literal["_usage", b"_usage"]) -> typing.Literal["usage"] | None: ...
+
+global___ConversationStreamComplete = ConversationStreamComplete
+
+@typing.final
+class ConversationUsage(google.protobuf.message.Message):
+    """ConversationUsage represents token usage statistics."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    PROMPT_TOKENS_FIELD_NUMBER: builtins.int
+    COMPLETION_TOKENS_FIELD_NUMBER: builtins.int
+    TOTAL_TOKENS_FIELD_NUMBER: builtins.int
+    prompt_tokens: builtins.int
+    """Number of tokens in the prompt"""
+    completion_tokens: builtins.int
+    """Number of tokens in the completion"""
+    total_tokens: builtins.int
+    """Total number of tokens used"""
+    def __init__(
+        self,
+        *,
+        prompt_tokens: builtins.int | None = ...,
+        completion_tokens: builtins.int | None = ...,
+        total_tokens: builtins.int | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["_completion_tokens", b"_completion_tokens", "_prompt_tokens", b"_prompt_tokens", "_total_tokens", b"_total_tokens", "completion_tokens", b"completion_tokens", "prompt_tokens", b"prompt_tokens", "total_tokens", b"total_tokens"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_completion_tokens", b"_completion_tokens", "_prompt_tokens", b"_prompt_tokens", "_total_tokens", b"_total_tokens", "completion_tokens", b"completion_tokens", "prompt_tokens", b"prompt_tokens", "total_tokens", b"total_tokens"]) -> None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing.Literal["_completion_tokens", b"_completion_tokens"]) -> typing.Literal["completion_tokens"] | None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing.Literal["_prompt_tokens", b"_prompt_tokens"]) -> typing.Literal["prompt_tokens"] | None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing.Literal["_total_tokens", b"_total_tokens"]) -> typing.Literal["total_tokens"] | None: ...
+
+global___ConversationUsage = ConversationUsage

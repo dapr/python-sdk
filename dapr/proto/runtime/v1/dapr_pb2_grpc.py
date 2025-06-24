@@ -312,6 +312,11 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.FromString,
                 )
+        self.ConverseStreamAlpha1 = channel.unary_stream(
+                '/dapr.proto.runtime.v1.Dapr/ConverseStreamAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationStreamResponse.FromString,
+                )
 
 
 class DaprServicer(object):
@@ -733,6 +738,13 @@ class DaprServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ConverseStreamAlpha1(self, request, context):
+        """Converse with a LLM service using streaming
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DaprServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -1030,6 +1042,11 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.ConverseAlpha1,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.SerializeToString,
+            ),
+            'ConverseStreamAlpha1': grpc.unary_stream_rpc_method_handler(
+                    servicer.ConverseStreamAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationStreamResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -2042,5 +2059,22 @@ class Dapr(object):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/ConverseAlpha1',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ConverseStreamAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/dapr.proto.runtime.v1.Dapr/ConverseStreamAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationStreamResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
