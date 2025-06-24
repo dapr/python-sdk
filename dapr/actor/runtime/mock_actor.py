@@ -86,7 +86,7 @@ class MockActor(Actor):
         name: str,
         state: bytes,
         due_time: timedelta,
-        period: timedelta,
+        period: Optional[timedelta] = None,
         ttl: Optional[timedelta] = None,
     ) -> None:
         """Adds actor reminder to self._state_manager._mock_reminders.

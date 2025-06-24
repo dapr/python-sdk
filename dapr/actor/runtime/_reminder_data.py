@@ -36,7 +36,7 @@ class ActorReminderData:
         reminder_name: str,
         state: Optional[bytes],
         due_time: timedelta,
-        period: timedelta,
+        period: Optional[timedelta] = None,
         ttl: Optional[timedelta] = None,
     ):
         """Creates new :class:`ActorReminderData` instance.
@@ -77,7 +77,7 @@ class ActorReminderData:
         return self._due_time
 
     @property
-    def period(self) -> timedelta:
+    def period(self) -> Optional[timedelta]:
         """Gets period of Actor Reminder."""
         return self._period
 
