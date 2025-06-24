@@ -31,7 +31,7 @@ def task_chain_workflow(ctx: wf.DaprWorkflowContext, wf_input: int):
     return [result1, result2, result3]
 
 
-@wfr.activity(name='step10')
+@wfr.activity(name='step1')
 def step1(ctx, activity_input):
     print(f'Step 1: Received input: {activity_input}.')
     # Do some work
