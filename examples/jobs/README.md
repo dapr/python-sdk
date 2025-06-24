@@ -6,7 +6,10 @@ It demonstrates the following APIs:
 - **get_job_alpha1**: Retrieve details about a scheduled job
 - **delete_job_alpha1**: Delete a scheduled job
 
-It creates a client using `DaprClient` and calls all the Jobs API methods available as example.
+It includes two examples that showcase different aspects of the Jobs API:
+
+1. **`job_management.py`** - Focuses on job scheduling patterns and management operations
+2. **`job_processing.py`** - Shows the complete workflow including job event handling
 
 > **Note:** The Jobs API is currently in Alpha and subject to change. Make sure to use the latest proto bindings.
 
@@ -47,10 +50,83 @@ timeout_seconds: 10
 -->
 
 ```bash
-dapr run --app-id jobs-example -- python3 simple_job.py
+dapr run --app-id jobs-example -- python3 job_management.py
 ```
 
 <!-- END_STEP -->
+
+## Example 2: Complete Workflow with Job Event Handling
+
+This example (`job_processing.py`) demonstrates the complete Jobs API workflow in a single application that both schedules jobs and handles job events when they trigger. This shows:
+
+- How to register job event handlers using `@app.job_event()` decorators
+- How to schedule jobs from the same application that handles them
+- How to process job events with structured data
+- Complete end-to-end job lifecycle (schedule → trigger → handle)
+
+Run the following command in a terminal/command-prompt:
+
+<!-- STEP
+name: Run complete workflow example
+expected_stdout_lines:
+  - "== APP == Dapr Jobs Example"
+  - "== APP == Starting gRPC server on port 50051..."
+  - "== APP == Scheduling jobs..."
+  - "== APP == ✓ hello-job scheduled"
+  - "== APP == ✓ data-job scheduled"
+  - "== APP == Jobs scheduled! Waiting for execution..."
+  - "== APP == Job event received: hello-job"
+  - "== APP == Job data: None"
+  - "== APP == Hello job processing completed!"
+  - "== APP == Data job event received: data-job"
+  - "== APP == Processing data_processing task with priority high"
+  - "== APP == Processing 42 items..."
+  - "== APP == Data job processing completed!"
+background: true
+sleep: 15
+-->
+
+```bash
+# Start the complete workflow example (schedules jobs and handles job events)
+dapr run --app-id jobs-workflow --app-protocol grpc --app-port 50051 python3 job_processing.py
+```
+
+<!-- END_STEP -->
+
+## Cleanup
+
+<!-- STEP
+expected_stdout_lines:
+  - '✅  app stopped successfully: jobs-workflow'
+name: Shutdown dapr
+-->
+
+```bash
+dapr stop --app-id jobs-workflow
+```
+
+<!-- END_STEP -->
+
+## Example Comparison
+
+| Feature | `job_management.py` | `job_processing.py` |
+|---------|---------------------|---------------------|
+| **Purpose** | Job scheduling and management | Complete workflow with event handling |
+| **Job Scheduling** | ✅ Multiple patterns | ✅ Simple patterns |
+| **Job Event Handling** | ❌ No | ✅ Yes |
+| **Job Data Processing** | ❌ No | ✅ Yes |
+| **Use Case** | Learning job scheduling | Production job processing |
+| **Complexity** | Simple | Moderate |
+
+**Use `job_management.py` when:**
+- Learning how to schedule different types of jobs
+- Testing job scheduling patterns
+- Managing jobs without processing them
+
+**Use `job_processing.py` when:**
+- Building applications that process job events
+- Need complete end-to-end job workflow
+- Want to see job event handling in action
 
 The output should be as follows:
 
@@ -101,6 +177,29 @@ The Jobs API supports multiple schedule formats:
 - **data**: Payload data to send when the job is triggered (optional, empty Any proto used if not provided)
 - **overwrite**: If true, allows this job to overwrite an existing job with the same name (default: false)
 
+## Handling Job Events
+
+To handle job events when they're triggered, create a callback service using the gRPC extension:
+
+```python
+from dapr.ext.grpc import App, JobEvent
+
+app = App()
+
+@app.job_event('my-job')
+def handle_my_job(job_event: JobEvent) -> None:
+    print(f"Job {job_event.name} triggered!")
+    data_str = job_event.get_data_as_string()
+    print(f"Job data: {data_str}")
+    # Process the job...
+
+app.run(50051)
+```
+
+The callback service must:
+- Use the `@app.job_event('job-name')` decorator to register handlers
+- Accept a `JobEvent` object parameter containing job execution data
+- Run on a gRPC port (default 50051) that Dapr can reach
 
 ## Additional Information
 
