@@ -59,5 +59,5 @@ setup(
     version=version,
     description=description,
     long_description=long_description,
-    package_data={"": ["py.typed"]},
+    package_data={'': ['py.typed']},
 )
