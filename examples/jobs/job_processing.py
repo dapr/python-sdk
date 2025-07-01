@@ -16,7 +16,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 from dapr.ext.grpc import App, JobEvent
-from dapr.clients import DaprClient, Job
+from dapr.clients import DaprClient, Job, ConstantFailurePolicy
 
 try:
     from google.protobuf.any_pb2 import Any as GrpcAny
@@ -109,7 +109,12 @@ def schedule_jobs():
                 'source': 'test_data',
             }
 
-            data_job = Job(name='data-job', due_time=due_time_2, data=create_job_data(job_data))
+            data_job = Job(
+                name='data-job',
+                due_time=due_time_2,
+                data=create_job_data(job_data),
+                failure_policy=ConstantFailurePolicy(max_retries=2, interval_seconds=5),
+            )
             client.schedule_job_alpha1(data_job)
             print('✓ data-job scheduled', flush=True)
 

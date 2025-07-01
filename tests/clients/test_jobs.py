@@ -7,7 +7,7 @@ Unit tests for the Job class and its proto conversion methods.
 import unittest
 from google.protobuf.any_pb2 import Any as GrpcAny
 
-from dapr.clients.grpc._jobs import Job
+from dapr.clients.grpc._jobs import Job, DropFailurePolicy, ConstantFailurePolicy
 from dapr.proto.runtime.v1 import dapr_pb2 as api_v1
 
 
@@ -130,6 +130,68 @@ class TestJobClass(unittest.TestCase):
         self.assertEqual(job.ttl, '1h')
         self.assertEqual(job.data.value, b'{"message": "test"}')
         self.assertTrue(job.overwrite)
+
+    def test_job_with_drop_failure_policy(self):
+        """Test Job with DropFailurePolicy."""
+        drop_policy = DropFailurePolicy()
+        job = Job(name='drop-job', schedule='@every 1m', failure_policy=drop_policy)
+
+        # Convert to proto and back
+        job_proto = job._get_proto()
+        self.assertTrue(job_proto.HasField('failure_policy'))
+        self.assertTrue(job_proto.failure_policy.HasField('drop'))
+
+        # Convert back to Job
+        job_from_proto = Job._from_proto(job_proto)
+        self.assertIsInstance(job_from_proto.failure_policy, DropFailurePolicy)
+
+    def test_job_with_constant_failure_policy(self):
+        """Test Job with ConstantFailurePolicy."""
+        constant_policy = ConstantFailurePolicy(max_retries=3, interval_seconds=10)
+        job = Job(name='retry-job', schedule='@every 1m', failure_policy=constant_policy)
+
+        # Convert to proto and back
+        job_proto = job._get_proto()
+        self.assertTrue(job_proto.HasField('failure_policy'))
+        self.assertTrue(job_proto.failure_policy.HasField('constant'))
+        self.assertEqual(job_proto.failure_policy.constant.max_retries, 3)
+        self.assertEqual(job_proto.failure_policy.constant.interval.seconds, 10)
+
+        # Convert back to Job
+        job_from_proto = Job._from_proto(job_proto)
+        self.assertIsInstance(job_from_proto.failure_policy, ConstantFailurePolicy)
+        self.assertEqual(job_from_proto.failure_policy.max_retries, 3)
+        self.assertEqual(job_from_proto.failure_policy.interval_seconds, 10)
+
+    def test_job_with_constant_failure_policy_no_max_retries(self):
+        """Test Job with ConstantFailurePolicy without max_retries."""
+        constant_policy = ConstantFailurePolicy(interval_seconds=5)
+        job = Job(name='retry-job', schedule='@every 1m', failure_policy=constant_policy)
+
+        # Convert to proto and back
+        job_proto = job._get_proto()
+        self.assertTrue(job_proto.HasField('failure_policy'))
+        self.assertTrue(job_proto.failure_policy.HasField('constant'))
+        self.assertFalse(job_proto.failure_policy.constant.HasField('max_retries'))
+        self.assertEqual(job_proto.failure_policy.constant.interval.seconds, 5)
+
+        # Convert back to Job
+        job_from_proto = Job._from_proto(job_proto)
+        self.assertIsInstance(job_from_proto.failure_policy, ConstantFailurePolicy)
+        self.assertIsNone(job_from_proto.failure_policy.max_retries)
+        self.assertEqual(job_from_proto.failure_policy.interval_seconds, 5)
+
+    def test_job_without_failure_policy(self):
+        """Test Job without failure policy."""
+        job = Job(name='no-policy-job', schedule='@every 1m')
+
+        # Convert to proto and back
+        job_proto = job._get_proto()
+        self.assertFalse(job_proto.HasField('failure_policy'))
+
+        # Convert back to Job
+        job_from_proto = Job._from_proto(job_proto)
+        self.assertIsNone(job_from_proto.failure_policy)
 
 
 if __name__ == '__main__':

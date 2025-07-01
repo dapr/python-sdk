@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 
-from dapr.clients import DaprClient, Job
+from dapr.clients import DaprClient, Job, DropFailurePolicy, ConstantFailurePolicy
 from google.protobuf.any_pb2 import Any as GrpcAny
 
 
@@ -59,8 +59,41 @@ def main():
             print(f'✗ Failed to schedule one-time job: {e}', flush=True)
             return
 
-        # Example 3: Get job details
-        print('\n3. Getting job details...', flush=True)
+        # Example 3: Schedule jobs with failure policies
+        print('\n3. Scheduling jobs with failure policies...', flush=True)
+
+        # Job with drop failure policy (drops job if it fails to trigger)
+        drop_policy_job = Job(
+            name='drop-policy-job',
+            schedule='@every 45s',
+            data=create_job_data('Job with drop failure policy'),
+            failure_policy=DropFailurePolicy(),
+            overwrite=True,
+        )
+
+        try:
+            client.schedule_job_alpha1(drop_policy_job)
+            print(f'✓ Job with drop failure policy scheduled successfully', flush=True)
+        except Exception as e:
+            print(f'✗ Failed to schedule job with drop policy: {e}', flush=True)
+
+        # Job with constant retry failure policy (retries with constant interval)
+        constant_policy_job = Job(
+            name='retry-policy-job',
+            schedule='@every 60s',
+            data=create_job_data('Job with constant retry policy'),
+            failure_policy=ConstantFailurePolicy(max_retries=3, interval_seconds=10),
+            overwrite=True,
+        )
+
+        try:
+            client.schedule_job_alpha1(constant_policy_job)
+            print(f'✓ Job with constant retry policy scheduled successfully', flush=True)
+        except Exception as e:
+            print(f'✗ Failed to schedule job with retry policy: {e}', flush=True)
+
+        # Example 4: Get job details
+        print('\n4. Getting job details...', flush=True)
         try:
             job = client.get_job_alpha1('recurring-hello-job')
             print(f'✓ Retrieved job details:', flush=True)
@@ -78,9 +111,15 @@ def main():
         except Exception as e:
             print(f'✗ Failed to get job details: {e}', flush=True)
 
-        # Example 4: Delete jobs
-        print('\n4. Cleaning up - deleting jobs...', flush=True)
-        for job_name in ['simple-job', 'recurring-hello-job', 'one-time-hello-job']:
+        # Example 5: Delete jobs
+        print('\n5. Cleaning up - deleting jobs...', flush=True)
+        for job_name in [
+            'simple-job',
+            'recurring-hello-job',
+            'one-time-hello-job',
+            'drop-policy-job',
+            'retry-policy-job',
+        ]:
             try:
                 client.delete_job_alpha1(job_name)
                 print(f'✓ Deleted job: {job_name}', flush=True)

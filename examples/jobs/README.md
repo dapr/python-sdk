@@ -40,12 +40,17 @@ expected_stdout_lines:
   - "== APP == ✓ Recurring job scheduled successfully"
   - "== APP == 2. Scheduling a one-time job with due_time..."
   - "== APP == ✓ One-time job scheduled successfully"
-  - "== APP == 3. Getting job details..."
+  - "== APP == 3. Scheduling jobs with failure policies..."
+  - "== APP == ✓ Job with drop failure policy scheduled successfully"
+  - "== APP == ✓ Job with constant retry policy scheduled successfully"
+  - "== APP == 4. Getting job details..."
   - "== APP == ✓ Retrieved job details:"
-  - "== APP == 4. Cleaning up - deleting jobs..."
+  - "== APP == 5. Cleaning up - deleting jobs..."
   - "== APP == ✓ Deleted job: simple-job"
   - "== APP == ✓ Deleted job: recurring-hello-job"
   - "== APP == ✓ Deleted job: one-time-hello-job"
+  - "== APP == ✓ Deleted job: drop-policy-job"
+  - "== APP == ✓ Deleted job: retry-policy-job"
 timeout_seconds: 10
 -->
 
@@ -175,7 +180,47 @@ The Jobs API supports multiple schedule formats:
 - **repeats**: Number of times to repeat the job (optional)
 - **ttl**: Time-to-live for the job (optional)
 - **data**: Payload data to send when the job is triggered (optional, empty Any proto used if not provided)
+- **failure_policy**: Policy to apply when the job fails to trigger (optional)
 - **overwrite**: If true, allows this job to overwrite an existing job with the same name (default: false)
+
+## Job Failure Policies
+
+Jobs can be configured with failure policies that determine what happens when a job fails to trigger:
+
+### DropFailurePolicy
+
+Drops the job when it fails to trigger (no retries):
+
+```python
+from dapr.clients import Job, DropFailurePolicy
+
+job = Job(
+    name="my-job",
+    schedule="@every 30s",
+    failure_policy=DropFailurePolicy()
+)
+```
+
+### ConstantFailurePolicy
+
+Retries the job at constant intervals when it fails to trigger:
+
+```python
+from dapr.clients import Job, ConstantFailurePolicy
+
+job = Job(
+    name="my-job",
+    schedule="@every 30s",
+    failure_policy=ConstantFailurePolicy(
+        max_retries=3,           # Maximum number of retries (optional)
+        interval_seconds=10      # Interval between retries in seconds
+    )
+)
+```
+
+**ConstantFailurePolicy Parameters:**
+- **max_retries**: Maximum number of retries. If not specified, retries indefinitely.
+- **interval_seconds**: Interval between retries in seconds. Defaults to 30 seconds.
 
 ## Handling Job Events
 

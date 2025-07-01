@@ -3167,6 +3167,7 @@ class Job(google.protobuf.message.Message):
     TTL_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
     OVERWRITE_FIELD_NUMBER: builtins.int
+    FAILURE_POLICY_FIELD_NUMBER: builtins.int
     name: builtins.str
     """The unique name for the job."""
     schedule: builtins.str
@@ -3214,6 +3215,10 @@ class Job(google.protobuf.message.Message):
         when the job is triggered.
         """
 
+    @property
+    def failure_policy(self) -> dapr.proto.common.v1.common_pb2.JobFailurePolicy:
+        """failure_policy is the optional policy for handling job failures."""
+
     def __init__(
         self,
         *,
@@ -3224,11 +3229,14 @@ class Job(google.protobuf.message.Message):
         ttl: builtins.str | None = ...,
         data: google.protobuf.any_pb2.Any | None = ...,
         overwrite: builtins.bool = ...,
+        failure_policy: dapr.proto.common.v1.common_pb2.JobFailurePolicy | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["_due_time", b"_due_time", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_due_time", b"_due_time", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "name", b"name", "overwrite", b"overwrite", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "overwrite", b"overwrite", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> None: ...
     @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["_due_time", b"_due_time"]) -> typing.Literal["due_time"] | None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing.Literal["_failure_policy", b"_failure_policy"]) -> typing.Literal["failure_policy"] | None: ...
     @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["_repeats", b"_repeats"]) -> typing.Literal["repeats"] | None: ...
     @typing.overload

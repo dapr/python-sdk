@@ -15,7 +15,7 @@ limitations under the License.
 
 from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest, JobEvent
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
-from dapr.clients.grpc._jobs import Job
+from dapr.clients.grpc._jobs import Job, FailurePolicy, DropFailurePolicy, ConstantFailurePolicy
 
 from dapr.ext.grpc.app import App, Rule  # type:ignore
 
@@ -29,4 +29,7 @@ __all__ = [
     'TopicEventResponse',
     'Job',
     'JobEvent',
+    'FailurePolicy',
+    'DropFailurePolicy',
+    'ConstantFailurePolicy',
 ]
