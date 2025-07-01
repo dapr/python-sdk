@@ -109,7 +109,7 @@ class InvokeMethodRequest(DaprRequest):
         super(InvokeMethodRequest, self).__init__(())
 
         self._content_type = content_type
-        self._http_verb = None
+        self._http_verb: Optional[str] = None
         self._http_querystring: Dict[str, str] = {}
 
         self.set_data(data)
@@ -127,7 +127,7 @@ class InvokeMethodRequest(DaprRequest):
     @http_verb.setter
     def http_verb(self, val: Optional[str]) -> None:
         """Sets HTTP method to Dapr invocation request."""
-        if val not in self.HTTP_METHODS:
+        if val is not None and val not in self.HTTP_METHODS:
             raise ValueError(f'{val} is the invalid HTTP verb.')
         self._http_verb = val
 
@@ -285,6 +285,7 @@ class TransactionalStateOperation:
         data: Optional[Union[bytes, str]] = None,
         etag: Optional[str] = None,
         operation_type: TransactionOperationType = TransactionOperationType.upsert,
+        metadata: Optional[Dict[str, str]] = None,
     ):
         """Initializes TransactionalStateOperation item from
         :obj:`runtime_v1.TransactionalStateOperation`.
@@ -305,6 +306,7 @@ class TransactionalStateOperation:
         self._data = data  # type: ignore
         self._etag = etag
         self._operation_type = operation_type
+        self._metadata = metadata
 
     @property
     def key(self) -> str:
@@ -325,6 +327,11 @@ class TransactionalStateOperation:
     def operation_type(self) -> TransactionOperationType:
         """Gets etag."""
         return self._operation_type
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        """Gets metadata."""
+        return {} if self._metadata is None else self._metadata
 
 
 class EncryptRequestIterator(DaprRequest):

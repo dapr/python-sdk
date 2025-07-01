@@ -88,6 +88,24 @@ with DaprClient() as d:
     ).items
     print(f'Got items with etags: {[(i.data, i.etag) for i in items]}')
 
+    # Outbox pattern
+    # pass in the ("outbox.projection", "true") metadata to the transaction to enable the outbox pattern.
+    d.execute_state_transaction(
+        store_name=storeName,
+        operations=[
+            TransactionalStateOperation(
+                key='key1', data='val1', metadata={'outbox.projection': 'false'}
+            ),
+            TransactionalStateOperation(
+                key='key1', data='val2', metadata={'outbox.projection': 'true'}
+            ),
+        ],
+    )
+    print('Transaction with outbox pattern executed successfully!')
+
+    val = d.get_state(store_name=storeName, key='key1').data
+    print(f'Got value after outbox pattern: {val}')
+
     # Transaction delete
     d.execute_state_transaction(
         store_name=storeName,
