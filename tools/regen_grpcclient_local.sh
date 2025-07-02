@@ -18,7 +18,7 @@ PROTO_PATH="dapr/proto"
 SRC=.
 
 # Local dapr repository path (relative to current directory)
-LOCAL_DAPR_PATH="../dapr"
+LOCAL_DAPR_PATH="/Users/filinto/diagrid/dapr"
 
 checkLocalDaprRepo() {
     if [ ! -d "$LOCAL_DAPR_PATH" ]; then

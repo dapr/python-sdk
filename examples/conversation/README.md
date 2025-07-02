@@ -1,108 +1,213 @@
-# Conversation Streaming Examples
+# Conversation API Examples
 
-This directory contains examples demonstrating the Dapr conversation streaming API functionality in the Python SDK.
+This directory contains examples demonstrating the Dapr Conversation API functionality in the Python SDK.
 
 ## Overview
 
-The conversation streaming API allows you to interact with AI/LLM models through Dapr components in a streaming fashion, receiving responses as they are generated rather than waiting for the complete response.
+This directory contains **10 focused examples** demonstrating the Dapr Conversation API functionality, including **tool calling (function calling)**, **streaming responses**, **parameter conversion**, and **cost tracking** with real LLM providers.
 
-## Features Demonstrated
+## 🎯 What You'll Learn
 
-- **Synchronous streaming**: Use regular Python iterators to receive streaming responses
-- **Asynchronous streaming**: Use `async for` to receive streaming responses in async code
-- **Context management**: Maintain conversation context across multiple exchanges
-- **PII scrubbing**: Automatically scrub personally identifiable information from responses
-- **Temperature control**: Control response randomness/creativity
-- **Usage tracking**: Monitor token consumption (prompt, completion, total tokens)
-- **Concurrent conversations**: Handle multiple conversations simultaneously (async)
+- **🔧 Tool Calling**: Complete function calling workflow with real LLMs
+- **📡 Streaming Conversations**: Real-time response streaming from LLMs
+- **🔄 Multi-Provider Support**: Work with OpenAI, Anthropic, Google, Mistral, and DeepSeek
+- **⚡ Parameter Conversion**: Use simple Python values instead of complex protobuf objects
+- **💰 Cost Tracking**: Monitor token consumption and costs across providers
+- **🌐 Async/Sync Patterns**: Both synchronous and asynchronous implementations
+- **💬 Context Management**: Maintain conversation state across exchanges
+- **🧠 Conversation History**: Simplified multi-turn conversation management
 
 ## Prerequisites
 
-1. **Local Dapr Repository**: Clone the Dapr repository alongside this Python SDK:
+### Standard Dapr Setup
+
+1. **Dapr Installation**: 
    ```bash
-   git clone https://github.com/dapr/dapr.git ../dapr
+   dapr init
    ```
 
-2. **Python Dependencies**: Install the development dependencies:
+2. **Python Dependencies**:
    ```bash
-   pip install -r dev-requirements.txt
+   pip install -r ../../dev-requirements.txt
+   ```
+
+3. **API Keys** (for real providers):
+   ```bash
+   export OPENAI_API_KEY="your-openai-key"
+   export ANTHROPIC_API_KEY="your-anthropic-key"  
+   export GOOGLE_API_KEY="your-google-key"
    ```
 
 ## Quick Start
 
-### 1. Start the Development Sidecar
-
-Use the provided development helper to build and run a Dapr sidecar with conversation components:
+### Start Dapr Sidecar
 
 ```bash
-# Build and run (first time)
-python tools/run_dapr_dev.py --build
+# For development/testing with echo component
+python ../../tools/run_dapr_dev.py
 
-# Just run (if already built)
-python tools/run_dapr_dev.py
+# Or standard Dapr sidecar with your components
+dapr run --app-id conversation-app \
+         --dapr-http-port 3500 \
+         --dapr-grpc-port 50001 \
+         --resources-path ./components
 ```
 
-This will:
-- Build the latest daprd binary from your local Dapr repository
-- Create temporary conversation components (echo component for testing)
-- Start the sidecar on default ports (HTTP: 3500, gRPC: 50001)
-
-### 2. Run the Examples
-
-In a separate terminal, run the streaming examples:
+### Run Examples
 
 ```bash
-# Comprehensive streaming example (synchronous)
-python examples/conversation/streaming_comprehensive.py
+# Start with basic conversation
+python conversation.py
 
-# Comprehensive async streaming example
-python examples/conversation/streaming_async_comprehensive.py
+# Try the new parameter conversion feature  
+python parameter_conversion_example.py
+
+# Test with real AI providers
+python real_llm_providers_example.py
 ```
 
-## Examples
+## 📁 Examples Overview
 
-### Comprehensive Streaming (`streaming_comprehensive.py`)
+### 🚀 **Getting Started**
 
-Demonstrates:
-- Basic streaming conversation with echo component
-- PII scrubbing functionality
-- Temperature parameter usage
-- Context ID management
-- Usage tracking (token consumption)
-- Error handling
+| Example | Description | Use Case |
+|---------|-------------|----------|
+| `conversation.py` | Basic conversation starter | First steps with Conversation API |
+| `parameter_conversion_example.py` | **NEW!** Simple parameter usage | Learn the improved developer experience |
 
-### Comprehensive Async Streaming (`streaming_async_comprehensive.py`)
+### 🤖 **Real AI Providers**
 
-Demonstrates:
-- Async streaming conversation
-- Concurrent multiple conversations
-- Proper async context management
-- Usage tracking
-- Error handling
+| Example | Description | Use Case |
+|---------|-------------|----------|
+| `real_llm_providers_example.py` | Multiple AI providers | Production usage with OpenAI, Anthropic, Google |
 
-## Development Helper (`tools/run_dapr_dev.py`)
+### 🔧 **Tool Calling**
 
-The development helper script provides convenient options for testing:
+| Example | Description | Use Case |
+|---------|-------------|----------|
+| `working_multi_turn_example.py` | Simple tool calling | Learn tool calling basics |
+| `multi_turn_tool_calling_example.py` | Advanced multi-tool example | Complex tool calling scenarios |
 
+### 📡 **Streaming**
+
+| Example | Description | Use Case |
+|---------|-------------|----------|
+| `streaming_comprehensive.py` | Sync streaming | Real-time responses (synchronous) |
+| `streaming_async_comprehensive.py` | Async streaming | Real-time responses (asynchronous) |
+| `streaming_json_example.py` | JSON streaming format | OpenAI-compatible streaming |
+
+### 💰 **Advanced Features**
+
+| Example | Description | Use Case |
+|---------|-------------|----------|
+| `cost_calculation_example.py` | Cost tracking & provider comparison | Monitor usage and costs |
+| `conversation_history_helper.py` | Advanced conversation management | Complex conversation state |
+
+## 🌟 **Recommended Learning Path**
+
+### 1. **Start Here** - Basic Concepts
 ```bash
-# Build and run with default settings
-python tools/run_dapr_dev.py --build
-
-# Run with custom ports and debug logging
-python tools/run_dapr_dev.py --port 3501 --grpc-port 50002 --log-level debug
-
-# Use existing component configuration
-python tools/run_dapr_dev.py --components ./my-components
-
-# Just build without running
-python tools/run_dapr_dev.py --build --help
+python conversation.py                    # Basic conversation
+python parameter_conversion_example.py   # New parameter conversion
 ```
 
-## Component Configuration
+### 2. **Real AI Providers**
+```bash
+python real_llm_providers_example.py     # Production usage
+```
 
-The examples use an "echo" conversation component that simply echoes back the input, useful for testing. The component configuration is automatically created:
+### 3. **Tool Calling**
+```bash
+python working_multi_turn_example.py     # Simple tools
+python multi_turn_tool_calling_example.py # Advanced tools
+```
 
+### 4. **Streaming**
+```bash
+python streaming_comprehensive.py        # Sync streaming
+python streaming_async_comprehensive.py  # Async streaming
+```
+
+### 5. **Advanced Features**
+```bash
+python cost_calculation_example.py       # Cost tracking
+python conversation_history_helper.py    # Advanced management
+```
+
+## 🔧 **Key Features Demonstrated**
+
+### ⚡ **Parameter Conversion** (NEW!)
+Before our improvement:
+```python
+# Old way - complex protobuf wrapping
+from google.protobuf.any_pb2 import Any as ProtobufAny
+from google.protobuf.wrappers_pb2 import StringValue
+tool_choice_any = ProtobufAny()
+tool_choice_any.Pack(StringValue(value="auto"))
+parameters = {"tool_choice": tool_choice_any}
+```
+
+After our improvement:
+```python
+# New way - simple Python values
+parameters = {
+    "tool_choice": "auto",        # Raw string - auto-converted
+    "temperature": 0.7,           # Raw float - auto-converted  
+    "max_tokens": 1000,          # Raw int - auto-converted
+    "stream": False,             # Raw bool - auto-converted
+}
+```
+
+### 🔧 **Tool Calling**
+```python
+# Define tools
+weather_tool = Tool(
+    type="function",
+    function=ToolFunction(
+        name="get_weather",
+        description="Get weather information",
+        parameters={...}
+    )
+)
+
+# Use with ContentPart approach
+inputs = [ConversationInput(
+    role="user",
+    parts=[
+        ContentPart(text=TextContent(text="What's the weather?")),
+        ContentPart(tool_definitions=ToolDefinitionsContent(tools=[weather_tool]))
+    ]
+)]
+```
+
+### 📡 **Streaming**
+```python
+# Sync streaming
+for chunk in client.converse_stream_alpha1(name="openai", inputs=inputs):
+    print(chunk.outputs[0].result)
+
+# Async streaming  
+async for chunk in client.converse_stream_alpha1(name="openai", inputs=inputs):
+    print(chunk.outputs[0].result)
+```
+
+### 💰 **Cost Tracking**
+```python
+# Automatic cost calculation with provider-specific pricing
+usage_info = UsageInfo.calculate_cost(
+    usage,
+    cost_per_million_input_tokens=0.15,   # GPT-4o-mini input
+    cost_per_million_output_tokens=0.60,  # GPT-4o-mini output
+    model="gpt-4o-mini",
+    provider="openai"
+)
+```
+
+## 🗂️ **Component Configuration**
+
+### Echo Component (Testing)
 ```yaml
+# components/echo.yaml
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
@@ -110,91 +215,93 @@ metadata:
 spec:
   type: conversation.echo
   version: v1
+```
+
+### OpenAI Component
+```yaml
+# components/openai.yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: openai
+spec:
+  type: conversation.openai
+  version: v1
   metadata:
-  - name: key
-    value: testkey
+  - name: apiKey
+    secretKeyRef:
+      name: openai-secret
+      key: api-key
 ```
 
-For production use, replace this with actual LLM components like:
-- `conversation.openai`
-- `conversation.anthropic` 
-- `conversation.azure-openai`
-- etc.
-
-## API Reference
-
-### Synchronous Client
-
-```python
-from dapr.clients import DaprClient
-from dapr.clients.grpc._request import ConversationInput
-
-with DaprClient() as client:
-    inputs = [ConversationInput(content="Hello!", role='user')]
-    
-    for chunk in client.converse_stream_alpha1(
-        name='echo',
-        inputs=inputs,
-        context_id='session-123',
-        temperature=0.7,
-        scrub_pii=True
-         ):
-         if chunk.result and chunk.result.result:
-             print(chunk.result.result)
-         if chunk.context_id:
-             print(f"Context: {chunk.context_id}")
-         if chunk.usage:
-             print(f"Usage: {chunk.usage.total_tokens} tokens")
+### Anthropic Component
+```yaml
+# components/anthropic.yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: anthropic
+spec:
+  type: conversation.anthropic
+  version: v1
+  metadata:
+  - name: apiKey
+    secretKeyRef:
+      name: anthropic-secret
+      key: api-key
 ```
 
-### Asynchronous Client
+## 🆘 **Troubleshooting**
 
-```python
-from dapr.aio.clients import DaprClient
-from dapr.clients.grpc._request import ConversationInput
+### Common Issues
 
-async with DaprClient() as client:
-    inputs = [ConversationInput(content="Hello!", role='user')]
-    
-    async for chunk in client.converse_stream_alpha1(
-        name='echo',
-        inputs=inputs,
-        context_id='session-123'
-    ):
-        if chunk.result and chunk.result.result:
-            print(chunk.result.result)
+**Port Already in Use**
+```bash
+# Kill existing Dapr processes
+pkill -f daprd
+# Or find and kill specific process
+lsof -i :50001
 ```
 
-## Troubleshooting
+**Missing API Keys**
+```bash
+# Set environment variables
+export OPENAI_API_KEY="your-key-here"
+export ANTHROPIC_API_KEY="your-key-here"
+export GOOGLE_API_KEY="your-key-here"
+```
 
-### "Connection refused" errors
-- Make sure the Dapr sidecar is running: `python tools/run_dapr_dev.py`
-- Check that ports 3500 and 50001 are not in use by other processes
+**Component Not Found**
+```bash
+# Ensure components are in the correct path
+ls -la components/
+# Or specify path explicitly
+dapr run --resources-path ./components ...
+```
 
-### "Component not found" errors  
-- Verify the conversation components are loaded (check sidecar logs)
-- Make sure you're using the correct component name ('echo' in examples)
+## 📚 **Additional Resources**
 
-### Build errors
-- Ensure Go is installed and the Dapr repository is properly cloned
-- Try running `make build` manually in the `../dapr` directory
+- [Dapr Conversation API Documentation](https://docs.dapr.io/developing-applications/building-blocks/conversation/)
+- [Dapr Python SDK Documentation](https://docs.dapr.io/developing-applications/sdks/python/)
+- [OpenAI API Documentation](https://platform.openai.com/docs/api-reference)
+- [Anthropic Claude API Documentation](https://docs.anthropic.com/claude/reference/)
 
-### Import errors
-- Install development dependencies: `pip install -r dev-requirements.txt`
-- Make sure you're in the correct Python environment
+## 🎉 **What's New**
 
-## Contributing
+### Recent Improvements
 
-When modifying the conversation streaming implementation:
+- ✅ **Parameter Conversion**: No more protobuf complexity - use simple Python values!
+- ✅ **Streamlined Examples**: Reduced from 48+ files to 10 focused examples
+- ✅ **Fixed Cost Calculations**: Accurate pricing for all providers
+- ✅ **Current API Usage**: All examples use modern ContentPart approach
+- ✅ **Comprehensive Testing**: All examples tested and working
 
-1. Update the examples to demonstrate new features
-2. Test both sync and async implementations
-3. Verify PII scrubbing and other parameters work correctly
-4. Update this README if adding new functionality
+### Breaking Changes
 
-## Related Files
+- ❌ **Removed `tools=` parameter**: Use ContentPart with ToolDefinitionsContent instead
+- ❌ **Removed obsolete examples**: Consolidated into focused, working examples
+- ❌ **Fixed pricing bugs**: Corrected 1000x calculation errors in cost examples
 
-- `dapr/clients/grpc/client.py` - Synchronous client implementation
-- `dapr/aio/clients/grpc/client.py` - Asynchronous client implementation  
-- `dapr/clients/grpc/_response.py` - Response type definitions
-- `tools/run_dapr_dev.py` - Development helper script
+---
+
+**💡 Tip**: Start with `conversation.py` and `parameter_conversion_example.py` to understand the basics, then explore the other examples based on your specific needs!

@@ -25,25 +25,37 @@ async def basic_streaming_test(d):
 
     chunks_received = []
     final_usage = None
-    async for chunk in d.converse_stream_alpha1(
+    final_context_id = None
+
+    async for response in d.converse_stream_alpha1(
         name='echo', inputs=inputs, context_id='async-test-session-456'
     ):
-        if chunk.result and chunk.result.result:
-            print(f'📦 Async chunk: "{chunk.result.result}"')
-            chunks_received.append(chunk.result.result)
-        if chunk.context_id:
-            print(f'🆔 Async context ID: {chunk.context_id}')
-        if chunk.usage:
-            prompt_tokens = chunk.usage.prompt_tokens
-            completion_tokens = chunk.usage.completion_tokens
-            total_tokens = chunk.usage.total_tokens
-            usage_parts = [
-                f'📊 Async usage: {prompt_tokens} prompt',
-                f'{completion_tokens} completion',
-                f'{total_tokens} total tokens',
-            ]
-            print(' + '.join(usage_parts[:2]) + ' = ' + usage_parts[2])
-            final_usage = chunk.usage
+        if response.chunk:
+            # Extract text from chunk parts or fallback to deprecated content
+            if response.chunk.parts:
+                for part in response.chunk.parts:
+                    if part.text:
+                        print(f'📦 Async chunk: "{part.text.text}"')
+                        chunks_received.append(part.text.text)
+            elif response.chunk.content:
+                print(f'📦 Async chunk: "{response.chunk.content}"')
+                chunks_received.append(response.chunk.content)
+        elif response.complete:
+            # Handle completion with final context and usage
+            if response.complete.context_id:
+                final_context_id = response.complete.context_id
+                print(f'🆔 Async context ID: {final_context_id}')
+            if response.complete.usage:
+                prompt_tokens = response.complete.usage.prompt_tokens
+                completion_tokens = response.complete.usage.completion_tokens
+                total_tokens = response.complete.usage.total_tokens
+                usage_parts = [
+                    f'📊 Async usage: {prompt_tokens} prompt',
+                    f'{completion_tokens} completion',
+                    f'{total_tokens} total tokens',
+                ]
+                print(' + '.join(usage_parts[:2]) + ' = ' + usage_parts[2])
+                final_usage = response.complete.usage
 
     print(f'\n✅ Async success! Received {len(chunks_received)} chunks')
     print(f'📝 Full async response: {"".join(chunks_received)}')
@@ -62,11 +74,16 @@ async def concurrent_conversations_test(d):
     async def run_conversation(message, session_id):
         inputs = [ConversationInput(content=message, role='user')]
         chunks = []
-        async for chunk in d.converse_stream_alpha1(
+        async for response in d.converse_stream_alpha1(
             name='echo', inputs=inputs, context_id=session_id
         ):
-            if chunk.result and chunk.result.result:
-                chunks.append(chunk.result.result)
+            if response.chunk:
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.text:
+                            chunks.append(part.text.text)
+                elif response.chunk.content:
+                    chunks.append(response.chunk.content)
         return f"Session {session_id}: {''.join(chunks)}"
 
     # Run 3 conversations concurrently

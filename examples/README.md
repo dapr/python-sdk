@@ -16,6 +16,7 @@ These examples demonstrate how to use the Dapr Python SDK:
 | [Distributed lock](./distributed_lock)                | Keep your application safe from race conditions by using distributed locks
 | [Workflow](./demo_workflow)                           | Run a workflow to simulate an order processor
 | [Cryptography](./crypto)                              | Perform cryptographic operations without exposing keys to your application 
+| [Conversation](./conversation)                        | Interact with AI/LLM models using streaming and non-streaming responses, tool calling, and multi-turn conversations 
 
 ## More information
 

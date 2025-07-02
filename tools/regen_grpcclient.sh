@@ -17,42 +17,31 @@
 PROTO_PATH="dapr/proto"
 SRC=.
 
-# Http request CLI
-HTTP_REQUEST_CLI=curl
+# Local Dapr repository path
+LOCAL_DAPR_PATH="../../dapr"
 
-
-checkHttpRequestCLI() {
-    if type "curl" > /dev/null; then
-        HTTP_REQUEST_CLI=curl
-    elif type "wget" > /dev/null; then
-        HTTP_REQUEST_CLI=wget
-    else
-        echo "Either curl or wget is required"
-        exit 1
-    fi
-}
-
-downloadFile() {
+copyLocalFile() {
     PKG_NAME=$1
     FILE_NAME=$2
     FILE_PATH="${PROTO_PATH}/${PKG_NAME}/v1"
-
-    # URL for proto file
-    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
+    
+    # Local proto file path
+    LOCAL_PROTO_FILE="${LOCAL_DAPR_PATH}/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
 
     mkdir -p "${FILE_PATH}"
 
-    echo "Downloading $PROTO_URL ..."
-    if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
-        pushd ${FILE_PATH}
-        curl -SsL "$PROTO_URL" -o "${FILE_NAME}.proto"
-        popd
-    else
-        wget -q -P "$PROTO_URL" "${FILE_PATH}/${FILE_NAME}.proto"
+    echo "Copying local file $LOCAL_PROTO_FILE ..."
+    
+    if [ ! -e "$LOCAL_PROTO_FILE" ]; then
+        echo "Local proto file not found: $LOCAL_PROTO_FILE"
+        echo "Make sure the local Dapr repository is available at $LOCAL_DAPR_PATH"
+        exit 1
     fi
+    
+    cp "$LOCAL_PROTO_FILE" "${FILE_PATH}/${FILE_NAME}.proto"
 
     if [ ! -e "${FILE_PATH}/${FILE_NAME}.proto" ]; then
-        echo "failed to download $PROTO_URL ..."
+        echo "failed to copy $LOCAL_PROTO_FILE ..."
         ret_val=$FILE_NAME
         exit 1
     fi
@@ -70,6 +59,8 @@ generateGrpc() {
         ret_val=$FILE_NAME
         exit 1
     fi
+    
+    echo "Writing mypy to ${FILE_PATH}/${FILE_NAME}_pb2.pyi"
 }
 
 fail_trap() {
@@ -95,12 +86,11 @@ generateGrpcSuccess() {
 # -----------------------------------------------------------------------------
 trap "fail_trap" EXIT
 
-checkHttpRequestCLI
-downloadFile common common
+copyLocalFile common common
 generateGrpc common common
-downloadFile runtime appcallback
+copyLocalFile runtime appcallback
 generateGrpc runtime appcallback
-downloadFile runtime dapr
+copyLocalFile runtime dapr
 generateGrpc runtime dapr
 cleanup
 

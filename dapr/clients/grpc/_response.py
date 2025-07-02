@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """
 Copyright 2023 The Dapr Authors
@@ -22,19 +21,18 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Dict,
-    List,
-    Optional,
-    Text,
-    Union,
-    Sequence,
-    TYPE_CHECKING,
-    NamedTuple,
     Generator,
-    TypeVar,
     Generic,
+    List,
     Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
 )
 
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -44,12 +42,13 @@ from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._helpers import (
     MetadataDict,
     MetadataTuple,
+    WorkflowRuntimeStatus,
     to_bytes,
     to_str,
     tuple_to_dict,
     unpack,
-    WorkflowRuntimeStatus,
 )
+from dapr.clients.grpc._request import Tool
 from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
 
 # Avoid circular import dependency by only importing DaprGrpcClient
@@ -60,7 +59,6 @@ if TYPE_CHECKING:
 TCryptoResponse = TypeVar(
     'TCryptoResponse', bound=Union[api_v1.EncryptResponse, api_v1.DecryptResponse]
 )
-
 
 class DaprResponse:
     """A base class for Dapr Response.
@@ -102,7 +100,6 @@ class DaprResponse:
         if as_dict:
             return tuple_to_dict(self._headers)
         return self._headers
-
 
 class InvokeMethodResponse(DaprResponse):
     """The response of invoke_method API.
@@ -260,7 +257,6 @@ class InvokeMethodResponse(DaprResponse):
 
         unpack(self.proto, message)
 
-
 class BindingResponse(DaprResponse):
     """The response of invoke_binding API.
 
@@ -274,7 +270,7 @@ class BindingResponse(DaprResponse):
     def __init__(
         self,
         data: Union[bytes, str],
-        binding_metadata: Dict[str, str] = {},
+        binding_metadata: Optional[Dict[str, str]] = None,
         headers: MetadataTuple = (),
     ):
         """Initializes InvokeBindingReponse from :obj:`runtime_v1.InvokeBindingResponse`.
@@ -290,7 +286,7 @@ class BindingResponse(DaprResponse):
         """
         super(BindingResponse, self).__init__(headers)
         self.data = data  # type: ignore
-        self._metadata = binding_metadata
+        self._metadata = binding_metadata or {}
 
     def text(self) -> str:
         """Gets content as str."""
@@ -314,7 +310,6 @@ class BindingResponse(DaprResponse):
     def binding_metadata(self) -> Dict[str, str]:
         """Gets the metadata in the response."""
         return self._metadata
-
 
 class GetSecretResponse(DaprResponse):
     """The response of get_secret API.
@@ -340,7 +335,6 @@ class GetSecretResponse(DaprResponse):
         """Gets secret as a dict."""
         return self._secret
 
-
 class GetBulkSecretResponse(DaprResponse):
     """The response of get_bulk_secret API.
 
@@ -364,7 +358,6 @@ class GetBulkSecretResponse(DaprResponse):
     def secrets(self) -> Dict[str, Dict[str, str]]:
         """Gets secrets as a dict."""
         return self._secrets
-
 
 class StateResponse(DaprResponse):
     """The response of get_state API.
@@ -415,7 +408,6 @@ class StateResponse(DaprResponse):
     def data(self, val: Union[bytes, str]) -> None:
         """Sets str or bytes type data to request data."""
         self._data = to_bytes(val)
-
 
 class BulkStateItem:
     """A state item from bulk_get_state API.
@@ -469,7 +461,6 @@ class BulkStateItem:
         """Gets error."""
         return self._error
 
-
 class BulkStatesResponse(DaprResponse):
     """The response of bulk_get_state API.
 
@@ -493,7 +484,6 @@ class BulkStatesResponse(DaprResponse):
     def items(self) -> Sequence[BulkStateItem]:
         """Gets the items."""
         return self._items
-
 
 class QueryResponseItem:
     """A query response item from state store query API.
@@ -547,7 +537,6 @@ class QueryResponseItem:
         """Gets error."""
         return self._error
 
-
 class QueryResponse(DaprResponse):
     """The response of state store query API.
 
@@ -563,7 +552,7 @@ class QueryResponse(DaprResponse):
         self,
         results: Sequence[QueryResponseItem],
         token: str = '',
-        metadata: Dict[str, str] = dict(),
+        metadata: Optional[Dict[str, str]] = None,
         headers: MetadataTuple = (),
     ):
         """Initializes QueryResponse from :obj:`runtime_v1.QueryStateResponse`.
@@ -575,7 +564,7 @@ class QueryResponse(DaprResponse):
             headers (Tuple, optional): the headers from Dapr gRPC response.
         """
         super(QueryResponse, self).__init__(headers)
-        self._metadata = metadata
+        self._metadata = metadata or {}
         self._results = results
         self._token = token
 
@@ -594,7 +583,6 @@ class QueryResponse(DaprResponse):
         """Gets the query response metadata."""
         return self._metadata
 
-
 class ConfigurationItem:
     """A config item from get_configuration API.
 
@@ -604,7 +592,7 @@ class ConfigurationItem:
         metadata (str): metadata
     """
 
-    def __init__(self, value: str, version: str, metadata: Optional[Dict[str, str]] = dict()):
+    def __init__(self, value: str, version: str, metadata: Optional[Dict[str, str]] = None):
         """Initializes ConfigurationItem item from :obj:`runtime_v1.ConfigurationItem`.
 
         Args:
@@ -614,7 +602,7 @@ class ConfigurationItem:
         """
         self._value = value
         self._version = version
-        self._metadata = metadata
+        self._metadata = metadata or {}
 
     def text(self) -> str:
         """Gets content as str."""
@@ -639,7 +627,6 @@ class ConfigurationItem:
         """Gets metadata."""
         return self._metadata
 
-
 class ConfigurationResponse(DaprResponse):
     """The response of get_configuration API.
 
@@ -650,7 +637,7 @@ class ConfigurationResponse(DaprResponse):
     """
 
     def __init__(
-        self, items: Mapping[Text, common_v1.ConfigurationItem], headers: MetadataTuple = ()
+        self, items: Mapping[str, common_v1.ConfigurationItem], headers: MetadataTuple = ()
     ):
         """Initializes ConfigurationResponse from :obj:`runtime_v1.GetConfigurationResponse`.
 
@@ -659,17 +646,16 @@ class ConfigurationResponse(DaprResponse):
             headers (Tuple, optional): the headers from Dapr gRPC response.
         """
         super(ConfigurationResponse, self).__init__(headers)
-        self._items: Dict[Text, ConfigurationItem] = dict()
-        k: Text
+        self._items: Dict[str, ConfigurationItem] = dict()
+        k: str
         v: common_v1.ConfigurationItem
         for k, v in items.items():
             self._items[k] = ConfigurationItem(v.value, v.version, dict(v.metadata))
 
     @property
-    def items(self) -> Dict[Text, ConfigurationItem]:
+    def items(self) -> Dict[str, ConfigurationItem]:
         """Gets the items."""
         return self._items
-
 
 class ConfigurationWatcher:
     def __init__(self):
@@ -683,11 +669,11 @@ class ConfigurationWatcher:
         stub: api_service_v1.DaprStub,
         store_name: str,
         keys: List[str],
-        handler: Callable[[Text, ConfigurationResponse], None],
-        config_metadata: Optional[Dict[str, str]] = dict(),
+        handler: Callable[[str, ConfigurationResponse], None],
+        config_metadata: Optional[Dict[str, str]] = None,
     ):
         req = api_v1.SubscribeConfigurationRequest(
-            store_name=store_name, keys=keys, metadata=config_metadata
+            store_name=store_name, keys=keys, metadata=config_metadata or {}
         )
         thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req, handler))
         thread.daemon = True
@@ -704,7 +690,7 @@ class ConfigurationWatcher:
         self,
         stub: api_service_v1.DaprStub,
         req: api_v1.SubscribeConfigurationRequest,
-        handler: Callable[[Text, ConfigurationResponse], None],
+        handler: Callable[[str, ConfigurationResponse], None],
     ):
         try:
             responses: List[
@@ -722,13 +708,11 @@ class ConfigurationWatcher:
             print(f'{self.store_name} configuration watcher for keys ' f'{self.keys} stopped.')
             pass
 
-
 class TopicEventResponseStatus(Enum):
     # success is the default behavior: message is acknowledged and not retried
     success = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
     retry = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.RETRY
     drop = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.DROP
-
 
 class TopicEventResponse(DaprResponse):
     """The response of subscribed topic events.
@@ -768,7 +752,6 @@ class TopicEventResponse(DaprResponse):
         """Gets the status."""
         return self._status
 
-
 class UnlockResponseStatus(Enum):
     success = api_v1.UnlockResponse.Status.SUCCESS
     """The Unlock operation for the referred lock was successful."""
@@ -781,7 +764,6 @@ class UnlockResponseStatus(Enum):
 
     internal_error = api_v1.UnlockResponse.Status.INTERNAL_ERROR
     """An internal error happened while handling the Unlock operation"""
-
 
 class UnlockResponse(DaprResponse):
     """The response of an unlock operation.
@@ -810,7 +792,6 @@ class UnlockResponse(DaprResponse):
     def status(self) -> UnlockResponseStatus:
         """Gets the status."""
         return self._status
-
 
 class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
     """The response of a try_lock operation.
@@ -885,10 +866,9 @@ class TryLockResponse(contextlib.AbstractContextManager, DaprResponse):
             )
         # else: there is no point unlocking a lock we did not acquire.
 
-    async def __aenter__(self) -> 'TryLockResponse':
+    async def __aenter__(self) -> TryLockResponse:
         """Returns self as the context manager object."""
         return self
-
 
 class GetMetadataResponse(DaprResponse):
     """GetMetadataResponse is a message that is returned on GetMetadata rpc call."""
@@ -939,7 +919,6 @@ class GetMetadataResponse(DaprResponse):
         """Mapping of custom (extended) attributes to their respective values."""
         return self._extended_metadata
 
-
 class GetWorkflowResponse:
     """The response of get_workflow operation."""
 
@@ -950,7 +929,7 @@ class GetWorkflowResponse:
         created_at: datetime,
         last_updated_at: str,
         runtime_status: WorkflowRuntimeStatus,
-        properties: Dict[str, str] = {},
+        properties: Optional[Dict[str, str]] = None,
     ):
         """Initializes a GetWorkflowResponse.
 
@@ -967,8 +946,7 @@ class GetWorkflowResponse:
         self.created_at = created_at
         self.last_updated_at = last_updated_at
         self.runtime_status = runtime_status
-        self.properties = properties
-
+        self.properties = properties or {}
 
 class StartWorkflowResponse:
     """The response of start_workflow operation."""
@@ -984,7 +962,6 @@ class StartWorkflowResponse:
         """
         self.instance_id = instance_id
 
-
 class RegisteredComponents(NamedTuple):
     """Describes a loaded Dapr component."""
 
@@ -999,7 +976,6 @@ class RegisteredComponents(NamedTuple):
 
     capabilities: Sequence[str]
     """Supported capabilities for this component type and version."""
-
 
 class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):
     """An iterable of cryptography API responses."""
@@ -1064,21 +1040,158 @@ class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):
         # Return the requested number of bytes
         return data[:size]
 
-
 class EncryptResponse(CryptoResponse[TCryptoResponse]):
     ...
-
 
 class DecryptResponse(CryptoResponse[TCryptoResponse]):
     ...
 
+@dataclass
+class TextContent:
+    """Simple text content part."""
+    text: str
+
+    @classmethod
+    def from_proto(cls, proto_text) -> TextContent:
+        """Create TextContent from protobuf."""
+        return cls(text=proto_text.text)
+
+@dataclass
+class ToolCall:
+    """Tool call from LLM response."""
+
+    id: str
+    type: str  # Always "function"
+    name: str
+    arguments: str  # JSON string
+
+@dataclass
+class ToolCallContent:
+    """Tool call as content part."""
+    id: str
+    type: str  # "function"
+    name: str
+    arguments: str  # Function arguments as JSON string
+
+    @classmethod
+    def from_proto(cls, proto_tool_call) -> ToolCallContent:
+        """Create ToolCallContent from protobuf."""
+        return cls(
+            id=proto_tool_call.id,
+            type=proto_tool_call.type,
+            name=proto_tool_call.name,
+            arguments=proto_tool_call.arguments
+        )
+
+@dataclass
+class ToolResultContent:
+    """Tool result as content part."""
+    tool_call_id: str
+    name: str
+    content: str  # Tool result as text
+    is_error: Optional[bool] = None  # Indicates tool execution error
+
+    @classmethod
+    def from_proto(cls, proto_tool_result) -> ToolResultContent:
+        """Create ToolResultContent from protobuf."""
+        return cls(
+            tool_call_id=proto_tool_result.tool_call_id,
+            name=proto_tool_result.name,
+            content=proto_tool_result.content,
+            is_error=proto_tool_result.is_error if proto_tool_result.HasField('is_error') else None
+        )
+
+@dataclass
+class ContentPart:
+    """Content part supporting text and tool calling."""
+    # One of these will be set
+    text: Optional[TextContent] = None
+    tool_call: Optional[ToolCallContent] = None
+    tool_result: Optional[ToolResultContent] = None
+
+    @classmethod
+    def from_proto(cls, proto_part) -> ContentPart:
+        """Create ContentPart from protobuf."""
+        if proto_part.HasField('text'):
+            return cls(text=TextContent.from_proto(proto_part.text))
+        elif proto_part.HasField('tool_call'):
+            return cls(tool_call=ToolCallContent.from_proto(proto_part.tool_call))
+        elif proto_part.HasField('tool_result'):
+            return cls(tool_result=ToolResultContent.from_proto(proto_part.tool_result))
+        else:
+            return cls()
 
 @dataclass
 class ConversationResult:
     """Result from a single conversation input."""
 
-    result: str
+    # DEPRECATED: Use parts instead for new implementations
+    result: Optional[str] = None
     parameters: Dict[str, GrpcAny] = field(default_factory=dict)
+
+    # Reason why the LLM stopped generating (e.g., "stop", "tool_calls", "length")
+    finish_reason: Optional[str] = None
+
+    # NEW: Content parts in response
+    parts: Optional[List[ContentPart]] = None
+
+    def get_text(self) -> Optional[str]:
+        """Extract text content from parts or fallback to deprecated result field."""
+        if self.parts:
+            for part in self.parts:
+                if part.text:
+                    return part.text.text
+        return self.result
+
+    def get_tool_calls(self) -> List[ToolCall]:
+        """Extract tool calls from content parts."""
+        tool_calls = []
+        if self.parts:
+            for part in self.parts:
+                if hasattr(part, 'tool_call') and part.tool_call:
+                    tool_calls.append(ToolCall(
+                        id=part.tool_call.id,
+                        type=part.tool_call.type,
+                        name=part.tool_call.name,
+                        arguments=part.tool_call.arguments
+                    ))
+        return tool_calls
+
+    def extract_tool_results(self) -> List[Tool]:
+        """Extract tool results from content parts."""
+        tools = []
+        if self.parts:
+            for part in self.parts:
+                if hasattr(part, 'tool_result') and part.tool_result:
+                    tools.append(Tool(
+                        name=part.tool_result.tool_name,
+                        call_id=part.tool_result.call_id,
+                        result=part.tool_result.result
+                    ))
+        return tools
+
+    @classmethod
+    def from_proto(cls, proto_result) -> ConversationResult:
+        """Create ConversationResult from protobuf."""
+        # Convert parameters
+        parameters = {}
+        for key, value in proto_result.parameters.items():
+            parameters[key] = value
+
+        # Convert parts
+        parts = []
+        for proto_part in proto_result.parts:
+            parts.append(ContentPart.from_proto(proto_part))
+
+        return cls(
+            result=proto_result.result if proto_result.result else None,
+            parameters=parameters,
+            finish_reason=proto_result.finish_reason if proto_result.HasField('finish_reason') else None,
+            parts=parts if parts else None
+        )
+
+# Alias for backward compatibility - ConversationOutput was temporarily used
+ConversationOutput = ConversationResult
 
 
 @dataclass
@@ -1089,20 +1202,96 @@ class ConversationResponse:
     outputs: List[ConversationResult]
     usage: Optional[ConversationUsage] = None
 
-
 @dataclass
 class ConversationUsage:
-    """Token usage statistics from conversation API."""
-    
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    total_tokens: int = 0
+    """Usage information for conversation requests."""
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
 
+    @classmethod
+    def from_proto(cls, proto_usage) -> ConversationUsage:
+        """Create ConversationUsage from protobuf usage."""
+        return cls(
+            prompt_tokens=int(proto_usage.prompt_tokens),
+            completion_tokens=int(proto_usage.completion_tokens),
+            total_tokens=int(proto_usage.total_tokens)
+        )
+
+@dataclass
+class ConversationStreamChunk:
+    """Streaming conversation chunk response."""
+    parts: List[ContentPart]
+    context_id: Optional[str] = None
+    finish_reason: Optional[str] = None
+    chunk_index: Optional[int] = None
+    is_delta: Optional[bool] = None
+
+    @property
+    def content(self) -> Optional[str]:
+        """Backward compatibility: extract text content from parts."""
+        for part in self.parts:
+            if part.text:
+                return part.text.text
+        return None
+
+    @classmethod
+    def from_proto(cls, proto_chunk) -> ConversationStreamChunk:
+        """Create ConversationStreamChunk from protobuf."""
+        parts = []
+        for proto_part in proto_chunk.parts:
+            parts.append(ContentPart.from_proto(proto_part))
+
+        return cls(
+            parts=parts,
+            context_id=getattr(proto_chunk, 'context_id', None) or getattr(
+                proto_chunk, 'contextID', None
+            ),
+            finish_reason=proto_chunk.finish_reason if proto_chunk.HasField('finish_reason') else None,
+            chunk_index=proto_chunk.chunk_index if proto_chunk.HasField('chunk_index') else None,
+            is_delta=proto_chunk.is_delta if proto_chunk.HasField('is_delta') else None
+        )
+
+@dataclass
+class ConversationStreamComplete:
+    """Streaming conversation complete response."""
+    usage: Optional[ConversationUsage] = None
+    context_id: Optional[str] = None
+    outputs: Optional[List[ConversationResult]] = None  # NEW: Accumulated outputs/tool calls
+
+    @classmethod
+    def from_proto(cls, proto_complete) -> ConversationStreamComplete:
+        """Create ConversationStreamComplete from protobuf."""
+        usage = None
+        if hasattr(proto_complete, 'usage') and proto_complete.usage:
+            usage = ConversationUsage.from_proto(proto_complete.usage)
+
+        # Convert outputs
+        outputs = []
+        if hasattr(proto_complete, 'outputs'):
+            for proto_output in proto_complete.outputs:
+                outputs.append(ConversationResult.from_proto(proto_output))
+
+        return cls(
+            usage=usage,
+            context_id=getattr(proto_complete, 'context_id', None) or getattr(
+                proto_complete, 'contextID', None
+            ),
+            outputs=outputs if outputs else None
+        )
 
 @dataclass
 class ConversationStreamResponse:
-    """Single response chunk from the streaming conversation API."""
+    """Streaming response for conversation API."""
+    chunk: Optional[ConversationStreamChunk] = None
+    complete: Optional[ConversationStreamComplete] = None
 
-    context_id: Optional[str]
-    result: Optional[ConversationResult] = None
-    usage: Optional[ConversationUsage] = None
+    @property
+    def is_chunk(self) -> bool:
+        """Check if this is a chunk response."""
+        return self.chunk is not None
+
+    @property
+    def is_complete(self) -> bool:
+        """Check if this is a complete response."""
+        return self.complete is not None

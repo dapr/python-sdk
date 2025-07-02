@@ -26,25 +26,49 @@ def basic_streaming_test(d):
 
     chunks_received = []
     final_usage = None
-    for chunk in d.converse_stream_alpha1(
+    final_context_id = None
+
+    for response in d.converse_stream_alpha1(
         name='echo', inputs=inputs, context_id='sync-test-session-123'
     ):
-        if chunk.result and chunk.result.result:
-            print(f'📦 Chunk: "{chunk.result.result}"')
-            chunks_received.append(chunk.result.result)
-        if chunk.context_id:
-            print(f'🆔 Context ID: {chunk.context_id}')
-        if chunk.usage:
-            prompt_tokens = chunk.usage.prompt_tokens
-            completion_tokens = chunk.usage.completion_tokens
-            total_tokens = chunk.usage.total_tokens
-            usage_parts = [
-                f'📊 Usage: {prompt_tokens} prompt',
-                f'{completion_tokens} completion',
-                f'{total_tokens} total tokens',
-            ]
-            print(' + '.join(usage_parts[:2]) + ' = ' + usage_parts[2])
-            final_usage = chunk.usage
+        if response.chunk:
+            # Extract text from chunk parts or fallback to deprecated content
+            if response.chunk.parts:
+                for part in response.chunk.parts:
+                    if part.text:
+                        print(f'📦 Chunk: "{part.text.text}"')
+                        chunks_received.append(part.text.text)
+            elif response.chunk.content:
+                print(f'📦 Chunk: "{response.chunk.content}"')
+                chunks_received.append(response.chunk.content)
+        elif response.complete:
+            # Handle completion with final context and usage
+            if response.complete.context_id:
+                final_context_id = response.complete.context_id
+                print(f'🆔 Context ID: {final_context_id}')
+            if response.complete.usage:
+                prompt_tokens = response.complete.usage.prompt_tokens
+                completion_tokens = response.complete.usage.completion_tokens
+                total_tokens = response.complete.usage.total_tokens
+                usage_parts = [
+                    f'📊 Usage: {prompt_tokens} prompt',
+                    f'{completion_tokens} completion',
+                    f'{total_tokens} total tokens',
+                ]
+                print(' + '.join(usage_parts[:2]) + ' = ' + usage_parts[2])
+                final_usage = response.complete.usage
+
+            # NEW: Handle accumulated outputs/tool calls in complete message
+            if response.complete.outputs:
+                print(f'🔧 Accumulated outputs: {len(response.complete.outputs)} items')
+                for i, output in enumerate(response.complete.outputs):
+                    if output.get_tool_calls():
+                        tool_calls = output.get_tool_calls()
+                        print(f'   Output {i+1}: {len(tool_calls)} tool call(s)')
+                        for tool_call in tool_calls:
+                            print(f'     - {tool_call.name}({tool_call.arguments})')
+                    elif output.get_text():
+                        print(f'   Output {i+1}: Text - "{output.get_text()}"')
 
     print(f'\n✅ Success! Received {len(chunks_received)} chunks')
     print(f'📝 Full response: {"".join(chunks_received)}')
@@ -64,10 +88,16 @@ def pii_scrubbing_test(d):
     ]
 
     scrubbed_chunks = []
-    for chunk in d.converse_stream_alpha1(name='echo', inputs=pii_inputs, scrub_pii=True):
-        if chunk.result and chunk.result.result:
-            print(f'📦 Scrubbed chunk: "{chunk.result.result}"')
-            scrubbed_chunks.append(chunk.result.result)
+    for response in d.converse_stream_alpha1(name='echo', inputs=pii_inputs, scrub_pii=True):
+        if response.chunk:
+            if response.chunk.parts:
+                for part in response.chunk.parts:
+                    if part.text:
+                        print(f'📦 Scrubbed chunk: "{part.text.text}"')
+                        scrubbed_chunks.append(part.text.text)
+            elif response.chunk.content:
+                print(f'📦 Scrubbed chunk: "{response.chunk.content}"')
+                scrubbed_chunks.append(response.chunk.content)
 
     scrubbed_response = ''.join(scrubbed_chunks)
     print(f'📝 Scrubbed response: {scrubbed_response}')
@@ -84,9 +114,14 @@ def temperature_test(d):
     temp_inputs = [ConversationInput(content='Test with temperature setting', role='user')]
 
     temp_chunks = []
-    for chunk in d.converse_stream_alpha1(name='echo', inputs=temp_inputs, temperature=0.7):
-        if chunk.result and chunk.result.result:
-            temp_chunks.append(chunk.result.result)
+    for response in d.converse_stream_alpha1(name='echo', inputs=temp_inputs, temperature=0.7):
+        if response.chunk:
+            if response.chunk.parts:
+                for part in response.chunk.parts:
+                    if part.text:
+                        temp_chunks.append(part.text.text)
+            elif response.chunk.content:
+                temp_chunks.append(response.chunk.content)
 
     print(f'📝 Temperature test response: {"".join(temp_chunks)}')
 

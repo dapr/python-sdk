@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,24 +12,24 @@ limitations under the License.
 """
 
 import io
-from enum import Enum
 from dataclasses import dataclass
-from typing import Dict, Optional, Union
+from enum import Enum
+from typing import Dict, List, Optional, Union
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
-from dapr.proto import api_v1, common_v1
 
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataDict,
     MetadataTuple,
-    tuple_to_dict,
     to_bytes,
     to_str,
+    tuple_to_dict,
     unpack,
 )
+from dapr.proto import api_v1, common_v1
 
 
 class DaprRequest:
@@ -72,7 +70,6 @@ class DaprRequest:
             return tuple_to_dict(self._metadata)
         return self._metadata
 
-
 class InvokeMethodRequest(DaprRequest):
     """A request data representation for invoke_method API.
 
@@ -106,7 +103,7 @@ class InvokeMethodRequest(DaprRequest):
         Raises:
             ValueError: data is not supported.
         """
-        super(InvokeMethodRequest, self).__init__(())
+        super().__init__(())
 
         self._content_type = content_type
         self._http_verb = None
@@ -216,7 +213,6 @@ class InvokeMethodRequest(DaprRequest):
         """Sets content type for bytes data."""
         self._content_type = val
 
-
 class BindingRequest(DaprRequest):
     """A request data representation for invoke_binding API.
 
@@ -228,7 +224,7 @@ class BindingRequest(DaprRequest):
         metadata (Dict[str, str]): the metadata sent to the binding.
     """
 
-    def __init__(self, data: Union[str, bytes], binding_metadata: Dict[str, str] = {}):
+    def __init__(self, data: Union[str, bytes], binding_metadata: Optional[Dict[str, str]] = None):
         """Inits BindingRequest with data and metadata if given.
 
         Args:
@@ -238,9 +234,9 @@ class BindingRequest(DaprRequest):
         Raises:
             ValueError: data is not bytes or str.
         """
-        super(BindingRequest, self).__init__(())
+        super().__init__(())
         self.data = data  # type: ignore
-        self._binding_metadata = binding_metadata
+        self._binding_metadata = binding_metadata or {}
 
     @property
     def data(self) -> bytes:
@@ -261,13 +257,11 @@ class BindingRequest(DaprRequest):
         """Gets the metadata for output binding."""
         return self._binding_metadata
 
-
 class TransactionOperationType(Enum):
     """Represents the type of operation for a Dapr Transaction State Api Call"""
 
     upsert = 'upsert'
     delete = 'delete'
-
 
 class TransactionalStateOperation:
     """An upsert or delete operation for a state transaction, 'upsert' by default.
@@ -326,7 +320,6 @@ class TransactionalStateOperation:
         """Gets etag."""
         return self._operation_type
 
-
 class EncryptRequestIterator(DaprRequest):
     """An iterator for cryptography encrypt API requests.
 
@@ -372,7 +365,6 @@ class EncryptRequestIterator(DaprRequest):
 
         self.seq += 1
         return request_proto
-
 
 class DecryptRequestIterator(DaprRequest):
     """An iterator for cryptography decrypt API requests.
@@ -420,11 +412,152 @@ class DecryptRequestIterator(DaprRequest):
         self.seq += 1
         return request_proto
 
+@dataclass
+class Tool:
+    """Tool definition for LLM tool calling (simplified structure)."""
+
+    type: str  # Always "function" for now
+    name: str
+    description: str
+    parameters: Optional[str] = None  # JSON schema as string
+
+# Legacy support - will be removed in future versions
+@dataclass
+class ToolFunction:
+    """DEPRECATED: Function definition for a tool. Use Tool directly instead."""
+
+    name: str
+    description: str
+    parameters: Optional[str] = None  # JSON schema as string
+
+@dataclass
+class TextContent:
+    """Simple text content part."""
+    text: str
+
+@dataclass
+class ToolCallContent:
+    """Tool call as content part."""
+    id: str
+    type: str  # "function"
+    name: str
+    arguments: str  # Function arguments as JSON string
+
+@dataclass
+class ToolResultContent:
+    """Tool result as content part."""
+    tool_call_id: str
+    name: str
+    content: str  # Tool result as text
+    is_error: Optional[bool] = None  # Indicates tool execution error
+
+@dataclass
+class ContentPart:
+    """Content part supporting text and tool calling."""
+    # One of these will be set
+    text: Optional[TextContent] = None
+    tool_call: Optional[ToolCallContent] = None
+    tool_result: Optional[ToolResultContent] = None
 
 @dataclass
 class ConversationInput:
     """A single input message for the conversation."""
 
-    content: str
+    # DEPRECATED: Use parts instead for new implementations
+    content: Optional[str] = None
     role: Optional[str] = None
     scrub_pii: Optional[bool] = None
+
+    # NEW: Content parts for rich content within each actor's input
+    parts: Optional[List[ContentPart]] = None
+
+    @classmethod
+    def from_text(cls, text: str, role: Optional[str] = None) -> 'ConversationInput':
+        """Create a ConversationInput with text content."""
+        return cls(
+            role=role,
+            parts=[ContentPart(text=TextContent(text=text))]
+        )
+
+    @classmethod
+    def from_tool_call(
+        cls, tool_call: ToolCallContent, role: str = "assistant"
+    ) -> 'ConversationInput':
+        """Create a ConversationInput with a tool call."""
+        return cls(
+            role=role,
+            parts=[ContentPart(tool_call=tool_call)]
+        )
+
+    @classmethod
+    def from_tool_result(
+        cls, tool_result: ToolResultContent, role: str = "tool"
+    ) -> 'ConversationInput':
+        """Create a ConversationInput with a tool result."""
+        return cls(
+            role=role,
+            parts=[ContentPart(tool_result=tool_result)]
+        )
+
+    @classmethod
+    def from_tool_result_simple(
+        cls, tool_name: str, call_id: str, result: str
+    ) -> 'ConversationInput':
+        """Create ConversationInput from tool result (simple interface)."""
+        return cls(
+            role="tool",
+            parts=[
+                ContentPart(
+                    tool_result=ToolResultContent(
+                        tool_call_id=call_id,
+                        name=tool_name,
+                        content=result
+                    )
+                )
+            ]
+        )
+
+    # NOTE: Tool definitions are now passed at the request level, not as content parts
+
+    def to_proto(self) -> api_v1.ConversationInput:
+        """Convert to protobuf ConversationInput."""
+        proto_input = api_v1.ConversationInput()
+
+        # Set basic fields
+        if self.role:
+            proto_input.role = self.role
+        if self.scrub_pii is not None:
+            proto_input.scrubPII = self.scrub_pii
+
+        # Handle content parts
+        if self.parts:
+            for part in self.parts:
+                proto_part = self._content_part_to_proto(part)
+                proto_input.parts.append(proto_part)
+        elif self.content:
+            # Legacy content support
+            text_part = api_v1.ContentPart()
+            text_part.text.text = self.content
+            proto_input.parts.append(text_part)
+
+        return proto_input
+
+    def _content_part_to_proto(self, part: ContentPart) -> api_v1.ContentPart:
+        """Convert ContentPart to protobuf ContentPart."""
+        proto_part = api_v1.ContentPart()
+
+        if part.text:
+            proto_part.text.text = part.text.text
+        elif part.tool_call:
+            proto_part.tool_call.id = part.tool_call.id
+            proto_part.tool_call.type = part.tool_call.type
+            proto_part.tool_call.name = part.tool_call.name
+            proto_part.tool_call.arguments = part.tool_call.arguments
+        elif part.tool_result:
+            proto_part.tool_result.tool_call_id = part.tool_result.tool_call_id
+            proto_part.tool_result.name = part.tool_result.name
+            proto_part.tool_result.content = part.tool_result.content
+            if part.tool_result.is_error is not None:
+                proto_part.tool_result.is_error = part.tool_result.is_error
+
+        return proto_part

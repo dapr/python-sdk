@@ -33,7 +33,7 @@ with DaprClient() as d:
         print(f'Result: {output.result}')
 
     # Check for usage information
-    if response.usage:
+    if hasattr(response, 'usage') and response.usage:
         prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
         total_tokens = response.usage.total_tokens

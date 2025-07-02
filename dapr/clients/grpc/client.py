@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """
 Copyright 2023 The Dapr Authors
@@ -12,89 +11,87 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import json
+import socket
 import threading
 import time
-import socket
-import json
 import uuid
-
+from datetime import datetime
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
 from urllib.parse import urlencode
-
 from warnings import warn
 
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any, Iterator
-from typing_extensions import Self
-from datetime import datetime
-from google.protobuf.message import Message as GrpcMessage
-from google.protobuf.empty_pb2 import Empty as GrpcEmpty
-from google.protobuf.any_pb2 import Any as GrpcAny
-
 import grpc  # type: ignore
+from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.empty_pb2 import Empty as GrpcEmpty
+from google.protobuf.message import Message as GrpcMessage
 from grpc import (  # type: ignore
-    UnaryUnaryClientInterceptor,
-    UnaryStreamClientInterceptor,
-    StreamUnaryClientInterceptor,
-    StreamStreamClientInterceptor,
     RpcError,
+    StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    UnaryUnaryClientInterceptor,
 )
+from typing_extensions import Self
 
-from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
-from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
+from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
+from dapr.clients.grpc._helpers import (
+    MetadataTuple,
+    getWorkflowRuntimeStatus,
+    to_bytes,
+    validateNotBlankString,
+    validateNotNone,
+)
+from dapr.clients.grpc._request import (
+    BindingRequest,
+    ConversationInput,
+    DecryptRequestIterator,
+    EncryptRequestIterator,
+    InvokeMethodRequest,
+    TransactionalStateOperation,
+)
+from dapr.clients.grpc._response import (
+    BindingResponse,
+    BulkStateItem,
+    BulkStatesResponse,
+    ConfigurationResponse,
+    ConfigurationWatcher,
+    ConversationResponse,
+    ConversationResult,
+    ConversationStreamChunk,
+    ConversationStreamComplete,
+    ConversationStreamResponse,
+    ConversationUsage,
+    DaprResponse,
+    DecryptResponse,
+    EncryptResponse,
+    GetBulkSecretResponse,
+    GetMetadataResponse,
+    GetSecretResponse,
+    GetWorkflowResponse,
+    InvokeMethodResponse,
+    QueryResponse,
+    QueryResponseItem,
+    RegisteredComponents,
+    StartWorkflowResponse,
+    StateResponse,
+    TopicEventResponse,
+    TryLockResponse,
+    UnlockResponse,
+    UnlockResponseStatus,
+)
+from dapr.clients.grpc._state import StateItem, StateOptions
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
+from dapr.clients.grpc.subscription import StreamInactiveError, Subscription
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
-from dapr.proto import api_v1, api_service_v1, common_v1
+from dapr.conf.helpers import GrpcEndpoint
+from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
-
-from dapr.clients.grpc._helpers import (
-    MetadataTuple,
-    to_bytes,
-    validateNotNone,
-    validateNotBlankString,
-)
-from dapr.conf.helpers import GrpcEndpoint
-from dapr.clients.grpc._request import (
-    InvokeMethodRequest,
-    BindingRequest,
-    TransactionalStateOperation,
-    EncryptRequestIterator,
-    DecryptRequestIterator,
-    ConversationInput,
-)
-from dapr.clients.grpc._response import (
-    BindingResponse,
-    DaprResponse,
-    GetSecretResponse,
-    GetBulkSecretResponse,
-    GetMetadataResponse,
-    InvokeMethodResponse,
-    UnlockResponseStatus,
-    StateResponse,
-    BulkStatesResponse,
-    BulkStateItem,
-    ConfigurationResponse,
-    QueryResponse,
-    QueryResponseItem,
-    RegisteredComponents,
-    ConfigurationWatcher,
-    TryLockResponse,
-    UnlockResponse,
-    GetWorkflowResponse,
-    StartWorkflowResponse,
-    EncryptResponse,
-    DecryptResponse,
-    TopicEventResponse,
-    ConversationResponse,
-    ConversationResult,
-    ConversationStreamResponse,
-    ConversationUsage,
-)
 
 
 class DaprGrpcClient:
@@ -182,7 +179,9 @@ class DaprGrpcClient:
                 options=options,
             )
 
-        self._channel = grpc.intercept_channel(self._channel, DaprClientTimeoutInterceptor())  # type: ignore
+        self._channel = grpc.intercept_channel(
+            self._channel, DaprClientTimeoutInterceptor()
+        )  # type: ignore
 
         if settings.DAPR_API_TOKEN:
             api_token_interceptor = DaprClientInterceptor(
@@ -1041,7 +1040,6 @@ class DaprGrpcClient:
         Metadata for request can be passed with the secret_metadata field and custom
         metadata can be passed with metadata field.
 
-
         The example gets a secret from secret store:
 
             from dapr.clients import DaprClient
@@ -1091,7 +1089,6 @@ class DaprGrpcClient:
 
         This gets all granted secrets from secret store.
         Metadata for request can be passed with the secret_metadata field.
-
 
         The example gets all secrets from secret store:
 
@@ -1173,9 +1170,9 @@ class DaprGrpcClient:
         self,
         store_name: str,
         keys: List[str],
-        handler: Callable[[Text, ConfigurationResponse], None],
+        handler: Callable[[str, ConfigurationResponse], None],
         config_metadata: Optional[Dict[str, str]] = dict(),
-    ) -> Text:
+    ) -> str:
         """Gets changed value from a config store with a key
 
         The example gets value from a config store:
@@ -1725,53 +1722,173 @@ class DaprGrpcClient:
         inputs: List[ConversationInput],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, GrpcAny]] = None,
+        parameters: Optional[Dict[str, Union[str, int, float, bool, GrpcAny]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
+        tools: Optional[List] = None,
     ) -> ConversationResponse:
         """Invoke an LLM using the conversation API (Alpha).
 
         Args:
             name: Name of the LLM component to invoke
-            inputs: List of conversation inputs
+            inputs: List of conversation inputs (may include tool definitions and tool results)
             context_id: Optional ID for continuing an existing chat
             parameters: Optional custom parameters for the request
             metadata: Optional metadata for the component
             scrub_pii: Optional flag to scrub PII from inputs and outputs
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+            tools: Optional list of tools available for LLM use (passed at request level)
 
         Returns:
-            ConversationResponse containing the conversation results
+            ConversationResponse containing the conversation results (may include tool calls)
 
         Raises:
             DaprGrpcError: If the Dapr runtime returns an error
         """
 
-        inputs_pb = [
-            api_v1.ConversationInput(content=inp.content, role=inp.role, scrubPII=inp.scrub_pii)
-            for inp in inputs
-        ]
+        def convert_content_part_to_pb(part):
+            """Convert ContentPart to protobuf."""
+            content_part_pb = api_v1.ContentPart()
+
+            if part.text:
+                content_part_pb.text.text = part.text.text
+            elif part.tool_call:
+                content_part_pb.tool_call.id = part.tool_call.id
+                content_part_pb.tool_call.type = part.tool_call.type
+                content_part_pb.tool_call.name = part.tool_call.name
+                content_part_pb.tool_call.arguments = part.tool_call.arguments
+            elif part.tool_result:
+                content_part_pb.tool_result.tool_call_id = part.tool_result.tool_call_id
+                content_part_pb.tool_result.name = part.tool_result.name
+                content_part_pb.tool_result.content = part.tool_result.content
+                if part.tool_result.is_error is not None:
+                    content_part_pb.tool_result.is_error = part.tool_result.is_error
+            elif part.tool_definitions:
+                for tool in part.tool_definitions.tools:
+                    tool_pb = content_part_pb.tool_definitions.tools.add()
+                    tool_pb.type = tool.type
+                    tool_pb.name = tool.name
+                    tool_pb.description = tool.description
+                    if tool.parameters:
+                        tool_pb.parameters = tool.parameters
+
+            return content_part_pb
+
+        inputs_pb = []
+        for inp in inputs:
+            input_pb = api_v1.ConversationInput()
+
+            # Set deprecated fields for backward compatibility
+            if inp.content:
+                input_pb.content = inp.content
+            if inp.role:
+                input_pb.role = inp.role
+            if inp.scrub_pii is not None:
+                input_pb.scrubPII = inp.scrub_pii
+
+            # Set new parts field
+            if inp.parts:
+                for part in inp.parts:
+                    part_pb = convert_content_part_to_pb(part)
+                    input_pb.parts.append(part_pb)
+
+            inputs_pb.append(input_pb)
+
+        # Convert parameters to protobuf Any objects for better developer experience
+        from dapr.clients.grpc._helpers import convert_parameters_for_grpc
+        converted_parameters = convert_parameters_for_grpc(parameters)
+
+        # Convert tools to protobuf format
+        tools_pb = []
+        if tools:
+            for tool in tools:
+                tool_pb = api_v1.Tool()
+                tool_pb.type = tool.type
+                tool_pb.name = tool.name
+                tool_pb.description = tool.description
+                if tool.parameters:
+                    tool_pb.parameters = tool.parameters
+                tools_pb.append(tool_pb)
 
         request = api_v1.ConversationRequest(
             name=name,
             inputs=inputs_pb,
             contextID=context_id,
-            parameters=parameters or {},
+            parameters=converted_parameters,
             metadata=metadata or {},
             scrubPII=scrub_pii,
             temperature=temperature,
+            tools=tools_pb,
         )
 
         try:
             response, call = self.retry_policy.run_rpc(self._stub.ConverseAlpha1.with_call, request)
 
-            outputs = [
-                ConversationResult(result=output.result, parameters=output.parameters)
-                for output in response.outputs
-            ]
+            def convert_content_part_from_pb(part_pb):
+                """Convert protobuf ContentPart to our dataclass."""
+                from dapr.clients.grpc._request import Tool
+                from dapr.clients.grpc._response import ContentPart as ResponseContentPart
+                from dapr.clients.grpc._response import TextContent as ResponseTextContent
+                from dapr.clients.grpc._response import ToolCallContent as ResponseToolCallContent
+                from dapr.clients.grpc._response import (
+                    ToolResultContent as ResponseToolResultContent,
+                )
 
-            return ConversationResponse(context_id=response.contextID, outputs=outputs)
+                if part_pb.HasField('text'):
+                    return ResponseContentPart(text=ResponseTextContent(text=part_pb.text.text))
+                elif part_pb.HasField('tool_call'):
+                    return ResponseContentPart(tool_call=ResponseToolCallContent(
+                        id=part_pb.tool_call.id,
+                        type=part_pb.tool_call.type,
+                        name=part_pb.tool_call.name,
+                        arguments=part_pb.tool_call.arguments
+                    ))
+                elif part_pb.HasField('tool_result'):
+                    return ResponseContentPart(tool_result=ResponseToolResultContent(
+                        tool_call_id=part_pb.tool_result.tool_call_id,
+                        name=part_pb.tool_result.name,
+                        content=part_pb.tool_result.content,
+                        is_error=part_pb.tool_result.is_error if part_pb.tool_result.HasField('is_error') else None
+                    ))
+                elif part_pb.HasField('tool_definitions'):
+                    tools = []
+                    for tool_pb in part_pb.tool_definitions.tools:
+                        tools.append(Tool(
+                            type=tool_pb.type,
+                            name=tool_pb.name,
+                            description=tool_pb.description,
+                            parameters=tool_pb.parameters if tool_pb.parameters else None
+                        ))
+                    # Note: We don't typically return tool definitions in responses
+                    return None
+
+                return None
+
+            outputs = []
+            for output in response.outputs:
+                parts = []
+                if output.parts:
+                    for part_pb in output.parts:
+                        part = convert_content_part_from_pb(part_pb)
+                        if part:
+                            parts.append(part)
+
+                result = ConversationResult(
+                    result=output.result if output.result else None,  # Backward compatibility
+                    parameters=dict(output.parameters),
+                    finish_reason=output.finish_reason if output.HasField('finish_reason') else None,
+                    parts=parts if parts else None
+                )
+                outputs.append(result)
+
+            # Extract usage information
+            usage = None
+            if response.HasField('usage'):
+                from dapr.clients.grpc._response import ConversationUsage
+                usage = ConversationUsage.from_proto(response.usage)
+
+            return ConversationResponse(context_id=response.contextID, outputs=outputs, usage=usage)
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
@@ -1781,77 +1898,174 @@ class DaprGrpcClient:
         inputs: List[ConversationInput],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, GrpcAny]] = None,
+        parameters: Optional[Dict[str, Union[str, int, float, bool, GrpcAny]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
+        tools: Optional[List] = None,
     ) -> Iterator[ConversationStreamResponse]:
         """Invoke an LLM using the streaming conversation API (Alpha).
 
         Args:
             name: Name of the LLM component to invoke
-            inputs: List of conversation inputs
+            inputs: List of conversation inputs (may include tool definitions and tool results)
             context_id: Optional ID for continuing an existing chat
             parameters: Optional custom parameters for the request
             metadata: Optional metadata for the component
             scrub_pii: Optional flag to scrub PII from inputs and outputs
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+            tools: Optional list of tools available for LLM use (passed at request level)
 
         Yields:
-            ConversationStreamResponse containing conversation result chunks
+            ConversationStreamResponse containing conversation result chunks (may include tool calls)
 
         Raises:
             DaprGrpcError: If the Dapr runtime returns an error
         """
         from dapr.clients.grpc._response import ConversationStreamResponse
 
-        inputs_pb = [
-            api_v1.ConversationInput(content=inp.content, role=inp.role, scrubPII=inp.scrub_pii)
-            for inp in inputs
-        ]
+        def convert_content_part_to_pb(part):
+            """Convert ContentPart to protobuf."""
+            content_part_pb = api_v1.ContentPart()
+
+            if part.text:
+                content_part_pb.text.text = part.text.text
+            elif part.tool_call:
+                content_part_pb.tool_call.id = part.tool_call.id
+                content_part_pb.tool_call.type = part.tool_call.type
+                content_part_pb.tool_call.name = part.tool_call.name
+                content_part_pb.tool_call.arguments = part.tool_call.arguments
+            elif part.tool_result:
+                content_part_pb.tool_result.tool_call_id = part.tool_result.tool_call_id
+                content_part_pb.tool_result.name = part.tool_result.name
+                content_part_pb.tool_result.content = part.tool_result.content
+                if part.tool_result.is_error is not None:
+                    content_part_pb.tool_result.is_error = part.tool_result.is_error
+            elif part.tool_definitions:
+                for tool in part.tool_definitions.tools:
+                    tool_pb = content_part_pb.tool_definitions.tools.add()
+                    tool_pb.type = tool.type
+                    tool_pb.name = tool.name
+                    tool_pb.description = tool.description
+                    if tool.parameters:
+                        tool_pb.parameters = tool.parameters
+
+            return content_part_pb
+
+        inputs_pb = []
+        for inp in inputs:
+            input_pb = api_v1.ConversationInput()
+
+            # Set deprecated fields for backward compatibility
+            if inp.content:
+                input_pb.content = inp.content
+            if inp.role:
+                input_pb.role = inp.role
+            if inp.scrub_pii is not None:
+                input_pb.scrubPII = inp.scrub_pii
+
+            # Set new parts field
+            if inp.parts:
+                for part in inp.parts:
+                    part_pb = convert_content_part_to_pb(part)
+                    input_pb.parts.append(part_pb)
+
+            inputs_pb.append(input_pb)
+
+        # Convert parameters to protobuf Any objects for better developer experience
+        from dapr.clients.grpc._helpers import convert_parameters_for_grpc
+        converted_parameters = convert_parameters_for_grpc(parameters)
+
+        # Convert tools to protobuf format
+        tools_pb = []
+        if tools:
+            for tool in tools:
+                tool_pb = api_v1.Tool()
+                tool_pb.type = tool.type
+                tool_pb.name = tool.name
+                tool_pb.description = tool.description
+                if tool.parameters:
+                    tool_pb.parameters = tool.parameters
+                tools_pb.append(tool_pb)
 
         request = api_v1.ConversationRequest(
             name=name,
             inputs=inputs_pb,
             contextID=context_id,
-            parameters=parameters or {},
+            parameters=converted_parameters,
             metadata=metadata or {},
             scrubPII=scrub_pii,
             temperature=temperature,
+            tools=tools_pb,
         )
 
         try:
-            response_stream = self.retry_policy.run_rpc(self._stub.ConverseStreamAlpha1, request)
+            stream = self._stub.ConverseStreamAlpha1(request)
 
-            for response in response_stream:
-                context_id = None
-                result = None
-                usage = None
-                
-                # Handle chunk response
+            for response in stream:
                 if response.HasField('chunk'):
-                    result = ConversationResult(
-                        result=response.chunk.content,
-                        parameters={}
-                    )
-                
-                # Handle completion response
-                elif response.HasField('complete'):
-                    context_id = response.complete.contextID
-                    
-                    # Extract usage information if available
-                    if response.complete.HasField('usage'):
-                        usage = ConversationUsage(
-                            prompt_tokens=response.complete.usage.prompt_tokens,
-                            completion_tokens=response.complete.usage.completion_tokens,
-                            total_tokens=response.complete.usage.total_tokens
+                    # Handle streaming chunk
+                    chunk_pb = response.chunk
+
+                    # Convert parts from protobuf
+                    parts = []
+                    if chunk_pb.parts:
+                        from dapr.clients.grpc._response import ContentPart as ResponseContentPart
+                        from dapr.clients.grpc._response import TextContent as ResponseTextContent
+                        from dapr.clients.grpc._response import (
+                            ToolCallContent as ResponseToolCallContent,
                         )
-                
-                yield ConversationStreamResponse(
-                    context_id=context_id,
-                    result=result,
-                    usage=usage
-                )
+                        from dapr.clients.grpc._response import (
+                            ToolResultContent as ResponseToolResultContent,
+                        )
+
+                        for part_pb in chunk_pb.parts:
+                            if part_pb.HasField('text'):
+                                parts.append(ResponseContentPart(text=ResponseTextContent(text=part_pb.text.text)))
+                            elif part_pb.HasField('tool_call'):
+                                parts.append(ResponseContentPart(tool_call=ResponseToolCallContent(
+                                    id=part_pb.tool_call.id,
+                                    type=part_pb.tool_call.type,
+                                    name=part_pb.tool_call.name,
+                                    arguments=part_pb.tool_call.arguments
+                                )))
+                            elif part_pb.HasField('tool_result'):
+                                parts.append(ResponseContentPart(tool_result=ResponseToolResultContent(
+                                    tool_call_id=part_pb.tool_result.tool_call_id,
+                                    name=part_pb.tool_result.name,
+                                    content=part_pb.tool_result.content,
+                                    is_error=part_pb.tool_result.is_error if part_pb.tool_result.HasField('is_error') else None
+                                )))
+
+                    chunk = ConversationStreamChunk(
+                        parts=parts if parts else [],
+                        context_id=getattr(chunk_pb, 'context_id', None) or getattr(chunk_pb, 'contextID', None),
+                        finish_reason=chunk_pb.finish_reason if chunk_pb.HasField('finish_reason') else None,
+                        chunk_index=chunk_pb.chunk_index if chunk_pb.HasField('chunk_index') else None,
+                        is_delta=chunk_pb.is_delta if chunk_pb.HasField('is_delta') else None
+                    )
+
+                    yield ConversationStreamResponse(chunk=chunk)
+
+                elif response.HasField('complete'):
+                    # Handle completion
+                    complete_pb = response.complete
+
+                    usage = None
+                    if complete_pb.HasField('usage'):
+                        usage = ConversationUsage(
+                            prompt_tokens=complete_pb.usage.prompt_tokens,
+                            completion_tokens=complete_pb.usage.completion_tokens,
+                            total_tokens=complete_pb.usage.total_tokens
+                        )
+
+                    complete = ConversationStreamComplete(
+                        context_id=complete_pb.contextID if complete_pb.HasField('contextID') else None,
+                        usage=usage
+                    )
+
+                    yield ConversationStreamResponse(complete=complete)
+
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
@@ -1861,10 +2075,11 @@ class DaprGrpcClient:
         inputs: List[ConversationInput],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, GrpcAny]] = None,
+        parameters: Optional[Dict[str, Union[str, int, float, bool, GrpcAny]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
+        tools: Optional[List] = None,
     ) -> Iterator[Dict[str, Any]]:
         """Invoke an LLM using the streaming conversation API with JSON response format (Alpha).
 
@@ -1880,6 +2095,7 @@ class DaprGrpcClient:
             metadata: Optional metadata for the component
             scrub_pii: Optional flag to scrub PII from inputs and outputs
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+            tools: Optional list of tools available for LLM use (passed at request level)
 
         Yields:
             Dict[str, Any]: JSON-formatted conversation response chunks with structure:
@@ -1913,6 +2129,7 @@ class DaprGrpcClient:
             metadata=metadata,
             scrub_pii=scrub_pii,
             temperature=temperature,
+            tools=tools,
         ):
             # Transform the chunk to JSON format compatible with common LLM APIs
             chunk_dict = {
@@ -1921,30 +2138,49 @@ class DaprGrpcClient:
                 'usage': None,
             }
 
-            # Handle streaming result chunks
-            if chunk.result and chunk.result.result:
-                chunk_dict['choices'] = [
-                    {
-                        'delta': {
-                            'content': chunk.result.result,
-                            'role': 'assistant'
-                        },
-                        'index': 0,
-                        'finish_reason': None
+            # Handle streaming chunk data
+            if chunk.chunk:
+                choice = {'delta': {}, 'index': 0, 'finish_reason': chunk.chunk.finish_reason}
+
+                # Add content if present in chunk parts
+                if chunk.chunk.parts:
+                    for part in chunk.chunk.parts:
+                        if part.text:
+                            choice['delta']['content'] = part.text.text
+                            choice['delta']['role'] = 'assistant'
+                        elif part.tool_call:
+                            if 'tool_calls' not in choice['delta']:
+                                choice['delta']['tool_calls'] = []
+                            choice['delta']['tool_calls'].append(
+                                {
+                                    'id': part.tool_call.id,
+                                    'type': part.tool_call.type,
+                                    'function': {
+                                        'name': part.tool_call.name,
+                                        'arguments': part.tool_call.arguments,
+                                    },
+                                }
+                            )
+
+                chunk_dict['choices'] = [choice]
+
+                # Handle context ID from chunk
+                if chunk.chunk.context_id:
+                    chunk_dict['context_id'] = chunk.chunk.context_id
+
+            # Handle completion data (final chunk with usage info)
+            if chunk.complete:
+                # Handle context ID from complete
+                if chunk.complete.context_id:
+                    chunk_dict['context_id'] = chunk.complete.context_id
+
+                # Handle usage information
+                if chunk.complete.usage:
+                    chunk_dict['usage'] = {
+                        'prompt_tokens': chunk.complete.usage.prompt_tokens,
+                        'completion_tokens': chunk.complete.usage.completion_tokens,
+                        'total_tokens': chunk.complete.usage.total_tokens,
                     }
-                ]
-
-            # Handle context ID
-            if chunk.context_id:
-                chunk_dict['context_id'] = chunk.context_id
-
-            # Handle usage information (typically in the final chunk)
-            if chunk.usage:
-                chunk_dict['usage'] = {
-                    'prompt_tokens': chunk.usage.prompt_tokens,
-                    'completion_tokens': chunk.usage.completion_tokens,
-                    'total_tokens': chunk.usage.total_tokens,
-                }
 
             yield chunk_dict
 
