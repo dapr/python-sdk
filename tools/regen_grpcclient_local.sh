@@ -17,11 +17,8 @@
 PROTO_PATH="dapr/proto"
 SRC=.
 
-SCRIPT_DIR = Path(__file__).parent
-REPO_ROOT = SCRIPT_DIR.parent
-
-# Local dapr repository path (relative to current directory)
-LOCAL_DAPR_PATH = REPO_ROOT.parent / "dapr"
+# Local dapr repository path (relative to current directory where you are running)
+LOCAL_DAPR_PATH="../dapr"
 
 checkLocalDaprRepo() {
     if [ ! -d "$LOCAL_DAPR_PATH" ]; then

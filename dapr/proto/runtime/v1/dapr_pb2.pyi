@@ -3463,7 +3463,7 @@ class ConversationInput(google.protobuf.message.Message):
     """Scrub PII data that goes into the LLM"""
     @property
     def parts(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ContentPart]:
-        """Content parts for rich content within each agent's input. 
+        """Content parts for rich content within each agent's input.
         In multi-turn conversations the output becomes part of the next request input
         """
 
