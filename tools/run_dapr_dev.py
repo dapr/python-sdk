@@ -29,7 +29,13 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 REPO_ROOT = SCRIPT_DIR.parent
+
+# make sure dapr repo is in the right place
 DAPR_REPO = REPO_ROOT.parent / "dapr"
+if not DAPR_REPO.exists():
+    print(f"❌ Error: Dapr repository not found at {DAPR_REPO}")
+    print("Please clone the dapr repository at ../dapr relative to python-sdk and dapr-agents")
+    sys.exit(1)
 
 
 def load_env_file():
@@ -84,6 +90,7 @@ def load_env_file():
 def get_provider_key(provider, env_vars, providers_alt_keys):
     """Get the API key for a provider."""
     provider_prefixes = providers_alt_keys.get(provider, [provider])
+    value = None
     for prefix in provider_prefixes:
         key = f"{prefix}_API_KEY"
         if key in env_vars:
@@ -256,12 +263,6 @@ def run_daprd(args):
 
     # Load environment variables from .env file
     env_vars = load_env_file()
-
-    # Set environment variables for the process
-    # Some components need the environment variables to be available at runtime
-    for key, value in env_vars.items():
-        os.environ[key] = value
-
     # Special mapping for Gemini - it expects GEMINI_API_KEY but we have GOOGLE_AI_API_KEY
     if "GOOGLE_AI_API_KEY" in env_vars:
         os.environ["GEMINI_API_KEY"] = env_vars["GOOGLE_AI_API_KEY"]
@@ -309,6 +310,7 @@ def run_daprd(args):
 
     try:
         # Run the sidecar with explicit environment inheritance
+        # Set environment variables for the process
         env = os.environ.copy()
         env.update(env_vars)
         subprocess.run(cmd, check=True, env=env)

@@ -1,4 +1,3 @@
-
 """
 Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -2050,20 +2049,7 @@ class DaprGrpcClient:
                 elif response.HasField('complete'):
                     # Handle completion
                     complete_pb = response.complete
-
-                    usage = None
-                    if complete_pb.HasField('usage'):
-                        usage = ConversationUsage(
-                            prompt_tokens=complete_pb.usage.prompt_tokens,
-                            completion_tokens=complete_pb.usage.completion_tokens,
-                            total_tokens=complete_pb.usage.total_tokens
-                        )
-
-                    complete = ConversationStreamComplete(
-                        context_id=complete_pb.contextID if complete_pb.HasField('contextID') else None,
-                        usage=usage
-                    )
-
+                    complete = ConversationStreamComplete.from_proto(complete_pb)
                     yield ConversationStreamResponse(complete=complete)
 
         except RpcError as err:
