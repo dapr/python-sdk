@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,6 +72,7 @@ class DaprRequest:
             return tuple_to_dict(self._metadata)
         return self._metadata
 
+
 class InvokeMethodRequest(DaprRequest):
     """A request data representation for invoke_method API.
 
@@ -103,10 +106,10 @@ class InvokeMethodRequest(DaprRequest):
         Raises:
             ValueError: data is not supported.
         """
-        super().__init__(())
+        super(InvokeMethodRequest, self).__init__(())
 
         self._content_type = content_type
-        self._http_verb = None
+        self._http_verb: Optional[str] = None
         self._http_querystring: Dict[str, str] = {}
 
         self.set_data(data)
@@ -124,7 +127,7 @@ class InvokeMethodRequest(DaprRequest):
     @http_verb.setter
     def http_verb(self, val: Optional[str]) -> None:
         """Sets HTTP method to Dapr invocation request."""
-        if val not in self.HTTP_METHODS:
+        if val is not None and val not in self.HTTP_METHODS:
             raise ValueError(f'{val} is the invalid HTTP verb.')
         self._http_verb = val
 
@@ -213,6 +216,7 @@ class InvokeMethodRequest(DaprRequest):
         """Sets content type for bytes data."""
         self._content_type = val
 
+
 class BindingRequest(DaprRequest):
     """A request data representation for invoke_binding API.
 
@@ -224,7 +228,7 @@ class BindingRequest(DaprRequest):
         metadata (Dict[str, str]): the metadata sent to the binding.
     """
 
-    def __init__(self, data: Union[str, bytes], binding_metadata: Optional[Dict[str, str]] = None):
+    def __init__(self, data: Union[str, bytes], binding_metadata: Dict[str, str] = {}):
         """Inits BindingRequest with data and metadata if given.
 
         Args:
@@ -234,9 +238,9 @@ class BindingRequest(DaprRequest):
         Raises:
             ValueError: data is not bytes or str.
         """
-        super().__init__(())
+        super(BindingRequest, self).__init__(())
         self.data = data  # type: ignore
-        self._binding_metadata = binding_metadata or {}
+        self._binding_metadata = binding_metadata
 
     @property
     def data(self) -> bytes:
@@ -257,11 +261,13 @@ class BindingRequest(DaprRequest):
         """Gets the metadata for output binding."""
         return self._binding_metadata
 
+
 class TransactionOperationType(Enum):
     """Represents the type of operation for a Dapr Transaction State Api Call"""
 
     upsert = 'upsert'
     delete = 'delete'
+
 
 class TransactionalStateOperation:
     """An upsert or delete operation for a state transaction, 'upsert' by default.
@@ -279,6 +285,7 @@ class TransactionalStateOperation:
         data: Optional[Union[bytes, str]] = None,
         etag: Optional[str] = None,
         operation_type: TransactionOperationType = TransactionOperationType.upsert,
+        metadata: Optional[Dict[str, str]] = None,
     ):
         """Initializes TransactionalStateOperation item from
         :obj:`runtime_v1.TransactionalStateOperation`.
@@ -299,6 +306,7 @@ class TransactionalStateOperation:
         self._data = data  # type: ignore
         self._etag = etag
         self._operation_type = operation_type
+        self._metadata = metadata
 
     @property
     def key(self) -> str:
@@ -319,6 +327,12 @@ class TransactionalStateOperation:
     def operation_type(self) -> TransactionOperationType:
         """Gets etag."""
         return self._operation_type
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        """Gets metadata."""
+        return {} if self._metadata is None else self._metadata
+
 
 class EncryptRequestIterator(DaprRequest):
     """An iterator for cryptography encrypt API requests.
@@ -365,6 +379,7 @@ class EncryptRequestIterator(DaprRequest):
 
         self.seq += 1
         return request_proto
+
 
 class DecryptRequestIterator(DaprRequest):
     """An iterator for cryptography decrypt API requests.
