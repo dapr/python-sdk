@@ -13,15 +13,15 @@ The Dapr Python SDK provides a built-in Dapr Workflow extension, `dapr.ext.workf
 
 You can download and install the Dapr Workflow extension with:
 
-{{< tabs Stable Development>}}
+{{< tabpane text=true >}}
 
-{{% codetab %}}
+{{% tab header="Stable" %}}
 ```bash
 pip install dapr-ext-workflow
 ```
-{{% /codetab %}}
+{{% /tab %}}
 
-{{% codetab %}}
+{{% tab header="Development" %}}
 {{% alert title="Note" color="warning" %}}
 The development package will contain features and behavior that will be compatible with the pre-release version of the Dapr runtime. Make sure to uninstall any stable versions of the Python SDK extension before installing the `dapr-dev` package.
 {{% /alert %}}
@@ -29,9 +29,9 @@ The development package will contain features and behavior that will be compatib
 ```bash
 pip install dapr-ext-workflow-dev
 ```
-{{% /codetab %}}
+{{% /tab %}}
 
-{{< /tabs >}}
+{{< /tabpane >}}
 
 ## Example
 
@@ -88,11 +88,11 @@ if __name__ == '__main__':
 ```
 
 - Learn more about authoring and managing workflows: 
-  - [How-To: Author a workflow]({{< ref howto-author-workflow.md >}}).
-  - [How-To: Manage a workflow]({{< ref howto-manage-workflow.md >}}).
+  - [How-To: Author a workflow]({{% ref howto-author-workflow.md %}}).
+  - [How-To: Manage a workflow]({{% ref howto-manage-workflow.md %}}).
   - 
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/workflow) for code samples and instructions to try out Dapr Workflow:
-  - [Simple workflow example]({{< ref python-workflow.md >}})
+  - [Simple workflow example]({{% ref python-workflow.md %}})
   - [Task chaining example](https://github.com/dapr/python-sdk/blob/main/examples/workflow/task_chaining.py)
   - [Fan-out/Fan-in example](https://github.com/dapr/python-sdk/blob/main/examples/workflow/fan_out_fan_in.py)
   - [Child workflow example](https://github.com/dapr/python-sdk/blob/main/examples/workflow/child_workflow.py)

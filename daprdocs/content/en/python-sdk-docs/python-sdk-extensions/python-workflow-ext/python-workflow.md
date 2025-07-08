@@ -20,10 +20,10 @@ In the Python example project, the `simple.py` file contains the setup of the ap
 - The registration of the workflow and workflow activities 
 
 ## Prerequisites
-- [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
-- Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
+- [Dapr CLI]({{% ref install-dapr-cli.md %}}) installed
+- Initialized [Dapr environment]({{% ref install-dapr-selfhost.md %}})
 - [Python 3.9+](https://www.python.org/downloads/) installed
-- [Dapr Python package]({{< ref "python#installation" >}}) and the [workflow extension]({{< ref "python-workflow/_index.md" >}}) installed
+- [Dapr Python package]({{% ref "python#installation" %}}) and the [workflow extension]({{% ref "python-workflow/_index.md" %}}) installed
 - Verify you're using the latest proto bindings
 
 ## Set up the environment
@@ -161,6 +161,6 @@ When you run the application, several key workflow features are shown:
    wf_client.purge_workflow(instance_id=instance_id)
    ```
 ## Next steps
-- [Learn more about Dapr workflow]({{< ref workflow-overview.md >}})
-- [Workflow API reference]({{< ref workflow_api.md >}})
+- [Learn more about Dapr workflow]({{% ref workflow-overview.md %}})
+- [Workflow API reference]({{% ref workflow_api.md %}})
 - [Try implementing more complex workflow patterns](https://github.com/dapr/python-sdk/tree/main/examples/workflow)

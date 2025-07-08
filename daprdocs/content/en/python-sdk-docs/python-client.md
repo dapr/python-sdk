@@ -9,13 +9,13 @@ description: How to get up and running with the Dapr Python SDK
 The Dapr client package allows you to interact with other Dapr applications from a Python application.
 
 {{% alert title="Note" color="primary" %}}
- If you haven't already, [try out one of the quickstarts]({{< ref quickstarts >}}) for a quick walk-through on how to use the Dapr Python SDK with an API building block.
+ If you haven't already, [try out one of the quickstarts]({{% ref quickstarts %}}) for a quick walk-through on how to use the Dapr Python SDK with an API building block.
 
 {{% /alert %}}
 
 ## Prerequisites
 
-[Install the Dapr Python package]({{< ref "python#installation" >}}) before getting started.
+[Install the Dapr Python package]({{% ref "python#installation" %}}) before getting started.
 
 ## Import the client package
 
@@ -140,7 +140,7 @@ except DaprGrpcError as err:
 
 ## Building blocks
 
-The Python SDK allows you to interface with all of the [Dapr building blocks]({{< ref building-blocks >}}).
+The Python SDK allows you to interface with all of the [Dapr building blocks]({{% ref building-blocks %}}).
 
 ### Invoke a service
 
@@ -164,7 +164,7 @@ If this variable is not set, the endpoint value is derived from the `DAPR_RUNTIM
 The base endpoint for gRPC calls is the one used for the client initialisation ([explained above](#initialising-the-client)).
 
 
-- For a full guide on service invocation visit [How-To: Invoke a service]({{< ref howto-invoke-discover-services.md >}}).
+- For a full guide on service invocation visit [How-To: Invoke a service]({{% ref howto-invoke-discover-services.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/invoke-simple) for code samples and instructions to try out service invocation.
 
 ### Save & get application state
@@ -183,7 +183,7 @@ with DaprClient() as d:
     d.delete_state(store_name="statestore", key="key1")
 ```
 
-- For a full list of state operations visit [How-To: Get & save state]({{< ref howto-get-save-state.md >}}).
+- For a full list of state operations visit [How-To: Get & save state]({{% ref howto-get-save-state.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store) for code samples and instructions to try out state management.
 
 ### Query application state (Alpha)
@@ -213,7 +213,7 @@ with DaprClient() as d:
         )
 ```
 
-- For a full list of state store query options visit [How-To: Query state]({{< ref howto-state-query-api.md >}}).
+- For a full list of state store query options visit [How-To: Query state]({{% ref howto-state-query-api.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/state_store_query) for code samples and instructions to try out state store querying.
 
 ### Publish & subscribe
@@ -302,7 +302,7 @@ def mytopic_important(event: v1.Event) -> None:
           ' content_type="{event.content_type}"',flush=True)
 ```
 
-- For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
+- For more information about pub/sub, visit [How-To: Publish & subscribe]({{% ref howto-publish-subscribe.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/pubsub-simple) for code samples and instructions to try out pub/sub.
 
 #### Streaming message subscription
@@ -428,7 +428,7 @@ if __name__ == '__main__':
     main()
 ```
 
-- For more information about pub/sub, visit [How-To: Publish & subscribe]({{< ref howto-publish-subscribe.md >}}).
+- For more information about pub/sub, visit [How-To: Publish & subscribe]({{% ref howto-publish-subscribe.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/pubsub-simple) for code samples and instructions to try out streaming pub/sub.
 
 ### Conversation (Alpha)
@@ -437,7 +437,7 @@ if __name__ == '__main__':
 The Dapr Conversation API is currently in alpha.
 {{% /alert %}}
 
-Since version 1.15 Dapr offers developers the capability to securely and reliably interact with Large Language Models (LLM) through the [Conversation API]({{< ref conversation-overview.md >}}).
+Since version 1.15 Dapr offers developers the capability to securely and reliably interact with Large Language Models (LLM) through the [Conversation API]({{% ref conversation-overview.md %}}).
 
 ```python
 from dapr.clients import DaprClient
@@ -472,7 +472,7 @@ with DaprClient() as d:
     resp = d.invoke_binding(binding_name='kafkaBinding', operation='create', data='{"message":"Hello World"}')
 ```
 
-- For a full guide on output bindings visit [How-To: Use bindings]({{< ref howto-bindings.md >}}).
+- For a full guide on output bindings visit [How-To: Use bindings]({{% ref howto-bindings.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/main/examples/invoke-binding) for code samples and instructions to try out output bindings.
 
 ### Retrieve secrets
@@ -484,7 +484,7 @@ with DaprClient() as d:
     resp = d.get_secret(store_name='localsecretstore', key='secretKey')
 ```
 
-- For a full guide on secrets visit [How-To: Retrieve secrets]({{< ref howto-secrets.md >}}).
+- For a full guide on secrets visit [How-To: Retrieve secrets]({{% ref howto-secrets.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/secret_store) for code samples and instructions to try out retrieving secrets
 
 ### Configuration
@@ -529,7 +529,7 @@ async def executeConfiguration():
 asyncio.run(executeConfiguration())
 ```
 
-- Learn more about managing configurations via the [How-To: Manage configuration]({{< ref howto-manage-configuration.md >}}) guide.
+- Learn more about managing configurations via the [How-To: Manage configuration]({{% ref howto-manage-configuration.md %}}) guide.
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/configuration) for code samples and instructions to try out configuration.
 
 ### Distributed Lock
@@ -560,7 +560,7 @@ def main():
         print('We tried to unlock it anyway and got back [%s]' % unlock_result.status)
 ```
 
-- Learn more about using a distributed lock: [How-To: Use a lock]({{< ref howto-use-distributed-lock.md >}}).
+- Learn more about using a distributed lock: [How-To: Use a lock]({{% ref howto-use-distributed-lock.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/blob/master/examples/distributed_lock) for code samples and instructions to try out distributed lock.
 
 ### Cryptography
@@ -594,7 +594,7 @@ def main():
         print(decrypt_bytes.decode())  # The secret is "passw0rd"
 ```
 
-- For a full list of state operations visit [How-To: Use the cryptography APIs]({{< ref howto-cryptography.md >}}).
+- For a full list of state operations visit [How-To: Use the cryptography APIs]({{% ref howto-cryptography.md %}}).
 - Visit [Python SDK examples](https://github.com/dapr/python-sdk/tree/master/examples/crypto) for code samples and instructions to try out cryptography
 
 ## Related links
