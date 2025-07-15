@@ -16,24 +16,24 @@ Dapr offers a variety of subpackages to help with the development of Python appl
 
 ## Prerequisites
 
-- [Dapr CLI]({{< ref install-dapr-cli.md >}}) installed
-- Initialized [Dapr environment]({{< ref install-dapr-selfhost.md >}})
+- [Dapr CLI]({{% ref install-dapr-cli.md %}}) installed
+- Initialized [Dapr environment]({{% ref install-dapr-selfhost.md %}})
 - [Python 3.9+](https://www.python.org/downloads/) installed
 
 ## Installation
 
 To get started with the Python SDK, install the main Dapr Python SDK package. 
 
-{{< tabs Stable Development>}}
+{{< tabpane text=true >}}
 
-{{% codetab %}}
+{{% tab header="Stable" %}}
 <!--stable-->
 ```bash
 pip install dapr
 ```
-{{% /codetab %}}
+{{% /tab %}}
 
-{{% codetab %}}
+{{% tab header="Development" %}}
 <!--dev-->
 > **Note:** The development package will contain features and behavior that will be compatible with the pre-release version of the Dapr runtime. Make sure to uninstall any stable versions of the Python SDK before installing the dapr-dev package.
 
@@ -41,9 +41,9 @@ pip install dapr
 pip install dapr-dev
 ```
 
-{{% /codetab %}}
+{{% /tab %}}
 
-{{< /tabs >}}
+{{< /tabpane >}}
 
 
 ## Available subpackages
@@ -57,14 +57,14 @@ Python SDK imports are subpackages included with the main SDK install, but need 
     <div class="card-body">
       <h5 class="card-title"><b>Client</b></h5>
       <p class="card-text">Write Python applications to interact with a Dapr sidecar and other Dapr applications, including stateful virtual actors in Python</p>
-      <a href="{{< ref python-client >}}" class="stretched-link"></a>
+      <a href="{{% ref python-client %}}" class="stretched-link"></a>
     </div>
   </div>
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>Actors</b></h5>
       <p class="card-text">Create and interact with Dapr's Actor framework.</p>
-      <a href="{{< ref python-actor >}}" class="stretched-link"></a>
+      <a href="{{% ref python-actor %}}" class="stretched-link"></a>
     </div>
   </div>
 </div>
@@ -80,28 +80,28 @@ SDK extensions mainly work as utilities for receiving pub/sub events, programati
     <div class="card-body">
       <h5 class="card-title"><b>gRPC</b></h5>
       <p class="card-text">Create Dapr services with the gRPC server extension.</p>
-      <a href="{{< ref python-grpc >}}" class="stretched-link"></a>
+      <a href="{{% ref python-grpc %}}" class="stretched-link"></a>
     </div>
   </div>
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>FastAPI</b></h5>
       <p class="card-text">Integrate with Dapr Python virtual actors and pub/sub using the Dapr FastAPI extension.</p>
-      <a href="{{< ref python-fastapi >}}" class="stretched-link"></a>
+      <a href="{{% ref python-fastapi %}}" class="stretched-link"></a>
     </div>
   </div>
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>Flask</b></h5>
       <p class="card-text">Integrate with Dapr Python virtual actors using the Dapr Flask extension.</p>
-      <a href="{{< ref python-sdk-extensions >}}" class="stretched-link"></a>
+      <a href="{{% ref python-sdk-extensions %}}" class="stretched-link"></a>
     </div>
   </div>
   <div class="card">
     <div class="card-body">
       <h5 class="card-title"><b>Workflow</b></h5>
       <p class="card-text">Author workflows that work with other Dapr APIs in Python.</p>
-      <a href="{{< ref python-workflow >}}" class="stretched-link"></a>
+      <a href="{{% ref python-workflow %}}" class="stretched-link"></a>
     </div>
   </div>
 </div>
@@ -120,7 +120,7 @@ Walk through the Python quickstarts, tutorials, and examples to see Dapr in acti
 
 | SDK samples | Description |
 | ----------- | ----------- |
-| [Quickstarts]({{< ref quickstarts >}}) | Experience Dapr's API building blocks in just a few minutes using the Python SDK. |
+| [Quickstarts]({{% ref quickstarts %}}) | Experience Dapr's API building blocks in just a few minutes using the Python SDK. |
 | [SDK samples](https://github.com/dapr/python-sdk/tree/master/examples) | Clone the SDK repo to try out some examples and get started. |
 | [Bindings tutorial](https://github.com/dapr/quickstarts/tree/master/tutorials/bindings) | See how Dapr Python SDK works alongside other Dapr SDKs to enable bindings. |
 | [Distributed Calculator tutorial](https://github.com/dapr/quickstarts/tree/master/tutorials/distributed-calculator/python) | Use the Dapr Python SDK to handle method invocation and state persistent capabilities. |
@@ -137,7 +137,7 @@ Walk through the Python quickstarts, tutorials, and examples to see Dapr in acti
     <div class="card-body">
       <h5 class="card-title"><b>Serialization</b></h5>
       <p class="card-text">Learn more about serialization in Dapr SDKs.</p>
-      <a href="{{< ref sdk-serialization >}}" class="stretched-link"></a>
+      <a href="{{% ref sdk-serialization %}}" class="stretched-link"></a>
     </div>
   </div>
   <div class="card">
