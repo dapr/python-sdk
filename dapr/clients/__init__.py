@@ -19,6 +19,7 @@ from warnings import warn
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError, ERROR_CODE_UNKNOWN
 from dapr.clients.grpc.client import DaprGrpcClient, MetadataTuple, InvokeMethodResponse
+from dapr.clients.grpc._jobs import Job, FailurePolicy, DropFailurePolicy, ConstantFailurePolicy
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClient
 from dapr.clients.retry import RetryPolicy
@@ -32,6 +33,10 @@ __all__ = [
     'DaprActorHttpClient',
     'DaprInternalError',
     'ERROR_CODE_UNKNOWN',
+    'Job',
+    'FailurePolicy',
+    'DropFailurePolicy',
+    'ConstantFailurePolicy',
 ]
 
 

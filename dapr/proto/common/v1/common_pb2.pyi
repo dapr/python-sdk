@@ -18,6 +18,7 @@ import builtins
 import collections.abc
 import google.protobuf.any_pb2
 import google.protobuf.descriptor
+import google.protobuf.duration_pb2
 import google.protobuf.internal.containers
 import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
@@ -373,3 +374,67 @@ class ConfigurationItem(google.protobuf.message.Message):
     def ClearField(self, field_name: typing.Literal["metadata", b"metadata", "value", b"value", "version", b"version"]) -> None: ...
 
 global___ConfigurationItem = ConfigurationItem
+
+@typing.final
+class JobFailurePolicy(google.protobuf.message.Message):
+    """JobFailurePolicy defines the policy to apply when a job fails to trigger."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    DROP_FIELD_NUMBER: builtins.int
+    CONSTANT_FIELD_NUMBER: builtins.int
+    @property
+    def drop(self) -> global___JobFailurePolicyDrop: ...
+    @property
+    def constant(self) -> global___JobFailurePolicyConstant: ...
+    def __init__(
+        self,
+        *,
+        drop: global___JobFailurePolicyDrop | None = ...,
+        constant: global___JobFailurePolicyConstant | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing.Literal["policy", b"policy"]) -> typing.Literal["drop", "constant"] | None: ...
+
+global___JobFailurePolicy = JobFailurePolicy
+
+@typing.final
+class JobFailurePolicyDrop(google.protobuf.message.Message):
+    """JobFailurePolicyDrop is a policy which drops the job tick when the job fails to trigger."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+global___JobFailurePolicyDrop = JobFailurePolicyDrop
+
+@typing.final
+class JobFailurePolicyConstant(google.protobuf.message.Message):
+    """JobFailurePolicyConstant is a policy which retries the job at a consistent interval when the job fails to trigger."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    INTERVAL_FIELD_NUMBER: builtins.int
+    MAX_RETRIES_FIELD_NUMBER: builtins.int
+    max_retries: builtins.int
+    """max_retries is the optional maximum number of retries to attempt before giving up.
+    If unset, the Job will be retried indefinitely.
+    """
+    @property
+    def interval(self) -> google.protobuf.duration_pb2.Duration:
+        """interval is the constant delay to wait before retrying the job."""
+
+    def __init__(
+        self,
+        *,
+        interval: google.protobuf.duration_pb2.Duration | None = ...,
+        max_retries: builtins.int | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing.Literal["_max_retries", b"_max_retries"]) -> typing.Literal["max_retries"] | None: ...
+
+global___JobFailurePolicyConstant = JobFailurePolicyConstant
