@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """
 Copyright 2023 The Dapr Authors
@@ -12,13 +11,76 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Dict, List, Union, Tuple, Optional
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.wrappers_pb2 import (
+    BoolValue,
+    DoubleValue,
+    Int32Value,
+    Int64Value,
+    StringValue,
+)
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
+
+
+def convert_parameters_for_grpc(params: Optional[Dict[str, Any]]) -> Dict[str, GrpcAny]:
+    """
+    Convert raw Python values to protobuf Any objects for conversation API.
+
+    This function improves developer experience by automatically converting
+    common Python types to the protobuf Any format required by the gRPC API.
+
+    Args:
+        params: Dictionary of parameters with raw Python values or pre-wrapped
+                protobuf Any objects
+
+    Returns:
+        Dictionary with values converted to protobuf Any objects
+
+    Examples:
+        >>> params = {"tool_choice": "auto", "temperature": 0.7, "max_tokens": 1000}
+        >>> converted = convert_parameters_for_grpc(params)
+        >>> # Returns protobuf Any objects that can be sent via gRPC
+    """
+    if not params:
+        return {}
+
+    converted = {}
+
+    for key, value in params.items():
+        # Skip if already a protobuf Any (backward compatibility)
+        if isinstance(value, GrpcAny):
+            converted[key] = value
+            continue
+
+        # Convert based on type
+        any_value = GrpcAny()
+
+        if isinstance(value, str):
+            any_value.Pack(StringValue(value=value))
+        elif isinstance(value, bool):  # Check bool before int (bool is subclass of int)
+            any_value.Pack(BoolValue(value=value))
+        elif isinstance(value, int):
+            # Choose appropriate int wrapper based on value range
+            if -2147483648 <= value <= 2147483647:
+                any_value.Pack(Int32Value(value=value))
+            else:
+                any_value.Pack(Int64Value(value=value))
+        elif isinstance(value, float):
+            # Use DoubleValue for better precision
+            any_value.Pack(DoubleValue(value=value))
+        else:
+            # For unsupported types, convert to string as fallback
+            any_value.Pack(StringValue(value=str(value)))
+
+        converted[key] = any_value
+
+    return converted
 
 
 def tuple_to_dict(tupledata: MetadataTuple) -> MetadataDict:

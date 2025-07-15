@@ -24,7 +24,7 @@ from urllib.parse import urlencode
 
 from warnings import warn
 
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any, Awaitable
+from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any, Awaitable, AsyncIterator
 from typing_extensions import Self
 
 from google.protobuf.message import Message as GrpcMessage
@@ -82,6 +82,10 @@ from dapr.clients.grpc._response import (
     BindingResponse,
     ConversationResponse,
     ConversationResult,
+    ConversationStreamChunk,
+    ConversationStreamComplete,
+    ConversationStreamResponse,
+    ConversationUsage,
     DaprResponse,
     GetSecretResponse,
     GetBulkSecretResponse,
@@ -1721,10 +1725,11 @@ class DaprGrpcClientAsync:
         inputs: List[ConversationInput],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, GrpcAny]] = None,
+        parameters: Optional[Dict[str, Union[str, int, float, bool, GrpcAny]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
+        tools: Optional[List] = None,
     ) -> ConversationResponse:
         """Invoke an LLM using the conversation API (Alpha).
 
@@ -1736,6 +1741,7 @@ class DaprGrpcClientAsync:
             metadata: Optional metadata for the component
             scrub_pii: Optional flag to scrub PII from inputs and outputs
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+            tools: Optional list of tools available for LLM use (passed at request level)
 
         Returns:
             ConversationResponse containing the conversation results
@@ -1743,33 +1749,383 @@ class DaprGrpcClientAsync:
         Raises:
             DaprGrpcError: If the Dapr runtime returns an error
         """
-        inputs_pb = [
-            api_v1.ConversationInput(content=inp.content, role=inp.role, scrubPII=inp.scrub_pii)
-            for inp in inputs
-        ]
+        def convert_content_part_to_pb(part):
+            """Convert a ContentPart to protobuf format."""
+            part_pb = api_v1.ContentPart()
+            
+            if part.text:
+                part_pb.text.text = part.text.text
+            elif part.tool_call:
+                part_pb.tool_call.id = part.tool_call.id
+                part_pb.tool_call.type = part.tool_call.type
+                part_pb.tool_call.name = part.tool_call.name
+                part_pb.tool_call.arguments = part.tool_call.arguments
+            elif part.tool_result:
+                part_pb.tool_result.tool_call_id = part.tool_result.tool_call_id
+                part_pb.tool_result.name = part.tool_result.name
+                part_pb.tool_result.content = part.tool_result.content
+                if part.tool_result.is_error is not None:
+                    part_pb.tool_result.is_error = part.tool_result.is_error
+            
+            return part_pb
+
+        inputs_pb = []
+        for inp in inputs:
+            input_pb = api_v1.ConversationInput()
+
+            # Set deprecated fields for backward compatibility
+            if inp.content:
+                input_pb.content = inp.content
+            if inp.role:
+                input_pb.role = inp.role
+            if inp.scrub_pii is not None:
+                input_pb.scrubPII = inp.scrub_pii
+
+            # Set new parts field
+            if inp.parts:
+                for part in inp.parts:
+                    part_pb = convert_content_part_to_pb(part)
+                    input_pb.parts.append(part_pb)
+
+            inputs_pb.append(input_pb)
+
+        # Convert parameters to protobuf Any objects for better developer experience
+        from dapr.clients.grpc._helpers import convert_parameters_for_grpc
+        converted_parameters = convert_parameters_for_grpc(parameters)
+
+        # Convert tools to protobuf format
+        tools_pb = []
+        if tools:
+            for tool in tools:
+                tool_pb = api_v1.Tool()
+                tool_pb.type = tool.type
+                tool_pb.name = tool.name
+                tool_pb.description = tool.description
+                if tool.parameters:
+                    tool_pb.parameters = tool.parameters
+                tools_pb.append(tool_pb)
 
         request = api_v1.ConversationRequest(
             name=name,
             inputs=inputs_pb,
             contextID=context_id,
-            parameters=parameters or {},
+            parameters=converted_parameters,
             metadata=metadata or {},
             scrubPII=scrub_pii,
             temperature=temperature,
+            tools=tools_pb,
         )
 
         try:
             response = await self._stub.ConverseAlpha1(request)
 
-            outputs = [
-                ConversationResult(result=output.result, parameters=output.parameters)
-                for output in response.outputs
-            ]
+            def convert_content_part_from_pb(part_pb):
+                """Convert protobuf part to ContentPart for response."""
+                from dapr.clients.grpc._response import ContentPart as ResponseContentPart
+                from dapr.clients.grpc._response import TextContent as ResponseTextContent
+                from dapr.clients.grpc._response import ToolCallContent as ResponseToolCallContent
+                from dapr.clients.grpc._response import ToolResultContent as ResponseToolResultContent
+
+                if part_pb.HasField('text'):
+                    return ResponseContentPart(text=ResponseTextContent(text=part_pb.text.text))
+                elif part_pb.HasField('tool_call'):
+                    return ResponseContentPart(tool_call=ResponseToolCallContent(
+                        id=part_pb.tool_call.id,
+                        type=part_pb.tool_call.type,
+                        name=part_pb.tool_call.name,
+                        arguments=part_pb.tool_call.arguments
+                    ))
+                elif part_pb.HasField('tool_result'):
+                    return ResponseContentPart(tool_result=ResponseToolResultContent(
+                        tool_call_id=part_pb.tool_result.tool_call_id,
+                        name=part_pb.tool_result.name,
+                        content=part_pb.tool_result.content,
+                        is_error=part_pb.tool_result.is_error if part_pb.tool_result.HasField('is_error') else None
+                    ))
+
+            outputs = []
+            for output in response.outputs:
+                # Convert parts from protobuf
+                parts = []
+                if output.parts:
+                    for part_pb in output.parts:
+                        part = convert_content_part_from_pb(part_pb)
+                        if part:
+                            parts.append(part)
+
+                outputs.append(ConversationResult(
+                    result=output.result,
+                    parameters=output.parameters,
+                    parts=parts if parts else [],
+                    finish_reason=output.finish_reason if output.HasField('finish_reason') else None
+                ))
 
             return ConversationResponse(context_id=response.contextID, outputs=outputs)
 
         except grpc.aio.AioRpcError as err:
             raise DaprGrpcError(err) from err
+
+    async def converse_stream_alpha1(
+        self,
+        name: str,
+        inputs: List[ConversationInput],
+        *,
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, Union[str, int, float, bool, GrpcAny]]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        tools: Optional[List] = None,
+    ) -> AsyncIterator[ConversationStreamResponse]:
+        """Invoke an LLM using the streaming conversation API (Alpha).
+
+        Args:
+            name: Name of the LLM component to invoke
+            inputs: List of conversation inputs
+            context_id: Optional ID for continuing an existing chat
+            parameters: Optional custom parameters for the request
+            metadata: Optional metadata for the component
+            scrub_pii: Optional flag to scrub PII from inputs and outputs
+            temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+            tools: Optional list of tools available for LLM use (passed at request level)
+
+        Yields:
+            ConversationStreamResponse containing conversation result chunks
+
+        Raises:
+            DaprGrpcError: If the Dapr runtime returns an error
+        """
+        from dapr.clients.grpc._response import ConversationStreamResponse
+
+        def convert_content_part_to_pb(part):
+            """Convert a ContentPart to protobuf format."""
+            part_pb = api_v1.ContentPart()
+            
+            if part.text:
+                part_pb.text.text = part.text.text
+            elif part.tool_call:
+                part_pb.tool_call.id = part.tool_call.id
+                part_pb.tool_call.type = part.tool_call.type
+                part_pb.tool_call.name = part.tool_call.name
+                part_pb.tool_call.arguments = part.tool_call.arguments
+            elif part.tool_result:
+                part_pb.tool_result.tool_call_id = part.tool_result.tool_call_id
+                part_pb.tool_result.name = part.tool_result.name
+                part_pb.tool_result.content = part.tool_result.content
+                if part.tool_result.is_error is not None:
+                    part_pb.tool_result.is_error = part.tool_result.is_error
+            
+            return part_pb
+
+        inputs_pb = []
+        for inp in inputs:
+            input_pb = api_v1.ConversationInput()
+
+            # Set deprecated fields for backward compatibility
+            if inp.content:
+                input_pb.content = inp.content
+            if inp.role:
+                input_pb.role = inp.role
+            if inp.scrub_pii is not None:
+                input_pb.scrubPII = inp.scrub_pii
+
+            # Set new parts field
+            if inp.parts:
+                for part in inp.parts:
+                    part_pb = convert_content_part_to_pb(part)
+                    input_pb.parts.append(part_pb)
+
+            inputs_pb.append(input_pb)
+
+        # Convert parameters to protobuf Any objects for better developer experience
+        from dapr.clients.grpc._helpers import convert_parameters_for_grpc
+        converted_parameters = convert_parameters_for_grpc(parameters)
+
+        # Convert tools to protobuf format
+        tools_pb = []
+        if tools:
+            for tool in tools:
+                tool_pb = api_v1.Tool()
+                tool_pb.type = tool.type
+                tool_pb.name = tool.name
+                tool_pb.description = tool.description
+                if tool.parameters:
+                    tool_pb.parameters = tool.parameters
+                tools_pb.append(tool_pb)
+
+        request = api_v1.ConversationRequest(
+            name=name,
+            inputs=inputs_pb,
+            contextID=context_id,
+            parameters=converted_parameters,
+            metadata=metadata or {},
+            scrubPII=scrub_pii,
+            temperature=temperature,
+            tools=tools_pb,
+        )
+
+        try:
+            response_stream = self._stub.ConverseStreamAlpha1(request)
+
+            async for response in response_stream:
+                if response.HasField('chunk'):
+                    # Handle streaming chunk
+                    chunk_pb = response.chunk
+
+                    # Convert parts from protobuf
+                    parts = []
+                    if chunk_pb.parts:
+                        from dapr.clients.grpc._response import ContentPart as ResponseContentPart
+                        from dapr.clients.grpc._response import TextContent as ResponseTextContent
+                        from dapr.clients.grpc._response import (
+                            ToolCallContent as ResponseToolCallContent,
+                        )
+                        from dapr.clients.grpc._response import (
+                            ToolResultContent as ResponseToolResultContent,
+                        )
+
+                        for part_pb in chunk_pb.parts:
+                            if part_pb.HasField('text'):
+                                parts.append(ResponseContentPart(text=ResponseTextContent(text=part_pb.text.text)))
+                            elif part_pb.HasField('tool_call'):
+                                parts.append(ResponseContentPart(tool_call=ResponseToolCallContent(
+                                    id=part_pb.tool_call.id,
+                                    type=part_pb.tool_call.type,
+                                    name=part_pb.tool_call.name,
+                                    arguments=part_pb.tool_call.arguments
+                                )))
+                            elif part_pb.HasField('tool_result'):
+                                parts.append(ResponseContentPart(tool_result=ResponseToolResultContent(
+                                    tool_call_id=part_pb.tool_result.tool_call_id,
+                                    name=part_pb.tool_result.name,
+                                    content=part_pb.tool_result.content,
+                                    is_error=part_pb.tool_result.is_error if part_pb.tool_result.HasField('is_error') else None
+                                )))
+
+                    chunk = ConversationStreamChunk(
+                        parts=parts if parts else [],
+                        context_id=getattr(chunk_pb, 'context_id', None) or getattr(chunk_pb, 'contextID', None),
+                        finish_reason=chunk_pb.finish_reason if chunk_pb.HasField('finish_reason') else None,
+                        chunk_index=chunk_pb.chunk_index if chunk_pb.HasField('chunk_index') else None,
+                        is_delta=chunk_pb.is_delta if chunk_pb.HasField('is_delta') else None
+                    )
+
+                    yield ConversationStreamResponse(chunk=chunk)
+
+                elif response.HasField('complete'):
+                    # Handle completion
+                    complete_pb = response.complete
+                    complete = ConversationStreamComplete.from_proto(complete_pb)
+                    yield ConversationStreamResponse(complete=complete)
+
+        except grpc.aio.AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
+    async def converse_stream_json(
+        self,
+        name: str,
+        inputs: List[ConversationInput],
+        *,
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, Union[str, int, float, bool, GrpcAny]]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        tools: Optional[List] = None,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """Invoke an LLM using the streaming conversation API with JSON response format (Alpha).
+
+        This method provides a JSON-formatted streaming interface that's compatible with
+        common LLM response formats, making it easier to integrate with existing tools
+        and frameworks that expect JSON responses.
+
+        Args:
+            name: Name of the LLM component to invoke
+            inputs: List of conversation inputs
+            context_id: Optional ID for continuing an existing chat
+            parameters: Optional custom parameters for the request
+            metadata: Optional metadata for the component
+            scrub_pii: Optional flag to scrub PII from inputs and outputs
+            temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+            tools: Optional list of tools available for LLM use (passed at request level)
+
+        Yields:
+            Dict[str, Any]: JSON-formatted conversation response chunks with structure:
+                {
+                    "choices": [
+                        {
+                            "delta": {
+                                "content": "chunk content",
+                                "role": "assistant"
+                            },
+                            "index": 0,
+                            "finish_reason": None
+                        }
+                    ],
+                    "context_id": "optional context ID",
+                    "usage": {
+                        "prompt_tokens": 0,
+                        "completion_tokens": 0,
+                        "total_tokens": 0
+                    }
+                }
+
+        Raises:
+            DaprGrpcError: If the Dapr runtime returns an error
+        """
+        async for chunk in self.converse_stream_alpha1(
+            name=name,
+            inputs=inputs,
+            context_id=context_id,
+            parameters=parameters,
+            metadata=metadata,
+            scrub_pii=scrub_pii,
+            temperature=temperature,
+            tools=tools,
+        ):
+            # Transform the chunk to JSON format compatible with common LLM APIs
+            chunk_dict = {
+                'choices': [],
+                'context_id': None,
+                'usage': None,
+            }
+
+            # Handle streaming chunk data
+            if chunk.chunk:
+                choice = {'delta': {}, 'index': 0, 'finish_reason': chunk.chunk.finish_reason}
+
+                # Add content if present in chunk parts
+                if chunk.chunk.parts:
+                    for part in chunk.chunk.parts:
+                        if part.text:
+                            choice['delta']['content'] = part.text.text
+                            choice['delta']['role'] = 'assistant'
+                        elif part.tool_call:
+                            if 'tool_calls' not in choice['delta']:
+                                choice['delta']['tool_calls'] = []
+                            choice['delta']['tool_calls'].append({
+                                'id': part.tool_call.id,
+                                'type': part.tool_call.type,
+                                'function': {
+                                    'name': part.tool_call.name,
+                                    'arguments': part.tool_call.arguments
+                                }
+                            })
+
+                chunk_dict['choices'].append(choice)
+                chunk_dict['context_id'] = chunk.chunk.context_id
+
+            # Handle completion data
+            elif chunk.complete:
+                chunk_dict['context_id'] = chunk.complete.context_id
+                if chunk.complete.usage:
+                    chunk_dict['usage'] = {
+                        'prompt_tokens': chunk.complete.usage.prompt_tokens,
+                        'completion_tokens': chunk.complete.usage.completion_tokens,
+                        'total_tokens': chunk.complete.usage.total_tokens,
+                    }
+
+            yield chunk_dict
 
     async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.

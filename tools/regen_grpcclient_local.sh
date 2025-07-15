@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ------------------------------------------------------------
-# Copyright 2021 The Dapr Authors
+# Copyright 2025 The Dapr Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,42 +17,61 @@
 PROTO_PATH="dapr/proto"
 SRC=.
 
-# Http request CLI
-HTTP_REQUEST_CLI=curl
+# Local dapr repository path (relative to current directory where you are running)
+LOCAL_DAPR_PATH="../dapr"
 
-
-checkHttpRequestCLI() {
-    if type "curl" > /dev/null; then
-        HTTP_REQUEST_CLI=curl
-    elif type "wget" > /dev/null; then
-        HTTP_REQUEST_CLI=wget
-    else
-        echo "Either curl or wget is required"
+checkLocalDaprRepo() {
+    if [ ! -d "$LOCAL_DAPR_PATH" ]; then
+        echo "Local dapr repository not found at: $LOCAL_DAPR_PATH"
+        echo "Please ensure the dapr repository is cloned at the expected location."
+        exit 1
+    fi
+    
+    if [ ! -d "$LOCAL_DAPR_PATH/dapr/proto" ]; then
+        echo "Proto directory not found at: $LOCAL_DAPR_PATH/dapr/proto"
+        echo "Please ensure the dapr repository contains the proto files."
         exit 1
     fi
 }
 
-downloadFile() {
+checkDependencies() {
+    # Check if grpc_tools.protoc is available
+    if ! python3 -c "import grpc_tools.protoc" 2>/dev/null; then
+        echo "Error: grpcio-tools is not installed"
+        echo "Please install it with: pip install -r tools/requirements.txt"
+        exit 1
+    fi
+    
+    # Check if protoc-gen-mypy is available
+    if ! command -v protoc-gen-mypy &> /dev/null; then
+        echo "Error: protoc-gen-mypy is not available"
+        echo "Please install it with: pip install mypy-protobuf"
+        exit 1
+    fi
+}
+
+copyFile() {
     PKG_NAME=$1
     FILE_NAME=$2
     FILE_PATH="${PROTO_PATH}/${PKG_NAME}/v1"
 
-    # URL for proto file
-    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
+    # Local path for proto file
+    LOCAL_PROTO_PATH="${LOCAL_DAPR_PATH}/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
 
     mkdir -p "${FILE_PATH}"
 
-    echo "Downloading $PROTO_URL ..."
-    if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
-        pushd ${FILE_PATH}
-        curl -SsL "$PROTO_URL" -o "${FILE_NAME}.proto"
-        popd
-    else
-        wget -q -P "$PROTO_URL" "${FILE_PATH}/${FILE_NAME}.proto"
+    echo "Copying $LOCAL_PROTO_PATH ..."
+    
+    if [ ! -e "$LOCAL_PROTO_PATH" ]; then
+        echo "Failed to find local proto file: $LOCAL_PROTO_PATH"
+        ret_val=$FILE_NAME
+        exit 1
     fi
 
+    cp "$LOCAL_PROTO_PATH" "${FILE_PATH}/${FILE_NAME}.proto"
+
     if [ ! -e "${FILE_PATH}/${FILE_NAME}.proto" ]; then
-        echo "failed to download $PROTO_URL ..."
+        echo "Failed to copy $LOCAL_PROTO_PATH ..."
         ret_val=$FILE_NAME
         exit 1
     fi
@@ -87,7 +106,7 @@ cleanup() {
 
 generateGrpcSuccess() {
     export PYTHONPATH=`pwd`/$SRC
-    echo -e "\ngRPC interface and proto buf generated successfully!"
+    echo -e "\ngRPC interface and proto buf generated successfully from local dapr repository!"
 }
 
 # -----------------------------------------------------------------------------
@@ -95,13 +114,14 @@ generateGrpcSuccess() {
 # -----------------------------------------------------------------------------
 trap "fail_trap" EXIT
 
-checkHttpRequestCLI
-downloadFile common common
+checkLocalDaprRepo
+checkDependencies
+copyFile common common
 generateGrpc common common
-downloadFile runtime appcallback
+copyFile runtime appcallback
 generateGrpc runtime appcallback
-downloadFile runtime dapr
+copyFile runtime dapr
 generateGrpc runtime dapr
 cleanup
 
-generateGrpcSuccess
+generateGrpcSuccess 

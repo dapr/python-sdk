@@ -1,42 +1,43 @@
-import grpc
 import json
-
 from concurrent import futures
-from google.protobuf.any_pb2 import Any as GrpcAny
+from typing import Dict
+
+import grpc
 from google.protobuf import empty_pb2, struct_pb2
-from google.rpc import status_pb2, code_pb2
+from google.protobuf.any_pb2 import Any as GrpcAny
+from google.rpc import code_pb2, status_pb2
 from grpc_status import rpc_status
 
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.proto import api_service_v1, common_v1, api_v1, appcallback_v1
-from dapr.proto.common.v1.common_pb2 import ConfigurationItem
 from dapr.clients.grpc._response import WorkflowRuntimeStatus
+from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
+from dapr.proto.common.v1.common_pb2 import ConfigurationItem
 from dapr.proto.runtime.v1.dapr_pb2 import (
     ActiveActorsCount,
+    ConversationResult,
+    DecryptRequest,
+    DecryptResponse,
+    EncryptRequest,
+    EncryptResponse,
     GetMetadataResponse,
+    GetWorkflowRequest,
+    GetWorkflowResponse,
+    PauseWorkflowRequest,
+    PurgeWorkflowRequest,
     QueryStateItem,
+    RaiseEventWorkflowRequest,
     RegisteredComponents,
+    ResumeWorkflowRequest,
     SetMetadataRequest,
+    StartWorkflowRequest,
+    StartWorkflowResponse,
+    TerminateWorkflowRequest,
+    ToolCall,
     TryLockRequest,
     TryLockResponse,
     UnlockRequest,
     UnlockResponse,
-    StartWorkflowRequest,
-    StartWorkflowResponse,
-    GetWorkflowRequest,
-    GetWorkflowResponse,
-    PauseWorkflowRequest,
-    ResumeWorkflowRequest,
-    TerminateWorkflowRequest,
-    PurgeWorkflowRequest,
-    RaiseEventWorkflowRequest,
-    EncryptRequest,
-    EncryptResponse,
-    DecryptRequest,
-    DecryptResponse,
 )
-from typing import Dict
-
 from tests.clients.certs import GrpcCerts
 from tests.clients.fake_http_server import FakeHttpServer
 
@@ -524,17 +525,304 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             extended_metadata=self.metadata,
         )
 
-    def ConverseAlpha1(self, request, context):
+    def ConverseAlpha1(self, request, context):  # noqa: C901
         """Mock implementation of the ConverseAlpha1 endpoint."""
         self.check_for_exception(context)
 
         # Echo back the input messages as outputs
         outputs = []
-        for input in request.inputs:
-            result = f'Response to: {input.content}'
-            outputs.append(api_v1.ConversationResult(result=result, parameters={}))
 
-        return api_v1.ConversationResponse(contextID=request.contextID, outputs=outputs)
+        # Check for tools at request level (new architecture)
+        request_tools = []
+        if hasattr(request, 'tools') and request.tools:
+            request_tools = list(request.tools)
+
+        for input in request.inputs:
+            # Check input role FIRST - tool results should be handled specially regardless of tools
+            if input.role == 'tool':
+                # Tool result input - generate final response
+                result = ConversationResult(
+                    result='Based on the tool result, here is my response to your query.',
+                    parameters={},
+                    finish_reason='stop'
+                )
+            else:
+                # Check for tool definitions in content parts (legacy)
+                has_tool_definitions = False
+                tools = list(request_tools)  # Start with request-level tools
+
+                if input.parts:
+                    for part in input.parts:
+                        # tool_definitions no longer exists in the protobuf
+                        # Tools are now passed at request level only
+                        pass
+
+                # Also check legacy tools field for backward compatibility
+                if hasattr(input, 'tools') and input.tools:
+                    has_tool_definitions = True
+                    tools.extend(input.tools)
+
+                # If we have any tools (from request or content), set the flag
+                if tools:
+                    has_tool_definitions = True
+
+                if has_tool_definitions:
+                    # Simulate tool calling behavior
+                    tool_calls = []
+                    for tool in tools:
+                        # Handle both new flat structure and legacy nested structure
+                        tool_name = tool.name if hasattr(tool, 'name') else tool.function.name
+
+                        if tool_name == 'get_weather':
+                            tool_call = ToolCall(
+                                id='call_123',
+                                type='function',
+                                name='get_weather',
+                                arguments='{"location": "San Francisco", "unit": "fahrenheit"}'
+                            )
+                            tool_calls.append(tool_call)
+                        elif tool_name == 'calculate':
+                            tool_call = ToolCall(
+                                id='call_456',
+                                type='function',
+                                name='calculate',
+                                arguments='{"expression": "15 * 23"}'
+                            )
+                            tool_calls.append(tool_call)
+
+                    if tool_calls:
+                        # Create content parts with tool calls
+                        parts = []
+                        for tool_call in tool_calls:
+                            part = api_v1.ContentPart()
+                            part.tool_call.id = tool_call.id
+                            part.tool_call.type = tool_call.type
+                            part.tool_call.name = tool_call.name
+                            part.tool_call.arguments = tool_call.arguments
+                            parts.append(part)
+
+                        result = ConversationResult(
+                            result='',
+                            parameters={},
+                            parts=parts,
+                            finish_reason='tool_calls'
+                        )
+                    else:
+                        # Extract content from input
+                        content = input.content if input.content else ""
+                        if input.parts:
+                            for part in input.parts:
+                                if part.HasField('text'):
+                                    content = part.text.text
+                                    break
+
+                        result = ConversationResult(
+                            result=f'Response to: {content}',
+                            parameters={},
+                            finish_reason='stop'
+                        )
+                else:
+                    # Extract content from input
+                    content = input.content if input.content else ""
+                    if input.parts:
+                        for part in input.parts:
+                            if part.HasField('text'):
+                                content = part.text.text
+                                break
+
+                    result = ConversationResult(
+                        result=f'Response to: {content}',
+                        parameters={},
+                        finish_reason='stop'
+                    )
+            outputs.append(result)
+
+        # Mock usage information
+        usage = api_v1.ConversationUsage()
+        usage.prompt_tokens = 10
+        usage.completion_tokens = 20
+        usage.total_tokens = 30
+
+        return api_v1.ConversationResponse(
+            contextID=request.contextID or 'mock-context-123',
+            outputs=outputs,
+            usage=usage
+        )
+
+    def ConverseStreamAlpha1(self, request, context):  # noqa: C901
+        """Mock implementation of the ConverseStreamAlpha1 endpoint."""
+        self.check_for_exception(context)
+
+        # Check for tools at request level (new architecture)
+        request_tools = []
+        if hasattr(request, 'tools') and request.tools:
+            request_tools = list(request.tools)
+
+        for input in request.inputs:
+            # Check for tool definitions in content parts (legacy)
+            has_tool_definitions = False
+            tools = list(request_tools)  # Start with request-level tools
+
+            if input.parts:
+                for part in input.parts:
+                    # tool_definitions no longer exists in the protobuf
+                    # Tools are now passed at request level only
+                    pass
+
+            # Also check legacy tools field for backward compatibility
+            if hasattr(input, 'tools') and input.tools:
+                has_tool_definitions = True
+                tools.extend(input.tools)
+
+            # If we have any tools (from request or content), set the flag
+            if tools:
+                has_tool_definitions = True
+
+            # Check input role first - tool results should be handled specially
+            if input.role == 'tool':
+                # Tool result input - stream final response
+                response_text = 'Based on the tool result, here is my response.'
+                for chunk_text in response_text.split(' '):
+                    chunk = api_v1.ConversationStreamChunk()
+                    # Create text content part instead of deprecated content field
+                    part = api_v1.ContentPart()
+                    part.text.text = chunk_text + ' '
+                    chunk.parts.append(part)
+                    chunk.finish_reason = ''
+
+                    response = api_v1.ConversationStreamResponse()
+                    response.chunk.CopyFrom(chunk)
+                    yield response
+            elif has_tool_definitions:
+                # Extract content from input for context
+                content = input.content if input.content else ""
+                if input.parts:
+                    for part in input.parts:
+                        if part.HasField('text'):
+                            content = part.text.text
+                            break
+
+                # First, stream some thinking text before making tool calls
+                thinking_text = f"Let me help you with that. I'll need to use some tools to get the information."
+                for chunk_text in thinking_text.split(' '):
+                    chunk = api_v1.ConversationStreamChunk()
+                    part = api_v1.ContentPart()
+                    part.text.text = chunk_text + ' '
+                    chunk.parts.append(part)
+                    chunk.finish_reason = ''
+
+                    response = api_v1.ConversationStreamResponse()
+                    response.chunk.CopyFrom(chunk)
+                    yield response
+
+                # Then simulate streaming tool calling behavior
+                for tool in tools:
+                    # Handle both new flat structure and legacy nested structure
+                    tool_name = tool.name if hasattr(tool, 'name') else tool.function.name
+
+                    if tool_name == 'get_weather':
+                        # Stream tool call incrementally
+                        part = api_v1.ContentPart()
+                        part.tool_call.id = 'call_123'
+                        part.tool_call.type = 'function'
+                        part.tool_call.name = 'get_weather'
+                        part.tool_call.arguments = '{"location"'
+
+                        chunk = api_v1.ConversationStreamChunk()
+                        chunk.parts.append(part)
+                        chunk.finish_reason = ''
+
+                        response = api_v1.ConversationStreamResponse()
+                        response.chunk.CopyFrom(chunk)
+                        yield response
+
+                        # Complete the tool call
+                        part_complete = api_v1.ContentPart()
+                        part_complete.tool_call.id = 'call_123'
+                        part_complete.tool_call.type = 'function'
+                        part_complete.tool_call.name = 'get_weather'
+                        part_complete.tool_call.arguments = '{"location": "San Francisco", "unit": "fahrenheit"}'
+
+                        chunk_complete = api_v1.ConversationStreamChunk()
+                        chunk_complete.parts.append(part_complete)
+                        chunk_complete.finish_reason = 'tool_calls'
+
+                        response_complete = api_v1.ConversationStreamResponse()
+                        response_complete.chunk.CopyFrom(chunk_complete)
+                        yield response_complete
+                    elif tool_name == 'calculate':
+                        # Stream tool call incrementally
+                        part_calc = api_v1.ContentPart()
+                        part_calc.tool_call.id = 'call_456'
+                        part_calc.tool_call.type = 'function'
+                        part_calc.tool_call.name = 'calculate'
+                        part_calc.tool_call.arguments = '{"expression": "15 * 23"}'
+
+                        chunk_calc = api_v1.ConversationStreamChunk()
+                        chunk_calc.parts.append(part_calc)
+                        chunk_calc.finish_reason = 'tool_calls'
+
+                        response_calc = api_v1.ConversationStreamResponse()
+                        response_calc.chunk.CopyFrom(chunk_calc)
+                        yield response_calc
+                    else:
+                        # Extract content from input
+                        content = input.content if input.content else ""
+                        if input.parts:
+                            for part in input.parts:
+                                if part.HasField('text'):
+                                    content = part.text.text
+                                    break
+
+                        # Regular streaming response
+                        response_text = f'Response to: {content}'
+                        for chunk_text in response_text.split(' '):
+                            chunk = api_v1.ConversationStreamChunk()
+                            # Create text content part instead of deprecated content field
+                            part = api_v1.ContentPart()
+                            part.text.text = chunk_text + ' '
+                            chunk.parts.append(part)
+                            chunk.finish_reason = ''
+
+                            response = api_v1.ConversationStreamResponse()
+                            response.chunk.CopyFrom(chunk)
+                            yield response
+            else:
+                # Extract content from input
+                content = input.content if input.content else ""
+                if input.parts:
+                    for part in input.parts:
+                        if part.HasField('text'):
+                            content = part.text.text
+                            break
+
+                # Regular streaming response
+                response_text = f'Response to: {content}'
+                for chunk_text in response_text.split(' '):
+                    chunk = api_v1.ConversationStreamChunk()
+                    # Create text content part instead of deprecated content field
+                    part = api_v1.ContentPart()
+                    part.text.text = chunk_text + ' '
+                    chunk.parts.append(part)
+                    chunk.finish_reason = ''
+
+                    response = api_v1.ConversationStreamResponse()
+                    response.chunk.CopyFrom(chunk)
+                    yield response
+
+        # Final chunk with context and usage
+        usage = api_v1.ConversationUsage()
+        usage.prompt_tokens = 10
+        usage.completion_tokens = 20
+        usage.total_tokens = 30
+
+        complete = api_v1.ConversationStreamComplete()
+        complete.contextID = request.contextID or 'mock-context-123'
+        complete.usage.CopyFrom(usage)
+
+        response = api_v1.ConversationStreamResponse()
+        response.complete.CopyFrom(complete)
+        yield response
 
     def SetMetadata(self, request: SetMetadataRequest, context):
         self.metadata[request.key] = request.value

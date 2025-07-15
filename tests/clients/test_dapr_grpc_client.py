@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2021 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,41 +11,44 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import json
 import socket
 import tempfile
 import time
 import unittest
 import uuid
-import asyncio
-
 from unittest.mock import patch
 
-from google.rpc import status_pb2, code_pb2
+from google.rpc import code_pb2, status_pb2
 
-from dapr.clients.exceptions import DaprGrpcError
-from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
-from dapr.clients.grpc.subscription import StreamInactiveError
-from dapr.proto import common_v1
-from .fake_dapr_server import FakeDaprSidecar
-from dapr.conf import settings
+from dapr.clients.exceptions import DaprGrpcError
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import (
+    ContentPart,
+    ConversationInput,
+    TextContent,
+    Tool,
     TransactionalStateOperation,
     TransactionOperationType,
-    ConversationInput,
 )
-from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._response import (
     ConfigurationItem,
     ConfigurationResponse,
     ConfigurationWatcher,
+    TopicEventResponse,
     UnlockResponseStatus,
     WorkflowRuntimeStatus,
-    TopicEventResponse,
 )
+from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
+from dapr.clients.grpc.client import DaprGrpcClient
+from dapr.clients.grpc.subscription import StreamInactiveError
+from dapr.conf import settings
+from dapr.proto import common_v1
+
+from .fake_dapr_server import FakeDaprSidecar
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -61,7 +62,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls.grpc_port, http_port=cls.http_port)
         cls._fake_dapr_server.start()
         settings.DAPR_HTTP_PORT = cls.http_port
-        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(cls.http_port)
+        settings.DAPR_HTTP_ENDPOINT = f'http://127.0.0.1:{cls.http_port}'
 
     @classmethod
     def tearDownClass(cls):
@@ -928,7 +929,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Raise an event on the workflow.
         dapr.raise_workflow_event(instance_id, workflow_component, event_name, event_data)
         get_response = dapr.get_workflow(instance_id, workflow_component)
-        self.assertEqual(event_data, get_response.properties[instance_id].strip('""'))
+        self.assertEqual(event_data, get_response.properties[instance_id].strip('""'))  # noqa: B005
 
         # Terminate the workflow
         dapr.terminate_workflow(instance_id, workflow_component)
@@ -1232,6 +1233,282 @@ class DaprGrpcClientTests(unittest.TestCase):
         with self.assertRaises(DaprGrpcError) as context:
             dapr.converse_alpha1(name='test-llm', inputs=inputs)
         self.assertTrue('Invalid argument' in str(context.exception))
+
+    def test_converse_alpha1_with_tools(self):
+        """Test conversation with tool calling."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        weather_tool = Tool(
+            type="function",
+            name='get_weather',
+            description='Get weather information',
+            parameters=json.dumps({
+                'type': 'object',
+                'properties': {
+                    'location': {'type': 'string', 'description': 'City name'},
+                    'unit': {'type': 'string', 'enum': ['celsius', 'fahrenheit']}
+                },
+                'required': ['location']
+            })
+        )
+
+        inputs = [ConversationInput(
+            role='user',
+            parts=[
+                ContentPart(text=TextContent(text='What is the weather in San Francisco?'))
+            ]
+        )]
+
+        response = dapr.converse_alpha1(name='test-llm', inputs=inputs, tools=[weather_tool])
+
+        # Check response structure
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+
+        output = response.outputs[0]
+        tool_calls = output.get_tool_calls()
+        self.assertIsNotNone(tool_calls)
+        self.assertEqual(len(tool_calls), 1)
+
+        tool_call = tool_calls[0]
+        self.assertEqual(tool_call.name, 'get_weather')
+        self.assertEqual(tool_call.type, 'function')
+        self.assertIn('San Francisco', tool_call.arguments)
+        self.assertEqual(output.finish_reason, 'tool_calls')
+
+    def test_converse_alpha1_with_tool_result(self):
+        """Test conversation with tool result input."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        weather_tool = Tool(
+            type="function",
+            name='get_weather',
+            description='Get weather information',
+            parameters=json.dumps({
+                'type': 'object',
+                'properties': {
+                    'location': {'type': 'string', 'description': 'City name'}
+                },
+                'required': ['location']
+            })
+        )
+
+        # Updated to use from_tool_result_simple with correct signature
+        inputs = [ConversationInput.from_tool_result_simple(
+            tool_name='get_weather',
+            call_id='call_123',
+            result='{"temperature": 72, "condition": "sunny"}'
+        )]
+
+        response = dapr.converse_alpha1(name='test-llm', inputs=inputs, tools=[weather_tool])
+
+        # Check response structure
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        # Updated expectation to match what fake server returns for tool result inputs
+        self.assertIn('Based on the tool result', response.outputs[0].result)
+        self.assertEqual(response.outputs[0].finish_reason, 'stop')
+
+    def test_converse_alpha1_with_parameters(self):
+        """Test conversation with parameter conversion."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        inputs = [ConversationInput(content='Test with parameters', role='user')]
+
+        response = dapr.converse_alpha1(
+            name='test-llm',
+            inputs=inputs,
+            parameters={
+                "tool_choice": "auto",
+                "temperature": 0.7,
+                "max_tokens": 1000,
+                "stream": False,
+            }
+        )
+
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+
+    def test_converse_stream_alpha1_basic(self):
+        """Test basic streaming conversation."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        inputs = [ConversationInput(content='Hello streaming!', role='user')]
+
+        chunks = []
+        context_id = None
+        usage = None
+
+        for response in dapr.converse_stream_alpha1(
+            name='test-llm',
+            inputs=inputs,
+            context_id='stream-test-123'
+        ):
+            if response.chunk:
+                # Extract text from chunk parts or fallback to deprecated content
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.text:
+                            chunks.append(part.text.text)
+                elif response.chunk.content:
+                    chunks.append(response.chunk.content)
+
+            if response.complete:
+                context_id = response.complete.context_id
+                usage = response.complete.usage
+
+        # Check streaming response
+        self.assertGreater(len(chunks), 0)
+        full_response = ''.join(chunks)
+        self.assertIn('Hello streaming!', full_response)
+        self.assertEqual(context_id, 'stream-test-123')
+        self.assertIsNotNone(usage)
+
+    def test_converse_stream_alpha1_with_options(self):
+        """Test streaming conversation with options."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        inputs = [ConversationInput(content='Test with options', role='user', scrub_pii=True)]
+
+        chunks = []
+        for response in dapr.converse_stream_alpha1(
+            name='test-llm',
+            inputs=inputs,
+            context_id='options-test',
+            temperature=0.7,
+            scrub_pii=True,
+            metadata={'test': 'value'},
+            parameters={
+                "max_tokens": 500,
+                "top_p": 0.9,
+            }
+        ):
+            if response.chunk:
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.text:
+                            chunks.append(part.text.text)
+                elif response.chunk.content:
+                    chunks.append(response.chunk.content)
+
+        self.assertGreater(len(chunks), 0)
+        full_response = ''.join(chunks)
+        self.assertIn('Test with options', full_response)
+
+    def test_converse_stream_alpha1_with_tools(self):
+        """Test streaming conversation with tool calling."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        weather_tool = Tool(
+            type="function",
+            name='get_weather',
+            description='Get weather information',
+            parameters=json.dumps({
+                'type': 'object',
+                'properties': {
+                    'location': {'type': 'string'}
+                }
+            })
+        )
+
+        inputs = [ConversationInput(
+            role='user',
+            parts=[
+                ContentPart(text=TextContent(text='What is the weather?'))
+            ]
+        )]
+
+        chunks = []
+        tool_calls_found = False
+
+        for response in dapr.converse_stream_alpha1(name='test-llm',
+                                                    inputs=inputs, tools=[weather_tool]):
+            if response.chunk:
+                # Check for tool calls in chunk parts
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.tool_call:
+                            tool_calls_found = True
+                            self.assertEqual(part.tool_call.name, 'get_weather')
+                        elif part.text:
+                            chunks.append(part.text.text)
+                elif response.chunk.content:
+                    chunks.append(response.chunk.content)
+
+        self.assertTrue(tool_calls_found)
+
+    def test_converse_stream_alpha1_with_calculate_tool(self):
+        """Test streaming conversation with calculate tool."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        calc_tool = Tool(
+            type="function",
+            name='calculate',
+            description='Perform calculations',
+            parameters=json.dumps({
+                'type': 'object',
+                'properties': {
+                    'expression': {'type': 'string'}
+                }
+            })
+        )
+
+        inputs = [ConversationInput(
+            role='user',
+            parts=[
+                ContentPart(text=TextContent(text='Calculate 15 * 23'))
+            ]
+        )]
+
+        tool_calls_found = False
+        for response in dapr.converse_stream_alpha1(name='test-llm', inputs=inputs,
+                                                    tools=[calc_tool]):
+            if response.chunk:
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.tool_call:
+                            tool_calls_found = True
+                            # Updated to use flat structure instead of part.tool_call.function.name
+                            self.assertEqual(part.tool_call.name, 'calculate')
+                            self.assertIn('15 * 23', part.tool_call.arguments)
+
+        self.assertTrue(tool_calls_found)
+
+    def test_converse_stream_alpha1_error_handling(self):
+        """Test streaming conversation error handling."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        calc_tool = Tool(
+            type="function",
+            name='calculate',
+            description='Perform calculations',
+            parameters=json.dumps({
+                'type': 'object',
+                'properties': {
+                    'expression': {'type': 'string'}
+                }
+            })
+        )
+
+        # Setup server to raise an exception
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Stream error')
+        )
+
+        inputs = [ConversationInput(content='Test error', role='user')]
+
+        with self.assertRaises(DaprGrpcError) as context:
+            list(dapr.converse_stream_alpha1(name='test-llm', inputs=inputs, tools=[calc_tool]))
+        self.assertTrue('Stream error' in str(context.exception))
+
+    def test_converse_stream_alpha1_empty_inputs(self):
+        """Test streaming conversation with empty inputs."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # The client doesn't validate empty inputs, so this will succeed
+        # and return at least the completion chunk
+        chunks = list(dapr.converse_stream_alpha1(name='test-llm', inputs=[]))
+        self.assertGreaterEqual(len(chunks), 1)
 
 
 if __name__ == '__main__':

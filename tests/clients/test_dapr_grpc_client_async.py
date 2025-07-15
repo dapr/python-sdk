@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2021 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,25 +17,32 @@ import unittest
 import uuid
 from unittest.mock import patch
 
-from google.rpc import status_pb2, code_pb2
+from google.rpc import code_pb2, status_pb2
 
-from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.aio.clients import DaprClient
+from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.clients.exceptions import DaprGrpcError
-from dapr.common.pubsub.subscription import StreamInactiveError
-from dapr.proto import common_v1
-from .fake_dapr_server import FakeDaprSidecar
-from dapr.conf import settings
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.clients.grpc._request import TransactionalStateOperation, ConversationInput
-from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients.grpc._request import (
+    ContentPart,
+    ConversationInput,
+    TextContent,
+    Tool,
+    TransactionalStateOperation,
+)
 from dapr.clients.grpc._response import (
     ConfigurationItem,
-    ConfigurationWatcher,
     ConfigurationResponse,
+    ConfigurationWatcher,
     UnlockResponseStatus,
 )
+from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
+from dapr.common.pubsub.subscription import StreamInactiveError
+from dapr.conf import settings
+from dapr.proto import common_v1
+
+from .fake_dapr_server import FakeDaprSidecar
 
 
 class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
@@ -51,7 +56,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         cls._fake_dapr_server.start()
 
         settings.DAPR_HTTP_PORT = cls.http_port
-        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(cls.http_port)
+        settings.DAPR_HTTP_ENDPOINT = f'http://127.0.0.1:{cls.http_port}'
 
     @classmethod
     def tearDownClass(cls):
@@ -1162,6 +1167,344 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(DaprGrpcError) as context:
             await dapr.converse_alpha1(name='test-llm', inputs=inputs)
         self.assertTrue('Invalid argument' in str(context.exception))
+        await dapr.close()
+
+    async def test_converse_alpha1_with_tools(self):
+        """Test async conversation with tool calling."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+
+        weather_tool = Tool(
+            type="function",
+            name='get_weather',
+            description='Get weather information',
+            parameters=json.dumps({
+                    'type': 'object',
+                    'properties': {
+                        'location': {'type': 'string', 'description': 'City name'},
+                        'unit': {'type': 'string', 'enum': ['celsius', 'fahrenheit']}
+                    },
+                    'required': ['location']
+                }
+        )
+        )
+
+        inputs = [ConversationInput(
+            role='user',
+            parts=[
+                ContentPart(text=TextContent(text='What is the weather in San Francisco?'))
+            ]
+        )]
+
+        response = await dapr.converse_alpha1(name='test-llm', inputs=inputs, tools=[weather_tool])
+
+        # Check response structure
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+
+        output = response.outputs[0]
+        tool_calls = output.get_tool_calls()
+        self.assertIsNotNone(tool_calls)
+        self.assertEqual(len(tool_calls), 1)
+
+        tool_call = tool_calls[0]
+        self.assertEqual(tool_call.name, 'get_weather')
+        self.assertEqual(tool_call.type, 'function')
+        self.assertIn('San Francisco', tool_call.arguments)
+        self.assertEqual(output.finish_reason, 'tool_calls')
+        await dapr.close()
+
+    async def test_converse_alpha1_with_tool_result(self):
+        """Test async conversation with tool result input."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        weather_tool = Tool(
+            type="function",
+            name='get_weather',
+            description='Get weather information',
+            parameters=json.dumps({
+                    'type': 'object',
+                    'properties': {
+                        'location': {'type': 'string'}
+                    }
+                }
+            )
+        )
+
+        # Updated to use from_tool_result_simple with correct signature
+        inputs = [ConversationInput.from_tool_result_simple(
+            tool_name='get_weather',
+            call_id='call_123',
+            result='{"temperature": 72, "condition": "sunny"}'
+        )]
+
+        response = await dapr.converse_alpha1(name='test-llm', inputs=inputs, tools=[weather_tool])
+
+        # Check response structure
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        self.assertIn('Based on the tool result', response.outputs[0].result)
+        self.assertEqual(response.outputs[0].finish_reason, 'stop')
+        await dapr.close()
+
+    async def test_converse_alpha1_with_parameters(self):
+        """Test async conversation with parameter conversion."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+
+        inputs = [ConversationInput(content='Async test with parameters', role='user')]
+
+        response = await dapr.converse_alpha1(
+            name='test-llm',
+            inputs=inputs,
+            parameters={
+                "tool_choice": "auto",
+                "temperature": 0.8,
+                "max_tokens": 500,
+                "stream": False,
+            }
+        )
+
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        await dapr.close()
+
+    async def test_converse_stream_alpha1_basic(self):
+        """Test basic async streaming conversation."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+
+        inputs = [ConversationInput(content='Hello async streaming!', role='user')]
+
+        chunks = []
+        context_id = None
+        usage = None
+
+        async for response in dapr.converse_stream_alpha1(
+            name='test-llm',
+            inputs=inputs,
+            context_id='async-stream-test-123'
+        ):
+            if response.chunk:
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.text:
+                            chunks.append(part.text.text)
+                elif response.chunk.content:
+                    chunks.append(response.chunk.content)
+
+            if response.complete:
+                context_id = response.complete.context_id
+                usage = response.complete.usage
+
+        # Check streaming response
+        self.assertGreater(len(chunks), 0)
+        full_response = ''.join(chunks)
+        self.assertIn('Hello async streaming!', full_response)
+        self.assertEqual(context_id, 'async-stream-test-123')
+        self.assertIsNotNone(usage)
+        await dapr.close()
+
+    async def test_converse_stream_alpha1_with_options(self):
+        """Test async streaming conversation with options."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+
+        inputs = [ConversationInput(content='Test async options', role='user', scrub_pii=True)]
+
+        chunks = []
+        async for response in dapr.converse_stream_alpha1(
+            name='test-llm',
+            inputs=inputs,
+            context_id='async-options-test',
+            temperature=0.7,
+            scrub_pii=True,
+            metadata={'test': 'async_value'},
+            parameters={
+                "max_tokens": 300,
+                "top_p": 0.8,
+            }
+        ):
+            if response.chunk:
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.text:
+                            chunks.append(part.text.text)
+                elif response.chunk.content:
+                    chunks.append(response.chunk.content)
+
+        self.assertGreater(len(chunks), 0)
+        full_response = ''.join(chunks)
+        self.assertIn('Test async options', full_response)
+        await dapr.close()
+
+    async def test_converse_stream_alpha1_with_tools(self):
+        """Test async streaming conversation with tool calling."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+
+        weather_tool = Tool(
+            type="function",
+            name='get_weather',
+            description='Get weather information',
+            parameters=json.dumps({
+                    'type': 'object',
+                    'properties': {
+                        'location': {'type': 'string'}
+                    }
+                }
+            )
+        )
+
+        inputs = [ConversationInput(
+            role='user',
+            parts=[
+                ContentPart(text=TextContent(text='What is the weather?'))
+            ]
+        )]
+
+        chunks = []
+        tool_calls_found = False
+
+        async for response in dapr.converse_stream_alpha1(name='test-llm', inputs=inputs,
+                                                          tools=[weather_tool]):
+            if response.chunk:
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.tool_call:
+                            tool_calls_found = True
+                            self.assertEqual(part.tool_call.name, 'get_weather')
+                        elif part.text:
+                            chunks.append(part.text.text)
+                elif response.chunk.content:
+                    chunks.append(response.chunk.content)
+
+        self.assertTrue(tool_calls_found)
+        await dapr.close()
+
+    async def test_converse_stream_alpha1_with_calculate_tool(self):
+        """Test async streaming conversation with calculate tool."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        weather_tool = Tool(
+            type="function",
+            name='get_weather',
+            description='Get weather information',
+            parameters=json.dumps({
+                    'type': 'object',
+                    'properties': {
+                        'location': {'type': 'string'}
+                    }
+                }
+            )
+        )
+
+        calc_tool = Tool(
+            type="function",
+            name='calculate',
+            description='Perform calculations',
+            parameters=json.dumps({
+                    'type': 'object',
+                    'properties': {
+                        'expression': {'type': 'string'}
+                    }
+                }
+            )
+        )
+
+        inputs = [ConversationInput(
+            role='user',
+            parts=[
+                ContentPart(text=TextContent(text='Calculate 15 * 23'))
+            ]
+        )]
+
+        tool_calls_found = False
+        async for response in dapr.converse_stream_alpha1(name='test-llm', inputs=inputs,
+                                                          tools=[calc_tool]):
+            if response.chunk:
+                if response.chunk.parts:
+                    for part in response.chunk.parts:
+                        if part.tool_call:
+                            tool_calls_found = True
+                            self.assertEqual(part.tool_call.name, 'calculate')
+                            self.assertIn('15 * 23', part.tool_call.arguments)
+
+        self.assertTrue(tool_calls_found)
+        await dapr.close()
+
+    async def test_converse_stream_alpha1_concurrent_streams(self):
+        """Test multiple concurrent async streaming conversations."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+
+        async def stream_conversation(message, session_id):
+            inputs = [ConversationInput(content=message, role='user')]
+            chunks = []
+            async for response in dapr.converse_stream_alpha1(
+                name='test-llm',
+                inputs=inputs,
+                context_id=session_id
+            ):
+                if response.chunk:
+                    if response.chunk.parts:
+                        for part in response.chunk.parts:
+                            if part.text:
+                                chunks.append(part.text.text)
+                    elif response.chunk.content:
+                        chunks.append(response.chunk.content)
+            return ''.join(chunks)
+
+        # Run 3 conversations concurrently
+        import asyncio
+        tasks = [
+            stream_conversation('First async message', 'async-session-1'),
+            stream_conversation('Second async message', 'async-session-2'),
+            stream_conversation('Third async message', 'async-session-3'),
+        ]
+
+        results = await asyncio.gather(*tasks)
+
+        self.assertEqual(len(results), 3)
+        for i, result in enumerate(results, 1):
+            expected_words = ['First', 'Second', 'Third'][i-1]
+            self.assertIn(expected_words, result)
+
+        await dapr.close()
+
+    async def test_converse_stream_alpha1_error_handling(self):
+        """Test async streaming conversation error handling."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        calc_tool = Tool(
+            type="function",
+            name='calculate',
+            description='Perform calculations',
+            parameters=json.dumps({
+                    'type': 'object',
+                    'properties': {
+                        'expression': {'type': 'string'}
+                    }
+                }
+            )
+        )
+
+        # Setup server to raise an exception
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Async stream error')
+        )
+
+        inputs = [ConversationInput(content='Test async error', role='user')]
+
+        with self.assertRaises(DaprGrpcError) as context:
+            chunks = []
+            async for chunk in dapr.converse_stream_alpha1(name='test-llm', inputs=inputs,
+                                                           tools=[calc_tool]):
+                chunks.append(chunk)
+        self.assertTrue('Async stream error' in str(context.exception))
+        await dapr.close()
+
+    async def test_converse_stream_alpha1_empty_inputs(self):
+        """Test async streaming conversation with empty inputs."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # The client doesn't validate empty inputs, so this will succeed
+        # and return at least the completion chunk
+        chunks = []
+        async for chunk in dapr.converse_stream_alpha1(name='test-llm', inputs=[]):
+            chunks.append(chunk)
+        self.assertGreaterEqual(len(chunks), 1)
         await dapr.close()
 
 
