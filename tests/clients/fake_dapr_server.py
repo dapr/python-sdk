@@ -54,6 +54,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.workflow_status = {}
         self.workflow_options: Dict[str, str] = {}
         self.metadata: Dict[str, str] = {}
+        self.jobs: Dict[str, api_v1.Job] = {}
         self._next_exception = None
 
     def start(self):
@@ -535,6 +536,48 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             outputs.append(api_v1.ConversationResult(result=result, parameters={}))
 
         return api_v1.ConversationResponse(contextID=request.contextID, outputs=outputs)
+
+    def ScheduleJobAlpha1(self, request, context):
+        self.check_for_exception(context)
+
+        # Validate job name
+        if not request.job.name:
+            raise ValueError('Job name is required')
+
+        # Validate job name
+        if not request.job.schedule and not request.job.due_time:
+            raise ValueError('Schedule is empty')
+
+        # Store the job
+        self.jobs[request.job.name] = request.job
+
+        return empty_pb2.Empty()
+
+    def GetJobAlpha1(self, request, context):
+        self.check_for_exception(context)
+
+        # Validate job name
+        if not request.name:
+            raise ValueError('Job name is required')
+
+        # Check if job exists
+        if request.name not in self.jobs:
+            raise Exception(f'Job "{request.name}" not found')
+
+        return api_v1.GetJobResponse(job=self.jobs[request.name])
+
+    def DeleteJobAlpha1(self, request, context):
+        self.check_for_exception(context)
+
+        # Validate job name
+        if not request.name:
+            raise ValueError('Job name is required')
+
+        # Check if job exists (optional - some implementations might not error)
+        if request.name in self.jobs:
+            del self.jobs[request.name]
+
+        return empty_pb2.Empty()
 
     def SetMetadata(self, request: SetMetadataRequest, context):
         self.metadata[request.key] = request.value

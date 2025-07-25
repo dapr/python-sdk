@@ -22,15 +22,20 @@ from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.struct_pb2 import Struct
 
 from dapr.proto import appcallback_service_v1, common_v1, appcallback_v1
-from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest, BindingEventRequest
+from dapr.proto.runtime.v1.appcallback_pb2 import (
+    TopicEventRequest,
+    BindingEventRequest,
+    JobEventRequest,
+)
 from dapr.proto.common.v1.common_pb2 import InvokeRequest
 from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest
+from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest, JobEvent
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
 
 InvokeMethodCallable = Callable[[InvokeMethodRequest], Union[str, bytes, InvokeMethodResponse]]
 TopicSubscribeCallable = Callable[[v1.Event], Optional[TopicEventResponse]]
 BindingCallable = Callable[[BindingRequest], None]
+JobEventCallable = Callable[[JobEvent], None]
 
 DELIMITER = ':'
 
@@ -51,7 +56,9 @@ class _RegisteredSubscription:
         self.rules = rules
 
 
-class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
+class _CallbackServicer(
+    appcallback_service_v1.AppCallbackServicer, appcallback_service_v1.AppCallbackAlphaServicer
+):
     """The implementation of AppCallback Server.
 
     This internal class implements application server and provides helpers to register
@@ -65,6 +72,7 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
         self._invoke_method_map: Dict[str, InvokeMethodCallable] = {}
         self._topic_map: Dict[str, TopicSubscribeCallable] = {}
         self._binding_map: Dict[str, BindingCallable] = {}
+        self._job_event_map: Dict[str, JobEventCallable] = {}
 
         self._registered_topics_map: Dict[str, _RegisteredSubscription] = {}
         self._registered_topics: List[appcallback_v1.TopicSubscription] = []
@@ -132,6 +140,17 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
             raise ValueError(f'{name} is already registered')
         self._binding_map[name] = cb
         self._registered_bindings.append(name)
+
+    def register_job_event(self, name: str, cb: JobEventCallable) -> None:
+        """Registers job event handler.
+
+        Args:
+            name (str): The name of the job to handle events for.
+            cb (JobEventCallable): The callback function to handle job events.
+        """
+        if name in self._job_event_map:
+            raise ValueError(f'Job event handler for {name} is already registered')
+        self._job_event_map[name] = cb
 
     def OnInvoke(self, request: InvokeRequest, context):
         """Invokes service method with InvokeRequest."""
@@ -224,3 +243,36 @@ class _CallbackServicer(appcallback_service_v1.AppCallbackServicer):
 
         # TODO: support output bindings options
         return appcallback_v1.BindingEventResponse()
+
+    def OnJobEventAlpha1(self, request: JobEventRequest, context):
+        """Handles job events from Dapr runtime.
+
+        This method is called by Dapr when a scheduled job is triggered.
+        It routes the job event to the appropriate registered handler based on the job name.
+
+        Args:
+            request (JobEventRequest): The job event request from Dapr.
+            context: The gRPC context.
+
+        Returns:
+            appcallback_v1.JobEventResponse: Empty response indicating successful handling.
+        """
+        job_name = request.name
+
+        if job_name not in self._job_event_map:
+            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
+            raise NotImplementedError(f'Job event handler for {job_name} not implemented!')
+
+        # Create a JobEvent object matching Go SDK's common.JobEvent
+        # Extract raw data bytes from the Any proto (matching Go implementation)
+        data_bytes = b''
+        if request.HasField('data') and request.data.value:
+            data_bytes = request.data.value
+
+        job_event = JobEvent(name=request.name, data=data_bytes)
+
+        # Call the registered handler with the JobEvent object
+        self._job_event_map[job_name](job_event)
+
+        # Return empty response
+        return appcallback_v1.JobEventResponse()

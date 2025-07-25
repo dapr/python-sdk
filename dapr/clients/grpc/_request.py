@@ -435,3 +435,30 @@ class ConversationInput:
     content: str
     role: Optional[str] = None
     scrub_pii: Optional[bool] = None
+
+
+class JobEvent:
+    """Represents a job event received from Dapr runtime.
+
+    This matches the Go SDK's common.JobEvent structure and represents
+    a job that is currently being executed, not a job definition.
+
+    Args:
+        name (str): The name/type of the job being executed.
+        data (bytes): The raw job data payload.
+    """
+
+    def __init__(self, name: str, data: bytes = b''):
+        self.name = name
+        self.data = data
+
+    def get_data_as_string(self, encoding: str = 'utf-8') -> str:
+        """Get the job data as a string.
+
+        Args:
+            encoding (str): The encoding to use for decoding bytes. Defaults to 'utf-8'.
+
+        Returns:
+            str: The job data as a string, or empty string if no data.
+        """
+        return self.data.decode(encoding) if self.data else ''
