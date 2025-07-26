@@ -143,6 +143,8 @@ pip3 install -r tools/requirements.txt
 ./tools/regen_grpcclient.sh
 ```
 
+> Note: The `grpcio-tools` version we're using doesn't support Python 3.13. 
+
 ## Help & Feedback
 
 Need help or have feedback on the SDK? Please open a GitHub issue or come chat with us in the `#python-sdk` channel of our Discord server ([click here to join](https://discord.gg/MySdVxrH)).
