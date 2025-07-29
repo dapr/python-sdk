@@ -63,6 +63,7 @@ from dapr.clients.grpc._helpers import (
     to_bytes,
     validateNotNone,
     validateNotBlankString,
+    convert_parameters,
 )
 from dapr.aio.clients.grpc._request import (
     EncryptRequestIterator,
@@ -77,12 +78,28 @@ from dapr.clients.grpc._request import (
     BindingRequest,
     TransactionalStateOperation,
     ConversationInput,
+    ConversationInputAlpha2,
+    ConversationMessage,
+    ConversationMessageContent,
+    ConversationMessageOfUser,
+    ConversationMessageOfSystem,
+    ConversationMessageOfAssistant,
+    ConversationMessageOfDeveloper,
+    ConversationMessageOfTool,
+    ConversationTools,
+    ConversationToolsFunction,
+    ConversationToolCalls,
+    ConversationToolCallsOfFunction,
 )
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
     BindingResponse,
     ConversationResponse,
     ConversationResult,
+    ConversationResponseAlpha2,
+    ConversationResultAlpha2,
+    ConversationResultChoices,
+    ConversationResultMessage,
     DaprResponse,
     GetSecretResponse,
     GetBulkSecretResponse,
@@ -1722,7 +1739,7 @@ class DaprGrpcClientAsync:
         inputs: List[ConversationInput],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, GrpcAny]] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
@@ -1733,7 +1750,7 @@ class DaprGrpcClientAsync:
             name: Name of the LLM component to invoke
             inputs: List of conversation inputs
             context_id: Optional ID for continuing an existing chat
-            parameters: Optional custom parameters for the request
+            parameters: Optional custom parameters for the request (raw Python values or GrpcAny objects)
             metadata: Optional metadata for the component
             scrub_pii: Optional flag to scrub PII from inputs and outputs
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
@@ -1749,11 +1766,14 @@ class DaprGrpcClientAsync:
             for inp in inputs
         ]
 
+        # Convert raw Python parameters to GrpcAny objects
+        converted_parameters = convert_parameters(parameters)
+
         request = api_v1.ConversationRequest(
             name=name,
             inputs=inputs_pb,
             contextID=context_id,
-            parameters=parameters or {},
+            parameters=converted_parameters,
             metadata=metadata or {},
             scrubPII=scrub_pii,
             temperature=temperature,
@@ -1768,6 +1788,157 @@ class DaprGrpcClientAsync:
             ]
 
             return ConversationResponse(context_id=response.contextID, outputs=outputs)
+
+        except grpc.aio.AioRpcError as err:
+            raise DaprGrpcError(err) from err
+
+    async def converse_alpha2(
+        self,
+        name: str,
+        inputs: List[ConversationInputAlpha2],
+        *,
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        tools: Optional[List[ConversationTools]] = None,
+        tool_choice: Optional[str] = None,
+    ) -> ConversationResponseAlpha2:
+        """Invoke an LLM using the conversation API (Alpha2) with tool calling support.
+
+        Args:
+            name: Name of the LLM component to invoke
+            inputs: List of Alpha2 conversation inputs with sophisticated message types
+            context_id: Optional ID for continuing an existing chat
+            parameters: Optional custom parameters for the request (raw Python values or GrpcAny objects)
+            metadata: Optional metadata for the component
+            scrub_pii: Optional flag to scrub PII from inputs and outputs
+            temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
+            tools: Optional list of tools available for the LLM to call
+            tool_choice: Optional control over which tools can be called ('none', 'auto', 'required', or specific tool name)
+
+        Returns:
+            ConversationResponseAlpha2 containing the conversation results with choices and tool calls
+
+        Raises:
+            DaprGrpcError: If the Dapr runtime returns an error
+        """
+
+        def _convert_message_content(content_list: List[ConversationMessageContent]):
+            """Convert message content list to proto format."""
+            if not content_list:
+                return []
+            return [api_v1.ConversationMessageContent(text=content.text) for content in content_list]
+
+        def _convert_tool_calls(tool_calls: List[ConversationToolCalls]):
+            """Convert tool calls to proto format."""
+            if not tool_calls:
+                return []
+            proto_calls = []
+            for call in tool_calls:
+                proto_call = api_v1.ConversationToolCalls()
+                if call.id:
+                    proto_call.id = call.id
+                if call.function:
+                    proto_call.function.name = call.function.name
+                    proto_call.function.arguments = call.function.arguments
+                proto_calls.append(proto_call)
+            return proto_calls
+
+        def _convert_message(message: ConversationMessage):
+            """Convert a conversation message to proto format."""
+            proto_message = api_v1.ConversationMessage()
+
+            if message.of_developer:
+                proto_message.of_developer.name = message.of_developer.name or ''
+                proto_message.of_developer.content.extend(_convert_message_content(message.of_developer.content or []))
+            elif message.of_system:
+                proto_message.of_system.name = message.of_system.name or ''
+                proto_message.of_system.content.extend(_convert_message_content(message.of_system.content or []))
+            elif message.of_user:
+                proto_message.of_user.name = message.of_user.name or ''
+                proto_message.of_user.content.extend(_convert_message_content(message.of_user.content or []))
+            elif message.of_assistant:
+                proto_message.of_assistant.name = message.of_assistant.name or ''
+                proto_message.of_assistant.content.extend(_convert_message_content(message.of_assistant.content or []))
+                proto_message.of_assistant.tool_calls.extend(_convert_tool_calls(message.of_assistant.tool_calls or []))
+            elif message.of_tool:
+                if message.of_tool.tool_id:
+                    proto_message.of_tool.tool_id = message.of_tool.tool_id
+                proto_message.of_tool.name = message.of_tool.name
+                proto_message.of_tool.content.extend(_convert_message_content(message.of_tool.content or []))
+
+            return proto_message
+
+        # Convert inputs to proto format
+        inputs_pb = []
+        for inp in inputs:
+            proto_input = api_v1.ConversationInputAlpha2()
+            if inp.scrub_pii is not None:
+                proto_input.scrub_pii = inp.scrub_pii
+
+            for message in inp.messages:
+                proto_input.messages.append(_convert_message(message))
+
+            inputs_pb.append(proto_input)
+
+        # Convert tools to proto format
+        tools_pb = []
+        if tools:
+            for tool in tools:
+                proto_tool = api_v1.ConversationTools()
+                if tool.function:
+                    proto_tool.function.name = tool.function.name
+                    if tool.function.description:
+                        proto_tool.function.description = tool.function.description
+                    if tool.function.parameters:
+                        for key, value in tool.function.parameters.items():
+                            proto_tool.function.parameters[key].CopyFrom(value)
+                tools_pb.append(proto_tool)
+
+        # Convert raw Python parameters to GrpcAny objects
+        converted_parameters = convert_parameters(parameters)
+
+        # Build the request
+        request = api_v1.ConversationRequestAlpha2(
+            name=name,
+            inputs=inputs_pb,
+            parameters=converted_parameters,
+            metadata=metadata or {},
+            tools=tools_pb,
+        )
+
+        if context_id is not None:
+            request.context_id = context_id
+        if scrub_pii is not None:
+            request.scrub_pii = scrub_pii
+        if temperature is not None:
+            request.temperature = temperature
+        if tool_choice is not None:
+            request.tool_choice = tool_choice
+
+        try:
+            response = await self._stub.ConverseAlpha2(request)
+
+            outputs = []
+            for output in response.outputs:
+                choices = []
+                for choice in output.choices:
+                    choices.append(ConversationResultChoices(
+                        finish_reason=choice.finish_reason,
+                        index=choice.index,
+                        message=ConversationResultMessage(
+                            content=choice.message.content,
+                            tool_calls=choice.message.tool_calls
+                        )
+                    ))
+                outputs.append(ConversationResultAlpha2(choices=choices))
+
+            return ConversationResponseAlpha2(
+                context_id=response.context_id,
+                outputs=outputs
+            )
 
         except grpc.aio.AioRpcError as err:
             raise DaprGrpcError(err) from err

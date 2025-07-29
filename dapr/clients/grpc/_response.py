@@ -56,6 +56,7 @@ from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
 # for type checking
 if TYPE_CHECKING:
     from dapr.clients.grpc.client import DaprGrpcClient
+    from dapr.clients.grpc._request import ConversationToolCalls
 
 TCryptoResponse = TypeVar(
     'TCryptoResponse', bound=Union[api_v1.EncryptResponse, api_v1.DecryptResponse]
@@ -1082,8 +1083,40 @@ class ConversationResult:
 
 
 @dataclass
+class ConversationResultMessage:
+    """Message content in conversation result."""
+
+    content: str
+    tool_calls: List['ConversationToolCalls'] = field(default_factory=list)
+
+
+@dataclass
+class ConversationResultChoices:
+    """Choice in Alpha2 conversation result."""
+
+    finish_reason: str
+    index: int
+    message: ConversationResultMessage
+
+
+@dataclass
+class ConversationResultAlpha2:
+    """Alpha2 result from conversation input."""
+
+    choices: List[ConversationResultChoices] = field(default_factory=list)
+
+
+@dataclass
 class ConversationResponse:
     """Response from the conversation API."""
 
     context_id: Optional[str]
     outputs: List[ConversationResult]
+
+
+@dataclass
+class ConversationResponseAlpha2:
+    """Alpha2 response from the conversation API."""
+
+    context_id: Optional[str]
+    outputs: List[ConversationResultAlpha2]

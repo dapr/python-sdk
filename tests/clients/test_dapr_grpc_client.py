@@ -37,6 +37,18 @@ from dapr.clients.grpc._request import (
     TransactionalStateOperation,
     TransactionOperationType,
     ConversationInput,
+    ConversationInputAlpha2,
+    ConversationMessage,
+    ConversationMessageContent,
+    ConversationMessageOfUser,
+    ConversationMessageOfAssistant,
+    ConversationMessageOfSystem,
+    ConversationMessageOfDeveloper,
+    ConversationMessageOfTool,
+    ConversationTools,
+    ConversationToolsFunction,
+    ConversationToolCalls,
+    ConversationToolCallsOfFunction,
 )
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
@@ -1234,6 +1246,298 @@ class DaprGrpcClientTests(unittest.TestCase):
         with self.assertRaises(DaprGrpcError) as context:
             dapr.converse_alpha1(name='test-llm', inputs=inputs)
         self.assertTrue('Invalid argument' in str(context.exception))
+
+    def test_converse_alpha2_basic_user_message(self):
+        """Test basic Alpha2 conversation with user messages."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create user message
+        user_message = ConversationMessage(
+            of_user=ConversationMessageOfUser(
+                name="TestUser",
+                content=[ConversationMessageContent(text="Hello, how are you?")]
+            )
+        )
+
+        # Create Alpha2 input
+        input_alpha2 = ConversationInputAlpha2(
+            messages=[user_message],
+            scrub_pii=False
+        )
+
+        response = dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+
+        # Check response structure
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        self.assertEqual(len(response.outputs[0].choices), 1)
+
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.finish_reason, 'stop')
+        self.assertEqual(choice.index, 0)
+        self.assertEqual(choice.message.content, 'Response to user: Hello, how are you?')
+        self.assertEqual(len(choice.message.tool_calls), 0)
+
+    def test_converse_alpha2_with_tools_weather_request(self):
+        """Test Alpha2 conversation with tool calling for weather requests."""
+        from google.protobuf.any_pb2 import Any as GrpcAny
+
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create weather tool
+        weather_tool = ConversationTools(
+            function=ConversationToolsFunction(
+                name="get_weather",
+                description="Get current weather information",
+                parameters={"location": GrpcAny(value=b'{"type": "string"}')}
+            )
+        )
+
+        # Create user message asking for weather
+        user_message = ConversationMessage(
+            of_user=ConversationMessageOfUser(
+                content=[ConversationMessageContent(text="What's the weather like?")]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+
+        response = dapr.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            tools=[weather_tool],
+            tool_choice='auto'
+        )
+
+        # Check response structure with tool call
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        self.assertEqual(len(response.outputs[0].choices), 1)
+
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.finish_reason, 'tool_calls')
+        self.assertEqual(choice.index, 0)
+        self.assertEqual(choice.message.content, "I'll check the weather for you.")
+        self.assertEqual(len(choice.message.tool_calls), 1)
+
+        tool_call = choice.message.tool_calls[0]
+        self.assertEqual(tool_call.function.name, 'get_weather')
+        self.assertEqual(tool_call.function.arguments, '{"location": "San Francisco", "unit": "celsius"}')
+        self.assertTrue(tool_call.id.startswith('call_'))
+
+    def test_converse_alpha2_system_message(self):
+        """Test Alpha2 conversation with system messages."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create system message
+        system_message = ConversationMessage(
+            of_system=ConversationMessageOfSystem(
+                content=[ConversationMessageContent(text="You are a helpful assistant.")]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(messages=[system_message])
+
+        response = dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+
+        # Check response
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.message.content, 'System acknowledged: You are a helpful assistant.')
+
+    def test_converse_alpha2_developer_message(self):
+        """Test Alpha2 conversation with developer messages."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create developer message
+        developer_message = ConversationMessage(
+            of_developer=ConversationMessageOfDeveloper(
+                name="DevTeam",
+                content=[ConversationMessageContent(text="Debug: Processing user input")]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(messages=[developer_message])
+
+        response = dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+
+        # Check response
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.message.content, 'Developer note processed: Debug: Processing user input')
+
+    def test_converse_alpha2_tool_message(self):
+        """Test Alpha2 conversation with tool messages."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create tool message
+        tool_message = ConversationMessage(
+            of_tool=ConversationMessageOfTool(
+                tool_id="call_123",
+                name="get_weather",
+                content=[ConversationMessageContent(text='{"temperature": 22, "condition": "sunny"}')]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(messages=[tool_message])
+
+        response = dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+
+        # Check response
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.message.content, 'Tool result processed: {"temperature": 22, "condition": "sunny"}')
+
+    def test_converse_alpha2_assistant_message(self):
+        """Test Alpha2 conversation with assistant messages."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create assistant message
+        assistant_message = ConversationMessage(
+            of_assistant=ConversationMessageOfAssistant(
+                content=[ConversationMessageContent(text="I understand your request.")]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(messages=[assistant_message])
+
+        response = dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+
+        # Check response
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.message.content, 'Assistant continued: I understand your request.')
+
+    def test_converse_alpha2_multiple_messages(self):
+        """Test Alpha2 conversation with multiple messages in one input."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create multiple messages
+        system_message = ConversationMessage(
+            of_system=ConversationMessageOfSystem(
+                content=[ConversationMessageContent(text="You are helpful.")]
+            )
+        )
+
+        user_message = ConversationMessage(
+            of_user=ConversationMessageOfUser(
+                content=[ConversationMessageContent(text="Hello!")]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(messages=[system_message, user_message])
+
+        response = dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+
+        # Check response has choices for both messages
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        self.assertEqual(len(response.outputs[0].choices), 2)
+
+        # Check individual responses
+        self.assertEqual(response.outputs[0].choices[0].message.content, 'System acknowledged: You are helpful.')
+        self.assertEqual(response.outputs[0].choices[1].message.content, 'Response to user: Hello!')
+
+    def test_converse_alpha2_with_context_and_options(self):
+        """Test Alpha2 conversation with context ID and various options."""
+        from google.protobuf.any_pb2 import Any as GrpcAny
+
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        user_message = ConversationMessage(
+            of_user=ConversationMessageOfUser(
+                content=[ConversationMessageContent(text="Continue our conversation")]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(
+            messages=[user_message],
+            scrub_pii=True
+        )
+
+        # Create custom parameters
+        params = {"custom_param": GrpcAny(value=b'{"setting": "value"}')}
+
+        response = dapr.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            context_id='chat-session-123',
+            parameters=params,
+            metadata={'env': 'test'},
+            scrub_pii=True,
+            temperature=0.7,
+            tool_choice='none'
+        )
+
+        # Check response
+        self.assertIsNotNone(response)
+        self.assertEqual(response.context_id, 'chat-session-123')
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.message.content, 'Response to user: Continue our conversation')
+
+    def test_converse_alpha2_error_handling(self):
+        """Test Alpha2 conversation error handling."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Setup server to raise an exception
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Alpha2 Invalid argument')
+        )
+
+        user_message = ConversationMessage(
+            of_user=ConversationMessageOfUser(
+                content=[ConversationMessageContent(text="Test error")]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+
+        with self.assertRaises(DaprGrpcError) as context:
+            dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+        self.assertTrue('Alpha2 Invalid argument' in str(context.exception))
+
+    def test_converse_alpha2_tool_choice_specific(self):
+        """Test Alpha2 conversation with specific tool choice."""
+        from google.protobuf.any_pb2 import Any as GrpcAny
+
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+        # Create multiple tools
+        weather_tool = ConversationTools(
+            function=ConversationToolsFunction(
+                name="get_weather",
+                description="Get weather information"
+            )
+        )
+
+        calculator_tool = ConversationTools(
+            function=ConversationToolsFunction(
+                name="calculate",
+                description="Perform calculations"
+            )
+        )
+
+        user_message = ConversationMessage(
+            of_user=ConversationMessageOfUser(
+                content=[ConversationMessageContent(text="What's the weather today?")]
+            )
+        )
+
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+
+        response = dapr.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            tools=[weather_tool, calculator_tool],
+            tool_choice='get_weather'  # Force specific tool
+        )
+
+        # Even though we specified a specific tool, our mock will still trigger
+        # based on content matching "weather"
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        if 'weather' in choice.message.content.lower():
+            self.assertEqual(choice.finish_reason, 'tool_calls')
 
     #
     # Tests for Jobs API (Alpha)
