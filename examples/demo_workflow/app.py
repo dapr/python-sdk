@@ -186,7 +186,7 @@ def main():
         sleep(5)
         # Terminate Test
         d.terminate_workflow(instance_id=instance_id, workflow_component=workflow_component)
-        sleep(1)
+        sleep(2)
         get_response = d.get_workflow(
             instance_id=instance_id, workflow_component=workflow_component
         )
@@ -204,6 +204,7 @@ def main():
 
         # Purge Test
         d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        sleep(2)
         try:
             d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
         except DaprInternalError as err:
