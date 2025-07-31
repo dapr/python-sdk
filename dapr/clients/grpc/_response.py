@@ -40,7 +40,7 @@ from typing import (
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 
-from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
+from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._helpers import (
     MetadataDict,
     MetadataTuple,

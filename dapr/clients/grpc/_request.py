@@ -22,7 +22,7 @@ from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 from dapr.proto import api_v1, common_v1
 
-from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
+from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataDict,
@@ -527,7 +527,15 @@ class ConversationToolsFunction:
 
     name: str
     description: Optional[str] = None
-    parameters: Optional[Dict[str, GrpcAny]] = None
+    parameters: Optional[Dict] = None
+
+    def schema_as_dict(self) -> Dict:
+        """Return the function's schema as a dictionary.
+        
+        Returns:
+            Dict: The JSON schema for the function parameters.
+        """
+        return self.parameters or {}
 
 
 @dataclass

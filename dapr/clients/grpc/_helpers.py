@@ -12,8 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Dict, List, Union, Tuple, Optional, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union, Tuple
+
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.wrappers_pb2 import (
@@ -24,6 +25,7 @@ from google.protobuf.wrappers_pb2 import (
     DoubleValue,
     BytesValue,
 )
+from google.protobuf.struct_pb2 import Struct
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
@@ -115,21 +117,69 @@ def getWorkflowRuntimeStatus(inputString):
         return WorkflowRuntimeStatus.UNKNOWN
 
 
-def convert_parameter_value(value: Any) -> GrpcAny:
-    """Convert a raw Python value to a GrpcAny protobuf message.
+def convert_value_to_struct(value: Dict[str, Any]) -> Struct:
+    """Convert a raw Python value to a protobuf Struct message.
 
-    This function automatically detects the type of the input value and wraps it
-    in the appropriate protobuf wrapper type before packing it into GrpcAny.
+    This function converts Python values to a protobuf Struct, which is designed
+    to represent JSON-like dynamic data structures.
 
     Args:
-        value: Raw Python value (str, int, float, bool, bytes, or already GrpcAny)
+        value: Raw Python value (str, int, float, bool, None, dict, list, or already Struct)
 
     Returns:
-        GrpcAny: The value wrapped in a GrpcAny protobuf message
+        Struct: The value converted to a protobuf Struct message
 
     Raises:
-        ValueError: If the value type is not supported
+        ValueError: If the value type is not supported or cannot be serialized
 
+    Examples:
+        >>> convert_value_to_struct("hello")  # -> Struct with string value
+        >>> convert_value_to_struct(42)       # -> Struct with number value
+        >>> convert_value_to_struct(True)     # -> Struct with bool value
+        >>> convert_value_to_struct({"key": "value"})  # -> Struct with nested structure
+    """
+    # If it's already a Struct, return as-is (backward compatibility)
+    if isinstance(value, Struct):
+        return value
+
+    # raise an error if the value is not a dictionary
+    if not isinstance(value, dict) and not isinstance(value, bytes):
+        raise ValueError(f'Value must be a dictionary, got {type(value)}')
+
+    from google.protobuf import json_format
+
+    # Convert the value to a JSON-serializable format first
+    # Handle bytes by converting to base64 string for JSON compatibility
+    if isinstance(value, bytes):
+        import base64
+
+        json_value = base64.b64encode(value).decode('utf-8')
+    else:
+        json_value = value
+
+    try:
+        # For dict values, use ParseDict directly
+        struct = Struct()
+        json_format.ParseDict(json_value, struct)
+        return struct
+
+    except (TypeError, ValueError) as e:
+        raise ValueError(
+            f'Unsupported parameter type or value: {type(value)} = {repr(value)}. '
+            f'Must be JSON-serializable. Error: {e}'
+        ) from e
+
+
+def convert_parameters_to_grpc_any(value: Any) -> GrpcAny:
+    """Convert a raw Python value to a GrpcAny protobuf message.
+    This function automatically detects the type of the input value and wraps it
+    in the appropriate protobuf wrapper type before packing it into GrpcAny.
+    Args:
+        value: Raw Python value (str, int, float, bool, bytes, or already GrpcAny)
+    Returns:
+        GrpcAny: The value wrapped in a GrpcAny protobuf message
+    Raises:
+        ValueError: If the value type is not supported
     Examples:
         >>> convert_parameter_value("hello")  # -> GrpcAny containing StringValue
         >>> convert_parameter_value(42)       # -> GrpcAny containing Int64Value
@@ -160,24 +210,22 @@ def convert_parameter_value(value: Any) -> GrpcAny:
     elif isinstance(value, bytes):
         any_pb.Pack(BytesValue(value=value))
     else:
-        raise ValueError(f"Unsupported parameter type: {type(value)}. "
-                        f"Supported types: str, int, float, bool, bytes, GrpcAny")
+        raise ValueError(
+            f'Unsupported parameter type: {type(value)}. '
+            f'Supported types: str, int, float, bool, bytes, GrpcAny'
+        )
 
     return any_pb
 
 
 def convert_parameters(parameters: Optional[Dict[str, Any]]) -> Dict[str, GrpcAny]:
     """Convert a dictionary of raw Python values to GrpcAny parameters.
-
     This function takes a dictionary with raw Python values and converts each
     value to the appropriate GrpcAny protobuf message for use in Dapr API calls.
-
     Args:
         parameters: Optional dictionary of parameter names to raw Python values
-
     Returns:
         Dictionary of parameter names to GrpcAny values
-
     Examples:
         >>> convert_parameters({"temperature": 0.7, "max_tokens": 1000, "stream": False})
         >>> # Returns: {"temperature": GrpcAny, "max_tokens": GrpcAny, "stream": GrpcAny}
@@ -187,6 +235,207 @@ def convert_parameters(parameters: Optional[Dict[str, Any]]) -> Dict[str, GrpcAn
 
     converted = {}
     for key, value in parameters.items():
-        converted[key] = convert_parameter_value(value)
+        converted[key] = convert_parameters_to_grpc_any(value)
 
     return converted
+
+
+def convert_json_schema_to_grpc_any(schema: Dict[str, Any]) -> GrpcAny:
+    """Convert a parameter schema dictionary to a GrpcAny object.
+
+    This helper converts JSON schema objects to GrpcAny objects using
+    google.protobuf.struct_pb2.Struct for proper JSON representation.
+
+    Args:
+        schema: Parameter schema dictionary (JSON schema object)
+
+    Returns:
+        GrpcAny object containing the JSON schema as a Struct
+
+    Examples:
+        >>> schema = {
+        ...     "type": "object",
+        ...     "properties": {
+        ...         "location": {"type": "string", "description": "City name"}
+        ...     },
+        ...     "required": ["location"]
+        ... }
+        >>> convert_json_schema_to_grpc_any(schema)
+    """
+    if not isinstance(schema, dict):
+        raise ValueError(f'Schema must be a dictionary, got {type(schema)}')
+
+    # Use Struct to represent the JSON schema object
+    struct = Struct()
+    struct.update(schema)
+
+    any_pb = GrpcAny()
+    any_pb.Pack(struct)
+    return any_pb
+
+
+def create_tool_function(
+    name: str,
+    description: str,
+    parameters: Optional[Dict[str, Any]] = None,
+    required: Optional[List[str]] = None,
+) -> 'ConversationToolsFunction':
+    """Create a tool function with automatic parameter conversion.
+
+    This helper automatically converts Python dictionaries to the proper JSON Schema
+    format required by the Dapr Conversation API.
+
+    The parameters map directly represents the JSON schema structure using proper protobuf types.
+
+    Args:
+        name: Function name
+        description: Human-readable description of what the function does
+        parameters: Parameter definitions (raw Python dict)
+        required: List of required parameter names
+
+    Returns:
+        ConversationToolsFunction ready to use with Alpha2 API
+
+    Examples:
+        # Simple approach - properties become JSON schema
+        >>> create_tool_function(
+        ...     name="get_weather",
+        ...     description="Get current weather",
+        ...     parameters={
+        ...         "location": {"type": "string", "description": "City name"},
+        ...         "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+        ...     },
+        ...     required=["location"]
+        ... )
+        # Creates: parameters = {
+        #   "type": StringValue("object"),
+        #   "properties": Struct({...}),
+        #   "required": ListValue([...])
+        # }
+
+        # Full JSON Schema approach (already complete)
+        >>> create_tool_function(
+        ...     name="calculate",
+        ...     description="Perform calculations",
+        ...     parameters={
+        ...         "type": "object",
+        ...         "properties": {
+        ...             "expression": {"type": "string", "description": "Math expression"}
+        ...         },
+        ...         "required": ["expression"]
+        ...     }
+        ... )
+        # Maps schema fields directly to protobuf map
+
+        # No parameters
+        >>> create_tool_function(
+        ...     name="get_time",
+        ...     description="Get current time"
+        ... )
+        # Creates: parameters = {}
+    """
+    from dapr.clients.grpc._request import ConversationToolsFunction
+
+    if parameters is None:
+        # No parameters - simple case
+        return ConversationToolsFunction(name=name, description=description, parameters={})
+
+    # Build the complete JSON Schema object
+    if isinstance(parameters, dict):
+        # Check if it's already a complete JSON schema
+        if 'type' in parameters and parameters['type'] == 'object':
+            # Complete JSON schema provided - use as-is
+            json_schema = parameters.copy()
+            # Add required field if provided separately and not already present
+            if required and 'required' not in json_schema:
+                json_schema['required'] = required
+        elif 'properties' in parameters:
+            # Properties provided directly - wrap in JSON schema
+            json_schema = {'type': 'object', 'properties': parameters['properties']}
+            if required:
+                json_schema['required'] = required
+            elif 'required' in parameters:
+                json_schema['required'] = parameters['required']
+        else:
+            # Assume it's a direct mapping of parameter names to schemas
+            json_schema = {'type': 'object', 'properties': parameters}
+            if required:
+                json_schema['required'] = required
+    else:
+        raise ValueError(f'Parameters must be a dictionary, got {type(parameters)}')
+
+    # Map JSON schema fields directly to protobuf map entries
+    # The parameters map directly represents the JSON schema structure
+    converted_params = {}
+    if json_schema:
+        for key, value in json_schema.items():
+            converted_params[key] = convert_value_to_struct(value)
+
+    return ConversationToolsFunction(
+        name=name, description=description, parameters=converted_params
+    )
+
+
+def create_tool(
+    name: str,
+    description: str,
+    parameters: Optional[Dict[str, Any]] = None,
+    required: Optional[List[str]] = None,
+) -> 'ConversationTools':
+    """Create a complete tool with automatic parameter conversion.
+
+    Args:
+        name: Function name
+        description: Human-readable description of what the function does
+        parameters: JSON schema for function parameters (raw Python dict)
+        required: List of required parameter names
+
+    Returns:
+        ConversationTools ready to use with converse_alpha2()
+
+    Examples:
+        # Weather tool
+        >>> weather_tool = create_tool(
+        ...     name="get_weather",
+        ...     description="Get current weather for a location",
+        ...     parameters={
+        ...         "location": {
+        ...             "type": "string",
+        ...             "description": "The city and state or country"
+        ...         },
+        ...         "unit": {
+        ...             "type": "string",
+        ...             "enum": ["celsius", "fahrenheit"],
+        ...             "description": "Temperature unit"
+        ...         }
+        ...     },
+        ...     required=["location"]
+        ... )
+
+        # Calculator tool with full schema
+        >>> calc_tool = create_tool(
+        ...     name="calculate",
+        ...     description="Perform mathematical calculations",
+        ...     parameters={
+        ...         "type": "object",
+        ...         "properties": {
+        ...             "expression": {
+        ...                 "type": "string",
+        ...                 "description": "Mathematical expression to evaluate"
+        ...             }
+        ...         },
+        ...         "required": ["expression"]
+        ...     }
+        ... )
+
+        # Simple tool with no parameters
+        >>> time_tool = create_tool(
+        ...     name="get_current_time",
+        ...     description="Get the current date and time"
+        ... )
+    """
+    from dapr.clients.grpc._request import ConversationTools
+
+    function = create_tool_function(name, description, parameters, required)
+
+    return ConversationTools(function=function)

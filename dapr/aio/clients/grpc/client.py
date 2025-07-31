@@ -64,6 +64,7 @@ from dapr.clients.grpc._helpers import (
     validateNotNone,
     validateNotBlankString,
     convert_parameters,
+    convert_value_to_struct,
 )
 from dapr.aio.clients.grpc._request import (
     EncryptRequestIterator,
@@ -81,15 +82,8 @@ from dapr.clients.grpc._request import (
     ConversationInputAlpha2,
     ConversationMessage,
     ConversationMessageContent,
-    ConversationMessageOfUser,
-    ConversationMessageOfSystem,
-    ConversationMessageOfAssistant,
-    ConversationMessageOfDeveloper,
-    ConversationMessageOfTool,
     ConversationTools,
-    ConversationToolsFunction,
     ConversationToolCalls,
-    ConversationToolCallsOfFunction,
 )
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
@@ -1739,7 +1733,7 @@ class DaprGrpcClientAsync:
         inputs: List[ConversationInput],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: Optional[Dict[str, GrpcAny]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
@@ -1766,14 +1760,14 @@ class DaprGrpcClientAsync:
             for inp in inputs
         ]
 
-        # Convert raw Python parameters to GrpcAny objects
-        converted_parameters = convert_parameters(parameters)
+        # # Convert raw Python parameters to GrpcAny objects
+        # converted_parameters = convert_parameters(parameters)
 
         request = api_v1.ConversationRequest(
             name=name,
             inputs=inputs_pb,
             contextID=context_id,
-            parameters=converted_parameters,
+            parameters=parameters,
             metadata=metadata or {},
             scrubPII=scrub_pii,
             temperature=temperature,
@@ -1798,7 +1792,7 @@ class DaprGrpcClientAsync:
         inputs: List[ConversationInputAlpha2],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: Optional[Dict[str, GrpcAny]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
@@ -1829,7 +1823,9 @@ class DaprGrpcClientAsync:
             """Convert message content list to proto format."""
             if not content_list:
                 return []
-            return [api_v1.ConversationMessageContent(text=content.text) for content in content_list]
+            return [
+                api_v1.ConversationMessageContent(text=content.text) for content in content_list
+            ]
 
         def _convert_tool_calls(tool_calls: List[ConversationToolCalls]):
             """Convert tool calls to proto format."""
@@ -1852,22 +1848,34 @@ class DaprGrpcClientAsync:
 
             if message.of_developer:
                 proto_message.of_developer.name = message.of_developer.name or ''
-                proto_message.of_developer.content.extend(_convert_message_content(message.of_developer.content or []))
+                proto_message.of_developer.content.extend(
+                    _convert_message_content(message.of_developer.content or [])
+                )
             elif message.of_system:
                 proto_message.of_system.name = message.of_system.name or ''
-                proto_message.of_system.content.extend(_convert_message_content(message.of_system.content or []))
+                proto_message.of_system.content.extend(
+                    _convert_message_content(message.of_system.content or [])
+                )
             elif message.of_user:
                 proto_message.of_user.name = message.of_user.name or ''
-                proto_message.of_user.content.extend(_convert_message_content(message.of_user.content or []))
+                proto_message.of_user.content.extend(
+                    _convert_message_content(message.of_user.content or [])
+                )
             elif message.of_assistant:
                 proto_message.of_assistant.name = message.of_assistant.name or ''
-                proto_message.of_assistant.content.extend(_convert_message_content(message.of_assistant.content or []))
-                proto_message.of_assistant.tool_calls.extend(_convert_tool_calls(message.of_assistant.tool_calls or []))
+                proto_message.of_assistant.content.extend(
+                    _convert_message_content(message.of_assistant.content or [])
+                )
+                proto_message.of_assistant.tool_calls.extend(
+                    _convert_tool_calls(message.of_assistant.tool_calls or [])
+                )
             elif message.of_tool:
                 if message.of_tool.tool_id:
                     proto_message.of_tool.tool_id = message.of_tool.tool_id
                 proto_message.of_tool.name = message.of_tool.name
-                proto_message.of_tool.content.extend(_convert_message_content(message.of_tool.content or []))
+                proto_message.of_tool.content.extend(
+                    _convert_message_content(message.of_tool.content or [])
+                )
 
             return proto_message
 
@@ -1893,8 +1901,9 @@ class DaprGrpcClientAsync:
                     if tool.function.description:
                         proto_tool.function.description = tool.function.description
                     if tool.function.parameters:
-                        for key, value in tool.function.parameters.items():
-                            proto_tool.function.parameters[key].CopyFrom(value)
+                        proto_tool.function.parameters.CopyFrom(
+                            convert_value_to_struct(tool.function.parameters)
+                        )
                 tools_pb.append(proto_tool)
 
         # Convert raw Python parameters to GrpcAny objects
@@ -1925,20 +1934,18 @@ class DaprGrpcClientAsync:
             for output in response.outputs:
                 choices = []
                 for choice in output.choices:
-                    choices.append(ConversationResultChoices(
-                        finish_reason=choice.finish_reason,
-                        index=choice.index,
-                        message=ConversationResultMessage(
-                            content=choice.message.content,
-                            tool_calls=choice.message.tool_calls
+                    choices.append(
+                        ConversationResultChoices(
+                            finish_reason=choice.finish_reason,
+                            index=choice.index,
+                            message=ConversationResultMessage(
+                                content=choice.message.content, tool_calls=choice.message.tool_calls
+                            ),
                         )
-                    ))
+                    )
                 outputs.append(ConversationResultAlpha2(choices=choices))
 
-            return ConversationResponseAlpha2(
-                context_id=response.context_id,
-                outputs=outputs
-            )
+            return ConversationResponseAlpha2(context_id=response.context_id, outputs=outputs)
 
         except grpc.aio.AioRpcError as err:
             raise DaprGrpcError(err) from err

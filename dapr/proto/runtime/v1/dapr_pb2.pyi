@@ -23,6 +23,7 @@ import google.protobuf.descriptor
 import google.protobuf.internal.containers
 import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
+import google.protobuf.struct_pb2
 import google.protobuf.timestamp_pb2
 import sys
 import typing
@@ -4103,24 +4104,6 @@ class ConversationToolsFunction(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    @typing.final
-    class ParametersEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
-
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        @property
-        def value(self) -> google.protobuf.any_pb2.Any: ...
-        def __init__(
-            self,
-            *,
-            key: builtins.str = ...,
-            value: google.protobuf.any_pb2.Any | None = ...,
-        ) -> None: ...
-        def HasField(self, field_name: typing.Literal["value", b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
-
     NAME_FIELD_NUMBER: builtins.int
     DESCRIPTION_FIELD_NUMBER: builtins.int
     PARAMETERS_FIELD_NUMBER: builtins.int
@@ -4131,7 +4114,7 @@ class ConversationToolsFunction(google.protobuf.message.Message):
     used by the model to choose when and how to call the function.
     """
     @property
-    def parameters(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, google.protobuf.any_pb2.Any]:
+    def parameters(self) -> google.protobuf.struct_pb2.Struct:
         """The parameters the functions accepts, described as a JSON Schema object. 
         See the [guide](https://platform.openai.com/docs/guides/function-calling) for examples,
         and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.	
@@ -4143,9 +4126,9 @@ class ConversationToolsFunction(google.protobuf.message.Message):
         *,
         name: builtins.str = ...,
         description: builtins.str | None = ...,
-        parameters: collections.abc.Mapping[builtins.str, google.protobuf.any_pb2.Any] | None = ...,
+        parameters: google.protobuf.struct_pb2.Struct | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["_description", b"_description", "description", b"description"]) -> builtins.bool: ...
+    def HasField(self, field_name: typing.Literal["_description", b"_description", "description", b"description", "parameters", b"parameters"]) -> builtins.bool: ...
     def ClearField(self, field_name: typing.Literal["_description", b"_description", "description", b"description", "name", b"name", "parameters", b"parameters"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["_description", b"_description"]) -> typing.Literal["description"] | None: ...
 

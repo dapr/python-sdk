@@ -14,15 +14,14 @@ This test suite covers:
 """
 
 import asyncio
-import json
 import unittest
 
-from google.protobuf.any_pb2 import Any as GrpcAny
 from google.rpc import code_pb2, status_pb2
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprGrpcError
+from dapr.conf import settings
 from dapr.clients.grpc._request import (
     ConversationInput,
     ConversationInputAlpha2,
@@ -31,12 +30,9 @@ from dapr.clients.grpc._request import (
     ConversationMessageOfUser,
     ConversationMessageOfSystem,
     ConversationMessageOfAssistant,
-    ConversationMessageOfDeveloper,
     ConversationMessageOfTool,
     ConversationTools,
     ConversationToolsFunction,
-    ConversationToolCalls,
-    ConversationToolCallsOfFunction,
 )
 from tests.clients.fake_dapr_server import FakeDaprSidecar
 
@@ -52,6 +48,9 @@ class ConversationTestBase:
     def setUpClass(cls):
         cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls.grpc_port, http_port=cls.http_port)
         cls._fake_dapr_server.start()
+        # Configure health check to use fake server's HTTP port
+        settings.DAPR_HTTP_PORT = cls.http_port
+        settings.DAPR_HTTP_ENDPOINT = f'http://127.0.0.1:{cls.http_port}'
 
     @classmethod
     def tearDownClass(cls):
@@ -64,15 +63,19 @@ class ConversationTestBase:
                 name='get_weather',
                 description='Get weather information for a location',
                 parameters={
-                    'location': GrpcAny(value=json.dumps({
-                        'type': 'string',
-                        'description': 'The city and state, e.g. San Francisco, CA'
-                    }).encode()),
-                    'unit': GrpcAny(value=json.dumps({
-                        'type': 'string',
-                        'enum': ['celsius', 'fahrenheit'],
-                        'description': 'Temperature unit'
-                    }).encode())
+                    'type': 'object',
+                    'properties': {
+                        'location': {
+                            'type': 'string',
+                            'description': 'The city and state, e.g. San Francisco, CA',
+                        },
+                        'unit': {
+                            'type': 'string',
+                            'enum': ['celsius', 'fahrenheit'],
+                            'description': 'Temperature unit',
+                        },
+                    },
+                    'required': ['location'],
                 }
             )
         )
@@ -84,10 +87,14 @@ class ConversationTestBase:
                 name='calculate',
                 description='Perform mathematical calculations',
                 parameters={
-                    'expression': GrpcAny(value=json.dumps({
-                        'type': 'string',
-                        'description': 'Mathematical expression to evaluate'
-                    }).encode())
+                    'type': 'object',
+                    'properties': {
+                        'expression': {
+                            'type': 'string',
+                            'description': 'Mathematical expression to evaluate',
+                        }
+                    },
+                    'required': ['expression'],
                 }
             )
         )
@@ -95,25 +102,20 @@ class ConversationTestBase:
     def create_user_message(self, text):
         """Helper to create a user message for Alpha2."""
         return ConversationMessage(
-            of_user=ConversationMessageOfUser(
-                content=[ConversationMessageContent(text=text)]
-            )
+            of_user=ConversationMessageOfUser(content=[ConversationMessageContent(text=text)])
         )
 
     def create_system_message(self, text):
         """Helper to create a system message for Alpha2."""
         return ConversationMessage(
-            of_system=ConversationMessageOfSystem(
-                content=[ConversationMessageContent(text=text)]
-            )
+            of_system=ConversationMessageOfSystem(content=[ConversationMessageContent(text=text)])
         )
 
     def create_assistant_message(self, text, tool_calls=None):
         """Helper to create an assistant message for Alpha2."""
         return ConversationMessage(
             of_assistant=ConversationMessageOfAssistant(
-                content=[ConversationMessageContent(text=text)],
-                tool_calls=tool_calls or []
+                content=[ConversationMessageContent(text=text)], tool_calls=tool_calls or []
             )
         )
 
@@ -121,9 +123,7 @@ class ConversationTestBase:
         """Helper to create a tool message for Alpha2."""
         return ConversationMessage(
             of_tool=ConversationMessageOfTool(
-                tool_id=tool_id,
-                name=name,
-                content=[ConversationMessageContent(text=content)]
+                tool_id=tool_id, name=name, content=[ConversationMessageContent(text=content)]
             )
         )
 
@@ -157,7 +157,7 @@ class ConversationAlpha1SyncTests(ConversationTestBase, unittest.TestCase):
                 context_id='test-context-123',
                 temperature=0.7,
                 scrub_pii=True,
-                metadata={'test_key': 'test_value'}
+                metadata={'test_key': 'test_value'},
             )
 
             self.assertIsNotNone(response)
@@ -179,7 +179,7 @@ class ConversationAlpha1SyncTests(ConversationTestBase, unittest.TestCase):
                     'top_p': 0.9,
                     'frequency_penalty': 0.0,
                     'presence_penalty': 0.0,
-                }
+                },
             )
 
             self.assertIsNotNone(response)
@@ -226,8 +226,7 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
             user_message = self.create_user_message('Hello!')
 
             input_alpha2 = ConversationInputAlpha2(
-                messages=[system_message, user_message],
-                scrub_pii=False
+                messages=[system_message, user_message], scrub_pii=False
             )
 
             response = client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
@@ -247,10 +246,7 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
         """Test Alpha2 conversation with various options."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
             user_message = self.create_user_message('Alpha2 with options')
-            input_alpha2 = ConversationInputAlpha2(
-                messages=[user_message],
-                scrub_pii=True
-            )
+            input_alpha2 = ConversationInputAlpha2(messages=[user_message], scrub_pii=True)
 
             response = client.converse_alpha2(
                 name='test-llm',
@@ -259,7 +255,7 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
                 temperature=0.8,
                 scrub_pii=True,
                 metadata={'alpha2_test': 'true'},
-                tool_choice='none'
+                tool_choice='none',
             )
 
             self.assertIsNotNone(response)
@@ -282,7 +278,7 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
                     'frequency_penalty': 0.0,
                     'presence_penalty': 0.0,
                     'stream': False,
-                }
+                },
             )
 
             self.assertIsNotNone(response)
@@ -314,10 +310,7 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                tools=[weather_tool],
-                tool_choice='auto'
+                name='test-llm', inputs=[input_alpha2], tools=[weather_tool], tool_choice='auto'
             )
 
             self.assertIsNotNone(response)
@@ -338,9 +331,7 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                tools=[calc_tool]
+                name='test-llm', inputs=[input_alpha2], tools=[calc_tool]
             )
 
             # Note: Our fake server only triggers weather tools, so this won't return tool calls
@@ -362,7 +353,7 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
                 name='test-llm',
                 inputs=[input_alpha2],
                 tools=[weather_tool, calc_tool],
-                tool_choice='auto'
+                tool_choice='auto',
             )
 
             self.assertIsNotNone(response)
@@ -379,10 +370,7 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                tools=[weather_tool],
-                tool_choice='none'
+                name='test-llm', inputs=[input_alpha2], tools=[weather_tool], tool_choice='none'
             )
 
             self.assertIsNotNone(response)
@@ -404,7 +392,7 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
                 name='test-llm',
                 inputs=[input_alpha2],
                 tools=[weather_tool, calc_tool],
-                tool_choice='get_weather'
+                tool_choice='get_weather',
             )
 
             self.assertIsNotNone(response)
@@ -452,9 +440,7 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response1 = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                tools=[weather_tool]
+                name='test-llm', inputs=[input_alpha2], tools=[weather_tool]
             )
 
             # Should get tool call
@@ -467,7 +453,7 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
             tool_result_message = self.create_tool_message(
                 tool_id=tool_call.id,
                 name='get_weather',
-                content='{"temperature": 18, "condition": "cloudy", "humidity": 75}'
+                content='{"temperature": 18, "condition": "cloudy", "humidity": 75}',
             )
 
             result_input = ConversationInputAlpha2(messages=[tool_result_message])
@@ -489,9 +475,7 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
             input1 = ConversationInputAlpha2(messages=[user_message1])
 
             response1 = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input1],
-                context_id=context_id
+                name='test-llm', inputs=[input1], context_id=context_id
             )
 
             self.assertEqual(response1.context_id, context_id)
@@ -501,9 +485,7 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
             input2 = ConversationInputAlpha2(messages=[user_message2])
 
             response2 = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input2],
-                context_id=context_id
+                name='test-llm', inputs=[input2], context_id=context_id
             )
 
             self.assertEqual(response2.context_id, context_id)
@@ -548,9 +530,7 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = await client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                tools=[weather_tool]
+                name='test-llm', inputs=[input_alpha2], tools=[weather_tool]
             )
 
             self.assertIsNotNone(response)
@@ -562,12 +542,11 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
     async def test_concurrent_async_conversations(self):
         """Test multiple concurrent async conversations."""
         async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
+
             async def run_alpha1_conversation(message, session_id):
                 inputs = [ConversationInput(content=message, role='user')]
                 response = await client.converse_alpha1(
-                    name='test-llm',
-                    inputs=inputs,
-                    context_id=session_id
+                    name='test-llm', inputs=inputs, context_id=session_id
                 )
                 return response.outputs[0].result
 
@@ -575,9 +554,7 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
                 user_message = self.create_user_message(message)
                 input_alpha2 = ConversationInputAlpha2(messages=[user_message])
                 response = await client.converse_alpha2(
-                    name='test-llm',
-                    inputs=[input_alpha2],
-                    context_id=session_id
+                    name='test-llm', inputs=[input_alpha2], context_id=session_id
                 )
                 return response.outputs[0].choices[0].message.content
 
@@ -608,7 +585,7 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
                 name='test-llm',
                 inputs=[input1],
                 tools=[weather_tool],
-                context_id='async-multi-turn'
+                context_id='async-multi-turn',
             )
 
             # Should get tool call
@@ -619,14 +596,12 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
             tool_result_message = self.create_tool_message(
                 tool_id=tool_call.id,
                 name='get_weather',
-                content='{"temperature": 22, "condition": "sunny"}'
+                content='{"temperature": 22, "condition": "sunny"}',
             )
             input2 = ConversationInputAlpha2(messages=[tool_result_message])
 
             response2 = await client.converse_alpha2(
-                name='test-llm',
-                inputs=[input2],
-                context_id='async-multi-turn'
+                name='test-llm', inputs=[input2], context_id='async-multi-turn'
             )
 
             self.assertIsNotNone(response2)
@@ -649,30 +624,6 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
 class ConversationParameterTests(ConversationTestBase, unittest.TestCase):
     """Tests for parameter handling and conversion."""
 
-    def test_parameter_backward_compatibility(self):
-        """Test that pre-wrapped protobuf parameters still work."""
-        from google.protobuf.wrappers_pb2 import StringValue
-
-        # Create pre-wrapped parameter (old way)
-        pre_wrapped_any = GrpcAny()
-        pre_wrapped_any.Pack(StringValue(value="auto"))
-
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            inputs = [ConversationInput(content='Backward compatibility test', role='user')]
-
-            # Mix of old (pre-wrapped) and new (raw) parameters
-            response = client.converse_alpha1(
-                name='test-llm',
-                inputs=inputs,
-                parameters={
-                    'tool_choice': pre_wrapped_any,  # Old way (pre-wrapped)
-                    'temperature': 0.8,              # New way (raw value)
-                    'max_tokens': 500,               # New way (raw value)
-                }
-            )
-
-            self.assertIsNotNone(response)
-
     def test_parameter_edge_cases(self):
         """Test parameter conversion with edge cases."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
@@ -683,14 +634,14 @@ class ConversationParameterTests(ConversationTestBase, unittest.TestCase):
                 name='test-llm',
                 inputs=[input_alpha2],
                 parameters={
-                    'int32_max': 2147483647,    # Int32 maximum
+                    'int32_max': 2147483647,  # Int32 maximum
                     'int64_large': 9999999999,  # Requires Int64
-                    'negative_temp': -0.5,      # Negative float
-                    'zero_value': 0,            # Zero integer
-                    'false_flag': False,        # Boolean false
-                    'true_flag': True,          # Boolean true
-                    'empty_string': '',         # Empty string
-                }
+                    'negative_temp': -0.5,  # Negative float
+                    'zero_value': 0,  # Zero integer
+                    'false_flag': False,  # Boolean false
+                    'true_flag': True,  # Boolean true
+                    'empty_string': '',  # Empty string
+                },
             )
 
             self.assertIsNotNone(response)
@@ -714,7 +665,7 @@ class ConversationParameterTests(ConversationTestBase, unittest.TestCase):
                     'presence_penalty': 0.0,
                     'stream': False,
                     'tool_choice': 'auto',
-                }
+                },
             )
 
             # Anthropic-style parameters
@@ -728,7 +679,7 @@ class ConversationParameterTests(ConversationTestBase, unittest.TestCase):
                     'top_p': 0.9,
                     'top_k': 250,
                     'stream': False,
-                }
+                },
             )
 
             self.assertIsNotNone(response1)

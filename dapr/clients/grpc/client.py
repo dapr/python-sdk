@@ -40,7 +40,7 @@ from grpc import (  # type: ignore
 
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
+from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus, validateNotBlankString, validateNotNone
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
@@ -53,14 +53,10 @@ from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 from dapr.clients.grpc._helpers import (
-    MetadataDict,
     MetadataTuple,
     to_bytes,
-    to_str,
-    tuple_to_dict,
-    unpack,
-    WorkflowRuntimeStatus,
     convert_parameters,
+    convert_value_to_struct,
 )
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.clients.grpc._request import (
@@ -73,13 +69,7 @@ from dapr.clients.grpc._request import (
     ConversationInputAlpha2,
     ConversationMessage,
     ConversationMessageContent,
-    ConversationMessageOfDeveloper,
-    ConversationMessageOfSystem,
-    ConversationMessageOfUser,
-    ConversationMessageOfAssistant,
-    ConversationMessageOfTool,
     ConversationTools,
-    ConversationToolsFunction,
     ConversationToolCalls,
     ConversationToolCallsOfFunction,
 )
@@ -1804,7 +1794,7 @@ class DaprGrpcClient:
         inputs: List[ConversationInputAlpha2],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: Optional[Dict[str, GrpcAny | Any]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
@@ -1835,7 +1825,9 @@ class DaprGrpcClient:
             """Convert message content list to proto format."""
             if not content_list:
                 return []
-            return [api_v1.ConversationMessageContent(text=content.text) for content in content_list]
+            return [
+                api_v1.ConversationMessageContent(text=content.text) for content in content_list
+            ]
 
         def _convert_tool_calls(tool_calls: List[ConversationToolCalls]):
             """Convert tool calls to proto format."""
@@ -1858,22 +1850,34 @@ class DaprGrpcClient:
 
             if message.of_developer:
                 proto_message.of_developer.name = message.of_developer.name or ''
-                proto_message.of_developer.content.extend(_convert_message_content(message.of_developer.content or []))
+                proto_message.of_developer.content.extend(
+                    _convert_message_content(message.of_developer.content or [])
+                )
             elif message.of_system:
                 proto_message.of_system.name = message.of_system.name or ''
-                proto_message.of_system.content.extend(_convert_message_content(message.of_system.content or []))
+                proto_message.of_system.content.extend(
+                    _convert_message_content(message.of_system.content or [])
+                )
             elif message.of_user:
                 proto_message.of_user.name = message.of_user.name or ''
-                proto_message.of_user.content.extend(_convert_message_content(message.of_user.content or []))
+                proto_message.of_user.content.extend(
+                    _convert_message_content(message.of_user.content or [])
+                )
             elif message.of_assistant:
                 proto_message.of_assistant.name = message.of_assistant.name or ''
-                proto_message.of_assistant.content.extend(_convert_message_content(message.of_assistant.content or []))
-                proto_message.of_assistant.tool_calls.extend(_convert_tool_calls(message.of_assistant.tool_calls or []))
+                proto_message.of_assistant.content.extend(
+                    _convert_message_content(message.of_assistant.content or [])
+                )
+                proto_message.of_assistant.tool_calls.extend(
+                    _convert_tool_calls(message.of_assistant.tool_calls or [])
+                )
             elif message.of_tool:
                 if message.of_tool.tool_id:
                     proto_message.of_tool.tool_id = message.of_tool.tool_id
                 proto_message.of_tool.name = message.of_tool.name
-                proto_message.of_tool.content.extend(_convert_message_content(message.of_tool.content or []))
+                proto_message.of_tool.content.extend(
+                    _convert_message_content(message.of_tool.content or [])
+                )
 
             return proto_message
 
@@ -1899,8 +1903,10 @@ class DaprGrpcClient:
                     if tool.function.description:
                         proto_tool.function.description = tool.function.description
                     if tool.function.parameters:
-                        for key, value in tool.function.parameters.items():
-                            proto_tool.function.parameters[key].CopyFrom(value)
+                        # we only keep type, properties and required
+                        proto_tool.function.parameters.CopyFrom(
+                            convert_value_to_struct(tool.function.parameters)
+                        )
                 tools_pb.append(proto_tool)
 
         # Convert raw Python parameters to GrpcAny objects
@@ -1936,24 +1942,25 @@ class DaprGrpcClient:
                     tool_calls = []
                     for tool_call in choice.message.tool_calls:
                         function_call = ConversationToolCallsOfFunction(
-                            name=tool_call.function.name,
-                            arguments=tool_call.function.arguments
+                            name=tool_call.function.name, arguments=tool_call.function.arguments
                         )
-                        tool_calls.append(ConversationToolCalls(
-                            id=tool_call.id if tool_call.id else None,
-                            function=function_call
-                        ))
+                        tool_calls.append(
+                            ConversationToolCalls(
+                                id=tool_call.id if tool_call.id else None, function=function_call
+                            )
+                        )
 
                     result_message = ConversationResultMessage(
-                        content=choice.message.content,
-                        tool_calls=tool_calls
+                        content=choice.message.content, tool_calls=tool_calls
                     )
 
-                    choices.append(ConversationResultChoices(
-                        finish_reason=choice.finish_reason,
-                        index=choice.index,
-                        message=result_message
-                    ))
+                    choices.append(
+                        ConversationResultChoices(
+                            finish_reason=choice.finish_reason,
+                            index=choice.index,
+                            message=result_message,
+                        )
+                    )
 
                 outputs.append(ConversationResultAlpha2(choices=choices))
 
