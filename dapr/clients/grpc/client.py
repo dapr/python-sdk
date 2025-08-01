@@ -55,7 +55,7 @@ from dapr.version import __version__
 from dapr.clients.grpc._helpers import (
     MetadataTuple,
     to_bytes,
-    convert_parameters,
+    convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
 )
 from dapr.conf.helpers import GrpcEndpoint
@@ -1764,7 +1764,7 @@ class DaprGrpcClient:
         ]
 
         # Convert raw Python parameters to GrpcAny objects
-        converted_parameters = convert_parameters(parameters)
+        converted_parameters = convert_dict_to_grpc_dict_of_any(parameters)
 
         request = api_v1.ConversationRequest(
             name=name,
@@ -1910,7 +1910,7 @@ class DaprGrpcClient:
                 tools_pb.append(proto_tool)
 
         # Convert raw Python parameters to GrpcAny objects
-        converted_parameters = convert_parameters(parameters)
+        converted_parameters = convert_dict_to_grpc_dict_of_any(parameters)
 
         # Build the request
         request = api_v1.ConversationRequestAlpha2(

@@ -170,7 +170,7 @@ def convert_value_to_struct(value: Dict[str, Any]) -> Struct:
         ) from e
 
 
-def convert_parameters_to_grpc_any(value: Any) -> GrpcAny:
+def convert_value_to_grpc_any(value: Any) -> GrpcAny:
     """Convert a raw Python value to a GrpcAny protobuf message.
     This function automatically detects the type of the input value and wraps it
     in the appropriate protobuf wrapper type before packing it into GrpcAny.
@@ -181,10 +181,10 @@ def convert_parameters_to_grpc_any(value: Any) -> GrpcAny:
     Raises:
         ValueError: If the value type is not supported
     Examples:
-        >>> convert_parameter_value("hello")  # -> GrpcAny containing StringValue
-        >>> convert_parameter_value(42)       # -> GrpcAny containing Int64Value
-        >>> convert_parameter_value(3.14)     # -> GrpcAny containing DoubleValue
-        >>> convert_parameter_value(True)     # -> GrpcAny containing BoolValue
+        >>> convert_value_to_grpc_any("hello")  # -> GrpcAny containing StringValue
+        >>> convert_value_to_grpc_any(42)       # -> GrpcAny containing Int64Value
+        >>> convert_value_to_grpc_any(3.14)     # -> GrpcAny containing DoubleValue
+        >>> convert_value_to_grpc_any(True)     # -> GrpcAny containing BoolValue
     """
     # If it's already a GrpcAny, return as-is (backward compatibility)
     if isinstance(value, GrpcAny):
@@ -218,7 +218,7 @@ def convert_parameters_to_grpc_any(value: Any) -> GrpcAny:
     return any_pb
 
 
-def convert_parameters(parameters: Optional[Dict[str, Any]]) -> Dict[str, GrpcAny]:
+def convert_dict_to_grpc_dict_of_any(parameters: Optional[Dict[str, Any]]) -> Dict[str, GrpcAny]:
     """Convert a dictionary of raw Python values to GrpcAny parameters.
     This function takes a dictionary with raw Python values and converts each
     value to the appropriate GrpcAny protobuf message for use in Dapr API calls.
@@ -227,7 +227,7 @@ def convert_parameters(parameters: Optional[Dict[str, Any]]) -> Dict[str, GrpcAn
     Returns:
         Dictionary of parameter names to GrpcAny values
     Examples:
-        >>> convert_parameters({"temperature": 0.7, "max_tokens": 1000, "stream": False})
+        >>> convert_dict_to_grpc_dict_of_any({"temperature": 0.7, "max_tokens": 1000, "stream": False})
         >>> # Returns: {"temperature": GrpcAny, "max_tokens": GrpcAny, "stream": GrpcAny}
     """
     if not parameters:
@@ -235,43 +235,9 @@ def convert_parameters(parameters: Optional[Dict[str, Any]]) -> Dict[str, GrpcAn
 
     converted = {}
     for key, value in parameters.items():
-        converted[key] = convert_parameters_to_grpc_any(value)
+        converted[key] = convert_value_to_grpc_any(value)
 
     return converted
-
-
-def convert_json_schema_to_grpc_any(schema: Dict[str, Any]) -> GrpcAny:
-    """Convert a parameter schema dictionary to a GrpcAny object.
-
-    This helper converts JSON schema objects to GrpcAny objects using
-    google.protobuf.struct_pb2.Struct for proper JSON representation.
-
-    Args:
-        schema: Parameter schema dictionary (JSON schema object)
-
-    Returns:
-        GrpcAny object containing the JSON schema as a Struct
-
-    Examples:
-        >>> schema = {
-        ...     "type": "object",
-        ...     "properties": {
-        ...         "location": {"type": "string", "description": "City name"}
-        ...     },
-        ...     "required": ["location"]
-        ... }
-        >>> convert_json_schema_to_grpc_any(schema)
-    """
-    if not isinstance(schema, dict):
-        raise ValueError(f'Schema must be a dictionary, got {type(schema)}')
-
-    # Use Struct to represent the JSON schema object
-    struct = Struct()
-    struct.update(schema)
-
-    any_pb = GrpcAny()
-    any_pb.Pack(struct)
-    return any_pb
 
 
 def create_tool_function(

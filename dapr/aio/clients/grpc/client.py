@@ -63,7 +63,7 @@ from dapr.clients.grpc._helpers import (
     to_bytes,
     validateNotNone,
     validateNotBlankString,
-    convert_parameters,
+    convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
 )
 from dapr.aio.clients.grpc._request import (
@@ -1907,7 +1907,7 @@ class DaprGrpcClientAsync:
                 tools_pb.append(proto_tool)
 
         # Convert raw Python parameters to GrpcAny objects
-        converted_parameters = convert_parameters(parameters)
+        converted_parameters = convert_dict_to_grpc_dict_of_any(parameters)
 
         # Build the request
         request = api_v1.ConversationRequestAlpha2(
