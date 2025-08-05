@@ -205,11 +205,9 @@ def main():
         # Purge Test
         d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
         sleep(5)
-        try:
-            d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
-        except DaprInternalError as err:
-            if non_existent_id_error in err._message:
-                print('Instance Successfully Purged')
+        get_response = d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        if get_response is None:
+            print('Instance Successfully Purged')
 
         workflow_runtime.shutdown()
 
