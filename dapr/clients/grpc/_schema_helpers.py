@@ -17,7 +17,10 @@ limitations under the License.
 import inspect
 from dataclasses import fields, is_dataclass
 from enum import Enum
-from typing import Any, Dict, Optional, Union, get_args, get_origin, get_type_hints
+from typing import Any, Dict, List, Optional, Union, get_args, get_origin, get_type_hints, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from dapr.clients.grpc._request import ConversationTools
 
 """
 Schema Helpers for Dapr Conversation API.
@@ -76,7 +79,7 @@ def python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[s
 
     # Handle Dict types
     if origin is dict or python_type is dict:
-        schema = {'type': 'object'}
+        schema: Dict[str, Any] = {'type': 'object'}
         if args and len(args) == 2:
             # Dict[str, ValueType] - add additionalProperties
             key_type, value_type = args
@@ -118,23 +121,23 @@ def python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[s
     if is_dataclass(python_type):
         from dataclasses import MISSING
 
-        schema = {'type': 'object', 'properties': {}, 'required': []}
+        dataclass_schema: Dict[str, Any] = {'type': 'object', 'properties': {}, 'required': []}
 
         for field in fields(python_type):
             field_schema = python_type_to_json_schema(field.type, field.name)
-            schema['properties'][field.name] = field_schema
+            dataclass_schema['properties'][field.name] = field_schema
 
             # Check if field has no default (required) - use MISSING for dataclasses
             if field.default is MISSING:
-                schema['required'].append(field.name)
+                dataclass_schema['required'].append(field.name)
 
-        return schema
+        return dataclass_schema
 
     # Fallback for unknown types
     return {'type': 'string', 'description': f'Unknown type: {python_type}'}
 
 
-def extract_docstring_info(func) -> Dict[str, str]:
+def extract_docstring_args(func) -> Dict[str, str]:
     """Extract parameter descriptions from function docstring.
 
     Supports Google-style, NumPy-style, and Sphinx-style docstrings.
@@ -144,54 +147,287 @@ def extract_docstring_info(func) -> Dict[str, str]:
 
     Returns:
         Dict mapping parameter names to their descriptions
+
+    Raises:
+        ValueError: If docstring contains parameter info but doesn't match supported formats
     """
     docstring = inspect.getdoc(func)
     if not docstring:
         return {}
 
     param_descriptions = {}
-
-    # Simple regex-based extraction for common docstring formats
     lines = docstring.split('\n')
+
+    # First, try to extract Sphinx-style parameters (:param name: description)
+    param_descriptions.update(_extract_sphinx_params(lines))
+
+    # If no Sphinx-style params found, try Google/NumPy style
+    if not param_descriptions:
+        param_descriptions.update(_extract_google_numpy_params(lines))
+
+    # If still no parameters found, check if docstring might have parameter info
+    # in an unsupported format
+    if not param_descriptions and _has_potential_param_info(lines):
+        func_name = getattr(func, '__name__', 'unknown')
+        import warnings
+
+        warnings.warn(
+            f"Function '{func_name}' has a docstring that appears to contain parameter "
+            f"information, but it doesn't match any supported format (Google, NumPy, or Sphinx style). "
+            f'Consider reformatting the docstring to use one of the supported styles for '
+            f'automatic parameter extraction or create the tool manually.',
+            UserWarning,
+            stacklevel=2,
+        )
+
+    return param_descriptions
+
+
+def _has_potential_param_info(lines: List[str]) -> bool:
+    """Check if docstring lines might contain parameter information in unsupported format.
+
+    This is a heuristic to detect when a docstring might have parameter info
+    but doesn't match our supported formats (Google, NumPy, Sphinx).
+    """
+    text = ' '.join(line.strip().lower() for line in lines)
+
+    # Look for specific parameter documentation patterns that suggest
+    # an attempt to document parameters in an unsupported format
+    import re
+
+    # Look for informal parameter descriptions like:
+    # "The filename parameter should be..." or "parameter_name is used for..."
+    has_param_descriptions = bool(
+        re.search(r'the\s+\w+\s+parameter\s+(should|is|controls|specifies)', text)
+    )
+
+    # Look for patterns where parameters are mentioned with descriptions
+    # "filename parameter", "mode parameter", etc.
+    has_param_mentions = bool(
+        re.search(r'\w+\s+parameter\s+(should|is|controls|specifies|contains)', text)
+    )
+
+    # Look for informal patterns like "takes param1 which is", "param2 is an integer"
+    has_informal_param_descriptions = bool(
+        re.search(r'takes\s+\w+\s+which\s+(is|are)', text) or
+        re.search(r'\w+\s+(is|are)\s+(a|an)\s+\w+\s+(input|argument)', text)
+    )
+
+    # Look for multiple parameter mentions suggesting documentation attempt
+    param_count = text.count(' parameter ')
+    has_multiple_param_mentions = param_count >= 2
+
+    # Exclude common phrases that don't indicate parameter documentation attempts
+    exclude_phrases = [
+        'no parameters',
+        'without parameters',
+        'parameters documented',
+        'parameter information',
+        'parameter extraction',
+        'function parameter',
+        'optional parameter',
+        'required parameter',  # These are often in general descriptions
+    ]
+    has_excluded_phrases = any(phrase in text for phrase in exclude_phrases)
+
+    return (
+        (has_param_descriptions or has_param_mentions or has_informal_param_descriptions or has_multiple_param_mentions)
+        and not has_excluded_phrases
+    )
+
+
+def _extract_sphinx_params(lines: List[str]) -> Dict[str, str]:
+    """Extract parameters from Sphinx-style docstring.
+
+    Looks for patterns like:
+    :param name: description
+    :parameter name: description
+    """
+    import re
+
+    param_descriptions = {}
+
+    for original_line in lines:
+        line = original_line.strip()
+
+        # Match Sphinx-style parameter documentation
+        # Patterns: :param name: description or :parameter name: description
+        param_match = re.match(r':param(?:eter)?\s+(\w+)\s*:\s*(.*)', line)
+        if param_match:
+            param_name = param_match.group(1)
+            description = param_match.group(2).strip()
+            param_descriptions[param_name] = description
+            continue
+
+        # Handle multi-line descriptions for Sphinx style
+        # If line is indented and we have existing params, it might be a continuation
+        if (
+            original_line.startswith('    ') or original_line.startswith('\t')
+        ) and param_descriptions:
+            # Check if this could be a continuation of the last parameter
+            last_param = list(param_descriptions.keys())[-1]
+            # Don't treat section headers or other directive-like content as continuations
+            # Also don't treat content that looks like parameter definitions from other styles
+            if (param_descriptions[last_param] 
+                and not any(line.startswith(prefix) for prefix in [':param', ':type', ':return', ':raises'])
+                and not line.lower().endswith(':') 
+                and not line.lower() in ('args', 'arguments', 'parameters', 'params')
+                and ':' not in line):  # Avoid treating "param1: description" as continuation
+                param_descriptions[last_param] += ' ' + line.strip()
+
+    return param_descriptions
+
+
+def _extract_google_numpy_params(lines: List[str]) -> Dict[str, str]:
+    """Extract parameters from Google/NumPy-style docstring."""
+    param_descriptions = {}
     in_args_section = False
     current_param = None
 
-    for line in lines:
-        line = line.strip()
+    for i, original_line in enumerate(lines):
+        line = original_line.strip()
 
         # Detect Args/Parameters section
         if line.lower() in ('args:', 'arguments:', 'parameters:', 'params:'):
             in_args_section = True
             continue
 
+        # Handle NumPy style section headers with dashes
+        if line.lower() in ('parameters', 'arguments') and in_args_section is False:
+            in_args_section = True
+            continue
+
+        # Skip NumPy-style separator lines (dashes) but also check if this signals section end
+        if in_args_section and line and all(c in '-=' for c in line):
+            # Check if next line starts a new section
+            next_line_idx = i + 1
+            if next_line_idx < len(lines):
+                next_line = lines[next_line_idx].strip().lower()
+                if next_line in ('returns', 'return', 'yields', 'yield', 'raises', 'raise', 'notes', 'note', 'examples', 'example'):
+                    in_args_section = False
+            continue
+
         # Exit args section on new section
-        if in_args_section and line.endswith(':') and not line.startswith(' '):
+        if in_args_section and (line.endswith(':') and not line.startswith(' ')):
+            in_args_section = False
+            continue
+        
+        # Also exit on direct section headers without separators
+        if in_args_section and line.lower() in ('returns', 'return', 'yields', 'yield', 'raises', 'raise', 'notes', 'note', 'examples', 'example'):
             in_args_section = False
             continue
 
         if in_args_section and line:
-            # Look for parameter definitions (contains colon and doesn't look like a continuation)
-            if ':' in line and not line.startswith(' '):
+            # Look for parameter definitions (contains colon)
+            if ':' in line:
                 parts = line.split(':', 1)
                 if len(parts) == 2:
                     param_name = parts[0].strip()
                     description = parts[1].strip()
+                    
                     # Handle type annotations like "param_name (type): description"
                     if '(' in param_name and ')' in param_name:
                         param_name = param_name.split('(')[0].strip()
-                    param_descriptions[param_name] = description
+                    # Handle NumPy style "param_name : type" format where description is on next line
+                    if ' ' in param_name:
+                        param_name = param_name.split()[0]
+
+                    # Check if this looks like a real description vs just a type annotation
+                    # For NumPy style: "param : type" vs Google style: "param: description"
+                    # Type annotations are usually single words like "str", "int", "float"
+                    # Descriptions have multiple words or punctuation
+                    if description:
+                        if description.replace(' ', '').isalnum() and len(description.split()) == 1:
+                            # Likely just a type annotation (single alphanumeric word), wait for real description
+                            param_descriptions[param_name] = ''
+                        else:
+                            # Contains multiple words or punctuation, likely a real description
+                            param_descriptions[param_name] = description
+                    else:
+                        param_descriptions[param_name] = ''
                     current_param = param_name
-            elif current_param:
-                # Continuation of previous parameter description
-                param_descriptions[current_param] += ' ' + line.strip()
+            elif current_param and (
+                original_line.startswith('    ') or original_line.startswith('\t')
+            ) and in_args_section:
+                # Indented continuation line for current parameter (only if still in args section)
+                if not param_descriptions[current_param]:
+                    # First description line for this parameter (for cases where description is on next line)
+                    param_descriptions[current_param] = line
+                else:
+                    # Additional description lines
+                    param_descriptions[current_param] += ' ' + line
 
     return param_descriptions
+
+
+def extract_docstring_summary(func) -> Optional[str]:
+    """Extract only the summary from a function's docstring.
+
+    Args:
+        func: The function to extract the summary from
+
+    Returns:
+        The summary portion of the docstring, or None if no docstring exists
+    """
+    docstring = inspect.getdoc(func)
+    if not docstring:
+        return None
+
+    lines = docstring.strip().split('\n')
+    if not lines:
+        return None
+
+    # Extract all lines before the first section header
+    summary_lines = []
+
+    for line in lines:
+        line = line.strip()
+
+        # Skip empty lines
+        if not line:
+            continue
+
+        # Check if this line starts a Google/NumPy-style section
+        google_numpy_headers = (
+            'args:',
+            'arguments:',
+            'parameters:',
+            'params:',
+            'returns:',
+            'return:',
+            'yields:',
+            'yield:',
+            'raises:',
+            'raise:',
+            'note:',
+            'notes:',
+            'example:',
+            'examples:',
+            'see also:',
+            'references:',
+            'attributes:',
+        )
+        if line.lower().endswith(':') and line.lower() in google_numpy_headers:
+            break
+
+        # Check if this line starts a Sphinx-style section
+        # Look for patterns like :param name:, :returns:, :raises:, etc.
+        import re
+
+        sphinx_pattern = r'^:(?:param|parameter|type|returns?|return|yields?|yield|raises?|raise|note|notes|example|examples|see|seealso|references?|attributes?)(?:\s+\w+)?:'
+        if re.match(sphinx_pattern, line.lower()):
+            break
+
+        summary_lines.append(line)
+
+    return ' '.join(summary_lines) if summary_lines else None
 
 
 def function_to_json_schema(
     func, name: Optional[str] = None, description: Optional[str] = None
 ) -> Dict[str, Any]:
     """Convert a Python function to a JSON schema for tool calling.
+    All parameters without default values are set as required.
 
     Args:
         func: The Python function to convert
@@ -219,7 +455,7 @@ def function_to_json_schema(
     type_hints = get_type_hints(func)
 
     # Extract parameter descriptions from docstring
-    param_descriptions = extract_docstring_info(func)
+    param_descriptions = extract_docstring_args(func)
 
     # Get function description
     if description is None:
@@ -231,7 +467,7 @@ def function_to_json_schema(
             description = f'Function {func.__name__}'
 
     # Build JSON schema
-    schema = {'type': 'object', 'properties': {}, 'required': []}
+    schema: Dict[str, Any] = {'type': 'object', 'properties': {}, 'required': []}
 
     for param_name, param in sig.parameters.items():
         # Skip *args and **kwargs
@@ -257,7 +493,9 @@ def function_to_json_schema(
     return schema
 
 
-def create_tool_from_function(func, name: Optional[str] = None, description: Optional[str] = None):
+def create_tool_from_function(
+    func, name: Optional[str] = None, description: Optional[str] = None
+) -> 'ConversationTools':
     """Create a ConversationTools from a Python function with type hints.
 
     This provides the ultimate developer experience - just define a typed function

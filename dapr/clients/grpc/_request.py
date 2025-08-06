@@ -14,24 +14,25 @@ limitations under the License.
 """
 
 import io
+from dataclasses import dataclass, field
 from enum import Enum
-from dataclasses import dataclass
-from typing import Dict, Optional, Union, List
+from typing import Callable, Dict, List, Optional, Union
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
-from dapr.proto import api_v1, common_v1
 
 from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataDict,
     MetadataTuple,
-    tuple_to_dict,
     to_bytes,
     to_str,
+    tuple_to_dict,
     unpack,
 )
+from dapr.clients.grpc._schema_helpers import function_to_json_schema, extract_docstring_summary
+from dapr.proto import api_v1, common_v1
 
 
 class DaprRequest:
@@ -449,7 +450,7 @@ class ConversationMessageOfDeveloper:
     """Developer message content."""
 
     name: Optional[str] = None
-    content: List[ConversationMessageContent] = None
+    content: List[ConversationMessageContent] = field(default_factory=list)
 
 
 @dataclass
@@ -457,7 +458,7 @@ class ConversationMessageOfSystem:
     """System message content."""
 
     name: Optional[str] = None
-    content: List[ConversationMessageContent] = None
+    content: List[ConversationMessageContent] = field(default_factory=list)
 
 
 @dataclass
@@ -465,7 +466,7 @@ class ConversationMessageOfUser:
     """User message content."""
 
     name: Optional[str] = None
-    content: List[ConversationMessageContent] = None
+    content: List[ConversationMessageContent] = field(default_factory=list)
 
 
 @dataclass
@@ -489,8 +490,8 @@ class ConversationMessageOfAssistant:
     """Assistant message content."""
 
     name: Optional[str] = None
-    content: List[ConversationMessageContent] = None
-    tool_calls: List[ConversationToolCalls] = None
+    content: List[ConversationMessageContent] = field(default_factory=list)
+    tool_calls: List[ConversationToolCalls] = field(default_factory=list)
 
 
 @dataclass
@@ -499,7 +500,7 @@ class ConversationMessageOfTool:
 
     tool_id: Optional[str] = None
     name: str = ''
-    content: List[ConversationMessageContent] = None
+    content: List[ConversationMessageContent] = field(default_factory=list)
 
 
 @dataclass
@@ -531,11 +532,20 @@ class ConversationToolsFunction:
 
     def schema_as_dict(self) -> Dict:
         """Return the function's schema as a dictionary.
-        
+
         Returns:
             Dict: The JSON schema for the function parameters.
         """
         return self.parameters or {}
+
+    @classmethod
+    def from_function(cls, func: Callable) -> 'ConversationToolsFunction':
+        """Create a ConversationToolsFunction from a function."""
+        return cls(
+            name=func.__name__,
+            description=extract_docstring_summary(func),
+            parameters=function_to_json_schema(func),
+        )
 
 
 @dataclass

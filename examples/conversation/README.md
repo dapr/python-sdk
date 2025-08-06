@@ -38,128 +38,117 @@ The Conversation API supports real LLM providers including:
    python examples/conversation/real_llm_providers_example.py
    ```
 
+   Depending on what API key you have, this will run and print the result of each test function in the example file.
+
+   Before running the example, you need to start the Dapr sidecar with the component configurations as shown below in our run output.
+   Here we have a temporary directory with the component configurations with the API keys setup in the .env file.
+
+   ```bash
+   dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path <some temporary directory>
+   ```
+
+   For example if we have openai, anthropic, mistral, deepseek and google ai, we will have a temporary directory with the component configurations for each provider:
+
+   The example will run and print the result of each test function in the example file.
+   ```bash
+    🚀 Real LLM Providers Example for Dapr Conversation API Alpha2
+    ============================================================
+    📁 Loaded environment from /Users/filinto/diagrid/python-sdk/examples/conversation/.env
+
+    🔍 Detecting available LLM providers...
+
+    ✅ Found 5 configured provider(s)
+    📝 Created component: /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3/openai.yaml
+    📝 Created component: /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3/anthropic.yaml
+    📝 Created component: /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3/mistral.yaml
+    📝 Created component: /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3/deepseek.yaml
+    📝 Created component: /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3/google.yaml
+
+    ⚠️  IMPORTANT: Make sure Dapr sidecar is running with components from:
+    /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3
+
+    To start the sidecar with these components:
+    dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3
+
+    Press Enter when Dapr sidecar is running with the component configurations...
+    ```
+
+    At this point, you can press Enter to continue if you have the Dapr sidecar running with the component configurations.
+
 ## Alpha2 API Features
 
 The Alpha2 API introduces sophisticated features:
 
-- **Advanced Message Types**: user, system, assistant, tool messages
+- **Advanced Message Types**: user, system, assistant, developer, tool messages
 - **Automatic Parameter Conversion**: Raw Python values → GrpcAny
-- **Enhanced Tool Calling**: Multi-turn tool workflows
+- **Tool Calling**: Function calling with JSON schema definition
 - **Function-to-Schema**: Ultimate DevEx for tool creation
 - **Multi-turn Conversations**: Context accumulation across turns
 - **Async Support**: Full async/await implementation
 
-## New Tool Creation Helpers (Alpha2) - Excellent DevEx!
+## Current Limitations
 
-The Alpha2 API introduces powerful new helper functions that dramatically simplify tool creation and parameter handling.
+- **Streaming**: Response streaming is not yet supported in Alpha2. All responses are returned as complete messages.
 
-### Before (Manual GrpcAny Creation) ❌
+## Tool Creation (Alpha2) - Excellent DevEx!
+
+The Alpha2 API provides powerful functions for tool creation and parameter handling with clean JSON schema support.
+
+### Simple JSON Schema Approach
 ```python
-from google.protobuf.any_pb2 import Any as GrpcAny
-import json
-
-# Manual, error-prone approach
-location_param = GrpcAny()
-location_param.value = json.dumps({
-    "type": "string", 
-    "description": "City name"
-}).encode()
-
-unit_param = GrpcAny()
-unit_param.value = json.dumps({
-    "type": "string",
-    "enum": ["celsius", "fahrenheit"] 
-}).encode()
-
-weather_tool = ConversationTools(
-    function=ConversationToolsFunction(
-        name="get_weather",
-        description="Get weather",
-        parameters={
-            "location": location_param,  # ✅ This part was correct
-            "unit": unit_param,         # ✅ This part was correct  
-            "required": ["location"]    # ❌ This causes CopyFrom errors!
-        }
-    )
-)
-```
-
-### After (Helper Functions) ✅
-```python
-from dapr.clients.grpc._helpers import create_tool
-
-# Clean, simple, intuitive approach  
-weather_tool = create_tool(
+# Clean, simple, intuitive approach using standard JSON schema
+function = ConversationToolsFunction(
     name="get_weather",
     description="Get current weather",
     parameters={
-        "location": {
-            "type": "string", 
-            "description": "City name"
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string", 
+                "description": "City name"
+            },
+            "unit": {
+                "type": "string",
+                "enum": ["celsius", "fahrenheit"]
+            }
         },
-        "unit": {
-            "type": "string",
-            "enum": ["celsius", "fahrenheit"]
-        }
-    },
-    required=["location"]
+        "required": ["location"]
+    }
 )
+weather_tool = ConversationTools(function=function)
 ```
 
 ## Understanding the Protobuf Structure
 
-The Dapr Conversation API uses a specific protobuf structure for tool parameters that follows the OpenAI function calling standard:
+The Dapr Conversation API uses a protobuf Struct to represent JSON schema for tool parameters, which directly maps to JSON:
 
-```protobuf
-// ConversationToolsFunction.parameters is a map<string, google.protobuf.Any>
-// The parameters map directly represents the JSON schema structure
-parameters: {
-  "type": GrpcAny(StringValue("object")),
-  "properties": GrpcAny(Struct with parameter definitions),
-  "required": GrpcAny(ListValue(["location"]))
+```python
+# ConversationToolsFunction.parameters is a protobuf Struct (Dict[str, Any])
+# The parameters directly represent the JSON schema structure
+parameters = {
+    "type": "object",
+    "properties": {
+        "location": {"type": "string", "description": "City name"},
+        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+    },
+    "required": ["location"]
 }
 ```
 
 **Key insights:**
-- ✅ The **parameters map IS the JSON schema** - direct field mapping
-- ✅ Uses **proper protobuf types** for each schema field:
-  - `"type"`: `StringValue` for the schema type
-  - `"properties"`: `Struct` for parameter definitions  
-  - `"required"`: `ListValue` for required field names
-- ✅ **No wrapper keys** - each JSON schema field becomes a map entry
-- ✅ This matches the **OpenAI function calling standard** exactly
+- ✅ **Direct JSON representation** - parameters is a standard Python dict that gets converted to protobuf Struct
+- ✅ **Clean developer experience** - write standard JSON schema as Python dict
+- ✅ **OpenAI function calling standard** - follows OpenAI's JSON schema format
 
-**Example JSON Schema:**
-```json
-{
-  "type": "object",
-  "properties": {
-    "location": {"type": "string", "description": "City name"},
-    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
-  },
-  "required": ["location"]
-}
-```
+**Benefits of Struct-based approach:**
 
-**Becomes protobuf map:**
-```python
-parameters = {
-    "type": GrpcAny(StringValue("object")),
-    "properties": GrpcAny(Struct({
-        "location": {"type": "string", "description": "City name"},
-        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
-    })),
-    "required": GrpcAny(ListValue(["location"]))
-}
-```
-
-**Resolved Issues:**
-- ❌ **Old Issue**: `'type.googleapis.com/google.protobuf.StringValue' is not of type 'object'`
-- ✅ **New Solution**: Direct schema field mapping with proper protobuf types
+- Direct JSON schema representation
+- Automatic type conversion
+- Better error messages and debugging
 
 ### Automatic Parameter Conversion
 
-Parameters are now automatically converted from raw Python types:
+Parameters argument in the converse method for alpha2 are now automatically converted from raw Python types:
 
 ```python
 # Before: Manual GrpcAny creation for every parameter ❌
@@ -183,14 +172,14 @@ response = client.converse_alpha2(
 )
 ```
 
+
 ### Function-to-Schema Approach (Ultimate DevEx!)
 
-The most advanced approach: define typed Python functions and automatically generate tool schemas:
+We provide a helper function to automatically generate the tool schema from a Python function.
 
 ```python
 from typing import Optional, List
 from enum import Enum
-from dapr.clients.grpc._schema_helpers import function_to_json_schema
 from dapr.clients.grpc._request import ConversationToolsFunction, ConversationTools
 
 class Units(Enum):
@@ -206,13 +195,8 @@ def get_weather(location: str, unit: Units = Units.FAHRENHEIT) -> str:
     '''
     return f"Weather in {location}"
 
-# Automatically generate schema from function
-schema = function_to_json_schema(get_weather)
-function = ConversationToolsFunction(
-    name="get_weather",
-    description="Get current weather for a location",
-    parameters=schema
-)
+# Use the from_function class method for automatic schema generation
+function = ConversationToolsFunction.from_function(get_weather)
 weather_tool = ConversationTools(function=function)
 ```
 
@@ -224,22 +208,26 @@ weather_tool = ConversationTools(function=function)
 
 ### Multiple Tool Creation Approaches
 
-#### 1. Simple Properties (Recommended)
+#### 1. Simple JSON Schema (Recommended)
 ```python
-create_tool(
+function = ConversationToolsFunction(
     name="get_weather",
     description="Get weather",
     parameters={
-        "location": {"type": "string", "description": "City"},
-        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
-    },
-    required=["location"]
+        "type": "object",
+        "properties": {
+            "location": {"type": "string", "description": "City"},
+            "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+        },
+        "required": ["location"]
+    }
 )
+weather_tool = ConversationTools(function=function)
 ```
 
-#### 2. Full JSON Schema
+#### 2. Complete JSON Schema
 ```python
-create_tool(
+function = ConversationToolsFunction(
     name="calculate", 
     description="Perform calculations",
     parameters={
@@ -250,30 +238,37 @@ create_tool(
         "required": ["expression"]
     }
 )
+calc_tool = ConversationTools(function=function)
 ```
 
 #### 3. No Parameters
 ```python
-create_tool(
+function = ConversationToolsFunction(
     name="get_time",
-    description="Get current time"
+    description="Get current time",
+    parameters={"type": "object", "properties": {}, "required": []}
 )
+time_tool = ConversationTools(function=function)
 ```
 
 #### 4. Complex Schema with Arrays
 ```python
-create_tool(
+function = ConversationToolsFunction(
     name="search",
     description="Search the web", 
     parameters={
-        "query": {"type": "string"},
-        "domains": {
-            "type": "array",
-            "items": {"type": "string"}
-        }
-    },
-    required=["query"]
+        "type": "object",
+        "properties": {
+            "query": {"type": "string"},
+            "domains": {
+                "type": "array",
+                "items": {"type": "string"}
+            }
+        },
+        "required": ["query"]
+    }
 )
+search_tool = ConversationTools(function=function)
 ```
 
 ## Advanced Message Types (Alpha2)
@@ -285,6 +280,10 @@ Alpha2 supports sophisticated message structures for complex conversations:
 from dapr.clients.grpc._request import (
     ConversationMessage,
     ConversationMessageOfUser,
+    ConversationMessageOfSystem,
+    ConversationMessageOfDeveloper,
+    ConversationMessageOfAssistant,
+    ConversationMessageOfTool,
     ConversationMessageContent
 )
 
@@ -300,6 +299,16 @@ user_message = ConversationMessage(
 system_message = ConversationMessage(
     of_system=ConversationMessageOfSystem(
         content=[ConversationMessageContent(text="You are a helpful AI assistant.")]
+    )
+)
+```
+
+### Developer Messages
+```python
+developer_message = ConversationMessage(
+    of_developer=ConversationMessageOfDeveloper(
+        name="developer",
+        content=[ConversationMessageContent(text="System configuration update.")]
     )
 )
 ```
@@ -387,11 +396,10 @@ result = asyncio.run(async_conversation())
 
 ## Benefits
 
-- ✅ **80%+ less boilerplate code**
-- ✅ **No more CopyFrom() errors**
+- ✅ **Clean JSON schema definition**
 - ✅ **Automatic type conversion**
-- ✅ **Multiple input formats**
-- ✅ **JSON Schema validation hints**
+- ✅ **Multiple input formats supported**
+- ✅ **Direct Python dict to protobuf Struct conversion**
 - ✅ **Clean, readable code**
 - ✅ **Supports complex nested structures**
 - ✅ **Real LLM provider integration**
@@ -458,16 +466,19 @@ conversation_history.append(assistant_message)
 
 - **`real_llm_providers_example.py`** - Comprehensive Alpha2 examples with real providers
   - Real LLM provider setup (OpenAI, Anthropic, Mistral, DeepSeek, Google AI)
-  - Advanced tool calling workflows  
-  - Multi-turn conversations with context accumulation
+  - Basic conversation testing (Alpha2)
+  - Multi-turn conversation testing
+  - Tool calling with real LLMs
+  - Parameter conversion demonstration  
+  - Multi-turn tool calling with context accumulation
   - Function-to-schema automatic tool generation
-  - Both sync and async implementations
-  - Parameter conversion demonstration
+  - Async conversation and tool calling support
   - Backward compatibility with Alpha1
 
-- **`conversation.py`** - Basic conversation examples
+- **`conversation_alpha1.py`** - Basic conversation examples (Alpha1)
   - Simple Alpha1 conversation flow
-  - Basic tool calling setup
+- **`conversation_alpha2.py`** - Basic conversation examples (Alpha2)
+  - Simple Alpha2 conversation flow
 
 - **Configuration files:**
   - `.env.example` - Environment variables template
@@ -527,7 +538,7 @@ with DaprClient() as client:
         parameters={
             'temperature': 0.7,      # Auto-converted to GrpcAny!
             'max_tokens': 500,       # Auto-converted to GrpcAny!
-            'stream': False          # Auto-converted to GrpcAny!
+            'stream': False          # Streaming not supported in Alpha2
         },
         tools=[weather_tool],
         tool_choice='auto'
@@ -598,12 +609,17 @@ For a complete working example with multiple providers, see `real_llm_providers_
    - No need to manually create GrpcAny objects for parameters
    - Supported types: int, float, bool, str, dict, list
 
+5. **Streaming not available**
+   - Response streaming is not yet supported in Alpha2
+   - Set `stream: False` in parameters (this is the default)
+   - All responses are returned as complete, non-streaming messages
+
 ### Environment Variables
 
 ```bash
 # Required for respective providers
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=...
+ANTHROPIC_API_KEY=...
 MISTRAL_API_KEY=...
 DEEPSEEK_API_KEY=...
 GOOGLE_API_KEY=...
@@ -655,7 +671,7 @@ response = client.converse_alpha2(
 | Feature | Alpha1 | Alpha2 |
 |---------|--------|--------|
 | Basic Conversations | ✅ | ✅ |
-| Tool Calling | ✅ | ✅ Enhanced |
+| Tool Calling | ❌ | ✅ |
 | Multi-turn Context | ❌ | ✅ |
 | Advanced Message Types | ❌ | ✅ |
 | Parameter Auto-conversion | ❌ | ✅ |

@@ -76,7 +76,7 @@ class ConversationTestBase:
                         },
                     },
                     'required': ['location'],
-                }
+                },
             )
         )
 
@@ -95,7 +95,7 @@ class ConversationTestBase:
                         }
                     },
                     'required': ['expression'],
-                }
+                },
             )
         )
 

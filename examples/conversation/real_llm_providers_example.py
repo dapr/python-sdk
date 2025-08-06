@@ -116,160 +116,12 @@ def convert_llm_response_to_conversation_message(
 
 
 class RealLLMProviderTester:
-    """Test real LLM providers with Dapr Conversation API Alpha2.
+    """Test real LLM providers with Dapr Conversation API Alpha2."""
 
-    This example demonstrates the new schema-based tool creation approach
-    using ConversationToolsFunction.from_schema() for proper JSON Schema handling.
-
-    ## Tool Creation Examples
-
-    ### 1. Simple Properties Approach (Recommended for most cases)
-    ```python
-    from dapr.clients.grpc._request import ConversationToolsFunction, ConversationTools
-
-    function = ConversationToolsFunction.from_schema(
-        name="get_weather",
-        description="Get current weather",
-        json_schema={
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "City name"
-                },
-                "unit": {
-                    "type": "string",
-                    "enum": ["celsius", "fahrenheit"]
-                }
-            },
-            "required": ["location"]
-        }
-    )
-    weather_tool = ConversationTools(function=function)
-    ```
-
-    ### 2. Function-to-Schema Approach (Ultimate DevEx - NEW!)
-    ```python
-    from typing import Optional, List
-    from enum import Enum
-    from dapr.clients.grpc._helpers import function_to_json_schema
-
-    class Units(Enum):
-        CELSIUS = "celsius"
-        FAHRENHEIT = "fahrenheit"
-
-    def get_weather(location: str, unit: Units = Units.FAHRENHEIT) -> str:
-        '''Get current weather for a location.
-
-        Args:
-            location: The city and state or country
-            unit: Temperature unit preference
-        '''
-        return f"Weather in {location}"
-
-    # Automatically generate schema from function
-    schema = function_to_json_schema(get_weather)
-    function = ConversationToolsFunction.from_schema(
-        name="get_weather",
-        description="Get current weather for a location",
-        json_schema=schema
-    )
-    weather_tool = ConversationTools(function=function)
-
-    # Or use the complete helper (when available):
-    # from dapr.clients.grpc._helpers import create_tool_from_function
-    # weather_tool = create_tool_from_function(get_weather)
-    ```
-
-    ### 3. Full JSON Schema Approach (For complex schemas)
-    ```python
-    function = ConversationToolsFunction.from_schema(
-        name="calculate",
-        description="Perform calculations",
-        json_schema={
-            "properties": {
-                "expression": {
-                    "type": "string",
-                    "description": "Math expression"
-                }
-            },
-            "required": ["expression"]
-        }
-    )
-    calc_tool = ConversationTools(function=function)
-    ```
-
-    ### 4. No Parameters Approach
-    ```python
-    function = ConversationToolsFunction.from_schema(
-        name="get_current_time",
-        description="Get current date and time",
-        json_schema={
-            "properties": {},
-            "required": []
-        }
-    )
-    time_tool = ConversationTools(function=function)
-    ```
-
-    ### 5. Complex Schema with Arrays and Nested Objects
-    ```python
-    function = ConversationToolsFunction.from_schema(
-        name="web_search",
-        description="Search the web",
-        json_schema={
-            "properties": {
-                "query": {"type": "string"},
-                "limit": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 10
-                },
-                "domains": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                }
-            },
-            "required": ["query"]
-        }
-    )
-    search_tool = ConversationTools(function=function)
-    ```
-
-    ### 6. Automatic Parameter Conversion
-    The client now automatically converts raw Python values to GrpcAny:
-    ```python
-    response = client.converse_alpha2(
-        name="my-provider",
-        inputs=[input_alpha2],
-        parameters={
-            'temperature': 0.7,
-            'max_tokens': 100,
-            'stream': False,
-            'model': 'gpt-4',
-        },
-        tools=[weather_tool]
-    )
-    ```
-
-    ## Benefits
-    - ✅ **Function-to-Schema**: Ultimate DevEx - define typed functions, get tools automatically
-    - ✅ **Type Safety**: Full Python type hint support (str, int, List, Optional, Enum, etc.)
-    - ✅ **Auto-Documentation**: Docstring parsing for parameter descriptions
-    - ✅ **Proper JSON Schema**: ConversationToolsFunction.from_schema() handles protobuf correctly
-    - ✅ **Automatic Parameter Conversion**: Raw Python values → GrpcAny at gRPC call level
-    - ✅ **OpenAI Compatibility**: 100% compatible with OpenAI function calling standard
-    - ✅ **Multiple Approaches**: Choose the right level of abstraction for your needs
-    - ✅ **Clean Separation**: Tool creation separated from protobuf conversion
-    - ✅ **Reduced Complexity**: 90%+ less boilerplate compared to manual schema creation
-    """
-
-    def __init__(self, use_local_dev: bool = False):
+    def __init__(self):
         self.available_providers = {}
         self.component_configs = {}
         self.components_dir = None
-        self.use_local_dev = use_local_dev
-        # Note: Local dev sidecar management not implemented in this example
-        self.sidecar_manager = None  # DaprSidecarManager() if use_local_dev else None
 
     def load_environment(self) -> None:
         """Load environment variables from .env file if available."""
@@ -389,8 +241,7 @@ class RealLLMProviderTester:
         return self.components_dir
 
     def create_weather_tool(self) -> ConversationTools:
-        """Create a weather tool for testing Alpha2 tool calling."""
-        # Using the new ConversationToolsFunction.from_schema approach
+        """Create a weather tool for testing Alpha2 tool calling using full JSON schema in parameters approach."""
         function = ConversationToolsFunction(
             name='get_weather',
             description='Get the current weather for a location',
@@ -410,7 +261,7 @@ class RealLLMProviderTester:
         return ConversationTools(function=function)
 
     def create_calculator_tool(self) -> ConversationTools:
-        """Create a calculator tool using full JSON schema approach."""
+        """Create a calculator tool using full JSON schema in parameters approach."""
         function = ConversationToolsFunction(
             name='calculate',
             description='Perform mathematical calculations',
@@ -428,7 +279,7 @@ class RealLLMProviderTester:
         return ConversationTools(function=function)
 
     def create_time_tool(self) -> ConversationTools:
-        """Create a simple tool with no parameters."""
+        """Create a simple tool with no parameters using full JSON schema in parameters approach."""
         function = ConversationToolsFunction(
             name='get_current_time',
             description='Get the current date and time',
@@ -437,7 +288,7 @@ class RealLLMProviderTester:
         return ConversationTools(function=function)
 
     def create_search_tool(self) -> ConversationTools:
-        """Create a more complex tool with multiple parameter types."""
+        """Create a more complex tool with multiple parameter types and constraints using full JSON schema in parameters approach."""
         function = ConversationToolsFunction(
             name='web_search',
             description='Search the web for information',
@@ -469,14 +320,13 @@ class RealLLMProviderTester:
         return ConversationTools(function=function)
 
     def create_tool_from_typed_function_example(self) -> ConversationTools:
-        """Demonstrate creating tools from typed Python functions - Ultimate DevEx!
+        """Demonstrate creating tools from typed Python functions - Best DevEx for most cases.
 
         This shows the most advanced approach: define a typed function and automatically
         generate the complete tool schema from type hints and docstrings.
         """
         from typing import Optional, List
         from enum import Enum
-        from dapr.clients.grpc._schema_helpers import function_to_json_schema
 
         # Define the tool behavior as a regular Python function with type hints
         class PriceRange(Enum):
@@ -503,15 +353,8 @@ class RealLLMProviderTester:
             # This would contain actual implementation
             return f'Found restaurants in {location} serving {cuisine} food'
 
-        # Automatically generate JSON schema from the function
-        schema = function_to_json_schema(find_restaurants)
-
-        # Create the tool using the generated schema
-        function = ConversationToolsFunction(
-            name='find_restaurants',
-            description='Find restaurants in a specific location',
-            parameters=schema,
-        )
+        # Create the tool using the from_function class method
+        function = ConversationToolsFunction.from_function(find_restaurants)
 
         return ConversationTools(function=function)
 
@@ -705,7 +548,10 @@ class RealLLMProviderTester:
                                     name=tool_call.function.name,
                                     content=weather_result,
                                 )
-                                print('✅ Alpha2 tool calling demonstration completed!')
+                                print(
+                                    '✅ Alpha2 tool calling demonstration completed! Tool Result Message:'
+                                )
+                                print(tool_result_message)
 
                             except json.JSONDecodeError:
                                 print('⚠️ Could not parse tool arguments')
@@ -949,7 +795,7 @@ class RealLLMProviderTester:
             print(f'❌ Multi-turn tool calling error: {e}')
 
     def test_function_to_schema_approach(self, provider_id: str) -> None:
-        """Test the ultimate DevEx: function-to-JSON-schema automatic tool creation."""
+        """Test the best DevEx for most cases: function-to-JSON-schema automatic tool creation."""
         print(
             f"\n🎯 Testing function-to-schema approach with {self.available_providers[provider_id]['display_name']}"
         )
@@ -980,7 +826,7 @@ class RealLLMProviderTester:
                     print(f'📊 Finish reason: {choice.finish_reason}')
 
                     if choice.finish_reason == 'tool_calls' and choice.message.tool_calls:
-                        print(f'🎯 Function-to-schema tool calling successful!')
+                        print('🎯 Function-to-schema tool calling successful!')
                         for tool_call in choice.message.tool_calls:
                             print(f'   Tool: {tool_call.function.name}')
                             print(f'   Arguments: {tool_call.function.arguments}')
@@ -1146,24 +992,7 @@ def main():
         print(__doc__)
         return
 
-    # Check if user wants to use local dev environment
-    use_local_dev = '--local-dev' in sys.argv or os.getenv('USE_LOCAL_DEV', '').lower() in (
-        'true',
-        '1',
-        'yes',
-    )
-    build_local_dapr = '--build-local-dapr' in sys.argv or os.getenv(
-        'BUILD_LOCAL_DAPR', ''
-    ).lower() in ('true', '1', 'yes')
-
-    if use_local_dev:
-        print('🔧 Using local development build (Alpha2 tool calling enabled)')
-        print('   This will automatically start and manage the Dapr sidecar')
-    else:
-        print('📋 Using manual Dapr sidecar setup')
-        print("   You'll need to start the Dapr sidecar manually")
-
-    tester = RealLLMProviderTester(use_local_dev=use_local_dev)
+    tester = RealLLMProviderTester()
 
     try:
         # Load environment variables

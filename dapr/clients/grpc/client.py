@@ -40,7 +40,11 @@ from grpc import (  # type: ignore
 
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus, validateNotBlankString, validateNotNone
+from dapr.clients.grpc._helpers import (
+    getWorkflowRuntimeStatus,
+    validateNotBlankString,
+    validateNotNone,
+)
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
@@ -1794,7 +1798,7 @@ class DaprGrpcClient:
         inputs: List[ConversationInputAlpha2],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, GrpcAny | Any]] = None,
+        parameters: Optional[Dict[str, Union[GrpcAny, Any]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,

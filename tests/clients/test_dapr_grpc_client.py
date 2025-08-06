@@ -1274,8 +1274,6 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_converse_alpha2_with_tools_weather_request(self):
         """Test Alpha2 conversation with tool calling for weather requests."""
-        from google.protobuf.any_pb2 import Any as GrpcAny
-
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
         # Create weather tool
@@ -1288,7 +1286,7 @@ class DaprGrpcClientTests(unittest.TestCase):
                     'properties': {
                         'location': {'type': 'string', 'description': 'Location for weather info'}
                     },
-                    'required': ['location']
+                    'required': ['location'],
                 },
             )
         )

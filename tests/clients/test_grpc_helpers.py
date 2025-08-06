@@ -10,6 +10,7 @@ automatic tool creation from typed Python functions.
 import unittest
 import sys
 import os
+import warnings
 from typing import Optional, List, Dict, Union
 from enum import Enum
 from dataclasses import dataclass
@@ -21,9 +22,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 try:
     from dapr.clients.grpc._schema_helpers import (
         python_type_to_json_schema,
-        extract_docstring_info,
+        extract_docstring_args,
         function_to_json_schema,
         create_tool_from_function,
+        extract_docstring_summary,
+    )
+    from dapr.clients.grpc._request import (
+        ConversationToolsFunction,
     )
 
     HELPERS_AVAILABLE = True
@@ -298,7 +303,7 @@ class TestExtractDocstringInfo(unittest.TestCase):
             """
             return f'{name} is {age}'
 
-        result = extract_docstring_info(sample_function)
+        result = extract_docstring_args(sample_function)
         expected = {'name': "The person's name", 'age': "The person's age in years"}
         self.assertEqual(result, expected)
 
@@ -308,7 +313,7 @@ class TestExtractDocstringInfo(unittest.TestCase):
         def no_doc_function(param):
             pass
 
-        result = extract_docstring_info(no_doc_function)
+        result = extract_docstring_args(no_doc_function)
         self.assertEqual(result, {})
 
     def test_docstring_without_args(self):
@@ -318,7 +323,7 @@ class TestExtractDocstringInfo(unittest.TestCase):
             """Just a simple function."""
             pass
 
-        result = extract_docstring_info(simple_function)
+        result = extract_docstring_args(simple_function)
         self.assertEqual(result, {})
 
     def test_multiline_param_description(self):
@@ -334,11 +339,184 @@ class TestExtractDocstringInfo(unittest.TestCase):
             """
             return param1
 
-        result = extract_docstring_info(complex_function)
+        result = extract_docstring_args(complex_function)
         expected = {
             'param1': 'This is a long description that spans multiple lines for testing purposes'
         }
         self.assertEqual(result, expected)
+
+    def test_sphinx_style_docstring(self):
+        """Test Sphinx-style docstring parsing."""
+
+        def sphinx_function(location: str, unit: str) -> str:
+            """Get weather information.
+
+            :param location: The city or location name
+            :param unit: Temperature unit (celsius or fahrenheit)
+            :type location: str
+            :type unit: str
+            :returns: Weather information string
+            :rtype: str
+            """
+            return f'Weather in {location}'
+
+        result = extract_docstring_args(sphinx_function)
+        expected = {
+            'location': 'The city or location name',
+            'unit': 'Temperature unit (celsius or fahrenheit)',
+        }
+        self.assertEqual(result, expected)
+
+    def test_sphinx_style_with_parameter_keyword(self):
+        """Test Sphinx-style with :parameter: instead of :param:."""
+
+        def sphinx_function2(query: str, limit: int) -> str:
+            """Search for data.
+
+            :parameter query: The search query string
+            :parameter limit: Maximum number of results
+            """
+            return f'Results for {query}'
+
+        result = extract_docstring_args(sphinx_function2)
+        expected = {'query': 'The search query string', 'limit': 'Maximum number of results'}
+        self.assertEqual(result, expected)
+
+    def test_sphinx_style_multiline_descriptions(self):
+        """Test Sphinx-style with multi-line parameter descriptions."""
+
+        def sphinx_multiline_function(data: str) -> str:
+            """Process complex data.
+
+            :param data: The input data to process, which can be
+                quite complex and may require special handling
+                for optimal results
+            :returns: Processed data
+            """
+            return data
+
+        result = extract_docstring_args(sphinx_multiline_function)
+        expected = {
+            'data': 'The input data to process, which can be quite complex and may require special handling for optimal results'
+        }
+        self.assertEqual(result, expected)
+
+    def test_numpy_style_docstring(self):
+        """Test NumPy-style docstring parsing."""
+
+        def numpy_function(x: float, y: float) -> float:
+            """Calculate distance.
+
+            Parameters
+            ----------
+            x : float
+                The x coordinate
+            y : float
+                The y coordinate
+
+            Returns
+            -------
+            float
+                The calculated distance
+            """
+            return (x**2 + y**2) ** 0.5
+
+        result = extract_docstring_args(numpy_function)
+        expected = {'x': 'The x coordinate', 'y': 'The y coordinate'}
+        self.assertEqual(result, expected)
+
+    def test_mixed_style_preference(self):
+        """Test that Sphinx-style takes precedence when both styles are present."""
+
+        def mixed_function(param1: str, param2: int) -> str:
+            """Function with mixed documentation styles.
+
+            :param param1: Sphinx-style description for param1
+            :param param2: Sphinx-style description for param2
+
+            Args:
+                param1: Google-style description for param1
+                param2: Google-style description for param2
+            """
+            return f'{param1}: {param2}'
+
+        result = extract_docstring_args(mixed_function)
+        expected = {
+            'param1': 'Sphinx-style description for param1',
+            'param2': 'Sphinx-style description for param2',
+        }
+        self.assertEqual(result, expected)
+
+    def test_unsupported_format_warning(self):
+        """Test that unsupported docstring formats trigger a warning."""
+
+        def unsupported_function(param1: str, param2: int) -> str:
+            """Function with unsupported parameter documentation format.
+
+            This function takes param1 which is a string input,
+            and param2 which is an integer argument.
+            """
+            return f'{param1}: {param2}'
+
+        with self.assertWarns(UserWarning) as warning_context:
+            result = extract_docstring_args(unsupported_function)
+
+        # Should return empty dict since no supported format found
+        self.assertEqual(result, {})
+
+        # Check warning message content
+        warning_message = str(warning_context.warning)
+        self.assertIn('unsupported_function', warning_message)
+        self.assertIn('supported format', warning_message)
+        self.assertIn('Google, NumPy, or Sphinx style', warning_message)
+
+    def test_informal_style_warning(self):
+        """Test that informal parameter documentation triggers a warning."""
+
+        def informal_function(filename: str, mode: str) -> str:
+            """Open and read a file.
+
+            The filename parameter should be the path to the file.
+            The mode parameter controls how the file is opened.
+            """
+            return f'Reading {filename} in {mode} mode'
+
+        with self.assertWarns(UserWarning):
+            result = extract_docstring_args(informal_function)
+
+        self.assertEqual(result, {})
+
+    def test_no_warning_for_no_params(self):
+        """Test that functions without parameter docs don't trigger warnings."""
+
+        def simple_function() -> str:
+            """Simple function with no parameters documented."""
+            return 'hello'
+
+        # Should not raise any warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')  # Turn warnings into errors
+            result = extract_docstring_args(simple_function)
+
+        self.assertEqual(result, {})
+
+    def test_no_warning_for_valid_formats(self):
+        """Test that valid formats don't trigger warnings."""
+
+        def google_function(param: str) -> str:
+            """Function with Google-style docs.
+
+            Args:
+                param: A parameter description
+            """
+            return param
+
+        # Should not raise any warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')  # Turn warnings into errors
+            result = extract_docstring_args(google_function)
+
+        self.assertEqual(result, {'param': 'A parameter description'})
 
 
 @unittest.skipIf(not HELPERS_AVAILABLE, 'Helpers not available due to import issues')
@@ -640,6 +818,365 @@ class TestFunctionToJsonSchema(unittest.TestCase):
 
 
 @unittest.skipIf(not HELPERS_AVAILABLE, 'Helpers not available due to import issues')
+class TestExtractDocstringSummary(unittest.TestCase):
+    """Test the extract_docstring_summary function."""
+
+    def test_simple_docstring(self):
+        """Test function with simple one-line docstring."""
+
+        def simple_function():
+            """Simple one-line description."""
+            pass
+
+        result = extract_docstring_summary(simple_function)
+        self.assertEqual(result, 'Simple one-line description.')
+
+    def test_full_docstring_with_extended_summary(self):
+        """Test function with full docstring including extended summary."""
+
+        def complex_function():
+            """Get weather information for a specific location.
+
+            This function retrieves current weather data including temperature,
+            humidity, and precipitation for the given location.
+
+            Args:
+                location: The city or location to get weather for
+                unit: Temperature unit (celsius or fahrenheit)
+
+            Returns:
+                Weather information as a string
+
+            Raises:
+                ValueError: If location is invalid
+            """
+            pass
+
+        result = extract_docstring_summary(complex_function)
+        expected = (
+            'Get weather information for a specific location. '
+            'This function retrieves current weather data including temperature, '
+            'humidity, and precipitation for the given location.'
+        )
+        self.assertEqual(result, expected)
+
+    def test_multiline_summary_before_args(self):
+        """Test function with multiline summary that stops at Args section."""
+
+        def multiline_summary_function():
+            """Complex function that does many things.
+
+            This is an extended description that spans multiple lines
+            and provides more context about what the function does.
+
+            Args:
+                param1: First parameter
+            """
+            pass
+
+        result = extract_docstring_summary(multiline_summary_function)
+        expected = (
+            'Complex function that does many things. '
+            'This is an extended description that spans multiple lines '
+            'and provides more context about what the function does.'
+        )
+        self.assertEqual(result, expected)
+
+    def test_no_docstring(self):
+        """Test function without docstring."""
+
+        def no_docstring_function():
+            pass
+
+        result = extract_docstring_summary(no_docstring_function)
+        self.assertIsNone(result)
+
+    def test_empty_docstring(self):
+        """Test function with empty docstring."""
+
+        def empty_docstring_function():
+            """"""
+            pass
+
+        result = extract_docstring_summary(empty_docstring_function)
+        self.assertIsNone(result)
+
+    def test_docstring_with_only_whitespace(self):
+        """Test function with docstring containing only whitespace."""
+
+        def whitespace_docstring_function():
+            """ """
+            pass
+
+        result = extract_docstring_summary(whitespace_docstring_function)
+        self.assertIsNone(result)
+
+    def test_docstring_stops_at_various_sections(self):
+        """Test that summary extraction stops at various section headers."""
+
+        def function_with_returns():
+            """Function description.
+
+            Returns:
+                Something useful
+            """
+            pass
+
+        def function_with_raises():
+            """Function description.
+
+            Raises:
+                ValueError: If something goes wrong
+            """
+            pass
+
+        def function_with_note():
+            """Function description.
+
+            Note:
+                This is important to remember
+            """
+            pass
+
+        # Test each section header
+        for func in [function_with_returns, function_with_raises, function_with_note]:
+            result = extract_docstring_summary(func)
+            self.assertEqual(result, 'Function description.')
+
+    def test_docstring_with_parameters_section(self):
+        """Test docstring with Parameters section (alternative to Args)."""
+
+        def function_with_parameters():
+            """Process data efficiently.
+
+            Parameters:
+                data: Input data to process
+                options: Processing options
+            """
+            pass
+
+        result = extract_docstring_summary(function_with_parameters)
+        self.assertEqual(result, 'Process data efficiently.')
+
+    def test_docstring_with_example_section(self):
+        """Test docstring with Example section."""
+
+        def function_with_example():
+            """Calculate the area of a circle.
+
+            Example:
+                >>> calculate_area(5)
+                78.54
+            """
+            pass
+
+        result = extract_docstring_summary(function_with_example)
+        self.assertEqual(result, 'Calculate the area of a circle.')
+
+    def test_case_insensitive_section_headers(self):
+        """Test that section header matching is case insensitive."""
+
+        def function_with_uppercase_args():
+            """Function with uppercase section.
+
+            ARGS:
+                param: A parameter
+            """
+            pass
+
+        result = extract_docstring_summary(function_with_uppercase_args)
+        self.assertEqual(result, 'Function with uppercase section.')
+
+    def test_sphinx_style_summary_extraction(self):
+        """Test that Sphinx-style docstrings stop at :param: sections."""
+
+        def sphinx_function():
+            """Calculate mathematical operations.
+
+            This function performs various mathematical calculations
+            with high precision and error handling.
+
+            :param x: First number
+            :param y: Second number
+            :returns: Calculation result
+            """
+            pass
+
+        result = extract_docstring_summary(sphinx_function)
+        expected = (
+            'Calculate mathematical operations. '
+            'This function performs various mathematical calculations '
+            'with high precision and error handling.'
+        )
+        self.assertEqual(result, expected)
+
+    def test_mixed_sphinx_google_summary(self):
+        """Test summary extraction stops at first section marker (Sphinx or Google)."""
+
+        def mixed_function():
+            """Process data with multiple algorithms.
+
+            This is an extended description that provides
+            more context about the processing methods.
+
+            :param data: Input data
+
+            Args:
+                additional: More parameters
+            """
+            pass
+
+        result = extract_docstring_summary(mixed_function)
+        expected = (
+            'Process data with multiple algorithms. '
+            'This is an extended description that provides '
+            'more context about the processing methods.'
+        )
+        self.assertEqual(result, expected)
+
+
+@unittest.skipIf(not HELPERS_AVAILABLE, 'Helpers not available due to import issues')
+class TestConversationToolsFunctionFromFunction(unittest.TestCase):
+    """Test the ConversationToolsFunction.from_function method."""
+
+    def test_from_function_basic(self):
+        """Test creating ConversationToolsFunction from a basic function."""
+
+        def test_function(param1: str, param2: int = 10):
+            """Test function for conversion.
+
+            Args:
+                param1: First parameter
+                param2: Second parameter with default
+            """
+            return f'{param1}: {param2}'
+
+        result = ConversationToolsFunction.from_function(test_function)
+
+        # Check basic properties
+        self.assertEqual(result.name, 'test_function')
+        self.assertEqual(result.description, 'Test function for conversion.')
+        self.assertIsInstance(result.parameters, dict)
+
+        # Check that parameters schema was generated
+        self.assertEqual(result.parameters['type'], 'object')
+        self.assertIn('properties', result.parameters)
+        self.assertIn('required', result.parameters)
+
+    def test_from_function_with_complex_docstring(self):
+        """Test from_function with complex docstring extracts only summary."""
+
+        def complex_function(location: str):
+            """Get weather information for a location.
+
+            This function provides comprehensive weather data including
+            current conditions and forecasts.
+
+            Args:
+                location: The location to get weather for
+
+            Returns:
+                str: Weather information
+
+            Raises:
+                ValueError: If location is invalid
+
+            Example:
+                >>> get_weather("New York")
+                "Sunny, 72°F"
+            """
+            return f'Weather for {location}'
+
+        result = ConversationToolsFunction.from_function(complex_function)
+
+        expected_description = (
+            'Get weather information for a location. '
+            'This function provides comprehensive weather data including '
+            'current conditions and forecasts.'
+        )
+        self.assertEqual(result.description, expected_description)
+
+    def test_from_function_no_docstring(self):
+        """Test from_function with function that has no docstring."""
+
+        def no_doc_function(param):
+            return param
+
+        result = ConversationToolsFunction.from_function(no_doc_function)
+
+        self.assertEqual(result.name, 'no_doc_function')
+        self.assertIsNone(result.description)
+        self.assertIsInstance(result.parameters, dict)
+
+    def test_from_function_simple_docstring(self):
+        """Test from_function with simple one-line docstring."""
+
+        def simple_function():
+            """Simple function description."""
+            pass
+
+        result = ConversationToolsFunction.from_function(simple_function)
+
+        self.assertEqual(result.name, 'simple_function')
+        self.assertEqual(result.description, 'Simple function description.')
+
+    def test_from_function_sphinx_style_summary(self):
+        """Test from_function extracts only summary from Sphinx-style docstring."""
+
+        def sphinx_function(location: str):
+            """Get weather information for a location.
+
+            This function provides comprehensive weather data including
+            current conditions and forecasts using various APIs.
+
+            :param location: The location to get weather for
+            :type location: str
+            :returns: Weather information string
+            :rtype: str
+            :raises ValueError: If location is invalid
+            """
+            return f'Weather for {location}'
+
+        result = ConversationToolsFunction.from_function(sphinx_function)
+
+        expected_description = (
+            'Get weather information for a location. '
+            'This function provides comprehensive weather data including '
+            'current conditions and forecasts using various APIs.'
+        )
+        self.assertEqual(result.description, expected_description)
+
+    def test_from_function_google_style_summary(self):
+        """Test from_function extracts only summary from Google-style docstring."""
+
+        def google_function(data: str):
+            """Process input data efficiently.
+
+            This function handles various data formats and applies
+            multiple processing algorithms for optimal results.
+
+            Args:
+                data: The input data to process
+
+            Returns:
+                str: Processed data string
+
+            Raises:
+                ValueError: If data format is invalid
+            """
+            return f'Processed {data}'
+
+        result = ConversationToolsFunction.from_function(google_function)
+
+        expected_description = (
+            'Process input data efficiently. '
+            'This function handles various data formats and applies '
+            'multiple processing algorithms for optimal results.'
+        )
+        self.assertEqual(result.description, expected_description)
+
+
+@unittest.skipIf(not HELPERS_AVAILABLE, 'Helpers not available due to import issues')
 class TestCreateToolFromFunction(unittest.TestCase):
     """Test the create_tool_from_function function."""
 
@@ -679,8 +1216,8 @@ class TestCreateToolFromFunction(unittest.TestCase):
 
     def test_create_tool_complex_function(self):
         """Test creating a tool from a complex function with multiple types."""
-        from typing import Optional, List
         from enum import Enum
+        from typing import List, Optional
 
         class Status(Enum):
             ACTIVE = 'active'
@@ -728,8 +1265,8 @@ class TestIntegrationScenarios(unittest.TestCase):
 
     def test_restaurant_finder_scenario(self):
         """Test the restaurant finder example from the documentation."""
-        from typing import Optional, List
         from enum import Enum
+        from typing import List, Optional
 
         class PriceRange(Enum):
             BUDGET = 'budget'
@@ -788,8 +1325,8 @@ class TestIntegrationScenarios(unittest.TestCase):
 
     def test_weather_api_scenario(self):
         """Test a weather API scenario with validation."""
-        from typing import Optional
         from enum import Enum
+        from typing import Optional
 
         class Units(Enum):
             CELSIUS = 'celsius'
