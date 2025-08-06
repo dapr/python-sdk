@@ -312,6 +312,11 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.FromString,
                 )
+        self.ConverseAlpha2 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/ConverseAlpha2',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequestAlpha2.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponseAlpha2.FromString,
+                )
 
 
 class DaprServicer(object):
@@ -733,6 +738,13 @@ class DaprServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ConverseAlpha2(self, request, context):
+        """Converse with a LLM service via alpha2 api
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DaprServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -1030,6 +1042,11 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.ConverseAlpha1,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.SerializeToString,
+            ),
+            'ConverseAlpha2': grpc.unary_unary_rpc_method_handler(
+                    servicer.ConverseAlpha2,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequestAlpha2.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponseAlpha2.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -2042,5 +2059,22 @@ class Dapr(object):
         return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/ConverseAlpha1',
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ConverseAlpha2(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dapr.proto.runtime.v1.Dapr/ConverseAlpha2',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationRequestAlpha2.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_dapr__pb2.ConversationResponseAlpha2.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
