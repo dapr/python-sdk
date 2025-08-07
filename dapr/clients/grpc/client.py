@@ -1516,6 +1516,9 @@ class DaprGrpcClient:
 
         try:
             resp = self.retry_policy.run_rpc(self._stub.GetWorkflowBeta1, req)
+            # not found workflows return no error, but empty status
+            if resp.runtime_status == '':
+                raise DaprInternalError('no such instance exists')
             if resp.created_at is None:
                 resp.created_at = datetime.now()
             if resp.last_updated_at is None:

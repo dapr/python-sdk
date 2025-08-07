@@ -68,16 +68,16 @@ def child_wf(ctx: DaprWorkflowContext):
 def hello_act(ctx: WorkflowActivityContext, wf_input):
     global counter
     counter += wf_input
-    print(f'New counter value is: {counter}!', flush=True)
+    print(f'New counter value is: {counter}!')
 
 
 def hello_retryable_act(ctx: WorkflowActivityContext):
     global retry_count
     if (retry_count % 2) == 0:
-        print(f'Retry count value is: {retry_count}!', flush=True)
+        print(f'Retry count value is: {retry_count}!')
         retry_count += 1
         raise ValueError('Retryable Error')
-    print(f'Retry count value is: {retry_count}! This print statement verifies retry', flush=True)
+    print(f'Retry count value is: {retry_count}! This print statement verifies retry')
     retry_count += 1
 
 
@@ -85,7 +85,7 @@ def child_retryable_wf(ctx: DaprWorkflowContext):
     global child_orchestrator_string, child_orchestrator_count
     if not ctx.is_replaying:
         child_orchestrator_count += 1
-        print(f'Appending {child_orchestrator_count} to child_orchestrator_string!', flush=True)
+        print(f'Appending {child_orchestrator_count} to child_orchestrator_string!')
         child_orchestrator_string += str(child_orchestrator_count)
     yield ctx.call_activity(
         act_for_child_wf, input=child_orchestrator_count, retry_policy=retry_policy
@@ -97,7 +97,7 @@ def child_retryable_wf(ctx: DaprWorkflowContext):
 def act_for_child_wf(ctx: WorkflowActivityContext, inp):
     global child_orchestrator_string, child_act_retry_count
     inp_char = chr(96 + inp)
-    print(f'Appending {inp_char} to child_orchestrator_string!', flush=True)
+    print(f'Appending {inp_char} to child_orchestrator_string!')
     child_orchestrator_string += inp_char
     if child_act_retry_count % 2 == 0:
         child_act_retry_count += 1
@@ -165,6 +165,7 @@ def main():
         sleep(5)
         # Purge Test
         d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        sleep(5)
         try:
             d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
         except DaprInternalError as err:
@@ -186,7 +187,7 @@ def main():
         sleep(5)
         # Terminate Test
         d.terminate_workflow(instance_id=instance_id, workflow_component=workflow_component)
-        sleep(1)
+        sleep(5)
         get_response = d.get_workflow(
             instance_id=instance_id, workflow_component=workflow_component
         )
@@ -204,6 +205,7 @@ def main():
 
         # Purge Test
         d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        sleep(5)
         try:
             d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
         except DaprInternalError as err:
