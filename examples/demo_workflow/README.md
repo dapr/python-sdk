@@ -49,6 +49,7 @@ expected_stdout_lines:
   - "== APP == Get response from hello_world_wf after resume call: Running"
   - "== APP == New counter value is: 111!"
   - "== APP == New counter value is: 1111!"
+  - "== APP == Instance Successfully Purged"
   - "== APP == Get response from hello_world_wf after terminate call: Terminated"
   - "== APP == Get response from child_wf after terminate call: Terminated"
   - "== APP == Instance Successfully Purged"
