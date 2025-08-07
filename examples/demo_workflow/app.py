@@ -205,7 +205,9 @@ def main():
         # Purge Test
         d.purge_workflow(instance_id=instance_id, workflow_component=workflow_component)
         sleep(5)
-        get_response = d.get_workflow(instance_id=instance_id, workflow_component=workflow_component)
+        get_response = d.get_workflow(
+            instance_id=instance_id, workflow_component=workflow_component
+        )
         if get_response is None:
             print('Instance Successfully Purged')
 
