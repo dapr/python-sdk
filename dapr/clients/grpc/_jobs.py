@@ -99,7 +99,6 @@ class Job:
             when the job is triggered. If not provided, an empty Any proto will be used.
         failure_policy (Optional[FailurePolicy]): The failure policy to apply when the job fails
             to trigger. If not provided, the default behavior is determined by the Dapr runtime.
-        overwrite (bool): If true, allows this job to overwrite an existing job with the same name.
     """
 
     name: str
@@ -109,7 +108,6 @@ class Job:
     ttl: Optional[str] = None
     data: Optional[GrpcAny] = None
     failure_policy: Optional[FailurePolicy] = None
-    overwrite: bool = False
 
     def _get_proto(self):
         """Convert this Job instance to a Dapr Job proto message.
@@ -123,7 +121,7 @@ class Job:
         from google.protobuf.any_pb2 import Any as GrpcAny
 
         # Build the job proto
-        job_proto = api_v1.Job(name=self.name, overwrite=self.overwrite)
+        job_proto = api_v1.Job(name=self.name)
 
         if self.schedule:
             job_proto.schedule = self.schedule
@@ -133,7 +131,6 @@ class Job:
             job_proto.due_time = self.due_time
         if self.ttl:
             job_proto.ttl = self.ttl
-        # overwrite is already set in the constructor above
 
         # data field is required, set empty Any if not provided
         if self.data:
@@ -184,5 +181,4 @@ class Job:
             ttl=job_proto.ttl if job_proto.HasField('ttl') else None,
             data=job_proto.data if job_proto.HasField('data') and job_proto.data.value else None,
             failure_policy=failure_policy,
-            overwrite=job_proto.overwrite,
         )

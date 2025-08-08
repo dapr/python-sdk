@@ -1184,9 +1184,33 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         # Verify job was stored in fake server
         self.assertIn('async-test-job', self._fake_dapr_server.jobs)
         stored_job = self._fake_dapr_server.jobs['async-test-job']
+        stored_job_overwrite = self._fake_dapr_server.job_overwrites['async-test-job']
         self.assertEqual(stored_job.name, 'async-test-job')
         self.assertEqual(stored_job.schedule, '@every 1m')
-        self.assertEqual(stored_job.overwrite, False)
+        self.assertEqual(stored_job_overwrite, False)
+        # Verify data field is always set (even if empty)
+        self.assertTrue(stored_job.HasField('data'))
+
+        await dapr.close()
+
+    async def test_schedule_job_alpha1_success_with_overwrite(self):
+        """Test successful async job scheduling."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        job = Job(name='async-test-job', schedule='@every 1m')
+
+        # Schedule the job with overwrite
+        response = await dapr.schedule_job_alpha1(job=job, overwrite=True)
+
+        # Verify response type
+        self.assertIsInstance(response, DaprResponse)
+
+        # Verify job was stored in fake server
+        self.assertIn('async-test-job', self._fake_dapr_server.jobs)
+        stored_job = self._fake_dapr_server.jobs['async-test-job']
+        stored_job_overwrite = self._fake_dapr_server.job_overwrites['async-test-job']
+        self.assertEqual(stored_job.name, 'async-test-job')
+        self.assertEqual(stored_job.schedule, '@every 1m')
+        self.assertEqual(stored_job_overwrite, True)
         # Verify data field is always set (even if empty)
         self.assertTrue(stored_job.HasField('data'))
 
@@ -1215,11 +1239,12 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         # Verify job was stored in fake server with all data
         self.assertIn('async-test-job-with-data', self._fake_dapr_server.jobs)
         stored_job = self._fake_dapr_server.jobs['async-test-job-with-data']
+        stored_job_overwrite = self._fake_dapr_server.job_overwrites['async-test-job-with-data']
         self.assertEqual(stored_job.name, 'async-test-job-with-data')
         self.assertEqual(stored_job.schedule, '@every 2m')
         self.assertEqual(stored_job.repeats, 3)
         self.assertEqual(stored_job.ttl, '10m')
-        self.assertEqual(stored_job.overwrite, False)
+        self.assertEqual(stored_job_overwrite, False)
 
         # Verify data field contains the payload
         self.assertTrue(stored_job.HasField('data'))
@@ -1279,7 +1304,6 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(retrieved_job.schedule, '@every 1m')
         self.assertEqual(retrieved_job.repeats, 5)
         self.assertEqual(retrieved_job.ttl, '1h')
-        self.assertEqual(retrieved_job.overwrite, False)
 
         await dapr.close()
 
@@ -1353,11 +1377,10 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             data=data,
             repeats=10,
             ttl='30m',
-            overwrite=True,
         )
 
         # 1. Schedule the job
-        schedule_response = await dapr.schedule_job_alpha1(job)
+        schedule_response = await dapr.schedule_job_alpha1(job=job, overwrite=True)
         self.assertIsInstance(schedule_response, DaprResponse)
 
         # 2. Get the job and verify all fields
@@ -1366,7 +1389,6 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(retrieved_job.schedule, '@every 5m')
         self.assertEqual(retrieved_job.repeats, 10)
         self.assertEqual(retrieved_job.ttl, '30m')
-        self.assertTrue(retrieved_job.overwrite)
         self.assertEqual(retrieved_job.data.value, b'{"lifecycle": "test"}')
 
         # 3. Delete the job

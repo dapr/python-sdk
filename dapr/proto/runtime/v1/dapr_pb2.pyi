@@ -23,6 +23,7 @@ import google.protobuf.descriptor
 import google.protobuf.internal.containers
 import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
+import google.protobuf.struct_pb2
 import google.protobuf.timestamp_pb2
 import sys
 import typing
@@ -3166,7 +3167,6 @@ class Job(google.protobuf.message.Message):
     DUE_TIME_FIELD_NUMBER: builtins.int
     TTL_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
-    OVERWRITE_FIELD_NUMBER: builtins.int
     FAILURE_POLICY_FIELD_NUMBER: builtins.int
     name: builtins.str
     """The unique name for the job."""
@@ -3207,8 +3207,6 @@ class Job(google.protobuf.message.Message):
     "point in time" string in the format of RFC3339, Go duration string
     (calculated from job creation time), or non-repeating ISO8601.
     """
-    overwrite: builtins.bool
-    """If true, allows this job to overwrite an existing job with the same name."""
     @property
     def data(self) -> google.protobuf.any_pb2.Any:
         """payload is the serialized job payload that will be sent to the recipient
@@ -3228,11 +3226,10 @@ class Job(google.protobuf.message.Message):
         due_time: builtins.str | None = ...,
         ttl: builtins.str | None = ...,
         data: google.protobuf.any_pb2.Any | None = ...,
-        overwrite: builtins.bool = ...,
         failure_policy: dapr.proto.common.v1.common_pb2.JobFailurePolicy | None = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "overwrite", b"overwrite", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]) -> None: ...
     @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["_due_time", b"_due_time"]) -> typing.Literal["due_time"] | None: ...
     @typing.overload
@@ -3253,6 +3250,9 @@ class ScheduleJobRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     JOB_FIELD_NUMBER: builtins.int
+    OVERWRITE_FIELD_NUMBER: builtins.int
+    overwrite: builtins.bool
+    """If true, allows this job to overwrite an existing job with the same name."""
     @property
     def job(self) -> global___Job:
         """The job details."""
@@ -3261,9 +3261,10 @@ class ScheduleJobRequest(google.protobuf.message.Message):
         self,
         *,
         job: global___Job | None = ...,
+        overwrite: builtins.bool = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["job", b"job"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["job", b"job"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["job", b"job", "overwrite", b"overwrite"]) -> None: ...
 
 global___ScheduleJobRequest = ScheduleJobRequest
 
@@ -4103,24 +4104,6 @@ class ConversationToolsFunction(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    @typing.final
-    class ParametersEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
-
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        @property
-        def value(self) -> google.protobuf.any_pb2.Any: ...
-        def __init__(
-            self,
-            *,
-            key: builtins.str = ...,
-            value: google.protobuf.any_pb2.Any | None = ...,
-        ) -> None: ...
-        def HasField(self, field_name: typing.Literal["value", b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
-
     NAME_FIELD_NUMBER: builtins.int
     DESCRIPTION_FIELD_NUMBER: builtins.int
     PARAMETERS_FIELD_NUMBER: builtins.int
@@ -4131,7 +4114,7 @@ class ConversationToolsFunction(google.protobuf.message.Message):
     used by the model to choose when and how to call the function.
     """
     @property
-    def parameters(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, google.protobuf.any_pb2.Any]:
+    def parameters(self) -> google.protobuf.struct_pb2.Struct:
         """The parameters the functions accepts, described as a JSON Schema object. 
         See the [guide](https://platform.openai.com/docs/guides/function-calling) for examples,
         and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.	
@@ -4143,9 +4126,9 @@ class ConversationToolsFunction(google.protobuf.message.Message):
         *,
         name: builtins.str = ...,
         description: builtins.str | None = ...,
-        parameters: collections.abc.Mapping[builtins.str, google.protobuf.any_pb2.Any] | None = ...,
+        parameters: google.protobuf.struct_pb2.Struct | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["_description", b"_description", "description", b"description"]) -> builtins.bool: ...
+    def HasField(self, field_name: typing.Literal["_description", b"_description", "description", b"description", "parameters", b"parameters"]) -> builtins.bool: ...
     def ClearField(self, field_name: typing.Literal["_description", b"_description", "description", b"description", "name", b"name", "parameters", b"parameters"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["_description", b"_description"]) -> typing.Literal["description"] | None: ...
 
