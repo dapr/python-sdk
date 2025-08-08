@@ -16,10 +16,10 @@ def main():
     with DaprClient() as client:
         # Example 0: Simple job without data (works without protobuf)
         print('0. Scheduling a simple job without data...', flush=True)
-        simple_job = Job(name='simple-job', schedule='@every 30s', overwrite=True)
+        simple_job = Job(name='simple-job', schedule='@every 30s')
 
         try:
-            client.schedule_job_alpha1(simple_job)
+            client.schedule_job_alpha1(job=simple_job, overwrite=True)
             print(f'✓ Simple job scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule simple job: {e}', flush=True)
@@ -33,11 +33,10 @@ def main():
             schedule='@every 30s',
             data=job_data,
             ttl='5m',
-            overwrite=True,
         )
 
         try:
-            client.schedule_job_alpha1(recurring_job)
+            client.schedule_job_alpha1(job=recurring_job, overwrite=True)
             print(f'✓ Recurring job scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule recurring job: {e}', flush=True)
@@ -68,11 +67,10 @@ def main():
             schedule='@every 45s',
             data=create_job_data('Job with drop failure policy'),
             failure_policy=DropFailurePolicy(),
-            overwrite=True,
         )
 
         try:
-            client.schedule_job_alpha1(drop_policy_job)
+            client.schedule_job_alpha1(job=drop_policy_job, overwrite=True)
             print(f'✓ Job with drop failure policy scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule job with drop policy: {e}', flush=True)
@@ -83,11 +81,10 @@ def main():
             schedule='@every 60s',
             data=create_job_data('Job with constant retry policy'),
             failure_policy=ConstantFailurePolicy(max_retries=3, interval_seconds=10),
-            overwrite=True,
         )
 
         try:
-            client.schedule_job_alpha1(constant_policy_job)
+            client.schedule_job_alpha1(job=constant_policy_job, overwrite=True)
             print(f'✓ Job with constant retry policy scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule job with retry policy: {e}', flush=True)
