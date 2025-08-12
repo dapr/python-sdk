@@ -1555,9 +1555,31 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Verify job was stored in fake server
         self.assertIn('test-job', self._fake_dapr_server.jobs)
         stored_job = self._fake_dapr_server.jobs['test-job']
+        stored_job_overwrite = self._fake_dapr_server.job_overwrites['test-job']
         self.assertEqual(stored_job.name, 'test-job')
         self.assertEqual(stored_job.schedule, '@every 1m')
-        self.assertEqual(stored_job.overwrite, False)
+        self.assertEqual(stored_job_overwrite, False)
+        # Verify data field is always set (even if empty)
+        self.assertTrue(stored_job.HasField('data'))
+
+    def test_schedule_job_alpha1_success_with_overwrite(self):
+        """Test successful job scheduling."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        job = Job(name='test-job', schedule='@every 1m')
+
+        # Schedule the job
+        response = dapr.schedule_job_alpha1(job=job, overwrite=True)
+
+        # Verify response type
+        self.assertIsInstance(response, DaprResponse)
+
+        # Verify job was stored in fake server
+        self.assertIn('test-job', self._fake_dapr_server.jobs)
+        stored_job = self._fake_dapr_server.jobs['test-job']
+        stored_job_overwrite = self._fake_dapr_server.job_overwrites['test-job']
+        self.assertEqual(stored_job.name, 'test-job')
+        self.assertEqual(stored_job.schedule, '@every 1m')
+        self.assertEqual(stored_job_overwrite, True)
         # Verify data field is always set (even if empty)
         self.assertTrue(stored_job.HasField('data'))
 
@@ -1582,12 +1604,12 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Verify job was stored in fake server with all data
         self.assertIn('test-job-with-data', self._fake_dapr_server.jobs)
         stored_job = self._fake_dapr_server.jobs['test-job-with-data']
+        stored_job_overwrite = self._fake_dapr_server.job_overwrites['test-job-with-data']
         self.assertEqual(stored_job.name, 'test-job-with-data')
         self.assertEqual(stored_job.schedule, '@every 2m')
         self.assertEqual(stored_job.repeats, 3)
         self.assertEqual(stored_job.ttl, '10m')
-        self.assertEqual(stored_job.overwrite, False)
-
+        self.assertEqual(stored_job_overwrite, False)
         # Verify data field contains the payload
         self.assertTrue(stored_job.HasField('data'))
         self.assertEqual(
@@ -1625,7 +1647,6 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(retrieved_job.schedule, '@every 1m')
         self.assertEqual(retrieved_job.repeats, 5)
         self.assertEqual(retrieved_job.ttl, '1h')
-        self.assertEqual(retrieved_job.overwrite, False)
 
     def test_get_job_alpha1_validation_error(self):
         """Test validation error in job retrieval."""

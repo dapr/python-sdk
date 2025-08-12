@@ -24,7 +24,6 @@ class TestJobClass(unittest.TestCase):
         self.assertIsNone(job.due_time)
         self.assertIsNone(job.ttl)
         self.assertIsNone(job.data)
-        self.assertEqual(job.overwrite, False)
 
         # Test job with all fields
         data = GrpcAny()
@@ -37,7 +36,6 @@ class TestJobClass(unittest.TestCase):
             due_time='2024-01-01T00:00:00Z',
             ttl='1h',
             data=data,
-            overwrite=True,
         )
         self.assertEqual(job_full.name, 'full-job')
         self.assertEqual(job_full.schedule, '0 0 * * *')
@@ -45,7 +43,6 @@ class TestJobClass(unittest.TestCase):
         self.assertEqual(job_full.due_time, '2024-01-01T00:00:00Z')
         self.assertEqual(job_full.ttl, '1h')
         self.assertEqual(job_full.data, data)
-        self.assertEqual(job_full.overwrite, True)
 
     def test_job_get_proto_full(self):
         """Test _get_proto() method with all fields."""
@@ -59,7 +56,6 @@ class TestJobClass(unittest.TestCase):
             due_time='2024-01-01T00:00:00Z',
             ttl='1h',
             data=data,
-            overwrite=True,
         )
         job_proto = job._get_proto()
 
@@ -70,7 +66,6 @@ class TestJobClass(unittest.TestCase):
         self.assertEqual(job_proto.repeats, 5)
         self.assertEqual(job_proto.due_time, '2024-01-01T00:00:00Z')
         self.assertEqual(job_proto.ttl, '1h')
-        self.assertTrue(job_proto.overwrite)
 
         # Verify data field
         self.assertTrue(job_proto.HasField('data'))
@@ -88,7 +83,7 @@ class TestJobClass(unittest.TestCase):
     def test_job_from_proto_no_data(self):
         """Test _from_proto() method with minimal proto."""
         # Create minimal proto
-        job_proto = api_v1.Job(name='test-job', overwrite=False)
+        job_proto = api_v1.Job(name='test-job')
         job_proto.data.CopyFrom(GrpcAny())  # Empty data
 
         # Convert to Job
@@ -101,7 +96,6 @@ class TestJobClass(unittest.TestCase):
         self.assertIsNone(job.due_time)
         self.assertIsNone(job.ttl)
         self.assertIsNone(job.data)  # Empty data becomes None
-        self.assertEqual(job.overwrite, False)
 
     def test_job_from_proto_full(self):
         """Test _from_proto() method with all fields."""
@@ -115,7 +109,6 @@ class TestJobClass(unittest.TestCase):
             repeats=5,
             due_time='2024-01-01T00:00:00Z',
             ttl='1h',
-            overwrite=True,
         )
         job_proto.data.CopyFrom(data)
 
@@ -129,7 +122,6 @@ class TestJobClass(unittest.TestCase):
         self.assertEqual(job.due_time, '2024-01-01T00:00:00Z')
         self.assertEqual(job.ttl, '1h')
         self.assertEqual(job.data.value, b'{"message": "test"}')
-        self.assertTrue(job.overwrite)
 
     def test_job_with_drop_failure_policy(self):
         """Test Job with DropFailurePolicy."""

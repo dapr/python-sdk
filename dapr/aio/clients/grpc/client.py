@@ -2029,13 +2029,14 @@ class DaprGrpcClientAsync:
             headers=await call.initial_metadata(),
         )
 
-    async def schedule_job_alpha1(self, job: Job) -> DaprResponse:
+    async def schedule_job_alpha1(self, job: Job, overwrite: bool = False) -> DaprResponse:
         """Schedules a job to be triggered at a specified time or interval.
 
         This is an Alpha API and is subject to change.
 
         Args:
             job (Job): The job to schedule. Must have a name and either schedule or due_time.
+            overwrite (bool): If true, allows this job to overwrite an existing job with the same name.
 
         Returns:
             DaprResponse: Empty response indicating successful scheduling.
@@ -2057,7 +2058,7 @@ class DaprGrpcClientAsync:
 
         # Convert job to proto using the Job class private method
         job_proto = job._get_proto()
-        request = api_v1.ScheduleJobRequest(job=job_proto)
+        request = api_v1.ScheduleJobRequest(job=job_proto, overwrite=overwrite)
 
         try:
             call = self._stub.ScheduleJobAlpha1(request)

@@ -40,11 +40,6 @@ from grpc import (  # type: ignore
 
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
 from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import (
-    getWorkflowRuntimeStatus,
-    validateNotBlankString,
-    validateNotNone,
-)
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
@@ -57,8 +52,11 @@ from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 from dapr.clients.grpc._helpers import (
+    getWorkflowRuntimeStatus,
     MetadataTuple,
     to_bytes,
+    validateNotNone,
+    validateNotBlankString,
     convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
 )
@@ -1975,13 +1973,14 @@ class DaprGrpcClient:
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
-    def schedule_job_alpha1(self, job: Job) -> DaprResponse:
+    def schedule_job_alpha1(self, job: Job, overwrite: bool = False) -> DaprResponse:
         """Schedules a job to be triggered at a specified time or interval.
 
         This is an Alpha API and is subject to change.
 
         Args:
             job (Job): The job to schedule. Must have a name and either schedule or due_time.
+            overwrite (bool): If true, allows this job to overwrite an existing job with the same name.
 
         Returns:
             DaprResponse: Empty response indicating successful scheduling.
@@ -2003,7 +2002,7 @@ class DaprGrpcClient:
 
         # Convert job to proto using the Job class private method
         job_proto = job._get_proto()
-        request = api_v1.ScheduleJobRequest(job=job_proto)
+        request = api_v1.ScheduleJobRequest(job=job_proto, overwrite=overwrite)
 
         try:
             _, call = self.retry_policy.run_rpc(self._stub.ScheduleJobAlpha1.with_call, request)

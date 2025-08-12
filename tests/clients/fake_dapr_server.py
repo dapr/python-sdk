@@ -61,6 +61,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.workflow_options: Dict[str, str] = {}
         self.metadata: Dict[str, str] = {}
         self.jobs: Dict[str, api_v1.Job] = {}
+        self.job_overwrites: Dict[str, bool] = {}
         self._next_exception = None
 
     def start(self):
@@ -632,6 +633,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         # Store the job
         self.jobs[request.job.name] = request.job
+        self.job_overwrites[request.job.name] = request.overwrite
 
         return empty_pb2.Empty()
 
