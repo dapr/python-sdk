@@ -29,6 +29,7 @@ from google.protobuf.wrappers_pb2 import (
     BytesValue,
 )
 from google.protobuf.struct_pb2 import Struct
+from google.protobuf import json_format
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
@@ -149,8 +150,6 @@ def convert_value_to_struct(value: Dict[str, Any]) -> Struct:
     if not isinstance(value, dict) and not isinstance(value, bytes):
         raise ValueError(f'Value must be a dictionary, got {type(value)}')
 
-    from google.protobuf import json_format
-
     # Convert the value to a JSON-serializable format first
     # Handle bytes by converting to base64 string for JSON compatibility
     if isinstance(value, bytes):
@@ -241,170 +240,3 @@ def convert_dict_to_grpc_dict_of_any(parameters: Optional[Dict[str, Any]]) -> Di
         converted[key] = convert_value_to_grpc_any(value)
 
     return converted
-
-
-def create_tool_function(
-    name: str,
-    description: str,
-    parameters: Optional[Dict[str, Any]] = None,
-    required: Optional[List[str]] = None,
-) -> 'ConversationToolsFunction':
-    """Create a tool function with automatic parameter conversion.
-
-    This helper automatically converts Python dictionaries to the proper JSON Schema
-    format required by the Dapr Conversation API.
-
-    The parameters map directly represents the JSON schema structure using proper protobuf types.
-
-    Args:
-        name: Function name
-        description: Human-readable description of what the function does
-        parameters: Parameter definitions (raw Python dict)
-        required: List of required parameter names
-
-    Returns:
-        ConversationToolsFunction ready to use with Alpha2 API
-
-    Examples:
-        # Simple approach - properties become JSON schema
-        >>> create_tool_function(
-        ...     name="get_weather",
-        ...     description="Get current weather",
-        ...     parameters={
-        ...         "location": {"type": "string", "description": "City name"},
-        ...         "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
-        ...     },
-        ...     required=["location"]
-        ... )
-        # Creates: parameters = {
-        #   "type": StringValue("object"),
-        #   "properties": Struct({...}),
-        #   "required": ListValue([...])
-        # }
-
-        # Full JSON Schema approach (already complete)
-        >>> create_tool_function(
-        ...     name="calculate",
-        ...     description="Perform calculations",
-        ...     parameters={
-        ...         "type": "object",
-        ...         "properties": {
-        ...             "expression": {"type": "string", "description": "Math expression"}
-        ...         },
-        ...         "required": ["expression"]
-        ...     }
-        ... )
-        # Maps schema fields directly to protobuf map
-
-        # No parameters
-        >>> create_tool_function(
-        ...     name="get_time",
-        ...     description="Get current time"
-        ... )
-        # Creates: parameters = {}
-    """
-    from dapr.clients.grpc._request import ConversationToolsFunction
-
-    if parameters is None:
-        # No parameters - simple case
-        return ConversationToolsFunction(name=name, description=description, parameters={})
-
-    # Build the complete JSON Schema object
-    if isinstance(parameters, dict):
-        # Check if it's already a complete JSON schema
-        if 'type' in parameters and parameters['type'] == 'object':
-            # Complete JSON schema provided - use as-is
-            json_schema = parameters.copy()
-            # Add required field if provided separately and not already present
-            if required and 'required' not in json_schema:
-                json_schema['required'] = required
-        elif 'properties' in parameters:
-            # Properties provided directly - wrap in JSON schema
-            json_schema = {'type': 'object', 'properties': parameters['properties']}
-            if required:
-                json_schema['required'] = required
-            elif 'required' in parameters:
-                json_schema['required'] = parameters['required']
-        else:
-            # Assume it's a direct mapping of parameter names to schemas
-            json_schema = {'type': 'object', 'properties': parameters}
-            if required:
-                json_schema['required'] = required
-    else:
-        raise ValueError(f'Parameters must be a dictionary, got {type(parameters)}')
-
-    # Map JSON schema fields directly to protobuf map entries
-    # The parameters map directly represents the JSON schema structure
-    converted_params = {}
-    if json_schema:
-        for key, value in json_schema.items():
-            converted_params[key] = convert_value_to_struct(value)
-
-    return ConversationToolsFunction(
-        name=name, description=description, parameters=converted_params
-    )
-
-
-def create_tool(
-    name: str,
-    description: str,
-    parameters: Optional[Dict[str, Any]] = None,
-    required: Optional[List[str]] = None,
-) -> 'ConversationTools':
-    """Create a complete tool with automatic parameter conversion.
-
-    Args:
-        name: Function name
-        description: Human-readable description of what the function does
-        parameters: JSON schema for function parameters (raw Python dict)
-        required: List of required parameter names
-
-    Returns:
-        ConversationTools ready to use with converse_alpha2()
-
-    Examples:
-        # Weather tool
-        >>> weather_tool = create_tool(
-        ...     name="get_weather",
-        ...     description="Get current weather for a location",
-        ...     parameters={
-        ...         "location": {
-        ...             "type": "string",
-        ...             "description": "The city and state or country"
-        ...         },
-        ...         "unit": {
-        ...             "type": "string",
-        ...             "enum": ["celsius", "fahrenheit"],
-        ...             "description": "Temperature unit"
-        ...         }
-        ...     },
-        ...     required=["location"]
-        ... )
-
-        # Calculator tool with full schema
-        >>> calc_tool = create_tool(
-        ...     name="calculate",
-        ...     description="Perform mathematical calculations",
-        ...     parameters={
-        ...         "type": "object",
-        ...         "properties": {
-        ...             "expression": {
-        ...                 "type": "string",
-        ...                 "description": "Mathematical expression to evaluate"
-        ...             }
-        ...         },
-        ...         "required": ["expression"]
-        ...     }
-        ... )
-
-        # Simple tool with no parameters
-        >>> time_tool = create_tool(
-        ...     name="get_current_time",
-        ...     description="Get the current date and time"
-        ... )
-    """
-    from dapr.clients.grpc._request import ConversationTools
-
-    function = create_tool_function(name, description, parameters, required)
-
-    return ConversationTools(function=function)

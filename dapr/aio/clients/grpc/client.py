@@ -1763,14 +1763,14 @@ class DaprGrpcClientAsync:
             for inp in inputs
         ]
 
-        # # Convert raw Python parameters to GrpcAny objects
-        # converted_parameters = convert_parameters(parameters)
+        # Convert raw Python parameters to GrpcAny objects
+        converted_parameters = convert_dict_to_grpc_dict_of_any(parameters)
 
         request = api_v1.ConversationRequest(
             name=name,
             inputs=inputs_pb,
             contextID=context_id,
-            parameters=parameters,
+            parameters=converted_parameters,
             metadata=metadata or {},
             scrubPII=scrub_pii,
             temperature=temperature,

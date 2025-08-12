@@ -2,14 +2,7 @@
 target-version = "py38"
 line-length = 100
 fix = true
-extend-exclude = [
-    ".github",
-    "dapr/proto",
-    "tools/dapr/proto",
-    "**/*_pb2.py",
-    "**/*_pb2_grpc.py", 
-    "**/*_pb2.pyi"
-]
+extend-exclude = [".github", "dapr/proto"]
 [tool.ruff.lint]
 select = [
   "E",  # pycodestyle errors
