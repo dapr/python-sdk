@@ -38,7 +38,6 @@ import json
 import os
 import sys
 import tempfile
-from faulthandler import unregister
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 

@@ -11,7 +11,7 @@
 # limitations under the License.
 # ------------------------------------------------------------
 from dapr.clients import DaprClient
-from dapr.clients.grpc._conversation import ConversationInput
+from dapr.clients.grpc.conversation import ConversationInput
 
 with DaprClient() as d:
     inputs = [
