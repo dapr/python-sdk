@@ -1,17 +1,19 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
-Comprehensive tests for Dapr conversation API functionality.
-
-This test suite covers:
-- Basic conversation API (Alpha1)
-- Advanced conversation API (Alpha2) with tool calling
-- Multi-turn conversations
-- Different message types (user, system, assistant, developer, tool)
-- Error handling
-- Both sync and async implementations
-- Parameter conversion and validation
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
+
+
 import asyncio
 import unittest
 import uuid
@@ -29,24 +31,36 @@ from dapr.clients.grpc._conversation_helpers import (
 from dapr.clients.grpc.conversation import (
     ConversationInput,
     ConversationInputAlpha2,
-    ConversationMessage,
-    ConversationMessageContent,
-    ConversationMessageOfAssistant,
-    ConversationMessageOfSystem,
-    ConversationMessageOfTool,
-    ConversationMessageOfUser,
     ConversationTools,
     ConversationToolsFunction,
     FunctionBackend,
+    create_assistant_message,
+    create_system_message,
+    create_tool_message,
+    create_user_message,
     execute_registered_tool_async,
     get_registered_tools,
     register_tool,
-    tool as tool_decorator,
     unregister_tool,
 )
+from dapr.clients.grpc.conversation import (
+    tool as tool_decorator,
+)
 from dapr.conf import settings
-
 from tests.clients.fake_dapr_server import FakeDaprSidecar
+
+"""
+Comprehensive tests for Dapr conversation API functionality.
+
+This test suite covers:
+- Basic conversation API (Alpha1)
+- Advanced conversation API (Alpha2) with tool calling
+- Multi-turn conversations
+- Different message types (user, system, assistant, developer, tool)
+- Error handling
+- Both sync and async implementations
+- Parameter conversion and validation
+"""
 
 
 def create_weather_tool():
@@ -94,38 +108,6 @@ def create_calculate_tool():
     )
 
 
-def create_user_message(text):
-    """Helper to create a user message for Alpha2."""
-    return ConversationMessage(
-        of_user=ConversationMessageOfUser(content=[ConversationMessageContent(text=text)])
-    )
-
-
-def create_system_message(text):
-    """Helper to create a system message for Alpha2."""
-    return ConversationMessage(
-        of_system=ConversationMessageOfSystem(content=[ConversationMessageContent(text=text)])
-    )
-
-
-def create_assistant_message(text, tool_calls=None):
-    """Helper to create an assistant message for Alpha2."""
-    return ConversationMessage(
-        of_assistant=ConversationMessageOfAssistant(
-            content=[ConversationMessageContent(text=text)], tool_calls=tool_calls or []
-        )
-    )
-
-
-def create_tool_message(tool_id, name, content):
-    """Helper to create a tool message for Alpha2."""
-    return ConversationMessage(
-        of_tool=ConversationMessageOfTool(
-            tool_id=tool_id, name=name, content=[ConversationMessageContent(text=content)]
-        )
-    )
-
-
 class ConversationTestBase:
     """Base class for conversation tests with common setup."""
 
@@ -145,31 +127,50 @@ class ConversationTestBase:
     def tearDownClass(cls):
         cls._fake_dapr_server.stop()
 
+class ConversationTestBaseSync(ConversationTestBase, unittest.TestCase):
+    """Base class for conversation tests with common setup."""
 
-class ConversationAlpha1SyncTests(ConversationTestBase, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.client = DaprClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+    def tearDown(self):
+        super().tearDown()
+        self.client.close()
+
+
+class ConversationTestBaseAsync(ConversationTestBase, unittest.IsolatedAsyncioTestCase):
+    """Base class for conversation tests with common setup."""
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
+        self.client = AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}')
+
+    async def asyncTearDown(self):
+        await super().asyncTearDown()
+        await self.client.close()
+
+class ConversationAlpha1SyncTests(ConversationTestBaseSync):
     """Synchronous Alpha1 conversation API tests."""
 
     def test_basic_conversation_alpha1(self):
         """Test basic Alpha1 conversation functionality."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            inputs = [
-                ConversationInput(content='Hello', role='user'),
-                ConversationInput(content='How are you?', role='user'),
-            ]
+        inputs = [
+            ConversationInput(content='Hello', role='user'),
+            ConversationInput(content='How are you?', role='user'),
+        ]
 
-            response = client.converse_alpha1(name='test-llm', inputs=inputs)
+        response = self.client.converse_alpha1(name='test-llm', inputs=inputs)
 
-            self.assertIsNotNone(response)
-            self.assertEqual(len(response.outputs), 2)
-            self.assertIn('Hello', response.outputs[0].result)
-            self.assertIn('How are you?', response.outputs[1].result)
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 2)
+        self.assertIn('Hello', response.outputs[0].result)
+        self.assertIn('How are you?', response.outputs[1].result)
 
     def test_conversation_alpha1_with_options(self):
         """Test Alpha1 conversation with various options."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            inputs = [ConversationInput(content='Hello with options', role='user', scrub_pii=True)]
+        inputs = [ConversationInput(content='Hello with options', role='user', scrub_pii=True)]
 
-            response = client.converse_alpha1(
+        response = self.client.converse_alpha1(
                 name='test-llm',
                 inputs=inputs,
                 context_id='test-context-123',
@@ -178,17 +179,16 @@ class ConversationAlpha1SyncTests(ConversationTestBase, unittest.TestCase):
                 metadata={'test_key': 'test_value'},
             )
 
-            self.assertIsNotNone(response)
-            self.assertEqual(len(response.outputs), 1)
-            self.assertEqual(response.context_id, 'test-context-123')
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        self.assertEqual(response.context_id, 'test-context-123')
 
     def test_alpha1_parameter_conversion(self):
         """Test Alpha1 parameter conversion with raw Python values."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            inputs = [ConversationInput(content='Test with parameters', role='user')]
+        inputs = [ConversationInput(content='Test with parameters', role='user')]
 
-            # Test with raw Python parameters - these should be automatically converted
-            response = client.converse_alpha1(
+        # Test with raw Python parameters - these should be automatically converted
+        response = self.client.converse_alpha1(
                 name='test-llm',
                 inputs=inputs,
                 parameters={
@@ -200,8 +200,8 @@ class ConversationAlpha1SyncTests(ConversationTestBase, unittest.TestCase):
                 },
             )
 
-            self.assertIsNotNone(response)
-            self.assertEqual(len(response.outputs), 1)
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
 
     def test_alpha1_error_handling(self):
         """Test Alpha1 conversation error handling."""
@@ -210,96 +210,91 @@ class ConversationAlpha1SyncTests(ConversationTestBase, unittest.TestCase):
             status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Alpha1 test error')
         )
 
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            inputs = [ConversationInput(content='Error test', role='user')]
+        inputs = [ConversationInput(content='Error test', role='user')]
 
-            with self.assertRaises(DaprGrpcError) as context:
-                client.converse_alpha1(name='test-llm', inputs=inputs)
+        with self.assertRaises(DaprGrpcError) as context:
+            self.client.converse_alpha1(name='test-llm', inputs=inputs)
             self.assertIn('Alpha1 test error', str(context.exception))
 
 
-class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
+class ConversationAlpha2SyncTests(ConversationTestBaseSync):
     """Synchronous Alpha2 conversation API tests."""
 
     def test_basic_conversation_alpha2(self):
         """Test basic Alpha2 conversation functionality."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = create_user_message('Hello Alpha2!')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        user_message = create_user_message('Hello Alpha2!')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+        response = self.client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
 
-            self.assertIsNotNone(response)
-            self.assertEqual(len(response.outputs), 1)
-            self.assertEqual(len(response.outputs[0].choices), 1)
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 1)
+        self.assertEqual(len(response.outputs[0].choices), 1)
 
-            choice = response.outputs[0].choices[0]
-            self.assertEqual(choice.finish_reason, 'stop')
-            self.assertIn('Hello Alpha2!', choice.message.content)
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.finish_reason, 'stop')
+        self.assertIn('Hello Alpha2!', choice.message.content)
 
     def test_conversation_alpha2_with_system_message(self):
         """Test Alpha2 conversation with system message."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            system_message = create_system_message('You are a helpful assistant.')
-            user_message = create_user_message('Hello!')
+        system_message = create_system_message('You are a helpful assistant.')
+        user_message = create_user_message('Hello!')
 
-            input_alpha2 = ConversationInputAlpha2(
-                messages=[system_message, user_message], scrub_pii=False
-            )
+        input_alpha2 = ConversationInputAlpha2(
+            messages=[system_message, user_message], scrub_pii=False
+        )
 
-            response = client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+        response = self.client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
 
-            self.assertIsNotNone(response)
-            self.assertEqual(len(response.outputs[0].choices), 2)
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs[0].choices), 2)
 
-            # Check system message response
-            system_choice = response.outputs[0].choices[0]
-            self.assertIn('System acknowledged', system_choice.message.content)
+        # Check system message response
+        system_choice = response.outputs[0].choices[0]
+        self.assertIn('System acknowledged', system_choice.message.content)
 
-            # Check user message response
-            user_choice = response.outputs[0].choices[1]
-            self.assertIn('Response to user', user_choice.message.content)
+        # Check user message response
+        user_choice = response.outputs[0].choices[1]
+        self.assertIn('Response to user', user_choice.message.content)
 
     def test_conversation_alpha2_with_options(self):
         """Test Alpha2 conversation with various options."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = create_user_message('Alpha2 with options')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message], scrub_pii=True)
+        user_message = create_user_message('Alpha2 with options')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message], scrub_pii=True)
 
-            response = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                context_id='alpha2-context-123',
+        response = self.client.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            context_id='alpha2-context-123',
                 temperature=0.8,
                 scrub_pii=True,
                 metadata={'alpha2_test': 'true'},
                 tool_choice='none',
             )
 
-            self.assertIsNotNone(response)
-            self.assertEqual(response.context_id, 'alpha2-context-123')
+        self.assertIsNotNone(response)
+        self.assertEqual(response.context_id, 'alpha2-context-123')
 
     def test_alpha2_parameter_conversion(self):
         """Test Alpha2 parameter conversion with various types."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = create_user_message('Parameter conversion test')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        user_message = create_user_message('Parameter conversion test')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                parameters={
-                    'model': 'gpt-4o-mini',
-                    'temperature': 0.7,
-                    'max_tokens': 1000,
-                    'top_p': 1.0,
-                    'frequency_penalty': 0.0,
-                    'presence_penalty': 0.0,
-                    'stream': False,
-                },
-            )
+        response = self.client.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            parameters={
+                'model': 'gpt-4o-mini',
+                'temperature': 0.7,
+                'max_tokens': 1000,
+                'top_p': 1.0,
+                'frequency_penalty': 0.0,
+                'presence_penalty': 0.0,
+                'stream': False,
+            },
+        )
 
-            self.assertIsNotNone(response)
+        self.assertIsNotNone(response)
 
     def test_alpha2_error_handling(self):
         """Test Alpha2 conversation error handling."""
@@ -307,120 +302,115 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
             status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Alpha2 test error')
         )
 
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = create_user_message('Error test')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        user_message = create_user_message('Error test')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            with self.assertRaises(DaprGrpcError) as context:
-                client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
-            self.assertIn('Alpha2 test error', str(context.exception))
+        with self.assertRaises(DaprGrpcError) as context:
+            self.client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+        self.assertIn('Alpha2 test error', str(context.exception))
 
 
-class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
+class ConversationToolCallingSyncTests(ConversationTestBaseSync):
     """Synchronous tool calling tests for Alpha2."""
 
     def test_tool_calling_weather(self):
         """Test tool calling with weather tool."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = create_weather_tool()
-            user_message = create_user_message('What is the weather in San Francisco?')
+        weather_tool = create_weather_tool()
+        user_message = create_user_message('What is the weather in San Francisco?')
 
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = client.converse_alpha2(
-                name='test-llm', inputs=[input_alpha2], tools=[weather_tool], tool_choice='auto'
-            )
+        response = self.client.converse_alpha2(
+            name='test-llm', inputs=[input_alpha2], tools=[weather_tool], tool_choice='auto'
+        )
 
-            self.assertIsNotNone(response)
-            choice = response.outputs[0].choices[0]
-            self.assertEqual(choice.finish_reason, 'tool_calls')
-            self.assertEqual(len(choice.message.tool_calls), 1)
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.finish_reason, 'tool_calls')
+        self.assertEqual(len(choice.message.tool_calls), 1)
 
-            tool_call = choice.message.tool_calls[0]
-            self.assertEqual(tool_call.function.name, 'get_weather')
-            self.assertIn('San Francisco', tool_call.function.arguments)
+        tool_call = choice.message.tool_calls[0]
+        self.assertEqual(tool_call.function.name, 'get_weather')
+        self.assertIn('San Francisco', tool_call.function.arguments)
 
     def test_tool_calling_calculate(self):
         """Test tool calling with calculate tool."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            calc_tool = create_calculate_tool()
-            user_message = create_user_message('Calculate 15 * 23')
+        calc_tool = create_calculate_tool()
+        user_message = create_user_message('Calculate 15 * 23')
 
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = client.converse_alpha2(
-                name='test-llm', inputs=[input_alpha2], tools=[calc_tool]
-            )
+        response = self.client.converse_alpha2(
+            name='test-llm', inputs=[input_alpha2], tools=[calc_tool]
+        )
 
-            # Note: Our fake server only triggers weather tools, so this won't return tool calls
-            # but it tests that the API works with different tools
-            self.assertIsNotNone(response)
-            choice = response.outputs[0].choices[0]
-            self.assertIn('Calculate', choice.message.content)
+        # Note: Our fake server only triggers weather tools, so this won't return tool calls
+        # but it tests that the API works with different tools
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        self.assertIn('Calculate', choice.message.content)
 
     def test_multiple_tools(self):
         """Test conversation with multiple tools."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = create_weather_tool()
-            calc_tool = create_calculate_tool()
+        weather_tool = create_weather_tool()
+        calc_tool = create_calculate_tool()
 
-            user_message = create_user_message('I need weather and calculation help')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        user_message = create_user_message('I need weather and calculation help')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                tools=[weather_tool, calc_tool],
-                tool_choice='auto',
-            )
+        response = self.client.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            tools=[weather_tool, calc_tool],
+            tool_choice='auto',
+        )
 
-            self.assertIsNotNone(response)
-            # The fake server will call weather tool if "weather" is in the message
-            choice = response.outputs[0].choices[0]
-            self.assertEqual(choice.finish_reason, 'tool_calls')
+        self.assertIsNotNone(response)
+        # The fake server will call weather tool if "weather" is in the message
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.finish_reason, 'tool_calls')
 
     def test_tool_choice_none(self):
         """Test tool choice set to 'none'."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = create_weather_tool()
-            user_message = create_user_message('What is the weather today?')
 
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        weather_tool = create_weather_tool()
+        user_message = create_user_message('What is the weather today?')
 
-            response = client.converse_alpha2(
-                name='test-llm', inputs=[input_alpha2], tools=[weather_tool], tool_choice='none'
-            )
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            self.assertIsNotNone(response)
-            choice = response.outputs[0].choices[0]
-            # With tool_choice='none', should not make tool calls even if weather is mentioned
-            # (though our fake server may still trigger based on content)
-            self.assertIsNotNone(choice.message.content)
+        response = self.client.converse_alpha2(
+            name='test-llm', inputs=[input_alpha2], tools=[weather_tool], tool_choice='none'
+        )
+
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        # With tool_choice='none', should not make tool calls even if weather is mentioned
+        # (though our fake server may still trigger based on content)
+        self.assertIsNotNone(choice.message.content)
 
     def test_tool_choice_specific(self):
         """Test tool choice set to specific tool name."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = create_weather_tool()
-            calc_tool = create_calculate_tool()
+        weather_tool = create_weather_tool()
+        calc_tool = create_calculate_tool()
 
-            user_message = create_user_message('What is the weather like?')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        user_message = create_user_message('What is the weather like?')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                tools=[weather_tool, calc_tool],
-                tool_choice='get_weather',
-            )
+        response = self.client.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            tools=[weather_tool, calc_tool],
+            tool_choice='get_weather',
+        )
 
-            self.assertIsNotNone(response)
-            choice = response.outputs[0].choices[0]
-            if choice.finish_reason == 'tool_calls':
-                tool_call = choice.message.tool_calls[0]
-                self.assertEqual(tool_call.function.name, 'get_weather')
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        if choice.finish_reason == 'tool_calls':
+            tool_call = choice.message.tool_calls[0]
+            self.assertEqual(tool_call.function.name, 'get_weather')
 
 
-class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
+class ConversationMultiTurnSyncTests(ConversationTestBaseSync):
     """Multi-turn conversation tests for Alpha2."""
 
     def test_multi_turn_conversation(self):
@@ -510,120 +500,114 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
             self.assertIsNotNone(response2.outputs[0].choices[0].message.content)
 
 
-class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestCase):
+class ConversationAsyncTests(ConversationTestBaseAsync):
     """Asynchronous conversation API tests."""
 
     async def test_basic_async_conversation_alpha1(self):
         """Test basic async Alpha1 conversation."""
-        async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            inputs = [
-                ConversationInput(content='Hello async', role='user'),
-                ConversationInput(content='How are you async?', role='user'),
-            ]
+        inputs = [
+            ConversationInput(content='Hello async', role='user'),
+            ConversationInput(content='How are you async?', role='user'),
+        ]
 
-            response = await client.converse_alpha1(name='test-llm', inputs=inputs)
+        response = await self.client.converse_alpha1(name='test-llm', inputs=inputs)
 
-            self.assertIsNotNone(response)
-            self.assertEqual(len(response.outputs), 2)
-            self.assertIn('Hello async', response.outputs[0].result)
+        self.assertIsNotNone(response)
+        self.assertEqual(len(response.outputs), 2)
+        self.assertIn('Hello async', response.outputs[0].result)
 
     async def test_basic_async_conversation_alpha2(self):
         """Test basic async Alpha2 conversation."""
-        async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = create_user_message('Hello async Alpha2!')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        user_message = create_user_message('Hello async Alpha2!')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = await client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+        response = await self.client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
 
-            self.assertIsNotNone(response)
-            choice = response.outputs[0].choices[0]
-            self.assertIn('Hello async Alpha2!', choice.message.content)
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        self.assertIn('Hello async Alpha2!', choice.message.content)
 
     async def test_async_tool_calling(self):
         """Test async tool calling."""
-        async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = create_weather_tool()
-            user_message = create_user_message('Async weather request for London')
+        weather_tool = create_weather_tool()
+        user_message = create_user_message('Async weather request for London')
 
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = await client.converse_alpha2(
-                name='test-llm', inputs=[input_alpha2], tools=[weather_tool]
-            )
+        response = await self.client.converse_alpha2(
+            name='test-llm', inputs=[input_alpha2], tools=[weather_tool]
+        )
 
-            self.assertIsNotNone(response)
-            choice = response.outputs[0].choices[0]
-            self.assertEqual(choice.finish_reason, 'tool_calls')
-            tool_call = choice.message.tool_calls[0]
-            self.assertEqual(tool_call.function.name, 'get_weather')
+        self.assertIsNotNone(response)
+        choice = response.outputs[0].choices[0]
+        self.assertEqual(choice.finish_reason, 'tool_calls')
+        tool_call = choice.message.tool_calls[0]
+        self.assertEqual(tool_call.function.name, 'get_weather')
 
     async def test_concurrent_async_conversations(self):
         """Test multiple concurrent async conversations."""
-        async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-
-            async def run_alpha1_conversation(message, session_id):
-                inputs = [ConversationInput(content=message, role='user')]
-                response = await client.converse_alpha1(
+        async def run_alpha1_conversation(message, session_id):
+            inputs = [ConversationInput(content=message, role='user')]
+            response = await self.client.converse_alpha1(
                     name='test-llm', inputs=inputs, context_id=session_id
                 )
-                return response.outputs[0].result
+            return response.outputs[0].result
 
-            async def run_alpha2_conversation(message, session_id):
-                user_message = create_user_message(message)
-                input_alpha2 = ConversationInputAlpha2(messages=[user_message])
-                response = await client.converse_alpha2(
+        async def run_alpha2_conversation(message, session_id):
+            user_message = create_user_message(message)
+            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+            response = await self.client.converse_alpha2(
                     name='test-llm', inputs=[input_alpha2], context_id=session_id
                 )
-                return response.outputs[0].choices[0].message.content
+            return response.outputs[0].choices[0].message.content
 
-            # Run concurrent conversations with both Alpha1 and Alpha2
-            tasks = [
-                run_alpha1_conversation('First Alpha1 message', 'concurrent-alpha1'),
-                run_alpha2_conversation('First Alpha2 message', 'concurrent-alpha2'),
-                run_alpha1_conversation('Second Alpha1 message', 'concurrent-alpha1-2'),
-                run_alpha2_conversation('Second Alpha2 message', 'concurrent-alpha2-2'),
-            ]
+        # Run concurrent conversations with both Alpha1 and Alpha2
+        tasks = [
+            run_alpha1_conversation('First Alpha1 message', 'concurrent-alpha1'),
+            run_alpha2_conversation('First Alpha2 message', 'concurrent-alpha2'),
+            run_alpha1_conversation('Second Alpha1 message', 'concurrent-alpha1-2'),
+            run_alpha2_conversation('Second Alpha2 message', 'concurrent-alpha2-2'),
+        ]
 
-            results = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
 
-            self.assertEqual(len(results), 4)
-            for result in results:
-                self.assertIsNotNone(result)
-                self.assertIsInstance(result, str)
+        self.assertEqual(len(results), 4)
+        for result in results:
+            self.assertIsNotNone(result)
+            self.assertIsInstance(result, str)
 
     async def test_async_multi_turn_with_tools(self):
         """Test async multi-turn conversation with tool calling."""
-        async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            # First turn: user asks for weather
-            weather_tool = create_weather_tool()
-            user_message = create_user_message('Async weather for Paris')
-            input1 = ConversationInputAlpha2(messages=[user_message])
+        # First turn: user asks for weather
+        weather_tool = create_weather_tool()
+        user_message = create_user_message('Async weather for Paris')
+        input1 = ConversationInputAlpha2(messages=[user_message])
 
-            response1 = await client.converse_alpha2(
-                name='test-llm',
-                inputs=[input1],
-                tools=[weather_tool],
-                context_id='async-multi-turn',
-            )
+        response1 = await self.client.converse_alpha2(
+            name='test-llm',
+            inputs=[input1],
+            tools=[weather_tool],
+            context_id='async-multi-turn',
+        )
 
-            # Should get tool call
-            self.assertEqual(response1.outputs[0].choices[0].finish_reason, 'tool_calls')
-            tool_call = response1.outputs[0].choices[0].message.tool_calls[0]
+        # Should get tool call
+        self.assertEqual(response1.outputs[0].choices[0].finish_reason, 'tool_calls')
+        tool_call = response1.outputs[0].choices[0].message.tool_calls[0]
 
-            # Second turn: provide tool result
-            tool_result_message = create_tool_message(
-                tool_id=tool_call.id,
-                name='get_weather',
-                content='{"temperature": 22, "condition": "sunny"}',
-            )
-            input2 = ConversationInputAlpha2(messages=[tool_result_message])
+        # Second turn: provide tool result
+        tool_result_message = create_tool_message(
+            tool_id=tool_call.id,
+            name='get_weather',
+            content='{"temperature": 22, "condition": "sunny"}',
+        )
+        input2 = ConversationInputAlpha2(messages=[tool_result_message])
 
-            response2 = await client.converse_alpha2(
-                name='test-llm', inputs=[input2], context_id='async-multi-turn'
-            )
+        response2 = await self.client.converse_alpha2(
+            name='test-llm', inputs=[input2], context_id='async-multi-turn'
+        )
 
-            self.assertIsNotNone(response2)
-            self.assertIn('Tool result processed', response2.outputs[0].choices[0].message.content)
+        self.assertIsNotNone(response2)
+        self.assertIn('Tool result processed', response2.outputs[0].choices[0].message.content)
 
     async def test_async_error_handling(self):
         """Test async conversation error handling."""
@@ -631,124 +615,117 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
             status_pb2.Status(code=code_pb2.INVALID_ARGUMENT, message='Async test error')
         )
 
-        async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            inputs = [ConversationInput(content='Async error test', role='user')]
+        inputs = [ConversationInput(content='Async error test', role='user')]
 
-            with self.assertRaises(DaprGrpcError) as context:
-                await client.converse_alpha1(name='test-llm', inputs=inputs)
-            self.assertIn('Async test error', str(context.exception))
+        with self.assertRaises(DaprGrpcError) as context:
+            await self.client.converse_alpha1(name='test-llm', inputs=inputs)
+        self.assertIn('Async test error', str(context.exception))
 
 
-class ConversationParameterTests(ConversationTestBase, unittest.TestCase):
+class ConversationParameterTests(ConversationTestBaseSync):
     """Tests for parameter handling and conversion."""
 
     def test_parameter_edge_cases(self):
         """Test parameter conversion with edge cases."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = create_user_message('Edge cases test')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        user_message = create_user_message('Edge cases test')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            response = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                parameters={
-                    'int32_max': 2147483647,  # Int32 maximum
-                    'int64_large': 9999999999,  # Requires Int64
-                    'negative_temp': -0.5,  # Negative float
-                    'zero_value': 0,  # Zero integer
-                    'false_flag': False,  # Boolean false
-                    'true_flag': True,  # Boolean true
-                    'empty_string': '',  # Empty string
-                },
-            )
+        response = self.client.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            parameters={
+                'int32_max': 2147483647,  # Int32 maximum
+                'int64_large': 9999999999,  # Requires Int64
+                'negative_temp': -0.5,  # Negative float
+                'zero_value': 0,  # Zero integer
+                'false_flag': False,  # Boolean false
+                'true_flag': True,  # Boolean true
+                'empty_string': '',  # Empty string
+            },
+        )
 
-            self.assertIsNotNone(response)
+        self.assertIsNotNone(response)
 
     def test_realistic_provider_parameters(self):
         """Test with realistic LLM provider parameters."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = create_user_message('Provider parameters test')
-            input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        user_message = create_user_message('Provider parameters test')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             # OpenAI-style parameters
-            response1 = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
+        response1 = self.client.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
                 parameters={
-                    'model': 'gpt-4o-mini',
-                    'temperature': 0.7,
-                    'max_tokens': 1000,
-                    'top_p': 1.0,
-                    'frequency_penalty': 0.0,
-                    'presence_penalty': 0.0,
-                    'stream': False,
-                    'tool_choice': 'auto',
-                },
-            )
+                'model': 'gpt-4o-mini',
+                'temperature': 0.7,
+                'max_tokens': 1000,
+                'top_p': 1.0,
+                'frequency_penalty': 0.0,
+                'presence_penalty': 0.0,
+                'stream': False,
+                'tool_choice': 'auto',
+            },
+        )
 
             # Anthropic-style parameters
-            response2 = client.converse_alpha2(
-                name='test-llm',
-                inputs=[input_alpha2],
-                parameters={
-                    'model': 'claude-3-5-sonnet-20241022',
-                    'max_tokens': 4096,
-                    'temperature': 0.8,
-                    'top_p': 0.9,
-                    'top_k': 250,
-                    'stream': False,
-                },
-            )
+        response2 = self.client.converse_alpha2(
+            name='test-llm',
+            inputs=[input_alpha2],
+            parameters={
+                'model': 'claude-3-5-sonnet-20241022',
+                'max_tokens': 4096,
+                'temperature': 0.8,
+                'top_p': 0.9,
+                'top_k': 250,
+                'stream': False,
+            },
+        )
 
-            self.assertIsNotNone(response1)
-            self.assertIsNotNone(response2)
+        self.assertIsNotNone(response1)
+        self.assertIsNotNone(response2)
 
 
-class ConversationValidationTests(ConversationTestBase, unittest.TestCase):
+class ConversationValidationTests(ConversationTestBaseSync):
     """Tests for input validation and edge cases."""
 
     def test_empty_inputs_alpha1(self):
         """Test Alpha1 with empty inputs."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            response = client.converse_alpha1(name='test-llm', inputs=[])
-            self.assertIsNotNone(response)
+        response = self.client.converse_alpha1(name='test-llm', inputs=[])
+        self.assertIsNotNone(response)
 
     def test_empty_inputs_alpha2(self):
         """Test Alpha2 with empty inputs."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            response = client.converse_alpha2(name='test-llm', inputs=[])
-            self.assertIsNotNone(response)
+        response = self.client.converse_alpha2(name='test-llm', inputs=[])
+        self.assertIsNotNone(response)
 
     def test_empty_messages_alpha2(self):
         """Test Alpha2 with empty messages in input."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            input_alpha2 = ConversationInputAlpha2(messages=[])
-            response = client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
-            self.assertIsNotNone(response)
+        input_alpha2 = ConversationInputAlpha2(messages=[])
+        response = self.client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
+        self.assertIsNotNone(response)
 
     def test_mixed_alpha1_alpha2_compatibility(self):
         """Test that Alpha1 and Alpha2 can be used in the same session."""
-        with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            # Alpha1 call
-            alpha1_inputs = [ConversationInput(content='Alpha1 call', role='user')]
-            alpha1_response = client.converse_alpha1(name='test-llm', inputs=alpha1_inputs)
+        # Alpha1 call
+        alpha1_inputs = [ConversationInput(content='Alpha1 call', role='user')]
+        alpha1_response = self.client.converse_alpha1(name='test-llm', inputs=alpha1_inputs)
 
-            # Alpha2 call
-            user_message = create_user_message('Alpha2 call')
-            alpha2_input = ConversationInputAlpha2(messages=[user_message])
-            alpha2_response = client.converse_alpha2(name='test-llm', inputs=[alpha2_input])
+        # Alpha2 call
+        user_message = create_user_message('Alpha2 call')
+        alpha2_input = ConversationInputAlpha2(messages=[user_message])
+        alpha2_response = self.client.converse_alpha2(name='test-llm', inputs=[alpha2_input])
 
-            # Both should work
-            self.assertIsNotNone(alpha1_response)
-            self.assertIsNotNone(alpha2_response)
+        # Both should work
+        self.assertIsNotNone(alpha1_response)
+        self.assertIsNotNone(alpha2_response)
 
-            # Check response structures are different but valid
-            self.assertTrue(hasattr(alpha1_response, 'outputs'))
-            self.assertTrue(hasattr(alpha2_response, 'outputs'))
-            self.assertTrue(hasattr(alpha2_response.outputs[0], 'choices'))
+        # Check response structures are different but valid
+        self.assertTrue(hasattr(alpha1_response, 'outputs'))
+        self.assertTrue(hasattr(alpha2_response, 'outputs'))
+        self.assertTrue(hasattr(alpha2_response.outputs[0], 'choices'))
 
 
-class ConversationToolHelpersSyncTests(unittest.TestCase):
+class ConversationToolHelpersSyncTests(ConversationTestBaseSync):
     """Tests for conversation tool helpers, registry, and backends (sync)."""
 
     def tearDown(self):
@@ -917,7 +894,7 @@ class ConversationToolHelpersSyncTests(unittest.TestCase):
         self.assertEqual(proto_tool.of_tool.content[0].text, 'cloudy')
 
 
-class ConversationToolHelpersAsyncTests(unittest.IsolatedAsyncioTestCase):
+class ConversationToolHelpersAsyncTests(ConversationTestBaseAsync):
     async def asyncTearDown(self):
         for t in list(get_registered_tools()):
             try:
