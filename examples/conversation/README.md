@@ -129,12 +129,14 @@ The Alpha2 API introduces sophisticated features:
 
 - **Streaming**: Response streaming is not yet supported in Alpha2. All responses are returned as complete messages.
 
-## Tool Creation (Alpha2) - Excellent DevEx!
+## Tool Creation (Alpha2)
 
-The Alpha2 API provides powerful functions for tool creation and parameter handling with clean JSON schema support.
-You can either define tools via JSON schema or use the recommended decorator-based approach that auto-generates the schema from a typed Python function.
+Recommended order of approaches:
+- Decorator-based definition (best ergonomics)
+- Function-to-Schema (automatic schema from typed function)
+- JSON schema variants (fallbacks for dynamic/manual cases)
 
-### Decorator-based Tool Definition (Recommended for most use cases)
+### Decorator-based Tool Definition (Recommended)
 ```python
 from dapr.clients.grpc import conversation
 
@@ -148,62 +150,9 @@ def get_weather(location: str, unit: str = 'fahrenheit') -> str:
 tools = conversation.get_registered_tools()
 ```
 
-### Simple JSON Schema Approach
-```python
-# Clean, simple, intuitive approach using standard JSON schema
-from dapr.clients.grpc import conversation
+### Function-to-Schema (from_function)
 
-function = conversation.ConversationToolsFunction(
-    name="get_weather",
-    description="Get current weather",
-    parameters={
-        "type": "object",
-        "properties": {
-            "location": {
-                "type": "string", 
-                "description": "City name"
-            },
-            "unit": {
-                "type": "string",
-                "enum": ["celsius", "fahrenheit"]
-            }
-        },
-        "required": ["location"]
-    }
-)
-weather_tool = conversation.ConversationTools(function=function)
-```
-
-### Automatic Parameter Conversion
-
-Parameters argument in the converse method for alpha2 are now automatically converted from raw Python types:
-
-```python
-# Before: Manual GrpcAny creation for every parameter ❌
-temp_param = GrpcAny()
-temp_param.Pack(DoubleValue(value=0.7))
-
-# After: Raw Python values automatically converted ✅
-response = client.converse_alpha2(
-    name="my-provider",
-    inputs=[input_alpha2],
-    parameters={
-        'temperature': 0.7,          # float -> GrpcAny
-        'max_tokens': 1000,          # int -> GrpcAny
-        'stream': False,             # bool -> GrpcAny
-        'model': 'gpt-4',            # string -> GrpcAny
-        'config': {                  # dict -> GrpcAny (JSON)
-            'features': ['a', 'b'],  # nested arrays supported
-            'enabled': True          # nested values converted
-        }
-    }
-)
-```
-
-
-### Alternative: Function-to-Schema (from_function)
-
-We provide a helper function to automatically generate the tool schema from a Python function.
+Automatically generate the tool schema from a typed Python function.
 
 ```python
 from enum import Enum
@@ -225,18 +174,17 @@ function = conversation.ConversationToolsFunction.from_function(get_weather)
 weather_tool = conversation.ConversationTools(function=function)
 ```
 
-**Benefits:**
+Benefits:
 - ✅ **Type Safety**: Full Python type hint support (str, int, List, Optional, Enum, etc.)
 - ✅ **Auto-Documentation**: Docstring parsing for parameter descriptions
 - ✅ **Ultimate DevEx**: Define functions, get tools automatically
 - ✅ **90%+ less boilerplate** compared to manual schema creation
 
-### Alternative Tool Creation Approaches
+### JSON Schema Variants (fallbacks)
 
-If you can't use the decorator (e.g., dynamic registration), these alternatives mirror the same
-schema but require a bit more boilerplate.
+Use when you can't decorate or need to build tools dynamically.
 
-#### 1) Simple JSON Schema
+#### Simple JSON Schema
 ```python
 from dapr.clients.grpc import conversation
 
@@ -255,7 +203,7 @@ function = conversation.ConversationToolsFunction(
 weather_tool = conversation.ConversationTools(function=function)
 ```
 
-#### 2) Complete JSON Schema
+#### Complete JSON Schema (e.g., calculator)
 ```python
 from dapr.clients.grpc import conversation
 
@@ -273,7 +221,7 @@ function = conversation.ConversationToolsFunction(
 calc_tool = conversation.ConversationTools(function=function)
 ```
 
-#### 3) No Parameters
+#### No Parameters
 ```python
 from dapr.clients.grpc import conversation
 
@@ -285,7 +233,7 @@ function = conversation.ConversationToolsFunction(
 time_tool = conversation.ConversationTools(function=function)
 ```
 
-#### 4) Complex Schema with Arrays
+#### Complex Schema with Arrays
 ```python
 from dapr.clients.grpc import conversation
 
@@ -367,6 +315,21 @@ tool_message = ConversationMessage(
         name="get_weather",
         content=[ConversationMessageContent(text="Weather: 72°F, sunny")]
     )
+)
+```
+
+### Convenience message helpers
+
+You can create the same messages more concisely using helpers from `conversation`:
+
+```python
+from dapr.clients.grpc import conversation
+
+user = conversation.create_user_message("What's the weather in Paris?")
+system = conversation.create_system_message("You are a helpful AI assistant.")
+assistant = conversation.create_assistant_message("I can help you with that!")
+tool_result = conversation.create_tool_message(
+    tool_id="call_123", name="get_weather", content="Weather: 72°F, sunny"
 )
 ```
 
@@ -512,7 +475,7 @@ result = asyncio.run(async_conversation())
 
 ## Dapr Component Configuration
 
-For real LLM providers, you need Dapr component configurations. The example automatically creates these:
+For real LLM providers, you need Dapr component configurations. The example real_llm_providers_example.py automatically creates these for each provider you have configured in the .env file:
 
 ### OpenAI Component Example
 ```yaml
@@ -536,37 +499,6 @@ spec:
 dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path /tmp/dapr-llm-components-xyz/
 ```
 
-## Helper Functions
-
-Convert LLM responses for multi-turn conversations:
-
-```python
-from dapr.clients.grpc._response import ConversationResultAlpha2Message
-
-
-def convert_llm_response_to_conversation_message(
-        result_message: ConversationResultAlpha2Message) -> ConversationMessage:
-    """Convert ConversationResultMessage (from LLM response) to ConversationMessage (for conversation input)."""
-    content = []
-    if result_message.content:
-        content = [ConversationMessageContent(text=result_message.content)]
-
-    tool_calls = result_message.tool_calls or []
-
-    return ConversationMessage(
-        of_assistant=ConversationMessageOfAssistant(
-            content=content,
-            tool_calls=tool_calls
-        )
-    )
-
-
-# Usage in multi-turn conversations
-response = client.converse_alpha2(name="openai", inputs=[input_alpha2], tools=[tool])
-choice = response.outputs[0].choices[0]
-assistant_message = convert_llm_response_to_conversation_message(choice.message)
-conversation_history.append(assistant_message)
-```
 
 ## Examples in This Directory
 
