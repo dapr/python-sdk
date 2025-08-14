@@ -12,10 +12,10 @@
 # ------------------------------------------------------------
 from dapr.clients import DaprClient
 from dapr.clients.grpc.conversation import (
+    ConversationInputAlpha2,
+    ConversationMessage,
     ConversationMessageContent,
     ConversationMessageOfUser,
-    ConversationMessage,
-    ConversationInputAlpha2,
 )
 
 with DaprClient() as d:

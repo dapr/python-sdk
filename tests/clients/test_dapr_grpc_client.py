@@ -1242,12 +1242,15 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Create user message
         user_message = conversation.ConversationMessage(
             of_user=conversation.ConversationMessageOfUser(
-                name='TestUser', content=[conversation.ConversationMessageContent(text='Hello, how are you?')]
+                name='TestUser',
+                content=[conversation.ConversationMessageContent(text='Hello, how are you?')],
             )
         )
 
         # Create Alpha2 input
-        input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message], scrub_pii=False)
+        input_alpha2 = conversation.ConversationInputAlpha2(
+            messages=[user_message], scrub_pii=False
+        )
 
         response = dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
 
@@ -1319,7 +1322,9 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Create system message
         system_message = conversation.ConversationMessage(
             of_system=conversation.ConversationMessageOfSystem(
-                content=[conversation.ConversationMessageContent(text='You are a helpful assistant.')]
+                content=[
+                    conversation.ConversationMessageContent(text='You are a helpful assistant.')
+                ]
             )
         )
 
@@ -1342,7 +1347,9 @@ class DaprGrpcClientTests(unittest.TestCase):
         developer_message = conversation.ConversationMessage(
             of_developer=conversation.ConversationMessageOfDeveloper(
                 name='DevTeam',
-                content=[conversation.ConversationMessageContent(text='Debug: Processing user input')],
+                content=[
+                    conversation.ConversationMessageContent(text='Debug: Processing user input')
+                ],
             )
         )
 
@@ -1367,7 +1374,9 @@ class DaprGrpcClientTests(unittest.TestCase):
                 tool_id='call_123',
                 name='get_weather',
                 content=[
-                    conversation.ConversationMessageContent(text='{"temperature": 22, "condition": "sunny"}')
+                    conversation.ConversationMessageContent(
+                        text='{"temperature": 22, "condition": "sunny"}'
+                    )
                 ],
             )
         )
@@ -1416,7 +1425,9 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
 
         user_message = conversation.ConversationMessage(
-            of_user=conversation.ConversationMessageOfUser(content=[conversation.ConversationMessageContent(text='Hello!')])
+            of_user=conversation.ConversationMessageOfUser(
+                content=[conversation.ConversationMessageContent(text='Hello!')]
+            )
         )
 
         input_alpha2 = conversation.ConversationInputAlpha2(messages=[system_message, user_message])
@@ -1502,7 +1513,9 @@ class DaprGrpcClientTests(unittest.TestCase):
         )
 
         calculator_tool = conversation.ConversationTools(
-            function=conversation.ConversationToolsFunction(name='calculate', description='Perform calculations')
+            function=conversation.ConversationToolsFunction(
+                name='calculate', description='Perform calculations'
+            )
         )
 
         user_message = conversation.ConversationMessage(

@@ -1,11 +1,26 @@
-from dapr.clients.grpc import _conversation_helpers as conv_helpers
-from dapr.proto import api_v1
+# -*- coding: utf-8 -*-
+
+"""
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 import asyncio
 import inspect
 import json
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union, Protocol
+from typing import Any, Callable, Dict, List, Mapping, Optional, Protocol, Sequence, Union
+
+from dapr.clients.grpc import _conversation_helpers as conv_helpers
+from dapr.proto import api_v1
 
 Params = Union[Mapping[str, Any], Sequence[Any], None]
 
@@ -26,12 +41,30 @@ class ConversationMessageContent:
     text: str
 
 
+def _indent_lines(title: str, text: str, indent: int) -> str:
+    """Indent lines of text."""
+    indent_after_first_line = indent + len(title) + 2
+    lines = text.splitlines() if text is not None else ['']
+    first = lines[0] if lines else ''
+    rest = ''
+    for line in lines[1:]:
+        rest += f'\n{indent_after_first_line * " "}{line}'
+    return f'{indent * " "}{title}: {first}{rest}'
+
+
 @dataclass
 class ConversationMessageOfDeveloper:
     """Developer message content."""
 
     name: Optional[str] = None
     content: List[ConversationMessageContent] = field(default_factory=list)
+
+    def trace_print(self, indent: int = 0) -> None:
+        base = ' ' * indent
+        if self.name:
+            print(f'{base}name: {self.name}')
+        for i, c in enumerate(self.content):
+            print(_indent_lines(f'content[{i}]', c.text, indent))
 
 
 @dataclass
@@ -41,6 +74,13 @@ class ConversationMessageOfSystem:
     name: Optional[str] = None
     content: List[ConversationMessageContent] = field(default_factory=list)
 
+    def trace_print(self, indent: int = 0) -> None:
+        base = ' ' * indent
+        if self.name:
+            print(f'{base}name: {self.name}')
+        for i, c in enumerate(self.content):
+            print(_indent_lines(f'content[{i}]', c.text, indent))
+
 
 @dataclass
 class ConversationMessageOfUser:
@@ -48,6 +88,13 @@ class ConversationMessageOfUser:
 
     name: Optional[str] = None
     content: List[ConversationMessageContent] = field(default_factory=list)
+
+    def trace_print(self, indent: int = 0) -> None:
+        base = ' ' * indent
+        if self.name:
+            print(f'{base}name: {self.name}')
+        for i, c in enumerate(self.content):
+            print(_indent_lines(f'content[{i}]', c.text, indent))
 
 
 @dataclass
@@ -74,6 +121,24 @@ class ConversationMessageOfAssistant:
     content: List[ConversationMessageContent] = field(default_factory=list)
     tool_calls: List[ConversationToolCalls] = field(default_factory=list)
 
+    def trace_print(self, indent: int = 0) -> None:
+        base = ' ' * indent
+        if self.name:
+            print(f'{base}name: {self.name}')
+        for i, c in enumerate(self.content):
+            lines = c.text.splitlines() if c.text is not None else ['']
+            first = lines[0] if lines else ''
+            print(f'{base}content[{i}]: {first}')
+            for extra in lines[1:]:
+                print(extra)
+        if self.tool_calls:
+            print(f'{base}tool_calls: {len(self.tool_calls)}')
+            for idx, tc in enumerate(self.tool_calls):
+                tc_id = tc.id or ''
+                fn = tc.function.name if tc.function else ''
+                args = tc.function.arguments if tc.function else ''
+                print(f'{base}  [{idx}] id={tc_id} function={fn}({args})')
+
 
 @dataclass
 class ConversationMessageOfTool:
@@ -82,6 +147,19 @@ class ConversationMessageOfTool:
     tool_id: Optional[str] = None
     name: str = ''
     content: List[ConversationMessageContent] = field(default_factory=list)
+
+    def trace_print(self, indent: int = 0) -> None:
+        base = ' ' * indent
+        if self.tool_id:
+            print(f'{base}tool_id: {self.tool_id}')
+        if self.name:
+            print(f'{base}name: {self.name}')
+        for i, c in enumerate(self.content):
+            lines = c.text.splitlines() if c.text is not None else ['']
+            first = lines[0] if lines else ''
+            print(f'{base}content[{i}]: {first}')
+            for extra in lines[1:]:
+                print(extra)
 
 
 @dataclass
@@ -93,6 +171,25 @@ class ConversationMessage:
     of_user: Optional[ConversationMessageOfUser] = None
     of_assistant: Optional[ConversationMessageOfAssistant] = None
     of_tool: Optional[ConversationMessageOfTool] = None
+
+    def trace_print(self, indent: int = 0):
+        print()
+        """Print the conversation message with indentation and direction arrows."""
+        if self.of_developer:
+            print(f'{" " * indent}client[developer] ---------> LLM[assistant]:')
+            self.of_developer.trace_print(indent + 2)
+        if self.of_system:
+            print(f'{" " * indent}client[system]    ---------> LLM[assistant]:')
+            self.of_system.trace_print(indent + 2)
+        if self.of_user:
+            print(f'{" " * indent}client[user]      ---------> LLM[assistant]:')
+            self.of_user.trace_print(indent + 2)
+        if self.of_assistant:
+            print(f'{" " * indent}client            <-------- LLM[assistant]:')
+            self.of_assistant.trace_print(indent + 2)
+        if self.of_tool:
+            print(f'{" " * indent}client[tool]      --------> LLM[assistant]:')
+            self.of_tool.trace_print(indent + 2)
 
     def to_proto(self) -> api_v1.ConversationMessage:
         """Convert a conversation message to proto format."""
@@ -199,7 +296,10 @@ class ConversationToolsFunction:
             register_tool(c.name, ConversationTools(function=c, backend=FunctionBackend(func)))
         return c
 
-# --- Tool Helpers
+
+# ------------------------------------------------------------------------------------------------
+# Tool Helpers
+# ------------------------------------------------------------------------------------------------
 
 
 class ToolBackend(Protocol):
@@ -209,7 +309,7 @@ class ToolBackend(Protocol):
         ...
 
     async def ainvoke(
-        self, spec: ConversationToolsFunction, params: Params, *, timeout: Union[float , None] = None
+        self, spec: ConversationToolsFunction, params: Params, *, timeout: Union[float, None] = None
     ) -> Any:
         ...
 
@@ -232,7 +332,7 @@ class FunctionBackend:
             raise conv_helpers.ToolExecutionError(f'Tool raised: {e}') from e
 
     async def ainvoke(
-        self, spec: ConversationToolsFunction, params: Params, *, timeout: Union[float , None] = None
+        self, spec: ConversationToolsFunction, params: Params, *, timeout: Union[float, None] = None
     ) -> Any:
         bound = conv_helpers.bind_params_to_func(self.func, params)
         try:
@@ -241,14 +341,16 @@ class FunctionBackend:
                 return await (asyncio.wait_for(coro, timeout) if timeout else coro)
             loop = asyncio.get_running_loop()
             return await loop.run_in_executor(None, lambda: self.func(*bound.args, **bound.kwargs))
-        except asyncio.TimeoutError:
-            raise conv_helpers.ToolExecutionError(f'Timed out after {timeout} seconds')
+        except asyncio.TimeoutError as err:
+            raise conv_helpers.ToolExecutionError(
+                f'Timed out after {timeout} seconds'
+            ) from err
         except Exception as e:
             raise conv_helpers.ToolExecutionError(f'Tool raised: {e}') from e
 
 
 def tool(
-    func: Callable,
+    func: Optional[Callable] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -273,7 +375,8 @@ def tool(
 
         ct = ConversationTools(function=ctf, backend=FunctionBackend(f))
 
-        setattr(f, '__dapr_conversation_tool__', ct)
+        # Store the tool in the function for later retrieval
+        f.__dapr_conversation_tool__ = ct
 
         if register:
             register_tool(ctf.name, ct)
@@ -296,7 +399,7 @@ class ConversationTools:
             raise conv_helpers.ToolExecutionError('Tool backend not set')
         return self.backend.invoke(self.function, params)
 
-    async def ainvoke(self, params: Params = None, *, timeout: Union[float , None] = None) -> Any:
+    async def ainvoke(self, params: Params = None, *, timeout: Union[float, None] = None) -> Any:
         if not self.backend:
             raise conv_helpers.ToolExecutionError('Tool backend not set')
         return await self.backend.ainvoke(self.function, params, timeout=timeout)
@@ -304,11 +407,6 @@ class ConversationTools:
 
 # registry of tools
 _TOOL_REGISTRY: Dict[str, ConversationTools] = {}
-
-
-# whether to allow tool execution. It is set to false to express that you should validate the input of the LLM to
-# avoid injection attacks.
-_ALLOW_REGISTER_TOOL_EXECUTION = False
 
 
 def register_tool(name: str, t: ConversationTools):
@@ -328,44 +426,34 @@ def get_registered_tools() -> List[ConversationTools]:
     return list(_TOOL_REGISTRY.values())
 
 
-def set_allow_register_tool_execution(allow: bool):
-    """Set whether tool execution is allowed."""
-    global _ALLOW_REGISTER_TOOL_EXECUTION
-    _ALLOW_REGISTER_TOOL_EXECUTION = allow
-
-
 def _get_tool(name: str) -> ConversationTools:
     try:
         return _TOOL_REGISTRY[name]
-    except KeyError:
-        raise conv_helpers.ToolNotFoundError(f"Tool '{name}' is not registered")
+    except KeyError as err:
+        raise conv_helpers.ToolNotFoundError(
+            f"Tool '{name}' is not registered"
+        ) from err
 
 
-def execute_registered_tool(name: str, params: Union[Params , str] = None) -> Any:
+def execute_registered_tool(name: str, params: Union[Params, str] = None) -> Any:
     """Execute a registered tool."""
-    if not _ALLOW_REGISTER_TOOL_EXECUTION:
-        raise conv_helpers.ToolExecutionForbiddenError(
-            'Automatic tool execution is forbidden. To enable it, set it via set_allow_register_tool_execution'
-        )
     if isinstance(params, str):
         params = json.loads(params)
     return _get_tool(name).invoke(params)
 
 
 async def execute_registered_tool_async(
-    name: str, params: Union[Params , str] = None, *, timeout: Union[float , None] = None
+    name: str, params: Union[Params, str] = None, *, timeout: Union[float, None] = None
 ) -> Any:
     """Execute a registered tool asynchronously."""
-    if not _ALLOW_REGISTER_TOOL_EXECUTION:
-        raise conv_helpers.ToolExecutionForbiddenError(
-            'Automatic tool execution is forbidden. To enable it, set it via set_allow_register_tool_execution'
-        )
     if isinstance(params, str):
         params = json.loads(params)
     return await _get_tool(name).ainvoke(params, timeout=timeout)
 
 
-# --- Helpers to create messages for Alpha2 inputs
+# ------------------------------------------------------------------------------------------------
+# Helpers to create messages for Alpha2 inputs
+# ------------------------------------------------------------------------------------------------
 
 
 def create_user_message(text: str) -> ConversationMessage:

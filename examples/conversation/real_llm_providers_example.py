@@ -1,4 +1,15 @@
-#!/usr/bin/env python3
+# ------------------------------------------------------------
+# Copyright 2025 The Dapr Authors
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ------------------------------------------------------------
 
 """
 Real LLM Providers Example for Dapr Conversation API (Alpha2)
@@ -9,6 +20,7 @@ with the Dapr Conversation API Alpha2. It showcases the latest features includin
 - Automatic parameter conversion (raw Python values)
 - Enhanced tool calling capabilities
 - Multi-turn conversations
+- Decorator-based tool definition
 - Both sync and async implementations
 
 Prerequisites:
@@ -16,10 +28,7 @@ Prerequisites:
 2. For manual mode: Start Dapr sidecar manually
 
 Usage:
-    # Automatic mode (recommended) - manages Dapr sidecar automatically
-    python examples/conversation/real_llm_providers_example.py
-
-    # Manual mode - requires manual Dapr sidecar setup
+    # requires manual Dapr sidecar setup
     python examples/conversation/real_llm_providers_example.py
 
     # Show help
@@ -39,11 +48,12 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import yaml
 
-from dapr.clients.grpc._response import ConversationResultAlpha2Message
+if TYPE_CHECKING:
+    from dapr.clients.grpc._response import ConversationResultAlpha2Message
 
 # Add the parent directory to the path so we can import local dapr sdk
 # uncomment if running from development version
@@ -238,7 +248,7 @@ def execute_weather_tool(location: str, unit: str = 'fahrenheit') -> str:
 
 
 def convert_llm_response_to_conversation_input(
-    result_message: ConversationResultAlpha2Message,
+    result_message: 'ConversationResultAlpha2Message',
 ) -> conversation.ConversationMessage:
     """Convert ConversationResultMessage (from LLM response) to ConversationMessage (for conversation input).
 
@@ -805,10 +815,7 @@ class RealLLMProviderTester:
 
         try:
             with DaprClient() as client:
-                conversation_history = []
-
-                # allow automatically execute tool calls without checking arguments
-                conversation.set_allow_register_tool_execution(True)
+                conversation_history = []  # our context to pass to the LLM on each turn
 
                 # Turn 1: User asks about weather (include tools)
                 print('\n--- Turn 1: Initial weather query ---')
@@ -833,25 +840,27 @@ class RealLLMProviderTester:
                     },
                 )
 
-                def append_response_to_history(response):
+                def append_response_to_history(response: 'ConversationResultAlpha2Message'):
+                    """Helper to append response to history and execute tool calls."""
                     for msg in response.to_assistant_messages():
                         conversation_history.append(msg)
-                        if msg.of_assistant.tool_calls:
-                            for _tool_call in msg.of_assistant.tool_calls:
-                                print(f'Executing tool call: {_tool_call.function.name}')
-                                output = conversation.execute_registered_tool(
-                                    _tool_call.function.name, _tool_call.function.arguments
-                                )
-                                print(f'Tool output: {output}')
+                        if not msg.of_assistant.tool_calls:
+                            continue
+                        for _tool_call in msg.of_assistant.tool_calls:
+                            print(f'Executing tool call: {_tool_call.function.name}')
+                            output = conversation.execute_registered_tool(
+                                _tool_call.function.name, _tool_call.function.arguments
+                            )
+                            print(f'Tool output: {output}')
 
-                                # append result to history
-                                conversation_history.append(
-                                    conversation.create_tool_message(
-                                        tool_id=_tool_call.id,
-                                        name=_tool_call.function.name,
-                                        content=output,
-                                    )
+                            # append result to history
+                            conversation_history.append(
+                                conversation.create_tool_message(
+                                    tool_id=_tool_call.id,
+                                    name=_tool_call.function.name,
+                                    content=output,
                                 )
+                            )
 
                 append_response_to_history(response1)
 
@@ -922,15 +931,9 @@ class RealLLMProviderTester:
 
                 append_response_to_history(response4)
 
-                # print full history
-                for i, msg in enumerate(conversation_history):
-                    print(f'History Index {i}: {msg}')
-
-                else:
-                    print(
-                        '⚠️ No tool calls found in any output/choice - continuing with regular conversation flow'
-                    )
-                    # Could continue with regular multi-turn conversation without tools
+                print('Full conversation history trace:')
+                for msg in conversation_history:
+                    msg.trace_print(2)
 
         except Exception as e:
             print(f'❌ Multi-turn tool calling error: {e}')

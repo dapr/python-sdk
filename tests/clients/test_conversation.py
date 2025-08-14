@@ -12,28 +12,40 @@ This test suite covers:
 - Both sync and async implementations
 - Parameter conversion and validation
 """
-
 import asyncio
 import unittest
+import uuid
 
 from google.rpc import code_pb2, status_pb2
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprGrpcError
-from dapr.conf import settings
+from dapr.clients.grpc import conversation
+from dapr.clients.grpc._conversation_helpers import (
+    ToolArgumentError,
+    ToolExecutionError,
+)
 from dapr.clients.grpc.conversation import (
     ConversationInput,
-    ConversationMessageContent,
-    ConversationMessageOfSystem,
-    ConversationMessageOfUser,
-    ConversationMessageOfAssistant,
-    ConversationMessageOfTool,
-    ConversationMessage,
     ConversationInputAlpha2,
+    ConversationMessage,
+    ConversationMessageContent,
+    ConversationMessageOfAssistant,
+    ConversationMessageOfSystem,
+    ConversationMessageOfTool,
+    ConversationMessageOfUser,
+    ConversationTools,
     ConversationToolsFunction,
-    ConversationTools
+    FunctionBackend,
+    execute_registered_tool_async,
+    get_registered_tools,
+    register_tool,
+    tool as tool_decorator,
+    unregister_tool,
 )
+from dapr.conf import settings
+
 from tests.clients.fake_dapr_server import FakeDaprSidecar
 
 
@@ -734,6 +746,204 @@ class ConversationValidationTests(ConversationTestBase, unittest.TestCase):
             self.assertTrue(hasattr(alpha1_response, 'outputs'))
             self.assertTrue(hasattr(alpha2_response, 'outputs'))
             self.assertTrue(hasattr(alpha2_response.outputs[0], 'choices'))
+
+
+class ConversationToolHelpersSyncTests(unittest.TestCase):
+    """Tests for conversation tool helpers, registry, and backends (sync)."""
+
+    def tearDown(self):
+        # Cleanup tools with known prefixes
+        for t in list(get_registered_tools()):
+            try:
+                name = t.function.name
+                if name.startswith('test_') or name.startswith('ns_') or name.startswith('dup_'):
+                    unregister_tool(name)
+            except Exception:
+                continue
+
+    def test_tool_decorator_namespace_and_name_override(self):
+        ns_unique = uuid.uuid4().hex[:6]
+        name_override = f'test_sum_{ns_unique}'
+
+        @tool_decorator(namespace=f'ns.{ns_unique}', name=name_override)
+        def foo(x: int, y: int) -> int:
+            return x + y
+
+        names = {t.function.name for t in get_registered_tools()}
+        self.assertIn(name_override, names)
+        unregister_tool(name_override)
+
+        ns_tool = f'ns.{ns_unique}.bar'
+
+        @tool_decorator(namespace=f'ns.{ns_unique}')
+        def bar(q: int) -> int:
+            return q * 2
+
+        names = {t.function.name for t in get_registered_tools()}
+        self.assertIn(ns_tool, names)
+        unregister_tool(ns_tool)
+
+    def test_register_tool_duplicate_raises(self):
+        dup_name = f'dup_tool_{uuid.uuid4().hex[:6]}'
+        ct = ConversationTools(
+            function=ConversationToolsFunction(name=dup_name, parameters={'type': 'object'}),
+            backend=FunctionBackend(lambda: None),
+        )
+        register_tool(dup_name, ct)
+        try:
+            with self.assertRaises(ValueError):
+                register_tool(dup_name, ct)
+        finally:
+            unregister_tool(dup_name)
+
+    def test_conversationtools_invoke_without_backend_raises(self):
+        ct = ConversationTools(
+            function=ConversationToolsFunction(
+                name='test_no_backend', parameters={'type': 'object'}
+            ),
+            backend=None,
+        )
+        with self.assertRaises(ToolExecutionError):
+            ct.invoke({'a': 1})
+
+        async def run():
+            with self.assertRaises(ToolExecutionError):
+                await ct.ainvoke({'a': 1})
+
+        asyncio.run(run())
+
+    def test_functionbackend_sync_and_async_and_timeout(self):
+        def mul(a: int, b: int) -> int:
+            return a * b
+
+        fb_sync = FunctionBackend(mul)
+        self.assertEqual(
+            fb_sync.invoke(ConversationToolsFunction(name='mul'), {'a': 3, 'b': 5}),
+            15,
+        )
+
+        async def run_sync_via_async():
+            res = await fb_sync.ainvoke(ConversationToolsFunction(name='mul'), {'a': 2, 'b': 7})
+            self.assertEqual(res, 14)
+
+        asyncio.run(run_sync_via_async())
+
+        async def wait_and_return(x: int, delay: float = 0.01) -> int:
+            await asyncio.sleep(delay)
+            return x
+
+        fb_async = FunctionBackend(wait_and_return)
+        with self.assertRaises(ToolExecutionError):
+            fb_async.invoke(ConversationToolsFunction(name='wait'), {'x': 1})
+
+        async def run_async_ok():
+            res = await fb_async.ainvoke(ConversationToolsFunction(name='wait'), {'x': 42})
+            self.assertEqual(res, 42)
+
+        asyncio.run(run_async_ok())
+
+        async def run_async_timeout():
+            with self.assertRaises(ToolExecutionError):
+                await fb_async.ainvoke(
+                    ConversationToolsFunction(name='wait'),
+                    {'x': 1, 'delay': 0.2},
+                    timeout=0.01,
+                )
+
+        asyncio.run(run_async_timeout())
+
+        with self.assertRaises(ToolArgumentError):
+            fb_sync.invoke(ConversationToolsFunction(name='mul'), {'a': 1})
+
+        async def run_missing_arg_async():
+            with self.assertRaises(ToolArgumentError):
+                await fb_sync.ainvoke(ConversationToolsFunction(name='mul'), {'a': 1})
+
+        asyncio.run(run_missing_arg_async())
+
+    def test_conversationtoolsfunction_from_function_and_schema(self):
+        def greet(name: str, punctuation: str = '!') -> str:
+            """Say hello.
+
+            Args:
+                name: Person to greet
+                punctuation: Trailing punctuation
+            """
+
+            return f'Hello, {name}{punctuation}'
+
+        spec = ConversationToolsFunction.from_function(greet, register=False)
+        schema = spec.schema_as_dict()
+        self.assertIn('name', schema.get('properties', {}))
+        self.assertIn('name', schema.get('required', []))
+        self.assertIn('punctuation', schema.get('properties', {}))
+
+        spec2 = ConversationToolsFunction.from_function(greet, register=True)
+        try:
+            names = {t.function.name for t in get_registered_tools()}
+            self.assertIn(spec2.name, names)
+        finally:
+            unregister_tool(spec2.name)
+
+    def test_message_helpers_and_to_proto(self):
+        user_msg = conversation.create_user_message('hi')
+        self.assertIsNotNone(user_msg.of_user)
+        self.assertEqual(user_msg.of_user.content[0].text, 'hi')
+        proto_user = user_msg.to_proto()
+        self.assertEqual(proto_user.of_user.content[0].text, 'hi')
+
+        sys_msg = conversation.create_system_message('sys')
+        proto_sys = sys_msg.to_proto()
+        self.assertEqual(proto_sys.of_system.content[0].text, 'sys')
+
+        tc = conversation.ConversationToolCalls(
+            id='abc123',
+            function=conversation.ConversationToolCallsOfFunction(name='fn', arguments='{}'),
+        )
+        asst_msg = conversation.ConversationMessage(
+            of_assistant=conversation.ConversationMessageOfAssistant(
+                content=[conversation.ConversationMessageContent(text='ok')],
+                tool_calls=[tc],
+            )
+        )
+        proto_asst = asst_msg.to_proto()
+        self.assertEqual(proto_asst.of_assistant.content[0].text, 'ok')
+        self.assertEqual(proto_asst.of_assistant.tool_calls[0].function.name, 'fn')
+
+        tool_msg = conversation.create_tool_message('tid1', 'get_weather', 'cloudy')
+        proto_tool = tool_msg.to_proto()
+        self.assertEqual(proto_tool.of_tool.tool_id, 'tid1')
+        self.assertEqual(proto_tool.of_tool.name, 'get_weather')
+        self.assertEqual(proto_tool.of_tool.content[0].text, 'cloudy')
+
+
+class ConversationToolHelpersAsyncTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncTearDown(self):
+        for t in list(get_registered_tools()):
+            try:
+                name = t.function.name
+                if name.startswith('test_'):
+                    unregister_tool(name)
+            except Exception:
+                continue
+
+    async def test_execute_registered_tool_async(self):
+        unique = uuid.uuid4().hex[:8]
+        tool_name = f'test_async_{unique}'
+
+        @tool_decorator(name=tool_name)
+        async def echo(value: str, delay: float = 0.0) -> str:
+            await asyncio.sleep(delay)
+            return value
+
+        out = await execute_registered_tool_async(tool_name, {'value': 'hello'})
+        self.assertEqual(out, 'hello')
+
+        with self.assertRaises(ToolExecutionError):
+            await execute_registered_tool_async(
+                tool_name, {'value': 'slow', 'delay': 0.2}, timeout=0.01
+            )
+        unregister_tool(tool_name)
 
 
 if __name__ == '__main__':

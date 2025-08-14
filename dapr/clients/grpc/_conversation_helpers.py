@@ -12,27 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import random
-import string
-
-from dapr.clients.grpc.conversation import Params
 
 import inspect
+import random
+import string
 from dataclasses import fields, is_dataclass
 from enum import Enum
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Union,
     get_args,
     get_origin,
     get_type_hints,
-    Callable,
-    Mapping,
-    Sequence,
 )
+
+from dapr.clients.grpc.conversation import Params
 
 """
 Tool Calling Helpers for Dapr Conversation API.
@@ -564,11 +564,16 @@ class ToolArgumentError(ToolError):
     ...
 
 
-class ToolExecutionForbiddenError(ToolError):
-    """Exception raised when automatic execution of tools is forbidden per _ALLOW_REGISTER_TOOL_EXECUTION."""
-
-
 def bind_params_to_func(fn: Callable[..., Any], params: Params):
+    """Bind parameters to a function in the correct order.
+
+    Args:
+        fn: The function to bind parameters to
+        params: The parameters to bind
+
+    Returns:
+        The bound parameters
+    """
     sig = inspect.signature(fn)
     if params is None:
         bound = sig.bind()

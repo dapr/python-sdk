@@ -1146,8 +1146,8 @@ class ConversationResponseAlpha2:
         """Convert the outputs to a list of ConversationInput."""
         assistant_messages = []
 
-        for output_idx, output in enumerate(self.outputs or []):
-            for choice_idx, choice in enumerate(output.choices or []):
+        for output in self.outputs or []:
+            for choice in output.choices or []:
                 # Convert and collect all assistant messages
                 assistant_message = convert_llm_response_to_conversation_input(choice.message)
                 assistant_messages.append(assistant_message)
