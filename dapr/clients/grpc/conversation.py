@@ -17,7 +17,7 @@ import asyncio
 import inspect
 import json
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional, Protocol, Sequence, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Protocol, Sequence, Union, cast
 
 from dapr.clients.grpc import _conversation_helpers as conv_helpers
 from dapr.proto import api_v1
@@ -342,9 +342,7 @@ class FunctionBackend:
             loop = asyncio.get_running_loop()
             return await loop.run_in_executor(None, lambda: self.func(*bound.args, **bound.kwargs))
         except asyncio.TimeoutError as err:
-            raise conv_helpers.ToolExecutionError(
-                f'Timed out after {timeout} seconds'
-            ) from err
+            raise conv_helpers.ToolExecutionError(f'Timed out after {timeout} seconds') from err
         except Exception as e:
             raise conv_helpers.ToolExecutionError(f'Tool raised: {e}') from e
 
@@ -375,8 +373,8 @@ def tool(
 
         ct = ConversationTools(function=ctf, backend=FunctionBackend(f))
 
-        # Store the tool in the function for later retrieval
-        f.__dapr_conversation_tool__ = ct
+        # Store the tool in the function for later retrieval (mypy-safe without setattr)
+        cast(Any, f).__dapr_conversation_tool__ = ct
 
         if register:
             register_tool(ctf.name, ct)
@@ -430,9 +428,7 @@ def _get_tool(name: str) -> ConversationTools:
     try:
         return _TOOL_REGISTRY[name]
     except KeyError as err:
-        raise conv_helpers.ToolNotFoundError(
-            f"Tool '{name}' is not registered"
-        ) from err
+        raise conv_helpers.ToolNotFoundError(f"Tool '{name}' is not registered") from err
 
 
 def execute_registered_tool(name: str, params: Union[Params, str] = None) -> Any:

@@ -127,6 +127,7 @@ class ConversationTestBase:
     def tearDownClass(cls):
         cls._fake_dapr_server.stop()
 
+
 class ConversationTestBaseSync(ConversationTestBase, unittest.TestCase):
     """Base class for conversation tests with common setup."""
 
@@ -141,6 +142,7 @@ class ConversationTestBaseSync(ConversationTestBase, unittest.TestCase):
 
 class ConversationTestBaseAsync(ConversationTestBase, unittest.IsolatedAsyncioTestCase):
     """Base class for conversation tests with common setup."""
+
     async def asyncSetUp(self):
         await super().asyncSetUp()
         self.client = AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}')
@@ -148,6 +150,7 @@ class ConversationTestBaseAsync(ConversationTestBase, unittest.IsolatedAsyncioTe
     async def asyncTearDown(self):
         await super().asyncTearDown()
         await self.client.close()
+
 
 class ConversationAlpha1SyncTests(ConversationTestBaseSync):
     """Synchronous Alpha1 conversation API tests."""
@@ -171,13 +174,13 @@ class ConversationAlpha1SyncTests(ConversationTestBaseSync):
         inputs = [ConversationInput(content='Hello with options', role='user', scrub_pii=True)]
 
         response = self.client.converse_alpha1(
-                name='test-llm',
-                inputs=inputs,
-                context_id='test-context-123',
-                temperature=0.7,
-                scrub_pii=True,
-                metadata={'test_key': 'test_value'},
-            )
+            name='test-llm',
+            inputs=inputs,
+            context_id='test-context-123',
+            temperature=0.7,
+            scrub_pii=True,
+            metadata={'test_key': 'test_value'},
+        )
 
         self.assertIsNotNone(response)
         self.assertEqual(len(response.outputs), 1)
@@ -189,16 +192,16 @@ class ConversationAlpha1SyncTests(ConversationTestBaseSync):
 
         # Test with raw Python parameters - these should be automatically converted
         response = self.client.converse_alpha1(
-                name='test-llm',
-                inputs=inputs,
-                parameters={
-                    'temperature': 0.7,
-                    'max_tokens': 1000,
-                    'top_p': 0.9,
-                    'frequency_penalty': 0.0,
-                    'presence_penalty': 0.0,
-                },
-            )
+            name='test-llm',
+            inputs=inputs,
+            parameters={
+                'temperature': 0.7,
+                'max_tokens': 1000,
+                'top_p': 0.9,
+                'frequency_penalty': 0.0,
+                'presence_penalty': 0.0,
+            },
+        )
 
         self.assertIsNotNone(response)
         self.assertEqual(len(response.outputs), 1)
@@ -266,11 +269,11 @@ class ConversationAlpha2SyncTests(ConversationTestBaseSync):
             name='test-llm',
             inputs=[input_alpha2],
             context_id='alpha2-context-123',
-                temperature=0.8,
-                scrub_pii=True,
-                metadata={'alpha2_test': 'true'},
-                tool_choice='none',
-            )
+            temperature=0.8,
+            scrub_pii=True,
+            metadata={'alpha2_test': 'true'},
+            tool_choice='none',
+        )
 
         self.assertIsNotNone(response)
         self.assertEqual(response.context_id, 'alpha2-context-123')
@@ -546,19 +549,20 @@ class ConversationAsyncTests(ConversationTestBaseAsync):
 
     async def test_concurrent_async_conversations(self):
         """Test multiple concurrent async conversations."""
+
         async def run_alpha1_conversation(message, session_id):
             inputs = [ConversationInput(content=message, role='user')]
             response = await self.client.converse_alpha1(
-                    name='test-llm', inputs=inputs, context_id=session_id
-                )
+                name='test-llm', inputs=inputs, context_id=session_id
+            )
             return response.outputs[0].result
 
         async def run_alpha2_conversation(message, session_id):
             user_message = create_user_message(message)
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
             response = await self.client.converse_alpha2(
-                    name='test-llm', inputs=[input_alpha2], context_id=session_id
-                )
+                name='test-llm', inputs=[input_alpha2], context_id=session_id
+            )
             return response.outputs[0].choices[0].message.content
 
         # Run concurrent conversations with both Alpha1 and Alpha2
@@ -651,11 +655,11 @@ class ConversationParameterTests(ConversationTestBaseSync):
         user_message = create_user_message('Provider parameters test')
         input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
-            # OpenAI-style parameters
+        # OpenAI-style parameters
         response1 = self.client.converse_alpha2(
             name='test-llm',
             inputs=[input_alpha2],
-                parameters={
+            parameters={
                 'model': 'gpt-4o-mini',
                 'temperature': 0.7,
                 'max_tokens': 1000,
@@ -667,7 +671,7 @@ class ConversationParameterTests(ConversationTestBaseSync):
             },
         )
 
-            # Anthropic-style parameters
+        # Anthropic-style parameters
         response2 = self.client.converse_alpha2(
             name='test-llm',
             inputs=[input_alpha2],
