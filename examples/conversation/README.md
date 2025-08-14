@@ -32,8 +32,47 @@ The Conversation API supports real LLM providers including:
    DEEPSEEK_API_KEY=your_deepseek_key_here
    GOOGLE_API_KEY=your_google_ai_key_here
    ```
+   
+4. **Run the simple conversation on the Alpha V1 version (dapr 1.15)**
+    <!-- STEP
+    name: Run Conversation Alpha V1
+    expected_stdout_lines:
+      - "== APP == Result: What's Dapr?"
+      - "== APP == Give a brief overview."
+    background: true
+    timeout_seconds: 60
+    -->
+    
+    ```bash
+    dapr run --app-id conversation-alpha1 \
+             --log-level debug \
+             --resources-path ./config \
+             -- python3 conversation_alpha1.py
+    ```
+    
+    <!-- END_STEP -->
 
-4. **Run the comprehensive example:**
+5. **Run the simple conversation on the Alpha V2 version (dapr 1.16)**
+    <!-- STEP
+    name: Run Conversation Alpha V2
+    expected_stdout_lines:
+      - "== APP == Result: What's Dapr?"
+      - "== APP == Give a brief overview."
+    background: true
+    timeout_seconds: 60
+    -->
+    
+    ```bash
+    dapr run --app-id conversation-alpha2 \
+             --log-level debug \
+             --resources-path ./config \
+             -- python3 conversation_alpha2.py
+    ```
+    
+    <!-- END_STEP -->
+
+6. **Run the comprehensive example with real LLM providers (This requires API Keys)**
+
    ```bash
    python examples/conversation/real_llm_providers_example.py
    ```
@@ -180,11 +219,13 @@ We provide a helper function to automatically generate the tool schema from a Py
 ```python
 from typing import Optional, List
 from enum import Enum
-from dapr.clients.grpc._request import ConversationToolsFunction, ConversationTools
+from dapr.clients.grpc._conversation import ConversationToolsFunction, ConversationTools
+
 
 class Units(Enum):
     CELSIUS = "celsius"
     FAHRENHEIT = "fahrenheit"
+
 
 def get_weather(location: str, unit: Units = Units.FAHRENHEIT) -> str:
     '''Get current weather for a location.
@@ -194,6 +235,7 @@ def get_weather(location: str, unit: Units = Units.FAHRENHEIT) -> str:
         unit: Temperature unit preference
     '''
     return f"Weather in {location}"
+
 
 # Use the from_function class method for automatic schema generation
 function = ConversationToolsFunction.from_function(get_weather)
@@ -276,16 +318,16 @@ search_tool = ConversationTools(function=function)
 Alpha2 supports sophisticated message structures for complex conversations:
 
 ### User Messages
+
 ```python
-from dapr.clients.grpc._request import (
-    ConversationMessage,
-    ConversationMessageOfUser,
-    ConversationMessageOfSystem,
-    ConversationMessageOfDeveloper,
-    ConversationMessageOfAssistant,
-    ConversationMessageOfTool,
-    ConversationMessageContent
-)
+
+from dapr.clients.grpc._conversation import ConversationMessageContent, ConversationMessageOfDeveloper,
+
+ConversationMessage
+ConversationMessageOfTool
+ConversationMessageOfAssistant
+ConversationMessageOfUser
+ConversationMessageOfSystem
 
 user_message = ConversationMessage(
     of_user=ConversationMessageOfUser(
@@ -339,7 +381,8 @@ tool_message = ConversationMessage(
 Alpha2 excels at multi-turn conversations with proper context accumulation:
 
 ```python
-from dapr.clients.grpc._request import ConversationInputAlpha2
+
+from dapr.clients.grpc._conversation import ConversationInputAlpha2
 
 # Build conversation history
 conversation_history = []
@@ -438,22 +481,25 @@ dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resour
 Convert LLM responses for multi-turn conversations:
 
 ```python
-from dapr.clients.grpc._response import ConversationResultMessage
+from dapr.clients.grpc._response import ConversationResultAlpha2Message
 
-def convert_llm_response_to_conversation_message(result_message: ConversationResultMessage) -> ConversationMessage:
+
+def convert_llm_response_to_conversation_message(
+        result_message: ConversationResultAlpha2Message) -> ConversationMessage:
     """Convert ConversationResultMessage (from LLM response) to ConversationMessage (for conversation input)."""
     content = []
     if result_message.content:
         content = [ConversationMessageContent(text=result_message.content)]
-    
+
     tool_calls = result_message.tool_calls or []
-    
+
     return ConversationMessage(
         of_assistant=ConversationMessageOfAssistant(
             content=content,
             tool_calls=tool_calls
         )
     )
+
 
 # Usage in multi-turn conversations
 response = client.converse_alpha2(name="openai", inputs=[input_alpha2], tools=[tool])
@@ -491,13 +537,12 @@ conversation_history.append(assistant_message)
 ```python
 from dapr.clients import DaprClient
 from dapr.clients.grpc._request import (
-    ConversationInputAlpha2,
-    ConversationMessage,
-    ConversationMessageOfUser,
-    ConversationMessageContent,
-    ConversationToolsFunction,
     ConversationTools
 )
+from dapr.clients.grpc._conversation import ConversationMessageContent, ConversationMessageOfUser, ConversationMessage,
+
+ConversationToolsFunction
+ConversationInputAlpha2
 
 # Create a tool using the simple approach
 function = ConversationToolsFunction(
@@ -536,14 +581,14 @@ with DaprClient() as client:
         name="openai",  # or "anthropic", "mistral", etc.
         inputs=[input_alpha2],
         parameters={
-            'temperature': 0.7,      # Auto-converted to GrpcAny!
-            'max_tokens': 500,       # Auto-converted to GrpcAny!
-            'stream': False          # Streaming not supported in Alpha2
+            'temperature': 0.7,  # Auto-converted to GrpcAny!
+            'max_tokens': 500,  # Auto-converted to GrpcAny!
+            'stream': False  # Streaming not supported in Alpha2
         },
         tools=[weather_tool],
         tool_choice='auto'
     )
-    
+
     # Process the response
     if response.outputs and response.outputs[0].choices:
         choice = response.outputs[0].choices[0]
@@ -634,8 +679,10 @@ BUILD_LOCAL_DAPR=true
 Alpha2 provides significant improvements while maintaining backward compatibility:
 
 ### Alpha1 (Legacy)
+
 ```python
-from dapr.clients.grpc._request import ConversationInput
+
+from dapr.clients.grpc._conversation import ConversationInput
 
 inputs = [ConversationInput(
     content="Hello!",
@@ -650,8 +697,10 @@ response = client.converse_alpha1(
 ```
 
 ### Alpha2 (Recommended)
+
 ```python
-from dapr.clients.grpc._request import ConversationInputAlpha2, ConversationMessage
+
+from dapr.clients.grpc._conversation import ConversationMessage, ConversationInputAlpha2
 
 user_message = ConversationMessage(
     of_user=ConversationMessageOfUser(

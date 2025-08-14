@@ -38,12 +38,16 @@ import json
 import os
 import sys
 import tempfile
+from faulthandler import unregister
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
 
+from dapr.clients.grpc._response import ConversationResultAlpha2Message
+
 # Add the parent directory to the path so we can import local dapr sdk
+# uncomment if running from development version
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Load environment variables from .env file if available
@@ -57,27 +61,186 @@ except ImportError:
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients import DaprClient
-from dapr.clients.grpc._request import (
-    ConversationInput,
-    ConversationInputAlpha2,
-    ConversationMessage,
-    ConversationMessageContent,
-    ConversationMessageOfUser,
-    ConversationMessageOfSystem,
-    ConversationMessageOfAssistant,
-    ConversationMessageOfTool,
-    ConversationToolCalls,
-    ConversationToolCallsOfFunction,
-    ConversationTools,
-    ConversationToolsFunction,
-)
-from google.protobuf.wrappers_pb2 import DoubleValue, Int32Value, BoolValue, StringValue
-from dapr.clients.grpc._response import ConversationResultMessage
+from dapr.clients.grpc import conversation
 
 
-def convert_llm_response_to_conversation_message(
-    result_message: ConversationResultMessage,
-) -> ConversationMessage:
+def create_weather_tool() -> conversation.ConversationTools:
+    """Create a weather tool for testing Alpha2 tool calling using full JSON schema in parameters approach."""
+    conversation.unregister_tool('get_weather')
+    function = conversation.ConversationToolsFunction(
+        name='get_weather',
+        description='Get the current weather for a location',
+        parameters={
+            'type': 'object',
+            'properties': {
+                'location': {'type': 'string', 'description': 'The city and state or country'},
+                'unit': {
+                    'type': 'string',
+                    'enum': ['celsius', 'fahrenheit'],
+                    'description': 'Temperature unit',
+                },
+            },
+            'required': ['location'],
+        },
+    )
+    return conversation.ConversationTools(function=function)
+
+
+def create_calculator_tool() -> conversation.ConversationTools:
+    """Create a calculator tool using full JSON schema in parameters approach."""
+    conversation.unregister_tool('calculate')  # cleanup
+    function = conversation.ConversationToolsFunction(
+        name='calculate',
+        description='Perform mathematical calculations',
+        parameters={
+            'type': 'object',
+            'properties': {
+                'expression': {
+                    'type': 'string',
+                    'description': "Mathematical expression to evaluate (e.g., '2+2', 'sqrt(16)')",
+                }
+            },
+            'required': ['expression'],
+        },
+    )
+    return conversation.ConversationTools(function=function)
+
+
+def create_time_tool() -> conversation.ConversationTools:
+    """Create a simple tool with no parameters using full JSON schema in parameters approach."""
+    conversation.unregister_tool('get_current_time')
+    function = conversation.ConversationToolsFunction(
+        name='get_current_time',
+        description='Get the current date and time',
+        parameters={'type': 'object', 'properties': {}, 'required': []},
+    )
+    return conversation.ConversationTools(function=function)
+
+
+def create_search_tool() -> conversation.ConversationTools:
+    """Create a more complex tool with multiple parameter types and constraints using full JSON schema in parameters approach."""
+    conversation.unregister_tool('web_search')
+    function = conversation.ConversationToolsFunction(
+        name='web_search',
+        description='Search the web for information',
+        parameters={
+            'type': 'object',
+            'properties': {
+                'query': {'type': 'string', 'description': 'Search query'},
+                'limit': {
+                    'type': 'integer',
+                    'description': 'Maximum number of results',
+                    'minimum': 1,
+                    'maximum': 10,
+                    'default': 5,
+                },
+                'include_images': {
+                    'type': 'boolean',
+                    'description': 'Whether to include image results',
+                    'default': False,
+                },
+                'domains': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                    # 'description': 'Limit search to specific domains',
+                },
+            },
+            'required': ['query'],
+        },
+    )
+    return conversation.ConversationTools(function=function)
+
+
+def create_tool_from_typed_function_example() -> conversation.ConversationTools:
+    """Demonstrate creating tools from typed Python functions - Best DevEx for most cases.
+
+    This shows the most advanced approach: define a typed function and automatically
+    generate the complete tool schema from type hints and docstrings.
+    """
+    from typing import Optional, List
+    from enum import Enum
+
+    conversation.unregister_tool('find_restaurants')
+
+    # Define the tool behavior as a regular Python function with type hints
+    class PriceRange(Enum):
+        BUDGET = 'budget'
+        MODERATE = 'moderate'
+        EXPENSIVE = 'expensive'
+
+    def find_restaurants(
+        location: str,
+        cuisine: str = 'any',
+        price_range: PriceRange = PriceRange.MODERATE,
+        max_results: int = 5,
+        dietary_restrictions: Optional[List[str]] = None,
+    ) -> str:
+        """Find restaurants in a specific location.
+
+        Args:
+            location: The city or neighborhood to search
+            cuisine: Type of cuisine (italian, chinese, mexican, etc.)
+            price_range: Budget preference for dining
+            max_results: Maximum number of restaurant recommendations
+            dietary_restrictions: Special dietary needs (vegetarian, gluten-free, etc.)
+        """
+        # This would contain actual implementation
+        return f'Found restaurants in {location} serving {cuisine} food'
+
+    # Create the tool using the from_function class method
+    function = conversation.ConversationToolsFunction.from_function(find_restaurants)
+
+    return conversation.ConversationTools(function=function)
+
+
+def create_tool_from_tool_decorator_example() -> conversation.ConversationTools:
+    """Demonstrate creating tools from typed Python functions - Best DevEx for most cases.
+
+    This shows the most advanced approach: define a typed function and automatically
+    generate the complete tool schema from type hints and docstrings.
+    """
+    from typing import Optional, List
+    from enum import Enum
+
+    conversation.unregister_tool('find_restaurants')
+
+    # Define the tool behavior as a regular Python function with type hints
+    class PriceRange(Enum):
+        MODERATE = 'moderate'
+        EXPENSIVE = 'expensive'
+
+    @conversation.tool
+    def find_restaurants(
+        location: str,
+        cuisine: str = 'any',
+        price_range: PriceRange = PriceRange.MODERATE,
+        max_results: int = 5,
+        dietary_restrictions: Optional[List[str]] = None,
+    ) -> str:
+        """Find restaurants in a specific location.
+
+        Args:
+            location: The city or neighborhood to search
+            cuisine: Type of cuisine (italian, chinese, mexican, etc.)
+            price_range: Budget preference for dining
+            max_results: Maximum number of restaurant recommendations
+            dietary_restrictions: Special dietary needs (vegetarian, gluten-free, etc.)
+        """
+        # This would contain actual implementation
+        return f'Found restaurants in {location} serving {cuisine} food'
+
+    return conversation.ConversationTools(function=find_restaurants)
+
+
+def execute_weather_tool(location: str, unit: str = 'fahrenheit') -> str:
+    """Simulate weather tool execution."""
+    temp = '72°F' if unit == 'fahrenheit' else '22°C'
+    return f'The weather in {location} is sunny with a temperature of {temp}.'
+
+
+def convert_llm_response_to_conversation_input(
+    result_message: ConversationResultAlpha2Message,
+) -> conversation.ConversationMessage:
     """Convert ConversationResultMessage (from LLM response) to ConversationMessage (for conversation input).
 
     This standalone utility function makes it easy to append LLM responses to conversation history
@@ -94,7 +257,7 @@ def convert_llm_response_to_conversation_message(
         >>> choice = response.outputs[0].choices[0]
         >>>
         >>> # Convert LLM response to conversation message
-        >>> assistant_message = convert_llm_response_to_conversation_message(choice.message)
+        >>> assistant_message = convert_llm_response_to_conversation_input(choice.message)
         >>> conversation_history.append(assistant_message)
         >>>
         >>> # Use in next turn
@@ -104,14 +267,16 @@ def convert_llm_response_to_conversation_message(
     # Convert content string to ConversationMessageContent list
     content = []
     if result_message.content:
-        content = [ConversationMessageContent(text=result_message.content)]
+        content = [conversation.ConversationMessageContent(text=result_message.content)]
 
     # Convert tool_calls if present (they're already the right type)
     tool_calls = result_message.tool_calls or []
 
     # Create assistant message (since LLM responses are always assistant messages)
-    return ConversationMessage(
-        of_assistant=ConversationMessageOfAssistant(content=content, tool_calls=tool_calls)
+    return conversation.ConversationMessage(
+        of_assistant=conversation.ConversationMessageOfAssistant(
+            content=content, tool_calls=tool_calls
+        )
     )
 
 
@@ -143,12 +308,12 @@ class RealLLMProviderTester:
         # OpenAI
         if os.getenv('OPENAI_API_KEY'):
             providers['openai'] = {
-                'display_name': 'OpenAI GPT-4o-mini',
+                'display_name': 'OpenAI GPT-5-mini',
                 'component_type': 'conversation.openai',
                 'api_key_env': 'OPENAI_API_KEY',
                 'metadata': [
                     {'name': 'key', 'value': os.getenv('OPENAI_API_KEY')},
-                    {'name': 'model', 'value': 'gpt-4o-mini'},
+                    {'name': 'model', 'value': 'gpt-5-mini-2025-08-07'},
                 ],
             }
 
@@ -240,189 +405,6 @@ class RealLLMProviderTester:
 
         return self.components_dir
 
-    def create_weather_tool(self) -> ConversationTools:
-        """Create a weather tool for testing Alpha2 tool calling using full JSON schema in parameters approach."""
-        function = ConversationToolsFunction(
-            name='get_weather',
-            description='Get the current weather for a location',
-            parameters={
-                'type': 'object',
-                'properties': {
-                    'location': {'type': 'string', 'description': 'The city and state or country'},
-                    'unit': {
-                        'type': 'string',
-                        'enum': ['celsius', 'fahrenheit'],
-                        'description': 'Temperature unit',
-                    },
-                },
-                'required': ['location'],
-            },
-        )
-        return ConversationTools(function=function)
-
-    def create_calculator_tool(self) -> ConversationTools:
-        """Create a calculator tool using full JSON schema in parameters approach."""
-        function = ConversationToolsFunction(
-            name='calculate',
-            description='Perform mathematical calculations',
-            parameters={
-                'type': 'object',
-                'properties': {
-                    'expression': {
-                        'type': 'string',
-                        'description': "Mathematical expression to evaluate (e.g., '2+2', 'sqrt(16)')",
-                    }
-                },
-                'required': ['expression'],
-            },
-        )
-        return ConversationTools(function=function)
-
-    def create_time_tool(self) -> ConversationTools:
-        """Create a simple tool with no parameters using full JSON schema in parameters approach."""
-        function = ConversationToolsFunction(
-            name='get_current_time',
-            description='Get the current date and time',
-            parameters={'type': 'object', 'properties': {}, 'required': []},
-        )
-        return ConversationTools(function=function)
-
-    def create_search_tool(self) -> ConversationTools:
-        """Create a more complex tool with multiple parameter types and constraints using full JSON schema in parameters approach."""
-        function = ConversationToolsFunction(
-            name='web_search',
-            description='Search the web for information',
-            parameters={
-                'type': 'object',
-                'properties': {
-                    'query': {'type': 'string', 'description': 'Search query'},
-                    'limit': {
-                        'type': 'integer',
-                        'description': 'Maximum number of results',
-                        'minimum': 1,
-                        'maximum': 10,
-                        'default': 5,
-                    },
-                    'include_images': {
-                        'type': 'boolean',
-                        'description': 'Whether to include image results',
-                        'default': False,
-                    },
-                    'domains': {
-                        'type': 'array',
-                        'items': {'type': 'string'},
-                        'description': 'Limit search to specific domains',
-                    },
-                },
-                'required': ['query'],
-            },
-        )
-        return ConversationTools(function=function)
-
-    def create_tool_from_typed_function_example(self) -> ConversationTools:
-        """Demonstrate creating tools from typed Python functions - Best DevEx for most cases.
-
-        This shows the most advanced approach: define a typed function and automatically
-        generate the complete tool schema from type hints and docstrings.
-        """
-        from typing import Optional, List
-        from enum import Enum
-
-        # Define the tool behavior as a regular Python function with type hints
-        class PriceRange(Enum):
-            BUDGET = 'budget'
-            MODERATE = 'moderate'
-            EXPENSIVE = 'expensive'
-
-        def find_restaurants(
-            location: str,
-            cuisine: str = 'any',
-            price_range: PriceRange = PriceRange.MODERATE,
-            max_results: int = 5,
-            dietary_restrictions: Optional[List[str]] = None,
-        ) -> str:
-            """Find restaurants in a specific location.
-
-            Args:
-                location: The city or neighborhood to search
-                cuisine: Type of cuisine (italian, chinese, mexican, etc.)
-                price_range: Budget preference for dining
-                max_results: Maximum number of restaurant recommendations
-                dietary_restrictions: Special dietary needs (vegetarian, gluten-free, etc.)
-            """
-            # This would contain actual implementation
-            return f'Found restaurants in {location} serving {cuisine} food'
-
-        # Create the tool using the from_function class method
-        function = ConversationToolsFunction.from_function(find_restaurants)
-
-        return ConversationTools(function=function)
-
-    def execute_weather_tool(self, location: str, unit: str = 'fahrenheit') -> str:
-        """Simulate weather tool execution."""
-        temp = '72°F' if unit == 'fahrenheit' else '22°C'
-        return f'The weather in {location} is sunny with a temperature of {temp}.'
-
-    def create_user_message(self, text: str) -> ConversationMessage:
-        """Helper to create a user message for Alpha2."""
-        return ConversationMessage(
-            of_user=ConversationMessageOfUser(content=[ConversationMessageContent(text=text)])
-        )
-
-    def create_system_message(self, text: str) -> ConversationMessage:
-        """Helper to create a system message for Alpha2."""
-        return ConversationMessage(
-            of_system=ConversationMessageOfSystem(content=[ConversationMessageContent(text=text)])
-        )
-
-    def create_assistant_message(self, text: str) -> ConversationMessage:
-        """Helper to create an assistant message for Alpha2."""
-        return ConversationMessage(
-            of_assistant=ConversationMessageOfAssistant(
-                content=[ConversationMessageContent(text=text)]
-            )
-        )
-
-    def create_tool_message(self, tool_id: str, name: str, content: str) -> ConversationMessage:
-        """Helper to create a tool message for Alpha2 responses (from client to LLM)."""
-        return ConversationMessage(
-            of_tool=ConversationMessageOfTool(
-                tool_id=tool_id, name=name, content=[ConversationMessageContent(text=content)]
-            )
-        )
-
-    def create_tool_call_message(
-        self, tool_id: str, name: str, arguments: str
-    ) -> ConversationMessage:
-        """Helper to create a tool call message for Alpha2 responses (from LLM to client)."""
-        return ConversationMessage(
-            of_assistant=ConversationMessageOfAssistant(
-                tool_calls=[
-                    ConversationToolCalls(
-                        id=tool_id,
-                        function=ConversationToolCallsOfFunction(name=name, arguments=arguments),
-                    )
-                ]
-            )
-        )
-
-    def convert_result_message_to_input_message(
-        self, result_message: ConversationResultMessage
-    ) -> ConversationMessage:
-        """Convert ConversationResultMessage to ConversationMessage for reuse in conversation history.
-
-        This utility makes it easy to append LLM responses to conversation history
-        and use them as input for subsequent turns.
-
-        Args:
-            result_message: ConversationResultMessage from LLM response
-
-        Returns:
-            ConversationMessage suitable for input to next conversation turn
-        """
-        # Delegate to standalone utility function
-        return convert_llm_response_to_conversation_message(result_message)
-
     def test_basic_conversation_alpha2(self, provider_id: str) -> None:
         """Test basic Alpha2 conversation with a provider."""
         print(
@@ -432,10 +414,10 @@ class RealLLMProviderTester:
         try:
             with DaprClient() as client:
                 # Create Alpha2 conversation input with sophisticated message structure
-                user_message = self.create_user_message(
+                user_message = conversation.create_user_message(
                     "Hello! Please respond with exactly: 'Hello from Dapr Alpha2!'"
                 )
-                input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+                input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message])
 
                 # Use new parameter conversion (raw Python values automatically converted)
                 response = client.converse_alpha2(
@@ -467,14 +449,14 @@ class RealLLMProviderTester:
         try:
             with DaprClient() as client:
                 # Create a multi-turn conversation with system, user, and assistant messages
-                system_message = self.create_system_message(
+                system_message = conversation.create_system_message(
                     'You are a helpful AI assistant. Be concise.'
                 )
-                user_message1 = self.create_user_message('What is 2+2?')
-                assistant_message = self.create_assistant_message('2+2 equals 4.')
-                user_message2 = self.create_user_message('What about 3+3?')
+                user_message1 = conversation.create_user_message('What is 2+2?')
+                assistant_message = conversation.create_assistant_message('2+2 equals 4.')
+                user_message2 = conversation.create_user_message('What about 3+3?')
 
-                input_alpha2 = ConversationInputAlpha2(
+                input_alpha2 = conversation.ConversationInputAlpha2(
                     messages=[system_message, user_message1, assistant_message, user_message2]
                 )
 
@@ -507,10 +489,12 @@ class RealLLMProviderTester:
 
         try:
             with DaprClient() as client:
-                weather_tool = self.create_weather_tool()
-                user_message = self.create_user_message("What's the weather like in San Francisco?")
+                weather_tool = create_weather_tool()
+                user_message = conversation.create_user_message(
+                    "What's the weather like in San Francisco?"
+                )
 
-                input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+                input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message])
 
                 response = client.converse_alpha2(
                     name=provider_id,
@@ -536,14 +520,14 @@ class RealLLMProviderTester:
                             # Execute the tool to show the workflow
                             try:
                                 args = json.loads(tool_call.function.arguments)
-                                weather_result = self.execute_weather_tool(
+                                weather_result = execute_weather_tool(
                                     args.get('location', 'San Francisco'),
                                     args.get('unit', 'fahrenheit'),
                                 )
                                 print(f'🌤️ Tool executed: {weather_result}')
 
                                 # Demonstrate tool result message (for multi-turn tool workflows)
-                                tool_result_message = self.create_tool_message(
+                                tool_result_message = conversation.create_tool_message(
                                     tool_id=tool_call.id,
                                     name=tool_call.function.name,
                                     content=weather_result,
@@ -571,16 +555,16 @@ class RealLLMProviderTester:
 
         try:
             with DaprClient() as client:
-                user_message = self.create_user_message(
+                user_message = conversation.create_user_message(
                     'Tell me about the different tool creation approaches available.'
                 )
-                input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+                input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message])
 
                 # Demonstrate different tool creation approaches
-                weather_tool = self.create_weather_tool()  # Simple properties approach
-                calc_tool = self.create_calculator_tool()  # Full JSON schema approach
-                time_tool = self.create_time_tool()  # No parameters approach
-                search_tool = self.create_search_tool()  # Complex schema with arrays, etc.
+                weather_tool = create_weather_tool()  # Simple properties approach
+                calc_tool = create_calculator_tool()  # Full JSON schema approach
+                time_tool = create_time_tool()  # No parameters approach
+                search_tool = create_search_tool()  # Complex schema with arrays, etc.
 
                 print(
                     f'✅ Created {len([weather_tool, calc_tool, time_tool, search_tool])} tools with different approaches!'
@@ -590,6 +574,7 @@ class RealLLMProviderTester:
                 response = client.converse_alpha2(
                     name=provider_id,
                     inputs=[input_alpha2],
+                    tools=[weather_tool, calc_tool, time_tool, search_tool],
                     parameters={
                         # Raw Python values - automatically converted to GrpcAny
                         'temperature': 0.8,  # float
@@ -622,18 +607,20 @@ class RealLLMProviderTester:
 
         try:
             with DaprClient() as client:
-                weather_tool = self.create_weather_tool()
+                weather_tool = create_weather_tool()
                 conversation_history = []
 
                 # Turn 1: User asks about weather (include tools)
                 print('\n--- Turn 1: Initial weather query ---')
-                user_message1 = self.create_user_message(
-                    "What's the weather like in San Francisco?"
+                user_message1 = conversation.create_user_message(
+                    "What's the weather like in San Francisco? Use one of the tools available."
                 )
                 conversation_history.append(user_message1)
 
                 print(f'📝 Request 1 context: {len(conversation_history)} messages + tools')
-                input_alpha2_turn1 = ConversationInputAlpha2(messages=conversation_history)
+                input_alpha2_turn1 = conversation.ConversationInputAlpha2(
+                    messages=conversation_history
+                )
 
                 response1 = client.converse_alpha2(
                     name=provider_id,
@@ -657,13 +644,15 @@ class RealLLMProviderTester:
                         )
 
                         # Convert and collect all assistant messages
-                        assistant_message = self.convert_result_message_to_input_message(
+                        assistant_message = convert_llm_response_to_conversation_input(
                             choice.message
                         )
                         assistant_messages.append(assistant_message)
 
                         # Check for tool calls in this choice
                         if choice.message.tool_calls:
+                            # if not choice.message.tool_calls[0].id:
+                            #     choice.message.tool_calls[0].id = "1"
                             tool_calls_found.extend(choice.message.tool_calls)
                             print(
                                 f'🔧 Found {len(choice.message.tool_calls)} tool call(s) in output {output_idx}, choice {choice_idx}'
@@ -686,13 +675,13 @@ class RealLLMProviderTester:
 
                     # Execute the tool
                     args = json.loads(tool_call.function.arguments)
-                    weather_result = self.execute_weather_tool(
+                    weather_result = execute_weather_tool(
                         args.get('location', 'San Francisco'), args.get('unit', 'fahrenheit')
                     )
                     print(f'🌤️ Tool result: {weather_result}')
 
                     # Add tool result to conversation history
-                    tool_result_message = self.create_tool_message(
+                    tool_result_message = conversation.create_tool_message(
                         tool_id=tool_call.id, name=tool_call.function.name, content=weather_result
                     )
                     conversation_history.append(tool_result_message)
@@ -700,7 +689,9 @@ class RealLLMProviderTester:
                     # Turn 2: LLM processes tool result (accumulate context + tools)
                     print('\n--- Turn 2: LLM processes tool result ---')
                     print(f'📝 Request 2 context: {len(conversation_history)} messages + tools')
-                    input_alpha2_turn2 = ConversationInputAlpha2(messages=conversation_history)
+                    input_alpha2_turn2 = conversation.ConversationInputAlpha2(
+                        messages=conversation_history
+                    )
 
                     response2 = client.converse_alpha2(
                         name=provider_id,
@@ -717,14 +708,14 @@ class RealLLMProviderTester:
                         print(f'🤖 LLM response with tool context: {choice2.message.content}')
 
                         # Add LLM's response to accumulated history using utility
-                        assistant_message2 = self.convert_result_message_to_input_message(
+                        assistant_message2 = convert_llm_response_to_conversation_input(
                             choice2.message
                         )
                         conversation_history.append(assistant_message2)
 
                         # Turn 3: Follow-up question (full context + tools)
                         print('\n--- Turn 3: Follow-up question using accumulated context ---')
-                        user_message2 = self.create_user_message(
+                        user_message2 = conversation.create_user_message(
                             'Should I bring an umbrella? Also, what about the weather in New York?'
                         )
                         conversation_history.append(user_message2)
@@ -737,7 +728,9 @@ class RealLLMProviderTester:
                         print("   • Assistant's weather summary")
                         print('   • New user follow-up question')
 
-                        input_alpha2_turn3 = ConversationInputAlpha2(messages=conversation_history)
+                        input_alpha2_turn3 = conversation.ConversationInputAlpha2(
+                            messages=conversation_history
+                        )
 
                         response3 = client.converse_alpha2(
                             name=provider_id,
@@ -760,8 +753,10 @@ class RealLLMProviderTester:
 
                                 # Execute second tool call
                                 tool_call3 = choice3.message.tool_calls[0]
+                                # if not tool_call3.id:
+                                #     tool_call3.id = "2"
                                 args3 = json.loads(tool_call3.function.arguments)
-                                weather_result3 = self.execute_weather_tool(
+                                weather_result3 = execute_weather_tool(
                                     args3.get('location', 'New York'),
                                     args3.get('unit', 'fahrenheit'),
                                 )
@@ -794,6 +789,155 @@ class RealLLMProviderTester:
         except Exception as e:
             print(f'❌ Multi-turn tool calling error: {e}')
 
+    def test_multi_turn_tool_calling_alpha2_tool_helpers(self, provider_id: str) -> None:
+        """Test multi-turn Alpha2 tool calling with proper context accumulation using higher level abstractions."""
+        print(
+            f"\n🔄🔧 Testing multi-turn tool calling with {self.available_providers[provider_id]['display_name']}"
+        )
+
+        # using decorator
+
+        @conversation.tool
+        def get_weather(location: str, unit: str = 'fahrenheit') -> str:
+            """Get the current weather for a location."""
+            # This is a mock implementation. Replace with actual weather API call.
+            temp = '72°F' if unit == 'fahrenheit' else '22°C'
+            return f'The weather in {location} is sunny with a temperature of {temp}.'
+
+        try:
+            with DaprClient() as client:
+                conversation_history = []
+
+                # allow automatically execute tool calls without checking arguments
+                conversation.set_allow_register_tool_execution(True)
+
+                # Turn 1: User asks about weather (include tools)
+                print('\n--- Turn 1: Initial weather query ---')
+                user_message1 = conversation.create_user_message(
+                    "What's the weather like in San Francisco? Use one of the tools available."
+                )
+                conversation_history.append(user_message1)
+
+                print(f'📝 Request 1 context: {len(conversation_history)} messages + tools')
+                input_alpha2_turn1 = conversation.ConversationInputAlpha2(
+                    messages=conversation_history
+                )
+
+                response1 = client.converse_alpha2(
+                    name=provider_id,
+                    inputs=[input_alpha2_turn1],
+                    tools=conversation.get_registered_tools(),  # using registered tools (automatically registered by the decorator)
+                    tool_choice='auto',
+                    parameters={
+                        'temperature': 0.3,
+                        'max_tokens': 500,
+                    },
+                )
+
+                def append_response_to_history(response):
+                    for msg in response.to_assistant_messages():
+                        conversation_history.append(msg)
+                        if msg.of_assistant.tool_calls:
+                            for _tool_call in msg.of_assistant.tool_calls:
+                                print(f'Executing tool call: {_tool_call.function.name}')
+                                output = conversation.execute_registered_tool(
+                                    _tool_call.function.name, _tool_call.function.arguments
+                                )
+                                print(f'Tool output: {output}')
+
+                                # append result to history
+                                conversation_history.append(
+                                    conversation.create_tool_message(
+                                        tool_id=_tool_call.id,
+                                        name=_tool_call.function.name,
+                                        content=output,
+                                    )
+                                )
+
+                append_response_to_history(response1)
+
+                # Turn 2: LLM processes tool result (accumulate context + tools)
+                print('\n--- Turn 2: LLM processes tool result ---')
+                print(f'📝 Request 2 context: {len(conversation_history)} messages + tools')
+                input_alpha2_turn2 = conversation.ConversationInputAlpha2(
+                    messages=conversation_history
+                )
+
+                response2 = client.converse_alpha2(
+                    name=provider_id,
+                    inputs=[input_alpha2_turn2],
+                    tools=conversation.get_registered_tools(),
+                    parameters={
+                        'temperature': 0.3,
+                        'max_tokens': 500,
+                    },
+                )
+
+                # Turn 3: Follow-up question (full context + tools)
+
+                append_response_to_history(response2)
+
+                print('\n--- Turn 3: Follow-up question using accumulated context ---')
+                user_message2 = conversation.create_user_message(
+                    'Should I bring an umbrella? Also, what about the weather in New York?'
+                )
+                conversation_history.append(user_message2)
+
+                print(f'📝 Request 3 context: {len(conversation_history)} messages + tools')
+                print('📋 Accumulated context includes:')
+
+                input_alpha2_turn3 = conversation.ConversationInputAlpha2(
+                    messages=conversation_history
+                )
+
+                response3 = client.converse_alpha2(
+                    name=provider_id,
+                    inputs=[input_alpha2_turn3],
+                    tools=conversation.get_registered_tools(),
+                    tool_choice='auto',
+                    parameters={
+                        'temperature': 0.3,
+                        'max_tokens': 500,
+                    },
+                )
+
+                append_response_to_history(response3)
+
+                print(f'📝 Request 4 context: {len(conversation_history)} messages + tools')
+                print('📋 Expect response about the umbrella:')
+
+                input_alpha2_turn4 = conversation.ConversationInputAlpha2(
+                    messages=conversation_history
+                )
+
+                response4 = client.converse_alpha2(
+                    name=provider_id,
+                    inputs=[input_alpha2_turn4],
+                    tools=conversation.get_registered_tools(),
+                    tool_choice='auto',
+                    parameters={
+                        'temperature': 0.3,
+                        'max_tokens': 500,
+                    },
+                )
+
+                append_response_to_history(response4)
+
+                # print full history
+                for i, msg in enumerate(conversation_history):
+                    print(f'History Index {i}: {msg}')
+
+                else:
+                    print(
+                        '⚠️ No tool calls found in any output/choice - continuing with regular conversation flow'
+                    )
+                    # Could continue with regular multi-turn conversation without tools
+
+        except Exception as e:
+            print(f'❌ Multi-turn tool calling error: {e}')
+        finally:
+            conversation.unregister_tool('get_weather')
+
     def test_function_to_schema_approach(self, provider_id: str) -> None:
         """Test the best DevEx for most cases: function-to-JSON-schema automatic tool creation."""
         print(
@@ -803,17 +947,68 @@ class RealLLMProviderTester:
         try:
             with DaprClient() as client:
                 # Create a tool using the typed function approach
-                restaurant_tool = self.create_tool_from_typed_function_example()
+                restaurant_tool = create_tool_from_typed_function_example()
+                print(restaurant_tool)
 
-                user_message = self.create_user_message(
+                user_message = conversation.create_user_message(
                     'I want to find Italian restaurants in San Francisco with a moderate price range.'
                 )
-                input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+                input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message])
 
                 response = client.converse_alpha2(
                     name=provider_id,
                     inputs=[input_alpha2],
                     tools=[restaurant_tool],
+                    tool_choice='auto',
+                    parameters={
+                        'temperature': 0.3,
+                        'max_tokens': 500,
+                    },
+                )
+
+                if response.outputs and response.outputs[0].choices:
+                    choice = response.outputs[0].choices[0]
+                    print(f'📊 Finish reason: {choice.finish_reason}')
+
+                    if choice.finish_reason == 'tool_calls' and choice.message.tool_calls:
+                        print('🎯 Function-to-schema tool calling successful!')
+                        for tool_call in choice.message.tool_calls:
+                            print(f'   Tool: {tool_call.function.name}')
+                            print(f'   Arguments: {tool_call.function.arguments}')
+
+                            # This demonstrates the complete workflow
+                            print('✅ Auto-generated schema worked perfectly with real LLM!')
+                    else:
+                        print(f'💬 Response: {choice.message.content}')
+                else:
+                    print('❌ No function-to-schema response received')
+
+        except Exception as e:
+            print(f'❌ Function-to-schema approach error: {e}')
+
+    def test_tool_decorated_function_to_schema_approach(self, provider_id: str) -> None:
+        """Test the best DevEx for most cases: function-to-JSON-schema automatic tool creation."""
+        print(
+            f"\n🎯 Testing decorator tool function-to-schema approach with {self.available_providers[provider_id]['display_name']}"
+        )
+
+        try:
+            with DaprClient() as client:
+                # Create a tool using the typed function approach
+                create_tool_from_tool_decorator_example()
+
+                # we can get tools registered from different places in our repo
+                print(conversation.get_registered_tools())
+
+                user_message = conversation.create_user_message(
+                    'I want to find Italian restaurants in San Francisco with a moderate price range.'
+                )
+                input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message])
+
+                response = client.converse_alpha2(
+                    name=provider_id,
+                    inputs=[input_alpha2],
+                    tools=conversation.get_registered_tools(),
                     tool_choice='auto',
                     parameters={
                         'temperature': 0.3,
@@ -849,10 +1044,10 @@ class RealLLMProviderTester:
 
         try:
             async with AsyncDaprClient() as client:
-                user_message = self.create_user_message(
+                user_message = conversation.create_user_message(
                     'Tell me a very short joke about async programming.'
                 )
-                input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+                input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message])
 
                 response = await client.converse_alpha2(
                     name=provider_id,
@@ -880,10 +1075,10 @@ class RealLLMProviderTester:
 
         try:
             async with AsyncDaprClient() as client:
-                weather_tool = self.create_weather_tool()
-                user_message = self.create_user_message("What's the weather in Tokyo?")
+                weather_tool = create_weather_tool()
+                user_message = conversation.create_user_message("What's the weather in Tokyo?")
 
-                input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+                input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message])
 
                 response = await client.converse_alpha2(
                     name=provider_id,
@@ -902,7 +1097,7 @@ class RealLLMProviderTester:
                         for tool_call in choice.message.tool_calls:
                             print(f'   Tool: {tool_call.function.name}')
                             args = json.loads(tool_call.function.arguments)
-                            weather_result = self.execute_weather_tool(
+                            weather_result = execute_weather_tool(
                                 args.get('location', 'Tokyo'), args.get('unit', 'fahrenheit')
                             )
                             print(f'   Result: {weather_result}')
@@ -922,12 +1117,14 @@ class RealLLMProviderTester:
         print(f"{'='*60}")
 
         # Alpha2 Sync tests
-        self.test_basic_conversation_alpha2(provider_id)
-        self.test_multi_turn_conversation_alpha2(provider_id)
-        self.test_tool_calling_alpha2(provider_id)
-        self.test_parameter_conversion(provider_id)
-        self.test_function_to_schema_approach(provider_id)
-        self.test_multi_turn_tool_calling_alpha2(provider_id)
+        # self.test_basic_conversation_alpha2(provider_id)
+        # self.test_multi_turn_conversation_alpha2(provider_id)
+        # self.test_tool_calling_alpha2(provider_id)
+        # self.test_parameter_conversion(provider_id)
+        # self.test_function_to_schema_approach(provider_id)
+        # self.test_tool_decorated_function_to_schema_approach(provider_id)
+        # self.test_multi_turn_tool_calling_alpha2(provider_id)
+        self.test_multi_turn_tool_calling_alpha2_tool_helpers(provider_id)
 
         # Alpha2 Async tests
         asyncio.run(self.test_async_conversation_alpha2(provider_id))
@@ -945,7 +1142,7 @@ class RealLLMProviderTester:
         try:
             with DaprClient() as client:
                 inputs = [
-                    ConversationInput(
+                    conversation.ConversationInput(
                         content="Hello! Please respond with: 'Hello from Dapr Alpha1!'", role='user'
                     )
                 ]
@@ -969,11 +1166,6 @@ class RealLLMProviderTester:
             print(f'❌ Alpha1 legacy conversation error: {e}')
 
     def cleanup(self) -> None:
-        """Clean up temporary component files and stop sidecar if needed."""
-        # Stop sidecar if we started it
-        if self.sidecar_manager:
-            self.sidecar_manager.stop()
-
         # Clean up temporary components directory
         if self.components_dir and Path(self.components_dir).exists():
             import shutil
@@ -1040,6 +1232,7 @@ def main():
         print('   • Multi-turn conversations')
         print('   • Multi-turn tool calling with context expansion')
         print('   • Function-to-schema automatic tool generation')
+        print('   • Function-to-schema using @tool decorator for automatic tool generation')
         print('   • Both sync and async implementations')
         print('   • Backward compatibility with Alpha1')
         print(f"{'='*60}")

@@ -11,7 +11,7 @@
 # limitations under the License.
 # ------------------------------------------------------------
 from dapr.clients import DaprClient
-from dapr.clients.grpc._request import ConversationInput
+from dapr.clients.grpc._conversation import ConversationInput
 
 with DaprClient() as d:
     inputs = [
@@ -29,5 +29,6 @@ with DaprClient() as d:
         name='echo', inputs=inputs, temperature=0.7, context_id='chat-123', metadata=metadata
     )
 
+    print('Result: ', end='')
     for output in response.outputs:
-        print(f'Result: {output.result}')
+        print(output.result)

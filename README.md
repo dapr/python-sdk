@@ -120,6 +120,8 @@ tox -e type
 
 8. Run examples
 
+The tests in examples are using Mechanical Markdown (MM) from https://github.com/dapr/mechanical-markdown.
+
 ```bash
 tox -e examples
 ```

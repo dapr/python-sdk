@@ -12,25 +12,40 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import random
+import string
 
+from dapr.clients.grpc.conversation import Params
 
 import inspect
 from dataclasses import fields, is_dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, get_args, get_origin, get_type_hints, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from dapr.clients.grpc._request import ConversationTools
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+    Callable,
+    Mapping,
+    Sequence,
+)
 
 """
-Schema Helpers for Dapr Conversation API.
+Tool Calling Helpers for Dapr Conversation API.
 
 This module provides function-to-JSON-schema helpers that automatically
 convert typed Python functions to tools for the Conversation API.
+
+These makes it easy to create tools for the Conversation API without
+having to manually define the JSON schema for each tool.
 """
 
 
-def python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[str, Any]:
+def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[str, Any]:
     """Convert a Python type hint to JSON schema format.
 
     Args:
@@ -41,11 +56,11 @@ def python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[s
         Dict representing the JSON schema for this type
 
     Examples:
-        >>> python_type_to_json_schema(str)
+        >>> _python_type_to_json_schema(str)
         {"type": "string"}
-        >>> python_type_to_json_schema(Optional[int])
+        >>> _python_type_to_json_schema(Optional[int])
         {"type": "integer"}
-        >>> python_type_to_json_schema(List[str])
+        >>> _python_type_to_json_schema(List[str])
         {"type": "array", "items": {"type": "string"}}
     """
     # Handle None type
@@ -62,17 +77,17 @@ def python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[s
         non_none_args = [arg for arg in args if arg is not type(None)]
         if len(non_none_args) == 1 and type(None) in args:
             # This is Optional[T], convert T
-            return python_type_to_json_schema(non_none_args[0], field_name)
+            return _python_type_to_json_schema(non_none_args[0], field_name)
         else:
             # This is a true Union, use anyOf
-            return {'anyOf': [python_type_to_json_schema(arg, field_name) for arg in args]}
+            return {'anyOf': [_python_type_to_json_schema(arg, field_name) for arg in args]}
 
     # Handle List types
     if origin is list or python_type is list:
         if args:
             return {
                 'type': 'array',
-                'items': python_type_to_json_schema(args[0], f'{field_name}[]'),
+                'items': _python_type_to_json_schema(args[0], f'{field_name}[]'),
             }
         else:
             return {'type': 'array'}
@@ -84,7 +99,7 @@ def python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[s
             # Dict[str, ValueType] - add additionalProperties
             key_type, value_type = args
             if key_type is str:
-                schema['additionalProperties'] = python_type_to_json_schema(
+                schema['additionalProperties'] = _python_type_to_json_schema(
                     value_type, f'{field_name}.*'
                 )
         return schema
@@ -124,7 +139,7 @@ def python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[s
         dataclass_schema: Dict[str, Any] = {'type': 'object', 'properties': {}, 'required': []}
 
         for field in fields(python_type):
-            field_schema = python_type_to_json_schema(field.type, field.name)
+            field_schema = _python_type_to_json_schema(field.type, field.name)
             dataclass_schema['properties'][field.name] = field_schema
 
             # Check if field has no default (required) - use MISSING for dataclasses
@@ -137,7 +152,7 @@ def python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[s
     return {'type': 'string', 'description': f'Unknown type: {python_type}'}
 
 
-def extract_docstring_args(func) -> Dict[str, str]:
+def _extract_docstring_args(func) -> Dict[str, str]:
     """Extract parameter descriptions from function docstring.
 
     Supports Google-style, NumPy-style, and Sphinx-style docstrings.
@@ -209,8 +224,8 @@ def _has_potential_param_info(lines: List[str]) -> bool:
 
     # Look for informal patterns like "takes param1 which is", "param2 is an integer"
     has_informal_param_descriptions = bool(
-        re.search(r'takes\s+\w+\s+which\s+(is|are)', text) or
-        re.search(r'\w+\s+(is|are)\s+(a|an)\s+\w+\s+(input|argument)', text)
+        re.search(r'takes\s+\w+\s+which\s+(is|are)', text)
+        or re.search(r'\w+\s+(is|are)\s+(a|an)\s+\w+\s+(input|argument)', text)
     )
 
     # Look for multiple parameter mentions suggesting documentation attempt
@@ -231,9 +246,11 @@ def _has_potential_param_info(lines: List[str]) -> bool:
     has_excluded_phrases = any(phrase in text for phrase in exclude_phrases)
 
     return (
-        (has_param_descriptions or has_param_mentions or has_informal_param_descriptions or has_multiple_param_mentions)
-        and not has_excluded_phrases
-    )
+        has_param_descriptions
+        or has_param_mentions
+        or has_informal_param_descriptions
+        or has_multiple_param_mentions
+    ) and not has_excluded_phrases
 
 
 def _extract_sphinx_params(lines: List[str]) -> Dict[str, str]:
@@ -268,11 +285,15 @@ def _extract_sphinx_params(lines: List[str]) -> Dict[str, str]:
             last_param = list(param_descriptions.keys())[-1]
             # Don't treat section headers or other directive-like content as continuations
             # Also don't treat content that looks like parameter definitions from other styles
-            if (param_descriptions[last_param] 
-                and not any(line.startswith(prefix) for prefix in [':param', ':type', ':return', ':raises'])
-                and not line.lower().endswith(':') 
+            if (
+                param_descriptions[last_param]
+                and not any(
+                    line.startswith(prefix) for prefix in [':param', ':type', ':return', ':raises']
+                )
+                and not line.lower().endswith(':')
                 and not line.lower() in ('args', 'arguments', 'parameters', 'params')
-                and ':' not in line):  # Avoid treating "param1: description" as continuation
+                and ':' not in line
+            ):  # Avoid treating "param1: description" as continuation
                 param_descriptions[last_param] += ' ' + line.strip()
 
     return param_descriptions
@@ -303,7 +324,18 @@ def _extract_google_numpy_params(lines: List[str]) -> Dict[str, str]:
             next_line_idx = i + 1
             if next_line_idx < len(lines):
                 next_line = lines[next_line_idx].strip().lower()
-                if next_line in ('returns', 'return', 'yields', 'yield', 'raises', 'raise', 'notes', 'note', 'examples', 'example'):
+                if next_line in (
+                    'returns',
+                    'return',
+                    'yields',
+                    'yield',
+                    'raises',
+                    'raise',
+                    'notes',
+                    'note',
+                    'examples',
+                    'example',
+                ):
                     in_args_section = False
             continue
 
@@ -311,9 +343,20 @@ def _extract_google_numpy_params(lines: List[str]) -> Dict[str, str]:
         if in_args_section and (line.endswith(':') and not line.startswith(' ')):
             in_args_section = False
             continue
-        
+
         # Also exit on direct section headers without separators
-        if in_args_section and line.lower() in ('returns', 'return', 'yields', 'yield', 'raises', 'raise', 'notes', 'note', 'examples', 'example'):
+        if in_args_section and line.lower() in (
+            'returns',
+            'return',
+            'yields',
+            'yield',
+            'raises',
+            'raise',
+            'notes',
+            'note',
+            'examples',
+            'example',
+        ):
             in_args_section = False
             continue
 
@@ -324,7 +367,7 @@ def _extract_google_numpy_params(lines: List[str]) -> Dict[str, str]:
                 if len(parts) == 2:
                     param_name = parts[0].strip()
                     description = parts[1].strip()
-                    
+
                     # Handle type annotations like "param_name (type): description"
                     if '(' in param_name and ')' in param_name:
                         param_name = param_name.split('(')[0].strip()
@@ -346,9 +389,11 @@ def _extract_google_numpy_params(lines: List[str]) -> Dict[str, str]:
                     else:
                         param_descriptions[param_name] = ''
                     current_param = param_name
-            elif current_param and (
-                original_line.startswith('    ') or original_line.startswith('\t')
-            ) and in_args_section:
+            elif (
+                current_param
+                and (original_line.startswith('    ') or original_line.startswith('\t'))
+                and in_args_section
+            ):
                 # Indented continuation line for current parameter (only if still in args section)
                 if not param_descriptions[current_param]:
                     # First description line for this parameter (for cases where description is on next line)
@@ -455,7 +500,7 @@ def function_to_json_schema(
     type_hints = get_type_hints(func)
 
     # Extract parameter descriptions from docstring
-    param_descriptions = extract_docstring_args(func)
+    param_descriptions = _extract_docstring_args(func)
 
     # Get function description
     if description is None:
@@ -478,7 +523,7 @@ def function_to_json_schema(
         param_type = type_hints.get(param_name, str)
 
         # Convert to JSON schema
-        param_schema = python_type_to_json_schema(param_type, param_name)
+        param_schema = _python_type_to_json_schema(param_type, param_name)
 
         # Add description if available
         if param_name in param_descriptions:
@@ -493,82 +538,69 @@ def function_to_json_schema(
     return schema
 
 
-def create_tool_from_function(
-    func, name: Optional[str] = None, description: Optional[str] = None
-) -> 'ConversationTools':
-    """Create a ConversationTools from a Python function with type hints.
+def _generate_unique_tool_call_id():
+    """Generate a unique ID for a tool call.  Mainly used if the LLM provider is not able to generate one itself."""
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=9))
 
-    This provides the ultimate developer experience - just define a typed function
-    and automatically get a properly configured tool for the Conversation API.
 
-    Args:
-        func: Python function with type hints
-        name: Override function name (defaults to func.__name__)
-        description: Override description (defaults to docstring)
+# --- Tool Function Executor Backend
 
-    Returns:
-        ConversationTools ready to use with Alpha2 API
+# --- Errors ----
 
-    Examples:
-        >>> def get_weather(location: str, unit: str = "fahrenheit") -> str:
-        ...     '''Get current weather for a location.
-        ...
-        ...     Args:
-        ...         location: The city and state or country
-        ...         unit: Temperature unit preference
-        ...     '''
-        ...     return f"Weather in {location}: sunny, 72°F"
 
-        >>> weather_tool = create_tool_from_function(get_weather)
-        # Now use weather_tool in your conversation API calls!
+class ToolError(RuntimeError):
+    ...
 
-        >>> # With Pydantic models
-        >>> from pydantic import BaseModel
-        >>> class SearchQuery(BaseModel):
-        ...     query: str
-        ...     limit: int = 10
-        ...     include_images: bool = False
 
-        >>> def web_search(params: SearchQuery) -> str:
-        ...     '''Search the web for information.'''
-        ...     return f"Search results for: {params.query}"
+class ToolNotFoundError(ToolError):
+    ...
 
-        >>> search_tool = create_tool_from_function(web_search)
 
-        >>> # With Enums
-        >>> from enum import Enum
-        >>> class Units(Enum):
-        ...     CELSIUS = "celsius"
-        ...     FAHRENHEIT = "fahrenheit"
+class ToolExecutionError(ToolError):
+    ...
 
-        >>> def get_temperature(city: str, unit: Units = Units.FAHRENHEIT) -> float:
-        ...     '''Get temperature for a city.'''
-        ...     return 72.0
 
-        >>> temp_tool = create_tool_from_function(get_temperature)
-    """
-    # Import here to avoid circular imports
-    from dapr.clients.grpc._request import ConversationToolsFunction, ConversationTools
+class ToolArgumentError(ToolError):
+    ...
 
-    # Generate JSON schema from function
-    json_schema = function_to_json_schema(func, name, description)
 
-    # Use provided name or function name
-    tool_name = name or func.__name__
+class ToolExecutionForbiddenError(ToolError):
+    """Exception raised when automatic execution of tools is forbidden per _ALLOW_REGISTER_TOOL_EXECUTION."""
 
-    # Use provided description or extract from function
-    tool_description = description
-    if tool_description is None:
-        docstring = inspect.getdoc(func)
-        if docstring:
-            tool_description = docstring.split('\n')[0].strip()
-        else:
-            tool_description = f'Function {tool_name}'
 
-    # Create the tool function
-    function = ConversationToolsFunction(
-        name=tool_name, description=tool_description, parameters=json_schema
-    )
+def bind_params_to_func(fn: Callable[..., Any], params: Params):
+    sig = inspect.signature(fn)
+    if params is None:
+        bound = sig.bind()
+        bound.apply_defaults()
+        return bound
 
-    # Return the complete tool
-    return ConversationTools(function=function)
+    if isinstance(params, Mapping):
+        bound = sig.bind_partial(**params)
+        # missing required parameters
+        missing = [
+            p.name
+            for p in sig.parameters.values()
+            if p.default is inspect._empty
+            and p.kind
+            in (
+                inspect.Parameter.POSITIONAL_ONLY,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            )
+            and p.name not in bound.arguments
+        ]
+        if missing:
+            raise ToolArgumentError(f"Missing required parameter(s): {', '.join(missing)}")
+        # unexpected kwargs unless **kwargs present
+        if not any(p.kind is inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
+            extra = set(params) - set(sig.parameters)
+            if extra:
+                raise ToolArgumentError(f"Unexpected parameter(s): {', '.join(sorted(extra))}")
+    elif isinstance(params, Sequence):
+        bound = sig.bind(*params)
+    else:
+        raise ToolArgumentError('params must be a mapping (kwargs), sequence (positional), or None')
+
+    bound.apply_defaults()
+    return bound

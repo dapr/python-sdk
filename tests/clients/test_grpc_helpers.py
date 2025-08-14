@@ -24,12 +24,9 @@ try:
         python_type_to_json_schema,
         extract_docstring_args,
         function_to_json_schema,
-        create_tool_from_function,
         extract_docstring_summary,
     )
-    from dapr.clients.grpc._request import (
-        ConversationToolsFunction,
-    )
+    from dapr.clients.grpc._conversation import ConversationToolsFunction
 
     HELPERS_AVAILABLE = True
 except ImportError as e:
@@ -1174,89 +1171,6 @@ class TestConversationToolsFunctionFromFunction(unittest.TestCase):
             'multiple processing algorithms for optimal results.'
         )
         self.assertEqual(result.description, expected_description)
-
-
-@unittest.skipIf(not HELPERS_AVAILABLE, 'Helpers not available due to import issues')
-class TestCreateToolFromFunction(unittest.TestCase):
-    """Test the create_tool_from_function function."""
-
-    def test_create_tool_basic(self):
-        """Test creating a tool from a basic function."""
-
-        def get_weather(location: str, unit: str = 'celsius') -> str:
-            """Get weather information.
-
-            Args:
-                location: City name
-                unit: Temperature unit
-            """
-            return f'Weather in {location}'
-
-        # Test that the function works without errors
-        tool = create_tool_from_function(get_weather)
-
-        # Basic validation that we got a tool object
-        self.assertIsNotNone(tool)
-        self.assertIsNotNone(tool.function)
-        self.assertEqual(tool.function.name, 'get_weather')
-        self.assertEqual(tool.function.description, 'Get weather information.')
-
-    def test_create_tool_with_overrides(self):
-        """Test creating a tool with name and description overrides."""
-
-        def simple_func() -> str:
-            """Simple function."""
-            return 'result'
-
-        tool = create_tool_from_function(
-            simple_func, name='custom_name', description='Custom description'
-        )
-        self.assertEqual(tool.function.name, 'custom_name')
-        self.assertEqual(tool.function.description, 'Custom description')
-
-    def test_create_tool_complex_function(self):
-        """Test creating a tool from a complex function with multiple types."""
-        from enum import Enum
-        from typing import List, Optional
-
-        class Status(Enum):
-            ACTIVE = 'active'
-            INACTIVE = 'inactive'
-
-        def manage_user(
-            user_id: str,
-            status: Status = Status.ACTIVE,
-            tags: Optional[List[str]] = None,
-            metadata: Dict[str, any] = None,
-        ) -> str:
-            """Manage user account.
-
-            Args:
-                user_id: Unique user identifier
-                status: Account status
-                tags: User tags for categorization
-                metadata: Additional user metadata
-            """
-            return f'Managed user {user_id}'
-
-        tool = create_tool_from_function(manage_user)
-        self.assertIsNotNone(tool)
-        self.assertEqual(tool.function.name, 'manage_user')
-
-        # Verify the schema was generated correctly by unpacking it
-        schema = tool.function.schema_as_dict()
-        self.assertIsNotNone(schema)
-
-        # Check that all parameters are present
-        props = schema['properties']
-        self.assertIn('user_id', props)
-        self.assertIn('status', props)
-        self.assertIn('tags', props)
-        self.assertIn('metadata', props)
-
-        # Verify enum handling
-        self.assertEqual(props['status']['type'], 'string')
-        self.assertIn('enum', props['status'])
 
 
 @unittest.skipIf(not HELPERS_AVAILABLE, 'Helpers not available due to import issues')

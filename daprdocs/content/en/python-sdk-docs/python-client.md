@@ -441,7 +441,7 @@ Since version 1.15 Dapr offers developers the capability to securely and reliabl
 
 ```python
 from dapr.clients import DaprClient
-from dapr.clients.grpc._request import ConversationInput
+from dapr.clients.grpc._conversation import ConversationInput
 
 with DaprClient() as d:
     inputs = [

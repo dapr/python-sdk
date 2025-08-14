@@ -51,12 +51,13 @@ from dapr.clients.grpc._helpers import (
     WorkflowRuntimeStatus,
 )
 from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
+from dapr.clients.grpc import conversation
 
 # Avoid circular import dependency by only importing DaprGrpcClient
 # for type checking
 if TYPE_CHECKING:
     from dapr.clients.grpc.client import DaprGrpcClient
-    from dapr.clients.grpc._request import ConversationToolCalls
+
 
 TCryptoResponse = TypeVar(
     'TCryptoResponse', bound=Union[api_v1.EncryptResponse, api_v1.DecryptResponse]
@@ -1083,27 +1084,27 @@ class ConversationResult:
 
 
 @dataclass
-class ConversationResultMessage:
+class ConversationResultAlpha2Message:
     """Message content in conversation result."""
 
     content: str
-    tool_calls: List['ConversationToolCalls'] = field(default_factory=list)
+    tool_calls: List[conversation.ConversationToolCalls] = field(default_factory=list)
 
 
 @dataclass
-class ConversationResultChoices:
+class ConversationResultAlpha2Choices:
     """Choice in Alpha2 conversation result."""
 
     finish_reason: str
     index: int
-    message: ConversationResultMessage
+    message: ConversationResultAlpha2Message
 
 
 @dataclass
 class ConversationResultAlpha2:
     """Alpha2 result from conversation input."""
 
-    choices: List[ConversationResultChoices] = field(default_factory=list)
+    choices: List[ConversationResultAlpha2Choices] = field(default_factory=list)
 
 
 @dataclass
@@ -1120,3 +1121,35 @@ class ConversationResponseAlpha2:
 
     context_id: Optional[str]
     outputs: List[ConversationResultAlpha2]
+
+    def to_assistant_messages(self) -> List[conversation.ConversationMessage]:
+        def convert_llm_response_to_conversation_input(
+            result_message: ConversationResultAlpha2Message,
+        ) -> conversation.ConversationMessage:
+            """Convert ConversationResultMessage (from LLM response) to ConversationMessage."""
+
+            # Convert content string to ConversationMessageContent list
+            content = []
+            if result_message.content:
+                content = [conversation.ConversationMessageContent(text=result_message.content)]
+
+            # Convert tool_calls if present (they're already the right type)
+            tool_calls = result_message.tool_calls or []
+
+            # Create assistant message (since LLM responses are always assistant messages)
+            return conversation.ConversationMessage(
+                of_assistant=conversation.ConversationMessageOfAssistant(
+                    content=content, tool_calls=tool_calls
+                )
+            )
+
+        """Convert the outputs to a list of ConversationInput."""
+        assistant_messages = []
+
+        for output_idx, output in enumerate(self.outputs or []):
+            for choice_idx, choice in enumerate(output.choices or []):
+                # Convert and collect all assistant messages
+                assistant_message = convert_llm_response_to_conversation_input(choice.message)
+                assistant_messages.append(assistant_message)
+
+        return assistant_messages

@@ -23,6 +23,7 @@ from urllib.parse import urlencode
 from warnings import warn
 
 from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any
+
 from typing_extensions import Self
 from datetime import datetime
 from google.protobuf.message import Message as GrpcMessage
@@ -39,6 +40,7 @@ from grpc import (  # type: ignore
 )
 
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
+from dapr.clients.grpc._conversation_helpers import _generate_unique_tool_call_id
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
@@ -67,13 +69,13 @@ from dapr.clients.grpc._request import (
     TransactionalStateOperation,
     EncryptRequestIterator,
     DecryptRequestIterator,
+)
+from dapr.clients.grpc.conversation import (
     ConversationInput,
-    ConversationInputAlpha2,
-    ConversationMessage,
-    ConversationMessageContent,
-    ConversationTools,
-    ConversationToolCalls,
     ConversationToolCallsOfFunction,
+    ConversationToolCalls,
+    ConversationInputAlpha2,
+    ConversationTools,
 )
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
@@ -103,8 +105,8 @@ from dapr.clients.grpc._response import (
     ConversationResult,
     ConversationResponseAlpha2,
     ConversationResultAlpha2,
-    ConversationResultChoices,
-    ConversationResultMessage,
+    ConversationResultAlpha2Choices,
+    ConversationResultAlpha2Message,
 )
 
 
@@ -1826,66 +1828,6 @@ class DaprGrpcClient:
             DaprGrpcError: If the Dapr runtime returns an error
         """
 
-        def _convert_message_content(content_list: List[ConversationMessageContent]):
-            """Convert message content list to proto format."""
-            if not content_list:
-                return []
-            return [
-                api_v1.ConversationMessageContent(text=content.text) for content in content_list
-            ]
-
-        def _convert_tool_calls(tool_calls: List[ConversationToolCalls]):
-            """Convert tool calls to proto format."""
-            if not tool_calls:
-                return []
-            proto_calls = []
-            for call in tool_calls:
-                proto_call = api_v1.ConversationToolCalls()
-                if call.id:
-                    proto_call.id = call.id
-                if call.function:
-                    proto_call.function.name = call.function.name
-                    proto_call.function.arguments = call.function.arguments
-                proto_calls.append(proto_call)
-            return proto_calls
-
-        def _convert_message(message: ConversationMessage):
-            """Convert a conversation message to proto format."""
-            proto_message = api_v1.ConversationMessage()
-
-            if message.of_developer:
-                proto_message.of_developer.name = message.of_developer.name or ''
-                proto_message.of_developer.content.extend(
-                    _convert_message_content(message.of_developer.content or [])
-                )
-            elif message.of_system:
-                proto_message.of_system.name = message.of_system.name or ''
-                proto_message.of_system.content.extend(
-                    _convert_message_content(message.of_system.content or [])
-                )
-            elif message.of_user:
-                proto_message.of_user.name = message.of_user.name or ''
-                proto_message.of_user.content.extend(
-                    _convert_message_content(message.of_user.content or [])
-                )
-            elif message.of_assistant:
-                proto_message.of_assistant.name = message.of_assistant.name or ''
-                proto_message.of_assistant.content.extend(
-                    _convert_message_content(message.of_assistant.content or [])
-                )
-                proto_message.of_assistant.tool_calls.extend(
-                    _convert_tool_calls(message.of_assistant.tool_calls or [])
-                )
-            elif message.of_tool:
-                if message.of_tool.tool_id:
-                    proto_message.of_tool.tool_id = message.of_tool.tool_id
-                proto_message.of_tool.name = message.of_tool.name
-                proto_message.of_tool.content.extend(
-                    _convert_message_content(message.of_tool.content or [])
-                )
-
-            return proto_message
-
         # Convert inputs to proto format
         inputs_pb = []
         for inp in inputs:
@@ -1894,7 +1836,7 @@ class DaprGrpcClient:
                 proto_input.scrub_pii = inp.scrub_pii
 
             for message in inp.messages:
-                proto_input.messages.append(_convert_message(message))
+                proto_input.messages.append(message.to_proto())
 
             inputs_pb.append(proto_input)
 
@@ -1949,18 +1891,18 @@ class DaprGrpcClient:
                         function_call = ConversationToolCallsOfFunction(
                             name=tool_call.function.name, arguments=tool_call.function.arguments
                         )
+                        if not tool_call.id:
+                            tool_call.id = _generate_unique_tool_call_id()
                         tool_calls.append(
-                            ConversationToolCalls(
-                                id=tool_call.id if tool_call.id else None, function=function_call
-                            )
+                            ConversationToolCalls(id=tool_call.id, function=function_call)
                         )
 
-                    result_message = ConversationResultMessage(
+                    result_message = ConversationResultAlpha2Message(
                         content=choice.message.content, tool_calls=tool_calls
                     )
 
                     choices.append(
-                        ConversationResultChoices(
+                        ConversationResultAlpha2Choices(
                             finish_reason=choice.finish_reason,
                             index=choice.index,
                             message=result_message,

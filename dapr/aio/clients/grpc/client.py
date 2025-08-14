@@ -42,6 +42,7 @@ from grpc.aio import (  # type: ignore
 
 from dapr.aio.clients.grpc.subscription import Subscription
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
+from dapr.clients.grpc._conversation_helpers import _generate_unique_tool_call_id
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
@@ -78,13 +79,9 @@ from dapr.clients.grpc._request import (
     InvokeMethodRequest,
     BindingRequest,
     TransactionalStateOperation,
-    ConversationInput,
-    ConversationInputAlpha2,
-    ConversationMessage,
-    ConversationMessageContent,
-    ConversationTools,
-    ConversationToolCalls,
 )
+from dapr.clients.grpc import conversation
+
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
     BindingResponse,
@@ -92,8 +89,8 @@ from dapr.clients.grpc._response import (
     ConversationResult,
     ConversationResponseAlpha2,
     ConversationResultAlpha2,
-    ConversationResultChoices,
-    ConversationResultMessage,
+    ConversationResultAlpha2Choices,
+    ConversationResultAlpha2Message,
     DaprResponse,
     GetSecretResponse,
     GetBulkSecretResponse,
@@ -1733,7 +1730,7 @@ class DaprGrpcClientAsync:
     async def converse_alpha1(
         self,
         name: str,
-        inputs: List[ConversationInput],
+        inputs: List[conversation.ConversationInput],
         *,
         context_id: Optional[str] = None,
         parameters: Optional[Dict[str, GrpcAny]] = None,
@@ -1792,14 +1789,14 @@ class DaprGrpcClientAsync:
     async def converse_alpha2(
         self,
         name: str,
-        inputs: List[ConversationInputAlpha2],
+        inputs: List[conversation.ConversationInputAlpha2],
         *,
         context_id: Optional[str] = None,
         parameters: Optional[Dict[str, GrpcAny]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
-        tools: Optional[List[ConversationTools]] = None,
+        tools: Optional[List[conversation.ConversationTools]] = None,
         tool_choice: Optional[str] = None,
     ) -> ConversationResponseAlpha2:
         """Invoke an LLM using the conversation API (Alpha2) with tool calling support.
@@ -1822,66 +1819,6 @@ class DaprGrpcClientAsync:
             DaprGrpcError: If the Dapr runtime returns an error
         """
 
-        def _convert_message_content(content_list: List[ConversationMessageContent]):
-            """Convert message content list to proto format."""
-            if not content_list:
-                return []
-            return [
-                api_v1.ConversationMessageContent(text=content.text) for content in content_list
-            ]
-
-        def _convert_tool_calls(tool_calls: List[ConversationToolCalls]):
-            """Convert tool calls to proto format."""
-            if not tool_calls:
-                return []
-            proto_calls = []
-            for call in tool_calls:
-                proto_call = api_v1.ConversationToolCalls()
-                if call.id:
-                    proto_call.id = call.id
-                if call.function:
-                    proto_call.function.name = call.function.name
-                    proto_call.function.arguments = call.function.arguments
-                proto_calls.append(proto_call)
-            return proto_calls
-
-        def _convert_message(message: ConversationMessage):
-            """Convert a conversation message to proto format."""
-            proto_message = api_v1.ConversationMessage()
-
-            if message.of_developer:
-                proto_message.of_developer.name = message.of_developer.name or ''
-                proto_message.of_developer.content.extend(
-                    _convert_message_content(message.of_developer.content or [])
-                )
-            elif message.of_system:
-                proto_message.of_system.name = message.of_system.name or ''
-                proto_message.of_system.content.extend(
-                    _convert_message_content(message.of_system.content or [])
-                )
-            elif message.of_user:
-                proto_message.of_user.name = message.of_user.name or ''
-                proto_message.of_user.content.extend(
-                    _convert_message_content(message.of_user.content or [])
-                )
-            elif message.of_assistant:
-                proto_message.of_assistant.name = message.of_assistant.name or ''
-                proto_message.of_assistant.content.extend(
-                    _convert_message_content(message.of_assistant.content or [])
-                )
-                proto_message.of_assistant.tool_calls.extend(
-                    _convert_tool_calls(message.of_assistant.tool_calls or [])
-                )
-            elif message.of_tool:
-                if message.of_tool.tool_id:
-                    proto_message.of_tool.tool_id = message.of_tool.tool_id
-                proto_message.of_tool.name = message.of_tool.name
-                proto_message.of_tool.content.extend(
-                    _convert_message_content(message.of_tool.content or [])
-                )
-
-            return proto_message
-
         # Convert inputs to proto format
         inputs_pb = []
         for inp in inputs:
@@ -1890,7 +1827,7 @@ class DaprGrpcClientAsync:
                 proto_input.scrub_pii = inp.scrub_pii
 
             for message in inp.messages:
-                proto_input.messages.append(_convert_message(message))
+                proto_input.messages.append(message.to_proto())
 
             inputs_pb.append(proto_input)
 
@@ -1937,11 +1874,15 @@ class DaprGrpcClientAsync:
             for output in response.outputs:
                 choices = []
                 for choice in output.choices:
+                    # workaround for some issues with missing tool ID in some providers (ie: Gemini)
+                    for i, tool_call in enumerate(choice.message.tool_calls):
+                        if not tool_call.id:
+                            choice.message.tool_calls[i].id = _generate_unique_tool_call_id()
                     choices.append(
-                        ConversationResultChoices(
+                        ConversationResultAlpha2Choices(
                             finish_reason=choice.finish_reason,
                             index=choice.index,
-                            message=ConversationResultMessage(
+                            message=ConversationResultAlpha2Message(
                                 content=choice.message.content, tool_calls=choice.message.tool_calls
                             ),
                         )

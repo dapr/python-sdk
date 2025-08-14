@@ -29,7 +29,8 @@ from dapr.proto import common_v1
 from .fake_dapr_server import FakeDaprSidecar
 from dapr.conf import settings
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.clients.grpc._request import TransactionalStateOperation, ConversationInput
+from dapr.clients.grpc._request import TransactionalStateOperation
+from dapr.clients.grpc.conversation import ConversationInput
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions

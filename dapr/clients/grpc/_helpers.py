@@ -13,10 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Union, Tuple
 
-if TYPE_CHECKING:
-    from dapr.clients.grpc._request import ConversationToolsFunction, ConversationTools
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage

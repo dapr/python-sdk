@@ -22,19 +22,96 @@ from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprGrpcError
 from dapr.conf import settings
-from dapr.clients.grpc._request import (
+from dapr.clients.grpc.conversation import (
     ConversationInput,
-    ConversationInputAlpha2,
-    ConversationMessage,
     ConversationMessageContent,
-    ConversationMessageOfUser,
     ConversationMessageOfSystem,
+    ConversationMessageOfUser,
     ConversationMessageOfAssistant,
     ConversationMessageOfTool,
-    ConversationTools,
+    ConversationMessage,
+    ConversationInputAlpha2,
     ConversationToolsFunction,
+    ConversationTools
 )
 from tests.clients.fake_dapr_server import FakeDaprSidecar
+
+
+def create_weather_tool():
+    """Create a weather tool for testing."""
+    return ConversationTools(
+        function=ConversationToolsFunction(
+            name='get_weather',
+            description='Get weather information for a location',
+            parameters={
+                'type': 'object',
+                'properties': {
+                    'location': {
+                        'type': 'string',
+                        'description': 'The city and state, e.g. San Francisco, CA',
+                    },
+                    'unit': {
+                        'type': 'string',
+                        'enum': ['celsius', 'fahrenheit'],
+                        'description': 'Temperature unit',
+                    },
+                },
+                'required': ['location'],
+            },
+        )
+    )
+
+
+def create_calculate_tool():
+    """Create a calculate tool for testing."""
+    return ConversationTools(
+        function=ConversationToolsFunction(
+            name='calculate',
+            description='Perform mathematical calculations',
+            parameters={
+                'type': 'object',
+                'properties': {
+                    'expression': {
+                        'type': 'string',
+                        'description': 'Mathematical expression to evaluate',
+                    }
+                },
+                'required': ['expression'],
+            },
+        )
+    )
+
+
+def create_user_message(text):
+    """Helper to create a user message for Alpha2."""
+    return ConversationMessage(
+        of_user=ConversationMessageOfUser(content=[ConversationMessageContent(text=text)])
+    )
+
+
+def create_system_message(text):
+    """Helper to create a system message for Alpha2."""
+    return ConversationMessage(
+        of_system=ConversationMessageOfSystem(content=[ConversationMessageContent(text=text)])
+    )
+
+
+def create_assistant_message(text, tool_calls=None):
+    """Helper to create an assistant message for Alpha2."""
+    return ConversationMessage(
+        of_assistant=ConversationMessageOfAssistant(
+            content=[ConversationMessageContent(text=text)], tool_calls=tool_calls or []
+        )
+    )
+
+
+def create_tool_message(tool_id, name, content):
+    """Helper to create a tool message for Alpha2."""
+    return ConversationMessage(
+        of_tool=ConversationMessageOfTool(
+            tool_id=tool_id, name=name, content=[ConversationMessageContent(text=content)]
+        )
+    )
 
 
 class ConversationTestBase:
@@ -55,77 +132,6 @@ class ConversationTestBase:
     @classmethod
     def tearDownClass(cls):
         cls._fake_dapr_server.stop()
-
-    def create_weather_tool(self):
-        """Create a weather tool for testing."""
-        return ConversationTools(
-            function=ConversationToolsFunction(
-                name='get_weather',
-                description='Get weather information for a location',
-                parameters={
-                    'type': 'object',
-                    'properties': {
-                        'location': {
-                            'type': 'string',
-                            'description': 'The city and state, e.g. San Francisco, CA',
-                        },
-                        'unit': {
-                            'type': 'string',
-                            'enum': ['celsius', 'fahrenheit'],
-                            'description': 'Temperature unit',
-                        },
-                    },
-                    'required': ['location'],
-                },
-            )
-        )
-
-    def create_calculate_tool(self):
-        """Create a calculate tool for testing."""
-        return ConversationTools(
-            function=ConversationToolsFunction(
-                name='calculate',
-                description='Perform mathematical calculations',
-                parameters={
-                    'type': 'object',
-                    'properties': {
-                        'expression': {
-                            'type': 'string',
-                            'description': 'Mathematical expression to evaluate',
-                        }
-                    },
-                    'required': ['expression'],
-                },
-            )
-        )
-
-    def create_user_message(self, text):
-        """Helper to create a user message for Alpha2."""
-        return ConversationMessage(
-            of_user=ConversationMessageOfUser(content=[ConversationMessageContent(text=text)])
-        )
-
-    def create_system_message(self, text):
-        """Helper to create a system message for Alpha2."""
-        return ConversationMessage(
-            of_system=ConversationMessageOfSystem(content=[ConversationMessageContent(text=text)])
-        )
-
-    def create_assistant_message(self, text, tool_calls=None):
-        """Helper to create an assistant message for Alpha2."""
-        return ConversationMessage(
-            of_assistant=ConversationMessageOfAssistant(
-                content=[ConversationMessageContent(text=text)], tool_calls=tool_calls or []
-            )
-        )
-
-    def create_tool_message(self, tool_id, name, content):
-        """Helper to create a tool message for Alpha2."""
-        return ConversationMessage(
-            of_tool=ConversationMessageOfTool(
-                tool_id=tool_id, name=name, content=[ConversationMessageContent(text=content)]
-            )
-        )
 
 
 class ConversationAlpha1SyncTests(ConversationTestBase, unittest.TestCase):
@@ -206,7 +212,7 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
     def test_basic_conversation_alpha2(self):
         """Test basic Alpha2 conversation functionality."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = self.create_user_message('Hello Alpha2!')
+            user_message = create_user_message('Hello Alpha2!')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
@@ -222,8 +228,8 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
     def test_conversation_alpha2_with_system_message(self):
         """Test Alpha2 conversation with system message."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            system_message = self.create_system_message('You are a helpful assistant.')
-            user_message = self.create_user_message('Hello!')
+            system_message = create_system_message('You are a helpful assistant.')
+            user_message = create_user_message('Hello!')
 
             input_alpha2 = ConversationInputAlpha2(
                 messages=[system_message, user_message], scrub_pii=False
@@ -245,7 +251,7 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
     def test_conversation_alpha2_with_options(self):
         """Test Alpha2 conversation with various options."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = self.create_user_message('Alpha2 with options')
+            user_message = create_user_message('Alpha2 with options')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message], scrub_pii=True)
 
             response = client.converse_alpha2(
@@ -264,7 +270,7 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
     def test_alpha2_parameter_conversion(self):
         """Test Alpha2 parameter conversion with various types."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = self.create_user_message('Parameter conversion test')
+            user_message = create_user_message('Parameter conversion test')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = client.converse_alpha2(
@@ -290,7 +296,7 @@ class ConversationAlpha2SyncTests(ConversationTestBase, unittest.TestCase):
         )
 
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = self.create_user_message('Error test')
+            user_message = create_user_message('Error test')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             with self.assertRaises(DaprGrpcError) as context:
@@ -304,8 +310,8 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
     def test_tool_calling_weather(self):
         """Test tool calling with weather tool."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = self.create_weather_tool()
-            user_message = self.create_user_message('What is the weather in San Francisco?')
+            weather_tool = create_weather_tool()
+            user_message = create_user_message('What is the weather in San Francisco?')
 
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
@@ -325,8 +331,8 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
     def test_tool_calling_calculate(self):
         """Test tool calling with calculate tool."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            calc_tool = self.create_calculate_tool()
-            user_message = self.create_user_message('Calculate 15 * 23')
+            calc_tool = create_calculate_tool()
+            user_message = create_user_message('Calculate 15 * 23')
 
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
@@ -343,10 +349,10 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
     def test_multiple_tools(self):
         """Test conversation with multiple tools."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = self.create_weather_tool()
-            calc_tool = self.create_calculate_tool()
+            weather_tool = create_weather_tool()
+            calc_tool = create_calculate_tool()
 
-            user_message = self.create_user_message('I need weather and calculation help')
+            user_message = create_user_message('I need weather and calculation help')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = client.converse_alpha2(
@@ -364,8 +370,8 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
     def test_tool_choice_none(self):
         """Test tool choice set to 'none'."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = self.create_weather_tool()
-            user_message = self.create_user_message('What is the weather today?')
+            weather_tool = create_weather_tool()
+            user_message = create_user_message('What is the weather today?')
 
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
@@ -382,10 +388,10 @@ class ConversationToolCallingSyncTests(ConversationTestBase, unittest.TestCase):
     def test_tool_choice_specific(self):
         """Test tool choice set to specific tool name."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = self.create_weather_tool()
-            calc_tool = self.create_calculate_tool()
+            weather_tool = create_weather_tool()
+            calc_tool = create_calculate_tool()
 
-            user_message = self.create_user_message('What is the weather like?')
+            user_message = create_user_message('What is the weather like?')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = client.converse_alpha2(
@@ -409,10 +415,10 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
         """Test multi-turn conversation with different message types."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
             # Create a conversation with system, user, and assistant messages
-            system_message = self.create_system_message('You are a helpful AI assistant.')
-            user_message1 = self.create_user_message('Hello, how are you?')
-            assistant_message = self.create_assistant_message('I am doing well, thank you!')
-            user_message2 = self.create_user_message('What can you help me with?')
+            system_message = create_system_message('You are a helpful AI assistant.')
+            user_message1 = create_user_message('Hello, how are you?')
+            assistant_message = create_assistant_message('I am doing well, thank you!')
+            user_message2 = create_user_message('What can you help me with?')
 
             input_alpha2 = ConversationInputAlpha2(
                 messages=[system_message, user_message1, assistant_message, user_message2]
@@ -434,8 +440,8 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
         """Test complete tool calling workflow."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
             # Step 1: User asks for weather
-            weather_tool = self.create_weather_tool()
-            user_message = self.create_user_message('What is the weather in Tokyo?')
+            weather_tool = create_weather_tool()
+            user_message = create_user_message('What is the weather in Tokyo?')
 
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
@@ -450,7 +456,7 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
             tool_call = choice.message.tool_calls[0]
 
             # Step 2: Send tool result back
-            tool_result_message = self.create_tool_message(
+            tool_result_message = create_tool_message(
                 tool_id=tool_call.id,
                 name='get_weather',
                 content='{"temperature": 18, "condition": "cloudy", "humidity": 75}',
@@ -471,7 +477,7 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
             context_id = 'multi-turn-test-123'
 
             # First turn
-            user_message1 = self.create_user_message('My name is Alice.')
+            user_message1 = create_user_message('My name is Alice.')
             input1 = ConversationInputAlpha2(messages=[user_message1])
 
             response1 = client.converse_alpha2(
@@ -481,7 +487,7 @@ class ConversationMultiTurnSyncTests(ConversationTestBase, unittest.TestCase):
             self.assertEqual(response1.context_id, context_id)
 
             # Second turn with same context
-            user_message2 = self.create_user_message('What is my name?')
+            user_message2 = create_user_message('What is my name?')
             input2 = ConversationInputAlpha2(messages=[user_message2])
 
             response2 = client.converse_alpha2(
@@ -512,7 +518,7 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
     async def test_basic_async_conversation_alpha2(self):
         """Test basic async Alpha2 conversation."""
         async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = self.create_user_message('Hello async Alpha2!')
+            user_message = create_user_message('Hello async Alpha2!')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = await client.converse_alpha2(name='test-llm', inputs=[input_alpha2])
@@ -524,8 +530,8 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
     async def test_async_tool_calling(self):
         """Test async tool calling."""
         async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            weather_tool = self.create_weather_tool()
-            user_message = self.create_user_message('Async weather request for London')
+            weather_tool = create_weather_tool()
+            user_message = create_user_message('Async weather request for London')
 
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
@@ -551,7 +557,7 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
                 return response.outputs[0].result
 
             async def run_alpha2_conversation(message, session_id):
-                user_message = self.create_user_message(message)
+                user_message = create_user_message(message)
                 input_alpha2 = ConversationInputAlpha2(messages=[user_message])
                 response = await client.converse_alpha2(
                     name='test-llm', inputs=[input_alpha2], context_id=session_id
@@ -577,8 +583,8 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
         """Test async multi-turn conversation with tool calling."""
         async with AsyncDaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
             # First turn: user asks for weather
-            weather_tool = self.create_weather_tool()
-            user_message = self.create_user_message('Async weather for Paris')
+            weather_tool = create_weather_tool()
+            user_message = create_user_message('Async weather for Paris')
             input1 = ConversationInputAlpha2(messages=[user_message])
 
             response1 = await client.converse_alpha2(
@@ -593,7 +599,7 @@ class ConversationAsyncTests(ConversationTestBase, unittest.IsolatedAsyncioTestC
             tool_call = response1.outputs[0].choices[0].message.tool_calls[0]
 
             # Second turn: provide tool result
-            tool_result_message = self.create_tool_message(
+            tool_result_message = create_tool_message(
                 tool_id=tool_call.id,
                 name='get_weather',
                 content='{"temperature": 22, "condition": "sunny"}',
@@ -627,7 +633,7 @@ class ConversationParameterTests(ConversationTestBase, unittest.TestCase):
     def test_parameter_edge_cases(self):
         """Test parameter conversion with edge cases."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = self.create_user_message('Edge cases test')
+            user_message = create_user_message('Edge cases test')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             response = client.converse_alpha2(
@@ -649,7 +655,7 @@ class ConversationParameterTests(ConversationTestBase, unittest.TestCase):
     def test_realistic_provider_parameters(self):
         """Test with realistic LLM provider parameters."""
         with DaprClient(f'{self.scheme}localhost:{self.grpc_port}') as client:
-            user_message = self.create_user_message('Provider parameters test')
+            user_message = create_user_message('Provider parameters test')
             input_alpha2 = ConversationInputAlpha2(messages=[user_message])
 
             # OpenAI-style parameters
@@ -716,7 +722,7 @@ class ConversationValidationTests(ConversationTestBase, unittest.TestCase):
             alpha1_response = client.converse_alpha1(name='test-llm', inputs=alpha1_inputs)
 
             # Alpha2 call
-            user_message = self.create_user_message('Alpha2 call')
+            user_message = create_user_message('Alpha2 call')
             alpha2_input = ConversationInputAlpha2(messages=[user_message])
             alpha2_response = client.converse_alpha2(name='test-llm', inputs=[alpha2_input])
 

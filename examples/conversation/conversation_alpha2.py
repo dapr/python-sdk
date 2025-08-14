@@ -11,11 +11,11 @@
 # limitations under the License.
 # ------------------------------------------------------------
 from dapr.clients import DaprClient
-from dapr.clients.grpc._request import (
-    ConversationInputAlpha2,
-    ConversationMessage,
+from dapr.clients.grpc._conversation import (
     ConversationMessageContent,
     ConversationMessageOfUser,
+    ConversationMessage,
+    ConversationInputAlpha2,
 )
 
 with DaprClient() as d:
@@ -50,5 +50,6 @@ with DaprClient() as d:
         name='echo', inputs=inputs, temperature=0.7, context_id='chat-123', metadata=metadata
     )
 
+    print('Result: ', end='')
     for output in response.outputs:
-        print(f'Result: {output.choices[0].message.content}')
+        print(output.choices[0].message.content)
