@@ -70,13 +70,7 @@ from dapr.clients.grpc._request import (
     EncryptRequestIterator,
     DecryptRequestIterator,
 )
-from dapr.clients.grpc.conversation import (
-    ConversationInput,
-    ConversationToolCallsOfFunction,
-    ConversationToolCalls,
-    ConversationInputAlpha2,
-    ConversationTools,
-)
+from dapr.clients.grpc import conversation
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
     BindingResponse,
@@ -101,12 +95,6 @@ from dapr.clients.grpc._response import (
     EncryptResponse,
     DecryptResponse,
     TopicEventResponse,
-    ConversationResponse,
-    ConversationResult,
-    ConversationResponseAlpha2,
-    ConversationResultAlpha2,
-    ConversationResultAlpha2Choices,
-    ConversationResultAlpha2Message,
 )
 
 
@@ -1739,14 +1727,14 @@ class DaprGrpcClient:
     def converse_alpha1(
         self,
         name: str,
-        inputs: List[ConversationInput],
+        inputs: List[conversation.ConversationInput],
         *,
         context_id: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
-    ) -> ConversationResponse:
+    ) -> conversation.ConversationResponse:
         """Invoke an LLM using the conversation API (Alpha).
 
         Args:
@@ -1787,27 +1775,27 @@ class DaprGrpcClient:
             response, call = self.retry_policy.run_rpc(self._stub.ConverseAlpha1.with_call, request)
 
             outputs = [
-                ConversationResult(result=output.result, parameters=output.parameters)
+                conversation.ConversationResult(result=output.result, parameters=output.parameters)
                 for output in response.outputs
             ]
 
-            return ConversationResponse(context_id=response.contextID, outputs=outputs)
+            return conversation.ConversationResponse(context_id=response.contextID, outputs=outputs)
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
     def converse_alpha2(
         self,
         name: str,
-        inputs: List[ConversationInputAlpha2],
+        inputs: List[conversation.ConversationInputAlpha2],
         *,
         context_id: Optional[str] = None,
         parameters: Optional[Dict[str, Union[GrpcAny, Any]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
-        tools: Optional[List[ConversationTools]] = None,
+        tools: Optional[List[conversation.ConversationTools]] = None,
         tool_choice: Optional[str] = None,
-    ) -> ConversationResponseAlpha2:
+    ) -> conversation.ConversationResponseAlpha2:
         """Invoke an LLM using the conversation API (Alpha2) with tool calling support.
 
         Args:
@@ -1888,30 +1876,30 @@ class DaprGrpcClient:
                     # Convert tool calls from response
                     tool_calls = []
                     for tool_call in choice.message.tool_calls:
-                        function_call = ConversationToolCallsOfFunction(
+                        function_call = conversation.ConversationToolCallsOfFunction(
                             name=tool_call.function.name, arguments=tool_call.function.arguments
                         )
                         if not tool_call.id:
                             tool_call.id = _generate_unique_tool_call_id()
                         tool_calls.append(
-                            ConversationToolCalls(id=tool_call.id, function=function_call)
+                            conversation.ConversationToolCalls(id=tool_call.id, function=function_call)
                         )
 
-                    result_message = ConversationResultAlpha2Message(
+                    result_message = conversation.ConversationResultAlpha2Message(
                         content=choice.message.content, tool_calls=tool_calls
                     )
 
                     choices.append(
-                        ConversationResultAlpha2Choices(
+                        conversation.ConversationResultAlpha2Choices(
                             finish_reason=choice.finish_reason,
                             index=choice.index,
                             message=result_message,
                         )
                     )
 
-                outputs.append(ConversationResultAlpha2(choices=choices))
+                outputs.append(conversation.ConversationResultAlpha2(choices=choices))
 
-            return ConversationResponseAlpha2(context_id=response.context_id, outputs=outputs)
+            return conversation.ConversationResponseAlpha2(context_id=response.context_id, outputs=outputs)
         except RpcError as err:
             raise DaprGrpcError(err) from err
 

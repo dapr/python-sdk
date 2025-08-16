@@ -18,22 +18,8 @@ The Conversation API supports real LLM providers including:
    ```bash
    pip install python-dotenv  # For .env file support
    ```
-
-2. **Create .env file:**
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Add your API keys to .env:**
-   ```bash
-   OPENAI_API_KEY=your_openai_key_here
-   ANTHROPIC_API_KEY=your_anthropic_key_here
-   MISTRAL_API_KEY=your_mistral_key_here
-   DEEPSEEK_API_KEY=your_deepseek_key_here
-   GOOGLE_API_KEY=your_google_ai_key_here
-   ```
-   
-4. **Run the simple conversation on the Alpha V1 version (dapr 1.15)**
+ 
+2. **Run the simple conversation on the Alpha V1 version (dapr 1.15)**
     <!-- STEP
     name: Run Conversation Alpha V1
     expected_stdout_lines:
@@ -52,7 +38,7 @@ The Conversation API supports real LLM providers including:
     
     <!-- END_STEP -->
 
-5. **Run the simple conversation on the Alpha V2 version (dapr 1.16)**
+3. **Run the simple conversation on the Alpha V2 version (dapr 1.16)**
     <!-- STEP
     name: Run Conversation Alpha V2
     expected_stdout_lines:
@@ -71,11 +57,39 @@ The Conversation API supports real LLM providers including:
     
     <!-- END_STEP -->
 
-6. **Run the comprehensive example with real LLM providers (This requires LLMAPI Keys)**
+4. **Run the comprehensive example with real LLM providers (This requires LLMAPI Keys)**
+    
+    To run the comprehensive example with real LLM providers, you need to have at least one of the following LLM providers API keys:
 
-   ```bash
-   python examples/conversation/real_llm_providers_example.py
-   ```
+    - OpenAI
+    - Anthropic
+    - Mistral
+    - Deepseek
+    - Google AI
+
+    **Create .env file:**
+    
+    We use the python-dotenv package to load environment variables from a .env file, so we need to create one first.
+    If you don't have an .env file, you can copy the .env.example file and rename it to .env:
+     ```bash
+     cp .env.example .env
+     ```
+
+    **Add your API keys to .env:**
+    
+    Open the .env file and add your API keys for the providers you want to use. For example:
+     ```bash
+     OPENAI_API_KEY=your_openai_key_here
+     ANTHROPIC_API_KEY=your_anthropic_key_here
+     MISTRAL_API_KEY=your_mistral_key_here
+     DEEPSEEK_API_KEY=your_deepseek_key_here
+     GOOGLE_API_KEY=your_google_ai_key_here
+     ```
+    Run the example:
+
+    ```bash
+    python examples/conversation/real_llm_providers_example.py
+    ```
 
    Depending on what API key you have, this will run and print the result of each test function in the example file.
 
@@ -339,14 +353,13 @@ Alpha2 excels at multi-turn conversations with proper context accumulation:
 
 ```python
 from dapr.clients.grpc import conversation
-from dapr.clients.grpc._response import ConversationResultAlpha2
 
-conversation_history: list[conversation.ConversationMessage] = []
+conversation_history: list[conversation.ConversationMessage] = [
+    conversation.create_user_message("What's the weather in SF?")]
 
-# Turn 1: User asks question
-conversation_history.append(conversation.create_user_message("What's the weather in SF?"))
+# Turn 1: User asks a question
 
-response1: ConversationResultAlpha2 = client.converse_alpha2(
+response1: conversation.ConversationResponseAlpha2 = client.converse_alpha2(
     name="openai",
     inputs=[conversation.ConversationInputAlpha2(messages=conversation_history)],
     tools=conversation.get_registered_tools(),
@@ -389,41 +402,47 @@ That will print the conversation history with the following output (might vary d
 ```
 Full conversation history trace:
 
-  client[user]      ---------> LLM[assistant]:
+  client[user]   --------------> LLM[assistant]:
     content[0]: What's the weather like in San Francisco? Use one of the tools available.
 
-  client            <-------- LLM[assistant]:
-    tool_calls: 1
-      [0] id=call_23YKsQyzRhQxcNjjRNRhMmze function=get_weather({"location":"San Francisco"})
+  client         <------------- LLM[assistant]:
+    content[0]: I'll check the current weather in San Francisco for you.
 
-  client[tool]      --------> LLM[assistant]:
-    tool_id: call_23YKsQyzRhQxcNjjRNRhMmze
+  client         <------------- LLM[assistant]:
+    tool_calls: 1
+      [0] id=toolu_01TJSATPrtE4uL9GcpJJDKEY function=get_weather({"location":"San Francisco"})
+
+  client[tool]   -------------> LLM[assistant]:
+    tool_id: toolu_01TJSATPrtE4uL9GcpJJDKEY
     name: get_weather
     content[0]: The weather in San Francisco is sunny with a temperature of 72°F.
 
-  client            <-------- LLM[assistant]:
-    content[0]: The weather in San Francisco is sunny with a temperature of 72°F.
+  client         <------------- LLM[assistant]:
+    content[0]: The weather in San Francisco is currently sunny with a temperature of 72°F. It's a beautiful day there!
 
-  client[user]      ---------> LLM[assistant]:
+  client[user]   --------------> LLM[assistant]:
     content[0]: Should I bring an umbrella? Also, what about the weather in New York?
 
-  client            <-------- LLM[assistant]:
-    tool_calls: 2
-      [0] id=call_eWXkLbxKOAZRPoaAK0siYwHx function=get_weather({"location": "New York"})
-      [1] id=call_CnKVzPmbCUEPZqipoemMF5jr function=get_weather({"location": "San Francisco"})
+  client         <------------- LLM[assistant]:
+    content[0]: Let me check the weather in New York for you to help answer both questions.
 
-  client[tool]      --------> LLM[assistant]:
-    tool_id: call_eWXkLbxKOAZRPoaAK0siYwHx
+  client         <------------- LLM[assistant]:
+    tool_calls: 1
+      [0] id=toolu_01DqngeKSXhgqbn128NC4J1o function=get_weather({"location":"New York"})
+
+  client[tool]   -------------> LLM[assistant]:
+    tool_id: toolu_01DqngeKSXhgqbn128NC4J1o
     name: get_weather
     content[0]: The weather in New York is sunny with a temperature of 72°F.
 
-  client[tool]      --------> LLM[assistant]:
-    tool_id: call_CnKVzPmbCUEPZqipoemMF5jr
-    name: get_weather
-    content[0]: The weather in San Francisco is sunny with a temperature of 72°F.
-
-  client            <-------- LLM[assistant]:
-    content[0]: The weather in both San Francisco and New York is sunny with a temperature of 72°F. Since it's sunny in both locations, you likely won't need to bring an umbrella.
+  client         <------------- LLM[assistant]:
+    content[0]: Based on the weather information:
+                
+                **San Francisco**: Sunny, 72°F - No need for an umbrella there!
+                
+                **New York**: Also sunny, 72°F - No umbrella needed here either.
+                
+                Both cities are having beautiful, sunny weather today, so you shouldn't need an umbrella for either location. Perfect weather for being outdoors!
 ```
 
 
@@ -539,7 +558,7 @@ dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resour
    - Ensure LLM provider supports function calling
 
 3. **Multi-turn context issues**
-   - Use `convert_llm_response_to_conversation_message()` helper function
+   - Use `to_assistant_message()` helper function
    - Maintain conversation history across turns
    - Include all previous messages in subsequent requests
 

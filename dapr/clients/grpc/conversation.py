@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from __future__ import annotations
 
 import asyncio
 import inspect
@@ -19,10 +20,16 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, Optional, Protocol, Sequence, Union, cast
 
+from google.protobuf.any_pb2 import Any as GrpcAny
+
 from dapr.clients.grpc import _conversation_helpers as conv_helpers
 from dapr.proto import api_v1
 
 Params = Union[Mapping[str, Any], Sequence[Any], None]
+
+# ------------------------------------------------------------------------------------------------
+# Request Classes
+# ------------------------------------------------------------------------------------------------
 
 
 @dataclass
@@ -126,11 +133,7 @@ class ConversationMessageOfAssistant:
         if self.name:
             print(f'{base}name: {self.name}')
         for i, c in enumerate(self.content):
-            lines = c.text.splitlines() if c.text is not None else ['']
-            first = lines[0] if lines else ''
-            print(f'{base}content[{i}]: {first}')
-            for extra in lines[1:]:
-                print(extra)
+            print(_indent_lines(f'content[{i}]', c.text, indent))
         if self.tool_calls:
             print(f'{base}tool_calls: {len(self.tool_calls)}')
             for idx, tc in enumerate(self.tool_calls):
@@ -176,19 +179,19 @@ class ConversationMessage:
         print()
         """Print the conversation message with indentation and direction arrows."""
         if self.of_developer:
-            print(f'{" " * indent}client[developer] ---------> LLM[assistant]:')
+            print(f'{" " * indent}client[devel]  --------------> LLM[assistant]:')
             self.of_developer.trace_print(indent + 2)
         if self.of_system:
-            print(f'{" " * indent}client[system]    ---------> LLM[assistant]:')
+            print(f'{" " * indent}client[system] --------------> LLM[assistant]:')
             self.of_system.trace_print(indent + 2)
         if self.of_user:
-            print(f'{" " * indent}client[user]      ---------> LLM[assistant]:')
+            print(f'{" " * indent}client[user]   --------------> LLM[assistant]:')
             self.of_user.trace_print(indent + 2)
         if self.of_assistant:
-            print(f'{" " * indent}client            <-------- LLM[assistant]:')
+            print(f'{" " * indent}client         <------------- LLM[assistant]:')
             self.of_assistant.trace_print(indent + 2)
         if self.of_tool:
-            print(f'{" " * indent}client[tool]      --------> LLM[assistant]:')
+            print(f'{" " * indent}client[tool]   -------------> LLM[assistant]:')
             self.of_tool.trace_print(indent + 2)
 
     def to_proto(self) -> api_v1.ConversationMessage:
@@ -296,6 +299,91 @@ class ConversationToolsFunction:
             register_tool(c.name, ConversationTools(function=c, backend=FunctionBackend(func)))
         return c
 
+# ------------------------------------------------------------------------------------------------
+# Response Classes
+# ------------------------------------------------------------------------------------------------
+
+
+@dataclass
+class ConversationResult:
+    """One of the outputs to a request to the conversation API."""
+
+    result: str
+    parameters: Dict[str, GrpcAny] = field(default_factory=dict)
+
+
+@dataclass
+class ConversationResultAlpha2Message:
+    """Message content in one conversation result choice."""
+
+    content: str
+    tool_calls: List[ConversationToolCalls] = field(default_factory=list)
+
+
+@dataclass
+class ConversationResultAlpha2Choices:
+    """Choice in one Alpha2 conversation result output."""
+
+    finish_reason: str
+    index: int
+    message: ConversationResultAlpha2Message
+
+
+@dataclass
+class ConversationResultAlpha2:
+    """One of the outputs in Alpha2 response from conversation input."""
+
+    choices: List[ConversationResultAlpha2Choices] = field(default_factory=list)
+
+
+@dataclass
+class ConversationResponse:
+    """Response to a request from the conversation API."""
+
+    context_id: Optional[str]
+    outputs: List[ConversationResult]
+
+
+@dataclass
+class ConversationResponseAlpha2:
+    """Alpha2 response to a request from the conversation API."""
+
+    context_id: Optional[str]
+    outputs: List[ConversationResultAlpha2]
+
+    def to_assistant_messages(self) -> List[ConversationMessage]:
+        """Helper to convert to Assistant messages and makes it easy to use in multi-turn conversations."""
+
+        def convert_llm_response_to_conversation_input(
+                result_message: ConversationResultAlpha2Message,
+        ) -> ConversationMessage:
+            """Convert ConversationResultMessage (from LLM response) to ConversationMessage."""
+
+            # Convert content string to ConversationMessageContent list
+            content = []
+            if result_message.content:
+                content = [ConversationMessageContent(text=(result_message.content))]
+
+            # Convert tool_calls if present (they're already the right type)
+            tool_calls = result_message.tool_calls or []
+
+            # Create an assistant message (since LLM responses are always assistant messages)
+            return ConversationMessage(
+                of_assistant=ConversationMessageOfAssistant(
+                    content=content, tool_calls=tool_calls
+                )
+            )
+
+        """Convert the outputs to a list of ConversationInput."""
+        assistant_messages = []
+
+        for output in self.outputs or []:
+            for choice in output.choices or []:
+                # Convert and collect all assistant messages
+                assistant_message = convert_llm_response_to_conversation_input(choice.message)
+                assistant_messages.append(assistant_message)
+
+        return assistant_messages
 
 # ------------------------------------------------------------------------------------------------
 # Tool Helpers

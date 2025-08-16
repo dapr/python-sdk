@@ -85,12 +85,6 @@ from dapr.clients.grpc import conversation
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
     BindingResponse,
-    ConversationResponse,
-    ConversationResult,
-    ConversationResponseAlpha2,
-    ConversationResultAlpha2,
-    ConversationResultAlpha2Choices,
-    ConversationResultAlpha2Message,
     DaprResponse,
     GetSecretResponse,
     GetBulkSecretResponse,
@@ -111,6 +105,8 @@ from dapr.clients.grpc._response import (
     StartWorkflowResponse,
     TopicEventResponse,
 )
+from dapr.clients.grpc.conversation import ConversationResult, ConversationResultAlpha2Message, \
+    ConversationResultAlpha2Choices, ConversationResultAlpha2, ConversationResponse, ConversationResponseAlpha2
 
 
 class DaprGrpcClientAsync:

@@ -52,9 +52,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import yaml
 
-if TYPE_CHECKING:
-    from dapr.clients.grpc._response import ConversationResultAlpha2Message
-
 # Add the parent directory to the path so we can import local dapr sdk
 # uncomment if running from development version
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -248,7 +245,7 @@ def execute_weather_tool(location: str, unit: str = 'fahrenheit') -> str:
 
 
 def convert_llm_response_to_conversation_input(
-    result_message: 'ConversationResultAlpha2Message',
+    result_message: conversation.ConversationResultAlpha2Message,
 ) -> conversation.ConversationMessage:
     """Convert ConversationResultMessage (from LLM response) to ConversationMessage (for conversation input).
 
@@ -262,15 +259,18 @@ def convert_llm_response_to_conversation_input(
         ConversationMessage suitable for input to next conversation turn
 
     Example:
+        >>> import dapr.clients.grpc.conversation
+        >>> client = DaprClient()
         >>> response = client.converse_alpha2(name="openai", inputs=[input_alpha2], tools=[tool])
         >>> choice = response.outputs[0].choices[0]
         >>>
         >>> # Convert LLM response to conversation message
+        >>> conversation_history = []
         >>> assistant_message = convert_llm_response_to_conversation_input(choice.message)
         >>> conversation_history.append(assistant_message)
         >>>
         >>> # Use in next turn
-        >>> next_input = ConversationInputAlpha2(messages=conversation_history)
+        >>> next_input = conversation.ConversationInputAlpha2(messages=conversation_history)
         >>> next_response = client.converse_alpha2(name="openai", inputs=[next_input])
     """
     # Convert content string to ConversationMessageContent list
@@ -840,7 +840,7 @@ class RealLLMProviderTester:
                     },
                 )
 
-                def append_response_to_history(response: 'ConversationResultAlpha2Message'):
+                def append_response_to_history(response: conversation.ConversationResponseAlpha2):
                     """Helper to append response to history and execute tool calls."""
                     for msg in response.to_assistant_messages():
                         conversation_history.append(msg)
