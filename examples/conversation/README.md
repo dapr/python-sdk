@@ -57,9 +57,9 @@ The Conversation API supports real LLM providers including:
     
     <!-- END_STEP -->
 
-4. **Run the comprehensive example with real LLM providers (This requires LLMAPI Keys)**
+4. **Run the comprehensive example with real LLM providers (This requires LLM API Keys)**
     
-    To run the comprehensive example with real LLM providers, you need to have at least one of the following LLM providers API keys:
+    You need to have at least one of the following LLM providers API keys:
 
     - OpenAI
     - Anthropic
