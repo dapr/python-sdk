@@ -28,7 +28,7 @@ from dapr.proto.runtime.v1.appcallback_pb2 import (
     JobEventRequest,
 )
 from dapr.proto.common.v1.common_pb2 import InvokeRequest
-from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
+from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest, JobEvent
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
 
