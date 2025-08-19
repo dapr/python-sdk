@@ -502,15 +502,6 @@ def function_to_json_schema(
     # Extract parameter descriptions from docstring
     param_descriptions = _extract_docstring_args(func)
 
-    # Get function description
-    if description is None:
-        docstring = inspect.getdoc(func)
-        if docstring:
-            # Use first line of docstring as description
-            description = docstring.split('\n')[0].strip()
-        else:
-            description = f'Function {func.__name__}'
-
     # Build JSON schema
     schema: Dict[str, Any] = {'type': 'object', 'properties': {}, 'required': []}
 

@@ -1882,7 +1882,9 @@ class DaprGrpcClient:
                         if not tool_call.id:
                             tool_call.id = _generate_unique_tool_call_id()
                         tool_calls.append(
-                            conversation.ConversationToolCalls(id=tool_call.id, function=function_call)
+                            conversation.ConversationToolCalls(
+                                id=tool_call.id, function=function_call
+                            )
                         )
 
                     result_message = conversation.ConversationResultAlpha2Message(
@@ -1899,7 +1901,9 @@ class DaprGrpcClient:
 
                 outputs.append(conversation.ConversationResultAlpha2(choices=choices))
 
-            return conversation.ConversationResponseAlpha2(context_id=response.context_id, outputs=outputs)
+            return conversation.ConversationResponseAlpha2(
+                context_id=response.context_id, outputs=outputs
+            )
         except RpcError as err:
             raise DaprGrpcError(err) from err
 

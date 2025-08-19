@@ -105,8 +105,14 @@ from dapr.clients.grpc._response import (
     StartWorkflowResponse,
     TopicEventResponse,
 )
-from dapr.clients.grpc.conversation import ConversationResult, ConversationResultAlpha2Message, \
-    ConversationResultAlpha2Choices, ConversationResultAlpha2, ConversationResponse, ConversationResponseAlpha2
+from dapr.clients.grpc.conversation import (
+    ConversationResult,
+    ConversationResultAlpha2Message,
+    ConversationResultAlpha2Choices,
+    ConversationResultAlpha2,
+    ConversationResponse,
+    ConversationResponseAlpha2,
+)
 
 
 class DaprGrpcClientAsync:

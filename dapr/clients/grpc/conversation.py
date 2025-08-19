@@ -299,6 +299,7 @@ class ConversationToolsFunction:
             register_tool(c.name, ConversationTools(function=c, backend=FunctionBackend(func)))
         return c
 
+
 # ------------------------------------------------------------------------------------------------
 # Response Classes
 # ------------------------------------------------------------------------------------------------
@@ -355,7 +356,7 @@ class ConversationResponseAlpha2:
         """Helper to convert to Assistant messages and makes it easy to use in multi-turn conversations."""
 
         def convert_llm_response_to_conversation_input(
-                result_message: ConversationResultAlpha2Message,
+            result_message: ConversationResultAlpha2Message,
         ) -> ConversationMessage:
             """Convert ConversationResultMessage (from LLM response) to ConversationMessage."""
 
@@ -369,9 +370,7 @@ class ConversationResponseAlpha2:
 
             # Create an assistant message (since LLM responses are always assistant messages)
             return ConversationMessage(
-                of_assistant=ConversationMessageOfAssistant(
-                    content=content, tool_calls=tool_calls
-                )
+                of_assistant=ConversationMessageOfAssistant(content=content, tool_calls=tool_calls)
             )
 
         """Convert the outputs to a list of ConversationInput."""
@@ -384,6 +383,7 @@ class ConversationResponseAlpha2:
                 assistant_messages.append(assistant_message)
 
         return assistant_messages
+
 
 # ------------------------------------------------------------------------------------------------
 # Tool Helpers
@@ -481,6 +481,7 @@ class ConversationTools:
     backend: Optional[ToolBackend] = None
 
     def invoke(self, params: Params = None) -> Any:
+        """execute the tool with params"""
         if not self.backend:
             raise conv_helpers.ToolExecutionError('Tool backend not set')
         return self.backend.invoke(self.function, params)
