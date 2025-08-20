@@ -15,20 +15,27 @@ limitations under the License.
 
 import inspect
 from functools import wraps
-from typing import Optional, TypeVar
+import asyncio
+from typing import Optional, TypeVar, Awaitable, Callable, Any
 
-from durabletask import worker, task
+try:
+    from typing import Literal  # py39+
+except ImportError:  # pragma: no cover
+    Literal = str  # type: ignore
 
-from dapr.ext.workflow.workflow_context import Workflow
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
-from dapr.ext.workflow.util import getAddress
+from durabletask import task, worker
 
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
-from dapr.ext.workflow.logger import LoggerOptions, Logger
+from dapr.ext.workflow.async_context import AsyncWorkflowContext
+from dapr.ext.workflow.async_driver import CoroutineOrchestratorRunner
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from dapr.ext.workflow.logger import Logger, LoggerOptions
+from dapr.ext.workflow.util import getAddress
+from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
+from dapr.ext.workflow.workflow_context import Workflow
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -65,6 +72,10 @@ class WorkflowRuntime:
         )
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
+        # Seamlessly support async workflows using the existing API
+        if inspect.iscoroutinefunction(fn):
+            return self.register_async_workflow(fn, name=name)
+
         self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
 
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
@@ -100,6 +111,11 @@ class WorkflowRuntime:
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
             wfActivityContext = WorkflowActivityContext(ctx)
+            # Seamless support for async activities
+            if inspect.iscoroutinefunction(fn):
+                if inp is None:
+                    return asyncio.run(fn(wfActivityContext))
+                return asyncio.run(fn(wfActivityContext, inp))
             if inp is None:
                 return fn(wfActivityContext)
             return fn(wfActivityContext, inp)
@@ -129,6 +145,22 @@ class WorkflowRuntime:
         """Stops the listening for work items on a background thread."""
         self.__worker.stop()
 
+    def wait_for_ready(self, timeout: Optional[float] = None) -> None:
+        """Optionally block until the underlying worker is connected and ready.
+
+        If the durable task worker supports a readiness API, this will delegate to it. Otherwise it is a no-op.
+
+        Args:
+            timeout: Optional timeout in seconds.
+        """
+        if hasattr(self.__worker, 'wait_for_ready'):
+            try:
+                # type: ignore[attr-defined]
+                self.__worker.wait_for_ready(timeout=timeout)
+            except TypeError:
+                # Some implementations may not accept named arg
+                self.__worker.wait_for_ready(timeout)  # type: ignore[misc]
+
     def workflow(self, __fn: Workflow = None, *, name: Optional[str] = None):
         """Decorator to register a workflow function.
 
@@ -157,7 +189,11 @@ class WorkflowRuntime:
         """
 
         def wrapper(fn: Workflow):
-            self.register_workflow(fn, name=name)
+            # Auto-detect coroutine and delegate to async registration
+            if inspect.iscoroutinefunction(fn):
+                self.register_async_workflow(fn, name=name)
+            else:
+                self.register_workflow(fn, name=name)
 
             @wraps(fn)
             def innerfn():
@@ -173,6 +209,89 @@ class WorkflowRuntime:
         if __fn:
             # This case is true when the decorator is used without arguments
             # and the function to be decorated is passed as the first argument.
+            return wrapper(__fn)
+
+        return wrapper
+
+    # Async orchestrator registration (additive)
+    def register_async_workflow(
+        self,
+        fn: Callable[[AsyncWorkflowContext, Any], Awaitable[Any]],
+        *,
+        name: Optional[str] = None,
+        sandbox_mode: Literal['off', 'best_effort', 'strict'] = 'off',
+    ) -> None:
+        """Register an async workflow function.
+
+        The async workflow is wrapped by a coroutine-to-generator driver so it can be
+        executed by the Durable Task runtime alongside existing generator workflows.
+
+        Args:
+            fn: The async workflow function, taking ``AsyncWorkflowContext`` and optional input.
+            name: Optional alternate name for registration.
+            sandbox_mode: Scoped compatibility patching mode: "off" (default), "best_effort", or "strict".
+        """
+        self._logger.info(f"Registering ASYNC workflow '{fn.__name__}' with runtime")
+
+        if hasattr(fn, '_workflow_registered'):
+            alt_name = fn.__dict__['_dapr_alternate_name']
+            raise ValueError(f'Workflow {fn.__name__} already registered as {alt_name}')
+        if hasattr(fn, '_dapr_alternate_name'):
+            alt_name = fn._dapr_alternate_name
+            if name is not None:
+                m = f'Workflow {fn.__name__} already has an alternate name {alt_name}'
+                raise ValueError(m)
+        else:
+            fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
+
+        runner = CoroutineOrchestratorRunner(fn, sandbox_mode=sandbox_mode)
+
+        def generator_orchestrator(ctx: task.OrchestrationContext, inp: Optional[Any] = None):
+            async_ctx = AsyncWorkflowContext(DaprWorkflowContext(ctx, self._logger.get_options()))
+            gen = runner.to_generator(async_ctx, inp)
+            result = None
+            try:
+                while True:
+                    t = gen.send(result)
+                    result = yield t
+            except StopIteration as stop:
+                return stop.value
+
+        self.__worker._registry.add_named_orchestrator(
+            fn.__dict__['_dapr_alternate_name'], generator_orchestrator
+        )
+        fn.__dict__['_workflow_registered'] = True
+
+    def async_workflow(
+        self,
+        __fn: Callable[[AsyncWorkflowContext, Any], Awaitable[Any]] = None,
+        *,
+        name: Optional[str] = None,
+        sandbox_mode: Literal['off', 'best_effort', 'strict'] = 'off',
+    ):
+        """Decorator to register an async workflow function.
+
+        Usage:
+            @runtime.async_workflow(name="my_wf")
+            async def my_wf(ctx: AsyncWorkflowContext, input):
+                ...
+        """
+
+        def wrapper(fn: Callable[[AsyncWorkflowContext, Any], Awaitable[Any]]):
+            self.register_async_workflow(fn, name=name, sandbox_mode=sandbox_mode)
+
+            @wraps(fn)
+            def innerfn():
+                return fn
+
+            if hasattr(fn, '_dapr_alternate_name'):
+                innerfn.__dict__['_dapr_alternate_name'] = fn.__dict__['_dapr_alternate_name']
+            else:
+                innerfn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
+            innerfn.__signature__ = inspect.signature(fn)
+            return innerfn
+
+        if __fn:
             return wrapper(__fn)
 
         return wrapper
