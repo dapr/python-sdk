@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the specific language governing permissions and
 limitations under the License.
 """
+
 from dapr.ext.workflow import (
     AsyncWorkflowContext,
     DaprWorkflowClient,

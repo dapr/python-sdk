@@ -71,8 +71,11 @@ class CoroutineOrchestratorRunner:
 
         # Prime the coroutine
         try:
-            with sandbox_scope(async_ctx, self._sandbox_mode):
+            if self._sandbox_mode == "off":
                 awaited = coro.send(None)
+            else:
+                with sandbox_scope(async_ctx, self._sandbox_mode):
+                    awaited = coro.send(None)
         except StopIteration as stop:
             # Completed synchronously
             return stop.value  # type: ignore[misc]
@@ -89,14 +92,20 @@ class CoroutineOrchestratorRunner:
                 # Yield the task to the Durable Task runtime and wait to be resumed with its result
                 result = yield dapr_task
                 # Send the result back into the async coroutine
-                with sandbox_scope(async_ctx, self._sandbox_mode):
+                if self._sandbox_mode == "off":
                     awaited = coro.send(result)
+                else:
+                    with sandbox_scope(async_ctx, self._sandbox_mode):
+                        awaited = coro.send(result)
             except StopIteration as stop:
                 return stop.value
             except Exception as exc:  # Propagate failures into the coroutine
                 try:
-                    with sandbox_scope(async_ctx, self._sandbox_mode):
+                    if self._sandbox_mode == "off":
                         awaited = coro.throw(exc)
+                    else:
+                        with sandbox_scope(async_ctx, self._sandbox_mode):
+                            awaited = coro.throw(exc)
                 except StopIteration as stop:
                     return stop.value
             except BaseException as base_exc:
@@ -109,8 +118,11 @@ class CoroutineOrchestratorRunner:
                     is_cancel = False
                 if is_cancel:
                     try:
-                        with sandbox_scope(async_ctx, self._sandbox_mode):
+                        if self._sandbox_mode == "off":
                             awaited = coro.throw(base_exc)
+                        else:
+                            with sandbox_scope(async_ctx, self._sandbox_mode):
+                                awaited = coro.throw(base_exc)
                     except StopIteration as stop:
                         return stop.value
                     continue
