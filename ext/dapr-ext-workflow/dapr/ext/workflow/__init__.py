@@ -21,6 +21,19 @@ from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
+from dapr.ext.workflow.serializers import (
+    CanonicalSerializable,
+    GenericSerializer,
+    ActivityIOAdapter,
+    ensure_canonical_json,
+    register_serializer,
+    get_serializer,
+    register_activity_adapter,
+    get_activity_adapter,
+    use_activity_adapter,
+    serialize_activity_input,
+    serialize_activity_output,
+)
 
 __all__ = [
     'WorkflowRuntime',
@@ -34,4 +47,16 @@ __all__ = [
     'when_any',
     'alternate_name',
     'RetryPolicy',
+    # serializers
+    'CanonicalSerializable',
+    'GenericSerializer',
+    'ActivityIOAdapter',
+    'ensure_canonical_json',
+    'register_serializer',
+    'get_serializer',
+    'register_activity_adapter',
+    'get_activity_adapter',
+    'use_activity_adapter',
+    'serialize_activity_input',
+    'serialize_activity_output',
 ]
