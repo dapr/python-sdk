@@ -27,12 +27,14 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    Literal,
     get_args,
     get_origin,
     get_type_hints,
 )
 
 from dapr.clients.grpc.conversation import Params
+import os
 
 """
 Tool Calling Helpers for Dapr Conversation API.
@@ -43,6 +45,13 @@ convert typed Python functions to tools for the Conversation API.
 These makes it easy to create tools for the Conversation API without
 having to manually define the JSON schema for each tool.
 """
+
+# Configuration for handling large enums to avoid massive JSON schemas that can exceed LLM token limits
+_MAX_ENUM_ITEMS = int(os.getenv('DAPR_CONVERSATION_MAX_ENUM_ITEMS', '100'))
+_LARGE_ENUM_BEHAVIOR = os.getenv('DAPR_CONVERSATION_LARGE_ENUM_BEHAVIOR', 'string').lower()
+# Allowed behaviors: 'string' (default), 'error'
+if _LARGE_ENUM_BEHAVIOR not in {'string', 'error'}:
+    _LARGE_ENUM_BEHAVIOR = 'string'
 
 
 def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[str, Any]:
@@ -82,6 +91,55 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
             # This is a true Union, use anyOf
             return {'anyOf': [_python_type_to_json_schema(arg, field_name) for arg in args]}
 
+    # Handle Literal types -> map to enum
+    if origin is Literal:
+        # Normalize literal values (convert Enum members to their value)
+        literal_values: List[Any] = []
+        for val in args:
+            try:
+                from enum import Enum as _Enum
+
+                if isinstance(val, _Enum):
+                    literal_values.append(val.value)
+                else:
+                    literal_values.append(val)
+            except Exception:
+                literal_values.append(val)
+
+        # Determine JSON Schema primitive types for provided literals
+        def _json_primitive_type(v: Any) -> str:
+            if v is None:
+                return 'null'
+            if isinstance(v, bool):
+                return 'boolean'
+            if isinstance(v, int) and not isinstance(v, bool):
+                return 'integer'
+            if isinstance(v, float):
+                return 'number'
+            if isinstance(v, (bytes, bytearray)):
+                return 'string'
+            if isinstance(v, str):
+                return 'string'
+            # Fallback: let enum carry through without explicit type
+            return 'string'
+
+        types = {_json_primitive_type(v) for v in literal_values}
+        schema: Dict[str, Any] = {'enum': literal_values}
+        # If all non-null literals share same type, include it
+        non_null_types = {t for t in types if t != 'null'}
+        if len(non_null_types) == 1 and (len(types) == 1 or len(types) == 2 and 'null' in types):
+            only_type = next(iter(non_null_types)) if non_null_types else 'null'
+            if only_type == 'string' and any(
+                isinstance(v, (bytes, bytearray)) for v in literal_values
+            ):
+                schema['type'] = 'string'
+                # Note: bytes literals represented as raw bytes are unusual; keeping enum as-is.
+            else:
+                schema['type'] = only_type
+        elif types == {'null'}:
+            schema['type'] = 'null'
+        return schema
+
     # Handle List types
     if origin is list or python_type is list:
         if args:
@@ -118,7 +176,31 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
 
     # Handle Enum types
     if inspect.isclass(python_type) and issubclass(python_type, Enum):
-        return {'type': 'string', 'enum': [item.value for item in python_type]}
+        try:
+            members = list(python_type)
+        except Exception:
+            members = []
+        count = len(members)
+        # If enum is small enough, include full enum list (current behavior)
+        if count <= _MAX_ENUM_ITEMS:
+            return {'type': 'string', 'enum': [item.value for item in members]}
+        # Large enum handling
+        if _LARGE_ENUM_BEHAVIOR == 'error':
+            raise ValueError(
+                f"Enum '{getattr(python_type, '__name__', str(python_type))}' has {count} members, "
+                f"exceeding DAPR_CONVERSATION_MAX_ENUM_ITEMS={_MAX_ENUM_ITEMS}. "
+                f"Either reduce the enum size or set DAPR_CONVERSATION_LARGE_ENUM_BEHAVIOR=string to allow compact schema."
+            )
+        # Default behavior: compact schema as a string with helpful context and a few examples
+        example_values = [item.value for item in members[:5]] if members else []
+        desc = (
+            f"{getattr(python_type, '__name__', 'Enum')} (enum with {count} values). "
+            f"Provide a valid value. Schema compacted to avoid oversized enum listing."
+        )
+        schema: Dict[str, Any] = {'type': 'string', 'description': desc}
+        if example_values:
+            schema['examples'] = example_values
+        return schema
 
     # Handle Pydantic models (if available)
     if hasattr(python_type, 'model_json_schema'):
@@ -148,8 +230,64 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
 
         return dataclass_schema
 
-    # Fallback for unknown types
-    return {'type': 'string', 'description': f'Unknown type: {python_type}'}
+    # Handle plain classes (non-dataclass) using __init__ signature and annotations
+    if inspect.isclass(python_type):
+        try:
+            # Gather type hints from __init__ if available; fall back to class annotations
+            init = getattr(python_type, '__init__', None)
+            init_hints = get_type_hints(init) if init else {}
+            class_hints = get_type_hints(python_type)
+        except Exception:
+            init_hints = {}
+            class_hints = {}
+
+        # Build properties from __init__ parameters (excluding self)
+        properties: Dict[str, Any] = {}
+        required: List[str] = []
+
+        try:
+            sig = inspect.signature(python_type)
+        except Exception:
+            sig = None  # type: ignore
+
+        if sig is not None:
+            for pname, param in sig.parameters.items():
+                if pname == 'self':
+                    continue
+                # Determine type for this parameter
+                ptype = init_hints.get(pname) or class_hints.get(pname) or Any
+                properties[pname] = _python_type_to_json_schema(ptype, pname)
+                # Required if no default provided and not VAR_KEYWORD/POSITIONAL
+                if param.default is inspect._empty and param.kind in (
+                    inspect.Parameter.POSITIONAL_ONLY,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    inspect.Parameter.KEYWORD_ONLY,
+                ):
+                    required.append(pname)
+        else:
+            # Fall back to __slots__ if present
+            slots = getattr(python_type, '__slots__', None)
+            if isinstance(slots, (list, tuple)):
+                for pname in slots:
+                    ptype = class_hints.get(pname, Any)
+                    properties[pname] = _python_type_to_json_schema(ptype, pname)
+                    required.append(pname)
+
+        # If we found nothing, return a generic object
+        if not properties:
+            return {'type': 'object'}
+
+        schema: Dict[str, Any] = {'type': 'object', 'properties': properties}
+        if required:
+            schema['required'] = required
+        return schema
+
+    # Fallback for unknown/unsupported types
+    raise TypeError(
+        f"Unsupported type in JSON schema conversion for field '{field_name}': {python_type}. "
+        f"Please use supported typing annotations (e.g., str, int, float, bool, bytes, List[T], Dict[str, V], Union, Optional, Literal, Enum, dataclass, or plain classes)."
+        f"You can report this issue for future support of this type. You can always create the json schema manually."
+    )
 
 
 def _extract_docstring_args(func) -> Dict[str, str]:
@@ -534,6 +672,70 @@ def _generate_unique_tool_call_id():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=9))
 
 
+def stringify_tool_output(value: Any) -> str:
+    """Convert arbitrary tool return values into a serializable string.
+
+    Rules:
+    - If value is already a string, return as-is.
+    - For bytes/bytearray, return a base64-encoded string with 'base64:' prefix (not JSON).
+    - Otherwise, attempt to JSON-serialize the value and return the JSON string.
+      Uses a conservative default encoder that supports only:
+        * Enum -> enum.value (fallback to name)
+        * dataclass -> asdict
+      If JSON serialization still fails, fallback to str(value). If that fails, return '<unserializable>'.
+    """
+    import json as _json
+    import base64 as _b64
+    from dataclasses import asdict as _asdict
+
+    if isinstance(value, str):
+        return value
+
+    # bytes/bytearray -> base64 string (raw, not JSON-quoted)
+    if isinstance(value, (bytes, bytearray)):
+        try:
+            return 'base64:' + _b64.b64encode(bytes(value)).decode('ascii')
+        except Exception:
+            try:
+                return str(value)
+            except Exception:
+                return '<unserializable>'
+
+    def _default(o: Any):
+        # Enum handling
+        try:
+            from enum import Enum as _Enum
+            if isinstance(o, _Enum):
+                try:
+                    return o.value
+                except Exception:
+                    return getattr(o, 'name', str(o))
+        except Exception:
+            pass
+
+        # dataclass handling
+        try:
+            if is_dataclass(o):
+                return _asdict(o)
+        except Exception:
+            pass
+
+        # Do not attempt to auto-serialize arbitrary objects via __dict__ to avoid
+        # partially serialized structures. Let json raise and we will fallback to str(o).
+
+        # Fallback: cause JSON to fail for unsupported types
+        raise TypeError(f'Object of type {type(o).__name__} is not JSON serializable')
+
+    try:
+        return _json.dumps(value, default=_default, ensure_ascii=False)
+    except Exception:
+        try:
+            # Last resort: convert to string
+            return str(value)
+        except Exception:
+            return '<unserializable>'
+
+
 # --- Tool Function Executor Backend
 
 # --- Errors ----
@@ -553,6 +755,199 @@ class ToolExecutionError(ToolError):
 
 class ToolArgumentError(ToolError):
     ...
+
+
+def _coerce_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int,)):
+        return bool(value)
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in {'true', '1', 'yes', 'y', 'on'}:
+            return True
+        if v in {'false', '0', 'no', 'n', 'off'}:
+            return False
+    raise ValueError(f'Cannot coerce to bool: {value!r}')
+
+
+def _coerce_scalar(value: Any, expected_type: Any) -> Any:
+    # Basic scalar coercions
+    if expected_type is str:
+        return value if isinstance(value, str) else str(value)
+    if expected_type is int:
+        if isinstance(value, bool):  # avoid True->1 surprises
+            return int(value)
+        if isinstance(value, int):
+            return value
+        if isinstance(value, (float,)) and value.is_integer():
+            return int(value)
+        if isinstance(value, str):
+            return int(value.strip())
+        raise ValueError
+    if expected_type is float:
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            return float(value.strip())
+        raise ValueError
+    if expected_type is bool:
+        return _coerce_bool(value)
+    return value
+
+
+def _coerce_enum(value: Any, enum_type: Any) -> Any:
+    # Accept enum instance, name, or value
+    if isinstance(value, enum_type):
+        return value
+    try:
+        # match by value
+        for member in enum_type:
+            if member.value == value:
+                return member
+        if isinstance(value, str):
+            name = value.strip()
+            try:
+                return enum_type[name]
+            except Exception:
+                # try case-insensitive
+                for member in enum_type:
+                    if member.name.lower() == name.lower():
+                        return member
+    except Exception:
+        pass
+    raise ValueError(f'Cannot coerce {value!r} to {enum_type.__name__}')
+
+
+def _coerce_literal(value: Any, lit_args: List[Any]) -> Any:
+    # Try exact match first
+    if value in lit_args:
+        return value
+    # Try string-to-number coercions if literal set is homogeneous numeric
+    try_coerced = []
+    for target in lit_args:
+        try:
+            if isinstance(target, int) and not isinstance(target, bool) and isinstance(value, str):
+                try_coerced.append(int(value))
+            elif isinstance(target, float) and isinstance(value, str):
+                try_coerced.append(float(value))
+            else:
+                try_coerced.append(value)
+        except Exception:
+            try_coerced.append(value)
+    for coerced in try_coerced:
+        if coerced in lit_args:
+            return coerced
+    raise ValueError(f'{value!r} not in allowed literals {lit_args!r}')
+
+
+def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
+    origin = get_origin(expected_type)
+    args = get_args(expected_type)
+
+    # Optional[T] -> Union[T, None]
+    if origin is Union:
+        # try each option
+        last_err: Optional[Exception] = None
+        for opt in args:
+            if opt is type(None) and value is None:
+                return None
+            try:
+                return _coerce_and_validate(value, opt)
+            except Exception as e:
+                last_err = e
+                continue
+        raise ValueError(
+            str(last_err) if last_err else f'Cannot coerce {value!r} to {expected_type}'
+        )
+
+    # Literal
+    if origin is Literal:
+        return _coerce_literal(value, list(args))
+
+    # List[T]
+    if origin is list or expected_type is list:
+        item_type = args[0] if args else Any
+        if not isinstance(value, list):
+            raise ValueError(f'Expected list, got {type(value).__name__}')
+        return [_coerce_and_validate(v, item_type) for v in value]
+
+    # Dict[K, V]
+    if origin is dict or expected_type is dict:
+        key_t = args[0] if len(args) > 0 else Any
+        val_t = args[1] if len(args) > 1 else Any
+        if not isinstance(value, dict):
+            raise ValueError(f'Expected dict, got {type(value).__name__}')
+        coerced: Dict[Any, Any] = {}
+        for k, v in value.items():
+            ck = _coerce_and_validate(k, key_t)
+            cv = _coerce_and_validate(v, val_t)
+            coerced[ck] = cv
+        return coerced
+
+    # Enums
+    if inspect.isclass(expected_type) and issubclass(expected_type, Enum):
+        return _coerce_enum(value, expected_type)
+
+    # Dataclasses
+    if inspect.isclass(expected_type) and is_dataclass(expected_type):
+        if isinstance(value, expected_type) or value is None:
+            return value
+        raise ValueError(
+            f'Expected {expected_type.__name__} dataclass instance, got {type(value).__name__}'
+        )
+
+    # Plain classes (construct from dict using __init__ where possible)
+    if inspect.isclass(expected_type):
+        if isinstance(value, expected_type):
+            return value
+        if isinstance(value, dict):
+            try:
+                sig = inspect.signature(expected_type)
+            except Exception as e:
+                raise ValueError(f'Cannot inspect constructor for {expected_type.__name__}: {e}')
+
+            # type hints from __init__
+            try:
+                init_hints = get_type_hints(getattr(expected_type, '__init__', None))
+            except Exception:
+                init_hints = {}
+
+            kwargs: Dict[str, Any] = {}
+            missing: List[str] = []
+            for pname, param in sig.parameters.items():
+                if pname == 'self':
+                    continue
+                if pname in value:
+                    et = init_hints.get(pname, Any)
+                    kwargs[pname] = _coerce_and_validate(value[pname], et)
+                else:
+                    if param.default is inspect._empty and param.kind in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        inspect.Parameter.KEYWORD_ONLY,
+                    ):
+                        missing.append(pname)
+            if missing:
+                raise ValueError(
+                    f"Missing required constructor arg(s) for {expected_type.__name__}: {', '.join(missing)}"
+                )
+            try:
+                return expected_type(**kwargs)
+            except Exception as e:
+                raise ValueError(f'Failed constructing {expected_type.__name__} with {kwargs}: {e}')
+        # Not a dict or instance: fall through to isinstance check
+
+    # Basic primitives
+    try:
+        return _coerce_scalar(value, expected_type)
+    except Exception:
+        # Fallback to isinstance check
+        if expected_type is Any or isinstance(value, expected_type):
+            return value
+        raise ValueError(
+            f"Expected {getattr(expected_type, '__name__', str(expected_type))}, got {type(value).__name__}"
+        )
 
 
 def bind_params_to_func(fn: Callable[..., Any], params: Params):
@@ -599,4 +994,20 @@ def bind_params_to_func(fn: Callable[..., Any], params: Params):
         raise ToolArgumentError('params must be a mapping (kwargs), sequence (positional), or None')
 
     bound.apply_defaults()
+
+    # Coerce and validate according to type hints
+    try:
+        type_hints = get_type_hints(fn)
+    except Exception:
+        type_hints = {}
+    for name, value in list(bound.arguments.items()):
+        if name in type_hints:
+            expected = type_hints[name]
+            try:
+                bound.arguments[name] = _coerce_and_validate(value, expected)
+            except Exception as e:
+                raise ToolArgumentError(
+                    f"Invalid value for parameter '{name}': expected {getattr(get_origin(expected) or expected, '__name__', str(expected))}, got {type(value).__name__} ({value!r}). Details: {e}"
+                ) from e
+
     return bound

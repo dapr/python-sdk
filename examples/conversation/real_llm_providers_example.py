@@ -432,6 +432,7 @@ class RealLLMProviderTester:
                 response = client.converse_alpha2(
                     name=provider_id,
                     inputs=[input_alpha2],
+                    temperature=1,
                     parameters={
                         'temperature': 0.7,
                         'max_tokens': 100,
@@ -472,8 +473,8 @@ class RealLLMProviderTester:
                 response = client.converse_alpha2(
                     name=provider_id,
                     inputs=[input_alpha2],
+                    temperature=1,
                     parameters={
-                        'temperature': 0.5,
                         'max_tokens': 150,
                     },
                 )
@@ -510,8 +511,8 @@ class RealLLMProviderTester:
                     inputs=[input_alpha2],
                     tools=[weather_tool],
                     tool_choice='auto',
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,  # Lower temperature for more consistent tool calling
                         'max_tokens': 500,
                     },
                 )
@@ -584,9 +585,9 @@ class RealLLMProviderTester:
                     name=provider_id,
                     inputs=[input_alpha2],
                     tools=[weather_tool, calc_tool, time_tool, search_tool],
+                    temperature=1,
                     parameters={
                         # Raw Python values - automatically converted to GrpcAny
-                        'temperature': 0.8,  # float
                         'max_tokens': 200,  # int
                         'top_p': 1.0,  # float
                         'frequency_penalty': 0.0,  # float
@@ -636,8 +637,8 @@ class RealLLMProviderTester:
                     inputs=[input_alpha2_turn1],
                     tools=[weather_tool],  # Tools included in turn 1
                     tool_choice='auto',
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
@@ -706,8 +707,8 @@ class RealLLMProviderTester:
                         name=provider_id,
                         inputs=[input_alpha2_turn2],
                         tools=[weather_tool],  # Tools carried forward to turn 2
+                        temperature=1,
                         parameters={
-                            'temperature': 0.3,
                             'max_tokens': 500,
                         },
                     )
@@ -746,8 +747,8 @@ class RealLLMProviderTester:
                             inputs=[input_alpha2_turn3],
                             tools=[weather_tool],  # Tools still available in turn 3
                             tool_choice='auto',
+                            temperature=1,
                             parameters={
-                                'temperature': 0.3,
                                 'max_tokens': 500,
                             },
                         )
@@ -834,13 +835,15 @@ class RealLLMProviderTester:
                     inputs=[input_alpha2_turn1],
                     tools=conversation.get_registered_tools(),  # using registered tools (automatically registered by the decorator)
                     tool_choice='auto',
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
 
-                def append_response_to_history(response: conversation.ConversationResponseAlpha2):
+                def append_response_to_history(
+                    response: conversation.ConversationResponseAlpha2, skip_execution: bool = False
+                ):
                     """Helper to append response to history and execute tool calls."""
                     for msg in response.to_assistant_messages():
                         conversation_history.append(msg)
@@ -848,12 +851,17 @@ class RealLLMProviderTester:
                             continue
                         for _tool_call in msg.of_assistant.tool_calls:
                             print(f'Executing tool call: {_tool_call.function.name}')
-                            output = conversation.execute_registered_tool(
-                                _tool_call.function.name, _tool_call.function.arguments
-                            )
-                            print(f'Tool output: {output}')
 
-                            # append result to history
+                            # execute the tool called by the LLM
+                            if not skip_execution:
+                                output = conversation.execute_registered_tool(
+                                    _tool_call.function.name, _tool_call.function.arguments
+                                )
+                                print(f'Tool output: {output}')
+                            else:
+                                output = 'tool execution skipped'
+
+                            # append a result to history
                             conversation_history.append(
                                 conversation.create_tool_message(
                                     tool_id=_tool_call.id,
@@ -875,8 +883,8 @@ class RealLLMProviderTester:
                     name=provider_id,
                     inputs=[input_alpha2_turn2],
                     tools=conversation.get_registered_tools(),
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
@@ -903,8 +911,8 @@ class RealLLMProviderTester:
                     inputs=[input_alpha2_turn3],
                     tools=conversation.get_registered_tools(),
                     tool_choice='auto',
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
@@ -923,15 +931,18 @@ class RealLLMProviderTester:
                     inputs=[input_alpha2_turn4],
                     tools=conversation.get_registered_tools(),
                     tool_choice='auto',
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
 
-                append_response_to_history(response4)
+                append_response_to_history(response4, skip_execution=False)
 
                 print('Full conversation history trace:')
+                print('    Tools available:')
+                for tool in conversation.get_registered_tools():
+                    print(f'     - {tool.function.name}({tool.function.parameters["properties"]})')
                 for msg in conversation_history:
                     msg.trace_print(2)
 
@@ -962,8 +973,8 @@ class RealLLMProviderTester:
                     inputs=[input_alpha2],
                     tools=[restaurant_tool],
                     tool_choice='auto',
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
@@ -1012,8 +1023,8 @@ class RealLLMProviderTester:
                     inputs=[input_alpha2],
                     tools=conversation.get_registered_tools(),
                     tool_choice='auto',
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
@@ -1054,8 +1065,8 @@ class RealLLMProviderTester:
                 response = await client.converse_alpha2(
                     name=provider_id,
                     inputs=[input_alpha2],
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
@@ -1086,8 +1097,8 @@ class RealLLMProviderTester:
                     name=provider_id,
                     inputs=[input_alpha2],
                     tools=[weather_tool],
+                    temperature=1,
                     parameters={
-                        'temperature': 0.3,
                         'max_tokens': 500,
                     },
                 )
@@ -1119,13 +1130,13 @@ class RealLLMProviderTester:
         print(f"{'='*60}")
 
         # Alpha2 Sync tests
-        # self.test_basic_conversation_alpha2(provider_id)
-        # self.test_multi_turn_conversation_alpha2(provider_id)
-        # self.test_tool_calling_alpha2(provider_id)
-        # self.test_parameter_conversion(provider_id)
-        # self.test_function_to_schema_approach(provider_id)
-        # self.test_tool_decorated_function_to_schema_approach(provider_id)
-        # self.test_multi_turn_tool_calling_alpha2(provider_id)
+        self.test_basic_conversation_alpha2(provider_id)
+        self.test_multi_turn_conversation_alpha2(provider_id)
+        self.test_tool_calling_alpha2(provider_id)
+        self.test_parameter_conversion(provider_id)
+        self.test_function_to_schema_approach(provider_id)
+        self.test_tool_decorated_function_to_schema_approach(provider_id)
+        self.test_multi_turn_tool_calling_alpha2(provider_id)
         self.test_multi_turn_tool_calling_alpha2_tool_helpers(provider_id)
 
         # Alpha2 Async tests
@@ -1152,8 +1163,8 @@ class RealLLMProviderTester:
                 response = client.converse_alpha1(
                     name=provider_id,
                     inputs=inputs,
+                    temperature=1,
                     parameters={
-                        'temperature': 0.7,
                         'max_tokens': 100,
                     },
                 )

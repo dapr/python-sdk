@@ -562,8 +562,9 @@ def create_assistant_message(text: str) -> ConversationMessage:
     )
 
 
-def create_tool_message(tool_id: str, name: str, content: str) -> ConversationMessage:
+def create_tool_message(tool_id: str, name: str, content: Any) -> ConversationMessage:
     """Helper to create a tool message for Alpha2 responses (from client to LLM)."""
+    content = conv_helpers.stringify_tool_output(content)
     return ConversationMessage(
         of_tool=ConversationMessageOfTool(
             tool_id=tool_id, name=name, content=[ConversationMessageContent(text=content)]

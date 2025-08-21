@@ -150,6 +150,15 @@ Recommended order of approaches:
 - Function-to-Schema (automatic schema from typed function)
 - JSON schema variants (fallbacks for dynamic/manual cases)
 
+When using the Decorator or Function-to-Schema approach, you get the following benefits:
+
+- ✅ **Type Safety**: Full Python type hint support (str, int, List, Optional, Enum, etc.)
+- ✅ **Auto-Documentation**: Docstring parsing for parameter descriptions
+- ✅ **Ultimate DevEx**: Define functions, get tools automatically
+- ✅ **90%+ less boilerplate** compared to manual schema creation
+- ✅ **Automatic Tool Registration** this comes handy when you want to execute the tool when called by the LLM
+
+
 ### Decorator-based Tool Definition (Recommended)
 ```python
 from dapr.clients.grpc import conversation
@@ -188,34 +197,9 @@ function = conversation.ConversationToolsFunction.from_function(get_weather)
 weather_tool = conversation.ConversationTools(function=function)
 ```
 
-Benefits:
-- ✅ **Type Safety**: Full Python type hint support (str, int, List, Optional, Enum, etc.)
-- ✅ **Auto-Documentation**: Docstring parsing for parameter descriptions
-- ✅ **Ultimate DevEx**: Define functions, get tools automatically
-- ✅ **90%+ less boilerplate** compared to manual schema creation
-
 ### JSON Schema Variants (fallbacks)
 
 Use when you can't decorate or need to build tools dynamically.
-
-#### Simple JSON Schema
-```python
-from dapr.clients.grpc import conversation
-
-function = conversation.ConversationToolsFunction(
-    name="get_weather",
-    description="Get weather",
-    parameters={
-        "type": "object",
-        "properties": {
-            "location": {"type": "string", "description": "City"},
-            "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
-        },
-        "required": ["location"]
-    }
-)
-weather_tool = conversation.ConversationTools(function=function)
-```
 
 #### Complete JSON Schema (e.g., calculator)
 ```python
@@ -575,15 +559,16 @@ dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resour
 
 ## Features Overview
 
-| Feature | Alpha1 | Alpha2 |
-|---------|--------|--------|
-| Basic Conversations | ✅ | ✅ |
-| Tool Calling | ❌ | ✅ |
-| Multi-turn Context | ❌ | ✅ |
-| Advanced Message Types | ❌ | ✅ |
-| Parameter Auto-conversion | ❌ | ✅ |
-| Function-to-Schema | ❌ | ✅ |
-| Async Support | ✅ | ✅ Enhanced |
-| Real LLM Providers | ✅ | ✅ |
+| Feature                   | Alpha1 | Alpha2 |
+|---------------------------|--------|--------|
+| Basic Conversations       | ✅ | ✅      |
+| Tool Calling              | ❌ | ✅      |
+| Multi-turn Context        | ❌ | ✅      |
+| Advanced Message Types    | ❌ | ✅      |
+| Parameter Auto-conversion | ❌ | ✅      |
+| Function-to-Schema        | ❌ | ✅      |
+| Async Support             | ✅ | ✅      |
+| Real LLM Providers        | ✅ | ✅      |
+| Streaming                 | ❌ | ❌      | 
 
 **Recommendation:** Use Alpha2 for new projects and consider migrating existing Alpha1 code to benefit from enhanced features and improved developer experience.
