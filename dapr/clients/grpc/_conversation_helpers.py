@@ -31,6 +31,7 @@ from typing import (
     get_args,
     get_origin,
     get_type_hints,
+    cast,
 )
 
 from dapr.clients.grpc.conversation import Params
@@ -152,7 +153,7 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
 
     # Handle Dict types
     if origin is dict or python_type is dict:
-        schema: Dict[str, Any] = {'type': 'object'}
+        schema = {'type': 'object'}
         if args and len(args) == 2:
             # Dict[str, ValueType] - add additionalProperties
             key_type, value_type = args
@@ -197,7 +198,7 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
             f"{getattr(python_type, '__name__', 'Enum')} (enum with {count} values). "
             f"Provide a valid value. Schema compacted to avoid oversized enum listing."
         )
-        schema: Dict[str, Any] = {'type': 'string', 'description': desc}
+        schema = {'type': 'string', 'description': desc}
         if example_values:
             schema['examples'] = example_values
         return schema
@@ -277,7 +278,7 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
         if not properties:
             return {'type': 'object'}
 
-        schema: Dict[str, Any] = {'type': 'object', 'properties': properties}
+        schema = {'type': 'object', 'properties': properties}
         if required:
             schema['required'] = required
         return schema
@@ -285,8 +286,8 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
     # Fallback for unknown/unsupported types
     raise TypeError(
         f"Unsupported type in JSON schema conversion for field '{field_name}': {python_type}. "
-        f"Please use supported typing annotations (e.g., str, int, float, bool, bytes, List[T], Dict[str, V], Union, Optional, Literal, Enum, dataclass, or plain classes)."
-        f"You can report this issue for future support of this type. You can always create the json schema manually."
+        f'Please use supported typing annotations (e.g., str, int, float, bool, bytes, List[T], Dict[str, V], Union, Optional, Literal, Enum, dataclass, or plain classes).'
+        f'You can report this issue for future support of this type. You can always create the json schema manually.'
     )
 
 
@@ -705,6 +706,7 @@ def stringify_tool_output(value: Any) -> str:
         # Enum handling
         try:
             from enum import Enum as _Enum
+
             if isinstance(o, _Enum):
                 try:
                     return o.value
@@ -716,7 +718,8 @@ def stringify_tool_output(value: Any) -> str:
         # dataclass handling
         try:
             if is_dataclass(o):
-                return _asdict(o)
+                # mypy: asdict expects a DataclassInstance; after the runtime guard, this cast is safe
+                return _asdict(cast(Any, o))
         except Exception:
             pass
 
@@ -824,7 +827,7 @@ def _coerce_literal(value: Any, lit_args: List[Any]) -> Any:
     if value in lit_args:
         return value
     # Try string-to-number coercions if literal set is homogeneous numeric
-    try_coerced = []
+    try_coerced: List[Any] = []
     for target in lit_args:
         try:
             if isinstance(target, int) and not isinstance(target, bool) and isinstance(value, str):
