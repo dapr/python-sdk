@@ -49,7 +49,16 @@ class ConversationMessageContent:
 
 
 def _indent_lines(title: str, text: str, indent: int) -> str:
-    """Indent lines of text."""
+    """
+    Indent lines of text.
+    Example:
+    >>> print("foo")
+    foo
+    >>> print(_indent_lines("Description", "This is a long\nmultiline\ntext block", 4))
+        Description: This is a long
+                     multiline
+                     text block
+    """
     indent_after_first_line = indent + len(title) + 2
     lines = text.splitlines() if text is not None else ['']
     first = lines[0] if lines else ''
