@@ -13,31 +13,15 @@
 from dapr.clients import DaprClient
 from dapr.clients.grpc.conversation import (
     ConversationInputAlpha2,
-    ConversationMessage,
-    ConversationMessageContent,
-    ConversationMessageOfUser,
+    create_user_message,
 )
 
 with DaprClient() as d:
     inputs = [
         ConversationInputAlpha2(
-            messages=[
-                ConversationMessage(
-                    of_user=ConversationMessageOfUser(
-                        content=[ConversationMessageContent(text="What's Dapr?")]
-                    )
-                )
-            ]
-        ),
+            messages=[create_user_message("What's Dapr?")], scrub_pii=True),
         ConversationInputAlpha2(
-            messages=[
-                ConversationMessage(
-                    of_user=ConversationMessageOfUser(
-                        content=[ConversationMessageContent(text='Give a brief overview.')]
-                    )
-                )
-            ]
-        ),
+            messages=[create_user_message('Give a brief overview.')], scrub_pii=True),
     ]
 
     metadata = {

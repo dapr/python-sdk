@@ -40,7 +40,6 @@ from grpc import (  # type: ignore
 )
 
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
-from dapr.clients.grpc._conversation_helpers import _generate_unique_tool_call_id
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
@@ -1734,7 +1733,7 @@ class DaprGrpcClient:
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
-    ) -> conversation.ConversationResponse:
+    ) -> conversation.ConversationResponseAlpha1:
         """Invoke an LLM using the conversation API (Alpha).
 
         Args:
@@ -1775,11 +1774,11 @@ class DaprGrpcClient:
             response, call = self.retry_policy.run_rpc(self._stub.ConverseAlpha1.with_call, request)
 
             outputs = [
-                conversation.ConversationResult(result=output.result, parameters=output.parameters)
+                conversation.ConversationResultAlpha1(result=output.result, parameters=output.parameters)
                 for output in response.outputs
             ]
 
-            return conversation.ConversationResponse(context_id=response.contextID, outputs=outputs)
+            return conversation.ConversationResponseAlpha1(context_id=response.contextID, outputs=outputs)
         except RpcError as err:
             raise DaprGrpcError(err) from err
 
@@ -1869,37 +1868,7 @@ class DaprGrpcClient:
             response, call = self.retry_policy.run_rpc(self._stub.ConverseAlpha2.with_call, request)
 
             # Convert response to our format
-            outputs = []
-            for output in response.outputs:
-                choices = []
-                for choice in output.choices:
-                    # Convert tool calls from response
-                    tool_calls = []
-                    for tool_call in choice.message.tool_calls:
-                        function_call = conversation.ConversationToolCallsOfFunction(
-                            name=tool_call.function.name, arguments=tool_call.function.arguments
-                        )
-                        if not tool_call.id:
-                            tool_call.id = _generate_unique_tool_call_id()
-                        tool_calls.append(
-                            conversation.ConversationToolCalls(
-                                id=tool_call.id, function=function_call
-                            )
-                        )
-
-                    result_message = conversation.ConversationResultAlpha2Message(
-                        content=choice.message.content, tool_calls=tool_calls
-                    )
-
-                    choices.append(
-                        conversation.ConversationResultAlpha2Choices(
-                            finish_reason=choice.finish_reason,
-                            index=choice.index,
-                            message=result_message,
-                        )
-                    )
-
-                outputs.append(conversation.ConversationResultAlpha2(choices=choices))
+            outputs = conversation._get_outputs_from_grpc_response(response)
 
             return conversation.ConversationResponseAlpha2(
                 context_id=response.context_id, outputs=outputs

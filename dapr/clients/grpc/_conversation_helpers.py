@@ -34,8 +34,10 @@ from typing import (
     cast,
 )
 
-from dapr.clients.grpc.conversation import Params
-import os
+from dapr.conf import settings
+
+# duplicated from conversation to avoid circular import
+Params = Union[Mapping[str, Any], Sequence[Any], None]
 
 """
 Tool Calling Helpers for Dapr Conversation API.
@@ -46,13 +48,6 @@ convert typed Python functions to tools for the Conversation API.
 These makes it easy to create tools for the Conversation API without
 having to manually define the JSON schema for each tool.
 """
-
-# Configuration for handling large enums to avoid massive JSON schemas that can exceed LLM token limits
-_MAX_ENUM_ITEMS = int(os.getenv('DAPR_CONVERSATION_MAX_ENUM_ITEMS', '100'))
-_LARGE_ENUM_BEHAVIOR = os.getenv('DAPR_CONVERSATION_LARGE_ENUM_BEHAVIOR', 'string').lower()
-# Allowed behaviors: 'string' (default), 'error'
-if _LARGE_ENUM_BEHAVIOR not in {'string', 'error'}:
-    _LARGE_ENUM_BEHAVIOR = 'string'
 
 
 def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[str, Any]:
@@ -183,13 +178,13 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
             members = []
         count = len(members)
         # If enum is small enough, include full enum list (current behavior)
-        if count <= _MAX_ENUM_ITEMS:
+        if count <= settings.DAPR_CONVERSATION_TOOLS_MAX_ENUM_ITEMS:
             return {'type': 'string', 'enum': [item.value for item in members]}
         # Large enum handling
-        if _LARGE_ENUM_BEHAVIOR == 'error':
+        if settings.DAPR_CONVERSATION_TOOLS_LARGE_ENUM_BEHAVIOR == 'error':
             raise ValueError(
                 f"Enum '{getattr(python_type, '__name__', str(python_type))}' has {count} members, "
-                f"exceeding DAPR_CONVERSATION_MAX_ENUM_ITEMS={_MAX_ENUM_ITEMS}. "
+                f"exceeding DAPR_CONVERSATION_MAX_ENUM_ITEMS={settings.DAPR_CONVERSATION_TOOLS_MAX_ENUM_ITEMS}. "
                 f"Either reduce the enum size or set DAPR_CONVERSATION_LARGE_ENUM_BEHAVIOR=string to allow compact schema."
             )
         # Default behavior: compact schema as a string with helpful context and a few examples

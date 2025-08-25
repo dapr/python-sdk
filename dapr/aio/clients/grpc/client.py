@@ -42,7 +42,6 @@ from grpc.aio import (  # type: ignore
 
 from dapr.aio.clients.grpc.subscription import Subscription
 from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
-from dapr.clients.grpc._conversation_helpers import _generate_unique_tool_call_id
 from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._state import StateOptions, StateItem
 from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
@@ -104,14 +103,6 @@ from dapr.clients.grpc._response import (
     GetWorkflowResponse,
     StartWorkflowResponse,
     TopicEventResponse,
-)
-from dapr.clients.grpc.conversation import (
-    ConversationResult,
-    ConversationResultAlpha2Message,
-    ConversationResultAlpha2Choices,
-    ConversationResultAlpha2,
-    ConversationResponse,
-    ConversationResponseAlpha2,
 )
 
 
@@ -1739,7 +1730,7 @@ class DaprGrpcClientAsync:
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
-    ) -> ConversationResponse:
+    ) -> conversation.ConversationResponseAlpha1:
         """Invoke an LLM using the conversation API (Alpha).
 
         Args:
@@ -1779,11 +1770,11 @@ class DaprGrpcClientAsync:
             response = await self._stub.ConverseAlpha1(request)
 
             outputs = [
-                ConversationResult(result=output.result, parameters=output.parameters)
+                conversation.ConversationResultAlpha1(result=output.result, parameters=output.parameters)
                 for output in response.outputs
             ]
 
-            return ConversationResponse(context_id=response.contextID, outputs=outputs)
+            return conversation.ConversationResponseAlpha1(context_id=response.contextID, outputs=outputs)
 
         except grpc.aio.AioRpcError as err:
             raise DaprGrpcError(err) from err
@@ -1794,13 +1785,13 @@ class DaprGrpcClientAsync:
         inputs: List[conversation.ConversationInputAlpha2],
         *,
         context_id: Optional[str] = None,
-        parameters: Optional[Dict[str, GrpcAny]] = None,
+        parameters: Optional[Dict[str, Union[GrpcAny, Any]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         scrub_pii: Optional[bool] = None,
         temperature: Optional[float] = None,
         tools: Optional[List[conversation.ConversationTools]] = None,
         tool_choice: Optional[str] = None,
-    ) -> ConversationResponseAlpha2:
+    ) -> conversation.ConversationResponseAlpha2:
         """Invoke an LLM using the conversation API (Alpha2) with tool calling support.
 
         Args:
@@ -1870,28 +1861,12 @@ class DaprGrpcClientAsync:
             request.tool_choice = tool_choice
 
         try:
-            response = await self._stub.ConverseAlpha2(request)
+            response, call = await self.retry_policy.run_rpc_async(
+                self._stub.ConverseAlpha2, request)
 
-            outputs = []
-            for output in response.outputs:
-                choices = []
-                for choice in output.choices:
-                    # workaround for some issues with missing tool ID in some providers (ie: Gemini)
-                    for i, tool_call in enumerate(choice.message.tool_calls):
-                        if not tool_call.id:
-                            choice.message.tool_calls[i].id = _generate_unique_tool_call_id()
-                    choices.append(
-                        ConversationResultAlpha2Choices(
-                            finish_reason=choice.finish_reason,
-                            index=choice.index,
-                            message=ConversationResultAlpha2Message(
-                                content=choice.message.content, tool_calls=choice.message.tool_calls
-                            ),
-                        )
-                    )
-                outputs.append(ConversationResultAlpha2(choices=choices))
+            outputs = conversation._get_outputs_from_grpc_response(response)
 
-            return ConversationResponseAlpha2(context_id=response.context_id, outputs=outputs)
+            return conversation.ConversationResponseAlpha2(context_id=response.context_id, outputs=outputs)
 
         except grpc.aio.AioRpcError as err:
             raise DaprGrpcError(err) from err

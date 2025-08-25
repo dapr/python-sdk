@@ -23,6 +23,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Protocol, Seque
 from google.protobuf.any_pb2 import Any as GrpcAny
 
 from dapr.clients.grpc import _conversation_helpers as conv_helpers
+from dapr.clients.grpc._conversation_helpers import _generate_unique_tool_call_id
 from dapr.proto import api_v1
 
 Params = Union[Mapping[str, Any], Sequence[Any], None]
@@ -68,49 +69,38 @@ def _indent_lines(title: str, text: str, indent: int) -> str:
     return f'{indent * " "}{title}: {first}{rest}'
 
 
+class UserTracePrintMixin:
+    """Mixin for trace_print for text based message content from user to LLM."""
+    def trace_print(self, indent: int = 0) -> None:
+        base = ' ' * indent
+        if self.name:
+            print(f'{base}name: {self.name}')
+        for i, c in enumerate(self.content):
+            print(_indent_lines(f'content[{i}]', c.text, indent))
+
+
 @dataclass
-class ConversationMessageOfDeveloper:
+class ConversationMessageOfDeveloper(UserTracePrintMixin):
     """Developer message content."""
 
     name: Optional[str] = None
     content: List[ConversationMessageContent] = field(default_factory=list)
 
-    def trace_print(self, indent: int = 0) -> None:
-        base = ' ' * indent
-        if self.name:
-            print(f'{base}name: {self.name}')
-        for i, c in enumerate(self.content):
-            print(_indent_lines(f'content[{i}]', c.text, indent))
-
 
 @dataclass
-class ConversationMessageOfSystem:
+class ConversationMessageOfSystem(UserTracePrintMixin):
     """System message content."""
 
     name: Optional[str] = None
     content: List[ConversationMessageContent] = field(default_factory=list)
 
-    def trace_print(self, indent: int = 0) -> None:
-        base = ' ' * indent
-        if self.name:
-            print(f'{base}name: {self.name}')
-        for i, c in enumerate(self.content):
-            print(_indent_lines(f'content[{i}]', c.text, indent))
-
 
 @dataclass
-class ConversationMessageOfUser:
+class ConversationMessageOfUser(UserTracePrintMixin):
     """User message content."""
 
     name: Optional[str] = None
     content: List[ConversationMessageContent] = field(default_factory=list)
-
-    def trace_print(self, indent: int = 0) -> None:
-        base = ' ' * indent
-        if self.name:
-            print(f'{base}name: {self.name}')
-        for i, c in enumerate(self.content):
-            print(_indent_lines(f'content[{i}]', c.text, indent))
 
 
 @dataclass
@@ -315,7 +305,7 @@ class ConversationToolsFunction:
 
 
 @dataclass
-class ConversationResult:
+class ConversationResultAlpha1:
     """One of the outputs to a request to the conversation API."""
 
     result: str
@@ -347,11 +337,11 @@ class ConversationResultAlpha2:
 
 
 @dataclass
-class ConversationResponse:
+class ConversationResponseAlpha1:
     """Response to a request from the conversation API."""
 
     context_id: Optional[str]
-    outputs: List[ConversationResult]
+    outputs: List[ConversationResultAlpha1]
 
 
 @dataclass
@@ -579,3 +569,39 @@ def create_tool_message(tool_id: str, name: str, content: Any) -> ConversationMe
             tool_id=tool_id, name=name, content=[ConversationMessageContent(text=content)]
         )
     )
+
+
+def _get_outputs_from_grpc_response(response: api_v1.ConversationResponseAlpha2) -> List[ConversationResultAlpha2]:
+    """Helper to get outputs from a Converse gRPC response from dapr sidecar."""
+    outputs: List[ConversationResultAlpha2] = []
+    for output in response.outputs:
+        choices = []
+        for choice in output.choices:
+            # Convert tool calls from response
+            tool_calls = []
+            for tool_call in choice.message.tool_calls:
+                function_call = ConversationToolCallsOfFunction(
+                    name=tool_call.function.name, arguments=tool_call.function.arguments
+                )
+                if not tool_call.id:
+                    tool_call.id = _generate_unique_tool_call_id()
+                tool_calls.append(
+                    ConversationToolCalls(
+                        id=tool_call.id, function=function_call
+                    )
+                )
+
+            result_message = ConversationResultAlpha2Message(
+                content=choice.message.content, tool_calls=tool_calls
+            )
+
+            choices.append(
+                ConversationResultAlpha2Choices(
+                    finish_reason=choice.finish_reason,
+                    index=choice.index,
+                    message=result_message,
+                )
+            )
+
+        outputs.append(ConversationResultAlpha2(choices=choices))
+    return outputs
