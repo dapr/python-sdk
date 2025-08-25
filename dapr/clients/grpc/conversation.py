@@ -69,7 +69,13 @@ def _indent_lines(title: str, text: str, indent: int) -> str:
     return f'{indent * " "}{title}: {first}{rest}'
 
 
-class UserTracePrintMixin:
+class HasNameAndContent:
+    """Mixin Protocol for name and content typing."""
+    name: Optional[str] = None
+    content: List[ConversationMessageContent] = field(default_factory=list)
+
+
+class UserTracePrintMixin(HasNameAndContent):
     """Mixin for trace_print for text based message content from user to LLM."""
     def trace_print(self, indent: int = 0) -> None:
         base = ' ' * indent

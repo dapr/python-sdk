@@ -927,5 +927,48 @@ class ConversationToolHelpersAsyncTests(ConversationTestBaseAsync):
         unregister_tool(tool_name)
 
 
+class TestIndentLines(unittest.TestCase):
+    def test_single_line_with_indent(self):
+        result = conversation._indent_lines("Note", "Hello", 2)
+        self.assertEqual(result, "  Note: Hello")
+
+    def test_multiline_example(self):
+        text = "This is a long\nmultiline\ntext block"
+        result = conversation._indent_lines("Description", text, 4)
+        expected = (
+            "    Description: This is a long\n"
+            "                 multiline\n"
+            "                 text block"
+        )
+        self.assertEqual(result, expected)
+
+    def test_zero_indent(self):
+        result = conversation._indent_lines("Title", "Line one\nLine two", 0)
+        expected = (
+            "Title: Line one\n"
+            "       Line two"
+        )
+        self.assertEqual(result, expected)
+
+    def test_empty_string(self):
+        result = conversation._indent_lines("Empty", "", 3)
+        # Should end with a space after colon
+        self.assertEqual(result, "   Empty: ")
+
+    def test_none_text(self):
+        result = conversation._indent_lines("NoneCase", None, 1)
+        self.assertEqual(result, " NoneCase: ")
+
+    def test_title_length_affects_indent(self):
+        # Title length is 1, indent_after_first_line should be indent + len(title) + 2
+        # indent=2, len(title)=1 => 2 + 1 + 2 = 5 spaces on continuation lines
+        result = conversation._indent_lines("T", "a\nb", 2)
+        expected = (
+            "  T: a\n"
+            "     b"
+        )
+        self.assertEqual(result, expected)
+
+
 if __name__ == '__main__':
     unittest.main()
