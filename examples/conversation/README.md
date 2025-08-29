@@ -20,6 +20,11 @@ The Conversation API supports real LLM providers including:
    ```
  
 2. **Run the simple conversation on the Alpha V1 version (dapr 1.15)**
+
+   This is a basic example that uses the Conversation API to get a response from a bot.
+   It also uses the `echo` provider that just echoes back the message.
+   In the echo provider, a multi-input message is returned as a single output separated by newlines.
+
     <!-- STEP
     name: Run Conversation Alpha V1
     expected_stdout_lines:
