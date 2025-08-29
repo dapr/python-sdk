@@ -49,7 +49,7 @@ def drive_success(gen, results):
         next(gen)
         idx = 0
         while True:
-            out = gen.send(results[idx])
+            gen.send(results[idx])
             idx += 1
     except StopIteration as stop:
         return stop.value
@@ -94,5 +94,3 @@ def test_sub_orchestrator_failure_raises_into_orchestrator():
     next(gen)
     with pytest.raises(RuntimeError, match='child failed'):
         gen.throw(RuntimeError('child failed'))
-
-

@@ -53,5 +53,3 @@ def test_activity_retry_final_failure_raises():
     # Simulate final failure after retry policy exhausts
     with pytest.raises(RuntimeError, match='activity failed'):
         gen.throw(RuntimeError('activity failed'))
-
-

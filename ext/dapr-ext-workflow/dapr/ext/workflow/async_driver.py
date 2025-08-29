@@ -71,7 +71,7 @@ class CoroutineOrchestratorRunner:
 
         # Prime the coroutine
         try:
-            if self._sandbox_mode == "off":
+            if self._sandbox_mode == 'off':
                 awaited = coro.send(None)
             else:
                 with sandbox_scope(async_ctx, self._sandbox_mode):
@@ -92,7 +92,7 @@ class CoroutineOrchestratorRunner:
                 # Yield the task to the Durable Task runtime and wait to be resumed with its result
                 result = yield dapr_task
                 # Send the result back into the async coroutine
-                if self._sandbox_mode == "off":
+                if self._sandbox_mode == 'off':
                     awaited = coro.send(result)
                 else:
                     with sandbox_scope(async_ctx, self._sandbox_mode):
@@ -101,7 +101,7 @@ class CoroutineOrchestratorRunner:
                 return stop.value
             except Exception as exc:  # Propagate failures into the coroutine
                 try:
-                    if self._sandbox_mode == "off":
+                    if self._sandbox_mode == 'off':
                         awaited = coro.throw(exc)
                     else:
                         with sandbox_scope(async_ctx, self._sandbox_mode):
@@ -118,7 +118,7 @@ class CoroutineOrchestratorRunner:
                     is_cancel = False
                 if is_cancel:
                     try:
-                        if self._sandbox_mode == "off":
+                        if self._sandbox_mode == 'off':
                             awaited = coro.throw(base_exc)
                         else:
                             with sandbox_scope(async_ctx, self._sandbox_mode):

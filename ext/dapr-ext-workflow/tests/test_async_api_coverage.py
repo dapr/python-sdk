@@ -72,8 +72,8 @@ def test_async_context_exposes_required_methods():
     assert getattr(base, '_continued', None) == ({'foo': 1}, True)
 
     # awaitable constructors do not raise
-    ctx.activity(lambda: None, input={'x': 1})
-    ctx.sub_orchestrator(lambda: None, input=1)
+    ctx.call_activity(lambda: None, input={'x': 1})
+    ctx.call_child_workflow(lambda: None)
     ctx.sleep(1.0)
     ctx.wait_for_external_event('go')
     ctx.when_all([])

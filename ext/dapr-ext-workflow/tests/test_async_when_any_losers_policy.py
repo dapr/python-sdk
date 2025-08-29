@@ -39,7 +39,7 @@ class FakeCtx:
 
 async def wf_when_any(ctx: AsyncWorkflowContext):
     # Two awaitables: an activity and a timer
-    a = ctx.activity(lambda: None)
+    a = ctx.call_activity(lambda: None)
     b = ctx.sleep(10)
     first = await ctx.when_any([a, b])
     return first
@@ -61,5 +61,3 @@ def test_when_any_yields_once_and_returns_first_result(monkeypatch):
         raise AssertionError('generator should have completed')
     except StopIteration as stop:
         assert stop.value == {'task': 'activity'}
-
-

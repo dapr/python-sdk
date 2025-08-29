@@ -53,7 +53,7 @@ def drive_with_history(gen, results):
 
 async def wf_mixed(ctx: AsyncWorkflowContext):
     # activity
-    r1 = await ctx.activity(lambda: None, input={'x': 1})
+    r1 = await ctx.call_activity(lambda: None, input={'x': 1})
     # timer
     await ctx.sleep(timedelta(seconds=5))
     # event

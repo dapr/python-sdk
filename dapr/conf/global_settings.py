@@ -33,3 +33,11 @@ DAPR_API_TIMEOUT_SECONDS = 60
 DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
 
 DAPR_HTTP_TIMEOUT_SECONDS = 60
+
+# gRPC keepalive (disabled by default; enable via env to help with idle debugging sessions)
+DAPR_GRPC_KEEPALIVE_ENABLED: bool = False
+DAPR_GRPC_KEEPALIVE_TIME_MS: int = 120000  # send keepalive pings every 120s
+DAPR_GRPC_KEEPALIVE_TIMEOUT_MS: int = (
+    20000  # wait 20s for ack before considering the connection dead
+)
+DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS: bool = False  # allow pings when there are no active calls

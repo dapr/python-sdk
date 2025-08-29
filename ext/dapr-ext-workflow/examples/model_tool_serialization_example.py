@@ -43,7 +43,9 @@ def from_model_response(obj: Any) -> Dict[str, Any]:
         tool_calls = obj.get('tool_calls') or []
         out = {'schema_version': 'model_res@v1', 'content': content, 'tool_calls': tool_calls}
         return ensure_canonical_json(out, strict=False)
-    return ensure_canonical_json({'schema_version': 'model_res@v1', 'content': str(obj), 'tool_calls': []}, strict=False)
+    return ensure_canonical_json(
+        {'schema_version': 'model_res@v1', 'content': str(obj), 'tool_calls': []}, strict=False
+    )
 
 
 def to_tool_request(name: str, args: list | None, kwargs: dict | None) -> Dict[str, Any]:
@@ -59,6 +61,6 @@ def to_tool_request(name: str, args: list | None, kwargs: dict | None) -> Dict[s
 def from_tool_result(obj: Any) -> Dict[str, Any]:
     if isinstance(obj, dict) and ('result' in obj or 'error' in obj):
         return ensure_canonical_json({'schema_version': 'tool_res@v1', **obj}, strict=False)
-    return ensure_canonical_json({'schema_version': 'tool_res@v1', 'result': obj, 'error': None}, strict=False)
-
-
+    return ensure_canonical_json(
+        {'schema_version': 'tool_res@v1', 'result': obj, 'error': None}, strict=False
+    )

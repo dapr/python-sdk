@@ -84,6 +84,16 @@ class _Sandbox(ContextDecorator):
         rnd = deterministic_random(_ctx_instance_id(self._async_ctx), _ctx_now(self._async_ctx))
 
         async def _sleep_patched(delay: float, result: Any = None):  # type: ignore[override]
+            # Many libraries (e.g., anyio/httpcore) use asyncio.sleep(0) as a checkpoint.
+            # Forward zero-or-negative delays to the original asyncio.sleep to avoid
+            # yielding workflow awaitables outside the orchestrator driver.
+            try:
+                if float(delay) <= 0:
+                    return await self._saved['asyncio.sleep'](0)
+            except Exception:
+                # If delay cannot be coerced, fall back to original behavior
+                return await self._saved['asyncio.sleep'](delay)  # type: ignore[arg-type]
+
             await self._async_ctx.sleep(delay)
             return result
 
@@ -105,8 +115,18 @@ class _Sandbox(ContextDecorator):
         def _time_ns_patched() -> int:
             return int(_ctx_now(self._async_ctx).timestamp() * 1_000_000_000)
 
-        def _create_task_blocked(*args, **kwargs):  # strict only
-            raise RuntimeError('asyncio.create_task is not allowed inside workflow (strict mode)')
+        def _create_task_blocked(coro, *args, **kwargs):  # strict only
+            # Close the coroutine to avoid "was never awaited" warnings when create_task is blocked
+            try:
+                close = getattr(coro, 'close', None)
+                if callable(close):
+                    try:
+                        close()
+                    except Exception:
+                        # Swallow any error while closing; we are about to raise a policy error
+                        pass
+            finally:
+                raise RuntimeError('asyncio.create_task is not allowed inside workflow (strict mode)')
 
         # Apply patches
         _asyncio.sleep = _sleep_patched  # type: ignore[assignment]

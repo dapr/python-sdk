@@ -58,10 +58,12 @@ async def hello_world_wf(ctx: AsyncWorkflowContext, wf_input):
     print(f'Child workflow returned {result_4}')
 
     # Event vs timeout using when_any
-    first = await ctx.when_any([
-        ctx.wait_for_external_event(event_name),
-        ctx.create_timer(timedelta(seconds=30)),
-    ])
+    first = await ctx.when_any(
+        [
+            ctx.wait_for_external_event(event_name),
+            ctx.create_timer(timedelta(seconds=30)),
+        ]
+    )
 
     # Proceed only if event won
     if isinstance(first, dict) and 'event' in first:
@@ -92,7 +94,9 @@ def hello_retryable_act(ctx: WorkflowActivityContext):
 async def child_retryable_wf(ctx: AsyncWorkflowContext):
     global child_orchestrator_string
     # Call activity with retry and simulate retryable workflow failure until certain state
-    child_activity_result = await ctx.call_activity(act_for_child_wf, input='x', retry_policy=retry_policy)
+    child_activity_result = await ctx.call_activity(
+        act_for_child_wf, input='x', retry_policy=retry_policy
+    )
     print(f'Child activity returned {child_activity_result}')
     # In a real sample, you might check state and raise to trigger retry
     return 'ok'
@@ -118,7 +122,9 @@ def main():
     sleep(5)
 
     # Raise event to continue
-    wf_client.raise_workflow_event(instance_id=instance_id, event_name=event_name, data={'ok': True})
+    wf_client.raise_workflow_event(
+        instance_id=instance_id, event_name=event_name, data={'ok': True}
+    )
 
     # Wait for completion
     state = wf_client.wait_for_workflow_completion(instance_id, timeout_in_seconds=60)

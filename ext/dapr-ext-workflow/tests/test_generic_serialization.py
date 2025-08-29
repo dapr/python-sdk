@@ -38,6 +38,7 @@ class _IO(ActivityIOAdapter):
 
 def test_activity_adapter_decorator_customizes_io():
     _use = use_activity_adapter(_IO())
+
     @_use
     def act(obj):
         return obj
@@ -48,5 +49,3 @@ def test_activity_adapter_decorator_customizes_io():
 
     out = serialize_activity_output(act, {'k': 'v'}, strict=True)
     assert out == {'ok': {'k': 'v'}}
-
-

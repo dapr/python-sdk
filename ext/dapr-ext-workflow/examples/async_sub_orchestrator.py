@@ -25,7 +25,7 @@ def main():
 
     @rt.async_workflow(name='parent')
     async def parent(ctx: AsyncWorkflowContext, n):
-        r = await ctx.sub_orchestrator(child, input=n)
+        r = await ctx.call_child_workflow(child, input=n)
         return r + 1
 
     rt.start()

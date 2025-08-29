@@ -26,8 +26,8 @@ def main():
 
     @rt.workflow(name='sum_three')
     async def sum_three(ctx: AsyncWorkflowContext, nums):
-        a = await ctx.activity(add, input=[nums[0], nums[1]])
-        b = await ctx.activity(add, input=[a, nums[2]])
+        a = await ctx.call_activity(add, input=[nums[0], nums[1]])
+        b = await ctx.call_activity(add, input=[a, nums[2]])
         return b
 
     rt.start()

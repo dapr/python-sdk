@@ -66,13 +66,44 @@ class DaprWorkflowClient:
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         options = self._logger.get_options()
-        self.__obj = client.TaskHubGrpcClient(
+        # Optional gRPC keepalive options (best-effort; depends on durabletask version)
+        channel_options = None
+        if settings.DAPR_GRPC_KEEPALIVE_ENABLED:
+            channel_options = [
+                ('grpc.keepalive_time_ms', int(settings.DAPR_GRPC_KEEPALIVE_TIME_MS)),
+                ('grpc.keepalive_timeout_ms', int(settings.DAPR_GRPC_KEEPALIVE_TIMEOUT_MS)),
+                (
+                    'grpc.keepalive_permit_without_calls',
+                    1 if settings.DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS else 0,
+                ),
+            ]
+
+        # Construct base kwargs for TaskHubGrpcClient
+        base_kwargs = dict(
             host_address=uri.endpoint,
             metadata=metadata,
             secure_channel=uri.tls,
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
         )
+
+        # Try passing channel options using commonly supported parameter names.
+        self.__obj = None  # type: ignore[assignment]
+        if channel_options is not None:
+            for param_name in ('options', 'channel_options', 'grpc_channel_options'):
+                try:
+                    attempt_kwargs = dict(base_kwargs)
+                    attempt_kwargs[param_name] = channel_options
+                    self.__obj = client.TaskHubGrpcClient(**attempt_kwargs)
+                    break
+                except TypeError:
+                    # Parameter not supported by this durabletask version; try next name
+                    self.__obj = None  # type: ignore[assignment]
+                    continue
+
+        # Fallback: no options supported or not enabled
+        if self.__obj is None:
+            self.__obj = client.TaskHubGrpcClient(**base_kwargs)
 
     def schedule_new_workflow(
         self,

@@ -89,5 +89,3 @@ def test_driver_overhead_vs_generator():
     print({'gen_time_s': gen_time, 'async_time_s': async_time, 'ratio': ratio})
     # Assert driver overhead stays within reasonable bound
     assert ratio < 3.0
-
-

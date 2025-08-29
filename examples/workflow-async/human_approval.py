@@ -20,11 +20,13 @@ wfr = WorkflowRuntime()
 
 @wfr.async_workflow(name='human_approval_async')
 async def orchestrator(ctx: AsyncWorkflowContext, request_id: str):
-    decision = await ctx.when_any([
-        ctx.wait_for_external_event(f'approve:{request_id}'),
-        ctx.wait_for_external_event(f'reject:{request_id}'),
-        ctx.create_timer(300.0),
-    ])
+    decision = await ctx.when_any(
+        [
+            ctx.wait_for_external_event(f'approve:{request_id}'),
+            ctx.wait_for_external_event(f'reject:{request_id}'),
+            ctx.create_timer(300.0),
+        ]
+    )
     if isinstance(decision, dict) and decision.get('approved'):
         return 'APPROVED'
     if isinstance(decision, dict) and decision.get('rejected'):

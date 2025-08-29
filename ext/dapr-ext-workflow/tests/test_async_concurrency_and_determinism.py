@@ -54,7 +54,7 @@ def drive_first_wins(gen, winner_name):
 
 
 async def wf_when_all(ctx: AsyncWorkflowContext):
-    a = ctx.activity(lambda: None)
+    a = ctx.call_activity(lambda: None)
     b = ctx.sleep(1.0)
     res = await ctx.when_all([a, b])
     return res
@@ -78,7 +78,7 @@ def test_when_all_maps_and_completes(monkeypatch):
 
 
 async def wf_when_any(ctx: AsyncWorkflowContext):
-    a = ctx.activity(lambda: None)
+    a = ctx.call_activity(lambda: None)
     b = ctx.sleep(5.0)
     first = await ctx.when_any([a, b])
     # Return the first result only; losers ignored deterministically

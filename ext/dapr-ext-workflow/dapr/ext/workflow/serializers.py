@@ -36,6 +36,7 @@ and replay-safe. It intentionally avoids provider-specific shapes (e.g., model/t
 which should live in examples or external packages.
 """
 
+
 def _is_json_primitive(value: Any) -> bool:
     return value is None or isinstance(value, (str, int, float, bool))
 
@@ -124,7 +125,9 @@ def ensure_canonical_json(obj: Any, *, strict: bool = True) -> Any:
     """
 
     if hasattr(obj, 'to_canonical_json') and callable(getattr(obj, 'to_canonical_json')):
-        return _ensure_json(cast(CanonicalSerializable, obj).to_canonical_json(strict=strict), strict=strict)
+        return _ensure_json(
+            cast(CanonicalSerializable, obj).to_canonical_json(strict=strict), strict=strict
+        )
     return _ensure_json(obj, strict=strict)
 
 
@@ -151,7 +154,9 @@ def get_activity_adapter(name: str) -> Optional[ActivityIOAdapter]:
     return _ACTIVITY_ADAPTERS.get(name)
 
 
-def use_activity_adapter(adapter: ActivityIOAdapter) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def use_activity_adapter(
+    adapter: ActivityIOAdapter,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to attach an ActivityIOAdapter to an activity function."""
 
     def _decorate(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -173,8 +178,3 @@ def serialize_activity_output(func: Callable[..., Any], output: Any, *, strict: 
     if adapter:
         return cast(ActivityIOAdapter, adapter).serialize_output(output, strict=strict)
     return ensure_canonical_json(output, strict=strict)
-
-
-
-
-

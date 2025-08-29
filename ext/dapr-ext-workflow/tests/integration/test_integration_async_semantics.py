@@ -60,7 +60,10 @@ def test_integration_suspension_and_buffering():
         time.sleep(1)
         state = client.get_workflow_state(instance_id)
         assert state is not None
-        assert state.runtime_status.name in ('SUSPENDED', 'RUNNING')  # some hubs report SUSPENDED explicitly
+        assert state.runtime_status.name in (
+            'SUSPENDED',
+            'RUNNING',
+        )  # some hubs report SUSPENDED explicitly
 
         # While suspended, raise the event; it should buffer
         client.raise_workflow_event(instance_id, 'resume_event', data={'ok': True})
@@ -115,10 +118,12 @@ def test_integration_when_any_first_wins():
 
     @runtime.async_workflow(name='when_any_async')
     async def when_any_orchestrator(ctx: AsyncWorkflowContext):
-        first = await ctx.when_any([
-            ctx.wait_for_external_event('go'),
-            ctx.create_timer(300.0),
-        ])
+        first = await ctx.when_any(
+            [
+                ctx.wait_for_external_event('go'),
+                ctx.create_timer(300.0),
+            ]
+        )
         # Complete quickly if event won; losers are ignored (no additional commands emitted)
         return {'first': first}
 
@@ -144,5 +149,3 @@ def test_integration_when_any_first_wins():
         # TODO: when sidecar exposes command diagnostics, assert only one command set was emitted
     finally:
         runtime.shutdown()
-
-

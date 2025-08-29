@@ -52,7 +52,7 @@ def test_real_activity_benchmark():
     def gen_chain(ctx: DaprWorkflowContext, num_steps: int) -> int:
         total = 0
         for i in range(num_steps):
-            total += (yield ctx.call_activity(echo_act, input=i))
+            total += yield ctx.call_activity(echo_act, input=i)
         return total
 
     @runtime.async_workflow(name='async_chain')
@@ -88,8 +88,13 @@ def test_real_activity_benchmark():
         t_async = time.perf_counter() - t1
         assert state_a is not None and state_a.runtime_status.name == 'COMPLETED'
 
-        print({'steps': steps, 'gen_time_s': t_gen, 'async_time_s': t_async, 'ratio': (t_async / t_gen) if t_gen else None})
+        print(
+            {
+                'steps': steps,
+                'gen_time_s': t_gen,
+                'async_time_s': t_async,
+                'ratio': (t_async / t_gen) if t_gen else None,
+            }
+        )
     finally:
         runtime.shutdown()
-
-

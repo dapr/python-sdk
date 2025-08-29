@@ -53,8 +53,8 @@ def drive_raise(gen, exc: Exception):
 
 async def wf_catches_activity_error(ctx: AsyncWorkflowContext):
     try:
-        await ctx.activity(lambda: None)
-    except Exception as e:
+        await ctx.call_activity(lambda: (_ for _ in ()).throw(RuntimeError('boom')))
+    except RuntimeError as e:
         return f'caught:{e}'
     return 'not-reached'
 
@@ -144,7 +144,7 @@ def test_generator_and_async_registration_coexist(monkeypatch):
 
     async def wf_cancel(ctx: AsyncWorkflowContext):
         try:
-            await ctx.activity(lambda: None)
+            await ctx.call_activity(lambda: None)
         except asyncio.CancelledError:
             return 'cancelled'
         return 'not-reached'

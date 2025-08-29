@@ -21,6 +21,7 @@ from typing import Any, Awaitable, Callable, Optional, Sequence, Union
 from .awaitables import (
     ActivityAwaitable,
     ExternalEventAwaitable,
+    GatherReturnExceptionsAwaitable,
     SleepAwaitable,
     SubOrchestratorAwaitable,
     WhenAllAwaitable,
@@ -62,13 +63,15 @@ class AsyncWorkflowContext:
             retry_policy=retry_policy,
         )
 
-
     # Timers & Events
     def create_timer(self, fire_at: Union[float, timedelta, datetime]) -> Awaitable[None]:
         # If float provided, interpret as seconds
         if isinstance(fire_at, (int, float)):
             fire_at = timedelta(seconds=float(fire_at))
         return SleepAwaitable(self._base_ctx, fire_at)
+
+    def sleep(self, duration: Union[float, timedelta, datetime]) -> Awaitable[None]:
+        return self.create_timer(duration)
 
     def wait_for_external_event(self, name: str) -> Awaitable[Any]:
         return ExternalEventAwaitable(self._base_ctx, name)
@@ -79,6 +82,11 @@ class AsyncWorkflowContext:
 
     def when_any(self, awaitables: Sequence[Awaitable[Any]]) -> Awaitable[Any]:
         return WhenAnyAwaitable(awaitables)
+
+    def gather(self, *aws: Awaitable[Any], return_exceptions: bool = False) -> Awaitable[list[Any]]:
+        if return_exceptions:
+            return GatherReturnExceptionsAwaitable(self._base_ctx, list(aws))
+        return WhenAllAwaitable(list(aws))
 
     # Deterministic utilities
     def now(self) -> datetime:
