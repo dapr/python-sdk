@@ -1178,7 +1178,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_message], scrub_pii=False)
+        input_alpha2 = conversation.ConversationInputAlpha2(
+            messages=[user_message], scrub_pii=False
+        )
 
         response = await dapr.converse_alpha2(name='test-llm', inputs=[input_alpha2])
 
@@ -1232,7 +1234,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(choice.message.tool_calls), 1)
         tool_call = choice.message.tool_calls[0]
         self.assertEqual(tool_call.function.name, 'get_weather')
-        self.assertEqual(tool_call.function.arguments, '{"location": "San Francisco", "unit": "celsius"}')
+        self.assertEqual(
+            tool_call.function.arguments, '{"location": "San Francisco", "unit": "celsius"}'
+        )
         self.assertTrue(tool_call.id.startswith('call_'))
         await dapr.close()
 
@@ -1242,7 +1246,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         system_message = conversation.ConversationMessage(
             of_system=conversation.ConversationMessageOfSystem(
-                content=[conversation.ConversationMessageContent(text='You are a helpful assistant.')]
+                content=[
+                    conversation.ConversationMessageContent(text='You are a helpful assistant.')
+                ]
             )
         )
 
@@ -1325,9 +1331,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(response)
         choice = response.outputs[0].choices[0]
-        self.assertEqual(
-            choice.message.content, 'Assistant continued: I understand your request.'
-        )
+        self.assertEqual(choice.message.content, 'Assistant continued: I understand your request.')
         await dapr.close()
 
     async def test_converse_alpha2_multiple_messages(self):
@@ -1357,9 +1361,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             response.outputs[0].choices[0].message.content,
             'System acknowledged: You are helpful.',
         )
-        self.assertEqual(
-            response.outputs[0].choices[1].message.content, 'Response to user: Hello!'
-        )
+        self.assertEqual(response.outputs[0].choices[1].message.content, 'Response to user: Hello!')
         await dapr.close()
 
     async def test_converse_alpha2_with_context_and_options(self):
@@ -1392,9 +1394,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(response)
         self.assertEqual(response.context_id, 'chat-session-123')
         choice = response.outputs[0].choices[0]
-        self.assertEqual(
-            choice.message.content, 'Response to user: Continue our conversation'
-        )
+        self.assertEqual(choice.message.content, 'Response to user: Continue our conversation')
         await dapr.close()
 
     async def test_converse_alpha2_error_handling(self):

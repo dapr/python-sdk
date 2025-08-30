@@ -1774,11 +1774,15 @@ class DaprGrpcClient:
             response, call = self.retry_policy.run_rpc(self._stub.ConverseAlpha1.with_call, request)
 
             outputs = [
-                conversation.ConversationResultAlpha1(result=output.result, parameters=output.parameters)
+                conversation.ConversationResultAlpha1(
+                    result=output.result, parameters=output.parameters
+                )
                 for output in response.outputs
             ]
 
-            return conversation.ConversationResponseAlpha1(context_id=response.contextID, outputs=outputs)
+            return conversation.ConversationResponseAlpha1(
+                context_id=response.contextID, outputs=outputs
+            )
         except RpcError as err:
             raise DaprGrpcError(err) from err
 

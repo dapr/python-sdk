@@ -1770,11 +1770,15 @@ class DaprGrpcClientAsync:
             response = await self._stub.ConverseAlpha1(request)
 
             outputs = [
-                conversation.ConversationResultAlpha1(result=output.result, parameters=output.parameters)
+                conversation.ConversationResultAlpha1(
+                    result=output.result, parameters=output.parameters
+                )
                 for output in response.outputs
             ]
 
-            return conversation.ConversationResponseAlpha1(context_id=response.contextID, outputs=outputs)
+            return conversation.ConversationResponseAlpha1(
+                context_id=response.contextID, outputs=outputs
+            )
 
         except grpc.aio.AioRpcError as err:
             raise DaprGrpcError(err) from err
@@ -1862,11 +1866,14 @@ class DaprGrpcClientAsync:
 
         try:
             response, call = await self.retry_policy.run_rpc_async(
-                self._stub.ConverseAlpha2, request)
+                self._stub.ConverseAlpha2, request
+            )
 
             outputs = conversation._get_outputs_from_grpc_response(response)
 
-            return conversation.ConversationResponseAlpha2(context_id=response.context_id, outputs=outputs)
+            return conversation.ConversationResponseAlpha2(
+                context_id=response.context_id, outputs=outputs
+            )
 
         except grpc.aio.AioRpcError as err:
             raise DaprGrpcError(err) from err

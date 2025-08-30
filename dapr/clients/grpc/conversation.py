@@ -71,12 +71,14 @@ def _indent_lines(title: str, text: str, indent: int) -> str:
 
 class HasNameAndContent:
     """Mixin Protocol for name and content typing."""
+
     name: Optional[str] = None
     content: List[ConversationMessageContent] = field(default_factory=list)
 
 
 class UserTracePrintMixin(HasNameAndContent):
     """Mixin for trace_print for text based message content from user to LLM."""
+
     def trace_print(self, indent: int = 0) -> None:
         base = ' ' * indent
         if self.name:
@@ -577,7 +579,9 @@ def create_tool_message(tool_id: str, name: str, content: Any) -> ConversationMe
     )
 
 
-def _get_outputs_from_grpc_response(response: api_v1.ConversationResponseAlpha2) -> List[ConversationResultAlpha2]:
+def _get_outputs_from_grpc_response(
+    response: api_v1.ConversationResponseAlpha2,
+) -> List[ConversationResultAlpha2]:
     """Helper to get outputs from a Converse gRPC response from dapr sidecar."""
     outputs: List[ConversationResultAlpha2] = []
     for output in response.outputs:
@@ -591,11 +595,7 @@ def _get_outputs_from_grpc_response(response: api_v1.ConversationResponseAlpha2)
                 )
                 if not tool_call.id:
                     tool_call.id = _generate_unique_tool_call_id()
-                tool_calls.append(
-                    ConversationToolCalls(
-                        id=tool_call.id, function=function_call
-                    )
-                )
+                tool_calls.append(ConversationToolCalls(id=tool_call.id, function=function_call))
 
             result_message = ConversationResultAlpha2Message(
                 content=choice.message.content, tool_calls=tool_calls
