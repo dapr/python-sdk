@@ -63,6 +63,10 @@ class AsyncWorkflowContext:
             retry_policy=retry_policy,
         )
 
+    @property
+    def is_replaying(self) -> bool:
+        return self._base_ctx.is_replaying
+
     # Timers & Events
     def create_timer(self, fire_at: Union[float, timedelta, datetime]) -> Awaitable[None]:
         # If float provided, interpret as seconds
