@@ -26,6 +26,8 @@ from typing import Any
 from .deterministic import deterministic_random, deterministic_uuid4
 
 """
+HAS_PATCHED_GATHER = True
+
 Scoped sandbox patching for async workflows (best-effort, strict).
 
 Patches selected stdlib functions to deterministic, workflow-scoped equivalents:
@@ -73,6 +75,7 @@ class _Sandbox(ContextDecorator):
     def __enter__(self):
         # Save originals
         self._saved['asyncio.sleep'] = _asyncio.sleep
+        self._saved['asyncio.gather'] = getattr(_asyncio, 'gather', None)
         self._saved['asyncio.create_task'] = getattr(_asyncio, 'create_task', None)
         self._saved['random.random'] = _random.random
         self._saved['random.randrange'] = _random.randrange
@@ -128,8 +131,87 @@ class _Sandbox(ContextDecorator):
             finally:
                 raise RuntimeError('asyncio.create_task is not allowed inside workflow (strict mode)')
 
+        def _is_workflow_awaitable(obj: Any) -> bool:
+            try:
+                from dapr.ext.workflow.awaitables import AwaitableBase as _DaprAwaitable  # noqa
+
+                if isinstance(obj, _DaprAwaitable):
+                    return True
+            except Exception:
+                pass
+            try:
+                from durabletask import task as _dt  # noqa
+
+                if isinstance(obj, _dt.Task):
+                    return True
+            except Exception:
+                pass
+            return False
+
+        class _OneShot:
+            def __init__(self, factory):
+                self._factory = factory
+                self._done = False
+                self._res: Any = None
+                self._exc: BaseException | None = None
+
+            def __await__(self):  # type: ignore[override]
+                if self._done:
+                    async def _replay():
+                        if self._exc is not None:
+                            raise self._exc
+                        return self._res
+
+                    return _replay().__await__()
+
+                async def _compute():
+                    try:
+                        out = await self._factory()
+                        self._res = out
+                        self._done = True
+                        return out
+                    except BaseException as e:  # noqa: BLE001
+                        self._exc = e
+                        self._done = True
+                        raise
+
+                return _compute().__await__()
+
+        def _patched_gather(*aws: Any, return_exceptions: bool = False):  # type: ignore[override]
+            # Return an awaitable that can be awaited multiple times safely without a running loop
+            if not aws:
+                async def _empty():
+                    return []
+
+                return _OneShot(_empty)
+
+            if all(_is_workflow_awaitable(a) for a in aws):
+                async def _await_when_all():
+                    from dapr.ext.workflow.awaitables import WhenAllAwaitable  # local import
+
+                    combined = WhenAllAwaitable(list(aws))
+                    return await combined  # type: ignore[func-returns-value]
+
+                return _OneShot(_await_when_all)
+
+            async def _run_mixed():
+                results = []
+                for a in aws:
+                    try:
+                        results.append(await a)
+                    except Exception as e:  # noqa: BLE001
+                        if return_exceptions:
+                            results.append(e)
+                        else:
+                            raise
+                return results
+
+            return _OneShot(_run_mixed)
+
         # Apply patches
         _asyncio.sleep = _sleep_patched  # type: ignore[assignment]
+        if self._saved['asyncio.gather'] is not None:
+            _asyncio.gather = _patched_gather  # type: ignore[assignment]
         _random.random = _random_patched  # type: ignore[assignment]
         _random.randrange = _randrange_patched  # type: ignore[assignment]
         _random.randint = _randint_patched  # type: ignore[assignment]
@@ -145,6 +227,8 @@ class _Sandbox(ContextDecorator):
     def __exit__(self, exc_type, exc, tb):
         # Restore originals
         _asyncio.sleep = self._saved['asyncio.sleep']  # type: ignore[assignment]
+        if self._saved['asyncio.gather'] is not None:
+            _asyncio.gather = self._saved['asyncio.gather']  # type: ignore[assignment]
         if self._saved['asyncio.create_task'] is not None:
             _asyncio.create_task = self._saved['asyncio.create_task']  # type: ignore[assignment]
         _random.random = self._saved['random.random']  # type: ignore[assignment]
