@@ -17,6 +17,7 @@ limitations under the License.
 from dapr.ext.workflow.async_context import AsyncWorkflowContext
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
+from dapr.ext.workflow.middleware import MiddlewareOrder, MiddlewarePolicy, RuntimeMiddleware
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.serializers import (
     ActivityIOAdapter,
@@ -47,6 +48,10 @@ __all__ = [
     'when_any',
     'alternate_name',
     'RetryPolicy',
+    # middleware
+    'RuntimeMiddleware',
+    'MiddlewarePolicy',
+    'MiddlewareOrder',
     # serializers
     'CanonicalSerializable',
     'GenericSerializer',

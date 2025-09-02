@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import inspect
 from functools import wraps
-import asyncio
-from typing import Optional, TypeVar, Awaitable, Callable, Any
+from typing import Any, Awaitable, Callable, List, Optional, Tuple, TypeVar
 
 try:
     from typing import Literal  # py39+
@@ -33,6 +33,11 @@ from dapr.ext.workflow.async_context import AsyncWorkflowContext
 from dapr.ext.workflow.async_driver import CoroutineOrchestratorRunner
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.logger import Logger, LoggerOptions
+from dapr.ext.workflow.middleware import (
+    MiddlewareOrder,
+    MiddlewarePolicy,
+    RuntimeMiddleware,
+)
 from dapr.ext.workflow.util import getAddress
 from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
 from dapr.ext.workflow.workflow_context import Workflow
@@ -50,6 +55,9 @@ class WorkflowRuntime:
         host: Optional[str] = None,
         port: Optional[str] = None,
         logger_options: Optional[LoggerOptions] = None,
+        *,
+        middleware: Optional[list[RuntimeMiddleware]] = None,
+        middleware_policy: str = MiddlewarePolicy.CONTINUE_ON_ERROR,
     ):
         self._logger = Logger('WorkflowRuntime', logger_options)
         metadata = tuple()
@@ -70,6 +78,94 @@ class WorkflowRuntime:
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
         )
+        # Middleware state
+        self._middleware: List[Tuple[int, RuntimeMiddleware]] = []
+        self._middleware_policy: str = middleware_policy
+        if middleware:
+            for mw in middleware:
+                self.add_middleware(mw)
+
+    # Middleware API
+    def add_middleware(self, mw: RuntimeMiddleware, *, order: int = MiddlewareOrder.DEFAULT) -> None:
+        self._middleware.append((order, mw))
+        # Keep sorted by order
+        self._middleware.sort(key=lambda x: x[0])
+
+    def remove_middleware(self, mw: RuntimeMiddleware) -> None:
+        self._middleware = [(o, m) for (o, m) in self._middleware if m is not mw]
+
+    def set_middleware_policy(self, policy: str) -> None:
+        self._middleware_policy = policy
+
+    # Internal helpers to invoke middleware hooks
+    def _iter_mw_start(self):
+        # Ascending order
+        return [m for _, m in self._middleware]
+
+    def _iter_mw_end(self):
+        # Descending order
+        return [m for _, m in reversed(self._middleware)]
+
+    def _invoke_hook(self, hook_name: str, *, ctx: Any, arg: Any, end_phase: bool, allow_async: bool) -> None:
+        middlewares = self._iter_mw_end() if end_phase else self._iter_mw_start()
+        for mw in middlewares:
+            hook = getattr(mw, hook_name, None)
+            if not hook:
+                continue
+            try:
+                maybe = hook(ctx, arg)
+                # Avoid awaiting inside orchestrator; only allow async in activity wrappers
+                if allow_async and asyncio.iscoroutine(maybe):
+                    asyncio.run(maybe)
+            except BaseException as exc:
+                if self._middleware_policy == MiddlewarePolicy.RAISE_ON_ERROR:
+                    raise
+                # CONTINUE_ON_ERROR: log and continue
+                try:
+                    self._logger.warning(
+                        f"Middleware hook '{hook_name}' failed in {mw.__class__.__name__}: {exc}"
+                    )
+                except Exception:
+                    pass
+
+    # Outbound transformation helpers (workflow context)
+    def _apply_outbound_activity(self, ctx: Any, activity: Callable[..., Any] | str, input: Any, retry_policy: Any | None):  # noqa: E501
+        value = input
+        for _, mw in self._middleware:
+            hook = getattr(mw, 'on_schedule_activity', None)
+            if not hook:
+                continue
+            try:
+                value = hook(ctx, activity, value, retry_policy)
+            except BaseException as exc:
+                if self._middleware_policy == MiddlewarePolicy.RAISE_ON_ERROR:
+                    raise
+                try:
+                    self._logger.warning(
+                        f"Middleware hook 'on_schedule_activity' failed in {mw.__class__.__name__}: {exc}"
+                    )
+                except Exception:
+                    pass
+        return value
+
+    def _apply_outbound_child(self, ctx: Any, workflow: Callable[..., Any] | str, input: Any):
+        value = input
+        for _, mw in self._middleware:
+            hook = getattr(mw, 'on_start_child_workflow', None)
+            if not hook:
+                continue
+            try:
+                value = hook(ctx, workflow, value)
+            except BaseException as exc:
+                if self._middleware_policy == MiddlewarePolicy.RAISE_ON_ERROR:
+                    raise
+                try:
+                    self._logger.warning(
+                        f"Middleware hook 'on_start_child_workflow' failed in {mw.__class__.__name__}: {exc}"
+                    )
+                except Exception:
+                    pass
+        return value
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
         # Seamlessly support async workflows using the existing API
@@ -79,11 +175,54 @@ class WorkflowRuntime:
         self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
 
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
-            """Responsible to call Workflow function in orchestrationWrapper"""
-            daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
-            if inp is None:
-                return fn(daprWfContext)
-            return fn(daprWfContext, inp)
+            """Responsible to call Workflow function in orchestrationWrapper with middleware hooks."""
+            daprWfContext = DaprWorkflowContext(
+                ctx,
+                self._logger.get_options(),
+                outbound_handlers={
+                    'activity': self._apply_outbound_activity,
+                    'child': self._apply_outbound_child,
+                },
+            )
+
+            # on_workflow_start
+            self._invoke_hook('on_workflow_start', ctx=daprWfContext, arg=inp, end_phase=False, allow_async=False)
+
+            try:
+                result_or_gen = fn(daprWfContext) if inp is None else fn(daprWfContext, inp)
+            except BaseException as call_exc:
+                # on_workflow_error
+                self._invoke_hook('on_workflow_error', ctx=daprWfContext, arg=call_exc, end_phase=True, allow_async=False)
+                raise
+
+            # If the workflow returned a generator, wrap it to intercept yield/resume
+            if inspect.isgenerator(result_or_gen):
+                gen = result_or_gen
+
+                def driver():
+                    sent_value: Any = None
+                    try:
+                        while True:
+                            yielded = gen.send(sent_value)
+                            # on_workflow_yield
+                            self._invoke_hook('on_workflow_yield', ctx=daprWfContext, arg=yielded, end_phase=False, allow_async=False)
+                            sent_value = yield yielded
+                            # on_workflow_resume
+                            self._invoke_hook('on_workflow_resume', ctx=daprWfContext, arg=sent_value, end_phase=False, allow_async=False)
+                    except StopIteration as stop:
+                        # on_workflow_complete
+                        self._invoke_hook('on_workflow_complete', ctx=daprWfContext, arg=stop.value, end_phase=True, allow_async=False)
+                        return stop.value
+                    except BaseException as exc:
+                        # on_workflow_error
+                        self._invoke_hook('on_workflow_error', ctx=daprWfContext, arg=exc, end_phase=True, allow_async=False)
+                        raise
+
+                return driver()
+
+            # Non-generator result: completed synchronously
+            self._invoke_hook('on_workflow_complete', ctx=daprWfContext, arg=result_or_gen, end_phase=True, allow_async=False)
+            return result_or_gen
 
         if hasattr(fn, '_workflow_registered'):
             # whenever a workflow is registered, it has a _dapr_alternate_name attribute
@@ -109,16 +248,32 @@ class WorkflowRuntime:
         self._logger.info(f"Registering activity '{fn.__name__}' with runtime")
 
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
-            """Responsible to call Activity function in activityWrapper"""
+            """Responsible to call Activity function in activityWrapper with middleware hooks."""
             wfActivityContext = WorkflowActivityContext(ctx)
-            # Seamless support for async activities
-            if inspect.iscoroutinefunction(fn):
-                if inp is None:
-                    return asyncio.run(fn(wfActivityContext))
-                return asyncio.run(fn(wfActivityContext, inp))
-            if inp is None:
-                return fn(wfActivityContext)
-            return fn(wfActivityContext, inp)
+
+            # on_activity_start (allow awaiting)
+            self._invoke_hook('on_activity_start', ctx=wfActivityContext, arg=inp, end_phase=False, allow_async=True)
+
+            try:
+                # Seamless support for async activities
+                if inspect.iscoroutinefunction(fn):
+                    if inp is None:
+                        result = asyncio.run(fn(wfActivityContext))
+                    else:
+                        result = asyncio.run(fn(wfActivityContext, inp))
+                else:
+                    if inp is None:
+                        result = fn(wfActivityContext)
+                    else:
+                        result = fn(wfActivityContext, inp)
+            except BaseException as act_exc:
+                # on_activity_error (allow awaiting)
+                self._invoke_hook('on_activity_error', ctx=wfActivityContext, arg=act_exc, end_phase=True, allow_async=True)
+                raise
+
+            # on_activity_complete (allow awaiting)
+            self._invoke_hook('on_activity_complete', ctx=wfActivityContext, arg=result, end_phase=True, allow_async=True)
+            return result
 
         if hasattr(fn, '_activity_registered'):
             # whenever an activity is registered, it has a _dapr_alternate_name attribute
@@ -247,15 +402,37 @@ class WorkflowRuntime:
         runner = CoroutineOrchestratorRunner(fn, sandbox_mode=sandbox_mode)
 
         def generator_orchestrator(ctx: task.OrchestrationContext, inp: Optional[Any] = None):
-            async_ctx = AsyncWorkflowContext(DaprWorkflowContext(ctx, self._logger.get_options()))
+            async_ctx = AsyncWorkflowContext(
+                DaprWorkflowContext(
+                    ctx,
+                    self._logger.get_options(),
+                    outbound_handlers={
+                        'activity': self._apply_outbound_activity,
+                        'child': self._apply_outbound_child,
+                    },
+                )
+            )
+            # on_workflow_start
+            self._invoke_hook('on_workflow_start', ctx=async_ctx, arg=inp, end_phase=False, allow_async=False)
+
             gen = runner.to_generator(async_ctx, inp)
             result = None
             try:
                 while True:
                     t = gen.send(result)
+                    # on_workflow_yield
+                    self._invoke_hook('on_workflow_yield', ctx=async_ctx, arg=t, end_phase=False, allow_async=False)
                     result = yield t
+                    # on_workflow_resume
+                    self._invoke_hook('on_workflow_resume', ctx=async_ctx, arg=result, end_phase=False, allow_async=False)
             except StopIteration as stop:
+                # on_workflow_complete
+                self._invoke_hook('on_workflow_complete', ctx=async_ctx, arg=stop.value, end_phase=True, allow_async=False)
                 return stop.value
+            except BaseException as exc:
+                # on_workflow_error
+                self._invoke_hook('on_workflow_error', ctx=async_ctx, arg=exc, end_phase=True, allow_async=False)
+                raise
 
         self.__worker._registry.add_named_orchestrator(
             fn.__dict__['_dapr_alternate_name'], generator_orchestrator

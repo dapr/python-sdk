@@ -31,6 +31,47 @@ This package supports authoring workflows with ``async def`` in addition to the 
   - Concurrency: ``await ctx.when_all([...])``, ``await ctx.when_any([...])``
   - Deterministic utils: ``ctx.now()``, ``ctx.random()``, ``ctx.uuid4()``
 
+Middleware (workflow/activity hooks)
+------------------------------------
+
+This extension supports pluggable middleware that can observe key workflow and activity lifecycle
+events. Use middleware for cross-cutting concerns such as context propagation, replay-aware
+logging/metrics, and policy enforcement.
+
+- Register at runtime construction via ``WorkflowRuntime(middleware=[...])`` or use
+  ``add_middleware`` at any time. Control behavior with ``set_middleware_policy``.
+- Ordering: start/yield/resume hooks run in ascending registration order; complete/error hooks run
+  in reverse order (stack semantics).
+- Determinism: workflow/orchestrator hooks are synchronous (returned awaitables are not awaited).
+  Activity hooks may be ``async`` and are awaited by the runtime.
+
+.. code-block:: python
+
+    from dapr.ext.workflow import (
+        WorkflowRuntime,
+        RuntimeMiddleware,
+        MiddlewarePolicy,
+        MiddlewareOrder,
+    )
+
+    class TraceContext(RuntimeMiddleware):
+        def on_workflow_start(self, ctx, input):
+            # restore trace context using contextvars (no I/O)
+            pass
+
+        async def on_activity_start(self, ctx, input):
+            # async is allowed in activities
+            pass
+
+    rt = WorkflowRuntime(
+        middleware=[TraceContext()],
+        middleware_policy=MiddlewarePolicy.CONTINUE_ON_ERROR,
+    )
+
+    # Or later at runtime
+    rt.add_middleware(TraceContext(), order=MiddlewareOrder.DEFAULT)
+    rt.set_middleware_policy(MiddlewarePolicy.RAISE_ON_ERROR)
+
 Best-effort sandbox
 ~~~~~~~~~~~~~~~~~~~
 
