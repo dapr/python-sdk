@@ -227,7 +227,7 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
         return dataclass_schema
 
     # Handle plain classes (non-dataclass) using __init__ signature and annotations
-    if inspect.isclass(python_type):
+    if inspect.isclass(python_type) and python_type is not Any:
         try:
             # Gather type hints from __init__ if available; fall back to class annotations
             init = getattr(python_type, '__init__', None)
@@ -246,7 +246,9 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
         except Exception:
             sig = None  # type: ignore
 
+        check_slots = True
         if sig is not None:
+            check_slots = False
             for pname, param in sig.parameters.items():
                 if pname == 'self':
                     continue
@@ -260,14 +262,22 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
                     inspect.Parameter.KEYWORD_ONLY,
                 ):
                     required.append(pname)
-        else:
+            else:
+                check_slots = True
+        if check_slots:
             # Fall back to __slots__ if present
             slots = getattr(python_type, '__slots__', None)
             if isinstance(slots, (list, tuple)):
                 for pname in slots:
                     ptype = class_hints.get(pname, Any)
                     properties[pname] = _python_type_to_json_schema(ptype, pname)
-                    required.append(pname)
+                    if not (get_origin(ptype) is Union and type(None) in get_args(ptype)):
+                        required.append(pname)
+            else:  # use class_hints
+                for pname, ptype in class_hints.items():
+                    properties[pname] = _python_type_to_json_schema(ptype, pname)
+                    if not (get_origin(ptype) is Union and type(None) in get_args(ptype)):
+                        required.append(pname)
 
         # If we found nothing, return a generic object
         if not properties:
@@ -718,8 +728,13 @@ def stringify_tool_output(value: Any) -> str:
         except Exception:
             pass
 
-        # Do not attempt to auto-serialize arbitrary objects via __dict__ to avoid
-        # partially serialized structures. Let json raise and we will fallback to str(o).
+        # Plain Python objects with __dict__: return a dict filtered for non-callable attributes
+        try:
+            d = getattr(o, '__dict__', None)
+            if isinstance(d, dict):
+                return {k: v for k, v in d.items() if not callable(v)}
+        except Exception:
+            pass
 
         # Fallback: cause JSON to fail for unsupported types
         raise TypeError(f'Object of type {type(o).__name__} is not JSON serializable')
@@ -842,6 +857,9 @@ def _coerce_literal(value: Any, lit_args: List[Any]) -> Any:
 def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
     origin = get_origin(expected_type)
     args = get_args(expected_type)
+
+    if expected_type is Any:
+        raise TypeError(f'We cannot handle parameters with type Any')
 
     # Optional[T] -> Union[T, None]
     if origin is Union:

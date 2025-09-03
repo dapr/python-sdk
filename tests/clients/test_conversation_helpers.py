@@ -12,11 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import io
 import json
 import base64
 import unittest
 import warnings
+from contextlib import redirect_stdout
 from dataclasses import dataclass
 from enum import Enum
 
@@ -31,7 +32,18 @@ from dapr.clients.grpc._conversation_helpers import (
     _python_type_to_json_schema,
     extract_docstring_summary,
 )
-from dapr.clients.grpc.conversation import ConversationToolsFunction
+from dapr.clients.grpc.conversation import (
+    ConversationToolsFunction,
+    ConversationMessageOfUser,
+    ConversationMessageContent,
+    ConversationToolCalls,
+    ConversationToolCallsOfFunction,
+    ConversationMessageOfAssistant,
+    ConversationMessageOfTool,
+    ConversationMessage,
+    ConversationMessageOfDeveloper,
+    ConversationMessageOfSystem,
+)
 
 
 def test_string_passthrough():
@@ -1606,3 +1618,124 @@ class TestIntegrationScenarios(unittest.TestCase):
 
         # Check required fields
         self.assertEqual(set(schema['required']), {'latitude', 'longitude'})
+
+
+class TestTracePrintUserMixin(unittest.TestCase):
+    def test_user_trace_print_with_name_and_multiple_contents(self):
+        msg = ConversationMessageOfUser(
+            name='alice',
+            content=[
+                ConversationMessageContent(text='hello'),
+                ConversationMessageContent(text='how are you?'),
+            ],
+        )
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            msg.trace_print(indent=2)
+        out = buf.getvalue().splitlines()
+        # Name line with indent
+        self.assertEqual('  name: alice', out[0])
+        # Content lines with computed indentation
+        self.assertEqual('  content[0]: hello', out[1])
+        self.assertEqual('  content[1]: how are you?', out[2])
+
+
+class TestTracePrintAssistant(unittest.TestCase):
+    def test_assistant_trace_print_with_tool_calls(self):
+        tool_calls = [
+            ConversationToolCalls(
+                id='id1',
+                function=ConversationToolCallsOfFunction(
+                    name='get_weather', arguments='{"location":"Paris"}'
+                ),
+            )
+        ]
+        msg = ConversationMessageOfAssistant(
+            name='helper',
+            content=[ConversationMessageContent(text='checking weather')],
+            tool_calls=tool_calls,
+        )
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            msg.trace_print(indent=0)
+        lines = buf.getvalue().strip().splitlines()
+        # Name line
+        self.assertEqual(lines[0], 'name: helper')
+        # Content line
+        self.assertEqual(lines[1], 'content[0]: checking weather')
+        # Tool calls header and entry
+        self.assertEqual(lines[2], 'tool_calls: 1')
+        self.assertEqual(lines[3], '  [0] id=id1 function=get_weather({"location":"Paris"})')
+
+
+class TestTracePrintTool(unittest.TestCase):
+    def test_tool_trace_print_multiline_content(self):
+        msg = ConversationMessageOfTool(
+            tool_id='tid-123',
+            name='get_weather',
+            content=[
+                ConversationMessageContent(text='line1\nline2\nline3'),
+            ],
+        )
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            msg.trace_print(indent=2)
+        lines = buf.getvalue().splitlines()
+        # tool_id and name printed with indent
+        self.assertEqual(lines[0], '  tool_id: tid-123')
+        self.assertEqual(lines[1], '  name: get_weather')
+        # First line has the content[0] prefix with indent
+        self.assertEqual(lines[2], '  content[0]: line1')
+        # Subsequent lines are printed as-is per implementation
+        self.assertEqual(lines[3], 'line2')
+        self.assertEqual(lines[4], 'line3')
+
+
+class TestTracePrintConversationMessage(unittest.TestCase):
+    def test_conversation_message_headers_for_all_roles(self):
+        msg = ConversationMessage(
+            of_user=ConversationMessageOfUser(
+                name='bob', content=[ConversationMessageContent(text='hi')]
+            ),
+            of_assistant=ConversationMessageOfAssistant(
+                content=[ConversationMessageContent(text='hello')]
+            ),
+            of_tool=ConversationMessageOfTool(
+                tool_id='t1',
+                name='tool.fn',
+                content=[ConversationMessageContent(text='ok')],
+            ),
+            of_developer=ConversationMessageOfDeveloper(
+                name='dev', content=[ConversationMessageContent(text='turn on feature x')]
+            ),
+            of_system=ConversationMessageOfSystem(
+                name='policy', content=[ConversationMessageContent(text='Follow company policy.')]
+            ),
+        )
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            msg.trace_print(indent=0)
+        out = buf.getvalue().splitlines()
+        # First line is an empty line due to initial print()
+        self.assertEqual(out[0], '')
+        # Headers for each role appear
+        # Developer header and content
+        self.assertEqual(out[1], 'client[devel]  --------------> LLM[assistant]:')
+        self.assertEqual(out[2], '  name: dev')
+        self.assertEqual(out[3], '  content[0]: turn on feature x')
+        # System header and content
+        self.assertEqual(out[4], 'client[system] --------------> LLM[assistant]:')
+        self.assertEqual(out[5], '  name: policy')
+        self.assertEqual(out[6], '  content[0]: Follow company policy.')
+        # Delegated lines for user (name first, then content)
+        self.assertEqual(out[7], 'client[user]   --------------> LLM[assistant]:')
+        self.assertEqual(out[8], '  name: bob')
+        self.assertEqual(out[9], '  content[0]: hi')
+        # Assistant header and content
+        self.assertEqual(out[10], 'client         <------------- LLM[assistant]:')
+        self.assertIn('  content[0]: hello', out[11])
+        # Tool header and content
+        self.assertEqual(out[12], 'client[tool]   -------------> LLM[assistant]:')
+        self.assertEqual(out[13], '  tool_id: t1')
+        self.assertEqual(out[14], '  name: tool.fn')
+        self.assertEqual(out[15], '  content[0]: ok')

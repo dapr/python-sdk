@@ -31,6 +31,7 @@ from dapr.clients.grpc._conversation_helpers import (
 from dapr.clients.grpc.conversation import (
     ConversationInput,
     ConversationInputAlpha2,
+    ConversationResponseAlpha2,
     ConversationTools,
     ConversationToolsFunction,
     FunctionBackend,
@@ -42,6 +43,13 @@ from dapr.clients.grpc.conversation import (
     get_registered_tools,
     register_tool,
     unregister_tool,
+    ConversationResultAlpha2Message,
+    ConversationResultAlpha2Choices,
+    ConversationResultAlpha2,
+    ConversationMessage,
+    ConversationMessageOfAssistant,
+    ConversationToolCalls,
+    ConversationToolCallsOfFunction,
 )
 from dapr.clients.grpc.conversation import (
     tool as tool_decorator,
@@ -927,6 +935,61 @@ class ConversationToolHelpersAsyncTests(ConversationTestBaseAsync):
         unregister_tool(tool_name)
 
 
+class TestStringifyToolOutputIntegration(unittest.TestCase):
+    def test_create_tool_message_with_bytes_and_bytearray(self):
+        import base64
+
+        # bytes
+        raw = bytes([0, 1, 2, 250, 255])
+        msg = create_tool_message('tidb', 'bin', raw)
+        self.assertTrue(msg.of_tool.content[0].text.startswith('base64:'))
+        self.assertEqual(
+            msg.of_tool.content[0].text,
+            'base64:' + base64.b64encode(raw).decode('ascii'),
+        )
+        # bytearray
+        ba = bytearray(raw)
+        msg2 = create_tool_message('tidb2', 'bin', ba)
+        self.assertEqual(
+            msg2.of_tool.content[0].text,
+            'base64:' + base64.b64encode(bytes(ba)).decode('ascii'),
+        )
+
+    def test_create_tool_message_with_dataclass_and_plain_object(self):
+        import json
+        from dataclasses import dataclass
+
+        @dataclass
+        class P:
+            x: int
+            y: str
+
+        p = P(3, 'z')
+        msg = create_tool_message('tiddc', 'dc', p)
+        self.assertEqual(json.loads(msg.of_tool.content[0].text), {'x': 3, 'y': 'z'})
+
+        class Plain:
+            def __init__(self):
+                self.a = 1
+                self.b = 'b'
+                self.fn = lambda: 42  # filtered out
+
+        obj = Plain()
+        msg2 = create_tool_message('tidobj', 'plain', obj)
+        self.assertEqual(json.loads(msg2.of_tool.content[0].text), {'a': 1, 'b': 'b'})
+
+    def test_create_tool_message_json_failure_falls_back_to_str(self):
+        class Bad:
+            def __init__(self):
+                self.s = {1, 2, 3}  # set not JSON serializable
+
+            def __str__(self):
+                return 'badobj'
+
+        m = create_tool_message('tidbad', 'bad', Bad())
+        self.assertEqual(m.of_tool.content[0].text, 'badobj')
+
+
 class TestIndentLines(unittest.TestCase):
     def test_single_line_with_indent(self):
         result = conversation._indent_lines('Note', 'Hello', 2)
@@ -962,6 +1025,84 @@ class TestIndentLines(unittest.TestCase):
         result = conversation._indent_lines('T', 'a\nb', 2)
         expected = '  T: a\n' '     b'
         self.assertEqual(result, expected)
+
+
+class TestToAssistantMessages(unittest.TestCase):
+    def test_single_choice_content_only(self):
+        # Prepare a response with a single output and single choice, content only
+        msg = ConversationResultAlpha2Message(content='Hello from assistant!', tool_calls=[])
+        choice = ConversationResultAlpha2Choices(finish_reason='stop', index=0, message=msg)
+        response = ConversationResponseAlpha2(
+            context_id='ctx1', outputs=[ConversationResultAlpha2(choices=[choice])]
+        )
+
+        out = response.to_assistant_messages()
+
+        self.assertIsInstance(out, list)
+        self.assertEqual(len(out), 1)
+        self.assertIsInstance(out[0], ConversationMessage)
+        self.assertIsNotNone(out[0].of_assistant)
+        self.assertIsInstance(out[0].of_assistant, ConversationMessageOfAssistant)
+        self.assertEqual(len(out[0].of_assistant.content), 1)
+        self.assertEqual(out[0].of_assistant.content[0].text, 'Hello from assistant!')
+        self.assertEqual(len(out[0].of_assistant.tool_calls), 0)
+
+    def test_multiple_outputs_and_choices(self):
+        # Prepare response with 2 outputs, each with 2 choices
+        def make_choice(idx: int, text: str) -> ConversationResultAlpha2Choices:
+            return ConversationResultAlpha2Choices(
+                finish_reason='stop',
+                index=idx,
+                message=ConversationResultAlpha2Message(content=text, tool_calls=[]),
+            )
+
+        outputs = [
+            ConversationResultAlpha2(choices=[make_choice(0, 'A1'), make_choice(1, 'A2')]),
+            ConversationResultAlpha2(choices=[make_choice(0, 'B1'), make_choice(1, 'B2')]),
+        ]
+
+        response = ConversationResponseAlpha2(context_id=None, outputs=outputs)
+        out = response.to_assistant_messages()
+
+        # Expect 4 assistant messages in order
+        self.assertEqual(len(out), 4)
+        texts = [m.of_assistant.content[0].text for m in out]
+        self.assertEqual(texts, ['A1', 'A2', 'B1', 'B2'])
+
+    def test_choice_with_tool_calls_preserved(self):
+        tool_call = ConversationToolCalls(
+            id='call-123',
+            function=ConversationToolCallsOfFunction(
+                name='get_weather', arguments='{"location":"Paris","unit":"celsius"}'
+            ),
+        )
+        msg = ConversationResultAlpha2Message(content='', tool_calls=[tool_call])
+        choice = ConversationResultAlpha2Choices(finish_reason='tool_calls', index=0, message=msg)
+        response = ConversationResponseAlpha2(
+            context_id='ctx2', outputs=[ConversationResultAlpha2(choices=[choice])]
+        )
+
+        out = response.to_assistant_messages()
+
+        self.assertEqual(len(out), 1)
+        asst = out[0].of_assistant
+        self.assertIsNotNone(asst)
+        self.assertEqual(len(asst.content), 0)
+        self.assertEqual(len(asst.tool_calls), 1)
+        tc = asst.tool_calls[0]
+        self.assertEqual(tc.id, 'call-123')
+        self.assertIsNotNone(tc.function)
+        self.assertEqual(tc.function.name, 'get_weather')
+        self.assertEqual(tc.function.arguments, '{"location":"Paris","unit":"celsius"}')
+
+    def test_empty_and_none_outputs(self):
+        # Empty list outputs
+        response_empty = ConversationResponseAlpha2(context_id=None, outputs=[])
+        self.assertEqual(response_empty.to_assistant_messages(), [])
+
+        # None outputs (even though type says List, code handles None via `or []`)
+        response_none = ConversationResponseAlpha2(context_id=None, outputs=None)  # type: ignore[arg-type]
+        self.assertEqual(response_none.to_assistant_messages(), [])
 
 
 if __name__ == '__main__':
