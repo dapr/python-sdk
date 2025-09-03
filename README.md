@@ -126,11 +126,10 @@ tox -e examples
 
 [Dapr Mechanical Markdown](https://github.com/dapr/mechanical-markdown) is used to test the examples.
 
-If you need to run the examples against a development version of the runtime, you can use the following command:
+If you need to run the examples against a pre-released version of the runtime, you can use the following command:
 - Get your daprd runtime binary from [here](https://github.com/dapr/dapr/releases) for your platform.
-- Copy the binary to a folder, for example `examples/.dapr/bin/` directory.
-- In your example README, change the `dapr run` command and add a line `--runtime-path ./examples \`.
-- Copy a dapr config file `config.yaml` file to the `examples/.dapr` directory.  This file is usually in your $(HOME)/.dapr directory if you had installed dapr cli before.
+- Copy the binary to your dapr home folder at $HOME/.dapr/bin/daprd.
+Or using dapr cli directly: `dapr init --runtime-version <release version>`
 - Now you can run the example with `tox -e examples`.
 
 

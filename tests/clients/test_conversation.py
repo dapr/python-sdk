@@ -15,6 +15,7 @@ limitations under the License.
 
 
 import asyncio
+import json
 import unittest
 import uuid
 
@@ -27,6 +28,7 @@ from dapr.clients.grpc import conversation
 from dapr.clients.grpc._conversation_helpers import (
     ToolArgumentError,
     ToolExecutionError,
+    ToolNotFoundError,
 )
 from dapr.clients.grpc.conversation import (
     ConversationInput,
@@ -50,6 +52,7 @@ from dapr.clients.grpc.conversation import (
     ConversationMessageOfAssistant,
     ConversationToolCalls,
     ConversationToolCallsOfFunction,
+    execute_registered_tool,
 )
 from dapr.clients.grpc.conversation import (
     tool as tool_decorator,
@@ -1103,6 +1106,121 @@ class TestToAssistantMessages(unittest.TestCase):
         # None outputs (even though type says List, code handles None via `or []`)
         response_none = ConversationResponseAlpha2(context_id=None, outputs=None)  # type: ignore[arg-type]
         self.assertEqual(response_none.to_assistant_messages(), [])
+
+
+class ExecuteRegisteredToolSyncTests(unittest.TestCase):
+    def tearDown(self):
+        # Cleanup all tools we may have registered by name prefix
+        # (names are randomized per test to avoid collisions)
+        pass  # Names are unique per test; we explicitly unregister in tests
+
+    def test_sync_success_with_kwargs_and_sequence_and_json(self):
+        name = f'test_add_{uuid.uuid4().hex[:8]}'
+
+        @tool_decorator(name=name)
+        def add(a: int, b: int) -> int:
+            return a + b
+
+        try:
+            # kwargs mapping
+            out = execute_registered_tool(name, {'a': 2, 'b': 3})
+            self.assertEqual(out, 5)
+
+            # sequence args
+            out2 = execute_registered_tool(name, [10, 5])
+            self.assertEqual(out2, 15)
+
+            # JSON string params
+            out3 = execute_registered_tool(name, json.dumps({'a': '7', 'b': '8'}))
+            self.assertEqual(out3, 15)
+        finally:
+            unregister_tool(name)
+
+    def test_sync_invalid_params_type_raises(self):
+        name = f'test_echo_{uuid.uuid4().hex[:8]}'
+
+        @tool_decorator(name=name)
+        def echo(x: str) -> str:
+            return x
+
+        try:
+            with self.assertRaises(ToolArgumentError):
+                execute_registered_tool(name, 123)  # not Mapping/Sequence/None
+        finally:
+            unregister_tool(name)
+
+    def test_sync_unregistered_tool_raises(self):
+        name = f'does_not_exist_{uuid.uuid4().hex[:8]}'
+        with self.assertRaises(ToolNotFoundError):
+            execute_registered_tool(name, {'a': 1})
+
+    def test_sync_tool_exception_wrapped(self):
+        name = f'test_fail_{uuid.uuid4().hex[:8]}'
+
+        @tool_decorator(name=name)
+        def fail() -> None:
+            raise ValueError('boom')
+
+        try:
+            with self.assertRaises(ToolExecutionError):
+                execute_registered_tool(name)
+        finally:
+            unregister_tool(name)
+
+
+class ExecuteRegisteredToolAsyncTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncTearDown(self):
+        # Nothing persistent; individual tests unregister.
+        pass
+
+    async def test_async_success_and_json_params(self):
+        name = f'test_async_echo_{uuid.uuid4().hex[:8]}'
+
+        @tool_decorator(name=name)
+        async def echo(value: str) -> str:
+            await asyncio.sleep(0)
+            return value
+
+        try:
+            out = await execute_registered_tool_async(name, {'value': 'hi'})
+            self.assertEqual(out, 'hi')
+
+            out2 = await execute_registered_tool_async(name, json.dumps({'value': 'ok'}))
+            self.assertEqual(out2, 'ok')
+        finally:
+            unregister_tool(name)
+
+    async def test_async_invalid_params_type_raises(self):
+        name = f'test_async_inv_{uuid.uuid4().hex[:8]}'
+
+        @tool_decorator(name=name)
+        async def one(x: int) -> int:
+            return x
+
+        try:
+            with self.assertRaises(ToolArgumentError):
+                await execute_registered_tool_async(name, 3.14)  # invalid type
+        finally:
+            unregister_tool(name)
+
+    async def test_async_unregistered_tool_raises(self):
+        name = f'does_not_exist_{uuid.uuid4().hex[:8]}'
+        with self.assertRaises(ToolNotFoundError):
+            await execute_registered_tool_async(name, None)
+
+    async def test_async_tool_exception_wrapped(self):
+        name = f'test_async_fail_{uuid.uuid4().hex[:8]}'
+
+        @tool_decorator(name=name)
+        async def fail_async() -> None:
+            await asyncio.sleep(0)
+            raise RuntimeError('nope')
+
+        try:
+            with self.assertRaises(ToolExecutionError):
+                await execute_registered_tool_async(name)
+        finally:
+            unregister_tool(name)
 
 
 if __name__ == '__main__':

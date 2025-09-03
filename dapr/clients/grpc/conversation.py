@@ -452,6 +452,14 @@ def tool(
 ):
     """
     Decorate a callable as a conversation tool.
+
+    Security note:
+    - Register only trusted functions. Tool calls may be triggered from LLM outputs and receive
+      untrusted parameters.
+    - Use precise type annotations and docstrings for your function; we derive a JSON schema used by
+      the binder to coerce types and reject unexpected/invalid arguments.
+    - Add your own guardrails if the tool can perform side effects (filesystem, network, subprocess).
+    - You can set register=False and call register_tool later to control registration explicitly.
     """
 
     def _decorate(f: Callable):
@@ -481,19 +489,35 @@ def tool(
 
 @dataclass
 class ConversationTools:
-    """Tools available for conversation."""
+    """Tools available for conversation.
+
+    Notes on safety and validation:
+    - Tools execute arbitrary Python callables. Register only trusted functions and be mindful of
+      side effects (filesystem, network, subprocesses).
+    - Parameters provided by an LLM are untrusted. The invocation path uses bind_params_to_func to
+      coerce types based on your function annotations and to reject unexpected/invalid arguments.
+    - Consider adding your own validation/guardrails in your tool implementation.
+    """
 
     # currently only function is supported
     function: ConversationToolsFunction
     backend: Optional[ToolBackend] = None
 
     def invoke(self, params: Params = None) -> Any:
-        """execute the tool with params"""
+        """Execute the tool with params (synchronous).
+
+        params may be:
+        - Mapping[str, Any]: passed as keyword arguments
+        - Sequence[Any]: passed as positional arguments
+        - None: no arguments
+        Detailed validation and coercion are performed by the backend via bind_params_to_func.
+        """
         if not self.backend:
             raise conv_helpers.ToolExecutionError('Tool backend not set')
         return self.backend.invoke(self.function, params)
 
     async def ainvoke(self, params: Params = None, *, timeout: Union[float, None] = None) -> Any:
+        """Execute the tool asynchronously. See invoke() for parameter shape and safety notes."""
         if not self.backend:
             raise conv_helpers.ToolExecutionError('Tool backend not set')
         return await self.backend.ainvoke(self.function, params, timeout=timeout)
@@ -528,18 +552,43 @@ def _get_tool(name: str) -> ConversationTools:
 
 
 def execute_registered_tool(name: str, params: Union[Params, str] = None) -> Any:
-    """Execute a registered tool."""
+    """Execute a registered tool.
+
+    Security considerations:
+    - A registered tool typically executes user-defined code (or code imported from libraries). Only
+      register and execute tools you trust. Treat model-provided params as untrusted input.
+    - Prefer defining a JSON schema for your tool function parameters (ConversationToolsFunction
+      is created from your function’s signature and annotations). The internal binder performs
+      type coercion and rejects unexpected/invalid arguments.
+    - Add your own guardrails if the tool can perform side effects (filesystem, network, subprocess, etc.).
+    """
     if isinstance(params, str):
         params = json.loads(params)
+    # Minimal upfront shape check; detailed validation happens in bind_params_to_func
+    if params is not None and not isinstance(params, (Mapping, Sequence)):
+        raise conv_helpers.ToolArgumentError(
+            'params must be a mapping (kwargs), a sequence (args), or None'
+        )
     return _get_tool(name).invoke(params)
 
 
 async def execute_registered_tool_async(
     name: str, params: Union[Params, str] = None, *, timeout: Union[float, None] = None
 ) -> Any:
-    """Execute a registered tool asynchronously."""
+    """Execute a registered tool asynchronously.
+
+    Security considerations:
+    - Only execute trusted tools; treat model-provided params as untrusted input.
+    - Prefer well-typed function signatures and schemas for parameter validation. The binder will
+      coerce and validate, rejecting unexpected arguments.
+    - For async tools, consider timeouts and guardrails to limit side effects.
+    """
     if isinstance(params, str):
         params = json.loads(params)
+    if params is not None and not isinstance(params, (Mapping, Sequence)):
+        raise conv_helpers.ToolArgumentError(
+            'params must be a mapping (kwargs), a sequence (args), or None'
+        )
     return await _get_tool(name).ainvoke(params, timeout=timeout)
 
 

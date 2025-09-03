@@ -859,7 +859,7 @@ def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
     args = get_args(expected_type)
 
     if expected_type is Any:
-        raise TypeError(f'We cannot handle parameters with type Any')
+        raise TypeError('We cannot handle parameters with type Any')
 
     # Optional[T] -> Union[T, None]
     if origin is Union:
