@@ -140,6 +140,7 @@ The generated files will be found in `docs/_build`.
 
 ```sh
 pip3 install -r tools/requirements.txt
+export DAPR_BRANCH=release-1.16 # Optional, defaults to master
 ./tools/regen_grpcclient.sh
 ```
 
