@@ -14,17 +14,33 @@ limitations under the License.
 """
 
 # Import your main classes here
-from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
+from dapr.ext.workflow.async_context import AsyncWorkflowContext
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
-from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
-from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
+from dapr.ext.workflow.middleware import MiddlewareOrder, MiddlewarePolicy, RuntimeMiddleware
 from dapr.ext.workflow.retry_policy import RetryPolicy
+from dapr.ext.workflow.serializers import (
+    ActivityIOAdapter,
+    CanonicalSerializable,
+    GenericSerializer,
+    ensure_canonical_json,
+    get_activity_adapter,
+    get_serializer,
+    register_activity_adapter,
+    register_serializer,
+    serialize_activity_input,
+    serialize_activity_output,
+    use_activity_adapter,
+)
+from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
+from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
 
 __all__ = [
     'WorkflowRuntime',
     'DaprWorkflowClient',
     'DaprWorkflowContext',
+    'AsyncWorkflowContext',
     'WorkflowActivityContext',
     'WorkflowState',
     'WorkflowStatus',
@@ -32,4 +48,20 @@ __all__ = [
     'when_any',
     'alternate_name',
     'RetryPolicy',
+    # middleware
+    'RuntimeMiddleware',
+    'MiddlewarePolicy',
+    'MiddlewareOrder',
+    # serializers
+    'CanonicalSerializable',
+    'GenericSerializer',
+    'ActivityIOAdapter',
+    'ensure_canonical_json',
+    'register_serializer',
+    'get_serializer',
+    'register_activity_adapter',
+    'get_activity_adapter',
+    'use_activity_adapter',
+    'serialize_activity_input',
+    'serialize_activity_output',
 ]

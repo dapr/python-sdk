@@ -32,10 +32,15 @@ class DaprWorkflowContext(WorkflowContext):
     """DaprWorkflowContext that provides proxy access to internal OrchestrationContext instance."""
 
     def __init__(
-        self, ctx: task.OrchestrationContext, logger_options: Optional[LoggerOptions] = None
+        self,
+        ctx: task.OrchestrationContext,
+        logger_options: Optional[LoggerOptions] = None,
+        *,
+        outbound_handlers: Optional[dict[str, Any]] = None,
     ):
         self.__obj = ctx
         self._logger = Logger('DaprWorkflowContext', logger_options)
+        self._outbound = outbound_handlers or {}
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
@@ -74,9 +79,19 @@ class DaprWorkflowContext(WorkflowContext):
         else:
             # this case should ideally never happen
             act = activity.__name__
+        # Apply outbound middleware hooks if provided
+        transformed_input: Any = input
+        if 'activity' in self._outbound and callable(self._outbound['activity']):
+            try:
+                transformed_input = self._outbound['activity'](self, activity, input, retry_policy)
+            except Exception:
+                # Continue with original input on failure; error policy handled by runtime helper
+                pass
         if retry_policy is None:
-            return self.__obj.call_activity(activity=act, input=input)
-        return self.__obj.call_activity(activity=act, input=input, retry_policy=retry_policy.obj)
+            return self.__obj.call_activity(activity=act, input=transformed_input)
+        return self.__obj.call_activity(
+            activity=act, input=transformed_input, retry_policy=retry_policy.obj
+        )
 
     def call_child_workflow(
         self,
@@ -99,10 +114,17 @@ class DaprWorkflowContext(WorkflowContext):
         else:
             # this case should ideally never happen
             wf.__name__ = workflow.__name__
+        # Apply outbound middleware hooks if provided
+        transformed_input: Any = input
+        if 'child' in self._outbound and callable(self._outbound['child']):
+            try:
+                transformed_input = self._outbound['child'](self, workflow, input)
+            except Exception:
+                pass
         if retry_policy is None:
-            return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
+            return self.__obj.call_sub_orchestrator(wf, input=transformed_input, instance_id=instance_id)
         return self.__obj.call_sub_orchestrator(
-            wf, input=input, instance_id=instance_id, retry_policy=retry_policy.obj
+            wf, input=transformed_input, instance_id=instance_id, retry_policy=retry_policy.obj
         )
 
     def wait_for_external_event(self, name: str) -> task.Task:

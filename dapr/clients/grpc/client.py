@@ -159,6 +159,26 @@ class DaprGrpcClient:
                 ('grpc.primary_user_agent', useragent),
             ]
 
+        # Optional keepalive configuration
+        if settings.DAPR_GRPC_KEEPALIVE_ENABLED:
+            print(f"DAPR_GRPC_KEEPALIVE_ENABLED: {settings.DAPR_GRPC_KEEPALIVE_ENABLED}")
+            print(f"DAPR_GRPC_KEEPALIVE_TIME_MS: {settings.DAPR_GRPC_KEEPALIVE_TIME_MS}")
+            print(f"DAPR_GRPC_KEEPALIVE_TIMEOUT_MS: {settings.DAPR_GRPC_KEEPALIVE_TIMEOUT_MS}")
+            print(f"DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS: {settings.DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS}")
+            options.extend(
+                [
+                    ('grpc.keepalive_time_ms', int(settings.DAPR_GRPC_KEEPALIVE_TIME_MS)),
+                    (
+                        'grpc.keepalive_timeout_ms',
+                        int(settings.DAPR_GRPC_KEEPALIVE_TIMEOUT_MS),
+                    ),
+                    (
+                        'grpc.keepalive_permit_without_calls',
+                        1 if settings.DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS else 0,
+                    ),
+                ]
+            )
+
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or (
                 f'{settings.DAPR_RUNTIME_HOST}:' f'{settings.DAPR_GRPC_PORT}'
