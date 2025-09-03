@@ -132,7 +132,7 @@ class WorkflowRuntime:
     def _apply_outbound_activity(self, ctx: Any, activity: Callable[..., Any] | str, input: Any, retry_policy: Any | None):  # noqa: E501
         value = input
         for _, mw in self._middleware:
-            hook = getattr(mw, 'on_schedule_activity', None)
+            hook = getattr(mw, 'on_call_activity', None)
             if not hook:
                 continue
             try:
@@ -142,7 +142,7 @@ class WorkflowRuntime:
                     raise
                 try:
                     self._logger.warning(
-                        f"Middleware hook 'on_schedule_activity' failed in {mw.__class__.__name__}: {exc}"
+                        f"Middleware hook 'on_call_activity' failed in {mw.__class__.__name__}: {exc}"
                     )
                 except Exception:
                     pass
@@ -151,7 +151,7 @@ class WorkflowRuntime:
     def _apply_outbound_child(self, ctx: Any, workflow: Callable[..., Any] | str, input: Any):
         value = input
         for _, mw in self._middleware:
-            hook = getattr(mw, 'on_start_child_workflow', None)
+            hook = getattr(mw, 'on_call_child_workflow', None)
             if not hook:
                 continue
             try:
@@ -161,7 +161,7 @@ class WorkflowRuntime:
                     raise
                 try:
                     self._logger.warning(
-                        f"Middleware hook 'on_start_child_workflow' failed in {mw.__class__.__name__}: {exc}"
+                        f"Middleware hook 'on_call_child_workflow' failed in {mw.__class__.__name__}: {exc}"
                     )
                 except Exception:
                     pass
