@@ -44,6 +44,7 @@ from dapr.clients.grpc.conversation import (
     ConversationMessageOfSystem,
 )
 
+
 def test_string_passthrough():
     assert stringify_tool_output('hello') == 'hello'
 
@@ -2146,6 +2147,7 @@ class TestStringifyToolOutputMore(unittest.TestCase):
         obj = PlainWithDict()
         out_obj = stringify_tool_output(obj)
         self.assertEqual(json.loads(out_obj), {'x': 10, 'y': 'y'})
+
 
 if __name__ == '__main__':
     unittest.main()
