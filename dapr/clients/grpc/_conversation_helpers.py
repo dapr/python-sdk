@@ -18,6 +18,7 @@ import random
 import string
 from dataclasses import fields, is_dataclass
 from enum import Enum
+from types import UnionType
 from typing import (
     Any,
     Callable,
@@ -854,20 +855,26 @@ def _coerce_literal(value: Any, lit_args: List[Any]) -> Any:
     raise ValueError(f'{value!r} not in allowed literals {lit_args!r}')
 
 
+def _is_union(t) -> bool:
+    origin = get_origin(t)
+    return origin in (Union, UnionType)  # handles 3.8–3.13+
+
+
 def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
-    origin = get_origin(expected_type)
     args = get_args(expected_type)
 
     if expected_type is Any:
         raise TypeError('We cannot handle parameters with type Any')
 
     # Optional[T] -> Union[T, None]
-    if origin is Union:
+    if _is_union(expected_type):
         # try each option
         last_err: Optional[Exception] = None
         for opt in args:
-            if opt is type(None) and value is None:
-                return None
+            if opt is type(None):
+                if value is None:
+                    return None
+                continue
             try:
                 return _coerce_and_validate(value, opt)
             except Exception as e:
@@ -876,6 +883,8 @@ def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
         raise ValueError(
             str(last_err) if last_err else f'Cannot coerce {value!r} to {expected_type}'
         )
+
+    origin = get_origin(expected_type)
 
     # Literal
     if origin is Literal:
