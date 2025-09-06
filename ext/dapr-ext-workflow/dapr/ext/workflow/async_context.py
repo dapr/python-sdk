@@ -39,6 +39,15 @@ class AsyncWorkflowContext:
     def __init__(self, base_ctx: any):
         self._base_ctx = base_ctx
 
+    # Core workflow metadata parity with sync context
+    @property
+    def instance_id(self) -> str:
+        return self._base_ctx.instance_id
+
+    @property
+    def current_utc_datetime(self) -> datetime:
+        return self._base_ctx.current_utc_datetime
+
     # Activities & Sub-orchestrations
     def call_activity(
         self, activity_fn: Callable[..., Any], *, input: Any = None, retry_policy: Any = None
@@ -94,7 +103,8 @@ class AsyncWorkflowContext:
 
     # Deterministic utilities
     def now(self) -> datetime:
-        return self._base_ctx.current_utc_datetime
+        # Keep convenience helper; mirrors sync context's current_utc_datetime
+        return self.current_utc_datetime
 
     def random(self):  # returns PRNG; implement deterministic seeding in later milestone
         return deterministic_random(self._base_ctx.instance_id, self._base_ctx.current_utc_datetime)
@@ -106,7 +116,7 @@ class AsyncWorkflowContext:
     @property
     def is_suspended(self) -> bool:
         # Placeholder; will be wired when Durable Task exposes this state in context
-        return getattr(self._base_ctx, 'is_suspended', False)
+        return self._base_ctx.is_suspended
 
     # Internal helpers
     def _seed(self) -> int:

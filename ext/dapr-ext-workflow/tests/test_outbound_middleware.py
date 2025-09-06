@@ -1,0 +1,117 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
+
+from dapr.ext.workflow import WorkflowRuntime, RuntimeMiddleware, AsyncWorkflowContext
+
+
+class _FakeRegistry:
+    def __init__(self):
+        self.orchestrators = {}
+
+    def add_named_orchestrator(self, name, fn):
+        self.orchestrators[name] = fn
+
+
+class _FakeWorker:
+    def __init__(self, *args, **kwargs):
+        self._registry = _FakeRegistry()
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+
+class _FakeOrchCtx:
+    def __init__(self):
+        self.instance_id = 'id'
+        self.current_utc_datetime = __import__('datetime').datetime(2024, 1, 1)
+
+    def call_activity(self, activity, *, input=None, retry_policy=None):
+        # return input back for assertion through driver
+        class _T:
+            def __init__(self, v):
+                self._v = v
+
+        return _T(input)
+
+    def call_sub_orchestrator(self, wf, *, input=None, instance_id=None, retry_policy=None):
+        class _T:
+            def __init__(self, v):
+                self._v = v
+
+        return _T(input)
+
+
+def drive(gen, returned):
+    try:
+        t = gen.send(None)
+        assert hasattr(t, '_v')
+        res = returned
+        while True:
+            t = gen.send(res)
+            assert hasattr(t, '_v')
+    except StopIteration as stop:
+        return stop.value
+
+
+class _InjectTrace(RuntimeMiddleware):
+    def on_schedule_activity(self, ctx: Any, activity: Any, input: Any, retry_policy: Any | None):
+        if input is None:
+            return {'tracing': 'T'}
+        if isinstance(input, dict):
+            out = dict(input)
+            out.setdefault('tracing', 'T')
+            return out
+        return input
+
+    def on_start_child_workflow(self, ctx: Any, workflow: Any, input: Any):
+        return {'child': input}
+
+
+def test_outbound_activity_injection(monkeypatch):
+    import durabletask.worker as worker_mod
+
+    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
+
+    rt = WorkflowRuntime(middleware=[_InjectTrace()])
+
+    @rt.workflow(name='w')
+    def w(ctx, x):
+        # schedule an activity; runtime should pass transformed input to durable task
+        y = yield ctx.call_activity(lambda: None, input={'a': 1})
+        return y['tracing']
+
+    orch = rt._WorkflowRuntime__worker._registry.orchestrators['w']
+    gen = orch(_FakeOrchCtx(), 0)
+    out = drive(gen, returned={'tracing': 'T', 'a': 1})
+    assert out == 'T'
+
+
+def test_outbound_child_injection(monkeypatch):
+    import durabletask.worker as worker_mod
+
+    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
+
+    rt = WorkflowRuntime(middleware=[_InjectTrace()])
+
+    def child(ctx, x):
+        yield 'noop'
+
+    @rt.workflow(name='parent')
+    def parent(ctx, x):
+        y = yield ctx.call_child_workflow(child, input={'b': 2})
+        return y
+
+    orch = rt._WorkflowRuntime__worker._registry.orchestrators['parent']
+    gen = orch(_FakeOrchCtx(), 0)
+    out = drive(gen, returned={'child': {'b': 2}})
+    assert out == {'child': {'b': 2}}
+
+

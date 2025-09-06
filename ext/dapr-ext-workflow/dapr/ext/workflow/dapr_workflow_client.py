@@ -87,23 +87,18 @@ class DaprWorkflowClient:
             log_formatter=options.log_formatter,
         )
 
-        # Try passing channel options using commonly supported parameter names.
-        self.__obj = None  # type: ignore[assignment]
-        if channel_options is not None:
-            for param_name in ('options', 'channel_options', 'grpc_channel_options'):
-                try:
-                    attempt_kwargs = dict(base_kwargs)
-                    attempt_kwargs[param_name] = channel_options
-                    self.__obj = client.TaskHubGrpcClient(**attempt_kwargs)
-                    break
-                except TypeError:
-                    # Parameter not supported by this durabletask version; try next name
-                    self.__obj = None  # type: ignore[assignment]
-                    continue
-
-        # Fallback: no options supported or not enabled
-        if self.__obj is None:
+        # Initialize TaskHubGrpcClient
+        if channel_options is None:
             self.__obj = client.TaskHubGrpcClient(**base_kwargs)
+        else:
+            try:
+                self.__obj = client.TaskHubGrpcClient(
+                    **base_kwargs,
+                    options=channel_options,
+                )
+            except TypeError:
+                # Durable Task version does not support channel options; create without them
+                self.__obj = client.TaskHubGrpcClient(**base_kwargs)
 
     def schedule_new_workflow(
         self,

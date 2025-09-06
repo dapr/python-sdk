@@ -114,9 +114,12 @@ class WorkflowRuntime:
                 continue
             try:
                 maybe = hook(ctx, arg)
-                # Avoid awaiting inside orchestrator; only allow async in activity wrappers
-                if allow_async and asyncio.iscoroutine(maybe):
-                    asyncio.run(maybe)
+                # Avoid awaiting inside orchestrator if allowed; it is currently only allowed in activities
+                if asyncio.iscoroutine(maybe):
+                    if allow_async:
+                        asyncio.run(maybe)
+                    else:
+                        self._logger.warning(f"Trying to run async hook '{hook_name}' in {mw.__class__.__name__} that is not allowed")
             except BaseException as exc:
                 if self._middleware_policy == MiddlewarePolicy.RAISE_ON_ERROR:
                     raise
