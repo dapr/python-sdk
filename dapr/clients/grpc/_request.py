@@ -15,23 +15,22 @@ limitations under the License.
 
 import io
 from enum import Enum
-from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
-from dapr.proto import api_v1, common_v1
 
-from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataDict,
     MetadataTuple,
-    tuple_to_dict,
     to_bytes,
     to_str,
+    tuple_to_dict,
     unpack,
 )
+from dapr.proto import api_v1, common_v1
 
 
 class DaprRequest:
@@ -426,15 +425,6 @@ class DecryptRequestIterator(DaprRequest):
 
         self.seq += 1
         return request_proto
-
-
-@dataclass
-class ConversationInput:
-    """A single input message for the conversation."""
-
-    content: str
-    role: Optional[str] = None
-    scrub_pii: Optional[bool] = None
 
 
 class JobEvent:

@@ -33,3 +33,11 @@ DAPR_API_TIMEOUT_SECONDS = 60
 DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
 
 DAPR_HTTP_TIMEOUT_SECONDS = 60
+
+# ----- Conversation API settings ------
+
+# Configuration for handling large enums to avoid massive JSON schemas that can exceed LLM token limits
+DAPR_CONVERSATION_TOOLS_MAX_ENUM_ITEMS = 100
+# What to do when an enum has more than DAPR_CONVERSATION_TOOLS_MAX_ENUM_ITEMS items. Convert to String message or raise an exception
+# possible values: 'string' (default), 'error'
+DAPR_CONVERSATION_TOOLS_LARGE_ENUM_BEHAVIOR = 'string'
