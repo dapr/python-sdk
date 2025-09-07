@@ -34,6 +34,12 @@ from dapr.proto.runtime.v1.dapr_pb2 import (
     EncryptResponse,
     DecryptRequest,
     DecryptResponse,
+    ConversationResultAlpha2,
+    ConversationResultChoices,
+    ConversationResultMessage,
+    ConversationResponseAlpha2,
+    ConversationToolCalls,
+    ConversationToolCallsOfFunction,
 )
 from typing import Dict
 
@@ -537,6 +543,82 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             outputs.append(api_v1.ConversationResult(result=result, parameters={}))
 
         return api_v1.ConversationResponse(contextID=request.contextID, outputs=outputs)
+
+    def ConverseAlpha2(self, request, context):
+        """Mock implementation of the ConverseAlpha2 endpoint."""
+        self.check_for_exception(context)
+
+        # Process inputs and create responses with choices structure
+        outputs = []
+        for input_idx, input in enumerate(request.inputs):
+            choices = []
+
+            # Process each message in the input
+            for msg_idx, message in enumerate(input.messages):
+                response_content = ''
+                tool_calls = []
+
+                # Extract content based on message type
+                if message.HasField('of_user'):
+                    if message.of_user.content:
+                        response_content = f'Response to user: {message.of_user.content[0].text}'
+                elif message.HasField('of_system'):
+                    if message.of_system.content:
+                        response_content = (
+                            f'System acknowledged: {message.of_system.content[0].text}'
+                        )
+                elif message.HasField('of_assistant'):
+                    if message.of_assistant.content:
+                        response_content = (
+                            f'Assistant continued: {message.of_assistant.content[0].text}'
+                        )
+                elif message.HasField('of_developer'):
+                    if message.of_developer.content:
+                        response_content = (
+                            f'Developer note processed: {message.of_developer.content[0].text}'
+                        )
+                elif message.HasField('of_tool'):
+                    if message.of_tool.content:
+                        response_content = (
+                            f'Tool result processed: {message.of_tool.content[0].text}'
+                        )
+
+                # Check if tools are available and simulate tool calling
+                if request.tools and response_content and 'weather' in response_content.lower():
+                    # Simulate a tool call for weather requests
+                    for tool in request.tools:
+                        if tool.function and 'weather' in tool.function.name.lower():
+                            tool_call = ConversationToolCalls(
+                                id=f'call_{input_idx}_{msg_idx}',
+                                function=ConversationToolCallsOfFunction(
+                                    name=tool.function.name,
+                                    arguments='{"location": "San Francisco", "unit": "celsius"}',
+                                ),
+                            )
+                            tool_calls.append(tool_call)
+                            response_content = "I'll check the weather for you."
+                            break
+
+                # Create result message
+                result_message = ConversationResultMessage(
+                    content=response_content, tool_calls=tool_calls
+                )
+
+                # Create choice
+                finish_reason = 'tool_calls' if tool_calls else 'stop'
+                choice = ConversationResultChoices(
+                    finish_reason=finish_reason, index=msg_idx, message=result_message
+                )
+                choices.append(choice)
+
+            # Create result for this input
+            result = ConversationResultAlpha2(choices=choices)
+            outputs.append(result)
+
+        return ConversationResponseAlpha2(
+            context_id=request.context_id if request.HasField('context_id') else None,
+            outputs=outputs,
+        )
 
     def ScheduleJobAlpha1(self, request, context):
         self.check_for_exception(context)
