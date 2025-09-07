@@ -124,6 +124,15 @@ tox -e type
 tox -e examples
 ```
 
+[Dapr Mechanical Markdown](https://github.com/dapr/mechanical-markdown) is used to test the examples.
+
+If you need to run the examples against a pre-released version of the runtime, you can use the following command:
+- Get your daprd runtime binary from [here](https://github.com/dapr/dapr/releases) for your platform.
+- Copy the binary to your dapr home folder at $HOME/.dapr/bin/daprd.
+Or using dapr cli directly: `dapr init --runtime-version <release version>`
+- Now you can run the example with `tox -e examples`.
+
+
 ## Documentation
 
 Documentation is generated using Sphinx. Extensions used are mainly Napoleon (To process the Google Comment Style) and Autodocs (For automatically generating documentation). The `.rst` files are generated using Sphinx-Apidocs.
