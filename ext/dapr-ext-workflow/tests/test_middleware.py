@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-Middleware hook tests for Dapr WorkflowRuntime.
+Interceptor tests for Dapr WorkflowRuntime.
+
+This replaces legacy middleware-hook tests.
 """
 
 from __future__ import annotations
@@ -11,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from dapr.ext.workflow import MiddlewarePolicy, RuntimeMiddleware, WorkflowRuntime
+from dapr.ext.workflow import RuntimeInterceptor, WorkflowRuntime
 
 
 class _FakeRegistry:
@@ -50,38 +52,22 @@ class _FakeActivityContext:
         self.task_id = 1
 
 
-class _RecorderMiddleware(RuntimeMiddleware):
+class _RecorderInterceptor(RuntimeInterceptor):
     def __init__(self, events: list[str], label: str):
         self.events = events
         self.label = label
 
-    # workflow
-    def on_workflow_start(self, ctx, input):
-        self.events.append(f'{self.label}:wf_start:{input!r}')
+    def execute_workflow(self, input, next):  # type: ignore[override]
+        self.events.append(f'{self.label}:wf_enter:{input.input!r}')
+        ret = next(input)
+        self.events.append(f'{self.label}:wf_ret_type:{ret.__class__.__name__}')
+        return ret
 
-    def on_workflow_yield(self, ctx, yielded):
-        # Orchestrator hooks must be synchronous
-        self.events.append(f'{self.label}:wf_yield:{yielded!r}')
-
-    def on_workflow_resume(self, ctx, resumed_value):
-        self.events.append(f'{self.label}:wf_resume:{resumed_value!r}')
-
-    def on_workflow_complete(self, ctx, result):
-        self.events.append(f'{self.label}:wf_complete:{result!r}')
-
-    def on_workflow_error(self, ctx, error: BaseException):
-        self.events.append(f'{self.label}:wf_error:{type(error).__name__}')
-
-    # activity
-    async def on_activity_start(self, ctx, input):
-        # Async hooks ARE awaited for activities
-        self.events.append(f'{self.label}:act_start:{input!r}')
-
-    def on_activity_complete(self, ctx, result):
-        self.events.append(f'{self.label}:act_complete:{result!r}')
-
-    def on_activity_error(self, ctx, error: BaseException):
-        self.events.append(f'{self.label}:act_error:{type(error).__name__}')
+    def execute_activity(self, input, next):  # type: ignore[override]
+        self.events.append(f'{self.label}:act_enter:{input.input!r}')
+        res = next(input)
+        self.events.append(f'{self.label}:act_exit:{res!r}')
+        return res
 
 
 def test_generator_workflow_hooks_sequence(monkeypatch):
@@ -90,8 +76,8 @@ def test_generator_workflow_hooks_sequence(monkeypatch):
     monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
 
     events: list[str] = []
-    mw = _RecorderMiddleware(events, 'mw')
-    rt = WorkflowRuntime(middleware=[mw])
+    ic = _RecorderInterceptor(events, 'mw')
+    rt = WorkflowRuntime(interceptors=[ic])
 
     @rt.workflow(name='gen')
     def gen(ctx, x: int):
@@ -111,14 +97,9 @@ def test_generator_workflow_hooks_sequence(monkeypatch):
     result = stop.value.value
 
     assert result == (10, 'ra', 'rb')
-    assert events == [
-        "mw:wf_start:10",
-        "mw:wf_yield:'A'",
-        "mw:wf_resume:'ra'",
-        "mw:wf_yield:'B'",
-        "mw:wf_resume:'rb'",
-        "mw:wf_complete:(10, 'ra', 'rb')",
-    ]
+    # Interceptors run once around the workflow entry; they return a generator to the runtime
+    assert events[0] == 'mw:wf_enter:10'
+    assert events[1].startswith('mw:wf_ret_type:')
 
 
 def test_async_workflow_hooks_called(monkeypatch):
@@ -127,8 +108,8 @@ def test_async_workflow_hooks_called(monkeypatch):
     monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
 
     events: list[str] = []
-    mw = _RecorderMiddleware(events, 'mw')
-    rt = WorkflowRuntime(middleware=[mw])
+    ic = _RecorderInterceptor(events, 'mw')
+    rt = WorkflowRuntime(interceptors=[ic])
 
     @rt.workflow(name='awf')
     async def awf(ctx, x: int):
@@ -143,11 +124,9 @@ def test_async_workflow_hooks_called(monkeypatch):
     result = stop.value.value
 
     assert result == 42
-    # For async workflow that completes synchronously, only start/complete fire
-    assert events == [
-        'mw:wf_start:41',
-        'mw:wf_complete:42',
-    ]
+    # For async workflow, interceptor sees entry and a generator return type
+    assert events[0] == 'mw:wf_enter:41'
+    assert events[1].startswith('mw:wf_ret_type:')
 
 
 def test_activity_hooks_and_policy(monkeypatch):
@@ -157,12 +136,14 @@ def test_activity_hooks_and_policy(monkeypatch):
 
     events: list[str] = []
 
-    class _ExplodingStart(RuntimeMiddleware):
-        def on_activity_start(self, ctx, input):  # type: ignore[override]
+    class _ExplodingActivity(RuntimeInterceptor):
+        def execute_activity(self, input, next):  # type: ignore[override]
             raise RuntimeError('boom')
+        def execute_workflow(self, input, next):  # type: ignore[override]
+            return next(input)
 
     # Continue-on-error policy
-    rt = WorkflowRuntime(middleware=[_RecorderMiddleware(events, 'mw'), _ExplodingStart()])
+    rt = WorkflowRuntime(interceptors=[_RecorderInterceptor(events, 'mw'), _ExplodingActivity()])
 
     @rt.activity(name='double')
     def double(ctx, x: int) -> int:
@@ -170,22 +151,8 @@ def test_activity_hooks_and_policy(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     act = reg.activities['double']
-    result = act(_FakeActivityContext(), 5)
-    assert result == 10
-    # Start error is swallowed; complete fires
-    assert events[-1] == 'mw:act_complete:10'
-
-    # Now raise-on-error policy
-    events.clear()
-    rt2 = WorkflowRuntime(middleware=[_ExplodingStart()], middleware_policy=MiddlewarePolicy.RAISE_ON_ERROR)
-
-    @rt2.activity(name='double2')
-    def double2(ctx, x: int) -> int:
-        return x * 2
-
-    reg2 = rt2._WorkflowRuntime__worker._registry
-    act2 = reg2.activities['double2']
+    # Error in interceptor bubbles up
     with pytest.raises(RuntimeError):
-        act2(_FakeActivityContext(), 6)
+        act(_FakeActivityContext(), 5)
 
 

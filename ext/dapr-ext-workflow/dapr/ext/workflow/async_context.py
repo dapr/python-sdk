@@ -113,6 +113,9 @@ class AsyncWorkflowContext:
         rnd = self.random()
         return deterministic_uuid4(rnd)
 
+    def new_guid(self):
+        return self.uuid4()
+
     @property
     def is_suspended(self) -> bool:
         # Placeholder; will be wired when Durable Task exposes this state in context

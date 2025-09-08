@@ -14,23 +14,27 @@ limitations under the License.
 """
 
 from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Optional, TypeVar
+from typing import Any, List, Optional, TypeVar
 
-
-from durabletask import client
 import durabletask.internal.orchestrator_service_pb2 as pb
-
-from dapr.ext.workflow.workflow_state import WorkflowState
-from dapr.ext.workflow.workflow_context import Workflow
-from dapr.ext.workflow.util import getAddress
+from durabletask import client
 from grpc import RpcError
 
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
-from dapr.ext.workflow.logger import LoggerOptions, Logger
+from dapr.ext.workflow.interceptors import (
+    ClientInterceptor,
+    ScheduleInput,
+    compose_client_chain,
+)
+from dapr.ext.workflow.logger import Logger, LoggerOptions
+from dapr.ext.workflow.util import getAddress
+from dapr.ext.workflow.workflow_context import Workflow
+from dapr.ext.workflow.workflow_state import WorkflowState
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -52,6 +56,8 @@ class DaprWorkflowClient:
         host: Optional[str] = None,
         port: Optional[str] = None,
         logger_options: Optional[LoggerOptions] = None,
+        *,
+        interceptors: Optional[List[ClientInterceptor]] = None,
     ):
         address = getAddress(host, port)
 
@@ -100,6 +106,9 @@ class DaprWorkflowClient:
                 # Durable Task version does not support channel options; create without them
                 self.__obj = client.TaskHubGrpcClient(**base_kwargs)
 
+        # Interceptors
+        self._client_interceptors: List[ClientInterceptor] = list(interceptors or [])
+
     def schedule_new_workflow(
         self,
         workflow: Workflow,
@@ -126,21 +135,31 @@ class DaprWorkflowClient:
         Returns:
             The ID of the scheduled workflow instance.
         """
-        if hasattr(workflow, '_dapr_alternate_name'):
+        wf_name = (
+            workflow.__dict__['_dapr_alternate_name']
+            if hasattr(workflow, '_dapr_alternate_name')
+            else workflow.__name__
+        )
+
+        # Build interceptor chain around schedule call
+        def terminal(term_input: ScheduleInput) -> str:
             return self.__obj.schedule_new_orchestration(
-                workflow.__dict__['_dapr_alternate_name'],
-                input=input,
-                instance_id=instance_id,
-                start_at=start_at,
-                reuse_id_policy=reuse_id_policy,
+                term_input.workflow_name,
+                input=term_input.args,
+                instance_id=term_input.instance_id,
+                start_at=term_input.start_at,
+                reuse_id_policy=term_input.reuse_id_policy,
             )
-        return self.__obj.schedule_new_orchestration(
-            workflow.__name__,
-            input=input,
+
+        chain = compose_client_chain(self._client_interceptors, terminal)
+        schedule_input = ScheduleInput(
+            workflow_name=wf_name,
+            args=input,
             instance_id=instance_id,
             start_at=start_at,
             reuse_id_policy=reuse_id_policy,
         )
+        return chain(schedule_input)
 
     def get_workflow_state(
         self, instance_id: str, *, fetch_payloads: bool = True

@@ -31,46 +31,125 @@ This package supports authoring workflows with ``async def`` in addition to the 
   - Concurrency: ``await ctx.when_all([...])``, ``await ctx.when_any([...])``
   - Deterministic utils: ``ctx.now()``, ``ctx.random()``, ``ctx.uuid4()``
 
-Middleware (workflow/activity hooks)
-------------------------------------
+Interceptors (client/runtime)
+-----------------------------
 
-This extension supports pluggable middleware that can observe key workflow and activity lifecycle
-events. Use middleware for cross-cutting concerns such as context propagation, replay-aware
-logging/metrics, and policy enforcement.
+Interceptors provide a simple, composable way to apply cross-cutting behavior with a single
+enter/exit per call. There are two types:
 
-- Register at runtime construction via ``WorkflowRuntime(middleware=[...])`` or use
-  ``add_middleware`` at any time. Control behavior with ``set_middleware_policy``.
-- Ordering: start/yield/resume hooks run in ascending registration order; complete/error hooks run
-  in reverse order (stack semantics).
-- Determinism: workflow/orchestrator hooks are synchronous (returned awaitables are not awaited).
-  Activity hooks may be ``async`` and are awaited by the runtime.
+- Client interceptors wrap outbound scheduling from the client and from inside workflows
+  (activities and child workflows) by transforming inputs.
+- Runtime interceptors wrap inbound execution of workflows and activities (before user code).
+
+Use cases include context propagation, request metadata stamping, replay-aware logging, validation,
+and policy enforcement.
+
+Quick start
+~~~~~~~~~~~
 
 .. code-block:: python
 
+    from __future__ import annotations
+    import contextvars
+    from typing import Any, Callable
+
     from dapr.ext.workflow import (
         WorkflowRuntime,
-        RuntimeMiddleware,
-        MiddlewarePolicy,
-        MiddlewareOrder,
+        DaprWorkflowClient,
+        ClientInterceptor,
+        RuntimeInterceptor,
+        ScheduleInput,
+        StartActivityInput,
+        StartChildInput,
+        ExecuteWorkflowInput,
+        ExecuteActivityInput,
     )
 
-    class TraceContext(RuntimeMiddleware):
-        def on_workflow_start(self, ctx, input):
-            # restore trace context using contextvars (no I/O)
-            pass
-
-        async def on_activity_start(self, ctx, input):
-            # async is allowed in activities
-            pass
-
-    rt = WorkflowRuntime(
-        middleware=[TraceContext()],
-        middleware_policy=MiddlewarePolicy.CONTINUE_ON_ERROR,
+    # Example: propagate a lightweight context dict through inputs
+    _current_ctx: contextvars.ContextVar[dict[str, Any] | None] = contextvars.ContextVar(
+        'wf_ctx', default=None
     )
 
-    # Or later at runtime
-    rt.add_middleware(TraceContext(), order=MiddlewareOrder.DEFAULT)
-    rt.set_middleware_policy(MiddlewarePolicy.RAISE_ON_ERROR)
+    def set_ctx(ctx: dict[str, Any] | None):
+        _current_ctx.set(ctx)
+
+    def _merge_ctx(args: Any) -> Any:
+        ctx = _current_ctx.get()
+        if ctx and isinstance(args, dict) and 'context' not in args:
+            return {**args, 'context': ctx}
+        return args
+
+    class ContextClientInterceptor(ClientInterceptor):
+        def schedule_new_workflow(self, input: ScheduleInput, nxt: Callable[[ScheduleInput], Any]) -> Any:
+            input = ScheduleInput(
+                workflow_name=input.workflow_name,
+                args=_merge_ctx(input.args),
+                instance_id=input.instance_id,
+                start_at=input.start_at,
+                reuse_id_policy=input.reuse_id_policy,
+            )
+            return nxt(input)
+
+        def start_child_workflow(self, input: StartChildInput, nxt: Callable[[StartChildInput], Any]) -> Any:
+            input = StartChildInput(
+                workflow_name=input.workflow_name,
+                args=_merge_ctx(input.args),
+                instance_id=input.instance_id,
+            )
+            return nxt(input)
+
+        def start_activity(self, input: StartActivityInput, nxt: Callable[[StartActivityInput], Any]) -> Any:
+            input = StartActivityInput(
+                activity_name=input.activity_name,
+                args=_merge_ctx(input.args),
+                retry_policy=input.retry_policy,
+            )
+            return nxt(input)
+
+    class ContextRuntimeInterceptor(RuntimeInterceptor):
+        def execute_workflow(self, input: ExecuteWorkflowInput, nxt: Callable[[ExecuteWorkflowInput], Any]) -> Any:
+            # Restore context from input if present (no I/O, replay-safe)
+            if isinstance(input.input, dict) and 'context' in input.input:
+                set_ctx(input.input['context'])
+            try:
+                return nxt(input)
+            finally:
+                set_ctx(None)
+
+        def execute_activity(self, input: ExecuteActivityInput, nxt: Callable[[ExecuteActivityInput], Any]) -> Any:
+            if isinstance(input.input, dict) and 'context' in input.input:
+                set_ctx(input.input['context'])
+            try:
+                return nxt(input)
+            finally:
+                set_ctx(None)
+
+    # Wire into client and runtime
+    runtime = WorkflowRuntime(
+        interceptors=[ContextRuntimeInterceptor()],
+        client_interceptors=[ContextClientInterceptor()],
+    )
+
+    client = DaprWorkflowClient(interceptors=[ContextClientInterceptor()])
+
+Notes
+~~~~~
+
+- Interceptors are synchronous and must not perform I/O in orchestrators. Activities may perform
+  I/O inside the user function; interceptor code should remain fast and replay-safe.
+- Client interceptors are applied when calling ``DaprWorkflowClient.schedule_new_workflow(...)`` and
+  when orchestrators call ``ctx.call_activity(...)`` or ``ctx.call_child_workflow(...)``.
+
+Legacy middleware
+~~~~~~~~~~~~~~~~~
+
+Earlier versions referenced a middleware hook API. Interceptors supersede it with a simpler, more
+deterministic surface. If you have existing middleware, migrate to:
+
+- ``on_call_activity`` -> implement ``ClientInterceptor.start_activity``
+- ``on_call_child_workflow`` -> implement ``ClientInterceptor.start_child_workflow``
+- ``on_workflow_start/complete/...`` -> implement ``RuntimeInterceptor.execute_workflow``
+- ``on_activity_start/complete/...`` -> implement ``RuntimeInterceptor.execute_activity``
 
 Best-effort sandbox
 ~~~~~~~~~~~~~~~~~~~

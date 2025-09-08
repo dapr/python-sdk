@@ -70,6 +70,7 @@ class CoroutineOrchestratorRunner:
             coro = self._async_orchestrator(async_ctx)
 
         # Prime the coroutine
+        awaited: Any = None
         try:
             if self._sandbox_mode == 'off':
                 awaited = coro.send(None)

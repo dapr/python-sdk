@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-import pytest
-
-from dapr.ext.workflow import WorkflowRuntime, RuntimeMiddleware, AsyncWorkflowContext
+from dapr.ext.workflow import ClientInterceptor, WorkflowRuntime
 
 
 class _FakeRegistry:
@@ -61,18 +57,19 @@ def drive(gen, returned):
         return stop.value
 
 
-class _InjectTrace(RuntimeMiddleware):
-    def on_schedule_activity(self, ctx: Any, activity: Any, input: Any, retry_policy: Any | None):
-        if input is None:
-            return {'tracing': 'T'}
-        if isinstance(input, dict):
-            out = dict(input)
+class _InjectTrace(ClientInterceptor):
+    def start_activity(self, input, next):  # type: ignore[override]
+        x = input.args
+        if x is None:
+            input = type(input)(activity_name=input.activity_name, args={'tracing': 'T'}, retry_policy=input.retry_policy)
+        elif isinstance(x, dict):
+            out = dict(x)
             out.setdefault('tracing', 'T')
-            return out
-        return input
+            input = type(input)(activity_name=input.activity_name, args=out, retry_policy=input.retry_policy)
+        return next(input)
 
-    def on_start_child_workflow(self, ctx: Any, workflow: Any, input: Any):
-        return {'child': input}
+    def start_child_workflow(self, input, next):  # type: ignore[override]
+        return next(type(input)(workflow_name=input.workflow_name, args={'child': input.args}, instance_id=input.instance_id))
 
 
 def test_outbound_activity_injection(monkeypatch):
@@ -80,7 +77,7 @@ def test_outbound_activity_injection(monkeypatch):
 
     monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
 
-    rt = WorkflowRuntime(middleware=[_InjectTrace()])
+    rt = WorkflowRuntime(client_interceptors=[_InjectTrace()])
 
     @rt.workflow(name='w')
     def w(ctx, x):
@@ -99,7 +96,7 @@ def test_outbound_child_injection(monkeypatch):
 
     monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
 
-    rt = WorkflowRuntime(middleware=[_InjectTrace()])
+    rt = WorkflowRuntime(client_interceptors=[_InjectTrace()])
 
     def child(ctx, x):
         yield 'noop'
