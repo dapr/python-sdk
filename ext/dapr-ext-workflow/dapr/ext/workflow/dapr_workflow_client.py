@@ -30,6 +30,7 @@ from dapr.ext.workflow.interceptors import (
     ClientInterceptor,
     ScheduleWorkflowInput,
     compose_client_chain,
+    wrap_payload_with_metadata,
 )
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
@@ -143,9 +144,10 @@ class DaprWorkflowClient:
 
         # Build interceptor chain around schedule call
         def terminal(term_input: ScheduleWorkflowInput) -> str:
+            payload = wrap_payload_with_metadata(term_input.args, term_input.metadata)
             return self.__obj.schedule_new_orchestration(
                 term_input.workflow_name,
-                input=term_input.args,
+                input=payload,
                 instance_id=term_input.instance_id,
                 start_at=term_input.start_at,
                 reuse_id_policy=term_input.reuse_id_policy,

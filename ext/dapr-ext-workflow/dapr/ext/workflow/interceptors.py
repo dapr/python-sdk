@@ -26,6 +26,9 @@ class ScheduleWorkflowInput:
     instance_id: Optional[str]
     start_at: Optional[Any]
     reuse_id_policy: Optional[Any]
+    # Extra context (durable string map, in-process objects)
+    metadata: Optional[dict[str, str]] = None
+    local_context: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -35,6 +38,9 @@ class CallChildWorkflowInput:
     instance_id: Optional[str]
     # Optional workflow context for outbound calls made inside workflows
     workflow_ctx: Any | None = None
+    # Extra context (durable string map, in-process objects)
+    metadata: Optional[dict[str, str]] = None
+    local_context: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -44,6 +50,9 @@ class CallActivityInput:
     retry_policy: Optional[Any]
     # Optional workflow context for outbound calls made inside workflows
     workflow_ctx: Any | None = None
+    # Extra context (durable string map, in-process objects)
+    metadata: Optional[dict[str, str]] = None
+    local_context: Optional[dict[str, Any]] = None
 
 
 class ClientInterceptor(Protocol):
@@ -60,12 +69,18 @@ class ClientInterceptor(Protocol):
 class ExecuteWorkflowInput:
     ctx: WorkflowContext
     input: Any
+    # Durable metadata and in-process context
+    metadata: Optional[dict[str, str]] = None
+    local_context: Optional[dict[str, Any]] = None
 
 
 @dataclass
 class ExecuteActivityInput:
     ctx: WorkflowActivityContext
     input: Any
+    # Durable metadata and in-process context
+    metadata: Optional[dict[str, str]] = None
+    local_context: Optional[dict[str, Any]] = None
 
 
 class RuntimeInterceptor(Protocol):
@@ -126,6 +141,47 @@ def compose_client_chain(interceptors: list['BaseClientInterceptor'], terminal: 
             return runner
         next_fn = make_next(icpt, next_fn)
     return next_fn
+
+
+# ------------------------------
+# Helper: envelope for durable metadata
+# ------------------------------
+
+_META_KEY = '__dapr_meta__'
+_META_VERSION = 1
+_PAYLOAD_KEY = '__dapr_payload__'
+
+
+def wrap_payload_with_metadata(payload: Any, metadata: Optional[dict[str, str]] | None) -> Any:
+    """If metadata is provided and non-empty, wrap payload in an envelope for persistence.
+
+    Backward compatible: if metadata is falsy, return payload unchanged.
+    """
+    if metadata:
+        return {
+            _META_KEY: {
+                'v': _META_VERSION,
+                'metadata': metadata,
+            },
+            _PAYLOAD_KEY: payload,
+        }
+    return payload
+
+
+def unwrap_payload_with_metadata(obj: Any) -> tuple[Any, Optional[dict[str, str]]]:
+    """Extract payload and metadata from envelope if present.
+
+    Returns (payload, metadata_dict_or_none).
+    """
+    try:
+        if isinstance(obj, dict) and _META_KEY in obj and _PAYLOAD_KEY in obj:
+            meta = obj.get(_META_KEY) or {}
+            md = meta.get('metadata') if isinstance(meta, dict) else None
+            return obj.get(_PAYLOAD_KEY), md if isinstance(md, dict) else None
+    except Exception:
+        # Be robust: on any error, treat as raw payload
+        pass
+    return obj, None
 
 
 def compose_runtime_chain(interceptors: list['BaseRuntimeInterceptor'], terminal: Callable[[Any], Any]):

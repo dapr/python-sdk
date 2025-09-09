@@ -41,6 +41,8 @@ from dapr.ext.workflow.interceptors import (
     RuntimeInterceptor,
     compose_client_chain,
     compose_runtime_chain,
+    unwrap_payload_with_metadata,
+    wrap_payload_with_metadata,
 )
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
@@ -105,7 +107,9 @@ class WorkflowRuntime:
         chain = compose_client_chain(self._client_interceptors, terminal)
         sai = CallActivityInput(activity_name=name, args=input, retry_policy=retry_policy, workflow_ctx=ctx)
         out = chain(sai)
-        return out.args if isinstance(out, CallActivityInput) else input
+        if isinstance(out, CallActivityInput):
+            return wrap_payload_with_metadata(out.args, out.metadata)
+        return input
 
     def _apply_outbound_child(self, ctx: Any, workflow: Callable[..., Any] | str, input: Any):
         name = (
@@ -122,7 +126,9 @@ class WorkflowRuntime:
         chain = compose_client_chain(self._client_interceptors, terminal)
         sci = CallChildWorkflowInput(workflow_name=name, args=input, instance_id=None, workflow_ctx=ctx)
         out = chain(sci)
-        return out.args if isinstance(out, CallChildWorkflowInput) else input
+        if isinstance(out, CallChildWorkflowInput):
+            return wrap_payload_with_metadata(out.args, out.metadata)
+        return input
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
         # Seamlessly support async workflows using the existing API
@@ -141,6 +147,7 @@ class WorkflowRuntime:
                     Handlers.CALL_CHILD_WORKFLOW: self._apply_outbound_child,
                 },
             )
+            payload, md = unwrap_payload_with_metadata(inp)
             # Build interceptor chain; terminal calls the user function (generator or non-generator)
             def terminal(e_input: ExecuteWorkflowInput) -> Any:
                 return (
@@ -149,7 +156,7 @@ class WorkflowRuntime:
                     else fn(dapr_wf_context, e_input.input)
                 )
             chain = compose_runtime_chain(self._runtime_interceptors, terminal)
-            return chain(ExecuteWorkflowInput(ctx=dapr_wf_context, input=inp))
+            return chain(ExecuteWorkflowInput(ctx=dapr_wf_context, input=payload, metadata=md))
 
         if hasattr(fn, '_workflow_registered'):
             # whenever a workflow is registered, it has a _dapr_alternate_name attribute
@@ -177,6 +184,7 @@ class WorkflowRuntime:
         def activity_wrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Activity entrypoint wrapped by runtime interceptors."""
             wf_activity_context = WorkflowActivityContext(ctx)
+            payload, md = unwrap_payload_with_metadata(inp)
 
             def terminal(e_input: ExecuteActivityInput) -> Any:
                 # Support async and sync activities
@@ -189,7 +197,7 @@ class WorkflowRuntime:
                 return fn(wf_activity_context, e_input.input)
 
             chain = compose_runtime_chain(self._runtime_interceptors, terminal)
-            return chain(ExecuteActivityInput(ctx=wf_activity_context, input=inp))
+            return chain(ExecuteActivityInput(ctx=wf_activity_context, input=payload, metadata=md))
 
         if hasattr(fn, '_activity_registered'):
             # whenever an activity is registered, it has a _dapr_alternate_name attribute
@@ -328,12 +336,13 @@ class WorkflowRuntime:
                     },
                 )
             )
-            gen = runner.to_generator(async_ctx, inp)
+            payload, md = unwrap_payload_with_metadata(inp)
+            gen = runner.to_generator(async_ctx, payload)
             def terminal(e_input: ExecuteWorkflowInput) -> Any:
                 # Return the generator for the durable runtime to drive
                 return gen
             chain = compose_runtime_chain(self._runtime_interceptors, terminal)
-            return chain(ExecuteWorkflowInput(ctx=async_ctx, input=inp))
+            return chain(ExecuteWorkflowInput(ctx=async_ctx, input=payload, metadata=md))
 
         self.__worker._registry.add_named_orchestrator(
             fn.__dict__['_dapr_alternate_name'], generator_orchestrator
