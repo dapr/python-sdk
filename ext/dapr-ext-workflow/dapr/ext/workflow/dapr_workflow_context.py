@@ -12,20 +12,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-from typing import Any, Callable, List, Optional, TypeVar, Union
+import enum
 from datetime import datetime, timedelta
+from typing import Any, Callable, List, Optional, TypeVar, Union
 
 from durabletask import task
 
-from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
-from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
-from dapr.ext.workflow.logger import LoggerOptions, Logger
+from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.retry_policy import RetryPolicy
+from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow.workflow_context import Workflow, WorkflowContext
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
+
+class Handlers(enum.Enum):
+    CALL_ACTIVITY = 'call_activity'
+    CALL_CHILD_WORKFLOW = 'call_child_workflow'
 
 
 class DaprWorkflowContext(WorkflowContext):
@@ -36,11 +40,11 @@ class DaprWorkflowContext(WorkflowContext):
         ctx: task.OrchestrationContext,
         logger_options: Optional[LoggerOptions] = None,
         *,
-        outbound_handlers: Optional[dict[str, Any]] = None,
+        outbound_handlers: Optional[dict[Handlers, Any]] = None,
     ):
         self.__obj = ctx
         self._logger = Logger('DaprWorkflowContext', logger_options)
-        self._outbound = outbound_handlers or {}
+        self._outbound_handlers = outbound_handlers or {}
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
@@ -79,14 +83,10 @@ class DaprWorkflowContext(WorkflowContext):
         else:
             # this case should ideally never happen
             act = activity.__name__
-        # Apply outbound middleware hooks if provided
+        # Apply outbound client interceptor transformations if provided via runtime wiring
         transformed_input: Any = input
-        if 'activity' in self._outbound and callable(self._outbound['activity']):
-            try:
-                transformed_input = self._outbound['activity'](self, activity, input, retry_policy)
-            except Exception:
-                # Continue with original input on failure; error policy handled by runtime helper
-                pass
+        if Handlers.CALL_ACTIVITY in self._outbound_handlers and callable(self._outbound_handlers[Handlers.CALL_ACTIVITY]):
+            transformed_input = self._outbound_handlers[Handlers.CALL_ACTIVITY](self, activity, input, retry_policy)
         if retry_policy is None:
             return self.__obj.call_activity(activity=act, input=transformed_input)
         return self.__obj.call_activity(
@@ -104,8 +104,8 @@ class DaprWorkflowContext(WorkflowContext):
         self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
 
         def wf(ctx: task.OrchestrationContext, inp: TInput):
-            daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
-            return workflow(daprWfContext, inp)
+            dapr_wf_context = DaprWorkflowContext(ctx, self._logger.get_options())
+            return workflow(dapr_wf_context, inp)
 
         # copy workflow name so durabletask.worker can find the orchestrator in its registry
 
@@ -114,13 +114,10 @@ class DaprWorkflowContext(WorkflowContext):
         else:
             # this case should ideally never happen
             wf.__name__ = workflow.__name__
-        # Apply outbound middleware hooks if provided
+        # Apply outbound client interceptor transformations if provided via runtime wiring
         transformed_input: Any = input
-        if 'child' in self._outbound and callable(self._outbound['child']):
-            try:
-                transformed_input = self._outbound['child'](self, workflow, input)
-            except Exception:
-                pass
+        if Handlers.CALL_CHILD_WORKFLOW in self._outbound_handlers and callable(self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW]):
+            transformed_input = self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW](self, workflow, input)
         if retry_policy is None:
             return self.__obj.call_sub_orchestrator(wf, input=transformed_input, instance_id=instance_id)
         return self.__obj.call_sub_orchestrator(

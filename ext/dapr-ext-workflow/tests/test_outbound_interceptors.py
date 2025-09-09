@@ -58,7 +58,7 @@ def drive(gen, returned):
 
 
 class _InjectTrace(ClientInterceptor):
-    def start_activity(self, input, next):  # type: ignore[override]
+    def call_activity(self, input, next):  # type: ignore[override]
         x = input.args
         if x is None:
             input = type(input)(activity_name=input.activity_name, args={'tracing': 'T'}, retry_policy=input.retry_policy)
@@ -68,7 +68,7 @@ class _InjectTrace(ClientInterceptor):
             input = type(input)(activity_name=input.activity_name, args=out, retry_policy=input.retry_policy)
         return next(input)
 
-    def start_child_workflow(self, input, next):  # type: ignore[override]
+    def call_child_workflow(self, input, next):  # type: ignore[override]
         return next(type(input)(workflow_name=input.workflow_name, args={'child': input.args}, instance_id=input.instance_id))
 
 

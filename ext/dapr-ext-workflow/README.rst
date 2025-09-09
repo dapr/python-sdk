@@ -143,13 +143,8 @@ Notes
 Legacy middleware
 ~~~~~~~~~~~~~~~~~
 
-Earlier versions referenced a middleware hook API. Interceptors supersede it with a simpler, more
-deterministic surface. If you have existing middleware, migrate to:
-
-- ``on_call_activity`` -> implement ``ClientInterceptor.start_activity``
-- ``on_call_child_workflow`` -> implement ``ClientInterceptor.start_child_workflow``
-- ``on_workflow_start/complete/...`` -> implement ``RuntimeInterceptor.execute_workflow``
-- ``on_activity_start/complete/...`` -> implement ``RuntimeInterceptor.execute_activity``
+Earlier drafts referenced a middleware hook API. It has been removed in favor of interceptors.
+Use the interceptor types described above for new development.
 
 Best-effort sandbox
 ~~~~~~~~~~~~~~~~~~~

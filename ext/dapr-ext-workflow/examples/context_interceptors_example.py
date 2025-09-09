@@ -18,14 +18,14 @@ import contextvars
 from typing import Any, Callable
 
 from dapr.ext.workflow import (
-    ClientInterceptor,
+    BaseClientInterceptor,
+    BaseRuntimeInterceptor,
+    CallActivityInput,
+    CallChildWorkflowInput,
     DaprWorkflowClient,
     ExecuteActivityInput,
     ExecuteWorkflowInput,
-    RuntimeInterceptor,
-    ScheduleInput,
-    StartActivityInput,
-    StartChildInput,
+    ScheduleWorkflowInput,
     WorkflowRuntime,
 )
 
@@ -50,9 +50,9 @@ def _merge_ctx(args: Any) -> Any:
     return args
 
 
-class ContextClientInterceptor(ClientInterceptor):
-    def schedule_new_workflow(self, input: ScheduleInput, nxt: Callable[[ScheduleInput], Any]) -> Any:  # type: ignore[override]
-        input = ScheduleInput(
+class ContextClientInterceptor(BaseClientInterceptor):
+    def schedule_new_workflow(self, input: ScheduleWorkflowInput, nxt: Callable[[ScheduleWorkflowInput], Any]) -> Any:  # type: ignore[override]
+        input = ScheduleWorkflowInput(
             workflow_name=input.workflow_name,
             args=_merge_ctx(input.args),
             instance_id=input.instance_id,
@@ -61,16 +61,16 @@ class ContextClientInterceptor(ClientInterceptor):
         )
         return nxt(input)
 
-    def start_child_workflow(self, input: StartChildInput, nxt: Callable[[StartChildInput], Any]) -> Any:  # type: ignore[override]
-        input = StartChildInput(
+    def start_child_workflow(self, input: CallChildWorkflowInput, nxt: Callable[[CallChildWorkflowInput], Any]) -> Any:  # type: ignore[override]
+        input = CallChildWorkflowInput(
             workflow_name=input.workflow_name,
             args=_merge_ctx(input.args),
             instance_id=input.instance_id,
         )
         return nxt(input)
 
-    def start_activity(self, input: StartActivityInput, nxt: Callable[[StartActivityInput], Any]) -> Any:  # type: ignore[override]
-        input = StartActivityInput(
+    def start_activity(self, input: CallActivityInput, nxt: Callable[[CallActivityInput], Any]) -> Any:  # type: ignore[override]
+        input = CallActivityInput(
             activity_name=input.activity_name,
             args=_merge_ctx(input.args),
             retry_policy=input.retry_policy,
@@ -78,7 +78,7 @@ class ContextClientInterceptor(ClientInterceptor):
         return nxt(input)
 
 
-class ContextRuntimeInterceptor(RuntimeInterceptor):
+class ContextRuntimeInterceptor(BaseRuntimeInterceptor):
     def execute_workflow(self, input: ExecuteWorkflowInput, nxt: Callable[[ExecuteWorkflowInput], Any]) -> Any:  # type: ignore[override]
         if isinstance(input.input, dict) and 'context' in input.input:
             set_ctx(input.input['context'])

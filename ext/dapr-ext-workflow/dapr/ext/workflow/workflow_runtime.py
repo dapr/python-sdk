@@ -31,14 +31,14 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.ext.workflow.async_context import AsyncWorkflowContext
 from dapr.ext.workflow.async_driver import CoroutineOrchestratorRunner
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, Handlers
 from dapr.ext.workflow.interceptors import (
+    CallActivityInput,
+    CallChildWorkflowInput,
     ClientInterceptor,
     ExecuteActivityInput,
     ExecuteWorkflowInput,
     RuntimeInterceptor,
-    StartActivityInput,
-    StartChildInput,
     compose_client_chain,
     compose_runtime_chain,
 )
@@ -100,12 +100,12 @@ class WorkflowRuntime:
                 else activity.__name__
             )
         )
-        def terminal(term_input: StartActivityInput) -> StartActivityInput:
+        def terminal(term_input: CallActivityInput) -> CallActivityInput:
             return term_input
         chain = compose_client_chain(self._client_interceptors, terminal)
-        sai = StartActivityInput(activity_name=name, args=input, retry_policy=retry_policy)
+        sai = CallActivityInput(activity_name=name, args=input, retry_policy=retry_policy, workflow_ctx=ctx)
         out = chain(sai)
-        return out.args if isinstance(out, StartActivityInput) else input
+        return out.args if isinstance(out, CallActivityInput) else input
 
     def _apply_outbound_child(self, ctx: Any, workflow: Callable[..., Any] | str, input: Any):
         name = (
@@ -117,12 +117,12 @@ class WorkflowRuntime:
                 else workflow.__name__
             )
         )
-        def terminal(term_input: StartChildInput) -> StartChildInput:
+        def terminal(term_input: CallChildWorkflowInput) -> CallChildWorkflowInput:
             return term_input
         chain = compose_client_chain(self._client_interceptors, terminal)
-        sci = StartChildInput(workflow_name=name, args=input, instance_id=None)
+        sci = CallChildWorkflowInput(workflow_name=name, args=input, instance_id=None, workflow_ctx=ctx)
         out = chain(sci)
-        return out.args if isinstance(out, StartChildInput) else input
+        return out.args if isinstance(out, CallChildWorkflowInput) else input
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
         # Seamlessly support async workflows using the existing API
@@ -131,28 +131,25 @@ class WorkflowRuntime:
 
         self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
 
-        def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
+        def orchestration_wrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Orchestration entrypoint wrapped by runtime interceptors."""
-            daprWfContext = DaprWorkflowContext(
+            dapr_wf_context = DaprWorkflowContext(
                 ctx,
                 self._logger.get_options(),
                 outbound_handlers={
-                    'activity': self._apply_outbound_activity,
-                    'child': self._apply_outbound_child,
+                    Handlers.CALL_ACTIVITY: self._apply_outbound_activity,
+                    Handlers.CALL_CHILD_WORKFLOW: self._apply_outbound_child,
                 },
             )
             # Build interceptor chain; terminal calls the user function (generator or non-generator)
             def terminal(e_input: ExecuteWorkflowInput) -> Any:
-                result_or_gen = (
-                    fn(daprWfContext)
+                return (
+                    fn(dapr_wf_context)
                     if e_input.input is None
-                    else fn(daprWfContext, e_input.input)
+                    else fn(dapr_wf_context, e_input.input)
                 )
-                if inspect.isgenerator(result_or_gen):
-                    return result_or_gen
-                return result_or_gen
             chain = compose_runtime_chain(self._runtime_interceptors, terminal)
-            return chain(ExecuteWorkflowInput(ctx=daprWfContext, input=inp))
+            return chain(ExecuteWorkflowInput(ctx=dapr_wf_context, input=inp))
 
         if hasattr(fn, '_workflow_registered'):
             # whenever a workflow is registered, it has a _dapr_alternate_name attribute
@@ -167,7 +164,7 @@ class WorkflowRuntime:
             fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
         self.__worker._registry.add_named_orchestrator(
-            fn.__dict__['_dapr_alternate_name'], orchestrationWrapper
+            fn.__dict__['_dapr_alternate_name'], orchestration_wrapper
         )
         fn.__dict__['_workflow_registered'] = True
 
@@ -177,22 +174,22 @@ class WorkflowRuntime:
         """
         self._logger.info(f"Registering activity '{fn.__name__}' with runtime")
 
-        def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
+        def activity_wrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Activity entrypoint wrapped by runtime interceptors."""
-            wfActivityContext = WorkflowActivityContext(ctx)
+            wf_activity_context = WorkflowActivityContext(ctx)
 
             def terminal(e_input: ExecuteActivityInput) -> Any:
                 # Support async and sync activities
                 if inspect.iscoroutinefunction(fn):
                     if e_input.input is None:
-                        return asyncio.run(fn(wfActivityContext))
-                    return asyncio.run(fn(wfActivityContext, e_input.input))
+                        return asyncio.run(fn(wf_activity_context))
+                    return asyncio.run(fn(wf_activity_context, e_input.input))
                 if e_input.input is None:
-                    return fn(wfActivityContext)
-                return fn(wfActivityContext, e_input.input)
+                    return fn(wf_activity_context)
+                return fn(wf_activity_context, e_input.input)
 
             chain = compose_runtime_chain(self._runtime_interceptors, terminal)
-            return chain(ExecuteActivityInput(ctx=wfActivityContext, input=inp))
+            return chain(ExecuteActivityInput(ctx=wf_activity_context, input=inp))
 
         if hasattr(fn, '_activity_registered'):
             # whenever an activity is registered, it has a _dapr_alternate_name attribute
@@ -207,7 +204,7 @@ class WorkflowRuntime:
             fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
         self.__worker._registry.add_named_activity(
-            fn.__dict__['_dapr_alternate_name'], activityWrapper
+            fn.__dict__['_dapr_alternate_name'], activity_wrapper
         )
         fn.__dict__['_activity_registered'] = True
 
@@ -326,8 +323,8 @@ class WorkflowRuntime:
                     ctx,
                     self._logger.get_options(),
                     outbound_handlers={
-                        'activity': self._apply_outbound_activity,
-                        'child': self._apply_outbound_child,
+                        Handlers.CALL_ACTIVITY: self._apply_outbound_activity,
+                        Handlers.CALL_CHILD_WORKFLOW: self._apply_outbound_child,
                     },
                 )
             )

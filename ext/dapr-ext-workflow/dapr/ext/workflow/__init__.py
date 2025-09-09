@@ -18,13 +18,15 @@ from dapr.ext.workflow.async_context import AsyncWorkflowContext
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
 from dapr.ext.workflow.interceptors import (
+    BaseClientInterceptor,
+    BaseRuntimeInterceptor,
+    CallActivityInput,
+    CallChildWorkflowInput,
     ClientInterceptor,
     ExecuteActivityInput,
     ExecuteWorkflowInput,
     RuntimeInterceptor,
-    ScheduleInput,
-    StartActivityInput,
-    StartChildInput,
+    ScheduleWorkflowInput,
     compose_client_chain,
     compose_runtime_chain,
 )
@@ -60,10 +62,12 @@ __all__ = [
     'RetryPolicy',
     # interceptors
     'ClientInterceptor',
+    'BaseClientInterceptor',
     'RuntimeInterceptor',
-    'ScheduleInput',
-    'StartChildInput',
-    'StartActivityInput',
+    'BaseRuntimeInterceptor',
+    'ScheduleWorkflowInput',
+    'CallChildWorkflowInput',
+    'CallActivityInput',
     'ExecuteWorkflowInput',
     'ExecuteActivityInput',
     'compose_client_chain',

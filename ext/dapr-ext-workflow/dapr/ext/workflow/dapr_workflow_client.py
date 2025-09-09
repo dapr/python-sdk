@@ -28,7 +28,7 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.ext.workflow.interceptors import (
     ClientInterceptor,
-    ScheduleInput,
+    ScheduleWorkflowInput,
     compose_client_chain,
 )
 from dapr.ext.workflow.logger import Logger, LoggerOptions
@@ -68,7 +68,7 @@ class DaprWorkflowClient:
 
         self._logger = Logger('DaprWorkflowClient', logger_options)
 
-        metadata = tuple()
+        metadata = ()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         options = self._logger.get_options()
@@ -85,13 +85,13 @@ class DaprWorkflowClient:
             ]
 
         # Construct base kwargs for TaskHubGrpcClient
-        base_kwargs = dict(
-            host_address=uri.endpoint,
-            metadata=metadata,
-            secure_channel=uri.tls,
-            log_handler=options.log_handler,
-            log_formatter=options.log_formatter,
-        )
+        base_kwargs = {
+            'host_address': uri.endpoint,
+            'metadata': metadata,
+            'secure_channel': uri.tls,
+            'log_handler': options.log_handler,
+            'log_formatter': options.log_formatter,
+        }
 
         # Initialize TaskHubGrpcClient
         if channel_options is None:
@@ -142,7 +142,7 @@ class DaprWorkflowClient:
         )
 
         # Build interceptor chain around schedule call
-        def terminal(term_input: ScheduleInput) -> str:
+        def terminal(term_input: ScheduleWorkflowInput) -> str:
             return self.__obj.schedule_new_orchestration(
                 term_input.workflow_name,
                 input=term_input.args,
@@ -152,7 +152,7 @@ class DaprWorkflowClient:
             )
 
         chain = compose_client_chain(self._client_interceptors, terminal)
-        schedule_input = ScheduleInput(
+        schedule_input = ScheduleWorkflowInput(
             workflow_name=wf_name,
             args=input,
             instance_id=instance_id,
