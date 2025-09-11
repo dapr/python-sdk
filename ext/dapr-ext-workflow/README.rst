@@ -31,15 +31,15 @@ This package supports authoring workflows with ``async def`` in addition to the 
   - Concurrency: ``await ctx.when_all([...])``, ``await ctx.when_any([...])``
   - Deterministic utils: ``ctx.now()``, ``ctx.random()``, ``ctx.uuid4()``
 
-Interceptors (client/runtime)
------------------------------
+Interceptors (client/runtime/outbound)
+--------------------------------------
 
 Interceptors provide a simple, composable way to apply cross-cutting behavior with a single
-enter/exit per call. There are two types:
+enter/exit per call. There are three types:
 
-- Client interceptors wrap outbound scheduling from the client and from inside workflows
-  (activities and child workflows) by transforming inputs.
-- Runtime interceptors wrap inbound execution of workflows and activities (before user code).
+- Client interceptors: wrap outbound scheduling from the client (schedule_new_workflow).
+- Workflow outbound interceptors: wrap calls made inside workflows (call_activity, call_child_workflow).
+- Runtime interceptors: wrap inbound execution of workflows and activities (before user code).
 
 Use cases include context propagation, request metadata stamping, replay-aware logging, validation,
 and policy enforcement.
@@ -57,10 +57,11 @@ Quick start
         WorkflowRuntime,
         DaprWorkflowClient,
         ClientInterceptor,
+        WorkflowOutboundInterceptor,
         RuntimeInterceptor,
-        ScheduleInput,
-        StartActivityInput,
-        StartChildInput,
+        ScheduleWorkflowInput,
+        CallActivityInput,
+        CallChildWorkflowInput,
         ExecuteWorkflowInput,
         ExecuteActivityInput,
     )
@@ -80,8 +81,8 @@ Quick start
         return args
 
     class ContextClientInterceptor(ClientInterceptor):
-        def schedule_new_workflow(self, input: ScheduleInput, nxt: Callable[[ScheduleInput], Any]) -> Any:
-            input = ScheduleInput(
+        def schedule_new_workflow(self, input: ScheduleWorkflowInput, nxt: Callable[[ScheduleWorkflowInput], Any]) -> Any:
+            input = ScheduleWorkflowInput(
                 workflow_name=input.workflow_name,
                 args=_merge_ctx(input.args),
                 instance_id=input.instance_id,
@@ -90,21 +91,26 @@ Quick start
             )
             return nxt(input)
 
-        def start_child_workflow(self, input: StartChildInput, nxt: Callable[[StartChildInput], Any]) -> Any:
-            input = StartChildInput(
+    class ContextWorkflowOutboundInterceptor(WorkflowOutboundInterceptor):
+        def call_child_workflow(self, input: CallChildWorkflowInput, nxt: Callable[[CallChildWorkflowInput], Any]) -> Any:
+            return nxt(CallChildWorkflowInput(
                 workflow_name=input.workflow_name,
                 args=_merge_ctx(input.args),
                 instance_id=input.instance_id,
-            )
-            return nxt(input)
+                workflow_ctx=input.workflow_ctx,
+                metadata=input.metadata,
+                local_context=input.local_context,
+            ))
 
-        def start_activity(self, input: StartActivityInput, nxt: Callable[[StartActivityInput], Any]) -> Any:
-            input = StartActivityInput(
+        def call_activity(self, input: CallActivityInput, nxt: Callable[[CallActivityInput], Any]) -> Any:
+            return nxt(CallActivityInput(
                 activity_name=input.activity_name,
                 args=_merge_ctx(input.args),
                 retry_policy=input.retry_policy,
-            )
-            return nxt(input)
+                workflow_ctx=input.workflow_ctx,
+                metadata=input.metadata,
+                local_context=input.local_context,
+            ))
 
     class ContextRuntimeInterceptor(RuntimeInterceptor):
         def execute_workflow(self, input: ExecuteWorkflowInput, nxt: Callable[[ExecuteWorkflowInput], Any]) -> Any:
@@ -126,14 +132,111 @@ Quick start
 
     # Wire into client and runtime
     runtime = WorkflowRuntime(
-        interceptors=[ContextRuntimeInterceptor()],
-        client_interceptors=[ContextClientInterceptor()],
+        runtime_interceptors=[ContextRuntimeInterceptor()],
+        workflow_outbound_interceptors=[ContextWorkflowOutboundInterceptor()],
     )
 
     client = DaprWorkflowClient(interceptors=[ContextClientInterceptor()])
 
+Context metadata and local_context (durable propagation)
+-------------------------------------------------------
+
+Interceptors support two extra context channels:
+
+- ``metadata``: a string-only dict that is durably persisted and propagated across workflow
+  boundaries (schedule, child workflows, activities). Typical use: tracing and correlation ids
+  (e.g., ``otel.trace_id``), tenancy, request ids. This is provider-agnostic and does not require
+  changes to your workflow/activities.
+- ``local_context``: an in-process dict for non-serializable objects (e.g., bound loggers, tracing
+  span objects, redaction policies). It is not persisted and does not cross process boundaries.
+
+How it works
+~~~~~~~~~~~~
+
+- Client interceptors can set ``metadata`` when scheduling a workflow or calling activities/children.
+- Runtime unwraps a reserved envelope before user code runs and exposes the metadata to
+  ``RuntimeInterceptor`` via ``ExecuteWorkflowInput.metadata`` / ``ExecuteActivityInput.metadata``,
+  while delivering only the original payload to the user function.
+- Outbound calls made inside a workflow use client interceptors; when ``metadata`` is present on the
+  call input, the runtime re-wraps the payload to persist and propagate it.
+
+Envelope (backward compatible)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Internally, the runtime persists metadata by wrapping inputs in an envelope:
+
+::
+
+    {
+      "__dapr_meta__": { "v": 1, "metadata": { "otel.trace_id": "abc" } },
+      "__dapr_payload__": { ... original user input ... }
+    }
+
+- The runtime unwraps this automatically so user code continues to receive the exact original input
+  structure and types.
+- The version field (``v``) is reserved for forward compatibility.
+
+Determinism and safety
+~~~~~~~~~~~~~~~~~~~~~~
+
+- In workflows, read metadata and avoid non-deterministic operations inside interceptors. Do not
+  perform network I/O in orchestrators.
+- Activities may read/modify metadata and perform I/O inside the activity function if desired.
+- Keep ``local_context`` for in-process state only; mirror string identifiers to ``metadata`` if you
+  need propagation across activities/children.
+
+Example (tracing propagation)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    from dapr.ext.workflow import (
+        WorkflowRuntime, DaprWorkflowClient,
+        ClientInterceptor, RuntimeInterceptor,
+        ScheduleWorkflowInput, CallActivityInput,
+        ExecuteWorkflowInput, ExecuteActivityInput,
+    )
+
+    class TracingClientInterceptor(ClientInterceptor):
+        def schedule_new_workflow(self, input: ScheduleWorkflowInput, next):
+            md = dict(input.metadata or {})
+            md.setdefault('otel.trace_id', 'trace-123')
+            return next(ScheduleWorkflowInput(
+                workflow_name=input.workflow_name,
+                args=input.args,
+                instance_id=input.instance_id,
+                start_at=input.start_at,
+                reuse_id_policy=input.reuse_id_policy,
+                metadata=md,
+            ))
+        def call_activity(self, input: CallActivityInput, next):
+            md = dict(input.metadata or {})
+            md.setdefault('otel.trace_id', 'trace-123')
+            input.metadata = md
+            return next(input)
+
+    class TracingRuntimeInterceptor(RuntimeInterceptor):
+        def execute_workflow(self, input: ExecuteWorkflowInput, next):
+            trace_id = (input.metadata or {}).get('otel.trace_id')
+            # Bind to a logger or contextvar here (replay-safe)
+            return next(input)
+        def execute_activity(self, input: ExecuteActivityInput, next):
+            trace_id = (input.metadata or {}).get('otel.trace_id')
+            return next(input)
+
+    rt = WorkflowRuntime(interceptors=[TracingRuntimeInterceptor()],
+                         client_interceptors=[TracingClientInterceptor()])
+    client = DaprWorkflowClient(interceptors=[TracingClientInterceptor()])
+
 Notes
 ~~~~~
+
+- User functions never see the envelope keys; they get the same input as before.
+- Only string keys/values should be stored in ``metadata``; enforce size limits and redaction
+  policies as needed.
+
+Notes
+-----
 
 - Interceptors are synchronous and must not perform I/O in orchestrators. Activities may perform
   I/O inside the user function; interceptor code should remain fast and replay-safe.
