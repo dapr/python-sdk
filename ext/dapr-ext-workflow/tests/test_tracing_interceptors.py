@@ -130,8 +130,7 @@ def test_runtime_restores_tracing_before_user_code(monkeypatch):
             return next(input)
 
     rt = WorkflowRuntime(
-        interceptors=[_TracingRuntime()],
-        client_interceptors=[_TracingClient2()],
+        runtime_interceptors=[_TracingRuntime()],
     )
 
     @rt.workflow(name='w')

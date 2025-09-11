@@ -20,6 +20,7 @@ from typing import Any, Callable
 from dapr.ext.workflow import (
     BaseClientInterceptor,
     BaseRuntimeInterceptor,
+    BaseWorkflowOutboundInterceptor,
     CallActivityInput,
     CallChildWorkflowInput,
     DaprWorkflowClient,
@@ -61,21 +62,26 @@ class ContextClientInterceptor(BaseClientInterceptor):
         )
         return nxt(input)
 
-    def start_child_workflow(self, input: CallChildWorkflowInput, nxt: Callable[[CallChildWorkflowInput], Any]) -> Any:  # type: ignore[override]
-        input = CallChildWorkflowInput(
+class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
+    def call_child_workflow(self, input: CallChildWorkflowInput, nxt: Callable[[CallChildWorkflowInput], Any]) -> Any:
+        return nxt(CallChildWorkflowInput(
             workflow_name=input.workflow_name,
             args=_merge_ctx(input.args),
             instance_id=input.instance_id,
-        )
-        return nxt(input)
+            workflow_ctx=input.workflow_ctx,
+            metadata=input.metadata,
+            local_context=input.local_context,
+        ))
 
-    def start_activity(self, input: CallActivityInput, nxt: Callable[[CallActivityInput], Any]) -> Any:  # type: ignore[override]
-        input = CallActivityInput(
+    def call_activity(self, input: CallActivityInput, nxt: Callable[[CallActivityInput], Any]) -> Any:
+        return nxt(CallActivityInput(
             activity_name=input.activity_name,
             args=_merge_ctx(input.args),
             retry_policy=input.retry_policy,
-        )
-        return nxt(input)
+            workflow_ctx=input.workflow_ctx,
+            metadata=input.metadata,
+            local_context=input.local_context,
+        ))
 
 
 class ContextRuntimeInterceptor(BaseRuntimeInterceptor):
@@ -109,8 +115,8 @@ def workflow_example(ctx, x: int):  # noqa: ANN001 (example)
 
 def wire_up() -> tuple[WorkflowRuntime, DaprWorkflowClient]:
     runtime = WorkflowRuntime(
-        interceptors=[ContextRuntimeInterceptor()],
-        client_interceptors=[ContextClientInterceptor()],
+        runtime_interceptors=[ContextRuntimeInterceptor()],
+        workflow_outbound_interceptors=[ContextWorkflowOutboundInterceptor()],
     )
     client = DaprWorkflowClient(interceptors=[ContextClientInterceptor()])
 

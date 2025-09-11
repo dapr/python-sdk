@@ -25,7 +25,7 @@ from grpc import RpcError
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
-from dapr.conf.helpers import GrpcEndpoint
+from dapr.conf.helpers import GrpcEndpoint, build_grpc_channel_options
 from dapr.ext.workflow.interceptors import (
     ClientInterceptor,
     ScheduleWorkflowInput,
@@ -73,17 +73,8 @@ class DaprWorkflowClient:
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         options = self._logger.get_options()
-        # Optional gRPC keepalive options (best-effort; depends on durabletask version)
-        channel_options = None
-        if settings.DAPR_GRPC_KEEPALIVE_ENABLED:
-            channel_options = [
-                ('grpc.keepalive_time_ms', int(settings.DAPR_GRPC_KEEPALIVE_TIME_MS)),
-                ('grpc.keepalive_timeout_ms', int(settings.DAPR_GRPC_KEEPALIVE_TIMEOUT_MS)),
-                (
-                    'grpc.keepalive_permit_without_calls',
-                    1 if settings.DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS else 0,
-                ),
-            ]
+        # Optional gRPC channel options (keepalive, retry policy) via helpers
+        channel_options = build_grpc_channel_options()
 
         # Construct base kwargs for TaskHubGrpcClient
         base_kwargs = {
@@ -94,18 +85,11 @@ class DaprWorkflowClient:
             'log_formatter': options.log_formatter,
         }
 
-        # Initialize TaskHubGrpcClient
-        if channel_options is None:
-            self.__obj = client.TaskHubGrpcClient(**base_kwargs)
-        else:
-            try:
-                self.__obj = client.TaskHubGrpcClient(
-                    **base_kwargs,
-                    options=channel_options,
-                )
-            except TypeError:
-                # Durable Task version does not support channel options; create without them
-                self.__obj = client.TaskHubGrpcClient(**base_kwargs)
+        # Initialize TaskHubGrpcClient (DurableTask supports options)
+        self.__obj = client.TaskHubGrpcClient(
+            **base_kwargs,
+            options=channel_options,
+        )
 
         # Interceptors
         self._client_interceptors: List[ClientInterceptor] = list(interceptors or [])
@@ -118,6 +102,7 @@ class DaprWorkflowClient:
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
         reuse_id_policy: Optional[pb.OrchestrationIdReusePolicy] = None,
+        metadata: Optional[dict[str, str]] = None,
     ) -> str:
         """Schedules a new workflow instance for execution.
 
@@ -160,6 +145,7 @@ class DaprWorkflowClient:
             instance_id=instance_id,
             start_at=start_at,
             reuse_id_policy=reuse_id_policy,
+            metadata=metadata,
         )
         return chain(schedule_input)
 

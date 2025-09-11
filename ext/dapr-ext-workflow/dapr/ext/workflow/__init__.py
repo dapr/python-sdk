@@ -20,6 +20,7 @@ from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_al
 from dapr.ext.workflow.interceptors import (
     BaseClientInterceptor,
     BaseRuntimeInterceptor,
+    BaseWorkflowOutboundInterceptor,
     CallActivityInput,
     CallChildWorkflowInput,
     ClientInterceptor,
@@ -27,8 +28,9 @@ from dapr.ext.workflow.interceptors import (
     ExecuteWorkflowInput,
     RuntimeInterceptor,
     ScheduleWorkflowInput,
-    compose_client_chain,
+    WorkflowOutboundInterceptor,
     compose_runtime_chain,
+    compose_workflow_outbound_chain,
 )
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.serializers import (
@@ -63,6 +65,8 @@ __all__ = [
     # interceptors
     'ClientInterceptor',
     'BaseClientInterceptor',
+    'WorkflowOutboundInterceptor',
+    'BaseWorkflowOutboundInterceptor',
     'RuntimeInterceptor',
     'BaseRuntimeInterceptor',
     'ScheduleWorkflowInput',
@@ -70,7 +74,7 @@ __all__ = [
     'CallActivityInput',
     'ExecuteWorkflowInput',
     'ExecuteActivityInput',
-    'compose_client_chain',
+    'compose_workflow_outbound_chain',
     'compose_runtime_chain',
     # serializers
     'CanonicalSerializable',

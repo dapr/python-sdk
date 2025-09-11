@@ -172,7 +172,7 @@ def test_single_interceptor_workflow_execution(monkeypatch):
 
     events: list[str] = []
     logging_interceptor = _LoggingInterceptor(events, 'log')
-    rt = WorkflowRuntime(interceptors=[logging_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[logging_interceptor])
 
     @rt.workflow(name='simple')
     def simple(ctx, x: int):
@@ -198,7 +198,7 @@ def test_single_interceptor_activity_execution(monkeypatch):
 
     events: list[str] = []
     logging_interceptor = _LoggingInterceptor(events, 'log')
-    rt = WorkflowRuntime(interceptors=[logging_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[logging_interceptor])
 
     @rt.activity(name='double')
     def double(ctx, x: int) -> int:
@@ -226,7 +226,7 @@ def test_multiple_interceptors_execution_order(monkeypatch):
     inner_interceptor = _LoggingInterceptor(events, 'inner')
 
     # First interceptor in list is outermost
-    rt = WorkflowRuntime(interceptors=[outer_interceptor, inner_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[outer_interceptor, inner_interceptor])
 
     @rt.workflow(name='ordered')
     def ordered(ctx, x: int):
@@ -254,7 +254,7 @@ def test_tracing_interceptor_context_restoration(monkeypatch):
 
     events: list[str] = []
     tracing_interceptor = _TracingInterceptor(events)
-    rt = WorkflowRuntime(interceptors=[tracing_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[tracing_interceptor])
 
     @rt.workflow(name='traced')
     def traced(ctx, input_data):
@@ -287,7 +287,7 @@ def test_validation_interceptor_input_validation(monkeypatch):
 
     events: list[str] = []
     validation_interceptor = _ValidationInterceptor(events)
-    rt = WorkflowRuntime(interceptors=[validation_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[validation_interceptor])
 
     @rt.workflow(name='validated')
     def validated(ctx, input_data):
@@ -320,7 +320,7 @@ def test_interceptor_error_handling_workflow(monkeypatch):
 
     events: list[str] = []
     logging_interceptor = _LoggingInterceptor(events, 'log')
-    rt = WorkflowRuntime(interceptors=[logging_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[logging_interceptor])
 
     @rt.workflow(name='error_wf')
     def error_wf(ctx, x: int):
@@ -346,7 +346,7 @@ def test_interceptor_error_handling_activity(monkeypatch):
 
     events: list[str] = []
     logging_interceptor = _LoggingInterceptor(events, 'log')
-    rt = WorkflowRuntime(interceptors=[logging_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[logging_interceptor])
 
     @rt.activity(name='error_act')
     def error_act(ctx, x: int) -> int:
@@ -372,7 +372,7 @@ def test_async_workflow_with_interceptors(monkeypatch):
 
     events: list[str] = []
     logging_interceptor = _LoggingInterceptor(events, 'log')
-    rt = WorkflowRuntime(interceptors=[logging_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[logging_interceptor])
 
     @rt.workflow(name='async_wf')
     async def async_wf(ctx, x: int):
@@ -402,7 +402,7 @@ def test_async_activity_with_interceptors(monkeypatch):
 
     events: list[str] = []
     logging_interceptor = _LoggingInterceptor(events, 'log')
-    rt = WorkflowRuntime(interceptors=[logging_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[logging_interceptor])
 
     @rt.activity(name='async_act')
     async def async_act(ctx, x: int) -> int:
@@ -428,7 +428,7 @@ def test_generator_workflow_with_interceptors(monkeypatch):
 
     events: list[str] = []
     logging_interceptor = _LoggingInterceptor(events, 'log')
-    rt = WorkflowRuntime(interceptors=[logging_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[logging_interceptor])
 
     @rt.workflow(name='gen_wf')
     def gen_wf(ctx, x: int):
@@ -475,7 +475,7 @@ def test_interceptor_chain_with_early_return(monkeypatch):
     logging_interceptor = _LoggingInterceptor(events, 'log')
     short_circuit_interceptor = _ShortCircuitInterceptor()
 
-    rt = WorkflowRuntime(interceptors=[short_circuit_interceptor, logging_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[short_circuit_interceptor, logging_interceptor])
 
     @rt.workflow(name='maybe_short')
     def maybe_short(ctx, input_data):
@@ -525,7 +525,7 @@ def test_interceptor_input_transformation(monkeypatch):
             return next(input)
 
     transform_interceptor = _TransformInterceptor()
-    rt = WorkflowRuntime(interceptors=[transform_interceptor])
+    rt = WorkflowRuntime(runtime_interceptors=[transform_interceptor])
 
     @rt.workflow(name='transform_test')
     def transform_test(ctx, input_data):

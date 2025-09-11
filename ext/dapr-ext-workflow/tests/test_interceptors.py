@@ -77,7 +77,7 @@ def test_generator_workflow_hooks_sequence(monkeypatch):
 
     events: list[str] = []
     ic = _RecorderInterceptor(events, 'mw')
-    rt = WorkflowRuntime(interceptors=[ic])
+    rt = WorkflowRuntime(runtime_interceptors=[ic])
 
     @rt.workflow(name='gen')
     def gen(ctx, x: int):
@@ -109,7 +109,7 @@ def test_async_workflow_hooks_called(monkeypatch):
 
     events: list[str] = []
     ic = _RecorderInterceptor(events, 'mw')
-    rt = WorkflowRuntime(interceptors=[ic])
+    rt = WorkflowRuntime(runtime_interceptors=[ic])
 
     @rt.workflow(name='awf')
     async def awf(ctx, x: int):
@@ -143,7 +143,7 @@ def test_activity_hooks_and_policy(monkeypatch):
             return next(input)
 
     # Continue-on-error policy
-    rt = WorkflowRuntime(interceptors=[_RecorderInterceptor(events, 'mw'), _ExplodingActivity()])
+    rt = WorkflowRuntime(runtime_interceptors=[_RecorderInterceptor(events, 'mw'), _ExplodingActivity()])
 
     @rt.activity(name='double')
     def double(ctx, x: int) -> int:

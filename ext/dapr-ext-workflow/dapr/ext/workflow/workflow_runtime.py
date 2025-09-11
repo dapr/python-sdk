@@ -35,12 +35,12 @@ from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, Handler
 from dapr.ext.workflow.interceptors import (
     CallActivityInput,
     CallChildWorkflowInput,
-    ClientInterceptor,
     ExecuteActivityInput,
     ExecuteWorkflowInput,
     RuntimeInterceptor,
-    compose_client_chain,
+    WorkflowOutboundInterceptor,
     compose_runtime_chain,
+    compose_workflow_outbound_chain,
     unwrap_payload_with_metadata,
     wrap_payload_with_metadata,
 )
@@ -63,8 +63,8 @@ class WorkflowRuntime:
         port: Optional[str] = None,
         logger_options: Optional[LoggerOptions] = None,
         *,
-        interceptors: Optional[list[RuntimeInterceptor]] = None,
-        client_interceptors: Optional[list[ClientInterceptor]] = None,
+        runtime_interceptors: Optional[list[RuntimeInterceptor]] = None,
+        workflow_outbound_interceptors: Optional[list[WorkflowOutboundInterceptor]] = None,
     ):
         self._logger = Logger('WorkflowRuntime', logger_options)
         metadata = ()
@@ -86,13 +86,16 @@ class WorkflowRuntime:
             log_formatter=options.log_formatter,
         )
         # Interceptors
-        self._runtime_interceptors: List[RuntimeInterceptor] = list(interceptors or [])
-        self._client_interceptors: List[ClientInterceptor] = list(client_interceptors or [])
+        self._runtime_interceptors: List[RuntimeInterceptor] = list(runtime_interceptors or [])
+        self._workflow_outbound_interceptors: List[WorkflowOutboundInterceptor] = list(
+            workflow_outbound_interceptors or []
+        )
+
     # Outbound transformation helpers (workflow context) — pass-throughs now
     def _apply_outbound_activity(
         self, ctx: Any, activity: Callable[..., Any] | str, input: Any, retry_policy: Any | None
     ):
-        # Build a transform-only client chain that returns the mutated StartActivityInput
+        # Build workflow-outbound chain to transform CallActivityInput
         name = (
             activity
             if isinstance(activity, str)
@@ -104,7 +107,7 @@ class WorkflowRuntime:
         )
         def terminal(term_input: CallActivityInput) -> CallActivityInput:
             return term_input
-        chain = compose_client_chain(self._client_interceptors, terminal)
+        chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
         sai = CallActivityInput(activity_name=name, args=input, retry_policy=retry_policy, workflow_ctx=ctx)
         out = chain(sai)
         if isinstance(out, CallActivityInput):
@@ -123,7 +126,7 @@ class WorkflowRuntime:
         )
         def terminal(term_input: CallChildWorkflowInput) -> CallChildWorkflowInput:
             return term_input
-        chain = compose_client_chain(self._client_interceptors, terminal)
+        chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
         sci = CallChildWorkflowInput(workflow_name=name, args=input, instance_id=None, workflow_ctx=ctx)
         out = chain(sci)
         if isinstance(out, CallChildWorkflowInput):

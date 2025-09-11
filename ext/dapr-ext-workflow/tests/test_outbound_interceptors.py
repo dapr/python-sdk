@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dapr.ext.workflow import ClientInterceptor, WorkflowRuntime
+from dapr.ext.workflow import WorkflowOutboundInterceptor, WorkflowRuntime
 
 
 class _FakeRegistry:
@@ -57,7 +57,7 @@ def drive(gen, returned):
         return stop.value
 
 
-class _InjectTrace(ClientInterceptor):
+class _InjectTrace(WorkflowOutboundInterceptor):
     def call_activity(self, input, next):  # type: ignore[override]
         x = input.args
         if x is None:
@@ -77,7 +77,7 @@ def test_outbound_activity_injection(monkeypatch):
 
     monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
 
-    rt = WorkflowRuntime(client_interceptors=[_InjectTrace()])
+    rt = WorkflowRuntime(workflow_outbound_interceptors=[_InjectTrace()])
 
     @rt.workflow(name='w')
     def w(ctx, x):
@@ -96,7 +96,7 @@ def test_outbound_child_injection(monkeypatch):
 
     monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
 
-    rt = WorkflowRuntime(client_interceptors=[_InjectTrace()])
+    rt = WorkflowRuntime(workflow_outbound_interceptors=[_InjectTrace()])
 
     def child(ctx, x):
         yield 'noop'

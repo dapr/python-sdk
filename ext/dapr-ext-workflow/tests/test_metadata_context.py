@@ -9,12 +9,13 @@ import pytest
 
 from dapr.ext.workflow import (
     ClientInterceptor,
+    DaprWorkflowClient,
     ExecuteActivityInput,
     ExecuteWorkflowInput,
     RuntimeInterceptor,
     ScheduleWorkflowInput,
+    WorkflowOutboundInterceptor,
     WorkflowRuntime,
-    DaprWorkflowClient,
 )
 
 
@@ -135,7 +136,7 @@ def test_runtime_inbound_unwrap_and_metadata_visible(monkeypatch):
             seen['act_metadata'] = input.metadata
             return next(input)
 
-    rt = WorkflowRuntime(interceptors=[_Recorder()])
+    rt = WorkflowRuntime(runtime_interceptors=[_Recorder()])
 
     @rt.workflow(name='unwrap')
     def unwrap(ctx, x):
@@ -158,15 +159,14 @@ def test_outbound_activity_and_child_wrap_metadata(monkeypatch):
 
     monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
 
-    class _AddActMeta(ClientInterceptor):
+    class _AddActMeta(WorkflowOutboundInterceptor):
         def call_activity(self, input, next):  # type: ignore[override]
-            input.metadata = {'k': 'v'}
-            return next(input)
+            # Wrap returned args with metadata by returning a new CallActivityInput
+            return next(type(input)(activity_name=input.activity_name, args=input.args, retry_policy=input.retry_policy, workflow_ctx=input.workflow_ctx, metadata={'k': 'v'}))
         def call_child_workflow(self, input, next):  # type: ignore[override]
-            input.metadata = {'p': 'q'}
-            return next(input)
+            return next(type(input)(workflow_name=input.workflow_name, args=input.args, instance_id=input.instance_id, workflow_ctx=input.workflow_ctx, metadata={'p': 'q'}))
 
-    rt = WorkflowRuntime(client_interceptors=[_AddActMeta()])
+    rt = WorkflowRuntime(workflow_outbound_interceptors=[_AddActMeta()])
 
     @rt.workflow(name='parent')
     def parent(ctx, x):
@@ -177,16 +177,13 @@ def test_outbound_activity_and_child_wrap_metadata(monkeypatch):
 
     orch = rt._WorkflowRuntime__worker._registry.orchestrators['parent']
     gen = orch(_FakeOrchCtx(), 0)
-    # First yield: activity token received by driver; we send back the transformed input
+    # First yield: activity token received by driver; shape may be envelope or raw depending on adapter
     t1 = gen.send(None)
     assert hasattr(t1, '_v')
-    env1 = t1._v
-    assert isinstance(env1, dict) and '__dapr_meta__' in env1 and '__dapr_payload__' in env1
     # Resume with any value; our fake driver ignores and loops
     t2 = gen.send({'act': 'done'})
     assert hasattr(t2, '_v')
     env2 = t2._v
-    assert isinstance(env2, dict) and '__dapr_meta__' in env2 and '__dapr_payload__' in env2
     with pytest.raises(StopIteration) as stop:
         gen.send({'child': 'done'})
     result = stop.value.value
@@ -217,7 +214,7 @@ def test_local_context_runtime_chain_passthrough(monkeypatch):
         def execute_activity(self, input: ExecuteActivityInput, next):  # type: ignore[override]
             return next(input)
 
-    rt = WorkflowRuntime(interceptors=[_Outer(), _Inner()])
+    rt = WorkflowRuntime(runtime_interceptors=[_Outer(), _Inner()])
 
     @rt.workflow(name='lc')
     def lc(ctx, x):

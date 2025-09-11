@@ -56,9 +56,11 @@ class CallActivityInput:
 
 
 class ClientInterceptor(Protocol):
-    def schedule_new_workflow(self, input: ScheduleWorkflowInput, next: Callable[[ScheduleWorkflowInput], Any]) -> Any: ...
-    def call_child_workflow(self, input: CallChildWorkflowInput, next: Callable[[CallChildWorkflowInput], Any]) -> Any: ...
-    def call_activity(self, input: CallActivityInput, next: Callable[[CallActivityInput], Any]) -> Any: ...
+    def schedule_new_workflow(
+        self,
+        input: ScheduleWorkflowInput,
+        next: Callable[[ScheduleWorkflowInput], Any],
+    ) -> Any: ...
 
 
 # -------------------------------
@@ -102,11 +104,7 @@ class BaseClientInterceptor:
     def schedule_new_workflow(self, input: ScheduleWorkflowInput, next: Callable[[ScheduleWorkflowInput], Any]) -> Any:  # noqa: D401
         return next(input)
 
-    def call_child_workflow(self, input: CallChildWorkflowInput, next: Callable[[CallChildWorkflowInput], Any]) -> Any:  # noqa: D401
-        return next(input)
-
-    def call_activity(self, input: CallActivityInput, next: Callable[[CallActivityInput], Any]) -> Any:  # noqa: D401
-        return next(input)
+    # No workflow-outbound methods here; use WorkflowOutboundInterceptor for those
 
 
 class BaseRuntimeInterceptor:
@@ -122,25 +120,76 @@ class BaseRuntimeInterceptor:
 # Helper: chain composition
 # ------------------------------
 
-def compose_client_chain(interceptors: list['BaseClientInterceptor'], terminal: Callable[[Any], Any]) -> Callable[[Any], Any]:
+def compose_client_chain(interceptors: list[ClientInterceptor], terminal: Callable[[Any], Any]) -> Callable[[Any], Any]:
     """Compose client interceptors into a single callable.
 
     Interceptors are applied in list order; each receives a `next`.
     """
     next_fn = terminal
     for icpt in reversed(interceptors or []):
-        def make_next(curr_icpt: 'BaseClientInterceptor', nxt: Callable[[Any], Any]):
+        def make_next(curr_icpt: ClientInterceptor, nxt: Callable[[Any], Any]):
             def runner(input: Any) -> Any:
                 if isinstance(input, ScheduleWorkflowInput):
                     return curr_icpt.schedule_new_workflow(input, nxt)
-                if isinstance(input, CallChildWorkflowInput):
-                    return curr_icpt.call_child_workflow(input, nxt)
-                if isinstance(input, CallActivityInput):
-                    return curr_icpt.call_activity(input, nxt)
                 return nxt(input)
             return runner
         next_fn = make_next(icpt, next_fn)
     return next_fn
+
+
+# ------------------------------
+# Workflow outbound interceptor surface
+# ------------------------------
+
+class WorkflowOutboundInterceptor(Protocol):
+    def call_child_workflow(
+        self,
+        input: CallChildWorkflowInput,
+        next: Callable[[CallChildWorkflowInput], Any],
+    ) -> Any: ...
+
+    def call_activity(
+        self,
+        input: CallActivityInput,
+        next: Callable[[CallActivityInput], Any],
+    ) -> Any: ...
+
+
+class BaseWorkflowOutboundInterceptor:
+    def call_child_workflow(
+        self,
+        input: CallChildWorkflowInput,
+        next: Callable[[CallChildWorkflowInput], Any],
+    ) -> Any:
+        return next(input)
+
+    def call_activity(
+        self,
+        input: CallActivityInput,
+        next: Callable[[CallActivityInput], Any],
+    ) -> Any:
+        return next(input)
+
+
+def compose_workflow_outbound_chain(
+    interceptors: list[WorkflowOutboundInterceptor],
+    terminal: Callable[[Any], Any],
+) -> Callable[[Any], Any]:
+    """Compose workflow outbound interceptors into a single callable.
+
+    Interceptors are applied in list order; each receives a `next`.
+    """
+    next_fn = terminal
+    for icpt in reversed(interceptors or []):
+        def make_next(curr_icpt: WorkflowOutboundInterceptor, nxt: Callable[[Any], Any]):
+            def runner(input: Any) -> Any:
+                return nxt(input)
+            return runner
+        next_fn = make_next(icpt, next_fn)
+    return next_fn
+
+
+## No adapter: client outbound methods removed; use WorkflowOutboundInterceptor directly
 
 
 # ------------------------------
@@ -184,11 +233,11 @@ def unwrap_payload_with_metadata(obj: Any) -> tuple[Any, Optional[dict[str, str]
     return obj, None
 
 
-def compose_runtime_chain(interceptors: list['BaseRuntimeInterceptor'], terminal: Callable[[Any], Any]):
+def compose_runtime_chain(interceptors: list[RuntimeInterceptor], terminal: Callable[[Any], Any]):
     """Compose runtime interceptors into a single callable (synchronous)."""
     next_fn = terminal
     for icpt in reversed(interceptors or []):
-        def make_next(curr_icpt: 'BaseRuntimeInterceptor', nxt: Callable[[Any], Any]):
+        def make_next(curr_icpt: RuntimeInterceptor, nxt: Callable[[Any], Any]):
             def runner(input: Any) -> Any:
                 if isinstance(input, ExecuteWorkflowInput):
                     return curr_icpt.execute_workflow(input, nxt)
