@@ -12,88 +12,84 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import json
+import socket
 import threading
 import time
-import socket
-import json
 import uuid
-
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional, Sequence, Text, Union
 from urllib.parse import urlencode
-
 from warnings import warn
 
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any
-from typing_extensions import Self
-from datetime import datetime
-from google.protobuf.message import Message as GrpcMessage
-from google.protobuf.empty_pb2 import Empty as GrpcEmpty
-from google.protobuf.any_pb2 import Any as GrpcAny
-
 import grpc  # type: ignore
+from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.empty_pb2 import Empty as GrpcEmpty
+from google.protobuf.message import Message as GrpcMessage
 from grpc import (  # type: ignore
-    UnaryUnaryClientInterceptor,
-    UnaryStreamClientInterceptor,
-    StreamUnaryClientInterceptor,
-    StreamStreamClientInterceptor,
     RpcError,
+    StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    UnaryUnaryClientInterceptor,
 )
+from typing_extensions import Self
 
-from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
-from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
+from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
+from dapr.clients.grpc._helpers import (
+    MetadataTuple,
+    getWorkflowRuntimeStatus,
+    to_bytes,
+    validateNotBlankString,
+    validateNotNone,
+)
+from dapr.clients.grpc._jobs import Job
+from dapr.clients.grpc._request import (
+    BindingRequest,
+    ConversationInput,
+    DecryptRequestIterator,
+    EncryptRequestIterator,
+    InvokeMethodRequest,
+    TransactionalStateOperation,
+)
+from dapr.clients.grpc._response import (
+    BindingResponse,
+    BulkStateItem,
+    BulkStatesResponse,
+    ConfigurationResponse,
+    ConfigurationWatcher,
+    ConversationResponse,
+    ConversationResult,
+    DaprResponse,
+    DecryptResponse,
+    EncryptResponse,
+    GetBulkSecretResponse,
+    GetMetadataResponse,
+    GetSecretResponse,
+    GetWorkflowResponse,
+    InvokeMethodResponse,
+    QueryResponse,
+    QueryResponseItem,
+    RegisteredComponents,
+    StartWorkflowResponse,
+    StateResponse,
+    TopicEventResponse,
+    TryLockResponse,
+    UnlockResponse,
+    UnlockResponseStatus,
+)
+from dapr.clients.grpc._state import StateItem, StateOptions
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
+from dapr.clients.grpc.subscription import StreamInactiveError, Subscription
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
-from dapr.proto import api_v1, api_service_v1, common_v1
+from dapr.conf.helpers import GrpcEndpoint, build_grpc_channel_options
+from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
-
-from dapr.clients.grpc._helpers import (
-    MetadataTuple,
-    to_bytes,
-    validateNotNone,
-    validateNotBlankString,
-)
-from dapr.conf.helpers import GrpcEndpoint
-from dapr.clients.grpc._request import (
-    InvokeMethodRequest,
-    BindingRequest,
-    TransactionalStateOperation,
-    EncryptRequestIterator,
-    DecryptRequestIterator,
-    ConversationInput,
-)
-from dapr.clients.grpc._jobs import Job
-from dapr.clients.grpc._response import (
-    BindingResponse,
-    DaprResponse,
-    GetSecretResponse,
-    GetBulkSecretResponse,
-    GetMetadataResponse,
-    InvokeMethodResponse,
-    UnlockResponseStatus,
-    StateResponse,
-    BulkStatesResponse,
-    BulkStateItem,
-    ConfigurationResponse,
-    QueryResponse,
-    QueryResponseItem,
-    RegisteredComponents,
-    ConfigurationWatcher,
-    TryLockResponse,
-    UnlockResponse,
-    GetWorkflowResponse,
-    StartWorkflowResponse,
-    EncryptResponse,
-    DecryptResponse,
-    TopicEventResponse,
-    ConversationResponse,
-    ConversationResult,
-)
 
 
 class DaprGrpcClient:
@@ -149,35 +145,13 @@ class DaprGrpcClient:
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
-            options = [
-                ('grpc.primary_user_agent', useragent),
-            ]
+            base_options = [('grpc.primary_user_agent', useragent)]
         else:
-            options = [
+            base_options = [
                 ('grpc.max_send_message_length', max_grpc_message_length),  # type: ignore
                 ('grpc.max_receive_message_length', max_grpc_message_length),  # type: ignore
                 ('grpc.primary_user_agent', useragent),
             ]
-
-        # Optional keepalive configuration
-        if settings.DAPR_GRPC_KEEPALIVE_ENABLED:
-            print(f"DAPR_GRPC_KEEPALIVE_ENABLED: {settings.DAPR_GRPC_KEEPALIVE_ENABLED}")
-            print(f"DAPR_GRPC_KEEPALIVE_TIME_MS: {settings.DAPR_GRPC_KEEPALIVE_TIME_MS}")
-            print(f"DAPR_GRPC_KEEPALIVE_TIMEOUT_MS: {settings.DAPR_GRPC_KEEPALIVE_TIMEOUT_MS}")
-            print(f"DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS: {settings.DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS}")
-            options.extend(
-                [
-                    ('grpc.keepalive_time_ms', int(settings.DAPR_GRPC_KEEPALIVE_TIME_MS)),
-                    (
-                        'grpc.keepalive_timeout_ms',
-                        int(settings.DAPR_GRPC_KEEPALIVE_TIMEOUT_MS),
-                    ),
-                    (
-                        'grpc.keepalive_permit_without_calls',
-                        1 if settings.DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS else 0,
-                    ),
-                ]
-            )
 
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or (
@@ -188,6 +162,9 @@ class DaprGrpcClient:
             self._uri = GrpcEndpoint(address)
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
+
+        # Merge standard + keepalive + retry options
+        options = build_grpc_channel_options(base_options)
 
         if self._uri.tls:
             self._channel = grpc.secure_channel(  # type: ignore

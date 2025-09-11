@@ -41,3 +41,12 @@ DAPR_GRPC_KEEPALIVE_TIMEOUT_MS: int = (
     20000  # wait 20s for ack before considering the connection dead
 )
 DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS: bool = False  # allow pings when there are no active calls
+
+# gRPC retries (disabled by default; enable via env to apply channel service config)
+DAPR_GRPC_RETRY_ENABLED: bool = False
+DAPR_GRPC_RETRY_MAX_ATTEMPTS: int = 4
+DAPR_GRPC_RETRY_INITIAL_BACKOFF_MS: int = 100
+DAPR_GRPC_RETRY_MAX_BACKOFF_MS: int = 1000
+DAPR_GRPC_RETRY_BACKOFF_MULTIPLIER: float = 2.0
+# Comma-separated list of status codes, e.g., 'UNAVAILABLE,DEADLINE_EXCEEDED'
+DAPR_GRPC_RETRY_CODES: str = 'UNAVAILABLE,DEADLINE_EXCEEDED'
