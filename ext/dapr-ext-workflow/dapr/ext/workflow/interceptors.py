@@ -19,6 +19,7 @@ from dapr.ext.workflow.workflow_context import WorkflowContext
 # Client-side interceptor surface
 # ------------------------------
 
+
 @dataclass
 class ScheduleWorkflowInput:
     workflow_name: str
@@ -60,12 +61,14 @@ class ClientInterceptor(Protocol):
         self,
         input: ScheduleWorkflowInput,
         next: Callable[[ScheduleWorkflowInput], Any],
-    ) -> Any: ...
+    ) -> Any:
+        ...
 
 
 # -------------------------------
 # Runtime-side interceptor surface
 # -------------------------------
+
 
 @dataclass
 class ExecuteWorkflowInput:
@@ -86,13 +89,21 @@ class ExecuteActivityInput:
 
 
 class RuntimeInterceptor(Protocol):
-    def execute_workflow(self, input: ExecuteWorkflowInput, next: Callable[[ExecuteWorkflowInput], Any]) -> Any: ...
-    def execute_activity(self, input: ExecuteActivityInput, next: Callable[[ExecuteActivityInput], Any]) -> Any: ...
+    def execute_workflow(
+        self, input: ExecuteWorkflowInput, next: Callable[[ExecuteWorkflowInput], Any]
+    ) -> Any:
+        ...
+
+    def execute_activity(
+        self, input: ExecuteActivityInput, next: Callable[[ExecuteActivityInput], Any]
+    ) -> Any:
+        ...
 
 
 # ------------------------------
 # Convenience base classes (devex)
 # ------------------------------
+
 
 class BaseClientInterceptor:
     """Subclass this to get method name completion and safe defaults.
@@ -101,7 +112,9 @@ class BaseClientInterceptor:
     methods simply call `next` unchanged.
     """
 
-    def schedule_new_workflow(self, input: ScheduleWorkflowInput, next: Callable[[ScheduleWorkflowInput], Any]) -> Any:  # noqa: D401
+    def schedule_new_workflow(
+        self, input: ScheduleWorkflowInput, next: Callable[[ScheduleWorkflowInput], Any]
+    ) -> Any:  # noqa: D401
         return next(input)
 
     # No workflow-outbound methods here; use WorkflowOutboundInterceptor for those
@@ -110,29 +123,40 @@ class BaseClientInterceptor:
 class BaseRuntimeInterceptor:
     """Subclass this to get method name completion and safe defaults."""
 
-    def execute_workflow(self, input: ExecuteWorkflowInput, next: Callable[[ExecuteWorkflowInput], Any]) -> Any:  # noqa: D401
+    def execute_workflow(
+        self, input: ExecuteWorkflowInput, next: Callable[[ExecuteWorkflowInput], Any]
+    ) -> Any:  # noqa: D401
         return next(input)
 
-    def execute_activity(self, input: ExecuteActivityInput, next: Callable[[ExecuteActivityInput], Any]) -> Any:  # noqa: D401
+    def execute_activity(
+        self, input: ExecuteActivityInput, next: Callable[[ExecuteActivityInput], Any]
+    ) -> Any:  # noqa: D401
         return next(input)
+
 
 # ------------------------------
 # Helper: chain composition
 # ------------------------------
 
-def compose_client_chain(interceptors: list[ClientInterceptor], terminal: Callable[[Any], Any]) -> Callable[[Any], Any]:
+
+def compose_client_chain(
+    interceptors: list[ClientInterceptor], terminal: Callable[[Any], Any]
+) -> Callable[[Any], Any]:
     """Compose client interceptors into a single callable.
 
     Interceptors are applied in list order; each receives a `next`.
     """
     next_fn = terminal
     for icpt in reversed(interceptors or []):
+
         def make_next(curr_icpt: ClientInterceptor, nxt: Callable[[Any], Any]):
             def runner(input: Any) -> Any:
                 if isinstance(input, ScheduleWorkflowInput):
                     return curr_icpt.schedule_new_workflow(input, nxt)
                 return nxt(input)
+
             return runner
+
         next_fn = make_next(icpt, next_fn)
     return next_fn
 
@@ -141,18 +165,21 @@ def compose_client_chain(interceptors: list[ClientInterceptor], terminal: Callab
 # Workflow outbound interceptor surface
 # ------------------------------
 
+
 class WorkflowOutboundInterceptor(Protocol):
     def call_child_workflow(
         self,
         input: CallChildWorkflowInput,
         next: Callable[[CallChildWorkflowInput], Any],
-    ) -> Any: ...
+    ) -> Any:
+        ...
 
     def call_activity(
         self,
         input: CallActivityInput,
         next: Callable[[CallActivityInput], Any],
-    ) -> Any: ...
+    ) -> Any:
+        ...
 
 
 class BaseWorkflowOutboundInterceptor:
@@ -181,10 +208,13 @@ def compose_workflow_outbound_chain(
     """
     next_fn = terminal
     for icpt in reversed(interceptors or []):
+
         def make_next(curr_icpt: WorkflowOutboundInterceptor, nxt: Callable[[Any], Any]):
             def runner(input: Any) -> Any:
                 return nxt(input)
+
             return runner
+
         next_fn = make_next(icpt, next_fn)
     return next_fn
 
@@ -237,6 +267,7 @@ def compose_runtime_chain(interceptors: list[RuntimeInterceptor], terminal: Call
     """Compose runtime interceptors into a single callable (synchronous)."""
     next_fn = terminal
     for icpt in reversed(interceptors or []):
+
         def make_next(curr_icpt: RuntimeInterceptor, nxt: Callable[[Any], Any]):
             def runner(input: Any) -> Any:
                 if isinstance(input, ExecuteWorkflowInput):
@@ -244,6 +275,8 @@ def compose_runtime_chain(interceptors: list[RuntimeInterceptor], terminal: Call
                 if isinstance(input, ExecuteActivityInput):
                     return curr_icpt.execute_activity(input, nxt)
                 return nxt(input)
+
             return runner
+
         next_fn = make_next(icpt, next_fn)
     return next_fn

@@ -265,10 +265,7 @@ def test_tracing_interceptor_context_restoration(monkeypatch):
     orch = reg.orchestrators['traced']
 
     # Input with tracing data
-    input_with_trace = {
-        'value': 5,
-        'tracing': {'trace_id': 'abc123', 'span_id': 'def456'}
-    }
+    input_with_trace = {'value': 5, 'tracing': {'trace_id': 'abc123', 'span_id': 'def456'}}
 
     result = orch(_FakeOrchestrationContext(), input_with_trace)
 

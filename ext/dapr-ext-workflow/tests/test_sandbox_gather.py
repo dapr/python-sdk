@@ -157,5 +157,3 @@ def test_strict_mode_blocks_create_task():
                     return 1
 
                 aio.create_task(_c())
-
-

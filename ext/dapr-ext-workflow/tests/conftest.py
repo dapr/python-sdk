@@ -25,10 +25,10 @@ def pytest_configure(config):  # noqa: D401 (pytest hook)
 
     # Best-effort diagnostic: show where dapr was imported from
     try:
-        dapr_mod = importlib.import_module("dapr")
-        dapr_path = Path(getattr(dapr_mod, "__file__", "<unknown>")).resolve()
-        where = "site-packages" if "site-packages" in str(dapr_path) else "local-repo"
-        print(f"[dapr-ext-workflow/tests] dapr resolved from {where}: {dapr_path}", file=sys.stderr)
+        dapr_mod = importlib.import_module('dapr')
+        dapr_path = Path(getattr(dapr_mod, '__file__', '<unknown>')).resolve()
+        where = 'site-packages' if 'site-packages' in str(dapr_path) else 'local-repo'
+        print(f'[dapr-ext-workflow/tests] dapr resolved from {where}: {dapr_path}', file=sys.stderr)
     except Exception:
         # If dapr isn't importable yet, that's fine; tests importing it later will use modified sys.path
         pass

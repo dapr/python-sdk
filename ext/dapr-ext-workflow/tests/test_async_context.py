@@ -8,7 +8,7 @@ from dapr.ext.workflow.async_context import AsyncWorkflowContext
 
 class DummyBaseCtx:
     def __init__(self):
-        self.instance_id = "abc-123"
+        self.instance_id = 'abc-123'
         # freeze a deterministic timestamp
         self.current_utc_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
         self.is_replaying = False
@@ -24,7 +24,7 @@ class DummyBaseCtx:
 
 def test_parity_properties_and_now():
     ctx = AsyncWorkflowContext(DummyBaseCtx())
-    assert ctx.instance_id == "abc-123"
+    assert ctx.instance_id == 'abc-123'
     assert ctx.current_utc_datetime == datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
     # now() should mirror current_utc_datetime
     assert ctx.now() == ctx.current_utc_datetime
@@ -40,15 +40,15 @@ def test_timer_accepts_float_and_timedelta():
     aw2 = ctx.create_timer(timedelta(seconds=2))
 
     # We only assert types by duck-typing public attribute presence to avoid importing internal classes in tests
-    assert hasattr(aw1, "_ctx") and hasattr(aw1, "__await__")
-    assert hasattr(aw2, "_ctx") and hasattr(aw2, "__await__")
+    assert hasattr(aw1, '_ctx') and hasattr(aw1, '__await__')
+    assert hasattr(aw2, '_ctx') and hasattr(aw2, '__await__')
 
 
 def test_wait_for_external_event_and_concurrency_factories():
     ctx = AsyncWorkflowContext(DummyBaseCtx())
 
-    evt = ctx.wait_for_external_event("go")
-    assert hasattr(evt, "__await__")
+    evt = ctx.wait_for_external_event('go')
+    assert hasattr(evt, '__await__')
 
     # when_all/when_any/gather return awaitables
     a = ctx.create_timer(0.1)
@@ -60,7 +60,7 @@ def test_wait_for_external_event_and_concurrency_factories():
     gat_exc_aw = ctx.gather(a, b, return_exceptions=True)
 
     for x in (all_aw, any_aw, gat_aw, gat_exc_aw):
-        assert hasattr(x, "__await__")
+        assert hasattr(x, '__await__')
 
 
 def test_deterministic_utils_and_passthroughs():
@@ -79,8 +79,8 @@ def test_deterministic_utils_and_passthroughs():
     assert isinstance(str(uid), str) and len(str(uid)) >= 32
 
     # passthroughs
-    ctx.set_custom_status("hello")
-    assert base._custom_status == "hello"
+    ctx.set_custom_status('hello')
+    assert base._custom_status == 'hello'
 
-    ctx.continue_as_new({"x": 1}, save_events=True)
-    assert base._continued == ({"x": 1}, True)
+    ctx.continue_as_new({'x': 1}, save_events=True)
+    assert base._continued == ({'x': 1}, True)

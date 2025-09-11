@@ -52,7 +52,9 @@ def _merge_ctx(args: Any) -> Any:
 
 
 class ContextClientInterceptor(BaseClientInterceptor):
-    def schedule_new_workflow(self, input: ScheduleWorkflowInput, nxt: Callable[[ScheduleWorkflowInput], Any]) -> Any:  # type: ignore[override]
+    def schedule_new_workflow(
+        self, input: ScheduleWorkflowInput, nxt: Callable[[ScheduleWorkflowInput], Any]
+    ) -> Any:  # type: ignore[override]
         input = ScheduleWorkflowInput(
             workflow_name=input.workflow_name,
             args=_merge_ctx(input.args),
@@ -62,30 +64,41 @@ class ContextClientInterceptor(BaseClientInterceptor):
         )
         return nxt(input)
 
-class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
-    def call_child_workflow(self, input: CallChildWorkflowInput, nxt: Callable[[CallChildWorkflowInput], Any]) -> Any:
-        return nxt(CallChildWorkflowInput(
-            workflow_name=input.workflow_name,
-            args=_merge_ctx(input.args),
-            instance_id=input.instance_id,
-            workflow_ctx=input.workflow_ctx,
-            metadata=input.metadata,
-            local_context=input.local_context,
-        ))
 
-    def call_activity(self, input: CallActivityInput, nxt: Callable[[CallActivityInput], Any]) -> Any:
-        return nxt(CallActivityInput(
-            activity_name=input.activity_name,
-            args=_merge_ctx(input.args),
-            retry_policy=input.retry_policy,
-            workflow_ctx=input.workflow_ctx,
-            metadata=input.metadata,
-            local_context=input.local_context,
-        ))
+class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
+    def call_child_workflow(
+        self, input: CallChildWorkflowInput, nxt: Callable[[CallChildWorkflowInput], Any]
+    ) -> Any:
+        return nxt(
+            CallChildWorkflowInput(
+                workflow_name=input.workflow_name,
+                args=_merge_ctx(input.args),
+                instance_id=input.instance_id,
+                workflow_ctx=input.workflow_ctx,
+                metadata=input.metadata,
+                local_context=input.local_context,
+            )
+        )
+
+    def call_activity(
+        self, input: CallActivityInput, nxt: Callable[[CallActivityInput], Any]
+    ) -> Any:
+        return nxt(
+            CallActivityInput(
+                activity_name=input.activity_name,
+                args=_merge_ctx(input.args),
+                retry_policy=input.retry_policy,
+                workflow_ctx=input.workflow_ctx,
+                metadata=input.metadata,
+                local_context=input.local_context,
+            )
+        )
 
 
 class ContextRuntimeInterceptor(BaseRuntimeInterceptor):
-    def execute_workflow(self, input: ExecuteWorkflowInput, nxt: Callable[[ExecuteWorkflowInput], Any]) -> Any:  # type: ignore[override]
+    def execute_workflow(
+        self, input: ExecuteWorkflowInput, nxt: Callable[[ExecuteWorkflowInput], Any]
+    ) -> Any:  # type: ignore[override]
         if isinstance(input.input, dict) and 'context' in input.input:
             set_ctx(input.input['context'])
         try:
@@ -93,7 +106,9 @@ class ContextRuntimeInterceptor(BaseRuntimeInterceptor):
         finally:
             set_ctx(None)
 
-    def execute_activity(self, input: ExecuteActivityInput, nxt: Callable[[ExecuteActivityInput], Any]) -> Any:  # type: ignore[override]
+    def execute_activity(
+        self, input: ExecuteActivityInput, nxt: Callable[[ExecuteActivityInput], Any]
+    ) -> Any:  # type: ignore[override]
         if isinstance(input.input, dict) and 'context' in input.input:
             set_ctx(input.input['context'])
         try:
@@ -105,7 +120,7 @@ class ContextRuntimeInterceptor(BaseRuntimeInterceptor):
 # Example workflow and activity
 def activity_log(ctx, data: dict[str, Any]) -> str:  # noqa: ANN001 (example)
     # Access restored context inside activity via contextvars
-    return f"ok:{get_ctx()}"
+    return f'ok:{get_ctx()}'
 
 
 def workflow_example(ctx, x: int):  # noqa: ANN001 (example)
@@ -135,5 +150,3 @@ if __name__ == '__main__':
     # print('scheduled:', instance_id)
     # rt.start(); rt.wait_for_ready(); ...
     pass
-
-

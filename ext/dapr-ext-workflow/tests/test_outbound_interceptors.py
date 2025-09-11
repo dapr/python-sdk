@@ -61,15 +61,27 @@ class _InjectTrace(WorkflowOutboundInterceptor):
     def call_activity(self, input, next):  # type: ignore[override]
         x = input.args
         if x is None:
-            input = type(input)(activity_name=input.activity_name, args={'tracing': 'T'}, retry_policy=input.retry_policy)
+            input = type(input)(
+                activity_name=input.activity_name,
+                args={'tracing': 'T'},
+                retry_policy=input.retry_policy,
+            )
         elif isinstance(x, dict):
             out = dict(x)
             out.setdefault('tracing', 'T')
-            input = type(input)(activity_name=input.activity_name, args=out, retry_policy=input.retry_policy)
+            input = type(input)(
+                activity_name=input.activity_name, args=out, retry_policy=input.retry_policy
+            )
         return next(input)
 
     def call_child_workflow(self, input, next):  # type: ignore[override]
-        return next(type(input)(workflow_name=input.workflow_name, args={'child': input.args}, instance_id=input.instance_id))
+        return next(
+            type(input)(
+                workflow_name=input.workflow_name,
+                args={'child': input.args},
+                instance_id=input.instance_id,
+            )
+        )
 
 
 def test_outbound_activity_injection(monkeypatch):
@@ -110,5 +122,3 @@ def test_outbound_child_injection(monkeypatch):
     gen = orch(_FakeOrchCtx(), 0)
     out = drive(gen, returned={'child': {'b': 2}})
     assert out == {'child': {'b': 2}}
-
-

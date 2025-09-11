@@ -198,6 +198,7 @@ class GrpcEndpoint:
 # gRPC channel options helpers
 # ------------------------------
 
+
 def get_grpc_keepalive_options():
     """Return a list of keepalive channel options if enabled, else empty list.
 
@@ -224,8 +225,8 @@ def get_grpc_retry_service_config_option():
         return None
     retry_policy = {
         'maxAttempts': int(settings.DAPR_GRPC_RETRY_MAX_ATTEMPTS),
-        'initialBackoff': f"{int(settings.DAPR_GRPC_RETRY_INITIAL_BACKOFF_MS) / 1000.0}s",
-        'maxBackoff': f"{int(settings.DAPR_GRPC_RETRY_MAX_BACKOFF_MS) / 1000.0}s",
+        'initialBackoff': f'{int(settings.DAPR_GRPC_RETRY_INITIAL_BACKOFF_MS) / 1000.0}s',
+        'maxBackoff': f'{int(settings.DAPR_GRPC_RETRY_MAX_BACKOFF_MS) / 1000.0}s',
         'backoffMultiplier': float(settings.DAPR_GRPC_RETRY_BACKOFF_MULTIPLIER),
         'retryableStatusCodes': [
             c.strip() for c in str(settings.DAPR_GRPC_RETRY_CODES).split(',') if c.strip()

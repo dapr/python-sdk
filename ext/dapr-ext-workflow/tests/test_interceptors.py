@@ -139,11 +139,14 @@ def test_activity_hooks_and_policy(monkeypatch):
     class _ExplodingActivity(RuntimeInterceptor):
         def execute_activity(self, input, next):  # type: ignore[override]
             raise RuntimeError('boom')
+
         def execute_workflow(self, input, next):  # type: ignore[override]
             return next(input)
 
     # Continue-on-error policy
-    rt = WorkflowRuntime(runtime_interceptors=[_RecorderInterceptor(events, 'mw'), _ExplodingActivity()])
+    rt = WorkflowRuntime(
+        runtime_interceptors=[_RecorderInterceptor(events, 'mw'), _ExplodingActivity()]
+    )
 
     @rt.activity(name='double')
     def double(ctx, x: int) -> int:
@@ -154,5 +157,3 @@ def test_activity_hooks_and_policy(monkeypatch):
     # Error in interceptor bubbles up
     with pytest.raises(RuntimeError):
         act(_FakeActivityContext(), 5)
-
-

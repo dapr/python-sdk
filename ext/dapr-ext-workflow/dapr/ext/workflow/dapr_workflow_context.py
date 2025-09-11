@@ -27,6 +27,7 @@ T = TypeVar('T')
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
+
 class Handlers(enum.Enum):
     CALL_ACTIVITY = 'call_activity'
     CALL_CHILD_WORKFLOW = 'call_child_workflow'
@@ -85,8 +86,12 @@ class DaprWorkflowContext(WorkflowContext):
             act = activity.__name__
         # Apply outbound client interceptor transformations if provided via runtime wiring
         transformed_input: Any = input
-        if Handlers.CALL_ACTIVITY in self._outbound_handlers and callable(self._outbound_handlers[Handlers.CALL_ACTIVITY]):
-            transformed_input = self._outbound_handlers[Handlers.CALL_ACTIVITY](self, activity, input, retry_policy)
+        if Handlers.CALL_ACTIVITY in self._outbound_handlers and callable(
+            self._outbound_handlers[Handlers.CALL_ACTIVITY]
+        ):
+            transformed_input = self._outbound_handlers[Handlers.CALL_ACTIVITY](
+                self, activity, input, retry_policy
+            )
         if retry_policy is None:
             return self.__obj.call_activity(activity=act, input=transformed_input)
         return self.__obj.call_activity(
@@ -116,10 +121,16 @@ class DaprWorkflowContext(WorkflowContext):
             wf.__name__ = workflow.__name__
         # Apply outbound client interceptor transformations if provided via runtime wiring
         transformed_input: Any = input
-        if Handlers.CALL_CHILD_WORKFLOW in self._outbound_handlers and callable(self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW]):
-            transformed_input = self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW](self, workflow, input)
+        if Handlers.CALL_CHILD_WORKFLOW in self._outbound_handlers and callable(
+            self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW]
+        ):
+            transformed_input = self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW](
+                self, workflow, input
+            )
         if retry_policy is None:
-            return self.__obj.call_sub_orchestrator(wf, input=transformed_input, instance_id=instance_id)
+            return self.__obj.call_sub_orchestrator(
+                wf, input=transformed_input, instance_id=instance_id
+            )
         return self.__obj.call_sub_orchestrator(
             wf, input=transformed_input, instance_id=instance_id, retry_policy=retry_policy.obj
         )

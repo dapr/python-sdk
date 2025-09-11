@@ -129,7 +129,9 @@ class _Sandbox(ContextDecorator):
                         # Swallow any error while closing; we are about to raise a policy error
                         pass
             finally:
-                raise RuntimeError('asyncio.create_task is not allowed inside workflow (strict mode)')
+                raise RuntimeError(
+                    'asyncio.create_task is not allowed inside workflow (strict mode)'
+                )
 
         def _is_workflow_awaitable(obj: Any) -> bool:
             try:
@@ -157,6 +159,7 @@ class _Sandbox(ContextDecorator):
 
             def __await__(self):  # type: ignore[override]
                 if self._done:
+
                     async def _replay():
                         if self._exc is not None:
                             raise self._exc
@@ -180,12 +183,14 @@ class _Sandbox(ContextDecorator):
         def _patched_gather(*aws: Any, return_exceptions: bool = False):  # type: ignore[override]
             # Return an awaitable that can be awaited multiple times safely without a running loop
             if not aws:
+
                 async def _empty():
                     return []
 
                 return _OneShot(_empty)
 
             if all(_is_workflow_awaitable(a) for a in aws):
+
                 async def _await_when_all():
                     from dapr.ext.workflow.awaitables import WhenAllAwaitable  # local import
 

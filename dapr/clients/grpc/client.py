@@ -22,61 +22,45 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Text, Union
 from urllib.parse import urlencode
 from warnings import warn
 
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any
-
-from typing_extensions import Self
-from datetime import datetime
-from google.protobuf.message import Message as GrpcMessage
-from google.protobuf.empty_pb2 import Empty as GrpcEmpty
-from google.protobuf.any_pb2 import Any as GrpcAny
-
 import grpc  # type: ignore
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 from google.protobuf.message import Message as GrpcMessage
 from grpc import (  # type: ignore
     RpcError,
+    StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    UnaryUnaryClientInterceptor,
 )
+from typing_extensions import Self
 
-from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
-from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc.subscription import Subscription, StreamInactiveError
-from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
-from dapr.clients.health import DaprHealth
-from dapr.clients.retry import RetryPolicy
-from dapr.common.pubsub.subscription import StreamCancelledError
-from dapr.conf import settings
-from dapr.proto import api_v1, api_service_v1, common_v1
-from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
-from dapr.version import __version__
-
+from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
+from dapr.clients.grpc import conversation
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
-    getWorkflowRuntimeStatus,
     MetadataTuple,
+    convert_dict_to_grpc_dict_of_any,
+    convert_value_to_struct,
     getWorkflowRuntimeStatus,
     to_bytes,
     validateNotBlankString,
-    convert_dict_to_grpc_dict_of_any,
-    convert_value_to_struct,
+    validateNotNone,
 )
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._request import (
     BindingRequest,
-    TransactionalStateOperation,
-    EncryptRequestIterator,
     DecryptRequestIterator,
+    EncryptRequestIterator,
+    InvokeMethodRequest,
+    TransactionalStateOperation,
 )
-from dapr.clients.grpc import conversation
-from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
     BindingResponse,
     BulkStateItem,
     BulkStatesResponse,
     ConfigurationResponse,
     ConfigurationWatcher,
-    ConversationResponse,
-    ConversationResult,
     DaprResponse,
     DecryptResponse,
     EncryptResponse,

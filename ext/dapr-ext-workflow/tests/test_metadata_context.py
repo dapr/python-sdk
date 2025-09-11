@@ -51,12 +51,14 @@ class _FakeOrchCtx:
         class _T:
             def __init__(self, v):
                 self._v = v
+
         return _T(input)
 
     def call_sub_orchestrator(self, wf, *, input=None, instance_id=None, retry_policy=None):
         class _T:
             def __init__(self, v):
                 self._v = v
+
         return _T(input)
 
 
@@ -81,7 +83,15 @@ def test_client_schedule_metadata_envelope(monkeypatch):
         def __init__(self, *args, **kwargs):
             pass
 
-        def schedule_new_orchestration(self, name, *, input=None, instance_id=None, start_at: Optional[datetime] = None, reuse_id_policy=None):  # noqa: E501
+        def schedule_new_orchestration(
+            self,
+            name,
+            *,
+            input=None,
+            instance_id=None,
+            start_at: Optional[datetime] = None,
+            reuse_id_policy=None,
+        ):  # noqa: E501
             captured['name'] = name
             captured['input'] = input
             captured['instance_id'] = instance_id
@@ -132,6 +142,7 @@ def test_runtime_inbound_unwrap_and_metadata_visible(monkeypatch):
         def execute_workflow(self, input: ExecuteWorkflowInput, next):  # type: ignore[override]
             seen['metadata'] = input.metadata
             return next(input)
+
         def execute_activity(self, input: ExecuteActivityInput, next):  # type: ignore[override]
             seen['act_metadata'] = input.metadata
             return next(input)
@@ -147,7 +158,7 @@ def test_runtime_inbound_unwrap_and_metadata_visible(monkeypatch):
     orch = rt._WorkflowRuntime__worker._registry.orchestrators['unwrap']
     envelope = {
         '__dapr_meta__': {'v': 1, 'metadata': {'c': 'd'}},
-        '__dapr_payload__': {'hello': 'world'}
+        '__dapr_payload__': {'hello': 'world'},
     }
     result = orch(_FakeOrchCtx(), envelope)
     assert result == 'ok'
@@ -162,9 +173,26 @@ def test_outbound_activity_and_child_wrap_metadata(monkeypatch):
     class _AddActMeta(WorkflowOutboundInterceptor):
         def call_activity(self, input, next):  # type: ignore[override]
             # Wrap returned args with metadata by returning a new CallActivityInput
-            return next(type(input)(activity_name=input.activity_name, args=input.args, retry_policy=input.retry_policy, workflow_ctx=input.workflow_ctx, metadata={'k': 'v'}))
+            return next(
+                type(input)(
+                    activity_name=input.activity_name,
+                    args=input.args,
+                    retry_policy=input.retry_policy,
+                    workflow_ctx=input.workflow_ctx,
+                    metadata={'k': 'v'},
+                )
+            )
+
         def call_child_workflow(self, input, next):  # type: ignore[override]
-            return next(type(input)(workflow_name=input.workflow_name, args=input.args, instance_id=input.instance_id, workflow_ctx=input.workflow_ctx, metadata={'p': 'q'}))
+            return next(
+                type(input)(
+                    workflow_name=input.workflow_name,
+                    args=input.args,
+                    instance_id=input.instance_id,
+                    workflow_ctx=input.workflow_ctx,
+                    metadata={'p': 'q'},
+                )
+            )
 
     rt = WorkflowRuntime(workflow_outbound_interceptors=[_AddActMeta()])
 
@@ -202,15 +230,21 @@ def test_local_context_runtime_chain_passthrough(monkeypatch):
         def execute_workflow(self, input: ExecuteWorkflowInput, next):  # type: ignore[override]
             lc = dict(input.local_context or {})
             lc['flag'] = 'on'
-            new_input = ExecuteWorkflowInput(ctx=input.ctx, input=input.input, metadata=input.metadata, local_context=lc)
+            new_input = ExecuteWorkflowInput(
+                ctx=input.ctx, input=input.input, metadata=input.metadata, local_context=lc
+            )
             return next(new_input)
+
         def execute_activity(self, input: ExecuteActivityInput, next):  # type: ignore[override]
             return next(input)
 
     class _Inner(RuntimeInterceptor):
         def execute_workflow(self, input: ExecuteWorkflowInput, next):  # type: ignore[override]
-            events.append(f"flag={input.local_context.get('flag') if input.local_context else None}")
+            events.append(
+                f"flag={input.local_context.get('flag') if input.local_context else None}"
+            )
             return next(input)
+
         def execute_activity(self, input: ExecuteActivityInput, next):  # type: ignore[override]
             return next(input)
 

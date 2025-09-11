@@ -64,7 +64,9 @@ def test_client_injects_tracing_on_schedule(monkeypatch):
         def __init__(self, *args, **kwargs):
             pass
 
-        def schedule_new_orchestration(self, name, *, input=None, instance_id=None, start_at=None, reuse_id_policy=None):
+        def schedule_new_orchestration(
+            self, name, *, input=None, instance_id=None, start_at=None, reuse_id_policy=None
+        ):
             scheduled['name'] = name
             scheduled['input'] = input
             scheduled['instance_id'] = instance_id
@@ -113,6 +115,7 @@ def test_runtime_restores_tracing_before_user_code(monkeypatch):
         def execute_workflow(self, input, next):  # type: ignore[override]
             # no-op; real restoration is app concern; test just ensures input contains tracing
             return next(input)
+
         def execute_activity(self, input, next):  # type: ignore[override]
             return next(input)
 

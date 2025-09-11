@@ -105,10 +105,14 @@ class WorkflowRuntime:
                 else activity.__name__
             )
         )
+
         def terminal(term_input: CallActivityInput) -> CallActivityInput:
             return term_input
+
         chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
-        sai = CallActivityInput(activity_name=name, args=input, retry_policy=retry_policy, workflow_ctx=ctx)
+        sai = CallActivityInput(
+            activity_name=name, args=input, retry_policy=retry_policy, workflow_ctx=ctx
+        )
         out = chain(sai)
         if isinstance(out, CallActivityInput):
             return wrap_payload_with_metadata(out.args, out.metadata)
@@ -124,10 +128,14 @@ class WorkflowRuntime:
                 else workflow.__name__
             )
         )
+
         def terminal(term_input: CallChildWorkflowInput) -> CallChildWorkflowInput:
             return term_input
+
         chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
-        sci = CallChildWorkflowInput(workflow_name=name, args=input, instance_id=None, workflow_ctx=ctx)
+        sci = CallChildWorkflowInput(
+            workflow_name=name, args=input, instance_id=None, workflow_ctx=ctx
+        )
         out = chain(sci)
         if isinstance(out, CallChildWorkflowInput):
             return wrap_payload_with_metadata(out.args, out.metadata)
@@ -151,6 +159,7 @@ class WorkflowRuntime:
                 },
             )
             payload, md = unwrap_payload_with_metadata(inp)
+
             # Build interceptor chain; terminal calls the user function (generator or non-generator)
             def terminal(e_input: ExecuteWorkflowInput) -> Any:
                 return (
@@ -158,6 +167,7 @@ class WorkflowRuntime:
                     if e_input.input is None
                     else fn(dapr_wf_context, e_input.input)
                 )
+
             chain = compose_runtime_chain(self._runtime_interceptors, terminal)
             return chain(ExecuteWorkflowInput(ctx=dapr_wf_context, input=payload, metadata=md))
 
@@ -341,9 +351,11 @@ class WorkflowRuntime:
             )
             payload, md = unwrap_payload_with_metadata(inp)
             gen = runner.to_generator(async_ctx, payload)
+
             def terminal(e_input: ExecuteWorkflowInput) -> Any:
                 # Return the generator for the durable runtime to drive
                 return gen
+
             chain = compose_runtime_chain(self._runtime_interceptors, terminal)
             return chain(ExecuteWorkflowInput(ctx=async_ctx, input=payload, metadata=md))
 
