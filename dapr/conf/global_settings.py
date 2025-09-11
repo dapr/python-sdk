@@ -50,3 +50,11 @@ DAPR_GRPC_RETRY_MAX_BACKOFF_MS: int = 1000
 DAPR_GRPC_RETRY_BACKOFF_MULTIPLIER: float = 2.0
 # Comma-separated list of status codes, e.g., 'UNAVAILABLE,DEADLINE_EXCEEDED'
 DAPR_GRPC_RETRY_CODES: str = 'UNAVAILABLE,DEADLINE_EXCEEDED'
+
+# ----- Conversation API settings ------
+
+# Configuration for handling large enums to avoid massive JSON schemas that can exceed LLM token limits
+DAPR_CONVERSATION_TOOLS_MAX_ENUM_ITEMS = 100
+# What to do when an enum has more than DAPR_CONVERSATION_TOOLS_MAX_ENUM_ITEMS items. Convert to String message or raise an exception
+# possible values: 'string' (default), 'error'
+DAPR_CONVERSATION_TOOLS_LARGE_ENUM_BEHAVIOR = 'string'

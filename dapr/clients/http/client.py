@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
 from dapr.conf import settings
-from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
+from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprHttpError, DaprInternalError
 
 

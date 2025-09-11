@@ -16,6 +16,7 @@
 # Path to store output
 PROTO_PATH="dapr/proto"
 SRC=.
+DAPR_BRANCH=${DAPR_BRANCH:-master}
 
 # Http request CLI
 HTTP_REQUEST_CLI=curl
@@ -38,7 +39,7 @@ downloadFile() {
     FILE_PATH="${PROTO_PATH}/${PKG_NAME}/v1"
 
     # URL for proto file
-    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/master/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
+    PROTO_URL="https://raw.githubusercontent.com/dapr/dapr/${DAPR_BRANCH}/dapr/proto/${PKG_NAME}/v1/${FILE_NAME}.proto"
 
     mkdir -p "${FILE_PATH}"
 

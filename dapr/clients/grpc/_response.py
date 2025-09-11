@@ -18,7 +18,6 @@ from __future__ import annotations
 import contextlib
 import json
 import threading
-from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -40,7 +39,7 @@ from typing import (
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
 
-from dapr.clients.base import DEFAULT_JSON_CONTENT_TYPE
+from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._helpers import (
     MetadataDict,
     MetadataTuple,
@@ -56,6 +55,7 @@ from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
 # for type checking
 if TYPE_CHECKING:
     from dapr.clients.grpc.client import DaprGrpcClient
+
 
 TCryptoResponse = TypeVar(
     'TCryptoResponse', bound=Union[api_v1.EncryptResponse, api_v1.DecryptResponse]
@@ -1071,19 +1071,3 @@ class EncryptResponse(CryptoResponse[TCryptoResponse]):
 
 class DecryptResponse(CryptoResponse[TCryptoResponse]):
     ...
-
-
-@dataclass
-class ConversationResult:
-    """Result from a single conversation input."""
-
-    result: str
-    parameters: Dict[str, GrpcAny] = field(default_factory=dict)
-
-
-@dataclass
-class ConversationResponse:
-    """Response from the conversation API."""
-
-    context_id: Optional[str]
-    outputs: List[ConversationResult]
