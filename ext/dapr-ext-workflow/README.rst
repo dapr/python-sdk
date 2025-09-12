@@ -185,22 +185,30 @@ Determinism and safety
 - Keep ``local_context`` for in-process state only; mirror string identifiers to ``metadata`` if you
   need propagation across activities/children.
 
-Example (tracing propagation)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Tracing interceptors (example)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can implement tracing as interceptors that stamp/propagate IDs in ``metadata`` and suppress
+spans during replay. A minimal sketch:
 
 .. code-block:: python
 
+    from typing import Any, Callable
     from dapr.ext.workflow import (
+        BaseClientInterceptor, BaseWorkflowOutboundInterceptor, BaseRuntimeInterceptor,
         WorkflowRuntime, DaprWorkflowClient,
-        ClientInterceptor, RuntimeInterceptor,
-        ScheduleWorkflowInput, CallActivityInput,
+        ScheduleWorkflowInput, CallActivityInput, CallChildWorkflowInput,
         ExecuteWorkflowInput, ExecuteActivityInput,
     )
 
-    class TracingClientInterceptor(ClientInterceptor):
+    TRACE_ID_KEY = 'otel.trace_id'
+
+    class TracingClientInterceptor(BaseClientInterceptor):
+        def __init__(self, get_trace: Callable[[], str]):
+            self._get = get_trace
         def schedule_new_workflow(self, input: ScheduleWorkflowInput, next):
             md = dict(input.metadata or {})
-            md.setdefault('otel.trace_id', 'trace-123')
+            md.setdefault(TRACE_ID_KEY, self._get())
             return next(ScheduleWorkflowInput(
                 workflow_name=input.workflow_name,
                 args=input.args,
@@ -208,25 +216,53 @@ Example (tracing propagation)
                 start_at=input.start_at,
                 reuse_id_policy=input.reuse_id_policy,
                 metadata=md,
+                local_context=input.local_context,
             ))
+
+    class TracingWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
+        def __init__(self, get_trace: Callable[[], str]):
+            self._get = get_trace
         def call_activity(self, input: CallActivityInput, next):
             md = dict(input.metadata or {})
-            md.setdefault('otel.trace_id', 'trace-123')
-            input.metadata = md
-            return next(input)
+            md.setdefault(TRACE_ID_KEY, self._get())
+            return next(type(input)(
+                activity_name=input.activity_name,
+                args=input.args,
+                retry_policy=input.retry_policy,
+                workflow_ctx=input.workflow_ctx,
+                metadata=md,
+                local_context=input.local_context,
+            ))
+        def call_child_workflow(self, input: CallChildWorkflowInput, next):
+            md = dict(input.metadata or {})
+            md.setdefault(TRACE_ID_KEY, self._get())
+            return next(type(input)(
+                workflow_name=input.workflow_name,
+                args=input.args,
+                instance_id=input.instance_id,
+                workflow_ctx=input.workflow_ctx,
+                metadata=md,
+                local_context=input.local_context,
+            ))
 
-    class TracingRuntimeInterceptor(RuntimeInterceptor):
+    class TracingRuntimeInterceptor(BaseRuntimeInterceptor):
         def execute_workflow(self, input: ExecuteWorkflowInput, next):
-            trace_id = (input.metadata or {}).get('otel.trace_id')
-            # Bind to a logger or contextvar here (replay-safe)
+            if not input.ctx.is_replaying:
+                _trace_id = (input.metadata or {}).get(TRACE_ID_KEY)
+                # start workflow span here
             return next(input)
         def execute_activity(self, input: ExecuteActivityInput, next):
-            trace_id = (input.metadata or {}).get('otel.trace_id')
+            _trace_id = (input.metadata or {}).get(TRACE_ID_KEY)
+            # start activity span here
             return next(input)
 
-    rt = WorkflowRuntime(interceptors=[TracingRuntimeInterceptor()],
-                         client_interceptors=[TracingClientInterceptor()])
-    client = DaprWorkflowClient(interceptors=[TracingClientInterceptor()])
+    rt = WorkflowRuntime(
+        runtime_interceptors=[TracingRuntimeInterceptor()],
+        workflow_outbound_interceptors=[TracingWorkflowOutboundInterceptor(lambda: 'trace-123')],
+    )
+    client = DaprWorkflowClient(interceptors=[TracingClientInterceptor(lambda: 'trace-123')])
+
+See the full runnable example in ``ext/dapr-ext-workflow/examples/tracing_interceptors_example.py``.
 
 Notes
 ~~~~~
@@ -234,6 +270,11 @@ Notes
 - User functions never see the envelope keys; they get the same input as before.
 - Only string keys/values should be stored in ``metadata``; enforce size limits and redaction
   policies as needed.
+- With newer durabletask-python, the engine provides deterministic context fields on
+  ``OrchestrationContext``/``ActivityContext`` that the SDK surfaces via
+  ``ctx.execution_info``/``activity_ctx.execution_info``: ``workflow_name``,
+  ``parent_instance_id``, ``history_event_sequence``, and ``attempt``. The SDK no longer
+  stamps parent linkage in metadata when these are present.
 
 Notes
 -----

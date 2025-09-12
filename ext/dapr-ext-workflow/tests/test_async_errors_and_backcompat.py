@@ -29,6 +29,8 @@ class FakeOrchestrationContext:
 
         self.current_utc_datetime = datetime.datetime(2024, 1, 1)
         self.instance_id = 'iid-errors'
+        self.is_replaying = False
+        self._custom_status = None
 
     def call_activity(self, activity, *, input=None, retry_policy=None):
         return FakeTask('activity')
@@ -38,6 +40,9 @@ class FakeOrchestrationContext:
 
     def wait_for_external_event(self, name: str):
         return FakeTask(f'event:{name}')
+
+    def set_custom_status(self, custom_status):
+        self._custom_status = custom_status
 
 
 def drive_raise(gen, exc: Exception):

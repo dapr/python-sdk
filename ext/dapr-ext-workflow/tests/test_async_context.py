@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 import types
 from datetime import datetime, timedelta, timezone
-import pytest
 
 from dapr.ext.workflow.async_context import AsyncWorkflowContext
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from dapr.ext.workflow.workflow_context import WorkflowContext
 
 
 class DummyBaseCtx:
@@ -14,12 +14,32 @@ class DummyBaseCtx:
         self.is_replaying = False
         self._custom_status = None
         self._continued = None
+        self._metadata = None
+        self._ei = types.SimpleNamespace(
+            workflow_id='abc-123',
+            workflow_name='wf',
+            is_replaying=False,
+            history_event_sequence=1,
+            inbound_metadata={'a': 'b'},
+            parent_instance_id=None,
+        )
 
     def set_custom_status(self, s: str):
         self._custom_status = s
 
     def continue_as_new(self, new_input, *, save_events: bool = False):
         self._continued = (new_input, save_events)
+
+    # Metadata parity
+    def set_metadata(self, md):
+        self._metadata = md
+
+    def get_metadata(self):
+        return self._metadata
+
+    @property
+    def execution_info(self):
+        return self._ei
 
 
 def test_parity_properties_and_now():
@@ -39,7 +59,8 @@ def test_timer_accepts_float_and_timedelta():
     # Timedelta should pass through
     aw2 = ctx.create_timer(timedelta(seconds=2))
 
-    # We only assert types by duck-typing public attribute presence to avoid importing internal classes in tests
+    # We only assert types by duck-typing public attribute presence to avoid
+    # importing internal classes in tests
     assert hasattr(aw1, '_ctx') and hasattr(aw1, '__await__')
     assert hasattr(aw2, '_ctx') and hasattr(aw2, '__await__')
 
@@ -84,3 +105,81 @@ def test_deterministic_utils_and_passthroughs():
 
     ctx.continue_as_new({'x': 1}, save_events=True)
     assert base._continued == ({'x': 1}, True)
+
+
+def test_async_metadata_api_and_execution_info():
+    base = DummyBaseCtx()
+    ctx = AsyncWorkflowContext(base)
+    ctx.set_metadata({'k': 'v'})
+    assert base._metadata == {'k': 'v'}
+    assert ctx.get_metadata() == {'k': 'v'}
+    ei = ctx.execution_info
+    assert ei and ei.workflow_id == 'abc-123' and ei.workflow_name == 'wf'
+
+
+def test_async_outbound_metadata_plumbed_into_awaitables():
+    base = DummyBaseCtx()
+    ctx = AsyncWorkflowContext(base)
+    a = ctx.call_activity(lambda: None, input=1, metadata={'m': 'n'})
+    c = ctx.call_child_workflow(lambda c, x: None, input=2, metadata={'x': 'y'})
+    # Introspect for test (internal attribute)
+    assert getattr(a, '_metadata', None) == {'m': 'n'}
+    assert getattr(c, '_metadata', None) == {'x': 'y'}
+
+
+def test_async_parity_surface_exists():
+    # Guard: ensure essential parity members exist
+    ctx = AsyncWorkflowContext(DummyBaseCtx())
+    for name in (
+        'set_metadata',
+        'get_metadata',
+        'execution_info',
+        'call_activity',
+        'call_child_workflow',
+        'continue_as_new',
+    ):
+        assert hasattr(ctx, name)
+
+
+def test_public_api_parity_against_workflowcontext_abc():
+    # Derive the required sync API surface from the ABC plus metadata/execution_info
+    required = {
+        name
+        for name, attr in WorkflowContext.__dict__.items()
+        if getattr(attr, '__isabstractmethod__', False)
+    }
+    required.update({'set_metadata', 'get_metadata', 'execution_info'})
+
+    # Async context must expose the same names
+    async_ctx = AsyncWorkflowContext(DummyBaseCtx())
+    missing_in_async = [name for name in required if not hasattr(async_ctx, name)]
+    assert not missing_in_async, f'AsyncWorkflowContext missing: {missing_in_async}'
+
+    # Sync context should also expose these names
+    class _FakeOrchCtx:
+        def __init__(self):
+            self.instance_id = 'abc-123'
+            self.current_utc_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+            self.is_replaying = False
+
+        def set_custom_status(self, s: str):
+            pass
+
+        def create_timer(self, fire_at):
+            return object()
+
+        def wait_for_external_event(self, name: str):
+            return object()
+
+        def continue_as_new(self, new_input, *, save_events: bool = False):
+            pass
+
+        def call_activity(self, *, activity, input=None, retry_policy=None):
+            return object()
+
+        def call_sub_orchestrator(self, fn, *, input=None, instance_id=None, retry_policy=None):
+            return object()
+
+    sync_ctx = DaprWorkflowContext(_FakeOrchCtx())
+    missing_in_sync = [name for name in required if not hasattr(sync_ctx, name)]
+    assert not missing_in_sync, f'DaprWorkflowContext missing: {missing_in_sync}'

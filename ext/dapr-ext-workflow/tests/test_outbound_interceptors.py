@@ -28,6 +28,8 @@ class _FakeOrchCtx:
     def __init__(self):
         self.instance_id = 'id'
         self.current_utc_datetime = __import__('datetime').datetime(2024, 1, 1)
+        self.is_replaying = False
+        self._custom_status = None
 
     def call_activity(self, activity, *, input=None, retry_policy=None):
         # return input back for assertion through driver
@@ -43,6 +45,23 @@ class _FakeOrchCtx:
                 self._v = v
 
         return _T(input)
+
+    def set_custom_status(self, custom_status):
+        self._custom_status = custom_status
+
+    def create_timer(self, fire_at):
+        class _T:
+            def __init__(self, v):
+                self._v = v
+
+        return _T(fire_at)
+
+    def wait_for_external_event(self, name: str):
+        class _T:
+            def __init__(self, v):
+                self._v = v
+
+        return _T(name)
 
 
 def drive(gen, returned):

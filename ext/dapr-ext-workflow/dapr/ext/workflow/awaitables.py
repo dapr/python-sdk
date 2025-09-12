@@ -46,18 +46,21 @@ class ActivityAwaitable(AwaitableBase):
         *,
         input: Any = None,
         retry_policy: Any = None,
+        metadata: dict[str, str] | None = None,
     ):
         self._ctx = ctx
         self._activity_fn = activity_fn
         self._input = input
         self._retry_policy = retry_policy
+        self._metadata = metadata
 
     def _to_dapr_task(self) -> task.Task:
-        if self._retry_policy is None:
-            return self._ctx.call_activity(self._activity_fn, input=self._input)
-        return self._ctx.call_activity(
-            self._activity_fn, input=self._input, retry_policy=self._retry_policy
-        )
+        kwargs = {'input': self._input}
+        if self._metadata is not None:
+            kwargs['metadata'] = self._metadata
+        if self._retry_policy is not None:
+            kwargs['retry_policy'] = self._retry_policy
+        return self._ctx.call_activity(self._activity_fn, **kwargs)
 
 
 class SubOrchestratorAwaitable(AwaitableBase):
@@ -69,24 +72,22 @@ class SubOrchestratorAwaitable(AwaitableBase):
         input: Any = None,
         instance_id: Optional[str] = None,
         retry_policy: Any = None,
+        metadata: dict[str, str] | None = None,
     ):
         self._ctx = ctx
         self._workflow_fn = workflow_fn
         self._input = input
         self._instance_id = instance_id
         self._retry_policy = retry_policy
+        self._metadata = metadata
 
     def _to_dapr_task(self) -> task.Task:
-        if self._retry_policy is None:
-            return self._ctx.call_child_workflow(
-                self._workflow_fn, input=self._input, instance_id=self._instance_id
-            )
-        return self._ctx.call_child_workflow(
-            self._workflow_fn,
-            input=self._input,
-            instance_id=self._instance_id,
-            retry_policy=self._retry_policy,
-        )
+        kwargs = {'input': self._input, 'instance_id': self._instance_id}
+        if self._metadata is not None:
+            kwargs['metadata'] = self._metadata
+        if self._retry_policy is not None:
+            kwargs['retry_policy'] = self._retry_policy
+        return self._ctx.call_child_workflow(self._workflow_fn, **kwargs)
 
 
 class SleepAwaitable(AwaitableBase):

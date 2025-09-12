@@ -32,6 +32,7 @@ from dapr.conf.helpers import GrpcEndpoint
 from dapr.ext.workflow.async_context import AsyncWorkflowContext
 from dapr.ext.workflow.async_driver import CoroutineOrchestratorRunner
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, Handlers
+from dapr.ext.workflow.execution_info import ActivityExecutionInfo, WorkflowExecutionInfo
 from dapr.ext.workflow.interceptors import (
     CallActivityInput,
     CallChildWorkflowInput,
@@ -93,7 +94,12 @@ class WorkflowRuntime:
 
     # Outbound transformation helpers (workflow context) — pass-throughs now
     def _apply_outbound_activity(
-        self, ctx: Any, activity: Callable[..., Any] | str, input: Any, retry_policy: Any | None
+        self,
+        ctx: Any,
+        activity: Callable[..., Any] | str,
+        input: Any,
+        retry_policy: Any | None,
+        metadata: dict[str, str] | None = None,
     ):
         # Build workflow-outbound chain to transform CallActivityInput
         name = (
@@ -110,15 +116,27 @@ class WorkflowRuntime:
             return term_input
 
         chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
+        # Use per-context default metadata when not provided
+        metadata = metadata or ctx.get_metadata()
         sai = CallActivityInput(
-            activity_name=name, args=input, retry_policy=retry_policy, workflow_ctx=ctx
+            activity_name=name,
+            args=input,
+            retry_policy=retry_policy,
+            workflow_ctx=ctx,
+            metadata=metadata,
         )
         out = chain(sai)
         if isinstance(out, CallActivityInput):
             return wrap_payload_with_metadata(out.args, out.metadata)
         return input
 
-    def _apply_outbound_child(self, ctx: Any, workflow: Callable[..., Any] | str, input: Any):
+    def _apply_outbound_child(
+        self,
+        ctx: Any,
+        workflow: Callable[..., Any] | str,
+        input: Any,
+        metadata: dict[str, str] | None = None,
+    ):
         name = (
             workflow
             if isinstance(workflow, str)
@@ -133,8 +151,9 @@ class WorkflowRuntime:
             return term_input
 
         chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
+        metadata = metadata or ctx.get_metadata()
         sci = CallChildWorkflowInput(
-            workflow_name=name, args=input, instance_id=None, workflow_ctx=ctx
+            workflow_name=name, args=input, instance_id=None, workflow_ctx=ctx, metadata=metadata
         )
         out = chain(sci)
         if isinstance(out, CallChildWorkflowInput):
@@ -158,6 +177,19 @@ class WorkflowRuntime:
                     Handlers.CALL_CHILD_WORKFLOW: self._apply_outbound_child,
                 },
             )
+            # Populate execution info
+            md_for_info = {}
+            if inp is not None:
+                md_for_info = unwrap_payload_with_metadata(inp)[1] or {}
+            info = WorkflowExecutionInfo(
+                workflow_id=ctx.instance_id,
+                workflow_name=getattr(ctx, 'workflow_name', fn.__dict__['_dapr_alternate_name']),
+                is_replaying=ctx.is_replaying,
+                history_event_sequence=getattr(ctx, 'history_event_sequence', None),
+                inbound_metadata=md_for_info,
+                parent_instance_id=getattr(ctx, 'parent_instance_id', None),
+            )
+            dapr_wf_context._set_execution_info(info)
             payload, md = unwrap_payload_with_metadata(inp)
 
             # Build interceptor chain; terminal calls the user function (generator or non-generator)
@@ -198,6 +230,22 @@ class WorkflowRuntime:
             """Activity entrypoint wrapped by runtime interceptors."""
             wf_activity_context = WorkflowActivityContext(ctx)
             payload, md = unwrap_payload_with_metadata(inp)
+            # Populate inbound metadata onto activity context
+            wf_activity_context.set_metadata(md or {})
+            # Populate execution info
+            try:
+                ainfo = ActivityExecutionInfo(
+                    workflow_id=ctx.orchestration_id,
+                    activity_name=fn.__dict__['_dapr_alternate_name']
+                    if hasattr(fn, '_dapr_alternate_name')
+                    else fn.__name__,
+                    task_id=ctx.task_id,
+                    attempt=ctx.attempt if hasattr(ctx, 'attempt') else None,
+                    inbound_metadata=md or {},
+                )
+                wf_activity_context._set_execution_info(ainfo)
+            except Exception:
+                pass
 
             def terminal(e_input: ExecuteActivityInput) -> Any:
                 # Support async and sync activities

@@ -46,6 +46,8 @@ class _FakeOrchCtx:
     def __init__(self):
         self.instance_id = 'id'
         self.current_utc_datetime = datetime(2024, 1, 1)
+        self._custom_status = None
+        self.is_replaying = False
 
     def call_activity(self, activity, *, input=None, retry_policy=None):
         class _T:
@@ -60,6 +62,23 @@ class _FakeOrchCtx:
                 self._v = v
 
         return _T(input)
+
+    def set_custom_status(self, custom_status):
+        self._custom_status = custom_status
+
+    def create_timer(self, fire_at):
+        class _T:
+            def __init__(self, v):
+                self._v = v
+
+        return _T(fire_at)
+
+    def wait_for_external_event(self, name: str):
+        class _T:
+            def __init__(self, v):
+                self._v = v
+
+        return _T(name)
 
 
 def _drive(gen, returned):
@@ -211,7 +230,6 @@ def test_outbound_activity_and_child_wrap_metadata(monkeypatch):
     # Resume with any value; our fake driver ignores and loops
     t2 = gen.send({'act': 'done'})
     assert hasattr(t2, '_v')
-    env2 = t2._v
     with pytest.raises(StopIteration) as stop:
         gen.send({'child': 'done'})
     result = stop.value.value
@@ -258,3 +276,86 @@ def test_local_context_runtime_chain_passthrough(monkeypatch):
     result = orch(_FakeOrchCtx(), 1)
     assert result == 'ok'
     assert events == ['flag=on']
+
+
+def test_context_set_metadata_default_propagation(monkeypatch):
+    import durabletask.worker as worker_mod
+
+    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
+
+    # No outbound interceptor needed; runtime will wrap using ctx.get_metadata()
+    rt = WorkflowRuntime()
+
+    @rt.workflow(name='use_ctx_md')
+    def use_ctx_md(ctx, x):
+        # Set default metadata on context
+        ctx.set_metadata({'k': 'ctx'})
+        env = yield ctx.call_activity(lambda: None, input={'p': 1})
+        # Return the raw yielded value for assertion
+        return env
+
+    orch = rt._WorkflowRuntime__worker._registry.orchestrators['use_ctx_md']
+    gen = orch(_FakeOrchCtx(), 0)
+    yielded = gen.send(None)
+    assert hasattr(yielded, '_v')
+    env = yielded._v
+    assert isinstance(env, dict)
+    assert env.get('__dapr_meta__', {}).get('metadata', {}).get('k') == 'ctx'
+
+
+def test_per_call_metadata_overrides_context(monkeypatch):
+    import durabletask.worker as worker_mod
+
+    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
+
+    rt = WorkflowRuntime()
+
+    @rt.workflow(name='override_ctx_md')
+    def override_ctx_md(ctx, x):
+        ctx.set_metadata({'k': 'ctx'})
+        env = yield ctx.call_activity(lambda: None, input={'p': 1}, metadata={'k': 'per'})
+        return env
+
+    orch = rt._WorkflowRuntime__worker._registry.orchestrators['override_ctx_md']
+    gen = orch(_FakeOrchCtx(), 0)
+    yielded = gen.send(None)
+    env = yielded._v
+    assert isinstance(env, dict)
+    assert env.get('__dapr_meta__', {}).get('metadata', {}).get('k') == 'per'
+
+
+def test_execution_info_workflow_and_activity(monkeypatch):
+    import durabletask.worker as worker_mod
+
+    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
+
+    rt = WorkflowRuntime()
+
+    def act(ctx, x):
+        # activity inbound metadata and execution info available
+        md = ctx.get_metadata()
+        ei = ctx.execution_info
+        assert md == {'m': 'v'}
+        assert ei is not None and ei.workflow_id == 'id' and ei.task_id == 1
+        return x
+
+    @rt.workflow(name='execinfo')
+    def execinfo(ctx, x):
+        # set default metadata
+        ctx.set_metadata({'m': 'v'})
+        # workflow execution info available
+        wi = ctx.execution_info
+        assert wi is not None and wi.workflow_id == 'id'
+        v = yield ctx.call_activity(act, input=42)
+        return v
+
+    # register activity
+    rt.activity(name='act')(act)
+    orch = rt._WorkflowRuntime__worker._registry.orchestrators['execinfo']
+    gen = orch(_FakeOrchCtx(), 7)
+    # drive one yield (call_activity)
+    gen.send(None)
+    # send back a value for activity result
+    with pytest.raises(StopIteration) as stop:
+        gen.send(42)
+    assert stop.value.value == 42

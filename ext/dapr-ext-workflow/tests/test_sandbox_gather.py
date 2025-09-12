@@ -40,10 +40,10 @@ class _FakeCtx:
 
 def drive(gen, results):
     try:
-        t = gen.send(None)
+        gen.send(None)
         i = 0
         while True:
-            t = gen.send(results[i])
+            gen.send(results[i])
             i += 1
     except StopIteration as stop:
         return stop.value

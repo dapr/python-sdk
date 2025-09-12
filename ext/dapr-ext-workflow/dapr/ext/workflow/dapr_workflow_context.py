@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +16,7 @@ from typing import Any, Callable, List, Optional, TypeVar, Union
 
 from durabletask import task
 
+from dapr.ext.workflow.execution_info import WorkflowExecutionInfo
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
@@ -46,6 +45,7 @@ class DaprWorkflowContext(WorkflowContext):
         self.__obj = ctx
         self._logger = Logger('DaprWorkflowContext', logger_options)
         self._outbound_handlers = outbound_handlers or {}
+        self._metadata: dict[str, str] | None = None
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
@@ -63,9 +63,24 @@ class DaprWorkflowContext(WorkflowContext):
     def is_replaying(self) -> bool:
         return self.__obj.is_replaying
 
+    # Metadata API
+    def set_metadata(self, metadata: dict[str, str] | None) -> None:
+        self._metadata = dict(metadata) if metadata else None
+
+    def get_metadata(self) -> dict[str, str] | None:
+        return dict(self._metadata) if self._metadata else None
+
     def set_custom_status(self, custom_status: str) -> None:
         self._logger.debug(f'{self.instance_id}: Setting custom status to {custom_status}')
         self.__obj.set_custom_status(custom_status)
+
+    # Execution info (populated by runtime when available)
+    @property
+    def execution_info(self) -> WorkflowExecutionInfo | None:
+        return getattr(self, '_execution_info', None)
+
+    def _set_execution_info(self, info: WorkflowExecutionInfo) -> None:
+        self._execution_info = info
 
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
         self._logger.debug(f'{self.instance_id}: Creating timer to fire at {fire_at} time')
@@ -77,6 +92,7 @@ class DaprWorkflowContext(WorkflowContext):
         *,
         input: TInput = None,
         retry_policy: Optional[RetryPolicy] = None,
+        metadata: dict[str, str] | None = None,
     ) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
         if hasattr(activity, '_dapr_alternate_name'):
@@ -90,7 +106,7 @@ class DaprWorkflowContext(WorkflowContext):
             self._outbound_handlers[Handlers.CALL_ACTIVITY]
         ):
             transformed_input = self._outbound_handlers[Handlers.CALL_ACTIVITY](
-                self, activity, input, retry_policy
+                self, activity, input, retry_policy, metadata or self.get_metadata()
             )
         if retry_policy is None:
             return self.__obj.call_activity(activity=act, input=transformed_input)
@@ -105,6 +121,7 @@ class DaprWorkflowContext(WorkflowContext):
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        metadata: dict[str, str] | None = None,
     ) -> task.Task[TOutput]:
         self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
 
@@ -125,7 +142,7 @@ class DaprWorkflowContext(WorkflowContext):
             self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW]
         ):
             transformed_input = self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW](
-                self, workflow, input
+                self, workflow, input, metadata or self.get_metadata()
             )
         if retry_policy is None:
             return self.__obj.call_sub_orchestrator(
@@ -139,9 +156,26 @@ class DaprWorkflowContext(WorkflowContext):
         self._logger.debug(f'{self.instance_id}: Waiting for external event {name}')
         return self.__obj.wait_for_external_event(name)
 
-    def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
+    def continue_as_new(
+        self,
+        new_input: Any,
+        *,
+        save_events: bool = False,
+        carryover_metadata: bool | dict[str, str] = False,
+    ) -> None:
         self._logger.debug(f'{self.instance_id}: Continuing as new')
-        self.__obj.continue_as_new(new_input, save_events=save_events)
+        # Merge/carry metadata if requested
+        payload = new_input
+        if carryover_metadata:
+            base = self.get_metadata() or {}
+            if isinstance(carryover_metadata, dict):
+                md = {**base, **carryover_metadata}
+            else:
+                md = base
+            from dapr.ext.workflow.interceptors import wrap_payload_with_metadata
+
+            payload = wrap_payload_with_metadata(new_input, md)
+        self.__obj.continue_as_new(payload, save_events=save_events)
 
 
 def when_all(tasks: List[task.Task[T]]) -> task.WhenAllTask[T]:

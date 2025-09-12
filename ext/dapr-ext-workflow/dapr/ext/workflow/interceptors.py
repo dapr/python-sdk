@@ -240,9 +240,6 @@ def compose_workflow_outbound_chain(
     return next_fn
 
 
-## No adapter: client outbound methods removed; use WorkflowOutboundInterceptor directly
-
-
 # ------------------------------
 # Helper: envelope for durable metadata
 # ------------------------------

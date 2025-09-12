@@ -50,10 +50,15 @@ class AsyncWorkflowContext:
 
     # Activities & Sub-orchestrations
     def call_activity(
-        self, activity_fn: Callable[..., Any], *, input: Any = None, retry_policy: Any = None
+        self,
+        activity_fn: Callable[..., Any],
+        *,
+        input: Any = None,
+        retry_policy: Any = None,
+        metadata: dict[str, str] | None = None,
     ) -> Awaitable[Any]:
         return ActivityAwaitable(
-            self._base_ctx, activity_fn, input=input, retry_policy=retry_policy
+            self._base_ctx, activity_fn, input=input, retry_policy=retry_policy, metadata=metadata
         )
 
     def call_child_workflow(
@@ -63,6 +68,7 @@ class AsyncWorkflowContext:
         input: Any = None,
         instance_id: Optional[str] = None,
         retry_policy: Any = None,
+        metadata: dict[str, str] | None = None,
     ) -> Awaitable[Any]:
         return SubOrchestratorAwaitable(
             self._base_ctx,
@@ -70,6 +76,7 @@ class AsyncWorkflowContext:
             input=input,
             instance_id=instance_id,
             retry_policy=retry_policy,
+            metadata=metadata,
         )
 
     @property
@@ -131,6 +138,33 @@ class AsyncWorkflowContext:
         if hasattr(self._base_ctx, 'set_custom_status'):
             self._base_ctx.set_custom_status(custom_status)
 
-    def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
+    def continue_as_new(
+        self,
+        new_input: Any,
+        *,
+        save_events: bool = False,
+        carryover_metadata: bool | dict[str, str] = False,
+    ) -> None:
         if hasattr(self._base_ctx, 'continue_as_new'):
-            self._base_ctx.continue_as_new(new_input, save_events=save_events)
+            try:
+                self._base_ctx.continue_as_new(
+                    new_input, save_events=save_events, carryover_metadata=carryover_metadata
+                )
+            except TypeError:
+                # Fallback for older runtimes without carryover support
+                self._base_ctx.continue_as_new(new_input, save_events=save_events)
+
+    # Metadata parity
+    def set_metadata(self, metadata: dict[str, str] | None) -> None:
+        setter = getattr(self._base_ctx, 'set_metadata', None)
+        if callable(setter):
+            setter(metadata)
+
+    def get_metadata(self) -> dict[str, str] | None:
+        getter = getattr(self._base_ctx, 'get_metadata', None)
+        return getter() if callable(getter) else None
+
+    # Execution info parity
+    @property
+    def execution_info(self):  # type: ignore[override]
+        return getattr(self._base_ctx, 'execution_info', None)

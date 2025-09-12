@@ -17,6 +17,7 @@ limitations under the License.
 from dapr.ext.workflow.async_context import AsyncWorkflowContext
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
+from dapr.ext.workflow.execution_info import ActivityExecutionInfo, WorkflowExecutionInfo
 from dapr.ext.workflow.interceptors import (
     BaseClientInterceptor,
     BaseRuntimeInterceptor,
@@ -76,6 +77,8 @@ __all__ = [
     'ExecuteActivityInput',
     'compose_workflow_outbound_chain',
     'compose_runtime_chain',
+    'WorkflowExecutionInfo',
+    'ActivityExecutionInfo',
     # serializers
     'CanonicalSerializable',
     'GenericSerializer',

@@ -46,10 +46,10 @@ class _FakeOrchestrationContext:
 
 def _drive_generator(gen, returned_value):
     # Prime to first yield; then drive
-    t = next(gen)
+    next(gen)
     while True:
         try:
-            t = gen.send(returned_value)
+            gen.send(returned_value)
         except StopIteration as stop:
             return stop.value
 
