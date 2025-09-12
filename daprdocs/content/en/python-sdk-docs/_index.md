@@ -67,6 +67,13 @@ Python SDK imports are subpackages included with the main SDK install, but need 
       <a href="{{% ref python-actor %}}" class="stretched-link"></a>
     </div>
   </div>
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title"><b>Conversation</b></h5>
+      <p class="card-text">Use the Dapr Conversation API (Alpha) for LLM interactions, tools, and multi-turn flows.</p>
+      <a href="{{% ref conversation %}}" class="stretched-link"></a>
+    </div>
+  </div>
 </div>
 
 Learn more about _all_ of the [available Dapr Python SDK imports](https://github.com/dapr/python-sdk/tree/master/dapr). 
