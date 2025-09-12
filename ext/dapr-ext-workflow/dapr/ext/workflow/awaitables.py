@@ -15,13 +15,13 @@ limitations under the License.
 
 from __future__ import annotations
 
+import importlib
 from datetime import datetime, timedelta
 from typing import Any, Callable, Iterable, List, Optional
 
 from durabletask import task
 
 from .async_driver import DaprOperation
-import importlib
 
 """
 Awaitable helpers for async workflows. Each awaitable yields a DaprOperation wrapping

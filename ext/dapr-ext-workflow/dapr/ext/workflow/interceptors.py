@@ -5,6 +5,21 @@ Interceptor interfaces and chain utilities for the Dapr Workflow SDK.
 
 This replaces ad-hoc middleware hook patterns with composable client/runtime interceptors,
 providing a single enter/exit around calls.
+
+IMPORTANT: Generator wrappers
+-----------------------------
+When writing runtime interceptors that touch workflow execution, be careful with generator
+handling. If an interceptor obtains a workflow generator from user code (e.g., an async
+orchestrator adapted into a generator) it must not manually iterate it using a for-loop
+and yield the produced items. Doing so breaks send()/throw() propagation back into the
+inner generator, which can cause resumed results from the durable runtime to be dropped
+and appear as None to awaiters.
+
+Best practices:
+- If the interceptor participates in composition and needs to return the generator,
+  return it directly (do not iterate it).
+- If the interceptor must wrap the generator, always use "yield from inner_gen" so that
+  send()/throw() are forwarded correctly.
 """
 
 from __future__ import annotations
@@ -211,6 +226,12 @@ def compose_workflow_outbound_chain(
 
         def make_next(curr_icpt: WorkflowOutboundInterceptor, nxt: Callable[[Any], Any]):
             def runner(input: Any) -> Any:
+                # Dispatch to the appropriate outbound method on the interceptor
+                if isinstance(input, CallActivityInput):
+                    return curr_icpt.call_activity(input, nxt)
+                if isinstance(input, CallChildWorkflowInput):
+                    return curr_icpt.call_child_workflow(input, nxt)
+                # Fallback to next if input type unknown
                 return nxt(input)
 
             return runner

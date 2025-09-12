@@ -353,7 +353,9 @@ class WorkflowRuntime:
             gen = runner.to_generator(async_ctx, payload)
 
             def terminal(e_input: ExecuteWorkflowInput) -> Any:
-                # Return the generator for the durable runtime to drive
+                # Return the generator for the durable runtime to drive.
+                # Note: If an interceptor wraps this generator, use "yield from gen"
+                # to preserve send()/throw() propagation into the inner generator.
                 return gen
 
             chain = compose_runtime_chain(self._runtime_interceptors, terminal)
