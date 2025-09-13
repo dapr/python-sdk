@@ -51,7 +51,8 @@ class Subscription:
 
     async def reconnect_stream(self):
         await self.close()
-        DaprHealth.wait_until_ready()
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, DaprHealth.wait_until_ready)
         print('Attempting to reconnect...')
         await self.start()
 
