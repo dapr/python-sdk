@@ -67,7 +67,7 @@ class Subscription:
                     return None
                 return SubscriptionMessage(message.event_message)
         except AioRpcError as e:
-            if e.code() == StatusCode.UNAVAILABLE:
+            if e.code() == StatusCode.UNAVAILABLE or e.code() == StatusCode.UNKNOWN:
                 print(
                     f'gRPC error while reading from stream: {e.details()}, '
                     f'Status Code: {e.code()}. '
