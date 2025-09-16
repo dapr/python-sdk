@@ -29,7 +29,7 @@ class FakeCtx:
         self.current_utc_datetime = now or datetime(2024, 1, 1)
         self.instance_id = instance_id
 
-    def call_activity(self, activity, *, input=None, retry_policy=None):
+    def call_activity(self, activity, *, input=None, retry_policy=None, metadata=None):
         return FakeTask(f"activity:{getattr(activity, '__name__', str(activity))}:{input}")
 
     def create_timer(self, fire_at):

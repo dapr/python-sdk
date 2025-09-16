@@ -16,6 +16,7 @@ from typing import Any, Callable, List, Optional, TypeVar, Union
 
 from durabletask import task
 
+from dapr.ext.workflow.deterministic import DeterministicContextMixin
 from dapr.ext.workflow.execution_info import WorkflowExecutionInfo
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.retry_policy import RetryPolicy
@@ -32,7 +33,7 @@ class Handlers(enum.Enum):
     CALL_CHILD_WORKFLOW = 'call_child_workflow'
 
 
-class DaprWorkflowContext(WorkflowContext):
+class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
     """DaprWorkflowContext that provides proxy access to internal OrchestrationContext instance."""
 
     def __init__(
@@ -63,12 +64,21 @@ class DaprWorkflowContext(WorkflowContext):
     def is_replaying(self) -> bool:
         return self.__obj.is_replaying
 
+    # Deterministic utilities are provided by mixin (now, random, uuid4, new_guid)
+
     # Metadata API
     def set_metadata(self, metadata: dict[str, str] | None) -> None:
         self._metadata = dict(metadata) if metadata else None
 
     def get_metadata(self) -> dict[str, str] | None:
         return dict(self._metadata) if self._metadata else None
+
+    # Header aliases (ergonomic alias for users familiar with Temporal terminology)
+    def set_headers(self, headers: dict[str, str] | None) -> None:
+        self.set_metadata(headers)
+
+    def get_headers(self) -> dict[str, str] | None:
+        return self.get_metadata()
 
     def set_custom_status(self, custom_status: str) -> None:
         self._logger.debug(f'{self.instance_id}: Setting custom status to {custom_status}')
@@ -162,14 +172,18 @@ class DaprWorkflowContext(WorkflowContext):
         *,
         save_events: bool = False,
         carryover_metadata: bool | dict[str, str] = False,
+        carryover_headers: bool | dict[str, str] | None = None,
     ) -> None:
         self._logger.debug(f'{self.instance_id}: Continuing as new')
         # Merge/carry metadata if requested
         payload = new_input
-        if carryover_metadata:
+        effective_carryover = (
+            carryover_headers if carryover_headers is not None else carryover_metadata
+        )
+        if effective_carryover:
             base = self.get_metadata() or {}
-            if isinstance(carryover_metadata, dict):
-                md = {**base, **carryover_metadata}
+            if isinstance(effective_carryover, dict):
+                md = {**base, **effective_carryover}
             else:
                 md = base
             from dapr.ext.workflow.interceptors import wrap_payload_with_metadata

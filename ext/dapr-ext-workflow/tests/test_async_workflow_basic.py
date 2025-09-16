@@ -28,10 +28,12 @@ class FakeCtx:
         self.instance_id = 'test-instance'
         self._events: dict[str, list] = {}
 
-    def call_activity(self, activity, *, input=None, retry_policy=None):
+    def call_activity(self, activity, *, input=None, retry_policy=None, metadata=None):
         return FakeTask(f"activity:{getattr(activity, '__name__', str(activity))}")
 
-    def call_child_workflow(self, workflow, *, input=None, instance_id=None, retry_policy=None):
+    def call_child_workflow(
+        self, workflow, *, input=None, instance_id=None, retry_policy=None, metadata=None
+    ):
         return FakeTask(f"sub:{getattr(workflow, '__name__', str(workflow))}")
 
     def create_timer(self, fire_at):

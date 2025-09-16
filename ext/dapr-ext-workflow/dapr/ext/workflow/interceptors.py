@@ -3,8 +3,7 @@
 """
 Interceptor interfaces and chain utilities for the Dapr Workflow SDK.
 
-This replaces ad-hoc middleware hook patterns with composable client/runtime interceptors,
-providing a single enter/exit around calls.
+Providing a single enter/exit around calls.
 
 IMPORTANT: Generator wrappers
 -----------------------------

@@ -29,7 +29,7 @@ This package supports authoring workflows with ``async def`` in addition to the 
   - Timers: ``await ctx.create_timer(seconds|timedelta)``
   - External events: ``await ctx.wait_for_external_event(name)``
   - Concurrency: ``await ctx.when_all([...])``, ``await ctx.when_any([...])``
-  - Deterministic utils: ``ctx.now()``, ``ctx.random()``, ``ctx.uuid4()``
+  - Deterministic utils: ``ctx.now()``, ``ctx.random()``, ``ctx.uuid4()``, ``ctx.new_guid()``, ``ctx.random_string(length)``
 
 Interceptors (client/runtime/outbound)
 --------------------------------------
@@ -176,6 +176,32 @@ Internally, the runtime persists metadata by wrapping inputs in an envelope:
   structure and types.
 - The version field (``v``) is reserved for forward compatibility.
 
+Minimal input guidance (SDK-facing)
+-----------------------------------
+
+- Workflow input SHOULD be JSON serializable and a preferably a single dict carried under ``ExecuteWorkflowInput.input``. Prefer a
+  single object over positional ``args`` to avoid shape ambiguity and ease future evolution. This is
+  a recommendation for consistency and versioning; the SDK accepts any JSON-serializable input type
+  (dict, list, or scalar) and preserves the original shape when unwrapping the envelope.
+
+- For contextual data, you can use "headers" (aliases for metadata) on the workflow context:
+  ``set_headers``/``get_headers`` behave the same as ``set_metadata``/``get_metadata`` and are
+  provided for familiarity with systems that use header terminology. ``continue_as_new`` also
+  supports ``carryover_headers`` as an alias to ``carryover_metadata``.
+- If your app needs a tracing or correlation fallback, include a small ``trace_context`` dict in
+  your input envelope. Interceptors should restore from ``metadata`` first (see below), then
+  optionally fall back to this field when present.
+
+Example (generic):
+
+.. code-block:: json
+
+    {
+      "schema_version": "your-app:workflow_input@v1",
+      "trace_context": { "trace_id": "...", "span_id": "..." },
+      "payload": { }
+    }
+
 Determinism and safety
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -184,6 +210,19 @@ Determinism and safety
 - Activities may read/modify metadata and perform I/O inside the activity function if desired.
 - Keep ``local_context`` for in-process state only; mirror string identifiers to ``metadata`` if you
   need propagation across activities/children.
+
+Metadata persistence lifecycle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``ctx.set_metadata()`` attaches a string-only dict to the current workflow activation. The runtime
+  persists it by wrapping inputs in the envelope shown above. Set metadata before yielding or
+  returning from an activation to ensure it is durably recorded.
+- ``continue_as_new``: metadata is not implicitly carried. Use
+  ``ctx.continue_as_new(new_input, carryover_metadata=True)`` to carry current metadata or provide a
+  dict to merge/override: ``carryover_metadata={"key": "value"}``.
+- Child workflows and activities: metadata is propagated when set on the outbound call input by
+  interceptors. If you maintain a baseline via ``ctx.set_metadata(...)``, your
+  ``WorkflowOutboundInterceptor`` can merge it into call-specific metadata.
 
 Tracing interceptors (example)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -264,31 +303,32 @@ spans during replay. A minimal sketch:
 
 See the full runnable example in ``ext/dapr-ext-workflow/examples/tracing_interceptors_example.py``.
 
+Recommended tracing restoration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Restore tracing from ``ExecuteWorkflowInput.metadata`` first (e.g., a key like ``otel.trace_id``)
+  to preserve determinism and cross-activation continuity without touching user payloads.
+- If no tracing metadata is present, optionally fall back to ``input.trace_context`` in your
+  application-defined input envelope.
+- Suppress workflow spans during replay by checking ``input.ctx.is_replaying`` in runtime
+  interceptors.
+
 Notes
 ~~~~~
 
 - User functions never see the envelope keys; they get the same input as before.
-- Only string keys/values should be stored in ``metadata``; enforce size limits and redaction
+- Only string keys/values should be stored in headers/metadata; enforce size limits and redaction
   policies as needed.
 - With newer durabletask-python, the engine provides deterministic context fields on
   ``OrchestrationContext``/``ActivityContext`` that the SDK surfaces via
   ``ctx.execution_info``/``activity_ctx.execution_info``: ``workflow_name``,
-  ``parent_instance_id``, ``history_event_sequence``, and ``attempt``. The SDK no longer
-  stamps parent linkage in metadata when these are present.
-
-Notes
------
-
+  ``parent_instance_id``, ``history_event_sequence``, and ``attempt``. The SDK no longer stamps
+  parent linkage in metadata when these are present.
 - Interceptors are synchronous and must not perform I/O in orchestrators. Activities may perform
   I/O inside the user function; interceptor code should remain fast and replay-safe.
 - Client interceptors are applied when calling ``DaprWorkflowClient.schedule_new_workflow(...)`` and
   when orchestrators call ``ctx.call_activity(...)`` or ``ctx.call_child_workflow(...)``.
 
-Legacy middleware
-~~~~~~~~~~~~~~~~~
-
-Earlier drafts referenced a middleware hook API. It has been removed in favor of interceptors.
-Use the interceptor types described above for new development.
 
 Best-effort sandbox
 ~~~~~~~~~~~~~~~~~~~

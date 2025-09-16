@@ -14,9 +14,11 @@ limitations under the License.
 """
 
 from __future__ import annotations
+
 from typing import Callable, TypeVar
 
 from durabletask import task
+
 from dapr.ext.workflow.execution_info import ActivityExecutionInfo
 
 T = TypeVar('T')

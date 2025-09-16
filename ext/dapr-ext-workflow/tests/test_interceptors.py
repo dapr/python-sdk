@@ -3,7 +3,6 @@
 """
 Interceptor tests for Dapr WorkflowRuntime.
 
-This replaces legacy middleware-hook tests.
 """
 
 from __future__ import annotations

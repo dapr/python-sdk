@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +15,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Callable, Generator, Optional, TypeVar, Union
+from typing import Any, Callable, Generator, TypeVar, Union
 
 from durabletask import task
 
+from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import Activity
 
 T = TypeVar('T')
@@ -91,7 +90,7 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
+    def create_timer(self, fire_at: datetime | timedelta) -> task.Task:
         """Create a Timer Task to fire after at the specified deadline.
 
         Parameters
@@ -108,7 +107,7 @@ class WorkflowContext(ABC):
 
     @abstractmethod
     def call_activity(
-        self, activity: Activity[TOutput], *, input: Optional[TInput] = None
+        self, activity: Activity[TOutput], *, input: TInput | None = None
     ) -> task.Task[TOutput]:
         """Schedule an activity for execution.
 
@@ -133,8 +132,9 @@ class WorkflowContext(ABC):
         self,
         orchestrator: Workflow[TOutput],
         *,
-        input: Optional[TInput] = None,
-        instance_id: Optional[str] = None,
+        input: TInput | None = None,
+        instance_id: str | None = None,
+        retry_policy: RetryPolicy | None = None,
     ) -> task.Task[TOutput]:
         """Schedule child-workflow function for execution.
 
@@ -147,6 +147,9 @@ class WorkflowContext(ABC):
         instance_id: str
             A unique ID to use for the sub-orchestration instance. If not specified, a
             random UUID will be used.
+        retry_policy: RetryPolicy | None
+            Optional retry policy for the child-workflow. When provided, failures will be retried
+            according to the policy.
 
         Returns
         -------

@@ -31,7 +31,7 @@ class FakeCtx:
         self.current_utc_datetime = datetime.datetime(2024, 1, 1)
         self.instance_id = 'iid-act-retry'
 
-    def call_activity(self, activity, *, input=None, retry_policy=None):
+    def call_activity(self, activity, *, input=None, retry_policy=None, metadata=None):
         return FakeTask('activity')
 
     def create_timer(self, fire_at):

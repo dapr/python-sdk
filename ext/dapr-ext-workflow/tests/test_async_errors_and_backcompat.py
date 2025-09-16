@@ -32,7 +32,7 @@ class FakeOrchestrationContext:
         self.is_replaying = False
         self._custom_status = None
 
-    def call_activity(self, activity, *, input=None, retry_policy=None):
+    def call_activity(self, activity, *, input=None, retry_policy=None, metadata=None):
         return FakeTask('activity')
 
     def create_timer(self, fire_at):

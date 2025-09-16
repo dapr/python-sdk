@@ -32,10 +32,12 @@ class FakeCtx:
         self.current_utc_datetime = datetime(2024, 1, 1)
         self.instance_id = 'iid-123'
 
-    def call_activity(self, activity, *, input=None, retry_policy=None):
+    def call_activity(self, activity, *, input=None, retry_policy=None, metadata=None):
         return FakeTask(f"activity:{getattr(activity, '__name__', str(activity))}")
 
-    def call_child_workflow(self, workflow, *, input=None, instance_id=None, retry_policy=None):
+    def call_child_workflow(
+        self, workflow, *, input=None, instance_id=None, retry_policy=None, metadata=None
+    ):
         return FakeTask(f"sub:{getattr(workflow, '__name__', str(workflow))}")
 
     def create_timer(self, fire_at):

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2025 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +14,7 @@ limitations under the License.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable, Optional, Sequence, Union
+from typing import Any, Awaitable, Callable, Sequence
 
 from .awaitables import (
     ActivityAwaitable,
@@ -27,7 +25,7 @@ from .awaitables import (
     WhenAllAwaitable,
     WhenAnyAwaitable,
 )
-from .deterministic import deterministic_random, deterministic_uuid4
+from .deterministic import DeterministicContextMixin
 
 """
 Async workflow context that exposes deterministic awaitables for activities, timers,
@@ -35,7 +33,7 @@ external events, and concurrency, along with deterministic utilities.
 """
 
 
-class AsyncWorkflowContext:
+class AsyncWorkflowContext(DeterministicContextMixin):
     def __init__(self, base_ctx: any):
         self._base_ctx = base_ctx
 
@@ -66,7 +64,7 @@ class AsyncWorkflowContext:
         workflow_fn: Callable[..., Any],
         *,
         input: Any = None,
-        instance_id: Optional[str] = None,
+        instance_id: str | None = None,
         retry_policy: Any = None,
         metadata: dict[str, str] | None = None,
     ) -> Awaitable[Any]:
@@ -84,13 +82,13 @@ class AsyncWorkflowContext:
         return self._base_ctx.is_replaying
 
     # Timers & Events
-    def create_timer(self, fire_at: Union[float, timedelta, datetime]) -> Awaitable[None]:
+    def create_timer(self, fire_at: float | timedelta | datetime) -> Awaitable[None]:
         # If float provided, interpret as seconds
         if isinstance(fire_at, (int, float)):
             fire_at = timedelta(seconds=float(fire_at))
         return SleepAwaitable(self._base_ctx, fire_at)
 
-    def sleep(self, duration: Union[float, timedelta, datetime]) -> Awaitable[None]:
+    def sleep(self, duration: float | timedelta | datetime) -> Awaitable[None]:
         return self.create_timer(duration)
 
     def wait_for_external_event(self, name: str) -> Awaitable[Any]:
@@ -108,20 +106,7 @@ class AsyncWorkflowContext:
             return GatherReturnExceptionsAwaitable(self._base_ctx, list(aws))
         return WhenAllAwaitable(list(aws))
 
-    # Deterministic utilities
-    def now(self) -> datetime:
-        # Keep convenience helper; mirrors sync context's current_utc_datetime
-        return self.current_utc_datetime
-
-    def random(self):  # returns PRNG; implement deterministic seeding in later milestone
-        return deterministic_random(self._base_ctx.instance_id, self._base_ctx.current_utc_datetime)
-
-    def uuid4(self):
-        rnd = self.random()
-        return deterministic_uuid4(rnd)
-
-    def new_guid(self):
-        return self.uuid4()
+    # Deterministic utilities are provided by mixin (now, random, uuid4, new_guid)
 
     @property
     def is_suspended(self) -> bool:
@@ -144,11 +129,15 @@ class AsyncWorkflowContext:
         *,
         save_events: bool = False,
         carryover_metadata: bool | dict[str, str] = False,
+        carryover_headers: bool | dict[str, str] | None = None,
     ) -> None:
         if hasattr(self._base_ctx, 'continue_as_new'):
             try:
+                effective_carryover = (
+                    carryover_headers if carryover_headers is not None else carryover_metadata
+                )
                 self._base_ctx.continue_as_new(
-                    new_input, save_events=save_events, carryover_metadata=carryover_metadata
+                    new_input, save_events=save_events, carryover_metadata=effective_carryover
                 )
             except TypeError:
                 # Fallback for older runtimes without carryover support
@@ -163,6 +152,13 @@ class AsyncWorkflowContext:
     def get_metadata(self) -> dict[str, str] | None:
         getter = getattr(self._base_ctx, 'get_metadata', None)
         return getter() if callable(getter) else None
+
+    # Header aliases (ergonomic alias for users familiar with Temporal terminology)
+    def set_headers(self, headers: dict[str, str] | None) -> None:
+        self.set_metadata(headers)
+
+    def get_headers(self) -> dict[str, str] | None:
+        return self.get_metadata()
 
     # Execution info parity
     @property
