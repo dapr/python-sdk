@@ -81,6 +81,19 @@ class AsyncWorkflowContext(DeterministicContextMixin):
     def is_replaying(self) -> bool:
         return self._base_ctx.is_replaying
 
+    # Tracing (engine-provided) pass-throughs when available
+    @property
+    def trace_parent(self) -> str | None:
+        return self._base_ctx.trace_parent
+
+    @property
+    def trace_state(self) -> str | None:
+        return self._base_ctx.trace_state
+
+    @property
+    def workflow_span_id(self) -> str | None:
+        return self._base_ctx.orchestration_span_id
+
     # Timers & Events
     def create_timer(self, fire_at: float | timedelta | datetime) -> Awaitable[None]:
         # If float provided, interpret as seconds

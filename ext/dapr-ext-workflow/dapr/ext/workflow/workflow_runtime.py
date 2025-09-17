@@ -183,11 +183,14 @@ class WorkflowRuntime:
                 md_for_info = unwrap_payload_with_metadata(inp)[1] or {}
             info = WorkflowExecutionInfo(
                 workflow_id=ctx.instance_id,
-                workflow_name=getattr(ctx, 'workflow_name', fn.__dict__['_dapr_alternate_name']),
+                workflow_name=ctx.workflow_name,
                 is_replaying=ctx.is_replaying,
-                history_event_sequence=getattr(ctx, 'history_event_sequence', None),
+                history_event_sequence=ctx.history_event_sequence,
                 inbound_metadata=md_for_info,
-                parent_instance_id=getattr(ctx, 'parent_instance_id', None),
+                parent_instance_id=ctx.parent_instance_id,
+                trace_parent=ctx.trace_parent,
+                trace_state=ctx.trace_state,
+                workflow_span_id=ctx.orchestration_span_id,
             )
             dapr_wf_context._set_execution_info(info)
             payload, md = unwrap_payload_with_metadata(inp)
@@ -240,8 +243,10 @@ class WorkflowRuntime:
                     if hasattr(fn, '_dapr_alternate_name')
                     else fn.__name__,
                     task_id=ctx.task_id,
-                    attempt=ctx.attempt if hasattr(ctx, 'attempt') else None,
+                    attempt=ctx.attempt,
                     inbound_metadata=md or {},
+                    trace_parent=ctx.trace_parent,
+                    trace_state=ctx.trace_state,
                 )
                 wf_activity_context._set_execution_info(ainfo)
             except Exception:

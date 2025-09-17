@@ -11,6 +11,10 @@ class WorkflowExecutionInfo:
     history_event_sequence: int | None
     inbound_metadata: dict[str, str]
     parent_instance_id: str | None
+    # Tracing (engine-provided)
+    trace_parent: str | None = None
+    trace_state: str | None = None
+    workflow_span_id: str | None = None
 
 
 @dataclass
@@ -20,3 +24,6 @@ class ActivityExecutionInfo:
     task_id: int
     attempt: int | None
     inbound_metadata: dict[str, str]
+    # Tracing (engine-provided)
+    trace_parent: str | None = None
+    trace_state: str | None = None

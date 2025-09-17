@@ -66,6 +66,20 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
 
     # Deterministic utilities are provided by mixin (now, random, uuid4, new_guid)
 
+    # Tracing (engine-provided) pass-throughs when available
+    @property
+    def trace_parent(self) -> str | None:
+        return self.__obj.trace_parent
+
+    @property
+    def trace_state(self) -> str | None:
+        return self.__obj.trace_state
+
+    @property
+    def workflow_span_id(self) -> str | None:
+        # provided by durabletask; naming aligned to workflow
+        return self.__obj.orchestration_span_id
+
     # Metadata API
     def set_metadata(self, metadata: dict[str, str] | None) -> None:
         self._metadata = dict(metadata) if metadata else None

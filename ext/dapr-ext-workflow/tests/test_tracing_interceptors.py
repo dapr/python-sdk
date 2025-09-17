@@ -42,6 +42,12 @@ class _FakeOrchestrationContext:
         self.instance_id = 'wf-1'
         self.current_utc_datetime = datetime(2025, 1, 1)
         self.is_replaying = is_replaying
+        self.workflow_name = 'wf'
+        self.parent_instance_id = None
+        self.history_event_sequence = 1
+        self.trace_parent = None
+        self.trace_state = None
+        self.orchestration_span_id = None
 
 
 def _drive_generator(gen, returned_value):

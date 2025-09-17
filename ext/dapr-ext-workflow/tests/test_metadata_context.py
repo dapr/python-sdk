@@ -48,6 +48,12 @@ class _FakeOrchCtx:
         self.current_utc_datetime = datetime(2024, 1, 1)
         self._custom_status = None
         self.is_replaying = False
+        self.workflow_name = 'wf'
+        self.parent_instance_id = None
+        self.history_event_sequence = 1
+        self.trace_parent = None
+        self.trace_state = None
+        self.orchestration_span_id = None
 
     def call_activity(self, activity, *, input=None, retry_policy=None):
         class _T:
