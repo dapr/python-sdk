@@ -15,7 +15,8 @@ limitations under the License.
 
 import inspect
 from functools import wraps
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, Union, Sequence
+import grpc
 
 from durabletask import worker, task
 
@@ -34,6 +35,13 @@ T = TypeVar('T')
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
+ClientInterceptor = Union[
+    grpc.UnaryUnaryClientInterceptor,
+    grpc.UnaryStreamClientInterceptor,
+    grpc.StreamUnaryClientInterceptor,
+    grpc.StreamStreamClientInterceptor,
+]
+
 
 class WorkflowRuntime:
     """WorkflowRuntime is the entry point for registering workflows and activities."""
@@ -43,6 +51,10 @@ class WorkflowRuntime:
         host: Optional[str] = None,
         port: Optional[str] = None,
         logger_options: Optional[LoggerOptions] = None,
+        interceptors: Optional[Sequence[ClientInterceptor]] = None,
+        maximum_concurrent_activity_work_items: Optional[int] = None,
+        maximum_concurrent_orchestration_work_items: Optional[int] = None,
+        maximum_thread_pool_workers: Optional[int] = None,
     ):
         self._logger = Logger('WorkflowRuntime', logger_options)
         metadata = tuple()
@@ -62,6 +74,12 @@ class WorkflowRuntime:
             secure_channel=uri.tls,
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
+            interceptors=interceptors,
+            concurrency_options=worker.ConcurrencyOptions(
+                maximum_concurrent_activity_work_items=maximum_concurrent_activity_work_items,
+                maximum_concurrent_orchestration_work_items=maximum_concurrent_orchestration_work_items,
+                maximum_thread_pool_workers=maximum_thread_pool_workers,
+            ),
         )
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
