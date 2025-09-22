@@ -51,7 +51,7 @@ class Subscription:
 
     async def reconnect_stream(self):
         await self.close()
-        DaprHealth.wait_until_ready()
+        DaprHealth.wait_for_sidecar()
         print('Attempting to reconnect...')
         await self.start()
 

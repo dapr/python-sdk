@@ -65,7 +65,7 @@ class Subscription:
 
     def reconnect_stream(self):
         self.close()
-        DaprHealth.wait_until_ready()
+        DaprHealth.wait_for_sidecar()
         print('Attempting to reconnect...')
         self.start()
 
