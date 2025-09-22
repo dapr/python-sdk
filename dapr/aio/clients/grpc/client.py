@@ -153,7 +153,7 @@ class DaprGrpcClientAsync:
             max_grpc_message_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
         """
-        DaprHealth.wait_until_ready()
+        DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
         useragent = f'dapr-sdk-python/{__version__}'

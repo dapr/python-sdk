@@ -145,7 +145,7 @@ class DaprGrpcClient:
                 message length in bytes.
             retry_policy (RetryPolicy optional): Specifies retry behaviour
         """
-        DaprHealth.wait_until_ready()
+        DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
         useragent = f'dapr-sdk-python/{__version__}'
