@@ -20,7 +20,7 @@ pip3 install -r requirements.txt
 Each of the examples in this directory can be run directly from the command line.
 
 ### Simple Workflow
-This example represents a workflow that manages counters through a series of activities and child workflows. 
+This example represents a workflow that manages counters through a series of activities and child workflows.
 It shows several Dapr Workflow features including:
 - Basic activity execution with counter increments
 - Retryable activities with configurable retry policies
@@ -270,3 +270,43 @@ When you run the example, you will see output like this:
 *** Child workflow 6feadc5370184b4998e50875b20084f6 called
 ...
 ```
+
+
+### Cross-app Workflow
+
+This example demonstrates how to call child workflows and activities in different apps. The multiple Dapr CLI instances can be started using the following commands:
+
+<!-- STEP
+name: Run apps
+expected_stdout_lines:
+  - '== APP == app1 - triggering app1 workflow'
+  - '== APP == app1 - received workflow call'
+  - '== APP == app1 - triggering app2 workflow'
+  - '== APP == app2 - received workflow call'
+  - '== APP == app2 - triggering app3 activity'
+  - '== APP == app3 - received activity call'
+  - '== APP == app3 - returning activity result'
+  - '== APP == app2 - received activity result'
+  - '== APP == app2 - returning workflow result'
+  - '== APP == app1 - received workflow result'
+  - '== APP == app1 - returning workflow result'
+background: true
+sleep: 5
+-->
+
+```sh
+pip install ./ext/dapr-ext-workflow
+dapr run --app-id wfexample3 --dapr-grpc-port 50003 python3 cross-app3.py &
+dapr run --app-id wfexample2 --dapr-grpc-port 50002 python3 cross-app2.py &
+dapr run --app-id wfexample1 --dapr-grpc-port 50001 python3 cross-app1.py
+```
+<!-- END_STEP -->
+
+When you run the apps, you will see output like this:
+```
+...
+app1 - triggering app2 workflow
+app2 - triggering app3 activity
+...
+```
+among others. This shows that the workflow calls are working as expected.
