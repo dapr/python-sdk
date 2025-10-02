@@ -10,6 +10,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import timedelta
+import os
+
+from durabletask.task import TaskFailedError
 import dapr.ext.workflow as wf
 import time
 
@@ -19,11 +23,24 @@ wfr = wf.WorkflowRuntime()
 @wfr.workflow
 def app2_workflow(ctx: wf.DaprWorkflowContext):
     print(f'app2 - received workflow call', flush=True)
+    if os.getenv('ERROR_WORKFLOW_MODE', 'false') == 'true':
+        print(f'app2 - raising error in workflow due to error mode being enabled', flush=True)
+        raise ValueError('Error in workflow due to error mode being enabled')
     print(f'app2 - triggering app3 activity', flush=True)
-    yield ctx.call_activity('app3_activity', input=None, app_id='wfexample3')
-    print(f'app2 - received activity result', flush=True)
-    print(f'app2 - returning workflow result', flush=True)
+    try:
+        retry_policy = wf.RetryPolicy(
+            max_number_of_attempts=2,
+            first_retry_interval=timedelta(milliseconds=100),
+            max_retry_interval=timedelta(seconds=3),
+        )
+        result = yield ctx.call_activity(
+            'app3_activity', input=None, app_id='wfexample3', retry_policy=retry_policy
+        )
+        print(f'app2 - received activity result', flush=True)
+    except TaskFailedError as e:
+        print(f'app2 - received activity error from app3', flush=True)
 
+    print(f'app2 - returning workflow result', flush=True)
     return 2
 
 

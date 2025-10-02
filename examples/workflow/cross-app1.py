@@ -10,6 +10,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import timedelta
+
+from durabletask.task import TaskFailedError
 import dapr.ext.workflow as wf
 import time
 
@@ -21,14 +24,23 @@ def app1_workflow(ctx: wf.DaprWorkflowContext):
     print(f'app1 - received workflow call', flush=True)
     print(f'app1 - triggering app2 workflow', flush=True)
 
-    yield ctx.call_child_workflow(
-        workflow='app2_workflow',
-        input=None,
-        app_id='wfexample2',
-    )
-    print(f'app1 - received workflow result', flush=True)
-    print(f'app1 - returning workflow result', flush=True)
+    try:
+        retry_policy = wf.RetryPolicy(
+            max_number_of_attempts=2,
+            first_retry_interval=timedelta(milliseconds=100),
+            max_retry_interval=timedelta(seconds=3),
+        )
+        yield ctx.call_child_workflow(
+            workflow='app2_workflow',
+            input=None,
+            app_id='wfexample2',
+            retry_policy=retry_policy,
+        )
+        print(f'app1 - received workflow result', flush=True)
+    except TaskFailedError as e:
+        print(f'app1 - received workflow error from app2', flush=True)
 
+    print(f'app1 - returning workflow result', flush=True)
     return 1
 
 
@@ -41,6 +53,6 @@ if __name__ == '__main__':
     instance_id = wf_client.schedule_new_workflow(workflow=app1_workflow)
 
     # Wait for the workflow to complete
-    time.sleep(5)
+    time.sleep(7)
 
     wfr.shutdown()
