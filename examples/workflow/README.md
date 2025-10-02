@@ -57,7 +57,7 @@ timeout_seconds: 30
 -->
 
 ```sh
-dapr run --app-id wf-simple-example --dapr-grpc-port 50001 -- python3 simple.py
+dapr run --app-id wf-simple-example -- python3 simple.py
 ```
 <!--END_STEP-->
 
@@ -99,7 +99,7 @@ timeout_seconds: 30
 -->
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001 -- python3 task_chaining.py
+dapr run --app-id wfexample -- python3 task_chaining.py
 ```
 <!--END_STEP-->
 
@@ -146,7 +146,7 @@ timeout_seconds: 30
 -->
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001 -- python3 fan_out_fan_in.py
+dapr run --app-id wfexample -- python3 fan_out_fan_in.py
 ```
 <!--END_STEP-->
 
@@ -186,7 +186,7 @@ This example demonstrates how to use a workflow to interact with a human user. T
 The Dapr CLI can be started using the following command:
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001
+dapr run --app-id wfexample
 ```
 
 In a separate terminal window, run the following command to start the Python workflow app:
@@ -222,7 +222,7 @@ This example demonstrates how to eternally running workflow that polls an endpoi
 The Dapr CLI can be started using the following command:
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001
+dapr run --app-id wfexample
 ```
 
 In a separate terminal window, run the following command to start the Python workflow app:
@@ -254,7 +254,7 @@ This workflow runs forever or until you press `ENTER` to stop it. Starting the a
 This example demonstrates how to call a child workflow. The Dapr CLI can be started using the following command:
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001
+dapr run --app-id wfexample
 ```
 
 In a separate terminal window, run the following command to start the Python workflow app:
@@ -295,9 +295,9 @@ sleep: 20
 -->
 
 ```sh
-dapr run --app-id wfexample3 --dapr-grpc-port 50003 python3 cross-app3.py &
-dapr run --app-id wfexample2 --dapr-grpc-port 50002 python3 cross-app2.py &
-dapr run --app-id wfexample1 --dapr-grpc-port 50001 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 cross-app3.py &
+dapr run --app-id wfexample2 python3 cross-app2.py &
+dapr run --app-id wfexample1 python3 cross-app1.py
 ```
 <!-- END_STEP -->
 
@@ -338,9 +338,9 @@ sleep: 20
 
 ```sh
 export ERROR_ACTIVITY_MODE=true
-dapr run --app-id wfexample3 --dapr-grpc-port 50013 python3 cross-app3.py &
-dapr run --app-id wfexample2 --dapr-grpc-port 50012 python3 cross-app2.py &
-dapr run --app-id wfexample1 --dapr-grpc-port 50011 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 cross-app3.py &
+dapr run --app-id wfexample2 python3 cross-app2.py &
+dapr run --app-id wfexample1 python3 cross-app1.py
 ```
 <!-- END_STEP -->
 
@@ -379,9 +379,9 @@ sleep: 20
 
 ```sh
 export ERROR_WORKFLOW_MODE=true
-dapr run --app-id wfexample3 --dapr-grpc-port 50023 python3 cross-app3.py &
-dapr run --app-id wfexample2 --dapr-grpc-port 50022 python3 cross-app2.py &
-dapr run --app-id wfexample1 --dapr-grpc-port 50021 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 cross-app3.py &
+dapr run --app-id wfexample2 python3 cross-app2.py &
+dapr run --app-id wfexample1 python3 cross-app1.py
 ```
 <!-- END_STEP -->
 
