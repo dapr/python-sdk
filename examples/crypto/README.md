@@ -21,7 +21,7 @@ It creates a client using `DaprClient`, uses a local store defined in
 
 <!-- STEP
 name: Generate crypto
-timeout_seconds: 5
+timeout_seconds: 20
 -->
 
 ```bash
