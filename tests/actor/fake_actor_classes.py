@@ -12,17 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from dapr.serializers.json import DefaultJSONSerializer
-import asyncio
 
+import asyncio
 from datetime import timedelta
 from typing import Optional
 
-from dapr.actor.runtime.actor import Actor
-from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.actor_interface import ActorInterface, actormethod
-
+from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+from dapr.actor.runtime.remindable import Remindable
+from dapr.serializers.json import DefaultJSONSerializer
 
 
 # Fake Simple Actor Class for testing

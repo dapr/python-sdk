@@ -11,6 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the specific language governing permissions and
 limitations under the License.
 """
+
 from datetime import timedelta
 from time import sleep
 
@@ -46,7 +47,6 @@ wfr = WorkflowRuntime()
 
 @wfr.async_workflow(name=workflow_name)
 async def hello_world_wf(ctx: AsyncWorkflowContext, wf_input):
-    global counter
     # activities
     result_1 = await ctx.call_activity(hello_act, input=1)
     print(f'Activity 1 returned {result_1}')
@@ -92,7 +92,6 @@ def hello_retryable_act(ctx: WorkflowActivityContext):
 
 @wfr.async_workflow(name=child_workflow_name)
 async def child_retryable_wf(ctx: AsyncWorkflowContext):
-    global child_orchestrator_string
     # Call activity with retry and simulate retryable workflow failure until certain state
     child_activity_result = await ctx.call_activity(
         act_for_child_wf, input='x', retry_policy=retry_policy

@@ -1,18 +1,50 @@
-# -*- coding: utf-8 -*-
-
 """
-Interceptor tests for Dapr WorkflowRuntime.
-
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 import pytest
 
 from dapr.ext.workflow import RuntimeInterceptor, WorkflowRuntime
+
+from ._fakes import make_act_ctx as _make_act_ctx
+from ._fakes import make_orch_ctx as _make_orch_ctx
+
+"""
+Comprehensive inbound interceptor tests for Dapr WorkflowRuntime.
+
+Tests the current interceptor system for runtime-side workflow and activity execution.
+"""
+
+
+"""
+Runtime interceptor chain tests for `WorkflowRuntime`.
+
+This suite intentionally uses a fake worker/registry to validate interceptor composition
+without requiring a sidecar. It focuses on the "why" behind runtime interceptors:
+
+- Ensure `execute_workflow` and `execute_activity` hooks compose in order and are
+  invoked exactly once around workflow entry/activity execution.
+- Cover both generator-based and async workflows, asserting the chain returns a
+  generator to the runtime (rather than iterating it), preserving send()/throw()
+  semantics during orchestration replay.
+- Keep signal-to-noise high for failures in chain logic independent of gRPC/sidecar.
+
+These tests complement outbound/client interceptor tests and e2e tests by providing
+fast, deterministic coverage of the chaining behavior and generator handling rules.
+"""
 
 
 class _FakeRegistry:
@@ -38,39 +70,20 @@ class _FakeWorker:
         pass
 
 
-class _FakeOrchestrationContext:
-    def __init__(self):
-        self.instance_id = 'wf-1'
-        self.current_utc_datetime = datetime(2025, 1, 1)
-        self.is_replaying = False
-        self.workflow_name = 'wf'
-        self.parent_instance_id = None
-        self.history_event_sequence = 1
-        self.trace_parent = None
-        self.trace_state = None
-        self.orchestration_span_id = None
-
-
-class _FakeActivityContext:
-    def __init__(self):
-        self.orchestration_id = 'wf-1'
-        self.task_id = 1
-
-
 class _RecorderInterceptor(RuntimeInterceptor):
     def __init__(self, events: list[str], label: str):
         self.events = events
         self.label = label
 
-    def execute_workflow(self, input, next):  # type: ignore[override]
-        self.events.append(f'{self.label}:wf_enter:{input.input!r}')
-        ret = next(input)
+    def execute_workflow(self, request, next):  # type: ignore[override]
+        self.events.append(f'{self.label}:wf_enter:{request.input!r}')
+        ret = next(request)
         self.events.append(f'{self.label}:wf_ret_type:{ret.__class__.__name__}')
         return ret
 
-    def execute_activity(self, input, next):  # type: ignore[override]
-        self.events.append(f'{self.label}:act_enter:{input.input!r}')
-        res = next(input)
+    def execute_activity(self, request, next):  # type: ignore[override]
+        self.events.append(f'{self.label}:act_enter:{request.input!r}')
+        res = next(request)
         self.events.append(f'{self.label}:act_exit:{res!r}')
         return res
 
@@ -93,7 +106,7 @@ def test_generator_workflow_hooks_sequence(monkeypatch):
     # Drive the registered orchestrator
     reg = rt._WorkflowRuntime__worker._registry
     orch = reg.orchestrators['gen']
-    gen_driver = orch(_FakeOrchestrationContext(), 10)
+    gen_driver = orch(_make_orch_ctx(), 10)
     # Prime and run
     assert next(gen_driver) == 'A'
     assert gen_driver.send('ra') == 'B'
@@ -123,7 +136,7 @@ def test_async_workflow_hooks_called(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     orch = reg.orchestrators['awf']
-    gen_orch = orch(_FakeOrchestrationContext(), 41)
+    gen_orch = orch(_make_orch_ctx(), 41)
     with pytest.raises(StopIteration) as stop:
         next(gen_orch)
     result = stop.value.value
@@ -142,11 +155,11 @@ def test_activity_hooks_and_policy(monkeypatch):
     events: list[str] = []
 
     class _ExplodingActivity(RuntimeInterceptor):
-        def execute_activity(self, input, next):  # type: ignore[override]
+        def execute_activity(self, request, next):  # type: ignore[override]
             raise RuntimeError('boom')
 
-        def execute_workflow(self, input, next):  # type: ignore[override]
-            return next(input)
+        def execute_workflow(self, request, next):  # type: ignore[override]
+            return next(request)
 
     # Continue-on-error policy
     rt = WorkflowRuntime(
@@ -161,4 +174,4 @@ def test_activity_hooks_and_policy(monkeypatch):
     act = reg.activities['double']
     # Error in interceptor bubbles up
     with pytest.raises(RuntimeError):
-        act(_FakeActivityContext(), 5)
+        act(_make_act_ctx(), 5)

@@ -9,7 +9,7 @@ You may obtain a copy of the License at
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the specific language governing permissions and
+See the License for the specific language governing permissions and
 limitations under the License.
 """
 
@@ -18,9 +18,10 @@ import random
 import time
 
 import pytest
+from durabletask.aio.errors import SandboxViolationError
+from durabletask.aio.sandbox import SandboxMode
 
-from dapr.ext.workflow.async_context import AsyncWorkflowContext
-from dapr.ext.workflow.async_driver import CoroutineOrchestratorRunner
+from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 
 
 class FakeTask:
@@ -64,7 +65,7 @@ def drive(gen, first_result=None):
 
 def test_sandbox_best_effort_patches_sleep():
     fake = FakeCtx()
-    runner = CoroutineOrchestratorRunner(wf_sleep, sandbox_mode='best_effort')
+    runner = CoroutineOrchestratorRunner(wf_sleep, sandbox_mode=SandboxMode.BEST_EFFORT)
     gen = runner.to_generator(AsyncWorkflowContext(fake), None)
     result = drive(gen)
     assert result == 'ok'
@@ -73,7 +74,7 @@ def test_sandbox_best_effort_patches_sleep():
 def test_sandbox_random_uuid_time_are_deterministic():
     fake = FakeCtx()
     runner = CoroutineOrchestratorRunner(
-        lambda ctx: _wf_random_uuid_time(ctx), sandbox_mode='best_effort'
+        lambda ctx: _wf_random_uuid_time(ctx), sandbox_mode=SandboxMode.BEST_EFFORT
     )
     gen1 = runner.to_generator(AsyncWorkflowContext(fake), None)
     out1 = drive(gen1)
@@ -92,12 +93,12 @@ async def _wf_random_uuid_time(ctx: AsyncWorkflowContext):
 
 def test_strict_blocks_create_task():
     async def wf(ctx: AsyncWorkflowContext):
-        with pytest.raises(RuntimeError):
+        with pytest.raises(SandboxViolationError):
             asyncio.create_task(asyncio.sleep(0))
         return 'ok'
 
     fake = FakeCtx()
-    runner = CoroutineOrchestratorRunner(wf, sandbox_mode='strict')
+    runner = CoroutineOrchestratorRunner(wf, sandbox_mode=SandboxMode.STRICT)
     gen = runner.to_generator(AsyncWorkflowContext(fake), None)
     result = drive(gen)
     assert result == 'ok'

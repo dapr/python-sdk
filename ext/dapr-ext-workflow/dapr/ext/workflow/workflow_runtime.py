@@ -15,6 +15,7 @@ limitations under the License.
 
 import asyncio
 import inspect
+import traceback
 from functools import wraps
 from typing import Any, Awaitable, Callable, List, Optional, TypeVar
 
@@ -24,20 +25,20 @@ except ImportError:  # pragma: no cover
     Literal = str  # type: ignore
 
 from durabletask import task, worker
+from durabletask.aio.sandbox import SandboxMode
 
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
-from dapr.ext.workflow.async_context import AsyncWorkflowContext
-from dapr.ext.workflow.async_driver import CoroutineOrchestratorRunner
+from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, Handlers
 from dapr.ext.workflow.execution_info import ActivityExecutionInfo, WorkflowExecutionInfo
 from dapr.ext.workflow.interceptors import (
-    CallActivityInput,
-    CallChildWorkflowInput,
-    ExecuteActivityInput,
-    ExecuteWorkflowInput,
+    CallActivityRequest,
+    CallChildWorkflowRequest,
+    ExecuteActivityRequest,
+    ExecuteWorkflowRequest,
     RuntimeInterceptor,
     WorkflowOutboundInterceptor,
     compose_runtime_chain,
@@ -92,7 +93,7 @@ class WorkflowRuntime:
             workflow_outbound_interceptors or []
         )
 
-    # Outbound transformation helpers (workflow context) — pass-throughs now
+    # Outbound helpers apply interceptors and wrap metadata; no built-in transformations.
     def _apply_outbound_activity(
         self,
         ctx: Any,
@@ -101,7 +102,7 @@ class WorkflowRuntime:
         retry_policy: Any | None,
         metadata: dict[str, str] | None = None,
     ):
-        # Build workflow-outbound chain to transform CallActivityInput
+        # Build workflow-outbound chain to transform CallActivityRequest
         name = (
             activity
             if isinstance(activity, str)
@@ -112,22 +113,22 @@ class WorkflowRuntime:
             )
         )
 
-        def terminal(term_input: CallActivityInput) -> CallActivityInput:
-            return term_input
+        def terminal(term_req: CallActivityRequest) -> CallActivityRequest:
+            return term_req
 
         chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
         # Use per-context default metadata when not provided
         metadata = metadata or ctx.get_metadata()
-        sai = CallActivityInput(
+        act_req = CallActivityRequest(
             activity_name=name,
-            args=input,
+            input=input,
             retry_policy=retry_policy,
             workflow_ctx=ctx,
             metadata=metadata,
         )
-        out = chain(sai)
-        if isinstance(out, CallActivityInput):
-            return wrap_payload_with_metadata(out.args, out.metadata)
+        out = chain(act_req)
+        if isinstance(out, CallActivityRequest):
+            return wrap_payload_with_metadata(out.input, out.metadata)
         return input
 
     def _apply_outbound_child(
@@ -147,18 +148,38 @@ class WorkflowRuntime:
             )
         )
 
-        def terminal(term_input: CallChildWorkflowInput) -> CallChildWorkflowInput:
-            return term_input
+        def terminal(term_req: CallChildWorkflowRequest) -> CallChildWorkflowRequest:
+            return term_req
 
         chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
         metadata = metadata or ctx.get_metadata()
-        sci = CallChildWorkflowInput(
-            workflow_name=name, args=input, instance_id=None, workflow_ctx=ctx, metadata=metadata
+        child_req = CallChildWorkflowRequest(
+            workflow_name=name, input=input, instance_id=None, workflow_ctx=ctx, metadata=metadata
         )
-        out = chain(sci)
-        if isinstance(out, CallChildWorkflowInput):
-            return wrap_payload_with_metadata(out.args, out.metadata)
+        out = chain(child_req)
+        if isinstance(out, CallChildWorkflowRequest):
+            return wrap_payload_with_metadata(out.input, out.metadata)
         return input
+
+    def _apply_outbound_continue_as_new(
+        self,
+        ctx: Any,
+        new_input: Any,
+        metadata: dict[str, str] | None = None,
+    ):
+        # Build workflow-outbound chain to transform ContinueAsNewRequest
+        from dapr.ext.workflow.interceptors import ContinueAsNewRequest
+
+        def terminal(term_req: ContinueAsNewRequest) -> ContinueAsNewRequest:
+            return term_req
+
+        chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
+        metadata = metadata or ctx.get_metadata()
+        cnr = ContinueAsNewRequest(input=new_input, workflow_ctx=ctx, metadata=metadata)
+        out = chain(cnr)
+        if isinstance(out, ContinueAsNewRequest):
+            return wrap_payload_with_metadata(out.input, out.metadata)
+        return new_input
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
         # Seamlessly support async workflows using the existing API
@@ -169,42 +190,25 @@ class WorkflowRuntime:
 
         def orchestration_wrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Orchestration entrypoint wrapped by runtime interceptors."""
-            dapr_wf_context = DaprWorkflowContext(
-                ctx,
-                self._logger.get_options(),
-                outbound_handlers={
-                    Handlers.CALL_ACTIVITY: self._apply_outbound_activity,
-                    Handlers.CALL_CHILD_WORKFLOW: self._apply_outbound_child,
-                },
-            )
-            # Populate execution info
-            md_for_info = {}
-            if inp is not None:
-                md_for_info = unwrap_payload_with_metadata(inp)[1] or {}
-            info = WorkflowExecutionInfo(
-                workflow_id=ctx.instance_id,
-                workflow_name=ctx.workflow_name,
-                is_replaying=ctx.is_replaying,
-                history_event_sequence=ctx.history_event_sequence,
-                inbound_metadata=md_for_info,
-                parent_instance_id=ctx.parent_instance_id,
-                trace_parent=ctx.trace_parent,
-                trace_state=ctx.trace_state,
-                workflow_span_id=ctx.orchestration_span_id,
-            )
-            dapr_wf_context._set_execution_info(info)
             payload, md = unwrap_payload_with_metadata(inp)
+            dapr_wf_context = self._get_workflow_context(ctx, md)
 
             # Build interceptor chain; terminal calls the user function (generator or non-generator)
-            def terminal(e_input: ExecuteWorkflowInput) -> Any:
-                return (
-                    fn(dapr_wf_context)
-                    if e_input.input is None
-                    else fn(dapr_wf_context, e_input.input)
-                )
+            def final_handler(exec_req: ExecuteWorkflowRequest) -> Any:
+                try:
+                    return (
+                        fn(dapr_wf_context)
+                        if exec_req.input is None
+                        else fn(dapr_wf_context, exec_req.input)
+                    )
+                except Exception as exc:  # log and re-raise to surface failure details
+                    self._logger.error(
+                        f"{ctx.instance_id}: workflow '{fn.__name__}' raised {type(exc).__name__}: {exc}\n{traceback.format_exc()}"
+                    )
+                    raise
 
-            chain = compose_runtime_chain(self._runtime_interceptors, terminal)
-            return chain(ExecuteWorkflowInput(ctx=dapr_wf_context, input=payload, metadata=md))
+            chain = compose_runtime_chain(self._runtime_interceptors, final_handler)
+            return chain(ExecuteWorkflowRequest(ctx=dapr_wf_context, input=payload, metadata=md))
 
         if hasattr(fn, '_workflow_registered'):
             # whenever a workflow is registered, it has a _dapr_alternate_name attribute
@@ -235,35 +239,38 @@ class WorkflowRuntime:
             payload, md = unwrap_payload_with_metadata(inp)
             # Populate inbound metadata onto activity context
             wf_activity_context.set_metadata(md or {})
+
             # Populate execution info
             try:
-                ainfo = ActivityExecutionInfo(
-                    workflow_id=ctx.orchestration_id,
-                    activity_name=fn.__dict__['_dapr_alternate_name']
-                    if hasattr(fn, '_dapr_alternate_name')
-                    else fn.__name__,
-                    task_id=ctx.task_id,
-                    attempt=ctx.attempt,
-                    inbound_metadata=md or {},
-                    trace_parent=ctx.trace_parent,
-                    trace_state=ctx.trace_state,
-                )
+                # Determine activity name (registered alternate name or function __name__)
+                act_name = getattr(fn, '_dapr_alternate_name', fn.__name__)
+                ainfo = ActivityExecutionInfo(inbound_metadata=md or {}, activity_name=act_name)
                 wf_activity_context._set_execution_info(ainfo)
             except Exception:
                 pass
 
-            def terminal(e_input: ExecuteActivityInput) -> Any:
-                # Support async and sync activities
-                if inspect.iscoroutinefunction(fn):
-                    if e_input.input is None:
-                        return asyncio.run(fn(wf_activity_context))
-                    return asyncio.run(fn(wf_activity_context, e_input.input))
-                if e_input.input is None:
-                    return fn(wf_activity_context)
-                return fn(wf_activity_context, e_input.input)
+            def final_handler(exec_req: ExecuteActivityRequest) -> Any:
+                try:
+                    # Support async and sync activities
+                    if inspect.iscoroutinefunction(fn):
+                        if exec_req.input is None:
+                            return asyncio.run(fn(wf_activity_context))
+                        return asyncio.run(fn(wf_activity_context, exec_req.input))
+                    if exec_req.input is None:
+                        return fn(wf_activity_context)
+                    return fn(wf_activity_context, exec_req.input)
+                except Exception as exc:
+                    # Log details for troubleshooting (metadata, error type)
+                    self._logger.error(
+                        f"{ctx.orchestration_id}:{ctx.task_id} activity '{fn.__name__}' failed with {type(exc).__name__}: {exc}"
+                    )
+                    self._logger.error(traceback.format_exc())
+                    raise
 
-            chain = compose_runtime_chain(self._runtime_interceptors, terminal)
-            return chain(ExecuteActivityInput(ctx=wf_activity_context, input=payload, metadata=md))
+            chain = compose_runtime_chain(self._runtime_interceptors, final_handler)
+            return chain(
+                ExecuteActivityRequest(ctx=wf_activity_context, input=payload, metadata=md)
+            )
 
         if hasattr(fn, '_activity_registered'):
             # whenever an activity is registered, it has a _dapr_alternate_name attribute
@@ -285,10 +292,27 @@ class WorkflowRuntime:
     def start(self):
         """Starts the listening for work items on a background thread."""
         self.__worker.start()
+        # Block until ready similar to durabletask e2e harness to avoid race conditions
+        try:
+            if hasattr(self.__worker, 'wait_for_ready'):
+                try:
+                    # type: ignore[attr-defined]
+                    self.__worker.wait_for_ready(timeout=10)
+                except TypeError:
+                    self.__worker.wait_for_ready(10)  # type: ignore[misc]
+        except Exception:
+            # If readiness isn't supported, proceed best-effort
+            pass
 
     def shutdown(self):
         """Stops the listening for work items on a background thread."""
-        self.__worker.stop()
+        try:
+            self._logger.info('Stopping gRPC worker...')
+            self.__worker.stop()
+            self._logger.info('Worker shutdown completed')
+        except Exception as exc:  # pragma: no cover
+            # DurableTask worker may emit CANCELLED warnings during local shutdown; not fatal
+            self._logger.warning(f'Worker stop encountered {type(exc).__name__}: {exc}')
 
     def wait_for_ready(self, timeout: Optional[float] = None) -> None:
         """Optionally block until the underlying worker is connected and ready.
@@ -364,7 +388,7 @@ class WorkflowRuntime:
         fn: Callable[[AsyncWorkflowContext, Any], Awaitable[Any]],
         *,
         name: Optional[str] = None,
-        sandbox_mode: Literal['off', 'best_effort', 'strict'] = 'off',
+        sandbox_mode: SandboxMode = SandboxMode.OFF,
     ) -> None:
         """Register an async workflow function.
 
@@ -374,7 +398,7 @@ class WorkflowRuntime:
         Args:
             fn: The async workflow function, taking ``AsyncWorkflowContext`` and optional input.
             name: Optional alternate name for registration.
-            sandbox_mode: Scoped compatibility patching mode: "off" (default), "best_effort", or "strict".
+            sandbox_mode: Scoped compatibility patching mode.
         """
         self._logger.info(f"Registering ASYNC workflow '{fn.__name__}' with runtime")
 
@@ -392,39 +416,59 @@ class WorkflowRuntime:
         runner = CoroutineOrchestratorRunner(fn, sandbox_mode=sandbox_mode)
 
         def generator_orchestrator(ctx: task.OrchestrationContext, inp: Optional[Any] = None):
-            async_ctx = AsyncWorkflowContext(
-                DaprWorkflowContext(
-                    ctx,
-                    self._logger.get_options(),
-                    outbound_handlers={
-                        Handlers.CALL_ACTIVITY: self._apply_outbound_activity,
-                        Handlers.CALL_CHILD_WORKFLOW: self._apply_outbound_child,
-                    },
-                )
-            )
+            """Orchestration entrypoint wrapped by runtime interceptors."""
             payload, md = unwrap_payload_with_metadata(inp)
-            gen = runner.to_generator(async_ctx, payload)
+            base_ctx = self._get_workflow_context(ctx, md)
 
-            def terminal(e_input: ExecuteWorkflowInput) -> Any:
-                # Return the generator for the durable runtime to drive.
-                # Note: If an interceptor wraps this generator, use "yield from gen"
-                # to preserve send()/throw() propagation into the inner generator.
-                return gen
+            async_ctx = AsyncWorkflowContext(base_ctx)
 
-            chain = compose_runtime_chain(self._runtime_interceptors, terminal)
-            return chain(ExecuteWorkflowInput(ctx=async_ctx, input=payload, metadata=md))
+            def final_handler(exec_req: ExecuteWorkflowRequest) -> Any:
+                # Build the generator using the (potentially shaped) input from interceptors.
+                shaped_input = exec_req.input
+                return runner.to_generator(async_ctx, shaped_input)
+
+            chain = compose_runtime_chain(self._runtime_interceptors, final_handler)
+            return chain(ExecuteWorkflowRequest(ctx=async_ctx, input=payload, metadata=md))
 
         self.__worker._registry.add_named_orchestrator(
             fn.__dict__['_dapr_alternate_name'], generator_orchestrator
         )
         fn.__dict__['_workflow_registered'] = True
 
+    def _get_workflow_context(
+        self, ctx: task.OrchestrationContext, metadata: dict[str, str] | None = None
+    ) -> DaprWorkflowContext:
+        """Get the workflow context and execution info for the given orchestration context and metadata.
+           Execution info serves as a read-only snapshot of the workflow context.
+
+        Args:
+            ctx: The orchestration context.
+            metadata: The metadata for the workflow.
+
+        Returns:
+            The workflow context.
+        """
+        base_ctx = DaprWorkflowContext(
+            ctx,
+            self._logger.get_options(),
+            outbound_handlers={
+                Handlers.CALL_ACTIVITY: self._apply_outbound_activity,
+                Handlers.CALL_CHILD_WORKFLOW: self._apply_outbound_child,
+                Handlers.CONTINUE_AS_NEW: self._apply_outbound_continue_as_new,
+            },
+        )
+        # Populate minimal execution info (only inbound metadata)
+        info = WorkflowExecutionInfo(inbound_metadata=metadata or {})
+        base_ctx._set_execution_info(info)
+        base_ctx.set_metadata(metadata or {})
+        return base_ctx
+
     def async_workflow(
         self,
         __fn: Callable[[AsyncWorkflowContext, Any], Awaitable[Any]] = None,
         *,
         name: Optional[str] = None,
-        sandbox_mode: Literal['off', 'best_effort', 'strict'] = 'off',
+        sandbox_mode: SandboxMode = SandboxMode.OFF,
     ):
         """Decorator to register an async workflow function.
 

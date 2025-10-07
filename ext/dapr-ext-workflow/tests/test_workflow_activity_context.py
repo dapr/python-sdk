@@ -15,14 +15,16 @@ limitations under the License.
 
 import unittest
 from unittest import mock
+
 from durabletask import task
+
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 
 mock_orchestration_id = 'orchestration001'
 mock_task = 10
 
 
-class FakeActivityContext:
+class _CompatFakeActivityContext:
     @property
     def orchestration_id(self):
         return mock_orchestration_id
@@ -34,7 +36,9 @@ class FakeActivityContext:
 
 class WorkflowActivityContextTest(unittest.TestCase):
     def test_workflow_activity_context(self):
-        with mock.patch('durabletask.task.ActivityContext', return_value=FakeActivityContext()):
+        with mock.patch(
+            'durabletask.task.ActivityContext', return_value=_CompatFakeActivityContext()
+        ):
             fake_act_ctx = task.ActivityContext(
                 orchestration_id=mock_orchestration_id, task_id=mock_task
             )

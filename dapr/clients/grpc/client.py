@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import json
 import socket
 import threading
@@ -155,7 +156,7 @@ class DaprGrpcClient:
 
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or (
-                f'{settings.DAPR_RUNTIME_HOST}:' f'{settings.DAPR_GRPC_PORT}'
+                f'{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}'
             )
 
         try:

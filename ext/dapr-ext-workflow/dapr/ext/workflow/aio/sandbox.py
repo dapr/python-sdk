@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2025 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -9,10 +7,9 @@ You may obtain a copy of the License at
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the specific language governing permissions and
+See the License for the specific language governing permissions and
 limitations under the License.
 """
-
 
 from __future__ import annotations
 
@@ -23,44 +20,32 @@ import uuid as _uuid
 from contextlib import ContextDecorator
 from typing import Any
 
-from .deterministic import deterministic_random, deterministic_uuid4
+from durabletask.aio.sandbox import SandboxMode
+from durabletask.deterministic import deterministic_random, deterministic_uuid4
 
 """
-HAS_PATCHED_GATHER = True
-
 Scoped sandbox patching for async workflows (best-effort, strict).
-
-Patches selected stdlib functions to deterministic, workflow-scoped equivalents:
-- asyncio.sleep -> ctx.sleep
-- random.random/randrange/randint -> deterministic PRNG
-- uuid.uuid4 -> deterministic UUID from PRNG
-- time.time/time_ns -> orchestration time
-
-Strict mode additionally blocks asyncio.create_task.
 """
 
 
 def _ctx_instance_id(async_ctx: Any) -> str:
     if hasattr(async_ctx, 'instance_id'):
-        return getattr(async_ctx, 'instance_id')  # AsyncWorkflowContext may not expose this
+        return getattr(async_ctx, 'instance_id')
     if hasattr(async_ctx, '_base_ctx') and hasattr(async_ctx._base_ctx, 'instance_id'):
         return async_ctx._base_ctx.instance_id
     return ''
 
 
 def _ctx_now(async_ctx: Any):
-    # Prefer AsyncWorkflowContext.now()
     if hasattr(async_ctx, 'now'):
         try:
             return async_ctx.now()
         except Exception:
             pass
-    # Fallback to base ctx attribute
     if hasattr(async_ctx, 'current_utc_datetime'):
         return async_ctx.current_utc_datetime
     if hasattr(async_ctx, '_base_ctx') and hasattr(async_ctx._base_ctx, 'current_utc_datetime'):
         return async_ctx._base_ctx.current_utc_datetime
-    # Last resort: wall clock (not ideal, used only in tests)
     import datetime as _dt
 
     return _dt.datetime.utcfromtimestamp(0)
@@ -73,7 +58,6 @@ class _Sandbox(ContextDecorator):
         self._saved: dict[str, Any] = {}
 
     def __enter__(self):
-        # Save originals
         self._saved['asyncio.sleep'] = _asyncio.sleep
         self._saved['asyncio.gather'] = getattr(_asyncio, 'gather', None)
         self._saved['asyncio.create_task'] = getattr(_asyncio, 'create_task', None)
@@ -87,14 +71,10 @@ class _Sandbox(ContextDecorator):
         rnd = deterministic_random(_ctx_instance_id(self._async_ctx), _ctx_now(self._async_ctx))
 
         async def _sleep_patched(delay: float, result: Any = None):  # type: ignore[override]
-            # Many libraries (e.g., anyio/httpcore) use asyncio.sleep(0) as a checkpoint.
-            # Forward zero-or-negative delays to the original asyncio.sleep to avoid
-            # yielding workflow awaitables outside the orchestrator driver.
             try:
                 if float(delay) <= 0:
                     return await self._saved['asyncio.sleep'](0)
             except Exception:
-                # If delay cannot be coerced, fall back to original behavior
                 return await self._saved['asyncio.sleep'](delay)  # type: ignore[arg-type]
 
             await self._async_ctx.sleep(delay)
@@ -118,15 +98,13 @@ class _Sandbox(ContextDecorator):
         def _time_ns_patched() -> int:
             return int(_ctx_now(self._async_ctx).timestamp() * 1_000_000_000)
 
-        def _create_task_blocked(coro, *args, **kwargs):  # strict only
-            # Close the coroutine to avoid "was never awaited" warnings when create_task is blocked
+        def _create_task_blocked(coro, *args, **kwargs):
             try:
                 close = getattr(coro, 'close', None)
                 if callable(close):
                     try:
                         close()
                     except Exception:
-                        # Swallow any error while closing; we are about to raise a policy error
                         pass
             finally:
                 raise RuntimeError(
@@ -135,14 +113,12 @@ class _Sandbox(ContextDecorator):
 
         def _is_workflow_awaitable(obj: Any) -> bool:
             try:
-                from dapr.ext.workflow.awaitables import AwaitableBase as _DaprAwaitable  # noqa
-
-                if isinstance(obj, _DaprAwaitable):
+                if hasattr(obj, '_to_dapr_task') or hasattr(obj, '_to_task'):
                     return True
             except Exception:
                 pass
             try:
-                from durabletask import task as _dt  # noqa
+                from durabletask import task as _dt
 
                 if isinstance(obj, _dt.Task):
                     return True
@@ -181,7 +157,6 @@ class _Sandbox(ContextDecorator):
                 return _compute().__await__()
 
         def _patched_gather(*aws: Any, return_exceptions: bool = False):  # type: ignore[override]
-            # Return an awaitable that can be awaited multiple times safely without a running loop
             if not aws:
 
                 async def _empty():
@@ -192,10 +167,10 @@ class _Sandbox(ContextDecorator):
             if all(_is_workflow_awaitable(a) for a in aws):
 
                 async def _await_when_all():
-                    from dapr.ext.workflow.awaitables import WhenAllAwaitable  # local import
+                    from dapr.ext.workflow.aio.awaitables import WhenAllAwaitable  # local import
 
                     combined = WhenAllAwaitable(list(aws))
-                    return await combined  # type: ignore[func-returns-value]
+                    return await combined
 
                 return _OneShot(_await_when_all)
 
@@ -213,7 +188,6 @@ class _Sandbox(ContextDecorator):
 
             return _OneShot(_run_mixed)
 
-        # Apply patches
         _asyncio.sleep = _sleep_patched  # type: ignore[assignment]
         if self._saved['asyncio.gather'] is not None:
             _asyncio.gather = _patched_gather  # type: ignore[assignment]
@@ -230,7 +204,6 @@ class _Sandbox(ContextDecorator):
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        # Restore originals
         _asyncio.sleep = self._saved['asyncio.sleep']  # type: ignore[assignment]
         if self._saved['asyncio.gather'] is not None:
             _asyncio.gather = self._saved['asyncio.gather']  # type: ignore[assignment]
@@ -246,11 +219,9 @@ class _Sandbox(ContextDecorator):
         return False
 
 
-def sandbox_scope(async_ctx: Any, mode: str):
-    if mode not in ('off', 'best_effort', 'strict'):
-        mode = 'off'
-    if mode == 'off':
-        # no-op context manager
+def sandbox_scope(async_ctx: Any, mode: SandboxMode):
+    if mode == SandboxMode.OFF:
+
         class _Null(ContextDecorator):
             def __enter__(self):
                 return self
@@ -259,4 +230,4 @@ def sandbox_scope(async_ctx: Any, mode: str):
                 return False
 
         return _Null()
-    return _Sandbox(async_ctx, mode)
+    return _Sandbox(async_ctx, 'strict' if mode == SandboxMode.STRICT else 'best_effort')

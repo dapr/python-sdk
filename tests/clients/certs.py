@@ -1,7 +1,7 @@
 import os
 import ssl
-import grpc
 
+import grpc
 from OpenSSL import crypto
 
 

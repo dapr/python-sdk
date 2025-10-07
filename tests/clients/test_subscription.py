@@ -1,8 +1,9 @@
-from dapr.clients.grpc.subscription import SubscriptionMessage
-from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
+import unittest
+
 from google.protobuf.struct_pb2 import Struct
 
-import unittest
+from dapr.clients.grpc.subscription import SubscriptionMessage
+from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 
 
 class SubscriptionMessageTests(unittest.TestCase):

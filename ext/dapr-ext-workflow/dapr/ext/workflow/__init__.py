@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 # Import your main classes here
-from dapr.ext.workflow.async_context import AsyncWorkflowContext
+from dapr.ext.workflow.aio import AsyncWorkflowContext
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
 from dapr.ext.workflow.execution_info import ActivityExecutionInfo, WorkflowExecutionInfo
@@ -22,13 +22,13 @@ from dapr.ext.workflow.interceptors import (
     BaseClientInterceptor,
     BaseRuntimeInterceptor,
     BaseWorkflowOutboundInterceptor,
-    CallActivityInput,
-    CallChildWorkflowInput,
+    CallActivityRequest,
+    CallChildWorkflowRequest,
     ClientInterceptor,
-    ExecuteActivityInput,
-    ExecuteWorkflowInput,
+    ExecuteActivityRequest,
+    ExecuteWorkflowRequest,
     RuntimeInterceptor,
-    ScheduleWorkflowInput,
+    ScheduleWorkflowRequest,
     WorkflowOutboundInterceptor,
     compose_runtime_chain,
     compose_workflow_outbound_chain,
@@ -70,11 +70,11 @@ __all__ = [
     'BaseWorkflowOutboundInterceptor',
     'RuntimeInterceptor',
     'BaseRuntimeInterceptor',
-    'ScheduleWorkflowInput',
-    'CallChildWorkflowInput',
-    'CallActivityInput',
-    'ExecuteWorkflowInput',
-    'ExecuteActivityInput',
+    'ScheduleWorkflowRequest',
+    'CallChildWorkflowRequest',
+    'CallActivityRequest',
+    'ExecuteWorkflowRequest',
+    'ExecuteActivityRequest',
     'compose_workflow_outbound_chain',
     'compose_runtime_chain',
     'WorkflowExecutionInfo',

@@ -10,8 +10,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dapr.ext.workflow as wf
 import time
+
+import dapr.ext.workflow as wf
 
 wfr = wf.WorkflowRuntime()
 

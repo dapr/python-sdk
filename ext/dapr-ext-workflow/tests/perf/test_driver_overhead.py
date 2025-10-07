@@ -18,8 +18,7 @@ import time
 
 import pytest
 
-from dapr.ext.workflow.async_context import AsyncWorkflowContext
-from dapr.ext.workflow.async_driver import CoroutineOrchestratorRunner
+from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 
 skip_bench = pytest.mark.skipif(
     os.getenv('RUN_DRIVER_BENCH', '0') != '1',

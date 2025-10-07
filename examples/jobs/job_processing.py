@@ -15,8 +15,9 @@ import json
 import threading
 import time
 from datetime import datetime, timedelta
+
+from dapr.clients import ConstantFailurePolicy, DaprClient, Job
 from dapr.ext.grpc import App, JobEvent
-from dapr.clients import DaprClient, Job, ConstantFailurePolicy
 
 try:
     from google.protobuf.any_pb2 import Any as GrpcAny

@@ -1,7 +1,14 @@
-# -*- coding: utf-8 -*-
-
 """
-Tests for sandboxed asyncio.gather behavior in async orchestrators.
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from __future__ import annotations
@@ -10,10 +17,14 @@ import asyncio
 from datetime import datetime, timedelta
 
 import pytest
+from durabletask.aio.sandbox import SandboxMode
 
-from dapr.ext.workflow.async_context import AsyncWorkflowContext
-from dapr.ext.workflow.async_driver import CoroutineOrchestratorRunner
-from dapr.ext.workflow.sandbox import sandbox_scope
+from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
+from dapr.ext.workflow.aio.sandbox import sandbox_scope
+
+"""
+Tests for sandboxed asyncio.gather behavior in async orchestrators.
+"""
 
 
 class _FakeCtx:
@@ -54,7 +65,7 @@ async def _plain(value):
 
 
 async def awf_empty(ctx: AsyncWorkflowContext):
-    with sandbox_scope(ctx, 'best_effort'):
+    with sandbox_scope(ctx, SandboxMode.BEST_EFFORT):
         out = await asyncio.gather()
     return out
 
@@ -70,7 +81,7 @@ def test_sandbox_gather_empty_returns_list():
 async def awf_when_all(ctx: AsyncWorkflowContext):
     a = ctx.create_timer(timedelta(seconds=0))
     b = ctx.wait_for_external_event('x')
-    with sandbox_scope(ctx, 'best_effort'):
+    with sandbox_scope(ctx, SandboxMode.BEST_EFFORT):
         res = await asyncio.gather(a, b)
     return res
 
@@ -85,7 +96,7 @@ def test_sandbox_gather_all_workflow_maps_to_when_all():
 
 async def awf_mixed(ctx: AsyncWorkflowContext):
     a = ctx.create_timer(timedelta(seconds=0))
-    with sandbox_scope(ctx, 'best_effort'):
+    with sandbox_scope(ctx, SandboxMode.BEST_EFFORT):
         res = await asyncio.gather(a, _plain('ok'))
     return res
 
@@ -103,7 +114,7 @@ async def awf_return_exceptions(ctx: AsyncWorkflowContext):
         raise RuntimeError('x')
 
     a = ctx.create_timer(timedelta(seconds=0))
-    with sandbox_scope(ctx, 'best_effort'):
+    with sandbox_scope(ctx, SandboxMode.BEST_EFFORT):
         res = await asyncio.gather(a, _boom(), return_exceptions=True)
     return res
 
@@ -117,7 +128,7 @@ def test_sandbox_gather_return_exceptions():
 
 
 async def awf_multi_await(ctx: AsyncWorkflowContext):
-    with sandbox_scope(ctx, 'best_effort'):
+    with sandbox_scope(ctx, SandboxMode.BEST_EFFORT):
         g = asyncio.gather()
         a = await g
         b = await g
@@ -138,7 +149,7 @@ def test_sandbox_gather_restored_outside():
     original = aio.gather
     fake = _FakeCtx()
     ctx = AsyncWorkflowContext(fake)
-    with sandbox_scope(ctx, 'best_effort'):
+    with sandbox_scope(ctx, SandboxMode.BEST_EFFORT):
         pass
     # After exit, gather should be restored
     assert aio.gather is original
@@ -149,7 +160,7 @@ def test_strict_mode_blocks_create_task():
 
     fake = _FakeCtx()
     ctx = AsyncWorkflowContext(fake)
-    with sandbox_scope(ctx, 'strict'):
+    with sandbox_scope(ctx, SandboxMode.STRICT):
         if hasattr(aio, 'create_task'):
             with pytest.raises(RuntimeError):
                 # Use a dummy coroutine to trigger the block

@@ -1,8 +1,22 @@
+"""
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import types
 from datetime import datetime, timedelta, timezone
 
-from dapr.ext.workflow.async_context import AsyncWorkflowContext
+from dapr.ext.workflow import AsyncWorkflowContext, WorkflowRuntime
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from dapr.ext.workflow.interceptors import BaseRuntimeInterceptor, ExecuteWorkflowRequest
 from dapr.ext.workflow.workflow_context import WorkflowContext
 
 
@@ -183,3 +197,100 @@ def test_public_api_parity_against_workflowcontext_abc():
     sync_ctx = DaprWorkflowContext(_FakeOrchCtx())
     missing_in_sync = [name for name in required if not hasattr(sync_ctx, name)]
     assert not missing_in_sync, f'DaprWorkflowContext missing: {missing_in_sync}'
+
+
+def test_runtime_interceptor_shapes_async_input():
+    runtime = WorkflowRuntime()
+
+    class ShapeInput(BaseRuntimeInterceptor):
+        def execute_workflow(self, request: ExecuteWorkflowRequest, next):  # type: ignore[override]
+            data = request.input
+            # Mutate input passed to workflow
+            if isinstance(data, dict):
+                shaped = {**data, 'shaped': True}
+            else:
+                shaped = {'value': data, 'shaped': True}
+            request.input = shaped
+            return next(request)
+
+    # Recreate runtime with interceptor wired in
+    runtime = WorkflowRuntime(runtime_interceptors=[ShapeInput()])
+
+    @runtime.async_workflow(name='wf_shape_input')
+    async def wf_shape_input(ctx: AsyncWorkflowContext, arg: dict | None = None):
+        # Verify shaped input is observed by the workflow
+        return arg
+
+    runtime.start()
+    try:
+        from dapr.ext.workflow import DaprWorkflowClient
+
+        client = DaprWorkflowClient()
+        iid = f'shape-{id(runtime)}'
+        client.schedule_new_workflow(workflow=wf_shape_input, instance_id=iid, input={'x': 1})
+        client.wait_for_workflow_start(iid, timeout_in_seconds=30)
+        st = client.wait_for_workflow_completion(iid, timeout_in_seconds=60)
+        assert st is not None
+        assert st.runtime_status.name == 'COMPLETED'
+        import json as _json
+
+        out = _json.loads(st.to_json().get('serialized_output') or '{}')
+        assert out.get('x') == 1
+        assert out.get('shaped') is True
+    finally:
+        runtime.shutdown()
+
+
+def test_runtime_interceptor_context_manager_with_async_workflow():
+    """Test that context managers stay active during async workflow execution."""
+    runtime = WorkflowRuntime()
+
+    # Track when context enters and exits
+    context_state = {'entered': False, 'exited': False, 'workflow_ran': False}
+
+    class ContextInterceptor(BaseRuntimeInterceptor):
+        def execute_workflow(self, request: ExecuteWorkflowRequest, next):  # type: ignore[override]
+            # Wrapper generator to keep context manager alive
+            def wrapper():
+                from contextlib import ExitStack
+
+                with ExitStack():
+                    # Mark context as entered
+                    context_state['entered'] = True
+
+                    # Get the workflow generator
+                    gen = next(request)
+
+                    # Use yield from to keep context alive during execution
+                    yield from gen
+
+                    # Context will exit after generator completes
+                    context_state['exited'] = True
+
+            return wrapper()
+
+    runtime = WorkflowRuntime(runtime_interceptors=[ContextInterceptor()])
+
+    @runtime.async_workflow(name='wf_context_test')
+    async def wf_context_test(ctx: AsyncWorkflowContext, arg: dict | None = None):
+        context_state['workflow_ran'] = True
+        return {'result': 'ok'}
+
+    runtime.start()
+    try:
+        from dapr.ext.workflow import DaprWorkflowClient
+
+        client = DaprWorkflowClient()
+        iid = f'ctx-test-{id(runtime)}'
+        client.schedule_new_workflow(workflow=wf_context_test, instance_id=iid, input={})
+        client.wait_for_workflow_start(iid, timeout_in_seconds=30)
+        st = client.wait_for_workflow_completion(iid, timeout_in_seconds=60)
+        assert st is not None
+        assert st.runtime_status.name == 'COMPLETED'
+
+        # Verify context manager was active during workflow execution
+        assert context_state['entered'], 'Context should have been entered'
+        assert context_state['workflow_ran'], 'Workflow should have executed'
+        assert context_state['exited'], 'Context should have exited after completion'
+    finally:
+        runtime.shutdown()

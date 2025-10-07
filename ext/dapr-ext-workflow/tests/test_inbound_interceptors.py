@@ -1,25 +1,38 @@
-# -*- coding: utf-8 -*-
+"""
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from typing import Any
+
+import pytest
+
+from dapr.ext.workflow import (
+    ExecuteActivityRequest,
+    ExecuteWorkflowRequest,
+    RuntimeInterceptor,
+    WorkflowRuntime,
+)
+
+from ._fakes import make_act_ctx as _make_act_ctx
+from ._fakes import make_orch_ctx as _make_orch_ctx
 
 """
 Comprehensive inbound interceptor tests for Dapr WorkflowRuntime.
 
 Tests the current interceptor system for runtime-side workflow and activity execution.
 """
-
-from __future__ import annotations
-
-import asyncio
-from datetime import datetime
-from typing import Any
-
-import pytest
-
-from dapr.ext.workflow import (
-    ExecuteActivityInput,
-    ExecuteWorkflowInput,
-    RuntimeInterceptor,
-    WorkflowRuntime,
-)
 
 
 class _FakeRegistry:
@@ -45,56 +58,36 @@ class _FakeWorker:
         pass
 
 
-class _FakeOrchestrationContext:
-    def __init__(self, *, is_replaying: bool = False):
-        self.instance_id = 'wf-1'
-        self.current_utc_datetime = datetime(2025, 1, 1)
-        self.is_replaying = is_replaying
-        # New durabletask-provided context fields used by runtime
-        self.workflow_name = 'wf'
-        self.parent_instance_id = None
-        self.history_event_sequence = 1
-        self.trace_parent = None
-        self.trace_state = None
-        self.orchestration_span_id = None
-
-
-class _FakeActivityContext:
-    def __init__(self):
-        self.orchestration_id = 'wf-1'
-        self.task_id = 1
-
-
 class _TracingInterceptor(RuntimeInterceptor):
     """Interceptor that injects and restores trace context."""
 
     def __init__(self, events: list[str]):
         self.events = events
 
-    def execute_workflow(self, input: ExecuteWorkflowInput, next):
+    def execute_workflow(self, request: ExecuteWorkflowRequest, next):
         # Extract tracing from input
         tracing_data = None
-        if isinstance(input.input, dict) and 'tracing' in input.input:
-            tracing_data = input.input['tracing']
+        if isinstance(request.input, dict) and 'tracing' in request.input:
+            tracing_data = request.input['tracing']
             self.events.append(f'wf_trace_restored:{tracing_data}')
 
         # Call next in chain
-        result = next(input)
+        result = next(request)
 
         if tracing_data:
             self.events.append(f'wf_trace_cleanup:{tracing_data}')
 
         return result
 
-    def execute_activity(self, input: ExecuteActivityInput, next):
+    def execute_activity(self, request: ExecuteActivityRequest, next):
         # Extract tracing from input
         tracing_data = None
-        if isinstance(input.input, dict) and 'tracing' in input.input:
-            tracing_data = input.input['tracing']
+        if isinstance(request.input, dict) and 'tracing' in request.input:
+            tracing_data = request.input['tracing']
             self.events.append(f'act_trace_restored:{tracing_data}')
 
         # Call next in chain
-        result = next(input)
+        result = next(request)
 
         if tracing_data:
             self.events.append(f'act_trace_cleanup:{tracing_data}')
@@ -109,20 +102,20 @@ class _LoggingInterceptor(RuntimeInterceptor):
         self.events = events
         self.label = label
 
-    def execute_workflow(self, input: ExecuteWorkflowInput, next):
-        self.events.append(f'{self.label}:wf_start:{input.input!r}')
+    def execute_workflow(self, request: ExecuteWorkflowRequest, next):
+        self.events.append(f'{self.label}:wf_start:{request.input!r}')
         try:
-            result = next(input)
+            result = next(request)
             self.events.append(f'{self.label}:wf_complete:{result!r}')
             return result
         except Exception as e:
             self.events.append(f'{self.label}:wf_error:{type(e).__name__}')
             raise
 
-    def execute_activity(self, input: ExecuteActivityInput, next):
-        self.events.append(f'{self.label}:act_start:{input.input!r}')
+    def execute_activity(self, request: ExecuteActivityRequest, next):
+        self.events.append(f'{self.label}:act_start:{request.input!r}')
         try:
-            result = next(input)
+            result = next(request)
             self.events.append(f'{self.label}:act_complete:{result!r}')
             return result
         except Exception as e:
@@ -136,14 +129,14 @@ class _ValidationInterceptor(RuntimeInterceptor):
     def __init__(self, events: list[str]):
         self.events = events
 
-    def execute_workflow(self, input: ExecuteWorkflowInput, next):
+    def execute_workflow(self, request: ExecuteWorkflowRequest, next):
         # Validate input
-        if isinstance(input.input, dict) and input.input.get('invalid'):
+        if isinstance(request.input, dict) and request.input.get('invalid'):
             self.events.append('wf_validation_failed')
             raise ValueError('Invalid workflow input')
 
         self.events.append('wf_validation_passed')
-        result = next(input)
+        result = next(request)
 
         # Validate output
         if isinstance(result, dict) and result.get('invalid_output'):
@@ -153,14 +146,14 @@ class _ValidationInterceptor(RuntimeInterceptor):
         self.events.append('wf_output_validation_passed')
         return result
 
-    def execute_activity(self, input: ExecuteActivityInput, next):
+    def execute_activity(self, request: ExecuteActivityRequest, next):
         # Validate input
-        if isinstance(input.input, dict) and input.input.get('invalid'):
+        if isinstance(request.input, dict) and request.input.get('invalid'):
             self.events.append('act_validation_failed')
             raise ValueError('Invalid activity input')
 
         self.events.append('act_validation_passed')
-        result = next(input)
+        result = next(request)
 
         # Validate output
         if isinstance(result, str) and 'invalid' in result:
@@ -187,7 +180,7 @@ def test_single_interceptor_workflow_execution(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     orch = reg.orchestrators['simple']
-    result = orch(_FakeOrchestrationContext(), 5)
+    result = orch(_make_orch_ctx(), 5)
 
     # For non-generator workflows, the result is returned directly
     assert result == 10
@@ -213,7 +206,7 @@ def test_single_interceptor_activity_execution(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     act = reg.activities['double']
-    result = act(_FakeActivityContext(), 7)
+    result = act(_make_act_ctx(), 7)
 
     assert result == 14
     assert events == [
@@ -241,7 +234,7 @@ def test_multiple_interceptors_execution_order(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     orch = reg.orchestrators['ordered']
-    result = orch(_FakeOrchestrationContext(), 3)
+    result = orch(_make_orch_ctx(), 3)
 
     assert result == 4
     # Outer interceptor enters first, exits last (stack semantics)
@@ -274,7 +267,7 @@ def test_tracing_interceptor_context_restoration(monkeypatch):
     # Input with tracing data
     input_with_trace = {'value': 5, 'tracing': {'trace_id': 'abc123', 'span_id': 'def456'}}
 
-    result = orch(_FakeOrchestrationContext(), input_with_trace)
+    result = orch(_make_orch_ctx(), input_with_trace)
 
     assert result == {'result': 10}
     assert events == [
@@ -301,7 +294,7 @@ def test_validation_interceptor_input_validation(monkeypatch):
     orch = reg.orchestrators['validated']
 
     # Test valid input
-    result = orch(_FakeOrchestrationContext(), {'value': 5})
+    result = orch(_make_orch_ctx(), {'value': 5})
 
     assert result == {'result': 'ok'}
     assert 'wf_validation_passed' in events
@@ -311,7 +304,7 @@ def test_validation_interceptor_input_validation(monkeypatch):
     events.clear()
 
     with pytest.raises(ValueError, match='Invalid workflow input'):
-        orch(_FakeOrchestrationContext(), {'invalid': True})
+        orch(_make_orch_ctx(), {'invalid': True})
 
     assert 'wf_validation_failed' in events
 
@@ -334,7 +327,7 @@ def test_interceptor_error_handling_workflow(monkeypatch):
     orch = reg.orchestrators['error_wf']
 
     with pytest.raises(ValueError, match='workflow error'):
-        orch(_FakeOrchestrationContext(), 1)
+        orch(_make_orch_ctx(), 1)
 
     assert events == [
         'log:wf_start:1',
@@ -360,7 +353,7 @@ def test_interceptor_error_handling_activity(monkeypatch):
     act = reg.activities['error_act']
 
     with pytest.raises(RuntimeError, match='activity error'):
-        act(_FakeActivityContext(), 5)
+        act(_make_act_ctx(), 5)
 
     assert events == [
         'log:act_start:5',
@@ -385,7 +378,7 @@ def test_async_workflow_with_interceptors(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     orch = reg.orchestrators['async_wf']
-    gen_result = orch(_FakeOrchestrationContext(), 4)
+    gen_result = orch(_make_orch_ctx(), 4)
 
     # Async workflows return a generator that needs to be driven
     with pytest.raises(StopIteration) as stop:
@@ -415,7 +408,7 @@ def test_async_activity_with_interceptors(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     act = reg.activities['async_act']
-    result = act(_FakeActivityContext(), 3)
+    result = act(_make_act_ctx(), 3)
 
     assert result == 12
     assert events == [
@@ -442,7 +435,7 @@ def test_generator_workflow_with_interceptors(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     orch = reg.orchestrators['gen_wf']
-    gen_orch = orch(_FakeOrchestrationContext(), 1)
+    gen_orch = orch(_make_orch_ctx(), 1)
 
     # Drive the generator
     assert next(gen_orch) == 'step1'
@@ -466,15 +459,15 @@ def test_interceptor_chain_with_early_return(monkeypatch):
     events: list[str] = []
 
     class _ShortCircuitInterceptor(RuntimeInterceptor):
-        def execute_workflow(self, input: ExecuteWorkflowInput, next):
+        def execute_workflow(self, request: ExecuteWorkflowRequest, next):
             events.append('short_circuit_check')
-            if isinstance(input.input, dict) and input.input.get('short_circuit'):
+            if isinstance(request.input, dict) and request.input.get('short_circuit'):
                 events.append('short_circuited')
                 return 'short_circuit_result'
-            return next(input)
+            return next(request)
 
-        def execute_activity(self, input: ExecuteActivityInput, next):
-            return next(input)
+        def execute_activity(self, request: ExecuteActivityRequest, next):
+            return next(request)
 
     logging_interceptor = _LoggingInterceptor(events, 'log')
     short_circuit_interceptor = _ShortCircuitInterceptor()
@@ -489,7 +482,7 @@ def test_interceptor_chain_with_early_return(monkeypatch):
     orch = reg.orchestrators['maybe_short']
 
     # Test normal execution
-    result = orch(_FakeOrchestrationContext(), {'value': 5})
+    result = orch(_make_orch_ctx(), {'value': 5})
 
     assert result == 'normal_result'
     assert 'short_circuit_check' in events
@@ -498,7 +491,7 @@ def test_interceptor_chain_with_early_return(monkeypatch):
 
     # Test short-circuit execution
     events.clear()
-    result = orch(_FakeOrchestrationContext(), {'short_circuit': True})
+    result = orch(_make_orch_ctx(), {'short_circuit': True})
 
     assert result == 'short_circuit_result'
     assert 'short_circuit_check' in events
@@ -516,17 +509,17 @@ def test_interceptor_input_transformation(monkeypatch):
     events: list[str] = []
 
     class _TransformInterceptor(RuntimeInterceptor):
-        def execute_workflow(self, input: ExecuteWorkflowInput, next):
+        def execute_workflow(self, request: ExecuteWorkflowRequest, next):
             # Transform input by adding metadata
-            if isinstance(input.input, dict):
-                transformed_input = {**input.input, 'interceptor_metadata': 'added'}
-                new_input = ExecuteWorkflowInput(ctx=input.ctx, input=transformed_input)
+            if isinstance(request.input, dict):
+                transformed_input = {**request.input, 'interceptor_metadata': 'added'}
+                new_input = ExecuteWorkflowRequest(ctx=request.ctx, input=transformed_input)
                 events.append(f'transformed_input:{transformed_input}')
                 return next(new_input)
-            return next(input)
+            return next(request)
 
-        def execute_activity(self, input: ExecuteActivityInput, next):
-            return next(input)
+        def execute_activity(self, request: ExecuteActivityRequest, next):
+            return next(request)
 
     transform_interceptor = _TransformInterceptor()
     rt = WorkflowRuntime(runtime_interceptors=[transform_interceptor])
@@ -538,8 +531,30 @@ def test_interceptor_input_transformation(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     orch = reg.orchestrators['transform_test']
-    result = orch(_FakeOrchestrationContext(), {'original': 'value'})
+    result = orch(_make_orch_ctx(), {'original': 'value'})
 
     # Result should include the interceptor metadata
     assert result == {'original': 'value', 'interceptor_metadata': 'added'}
     assert 'transformed_input:' in str(events)
+
+
+def test_runtime_interceptor_can_shape_activity_result(monkeypatch):
+    import durabletask.worker as worker_mod
+
+    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
+
+    class _ShapeResult(RuntimeInterceptor):
+        def execute_activity(self, request, next):  # type: ignore[override]
+            res = next(request)
+            return {'wrapped': res}
+
+    rt = WorkflowRuntime(runtime_interceptors=[_ShapeResult()])
+
+    @rt.activity(name='echo')
+    def echo(_ctx, x):
+        return x
+
+    reg = rt._WorkflowRuntime__worker._registry
+    act = reg.activities['echo']
+    out = act(_make_act_ctx(), 7)
+    assert out == {'wrapped': 7}

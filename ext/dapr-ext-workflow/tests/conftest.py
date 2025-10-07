@@ -1,10 +1,24 @@
+"""
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 # Ensure tests prefer the local python-sdk repository over any installed site-packages
 # This helps when running pytest directly (outside tox/CI), so changes in the repo are exercised.
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import sys
 from pathlib import Path
 import importlib
+import pytest
 
 
 def pytest_configure(config):  # noqa: D401 (pytest hook)
@@ -32,3 +46,29 @@ def pytest_configure(config):  # noqa: D401 (pytest hook)
     except Exception:
         # If dapr isn't importable yet, that's fine; tests importing it later will use modified sys.path
         pass
+
+
+@pytest.fixture(autouse=True)
+def cleanup_workflow_registrations(request):
+    """Clean up workflow/activity registration markers after each test.
+
+    This prevents test interference when the same function objects are reused across tests.
+    The workflow runtime marks functions with _dapr_alternate_name and _activity_registered
+    attributes, which can cause 'already registered' errors in subsequent tests.
+    """
+    yield  # Run the test
+
+    # After test completes, clean up functions defined in the test module
+    test_module = sys.modules.get(request.module.__name__)
+    if test_module:
+        for name in dir(test_module):
+            obj = getattr(test_module, name, None)
+            if callable(obj) and hasattr(obj, '__dict__'):
+                try:
+                    # Only clean up if __dict__ is writable (not mappingproxy)
+                    if isinstance(obj.__dict__, dict):
+                        obj.__dict__.pop('_dapr_alternate_name', None)
+                        obj.__dict__.pop('_activity_registered', None)
+                except (AttributeError, TypeError):
+                    # Skip objects with read-only __dict__
+                    pass

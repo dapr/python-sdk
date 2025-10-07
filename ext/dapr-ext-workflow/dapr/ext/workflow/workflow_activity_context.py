@@ -27,7 +27,16 @@ TOutput = TypeVar('TOutput')
 
 
 class WorkflowActivityContext:
-    """Defines properties and methods for task activity context objects."""
+    """Wrapper for ``durabletask.task.ActivityContext`` with metadata helpers.
+
+    Purpose
+    -------
+    - Provide pass-throughs for engine fields (``trace_parent``, ``trace_state``,
+      and parent ``workflow_span_id`` when available).
+    - Surface ``execution_info``: a per-activation snapshot that includes the retry
+      ``attempt`` and ``inbound_metadata`` actually received for this activity.
+    - Offer ``get_metadata()/set_metadata()`` for SDK-level durable metadata management.
+    """
 
     def __init__(self, ctx: task.ActivityContext):
         self.__obj = ctx
@@ -45,6 +54,25 @@ class WorkflowActivityContext:
 
     def get_inner_context(self) -> task.ActivityContext:
         return self.__obj
+
+    # Tracing fields (engine-provided) — pass-throughs when available
+    @property
+    def trace_parent(self) -> str | None:
+        return getattr(self.__obj, 'trace_parent', None)
+
+    @property
+    def trace_state(self) -> str | None:
+        return getattr(self.__obj, 'trace_state', None)
+
+    @property
+    def workflow_span_id(self) -> str | None:
+        # Parent workflow's span id for this activity invocation, if available
+        return getattr(self.__obj, 'workflow_span_id', None)
+
+    @property
+    def attempt(self) -> int | None:
+        """Retry attempt for this activity invocation when provided by the engine."""
+        return getattr(self.__obj, 'attempt', None)
 
     @property
     def execution_info(self) -> ActivityExecutionInfo | None:

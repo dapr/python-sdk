@@ -1,4 +1,15 @@
-# -*- coding: utf-8 -*-
+"""
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 from __future__ import annotations
 
@@ -10,10 +21,10 @@ import pytest
 from dapr.ext.workflow import (
     ClientInterceptor,
     DaprWorkflowClient,
-    ExecuteActivityInput,
-    ExecuteWorkflowInput,
+    ExecuteActivityRequest,
+    ExecuteWorkflowRequest,
     RuntimeInterceptor,
-    ScheduleWorkflowInput,
+    ScheduleWorkflowRequest,
     WorkflowOutboundInterceptor,
     WorkflowRuntime,
 )
@@ -127,19 +138,18 @@ def test_client_schedule_metadata_envelope(monkeypatch):
     monkeypatch.setattr(client_mod, 'TaskHubGrpcClient', _FakeClient)
 
     class _InjectMetadata(ClientInterceptor):
-        def schedule_new_workflow(self, input: ScheduleWorkflowInput, next):  # type: ignore[override]
+        def schedule_new_workflow(self, request: ScheduleWorkflowRequest, next):  # type: ignore[override]
             # Add metadata without touching args
             md = {'otel.trace_id': 't-123'}
-            new_input = ScheduleWorkflowInput(
-                workflow_name=input.workflow_name,
-                args=input.args,
-                instance_id=input.instance_id,
-                start_at=input.start_at,
-                reuse_id_policy=input.reuse_id_policy,
+            new_request = ScheduleWorkflowRequest(
+                workflow_name=request.workflow_name,
+                input=request.input,
+                instance_id=request.instance_id,
+                start_at=request.start_at,
+                reuse_id_policy=request.reuse_id_policy,
                 metadata=md,
-                local_context=None,
             )
-            return next(new_input)
+            return next(new_request)
 
     client = DaprWorkflowClient(interceptors=[_InjectMetadata()])
 
@@ -164,13 +174,13 @@ def test_runtime_inbound_unwrap_and_metadata_visible(monkeypatch):
     seen: dict[str, Any] = {}
 
     class _Recorder(RuntimeInterceptor):
-        def execute_workflow(self, input: ExecuteWorkflowInput, next):  # type: ignore[override]
-            seen['metadata'] = input.metadata
-            return next(input)
+        def execute_workflow(self, request: ExecuteWorkflowRequest, next):  # type: ignore[override]
+            seen['metadata'] = request.metadata
+            return next(request)
 
-        def execute_activity(self, input: ExecuteActivityInput, next):  # type: ignore[override]
-            seen['act_metadata'] = input.metadata
-            return next(input)
+        def execute_activity(self, request: ExecuteActivityRequest, next):  # type: ignore[override]
+            seen['act_metadata'] = request.metadata
+            return next(request)
 
     rt = WorkflowRuntime(runtime_interceptors=[_Recorder()])
 
@@ -196,25 +206,25 @@ def test_outbound_activity_and_child_wrap_metadata(monkeypatch):
     monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
 
     class _AddActMeta(WorkflowOutboundInterceptor):
-        def call_activity(self, input, next):  # type: ignore[override]
-            # Wrap returned args with metadata by returning a new CallActivityInput
+        def call_activity(self, request, next):  # type: ignore[override]
+            # Wrap returned args with metadata by returning a new CallActivityRequest
             return next(
-                type(input)(
-                    activity_name=input.activity_name,
-                    args=input.args,
-                    retry_policy=input.retry_policy,
-                    workflow_ctx=input.workflow_ctx,
+                type(request)(
+                    activity_name=request.activity_name,
+                    input=request.input,
+                    retry_policy=request.retry_policy,
+                    workflow_ctx=request.workflow_ctx,
                     metadata={'k': 'v'},
                 )
             )
 
-        def call_child_workflow(self, input, next):  # type: ignore[override]
+        def call_child_workflow(self, request, next):  # type: ignore[override]
             return next(
-                type(input)(
-                    workflow_name=input.workflow_name,
-                    args=input.args,
-                    instance_id=input.instance_id,
-                    workflow_ctx=input.workflow_ctx,
+                type(request)(
+                    workflow_name=request.workflow_name,
+                    input=request.input,
+                    instance_id=request.instance_id,
+                    workflow_ctx=request.workflow_ctx,
                     metadata={'p': 'q'},
                 )
             )
@@ -241,47 +251,6 @@ def test_outbound_activity_and_child_wrap_metadata(monkeypatch):
     result = stop.value.value
     # The result is whatever user returned; envelopes validated above
     assert isinstance(result, tuple) and len(result) == 2
-
-
-def test_local_context_runtime_chain_passthrough(monkeypatch):
-    import durabletask.worker as worker_mod
-
-    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
-
-    events: list[str] = []
-
-    class _Outer(RuntimeInterceptor):
-        def execute_workflow(self, input: ExecuteWorkflowInput, next):  # type: ignore[override]
-            lc = dict(input.local_context or {})
-            lc['flag'] = 'on'
-            new_input = ExecuteWorkflowInput(
-                ctx=input.ctx, input=input.input, metadata=input.metadata, local_context=lc
-            )
-            return next(new_input)
-
-        def execute_activity(self, input: ExecuteActivityInput, next):  # type: ignore[override]
-            return next(input)
-
-    class _Inner(RuntimeInterceptor):
-        def execute_workflow(self, input: ExecuteWorkflowInput, next):  # type: ignore[override]
-            events.append(
-                f"flag={input.local_context.get('flag') if input.local_context else None}"
-            )
-            return next(input)
-
-        def execute_activity(self, input: ExecuteActivityInput, next):  # type: ignore[override]
-            return next(input)
-
-    rt = WorkflowRuntime(runtime_interceptors=[_Outer(), _Inner()])
-
-    @rt.workflow(name='lc')
-    def lc(ctx, x):
-        return 'ok'
-
-    orch = rt._WorkflowRuntime__worker._registry.orchestrators['lc']
-    result = orch(_FakeOrchCtx(), 1)
-    assert result == 'ok'
-    assert events == ['flag=on']
 
 
 def test_context_set_metadata_default_propagation(monkeypatch):
@@ -342,16 +311,18 @@ def test_execution_info_workflow_and_activity(monkeypatch):
         md = ctx.get_metadata()
         ei = ctx.execution_info
         assert md == {'m': 'v'}
-        assert ei is not None and ei.workflow_id == 'id' and ei.task_id == 1
+        assert ei is not None and ei.inbound_metadata == {'m': 'v'}
+        # activity_name should reflect the registered name
+        assert getattr(ei, 'activity_name', None) == 'act'
         return x
 
     @rt.workflow(name='execinfo')
     def execinfo(ctx, x):
         # set default metadata
         ctx.set_metadata({'m': 'v'})
-        # workflow execution info available
+        # workflow execution info available (minimal inbound only)
         wi = ctx.execution_info
-        assert wi is not None and wi.workflow_id == 'id'
+        assert wi is not None and wi.inbound_metadata == {}
         v = yield ctx.call_activity(act, input=42)
         return v
 
@@ -365,3 +336,35 @@ def test_execution_info_workflow_and_activity(monkeypatch):
     with pytest.raises(StopIteration) as stop:
         gen.send(42)
     assert stop.value.value == 42
+
+
+def test_client_interceptor_can_shape_schedule_response(monkeypatch):
+    import durabletask.client as client_mod
+
+    captured: dict[str, Any] = {}
+
+    class _FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def schedule_new_orchestration(
+            self, name, *, input=None, instance_id=None, start_at=None, reuse_id_policy=None
+        ):
+            captured['name'] = name
+            return 'raw-id-123'
+
+    monkeypatch.setattr(client_mod, 'TaskHubGrpcClient', _FakeClient)
+
+    class _ShapeId(ClientInterceptor):
+        def schedule_new_workflow(self, request: ScheduleWorkflowRequest, next):  # type: ignore[override]
+            rid = next(request)
+            return f'shaped:{rid}'
+
+    client = DaprWorkflowClient(interceptors=[_ShapeId()])
+
+    def wf(ctx):
+        yield 'noop'
+
+    wf.__name__ = 'shape_test'
+    iid = client.schedule_new_workflow(wf, input=None)
+    assert iid == 'shaped:raw-id-123'

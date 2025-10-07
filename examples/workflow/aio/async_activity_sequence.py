@@ -13,7 +13,6 @@ See the specific language governing permissions and
 limitations under the License.
 """
 
-
 from dapr.ext.workflow import AsyncWorkflowContext, WorkflowRuntime
 
 

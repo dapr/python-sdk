@@ -14,12 +14,11 @@ limitations under the License.
 """
 
 import io
+from typing import Any, List, Tuple, Type
 
-from typing import Any, List, Type, Tuple
-from dapr.actor.runtime.state_change import StateChangeKind, ActorStateChange
+from dapr.actor.runtime.state_change import ActorStateChange, StateChangeKind
 from dapr.clients.base import DaprActorClientBase
-from dapr.serializers import Serializer, DefaultJSONSerializer
-
+from dapr.serializers import DefaultJSONSerializer, Serializer
 
 # Mapping StateChangeKind to Dapr State Operation
 _MAP_CHANGE_KIND_TO_OPERATION = {

@@ -1,4 +1,15 @@
-# -*- coding: utf-8 -*-
+"""
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 from __future__ import annotations
 
@@ -83,17 +94,17 @@ def test_client_injects_tracing_on_schedule(monkeypatch):
     monkeypatch.setattr(client_mod, 'TaskHubGrpcClient', _FakeClient)
 
     class _TracingClient(ClientInterceptor):
-        def schedule_new_workflow(self, input, next):  # type: ignore[override]
+        def schedule_new_workflow(self, request, next):  # type: ignore[override]
             tr = {'trace_id': uuid.uuid4().hex}
-            if isinstance(input.args, dict) and 'tracing' not in input.args:
-                input = type(input)(
-                    workflow_name=input.workflow_name,
-                    args={**input.args, 'tracing': tr},
-                    instance_id=input.instance_id,
-                    start_at=input.start_at,
-                    reuse_id_policy=input.reuse_id_policy,
+            if isinstance(request.input, dict) and 'tracing' not in request.input:
+                request = type(request)(
+                    workflow_name=request.workflow_name,
+                    input={**request.input, 'tracing': tr},
+                    instance_id=request.instance_id,
+                    start_at=request.start_at,
+                    reuse_id_policy=request.reuse_id_policy,
                 )
-            return next(input)
+            return next(request)
 
     client = DaprWorkflowClient(interceptors=[_TracingClient()])
 
@@ -118,25 +129,25 @@ def test_runtime_restores_tracing_before_user_code(monkeypatch):
     seen: dict[str, Any] = {}
 
     class _TracingRuntime(RuntimeInterceptor):
-        def execute_workflow(self, input, next):  # type: ignore[override]
+        def execute_workflow(self, request, next):  # type: ignore[override]
             # no-op; real restoration is app concern; test just ensures input contains tracing
-            return next(input)
+            return next(request)
 
-        def execute_activity(self, input, next):  # type: ignore[override]
-            return next(input)
+        def execute_activity(self, request, next):  # type: ignore[override]
+            return next(request)
 
     class _TracingClient2(ClientInterceptor):
-        def schedule_new_workflow(self, input, next):  # type: ignore[override]
+        def schedule_new_workflow(self, request, next):  # type: ignore[override]
             tr = {'trace_id': 't1'}
-            if isinstance(input.args, dict):
-                input = type(input)(
-                    workflow_name=input.workflow_name,
-                    args={**input.args, 'tracing': tr},
-                    instance_id=input.instance_id,
-                    start_at=input.start_at,
-                    reuse_id_policy=input.reuse_id_policy,
+            if isinstance(request.input, dict):
+                request = type(request)(
+                    workflow_name=request.workflow_name,
+                    input={**request.input, 'tracing': tr},
+                    instance_id=request.instance_id,
+                    start_at=request.start_at,
+                    reuse_id_policy=request.reuse_id_policy,
                 )
-            return next(input)
+            return next(request)
 
     rt = WorkflowRuntime(
         runtime_interceptors=[_TracingRuntime()],

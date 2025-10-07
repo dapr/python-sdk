@@ -16,16 +16,20 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Awaitable, Callable, Sequence
 
+from durabletask import task
+from durabletask.aio.awaitables import gather as _dt_gather  # type: ignore[import-not-found]
+from durabletask.deterministic import (  # type: ignore[F401]
+    DeterministicContextMixin,
+)
+
 from .awaitables import (
     ActivityAwaitable,
     ExternalEventAwaitable,
-    GatherReturnExceptionsAwaitable,
     SleepAwaitable,
     SubOrchestratorAwaitable,
     WhenAllAwaitable,
     WhenAnyAwaitable,
 )
-from .deterministic import DeterministicContextMixin
 
 """
 Async workflow context that exposes deterministic awaitables for activities, timers,
@@ -34,7 +38,7 @@ external events, and concurrency, along with deterministic utilities.
 
 
 class AsyncWorkflowContext(DeterministicContextMixin):
-    def __init__(self, base_ctx: any):
+    def __init__(self, base_ctx: task.OrchestrationContext):
         self._base_ctx = base_ctx
 
     # Core workflow metadata parity with sync context
@@ -94,6 +98,15 @@ class AsyncWorkflowContext(DeterministicContextMixin):
     def workflow_span_id(self) -> str | None:
         return self._base_ctx.orchestration_span_id
 
+    @property
+    def workflow_attempt(self) -> int | None:
+        getter = getattr(self._base_ctx, 'workflow_attempt', None)
+        return (
+            getter
+            if isinstance(getter, int) or getter is None
+            else getattr(self._base_ctx, 'workflow_attempt', None)
+        )
+
     # Timers & Events
     def create_timer(self, fire_at: float | timedelta | datetime) -> Awaitable[None]:
         # If float provided, interpret as seconds
@@ -115,9 +128,7 @@ class AsyncWorkflowContext(DeterministicContextMixin):
         return WhenAnyAwaitable(awaitables)
 
     def gather(self, *aws: Awaitable[Any], return_exceptions: bool = False) -> Awaitable[list[Any]]:
-        if return_exceptions:
-            return GatherReturnExceptionsAwaitable(self._base_ctx, list(aws))
-        return WhenAllAwaitable(list(aws))
+        return _dt_gather(*aws, return_exceptions=return_exceptions)
 
     # Deterministic utilities are provided by mixin (now, random, uuid4, new_guid)
 
@@ -125,11 +136,6 @@ class AsyncWorkflowContext(DeterministicContextMixin):
     def is_suspended(self) -> bool:
         # Placeholder; will be wired when Durable Task exposes this state in context
         return self._base_ctx.is_suspended
-
-    # Internal helpers
-    def _seed(self) -> int:
-        # Deprecated: use deterministic_random instead
-        return 0
 
     # Pass-throughs for completeness
     def set_custom_status(self, custom_status: str) -> None:
@@ -144,17 +150,16 @@ class AsyncWorkflowContext(DeterministicContextMixin):
         carryover_metadata: bool | dict[str, str] = False,
         carryover_headers: bool | dict[str, str] | None = None,
     ) -> None:
-        if hasattr(self._base_ctx, 'continue_as_new'):
-            try:
-                effective_carryover = (
-                    carryover_headers if carryover_headers is not None else carryover_metadata
-                )
-                self._base_ctx.continue_as_new(
-                    new_input, save_events=save_events, carryover_metadata=effective_carryover
-                )
-            except TypeError:
-                # Fallback for older runtimes without carryover support
-                self._base_ctx.continue_as_new(new_input, save_events=save_events)
+        effective_carryover = (
+            carryover_headers if carryover_headers is not None else carryover_metadata
+        )
+        # Try extended signature; fall back to minimal for older fakes/contexts
+        try:
+            self._base_ctx.continue_as_new(
+                new_input, save_events=save_events, carryover_metadata=effective_carryover
+            )
+        except TypeError:
+            self._base_ctx.continue_as_new(new_input, save_events=save_events)
 
     # Metadata parity
     def set_metadata(self, metadata: dict[str, str] | None) -> None:
@@ -177,3 +182,8 @@ class AsyncWorkflowContext(DeterministicContextMixin):
     @property
     def execution_info(self):  # type: ignore[override]
         return getattr(self._base_ctx, 'execution_info', None)
+
+
+__all__ = [
+    'AsyncWorkflowContext',
+]

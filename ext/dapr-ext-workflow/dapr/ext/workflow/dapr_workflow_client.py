@@ -28,7 +28,7 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint, build_grpc_channel_options
 from dapr.ext.workflow.interceptors import (
     ClientInterceptor,
-    ScheduleWorkflowInput,
+    ScheduleWorkflowRequest,
     compose_client_chain,
     wrap_payload_with_metadata,
 )
@@ -128,26 +128,26 @@ class DaprWorkflowClient:
         )
 
         # Build interceptor chain around schedule call
-        def terminal(term_input: ScheduleWorkflowInput) -> str:
-            payload = wrap_payload_with_metadata(term_input.args, term_input.metadata)
+        def terminal(term_req: ScheduleWorkflowRequest) -> str:
+            payload = wrap_payload_with_metadata(term_req.input, term_req.metadata)
             return self.__obj.schedule_new_orchestration(
-                term_input.workflow_name,
+                term_req.workflow_name,
                 input=payload,
-                instance_id=term_input.instance_id,
-                start_at=term_input.start_at,
-                reuse_id_policy=term_input.reuse_id_policy,
+                instance_id=term_req.instance_id,
+                start_at=term_req.start_at,
+                reuse_id_policy=term_req.reuse_id_policy,
             )
 
         chain = compose_client_chain(self._client_interceptors, terminal)
-        schedule_input = ScheduleWorkflowInput(
+        schedule_req = ScheduleWorkflowRequest(
             workflow_name=wf_name,
-            args=input,
+            input=input,
             instance_id=instance_id,
             start_at=start_at,
             reuse_id_policy=reuse_id_policy,
             metadata=metadata,
         )
-        return chain(schedule_input)
+        return chain(schedule_req)
 
     def get_workflow_state(
         self, instance_id: str, *, fetch_payloads: bool = True

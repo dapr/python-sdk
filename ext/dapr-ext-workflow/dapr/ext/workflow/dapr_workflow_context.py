@@ -10,14 +10,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import enum
 from datetime import datetime, timedelta
 from typing import Any, Callable, List, Optional, TypeVar, Union
 
 from durabletask import task
+from durabletask.deterministic import (  # type: ignore[F401]
+    DeterministicContextMixin,
+)
 
-from dapr.ext.workflow.deterministic import DeterministicContextMixin
 from dapr.ext.workflow.execution_info import WorkflowExecutionInfo
+from dapr.ext.workflow.interceptors import unwrap_payload_with_metadata, wrap_payload_with_metadata
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
@@ -31,10 +35,26 @@ TOutput = TypeVar('TOutput')
 class Handlers(enum.Enum):
     CALL_ACTIVITY = 'call_activity'
     CALL_CHILD_WORKFLOW = 'call_child_workflow'
+    CONTINUE_AS_NEW = 'continue_as_new'
 
 
 class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
-    """DaprWorkflowContext that provides proxy access to internal OrchestrationContext instance."""
+    """Workflow context wrapper with deterministic utilities and metadata helpers.
+
+    Purpose
+    -------
+    - Proxy to the underlying ``durabletask.task.OrchestrationContext`` (engine fields like
+      ``trace_parent``, ``orchestration_span_id``, and ``workflow_attempt`` pass through).
+    - Provide SDK-level helpers for durable metadata propagation via interceptors.
+    - Expose ``execution_info`` as a per-activation snapshot complementing live properties.
+
+    Tips
+    ----
+    - Use ``ctx.get_metadata()/set_metadata()`` to manage outbound propagation.
+    - Use ``ctx.execution_info.inbound_metadata`` to inspect what arrived on this activation.
+    - Prefer engine-backed properties for tracing/attempts when available (not yet available in dapr sidecar); fall back to
+      metadata only for app-specific context.
+    """
 
     def __init__(
         self,
@@ -79,6 +99,11 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
     def workflow_span_id(self) -> str | None:
         # provided by durabletask; naming aligned to workflow
         return self.__obj.orchestration_span_id
+
+    @property
+    def workflow_attempt(self) -> int | None:
+        # Provided by durabletask when available (e.g., sub-orchestrator retry attempt)
+        return getattr(self.__obj, 'workflow_attempt', None)
 
     # Metadata API
     def set_metadata(self, metadata: dict[str, str] | None) -> None:
@@ -189,24 +214,38 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
         carryover_headers: bool | dict[str, str] | None = None,
     ) -> None:
         self._logger.debug(f'{self.instance_id}: Continuing as new')
-        # Merge/carry metadata if requested
-        payload = new_input
+        # Allow workflow outbound interceptors (wired via runtime) to modify payload/metadata
+        transformed_input: Any = new_input
+        if Handlers.CONTINUE_AS_NEW in self._outbound_handlers and callable(
+            self._outbound_handlers[Handlers.CONTINUE_AS_NEW]
+        ):
+            transformed_input = self._outbound_handlers[Handlers.CONTINUE_AS_NEW](
+                self, new_input, self.get_metadata()
+            )
+
+        # Merge/carry metadata if requested, unwrapping any envelope produced by interceptors
+        payload, base_md = unwrap_payload_with_metadata(transformed_input)
+        # Start with current context metadata; then layer any interceptor-provided metadata on top
+        current_md = self.get_metadata() or {}
+        effective_md = {**current_md, **(base_md or {})}
         effective_carryover = (
             carryover_headers if carryover_headers is not None else carryover_metadata
         )
         if effective_carryover:
-            base = self.get_metadata() or {}
+            base = effective_md or {}
             if isinstance(effective_carryover, dict):
                 md = {**base, **effective_carryover}
             else:
                 md = base
-            from dapr.ext.workflow.interceptors import wrap_payload_with_metadata
-
-            payload = wrap_payload_with_metadata(new_input, md)
+            payload = wrap_payload_with_metadata(payload, md)
+        else:
+            # If we had metadata from interceptors or context, preserve it
+            if effective_md:
+                payload = wrap_payload_with_metadata(payload, effective_md)
         self.__obj.continue_as_new(payload, save_events=save_events)
 
 
-def when_all(tasks: List[task.Task[T]]) -> task.WhenAllTask[T]:
+def when_all(tasks: List[task.Task]) -> task.WhenAllTask:
     """Returns a task that completes when all of the provided tasks complete or when one of the
     tasks fail."""
     return task.when_all(tasks)

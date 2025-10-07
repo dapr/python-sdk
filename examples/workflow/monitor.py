@@ -10,10 +10,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import random
 from dataclasses import dataclass
 from datetime import timedelta
-import random
 from time import sleep
+
 import dapr.ext.workflow as wf
 
 wfr = wf.WorkflowRuntime()

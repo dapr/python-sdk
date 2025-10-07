@@ -13,8 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from dapr.clients import DaprActorClientBase
 from typing import Optional
+
+from dapr.clients import DaprActorClientBase
 
 
 # Fake Dapr Actor Client Base Class for testing
