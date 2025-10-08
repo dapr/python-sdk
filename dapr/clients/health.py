@@ -15,6 +15,7 @@ limitations under the License.
 import urllib.request
 import urllib.error
 import time
+from warnings import warn
 
 from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, USER_AGENT_HEADER, DAPR_USER_AGENT
 from dapr.clients.http.helpers import get_api_url
@@ -24,6 +25,15 @@ from dapr.conf import settings
 class DaprHealth:
     @staticmethod
     def wait_until_ready():
+        warn(
+            'This method is deprecated. Use DaprHealth.wait_for_sidecar instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        DaprHealth.wait_for_sidecar()
+
+    @staticmethod
+    def wait_for_sidecar():
         health_url = f'{get_api_url()}/healthz/outbound'
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
         if settings.DAPR_API_TOKEN is not None:
