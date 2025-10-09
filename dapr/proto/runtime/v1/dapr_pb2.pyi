@@ -1615,6 +1615,7 @@ class GetMetadataResponse(google.protobuf.message.Message):
     ENABLED_FEATURES_FIELD_NUMBER: builtins.int
     ACTOR_RUNTIME_FIELD_NUMBER: builtins.int
     SCHEDULER_FIELD_NUMBER: builtins.int
+    WORKFLOWS_FIELD_NUMBER: builtins.int
     id: builtins.str
     runtime_version: builtins.str
     @property
@@ -1637,6 +1638,8 @@ class GetMetadataResponse(google.protobuf.message.Message):
     def actor_runtime(self) -> global___ActorRuntime: ...
     @property
     def scheduler(self) -> global___MetadataScheduler: ...
+    @property
+    def workflows(self) -> global___MetadataWorkflows: ...
     def __init__(
         self,
         *,
@@ -1651,12 +1654,31 @@ class GetMetadataResponse(google.protobuf.message.Message):
         enabled_features: collections.abc.Iterable[builtins.str] | None = ...,
         actor_runtime: global___ActorRuntime | None = ...,
         scheduler: global___MetadataScheduler | None = ...,
+        workflows: global___MetadataWorkflows | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["_scheduler", b"_scheduler", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "scheduler", b"scheduler"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_scheduler", b"_scheduler", "active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "scheduler", b"scheduler", "subscriptions", b"subscriptions"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "scheduler", b"scheduler", "workflows", b"workflows"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "scheduler", b"scheduler", "subscriptions", b"subscriptions", "workflows", b"workflows"]) -> None: ...
+    @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["_scheduler", b"_scheduler"]) -> typing.Literal["scheduler"] | None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing.Literal["_workflows", b"_workflows"]) -> typing.Literal["workflows"] | None: ...
 
 global___GetMetadataResponse = GetMetadataResponse
+
+@typing.final
+class MetadataWorkflows(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    CONNECTED_WORKERS_FIELD_NUMBER: builtins.int
+    connected_workers: builtins.int
+    def __init__(
+        self,
+        *,
+        connected_workers: builtins.int = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing.Literal["connected_workers", b"connected_workers"]) -> None: ...
+
+global___MetadataWorkflows = MetadataWorkflows
 
 @typing.final
 class MetadataScheduler(google.protobuf.message.Message):
