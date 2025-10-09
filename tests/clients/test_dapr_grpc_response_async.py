@@ -15,7 +15,7 @@ limitations under the License.
 
 import unittest
 
-from dapr.aio.clients.grpc._response import EncryptResponse, DecryptResponse
+from dapr.aio.clients.grpc._response import DecryptResponse, EncryptResponse
 from dapr.proto import api_v1, common_v1
 
 

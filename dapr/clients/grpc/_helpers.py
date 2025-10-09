@@ -12,22 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-
+from google.protobuf import json_format
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.struct_pb2 import Struct
 from google.protobuf.wrappers_pb2 import (
     BoolValue,
-    StringValue,
+    BytesValue,
+    DoubleValue,
     Int32Value,
     Int64Value,
-    DoubleValue,
-    BytesValue,
+    StringValue,
 )
-from google.protobuf.struct_pb2 import Struct
-from google.protobuf import json_format
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]

@@ -117,8 +117,9 @@ class Job:
         Returns:
             api_v1.Job: The proto representation of this job.
         """
-        from dapr.proto.runtime.v1 import dapr_pb2 as api_v1
         from google.protobuf.any_pb2 import Any as GrpcAny
+
+        from dapr.proto.runtime.v1 import dapr_pb2 as api_v1
 
         # Build the job proto
         job_proto = api_v1.Job(name=self.name)

@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import unittest
 import json
+import unittest
 from datetime import timedelta
 
-from dapr.serializers.util import convert_from_dapr_duration, convert_to_dapr_duration
 from dapr.serializers.json import DaprJSONDecoder
+from dapr.serializers.util import convert_from_dapr_duration, convert_to_dapr_duration
 
 
 class UtilTests(unittest.TestCase):

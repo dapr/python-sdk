@@ -11,10 +11,11 @@
 # limitations under the License.
 
 import datetime
+from typing import Optional
+
+from demo_actor_interface import DemoActorInterface
 
 from dapr.actor import Actor, Remindable
-from demo_actor_interface import DemoActorInterface
-from typing import Optional
 
 
 class DemoActor(Actor, DemoActorInterface, Remindable):

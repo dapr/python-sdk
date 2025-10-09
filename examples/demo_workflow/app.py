@@ -12,15 +12,16 @@
 
 from datetime import timedelta
 from time import sleep
-from dapr.ext.workflow import (
-    WorkflowRuntime,
-    DaprWorkflowContext,
-    WorkflowActivityContext,
-    RetryPolicy,
-)
-from dapr.conf import Settings
+
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
+from dapr.conf import Settings
+from dapr.ext.workflow import (
+    DaprWorkflowContext,
+    RetryPolicy,
+    WorkflowActivityContext,
+    WorkflowRuntime,
+)
 
 settings = Settings()
 
@@ -192,8 +193,7 @@ def main():
             instance_id=instance_id, workflow_component=workflow_component
         )
         print(
-            f'Get response from {workflow_name} '
-            f'after terminate call: {get_response.runtime_status}'
+            f'Get response from {workflow_name} after terminate call: {get_response.runtime_status}'
         )
         child_get_response = d.get_workflow(
             instance_id=child_instance_id, workflow_component=workflow_component

@@ -21,7 +21,7 @@ from dapr.conf import settings
 def getAddress(host: Optional[str] = None, port: Optional[str] = None) -> str:
     if not host and not port:
         address = settings.DAPR_GRPC_ENDPOINT or (
-            f'{settings.DAPR_RUNTIME_HOST}:' f'{settings.DAPR_GRPC_PORT}'
+            f'{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}'
         )
     else:
         host = host or settings.DAPR_RUNTIME_HOST

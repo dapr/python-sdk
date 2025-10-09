@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 from enum import Enum
-from typing import TypeVar, Generic, Optional
+from typing import Generic, Optional, TypeVar
 
 T = TypeVar('T')
 

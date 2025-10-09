@@ -1,6 +1,6 @@
-import grpc
 from typing import Callable, Optional
 
+import grpc
 from dapr.proto import appcallback_service_v1
 from dapr.proto.runtime.v1.appcallback_pb2 import HealthCheckResponse
 

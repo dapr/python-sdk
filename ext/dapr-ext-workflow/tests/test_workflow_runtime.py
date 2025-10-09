@@ -13,12 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import List
 import unittest
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from typing import List
 from unittest import mock
-from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
+
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 
 listOrchestrators: List[str] = []
 listActivities: List[str] = []
@@ -36,7 +37,10 @@ class WorkflowRuntimeTest(unittest.TestCase):
     def setUp(self):
         listActivities.clear()
         listOrchestrators.clear()
-        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        self.patcher = mock.patch(
+            'durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        )
+        self.patcher.start()
         self.runtime_options = WorkflowRuntime()
         if hasattr(self.mock_client_wf, '_dapr_alternate_name'):
             del self.mock_client_wf.__dict__['_dapr_alternate_name']
@@ -46,6 +50,11 @@ class WorkflowRuntimeTest(unittest.TestCase):
             del self.mock_client_wf.__dict__['_workflow_registered']
         if hasattr(self.mock_client_activity, '_activity_registered'):
             del self.mock_client_activity.__dict__['_activity_registered']
+
+    def tearDown(self):
+        """Stop the mock patch to prevent interference with other tests."""
+        self.patcher.stop()
+        mock.patch.stopall()  # Ensure all patches are stopped
 
     def mock_client_wf(ctx: DaprWorkflowContext, input):
         print(f'{input}')

@@ -18,16 +18,13 @@ import unittest
 from dapr.actor import Actor
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_information import ActorTypeInformation
-from dapr.actor.runtime.manager import ActorManager
 from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.manager import ActorManager
 from dapr.serializers import DefaultJSONSerializer
-
 from tests.actor.fake_actor_classes import (
     FakeSimpleActorInterface,
 )
-
 from tests.actor.fake_client import FakeDaprActorClient
-
 from tests.actor.utils import _run
 
 

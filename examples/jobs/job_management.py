@@ -1,8 +1,9 @@
 import json
 from datetime import datetime, timedelta
 
-from dapr.clients import DaprClient, Job, DropFailurePolicy, ConstantFailurePolicy
 from google.protobuf.any_pb2 import Any as GrpcAny
+
+from dapr.clients import ConstantFailurePolicy, DaprClient, DropFailurePolicy, Job
 
 
 def create_job_data(message: str):
