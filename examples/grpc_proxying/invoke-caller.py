@@ -1,10 +1,11 @@
 import asyncio
+import json
 import logging
+import time
 
 import grpc
 import helloworld_service_pb2_grpc
-from helloworld_service_pb2 import HelloRequest, HelloReply
-import json, time
+from helloworld_service_pb2 import HelloReply, HelloRequest
 
 
 async def run() -> None:

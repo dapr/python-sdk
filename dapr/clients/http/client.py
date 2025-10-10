@@ -13,25 +13,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import aiohttp
+from typing import TYPE_CHECKING, Callable, Dict, Mapping, Optional, Tuple, Union
 
-from typing import Callable, Mapping, Dict, Optional, Union, Tuple, TYPE_CHECKING
+import aiohttp
 
 from dapr.clients.health import DaprHealth
 from dapr.clients.http.conf import (
-    DAPR_API_TOKEN_HEADER,
-    USER_AGENT_HEADER,
-    DAPR_USER_AGENT,
     CONTENT_TYPE_HEADER,
+    DAPR_API_TOKEN_HEADER,
+    DAPR_USER_AGENT,
+    USER_AGENT_HEADER,
 )
 from dapr.clients.retry import RetryPolicy
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
-from dapr.conf import settings
 from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprHttpError, DaprInternalError
+from dapr.conf import settings
 
 
 class DaprHttpClient:

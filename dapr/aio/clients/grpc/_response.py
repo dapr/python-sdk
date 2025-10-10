@@ -15,8 +15,8 @@ limitations under the License.
 
 from typing import AsyncGenerator, Generic
 
-from dapr.proto import api_v1
 from dapr.clients.grpc._response import DaprResponse, TCryptoResponse
+from dapr.proto import api_v1
 
 
 class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):
@@ -83,9 +83,7 @@ class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):
         return data[:size]
 
 
-class EncryptResponse(CryptoResponse[api_v1.EncryptResponse]):
-    ...
+class EncryptResponse(CryptoResponse[api_v1.EncryptResponse]): ...
 
 
-class DecryptResponse(CryptoResponse[api_v1.DecryptResponse]):
-    ...
+class DecryptResponse(CryptoResponse[api_v1.DecryptResponse]): ...

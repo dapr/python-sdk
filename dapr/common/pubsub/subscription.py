@@ -1,7 +1,9 @@
 import json
-from google.protobuf.json_format import MessageToDict
-from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 from typing import Optional, Union
+
+from google.protobuf.json_format import MessageToDict
+
+from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 
 
 class SubscriptionMessage:

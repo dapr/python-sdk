@@ -12,9 +12,10 @@
 
 import asyncio
 
-from dapr.actor import ActorProxy, ActorId, ActorProxyFactory
-from dapr.clients.retry import RetryPolicy
 from demo_actor_interface import DemoActorInterface
+
+from dapr.actor import ActorId, ActorProxy, ActorProxyFactory
+from dapr.clients.retry import RetryPolicy
 
 
 async def main():

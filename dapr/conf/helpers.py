@@ -1,5 +1,8 @@
+import json
+from urllib.parse import ParseResult, parse_qs, urlparse
 from warnings import warn
-from urllib.parse import urlparse, parse_qs, ParseResult
+
+from dapr.conf import settings
 
 
 class URIParseConfig:
@@ -126,9 +129,9 @@ class GrpcEndpoint:
             # A URI like dns:mydomain:5000 or vsock:mycid:5000 was used
             url = url.replace(':', '://', 1)
         elif (
-            len(url_list) >= 2
-            and '://' not in url
-            and url_list[0] in URIParseConfig.ACCEPTED_SCHEMES
+                len(url_list) >= 2
+                and '://' not in url
+                and url_list[0] in URIParseConfig.ACCEPTED_SCHEMES
         ):
             # A URI like dns:mydomain or dns:[2001:db8:1f70::999:de8:7648:6e8]:mydomain was used
             # Possibly a URI like dns:[2001:db8:1f70::999:de8:7648:6e8]:mydomain was used
@@ -174,7 +177,7 @@ class GrpcEndpoint:
     def _validate_path_and_query(self) -> None:
         if self._parsed_url.path:
             raise ValueError(
-                f'paths are not supported for gRPC endpoints:' f" '{self._parsed_url.path}'"
+                f"paths are not supported for gRPC endpoints: '{self._parsed_url.path}'"
             )
         if self._parsed_url.query:
             query_dict = parse_qs(self._parsed_url.query)
@@ -189,3 +192,68 @@ class GrpcEndpoint:
                     f'query parameters are not supported for gRPC endpoints:'
                     f" '{self._parsed_url.query}'"
                 )
+
+
+# ------------------------------
+# gRPC channel options helpers
+# ------------------------------
+
+
+def get_grpc_keepalive_options():
+    """Return a list of keepalive channel options if enabled, else empty list.
+
+    Options are tuples suitable for passing to grpc.{secure,insecure}_channel.
+    """
+    if not settings.DAPR_GRPC_KEEPALIVE_ENABLED:
+        return []
+    return [
+        ('grpc.keepalive_time_ms', int(settings.DAPR_GRPC_KEEPALIVE_TIME_MS)),
+        ('grpc.keepalive_timeout_ms', int(settings.DAPR_GRPC_KEEPALIVE_TIMEOUT_MS)),
+        (
+            'grpc.keepalive_permit_without_calls',
+            1 if settings.DAPR_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS else 0,
+        ),
+    ]
+
+
+def get_grpc_retry_service_config_option():
+    """Return ('grpc.service_config', json) option if retry is enabled, else None.
+
+    Applies a universal retry policy via gRPC service config.
+    """
+    if not getattr(settings, 'DAPR_GRPC_RETRY_ENABLED', False):
+        return None
+    retry_policy = {
+        'maxAttempts': int(settings.DAPR_GRPC_RETRY_MAX_ATTEMPTS),
+        'initialBackoff': f'{int(settings.DAPR_GRPC_RETRY_INITIAL_BACKOFF_MS) / 1000.0}s',
+        'maxBackoff': f'{int(settings.DAPR_GRPC_RETRY_MAX_BACKOFF_MS) / 1000.0}s',
+        'backoffMultiplier': float(settings.DAPR_GRPC_RETRY_BACKOFF_MULTIPLIER),
+        'retryableStatusCodes': [
+            c.strip() for c in str(settings.DAPR_GRPC_RETRY_CODES).split(',') if c.strip()
+        ],
+    }
+    service_config = {
+        'methodConfig': [
+            {
+                'name': [{'service': ''}],  # apply to all services
+                'retryPolicy': retry_policy,
+            }
+        ]
+    }
+    return ('grpc.service_config', json.dumps(service_config))
+
+
+def build_grpc_channel_options(base_options=None):
+    """Combine base options with keepalive and retry policy options.
+
+    Args:
+        base_options: optional iterable of (key, value) tuples.
+    Returns:
+        list of (key, value) tuples.
+    """
+    options = list(base_options or [])
+    options.extend(get_grpc_keepalive_options())
+    retry_opt = get_grpc_retry_service_config_option()
+    if retry_opt is not None:
+        options.append(retry_opt)
+    return options

@@ -3,6 +3,7 @@ import time
 import typing
 from concurrent import futures
 
+from dapr.ext.grpc import App, InvokeMethodRequest, InvokeMethodResponse
 from opentelemetry import trace
 from opentelemetry.exporter.zipkin.json import ZipkinExporter
 from opentelemetry.instrumentation.grpc import GrpcInstrumentorServer, filters
@@ -12,7 +13,6 @@ from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from dapr.clients import DaprClient
-from dapr.ext.grpc import App, InvokeMethodRequest, InvokeMethodResponse
 
 # Create a tracer provider
 tracer_provider = TracerProvider(sampler=ALWAYS_ON)

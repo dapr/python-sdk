@@ -3,9 +3,9 @@ import json
 import unittest
 
 import grpc
-from google.rpc import error_details_pb2, status_pb2, code_pb2
 from google.protobuf.any_pb2 import Any
 from google.protobuf.duration_pb2 import Duration
+from google.rpc import code_pb2, error_details_pb2, status_pb2
 
 from dapr.clients import DaprGrpcClient
 from dapr.clients.exceptions import DaprGrpcError, DaprInternalError

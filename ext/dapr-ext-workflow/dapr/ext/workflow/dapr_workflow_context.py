@@ -13,15 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Callable, List, Optional, TypeVar, Union
 from datetime import datetime, timedelta
+from typing import Any, Callable, List, Optional, TypeVar, Union
 
-from durabletask import task
-
-from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
-from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
-from dapr.ext.workflow.logger import LoggerOptions, Logger
+from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.retry_policy import RetryPolicy
+from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow.workflow_context import Workflow, WorkflowContext
+from durabletask import task
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

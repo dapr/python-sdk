@@ -16,9 +16,8 @@ limitations under the License.
 import json
 import unittest
 
-from fastapi import FastAPI
-
 from dapr.ext.fastapi.actor import DaprActor, _wrap_response
+from fastapi import FastAPI
 
 
 class DaprActorTest(unittest.TestCase):

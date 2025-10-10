@@ -17,19 +17,18 @@ import unittest
 
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.runtime._type_utils import (
+    get_actor_interfaces,
     get_class_method_args,
+    get_dispatchable_attrs,
     get_method_arg_types,
     get_method_return_types,
     is_dapr_actor,
-    get_actor_interfaces,
-    get_dispatchable_attrs,
 )
-
 from tests.actor.fake_actor_classes import (
-    FakeSimpleActor,
-    FakeMultiInterfacesActor,
     FakeActorCls1Interface,
     FakeActorCls2Interface,
+    FakeMultiInterfacesActor,
+    FakeSimpleActor,
 )
 
 

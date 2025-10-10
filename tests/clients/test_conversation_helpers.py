@@ -12,37 +12,39 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
+import base64
 import io
 import json
-import base64
 import unittest
 import warnings
 from contextlib import redirect_stdout
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Union, Set
-from dapr.conf import settings
+from typing import Any, Dict, List, Literal, Optional, Set, Union
+
 from dapr.clients.grpc._conversation_helpers import (
-    stringify_tool_output,
-    bind_params_to_func,
-    function_to_json_schema,
+    ToolArgumentError,
     _extract_docstring_args,
     _python_type_to_json_schema,
+    bind_params_to_func,
     extract_docstring_summary,
-    ToolArgumentError,
+    function_to_json_schema,
+    stringify_tool_output,
 )
 from dapr.clients.grpc.conversation import (
-    ConversationToolsFunction,
-    ConversationMessageOfUser,
-    ConversationMessageContent,
-    ConversationToolCalls,
-    ConversationToolCallsOfFunction,
-    ConversationMessageOfAssistant,
-    ConversationMessageOfTool,
     ConversationMessage,
+    ConversationMessageContent,
+    ConversationMessageOfAssistant,
     ConversationMessageOfDeveloper,
     ConversationMessageOfSystem,
+    ConversationMessageOfTool,
+    ConversationMessageOfUser,
+    ConversationToolCalls,
+    ConversationToolCallsOfFunction,
+    ConversationToolsFunction,
 )
+from dapr.conf import settings
 
 
 def test_string_passthrough():
@@ -2089,8 +2091,7 @@ class TestCoerceAndValidateBranches(unittest.TestCase):
             bind_params_to_func(f, {'p': {}})
 
     def test_any_and_isinstance_fallback(self):
-        class C:
-            ...
+        class C: ...
 
         def f(a: Any, c: C) -> tuple:
             return a, c
