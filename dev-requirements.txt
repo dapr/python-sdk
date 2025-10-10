@@ -3,7 +3,9 @@ mypy-extensions>=0.4.3
 mypy-protobuf>=2.9
 flake8>=3.7.9
 tox>=4.3.0
+pip>=23.0.0
 coverage>=5.3
+pytest
 wheel
 # used in unit test only
 opentelemetry-sdk
@@ -13,7 +15,7 @@ pyOpenSSL>=23.2.0
 # needed for type checking
 Flask>=1.1
 # needed for auto fix
-ruff===0.2.2
+ruff===0.14.0
 # needed for dapr-ext-workflow
 durabletask-dapr >= 0.2.0a7
 # needed for .env file loading in examples
@@ -22,3 +24,4 @@ python-dotenv>=1.0.0
 pydantic>=2.0.0
 # needed for yaml file generation in examples
 PyYAML>=6.0.2
+

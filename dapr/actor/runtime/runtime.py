@@ -14,20 +14,18 @@ limitations under the License.
 """
 
 import asyncio
-
-from typing import Dict, List, Optional, Type, Callable
+from typing import Callable, Dict, List, Optional, Type
 
 from dapr.actor.id import ActorId
+from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.manager import ActorManager
-from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
-from dapr.serializers import Serializer, DefaultJSONSerializer
-from dapr.conf import settings
-
 from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
+from dapr.conf import settings
+from dapr.serializers import DefaultJSONSerializer, Serializer
 
 
 class ActorRuntime:

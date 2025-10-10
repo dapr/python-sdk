@@ -11,12 +11,13 @@
 # limitations under the License.
 
 import threading
+import time
 from dataclasses import asdict, dataclass
 from datetime import timedelta
-import time
+
+import dapr.ext.workflow as wf
 
 from dapr.clients import DaprClient
-import dapr.ext.workflow as wf
 
 wfr = wf.WorkflowRuntime()
 

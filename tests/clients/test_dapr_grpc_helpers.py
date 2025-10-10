@@ -1,22 +1,22 @@
 import base64
 import unittest
 
-from google.protobuf.struct_pb2 import Struct
 from google.protobuf import json_format
-from google.protobuf.json_format import ParseError
 from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.json_format import ParseError
+from google.protobuf.struct_pb2 import Struct
 from google.protobuf.wrappers_pb2 import (
     BoolValue,
-    StringValue,
+    BytesValue,
+    DoubleValue,
     Int32Value,
     Int64Value,
-    DoubleValue,
-    BytesValue,
+    StringValue,
 )
 
 from dapr.clients.grpc._helpers import (
-    convert_value_to_struct,
     convert_dict_to_grpc_dict_of_any,
+    convert_value_to_struct,
 )
 
 

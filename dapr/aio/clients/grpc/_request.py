@@ -16,7 +16,7 @@ limitations under the License.
 import io
 from typing import Union
 
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._request import DaprRequest
 from dapr.proto import api_v1, common_v1

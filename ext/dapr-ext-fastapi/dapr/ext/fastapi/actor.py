@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Optional, Type, List
+from typing import Any, List, Optional, Type
 
 from dapr.actor import Actor, ActorRuntime
 from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
 from dapr.serializers import DefaultJSONSerializer
-from fastapi import FastAPI, APIRouter, Request, Response, status  # type: ignore
+from fastapi import APIRouter, FastAPI, Request, Response, status  # type: ignore
 from fastapi.logger import logger
 from fastapi.responses import JSONResponse
 

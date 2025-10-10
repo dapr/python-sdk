@@ -4,8 +4,9 @@ dapr run --app-id configexample --resources-path components/ -- python3 configur
 
 import asyncio
 from time import sleep
+
 from dapr.clients import DaprClient
-from dapr.clients.grpc._response import ConfigurationWatcher, ConfigurationResponse
+from dapr.clients.grpc._response import ConfigurationResponse, ConfigurationWatcher
 
 configuration: ConfigurationWatcher = ConfigurationWatcher()
 

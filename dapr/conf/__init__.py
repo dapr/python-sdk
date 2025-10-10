@@ -24,9 +24,7 @@ class Settings:
             default_value = getattr(global_settings, setting)
             env_variable = os.environ.get(setting)
             if env_variable:
-                val = (
-                    type(default_value)(env_variable) if default_value is not None else env_variable
-                )
+                val = self._coerce_env_value(default_value, env_variable)
                 setattr(self, setting, val)
             else:
                 setattr(self, setting, default_value)
@@ -35,6 +33,28 @@ class Settings:
         if name not in dir(global_settings):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return getattr(self, name)
+
+    @staticmethod
+    def _coerce_env_value(default_value, env_variable: str):
+        if default_value is None:
+            return env_variable
+        # Handle booleans explicitly to avoid bool('false') == True
+        if isinstance(default_value, bool):
+            s = env_variable.strip().lower()
+            if s in ('1', 'true', 't', 'yes', 'y', 'on'):
+                return True
+            if s in ('0', 'false', 'f', 'no', 'n', 'off'):
+                return False
+            # Fallback: non-empty -> True for backward-compat
+            return bool(s)
+        # Integers
+        if isinstance(default_value, int) and not isinstance(default_value, bool):
+            return int(env_variable)
+        # Floats
+        if isinstance(default_value, float):
+            return float(env_variable)
+        # Other types: try to cast as before
+        return type(default_value)(env_variable)
 
 
 settings = Settings()

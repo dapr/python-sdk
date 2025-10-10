@@ -10,12 +10,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fastapi import FastAPI  # type: ignore
-from dapr.actor.runtime.config import ActorRuntimeConfig, ActorTypeConfig, ActorReentrancyConfig
-from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.ext.fastapi import DaprActor  # type: ignore
 from demo_actor import DemoActor
+from fastapi import FastAPI  # type: ignore
 
+from dapr.actor.runtime.config import ActorReentrancyConfig, ActorRuntimeConfig, ActorTypeConfig
+from dapr.actor.runtime.runtime import ActorRuntime
 
 app = FastAPI(title=f'{DemoActor.__name__}Service')
 

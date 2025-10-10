@@ -17,18 +17,17 @@ import inspect
 from functools import wraps
 from typing import Optional, TypeVar
 
-from durabletask import worker, task
-
-from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
+from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
+from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
+from dapr.ext.workflow.workflow_context import Workflow
+from durabletask import task, worker
 
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
-from dapr.ext.workflow.logger import LoggerOptions, Logger
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

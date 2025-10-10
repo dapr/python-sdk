@@ -14,9 +14,9 @@ limitations under the License.
 """
 
 import unittest
-
 from datetime import timedelta
-from dapr.actor.runtime.config import ActorRuntimeConfig, ActorReentrancyConfig, ActorTypeConfig
+
+from dapr.actor.runtime.config import ActorReentrancyConfig, ActorRuntimeConfig, ActorTypeConfig
 
 
 class ActorTypeConfigTests(unittest.TestCase):

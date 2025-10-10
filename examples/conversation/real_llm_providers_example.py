@@ -163,8 +163,8 @@ def create_tool_from_typed_function_example() -> conversation.ConversationTools:
     This shows the most advanced approach: define a typed function and automatically
     generate the complete tool schema from type hints and docstrings.
     """
-    from typing import Optional, List
     from enum import Enum
+    from typing import List, Optional
 
     conversation.unregister_tool('find_restaurants')
 
@@ -205,8 +205,8 @@ def create_tool_from_tool_decorator_example() -> conversation.ConversationTools:
     This shows the most advanced approach: define a typed function and automatically
     generate the complete tool schema from type hints and docstrings.
     """
-    from typing import Optional, List
     from enum import Enum
+    from typing import List, Optional
 
     conversation.unregister_tool('find_restaurants')
 
@@ -417,7 +417,7 @@ class RealLLMProviderTester:
     def test_basic_conversation_alpha2(self, provider_id: str) -> None:
         """Test basic Alpha2 conversation with a provider."""
         print(
-            f"\n💬 Testing Alpha2 basic conversation with {self.available_providers[provider_id]['display_name']}"
+            f'\n💬 Testing Alpha2 basic conversation with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -453,7 +453,7 @@ class RealLLMProviderTester:
     def test_multi_turn_conversation_alpha2(self, provider_id: str) -> None:
         """Test multi-turn Alpha2 conversation with different message types."""
         print(
-            f"\n🔄 Testing Alpha2 multi-turn conversation with {self.available_providers[provider_id]['display_name']}"
+            f'\n🔄 Testing Alpha2 multi-turn conversation with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -484,7 +484,7 @@ class RealLLMProviderTester:
                         f'✅ Multi-turn conversation processed {len(response.outputs[0].choices)} message(s)'
                     )
                     for i, choice in enumerate(response.outputs[0].choices):
-                        print(f'   Response {i+1}: {choice.message.content[:100]}...')
+                        print(f'   Response {i + 1}: {choice.message.content[:100]}...')
                 else:
                     print('❌ No multi-turn response received')
 
@@ -494,7 +494,7 @@ class RealLLMProviderTester:
     def test_tool_calling_alpha2(self, provider_id: str) -> None:
         """Test Alpha2 tool calling with a provider."""
         print(
-            f"\n🔧 Testing Alpha2 tool calling with {self.available_providers[provider_id]['display_name']}"
+            f'\n🔧 Testing Alpha2 tool calling with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -560,7 +560,7 @@ class RealLLMProviderTester:
     def test_parameter_conversion(self, provider_id: str) -> None:
         """Test the new parameter conversion feature."""
         print(
-            f"\n🔄 Testing parameter conversion with {self.available_providers[provider_id]['display_name']}"
+            f'\n🔄 Testing parameter conversion with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -612,7 +612,7 @@ class RealLLMProviderTester:
     def test_multi_turn_tool_calling_alpha2(self, provider_id: str) -> None:
         """Test multi-turn Alpha2 tool calling with proper context accumulation."""
         print(
-            f"\n🔄🔧 Testing multi-turn tool calling with {self.available_providers[provider_id]['display_name']}"
+            f'\n🔄🔧 Testing multi-turn tool calling with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -802,7 +802,7 @@ class RealLLMProviderTester:
     def test_multi_turn_tool_calling_alpha2_tool_helpers(self, provider_id: str) -> None:
         """Test multi-turn Alpha2 tool calling with proper context accumulation using higher level abstractions."""
         print(
-            f"\n🔄🔧 Testing multi-turn tool calling with {self.available_providers[provider_id]['display_name']}"
+            f'\n🔄🔧 Testing multi-turn tool calling with {self.available_providers[provider_id]["display_name"]}'
         )
 
         # using decorator
@@ -954,7 +954,7 @@ class RealLLMProviderTester:
     def test_function_to_schema_approach(self, provider_id: str) -> None:
         """Test the best DevEx for most cases: function-to-JSON-schema automatic tool creation."""
         print(
-            f"\n🎯 Testing function-to-schema approach with {self.available_providers[provider_id]['display_name']}"
+            f'\n🎯 Testing function-to-schema approach with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -1002,7 +1002,7 @@ class RealLLMProviderTester:
     def test_tool_decorated_function_to_schema_approach(self, provider_id: str) -> None:
         """Test the best DevEx for most cases: function-to-JSON-schema automatic tool creation."""
         print(
-            f"\n🎯 Testing decorator tool function-to-schema approach with {self.available_providers[provider_id]['display_name']}"
+            f'\n🎯 Testing decorator tool function-to-schema approach with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -1052,7 +1052,7 @@ class RealLLMProviderTester:
     async def test_async_conversation_alpha2(self, provider_id: str) -> None:
         """Test async Alpha2 conversation with a provider."""
         print(
-            f"\n⚡ Testing async Alpha2 conversation with {self.available_providers[provider_id]['display_name']}"
+            f'\n⚡ Testing async Alpha2 conversation with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -1083,7 +1083,7 @@ class RealLLMProviderTester:
     async def test_async_tool_calling_alpha2(self, provider_id: str) -> None:
         """Test async Alpha2 tool calling with a provider."""
         print(
-            f"\n🔧⚡ Testing async Alpha2 tool calling with {self.available_providers[provider_id]['display_name']}"
+            f'\n🔧⚡ Testing async Alpha2 tool calling with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -1125,9 +1125,9 @@ class RealLLMProviderTester:
     def run_comprehensive_test(self, provider_id: str) -> None:
         """Run comprehensive Alpha2 tests for a provider."""
         provider_name = self.available_providers[provider_id]['display_name']
-        print(f"\n{'='*60}")
+        print(f'\n{"=" * 60}')
         print(f'🧪 Testing {provider_name} with Alpha2 API')
-        print(f"{'='*60}")
+        print(f'{"=" * 60}')
 
         # Alpha2 Sync tests
         self.test_basic_conversation_alpha2(provider_id)
@@ -1149,7 +1149,7 @@ class RealLLMProviderTester:
     def test_basic_conversation_alpha1_legacy(self, provider_id: str) -> None:
         """Test legacy Alpha1 conversation for comparison."""
         print(
-            f"\n📚 Testing legacy Alpha1 for comparison with {self.available_providers[provider_id]['display_name']}"
+            f'\n📚 Testing legacy Alpha1 for comparison with {self.available_providers[provider_id]["display_name"]}'
         )
 
         try:
@@ -1235,7 +1235,7 @@ def main():
             if provider_id in tester.available_providers:
                 tester.run_comprehensive_test(provider_id)
 
-        print(f"\n{'='*60}")
+        print(f'\n{"=" * 60}')
         print('🎉 All Alpha2 tests completed!')
         print('✅ Real LLM provider integration with Alpha2 API is working correctly')
         print('🔧 Features demonstrated:')
@@ -1248,7 +1248,7 @@ def main():
         print('   • Function-to-schema using @tool decorator for automatic tool generation')
         print('   • Both sync and async implementations')
         print('   • Backward compatibility with Alpha1')
-        print(f"{'='*60}")
+        print(f'{"=" * 60}')
 
     except KeyboardInterrupt:
         print('\n\n⏹️  Tests interrupted by user')

@@ -10,13 +10,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from demo_actor import DemoActor
 from flask import Flask, jsonify
 from flask_dapr.actor import DaprActor
 
-from dapr.conf import settings
-from dapr.actor.runtime.config import ActorRuntimeConfig, ActorTypeConfig, ActorReentrancyConfig
+from dapr.actor.runtime.config import ActorReentrancyConfig, ActorRuntimeConfig, ActorTypeConfig
 from dapr.actor.runtime.runtime import ActorRuntime
-from demo_actor import DemoActor
+from dapr.conf import settings
 
 app = Flask(f'{DemoActor.__name__}Service')
 
