@@ -3,7 +3,7 @@ from grpc import StatusCode
 from grpc.aio import AioRpcError
 
 from dapr.clients.grpc._response import TopicEventResponse
-from dapr.clients.health import DaprHealth
+from dapr.aio.clients.health import DaprHealth
 from dapr.common.pubsub.subscription import (
     StreamInactiveError,
     SubscriptionMessage,
@@ -51,8 +51,7 @@ class Subscription:
 
     async def reconnect_stream(self):
         await self.close()
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, DaprHealth.wait_until_ready)
+        await DaprHealth.wait_until_ready()
         print('Attempting to reconnect...')
         await self.start()
 
