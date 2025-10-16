@@ -100,6 +100,7 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
             # This will cause ~2 seconds of retries (1 second sleep after each failure)
             if call_count[0] <= 2:
                 import urllib.error
+
                 raise urllib.error.URLError('Connection refused')
             else:
                 return MockResponse(status=200)
