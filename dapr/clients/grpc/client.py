@@ -114,20 +114,20 @@ class DaprGrpcClient:
     """
 
     def __init__(
-            self,
-            address: Optional[str] = None,
-            interceptors: Optional[
-                List[
-                    Union[
-                        UnaryUnaryClientInterceptor,
-                        UnaryStreamClientInterceptor,
-                        StreamUnaryClientInterceptor,
-                        StreamStreamClientInterceptor,
-                    ]
+        self,
+        address: Optional[str] = None,
+        interceptors: Optional[
+            List[
+                Union[
+                    UnaryUnaryClientInterceptor,
+                    UnaryStreamClientInterceptor,
+                    StreamUnaryClientInterceptor,
+                    StreamStreamClientInterceptor,
                 ]
-            ] = None,
-            max_grpc_message_length: Optional[int] = None,
-            retry_policy: Optional[RetryPolicy] = None,
+            ]
+        ] = None,
+        max_grpc_message_length: Optional[int] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         """Connects to Dapr Runtime and initializes gRPC client stub.
 
@@ -219,7 +219,7 @@ class DaprGrpcClient:
 
     @staticmethod
     def _get_http_extension(
-            http_verb: str, http_querystring: Optional[MetadataTuple] = None
+        http_verb: str, http_querystring: Optional[MetadataTuple] = None
     ) -> common_v1.HTTPExtension:  # type: ignore
         verb = common_v1.HTTPExtension.Verb.Value(http_verb)  # type: ignore
         http_ext = common_v1.HTTPExtension(verb=verb)
@@ -228,15 +228,15 @@ class DaprGrpcClient:
         return http_ext
 
     def invoke_method(
-            self,
-            app_id: str,
-            method_name: str,
-            data: Union[bytes, str, GrpcMessage] = '',
-            content_type: Optional[str] = None,
-            metadata: Optional[MetadataTuple] = None,
-            http_verb: Optional[str] = None,
-            http_querystring: Optional[MetadataTuple] = None,
-            timeout: Optional[int] = None,
+        self,
+        app_id: str,
+        method_name: str,
+        data: Union[bytes, str, GrpcMessage] = '',
+        content_type: Optional[str] = None,
+        metadata: Optional[MetadataTuple] = None,
+        http_verb: Optional[str] = None,
+        http_querystring: Optional[MetadataTuple] = None,
+        timeout: Optional[int] = None,
     ) -> InvokeMethodResponse:
         """Invokes the target service to call method.
 
@@ -351,12 +351,12 @@ class DaprGrpcClient:
         return resp_data
 
     def invoke_binding(
-            self,
-            binding_name: str,
-            operation: str,
-            data: Union[bytes, str] = '',
-            binding_metadata: Dict[str, str] = {},
-            metadata: Optional[MetadataTuple] = None,
+        self,
+        binding_name: str,
+        operation: str,
+        data: Union[bytes, str] = '',
+        binding_metadata: Dict[str, str] = {},
+        metadata: Optional[MetadataTuple] = None,
     ) -> BindingResponse:
         """Invokes the output binding with the specified operation.
 
@@ -411,13 +411,13 @@ class DaprGrpcClient:
         return BindingResponse(response.data, dict(response.metadata), call.initial_metadata())
 
     def publish_event(
-            self,
-            pubsub_name: str,
-            topic_name: str,
-            data: Union[bytes, str],
-            publish_metadata: Dict[str, str] = {},
-            metadata: Optional[MetadataTuple] = None,
-            data_content_type: Optional[str] = None,
+        self,
+        pubsub_name: str,
+        topic_name: str,
+        data: Union[bytes, str],
+        publish_metadata: Dict[str, str] = {},
+        metadata: Optional[MetadataTuple] = None,
+        data_content_type: Optional[str] = None,
     ) -> DaprResponse:
         """Publish to a given topic.
         This publishes an event with bytes array or str data to a specified topic and
@@ -488,11 +488,11 @@ class DaprGrpcClient:
         return DaprResponse(call.initial_metadata())
 
     def subscribe(
-            self,
-            pubsub_name: str,
-            topic: str,
-            metadata: Optional[MetadataTuple] = None,
-            dead_letter_topic: Optional[str] = None,
+        self,
+        pubsub_name: str,
+        topic: str,
+        metadata: Optional[MetadataTuple] = None,
+        dead_letter_topic: Optional[str] = None,
     ) -> Subscription:
         """
         Subscribe to a topic with a bidirectional stream
@@ -514,12 +514,12 @@ class DaprGrpcClient:
         return subscription
 
     def subscribe_with_handler(
-            self,
-            pubsub_name: str,
-            topic: str,
-            handler_fn: Callable[..., TopicEventResponse],
-            metadata: Optional[MetadataTuple] = None,
-            dead_letter_topic: Optional[str] = None,
+        self,
+        pubsub_name: str,
+        topic: str,
+        handler_fn: Callable[..., TopicEventResponse],
+        metadata: Optional[MetadataTuple] = None,
+        dead_letter_topic: Optional[str] = None,
     ) -> Callable:
         """
         Subscribe to a topic with a bidirectional stream and a message handler function
@@ -563,11 +563,11 @@ class DaprGrpcClient:
         return close_subscription
 
     def get_state(
-            self,
-            store_name: str,
-            key: str,
-            state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None,
+        self,
+        store_name: str,
+        key: str,
+        state_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
     ) -> StateResponse:
         """Gets value from a statestore with a key
 
@@ -613,12 +613,12 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
     def get_bulk_state(
-            self,
-            store_name: str,
-            keys: Sequence[str],
-            parallelism: int = 1,
-            states_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None,
+        self,
+        store_name: str,
+        keys: Sequence[str],
+        parallelism: int = 1,
+        states_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
     ) -> BulkStatesResponse:
         """Gets values from a statestore with keys
 
@@ -672,7 +672,7 @@ class DaprGrpcClient:
         return BulkStatesResponse(items=items, headers=call.initial_metadata())
 
     def query_state(
-            self, store_name: str, query: str, states_metadata: Optional[Dict[str, str]] = dict()
+        self, store_name: str, query: str, states_metadata: Optional[Dict[str, str]] = dict()
     ) -> QueryResponse:
         """Queries a statestore with a query
 
@@ -740,14 +740,14 @@ class DaprGrpcClient:
         )
 
     def save_state(
-            self,
-            store_name: str,
-            key: str,
-            value: Union[bytes, str],
-            etag: Optional[str] = None,
-            options: Optional[StateOptions] = None,
-            state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None,
+        self,
+        store_name: str,
+        key: str,
+        value: Union[bytes, str],
+        etag: Optional[str] = None,
+        options: Optional[StateOptions] = None,
+        state_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
     ) -> DaprResponse:
         """Saves key-value pairs to a statestore
 
@@ -822,7 +822,7 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
     def save_bulk_state(
-            self, store_name: str, states: List[StateItem], metadata: Optional[MetadataTuple] = None
+        self, store_name: str, states: List[StateItem], metadata: Optional[MetadataTuple] = None
     ) -> DaprResponse:
         """Saves state items to a statestore
 
@@ -885,11 +885,11 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
     def execute_state_transaction(
-            self,
-            store_name: str,
-            operations: Sequence[TransactionalStateOperation],
-            transactional_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None,
+        self,
+        store_name: str,
+        operations: Sequence[TransactionalStateOperation],
+        transactional_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
     ) -> DaprResponse:
         """Saves or deletes key-value pairs to a statestore as a transaction
 
@@ -957,13 +957,13 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
     def delete_state(
-            self,
-            store_name: str,
-            key: str,
-            etag: Optional[str] = None,
-            options: Optional[StateOptions] = None,
-            state_metadata: Optional[Dict[str, str]] = dict(),
-            metadata: Optional[MetadataTuple] = None,
+        self,
+        store_name: str,
+        key: str,
+        etag: Optional[str] = None,
+        options: Optional[StateOptions] = None,
+        state_metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[MetadataTuple] = None,
     ) -> DaprResponse:
         """Deletes key-value pairs from a statestore
 
@@ -1027,11 +1027,11 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
     def get_secret(
-            self,
-            store_name: str,
-            key: str,
-            secret_metadata: Optional[Dict[str, str]] = {},
-            metadata: Optional[MetadataTuple] = None,
+        self,
+        store_name: str,
+        key: str,
+        secret_metadata: Optional[Dict[str, str]] = {},
+        metadata: Optional[MetadataTuple] = None,
     ) -> GetSecretResponse:
         """Get secret with a given key.
 
@@ -1080,10 +1080,10 @@ class DaprGrpcClient:
         return GetSecretResponse(secret=response.data, headers=call.initial_metadata())
 
     def get_bulk_secret(
-            self,
-            store_name: str,
-            secret_metadata: Optional[Dict[str, str]] = {},
-            metadata: Optional[MetadataTuple] = None,
+        self,
+        store_name: str,
+        secret_metadata: Optional[Dict[str, str]] = {},
+        metadata: Optional[MetadataTuple] = None,
     ) -> GetBulkSecretResponse:
         """Get all granted secrets.
 
@@ -1137,7 +1137,7 @@ class DaprGrpcClient:
         return GetBulkSecretResponse(secrets=secrets_map, headers=call.initial_metadata())
 
     def get_configuration(
-            self, store_name: str, keys: List[str], config_metadata: Optional[Dict[str, str]] = dict()
+        self, store_name: str, keys: List[str], config_metadata: Optional[Dict[str, str]] = dict()
     ) -> ConfigurationResponse:
         """Gets value from a config store with a key
 
@@ -1168,11 +1168,11 @@ class DaprGrpcClient:
         return ConfigurationResponse(items=response.items, headers=call.initial_metadata())
 
     def subscribe_configuration(
-            self,
-            store_name: str,
-            keys: List[str],
-            handler: Callable[[Text, ConfigurationResponse], None],
-            config_metadata: Optional[Dict[str, str]] = dict(),
+        self,
+        store_name: str,
+        keys: List[str],
+        handler: Callable[[Text, ConfigurationResponse], None],
+        config_metadata: Optional[Dict[str, str]] = dict(),
     ) -> Text:
         """Gets changed value from a config store with a key
 
@@ -1220,7 +1220,7 @@ class DaprGrpcClient:
         return response.ok
 
     def try_lock(
-            self, store_name: str, resource_id: str, lock_owner: str, expiry_in_seconds: int
+        self, store_name: str, resource_id: str, lock_owner: str, expiry_in_seconds: int
     ) -> TryLockResponse:
         """Tries to get a lock with an expiry.
 
@@ -1408,13 +1408,13 @@ class DaprGrpcClient:
         return DecryptResponse(resp_stream)
 
     def start_workflow(
-            self,
-            workflow_component: str,
-            workflow_name: str,
-            input: Optional[Union[Any, bytes]] = None,
-            instance_id: Optional[str] = None,
-            workflow_options: Optional[Dict[str, str]] = dict(),
-            send_raw_bytes: bool = False,
+        self,
+        workflow_component: str,
+        workflow_name: str,
+        input: Optional[Union[Any, bytes]] = None,
+        instance_id: Optional[str] = None,
+        workflow_options: Optional[Dict[str, str]] = dict(),
+        send_raw_bytes: bool = False,
     ) -> StartWorkflowResponse:
         """Starts a workflow.
         Deprecated: use dapr-ext-workflow instead
@@ -1551,12 +1551,12 @@ class DaprGrpcClient:
             raise DaprInternalError(err.details())
 
     def raise_workflow_event(
-            self,
-            instance_id: str,
-            workflow_component: str,
-            event_name: str,
-            event_data: Optional[Union[Any, bytes]] = None,
-            send_raw_bytes: bool = False,
+        self,
+        instance_id: str,
+        workflow_component: str,
+        event_name: str,
+        event_data: Optional[Union[Any, bytes]] = None,
+        send_raw_bytes: bool = False,
     ) -> DaprResponse:
         """Raises an event on a workflow.
         Deprecated: use dapr-ext-workflow instead
@@ -1721,15 +1721,15 @@ class DaprGrpcClient:
             raise DaprInternalError(err.details())
 
     def converse_alpha1(
-            self,
-            name: str,
-            inputs: List[conversation.ConversationInput],
-            *,
-            context_id: Optional[str] = None,
-            parameters: Optional[Dict[str, Any]] = None,
-            metadata: Optional[Dict[str, str]] = None,
-            scrub_pii: Optional[bool] = None,
-            temperature: Optional[float] = None,
+        self,
+        name: str,
+        inputs: List[conversation.ConversationInput],
+        *,
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
     ) -> conversation.ConversationResponseAlpha1:
         """Invoke an LLM using the conversation API (Alpha).
 
@@ -1784,17 +1784,17 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
     def converse_alpha2(
-            self,
-            name: str,
-            inputs: List[conversation.ConversationInputAlpha2],
-            *,
-            context_id: Optional[str] = None,
-            parameters: Optional[Dict[str, Union[GrpcAny, Any]]] = None,
-            metadata: Optional[Dict[str, str]] = None,
-            scrub_pii: Optional[bool] = None,
-            temperature: Optional[float] = None,
-            tools: Optional[List[conversation.ConversationTools]] = None,
-            tool_choice: Optional[str] = None,
+        self,
+        name: str,
+        inputs: List[conversation.ConversationInputAlpha2],
+        *,
+        context_id: Optional[str] = None,
+        parameters: Optional[Dict[str, Union[GrpcAny, Any]]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        scrub_pii: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        tools: Optional[List[conversation.ConversationTools]] = None,
+        tool_choice: Optional[str] = None,
     ) -> conversation.ConversationResponseAlpha2:
         """Invoke an LLM using the conversation API (Alpha2) with tool calling support.
 

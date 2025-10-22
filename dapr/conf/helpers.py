@@ -129,9 +129,9 @@ class GrpcEndpoint:
             # A URI like dns:mydomain:5000 or vsock:mycid:5000 was used
             url = url.replace(':', '://', 1)
         elif (
-                len(url_list) >= 2
-                and '://' not in url
-                and url_list[0] in URIParseConfig.ACCEPTED_SCHEMES
+            len(url_list) >= 2
+            and '://' not in url
+            and url_list[0] in URIParseConfig.ACCEPTED_SCHEMES
         ):
             # A URI like dns:mydomain or dns:[2001:db8:1f70::999:de8:7648:6e8]:mydomain was used
             # Possibly a URI like dns:[2001:db8:1f70::999:de8:7648:6e8]:mydomain was used
