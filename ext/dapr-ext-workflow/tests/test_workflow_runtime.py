@@ -19,6 +19,7 @@ from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from unittest import mock
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.conf import settings
 
 listOrchestrators: List[str] = []
 listActivities: List[str] = []
@@ -170,3 +171,58 @@ class WorkflowRuntimeTest(unittest.TestCase):
         wanted_activity = ['test_act']
         assert listActivities == wanted_activity
         assert client_act._dapr_alternate_name == 'test_act'
+
+    def test_runtime_with_explicit_api_token(self):
+        """Test that WorkflowRuntime accepts and uses explicit api_token"""
+        with mock.patch(
+            'durabletask.worker.TaskHubGrpcWorker', return_value=FakeTaskHubGrpcWorker()
+        ) as mock_grpc_worker:
+            _ = WorkflowRuntime(api_token='explicit-token-runtime')
+
+            # Verify the worker was created with the correct metadata
+            call_kwargs = mock_grpc_worker.call_args[1]
+            assert 'metadata' in call_kwargs
+            metadata = call_kwargs['metadata']
+            assert len(metadata) == 1
+            assert metadata[0] == ('dapr-api-token', 'explicit-token-runtime')
+
+    @mock.patch.object(settings, 'DAPR_API_TOKEN', 'global-token')
+    def test_runtime_explicit_token_overrides_global(self):
+        """Test that explicit api_token overrides global DAPR_API_TOKEN"""
+        with mock.patch(
+            'durabletask.worker.TaskHubGrpcWorker', return_value=FakeTaskHubGrpcWorker()
+        ) as mock_grpc_worker:
+            _ = WorkflowRuntime(api_token='explicit-token-override')
+
+            # Verify explicit token is used, not global
+            call_kwargs = mock_grpc_worker.call_args[1]
+            metadata = call_kwargs['metadata']
+            assert len(metadata) == 1
+            assert metadata[0] == ('dapr-api-token', 'explicit-token-override')
+
+    @mock.patch.object(settings, 'DAPR_API_TOKEN', 'global-token')
+    def test_runtime_falls_back_to_global_token(self):
+        """Test that runtime falls back to global DAPR_API_TOKEN when no explicit token"""
+        with mock.patch(
+            'durabletask.worker.TaskHubGrpcWorker', return_value=FakeTaskHubGrpcWorker()
+        ) as mock_grpc_worker:
+            _ = WorkflowRuntime()
+
+            # Verify global token is used
+            call_kwargs = mock_grpc_worker.call_args[1]
+            metadata = call_kwargs['metadata']
+            assert len(metadata) == 1
+            assert metadata[0] == ('dapr-api-token', 'global-token')
+
+    @mock.patch.object(settings, 'DAPR_API_TOKEN', None)
+    def test_runtime_no_token(self):
+        """Test that runtime works without any token"""
+        with mock.patch(
+            'durabletask.worker.TaskHubGrpcWorker', return_value=FakeTaskHubGrpcWorker()
+        ) as mock_grpc_worker:
+            _ = WorkflowRuntime()
+
+            # Verify no token metadata is passed
+            call_kwargs = mock_grpc_worker.call_args[1]
+            metadata = call_kwargs['metadata']
+            assert len(metadata) == 0
