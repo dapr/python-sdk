@@ -51,7 +51,11 @@ class DaprInvocationHttpClient:
                 falls back to DAPR_API_TOKEN environment variable.
         """
         self._client = DaprHttpClient(
-            DefaultJSONSerializer(), timeout, headers_callback, retry_policy=retry_policy, api_token=api_token
+            DefaultJSONSerializer(),
+            timeout,
+            headers_callback,
+            retry_policy=retry_policy,
+            api_token=api_token,
         )
 
     async def invoke_method_async(

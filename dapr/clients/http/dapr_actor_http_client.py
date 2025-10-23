@@ -48,7 +48,9 @@ class DaprActorHttpClient(DaprActorClientBase):
             api_token (str, optional): Dapr API token for authentication. If not provided,
                 falls back to DAPR_API_TOKEN environment variable.
         """
-        self._client = DaprHttpClient(message_serializer, timeout, headers_callback, retry_policy, api_token=api_token)
+        self._client = DaprHttpClient(
+            message_serializer, timeout, headers_callback, retry_policy, api_token=api_token
+        )
 
     async def invoke_method(
         self, actor_type: str, actor_id: str, method: str, data: Optional[bytes] = None
