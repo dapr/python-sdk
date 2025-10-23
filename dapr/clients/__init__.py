@@ -71,6 +71,7 @@ class DaprClient(DaprGrpcClient):
         http_timeout_seconds: Optional[int] = None,
         max_grpc_message_length: Optional[int] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        api_token: Optional[str] = None,
     ):
         """Connects to Dapr Runtime via gRPC and HTTP.
 
@@ -84,8 +85,10 @@ class DaprClient(DaprGrpcClient):
             http_timeout_seconds (int): specify a timeout for http connections
             max_grpc_message_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
+            api_token (str, optional): Dapr API token for authentication. If not provided,
+                falls back to DAPR_API_TOKEN environment variable.
         """
-        super().__init__(address, interceptors, max_grpc_message_length, retry_policy)
+        super().__init__(address, interceptors, max_grpc_message_length, retry_policy, api_token)
         self.invocation_client = None
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
@@ -94,7 +97,7 @@ class DaprClient(DaprGrpcClient):
             if http_timeout_seconds is None:
                 http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
             self.invocation_client = DaprInvocationHttpClient(
-                headers_callback=headers_callback, timeout=http_timeout_seconds
+                headers_callback=headers_callback, timeout=http_timeout_seconds, api_token=api_token
             )
         elif invocation_protocol == 'GRPC':
             pass

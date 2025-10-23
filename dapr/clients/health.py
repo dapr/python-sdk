@@ -12,22 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import urllib.request
-import urllib.error
 import time
+import urllib.error
+import urllib.request
 
-from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, USER_AGENT_HEADER, DAPR_USER_AGENT
+from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, DAPR_USER_AGENT, USER_AGENT_HEADER
 from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings
 
 
 class DaprHealth:
     @staticmethod
-    def wait_until_ready():
+    def wait_until_ready(api_token: str = None):
         health_url = f'{get_api_url()}/healthz/outbound'
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
-        if settings.DAPR_API_TOKEN is not None:
-            headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
+        token = api_token if api_token is not None else settings.DAPR_API_TOKEN
+        if token is not None:
+            headers[DAPR_API_TOKEN_HEADER] = token
         timeout = float(settings.DAPR_HEALTH_TIMEOUT)
 
         start = time.time()

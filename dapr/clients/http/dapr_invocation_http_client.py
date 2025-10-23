@@ -39,6 +39,7 @@ class DaprInvocationHttpClient:
         timeout: int = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        api_token: Optional[str] = None,
     ):
         """Invokes Dapr's API for method invocation over HTTP.
 
@@ -46,9 +47,11 @@ class DaprInvocationHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
             retry_policy (RetryPolicy optional): Specifies retry behaviour
+            api_token (str, optional): Dapr API token for authentication. If not provided,
+                falls back to DAPR_API_TOKEN environment variable.
         """
         self._client = DaprHttpClient(
-            DefaultJSONSerializer(), timeout, headers_callback, retry_policy=retry_policy
+            DefaultJSONSerializer(), timeout, headers_callback, retry_policy=retry_policy, api_token=api_token
         )
 
     async def invoke_method_async(

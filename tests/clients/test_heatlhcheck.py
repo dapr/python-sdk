@@ -62,6 +62,24 @@ class DaprHealthCheckTests(unittest.TestCase):
         self.assertIn('Dapr-api-token', headers)
         self.assertEqual(headers['Dapr-api-token'], 'mytoken')
 
+    @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'http://domain.com:3500')
+    @patch('urllib.request.urlopen')
+    def test_wait_until_ready_with_explicit_token(self, mock_urlopen):
+        """Test that explicit api_token parameter overrides global setting"""
+        mock_urlopen.return_value.__enter__.return_value = MagicMock(status=200)
+
+        try:
+            DaprHealth.wait_until_ready(api_token='explicit-token')
+        except Exception as e:
+            self.fail(f'wait_until_ready() raised an exception unexpectedly: {e}')
+
+        mock_urlopen.assert_called_once()
+
+        # Check headers are properly set
+        headers = mock_urlopen.call_args[0][0].headers
+        self.assertIn('Dapr-api-token', headers)
+        self.assertEqual(headers['Dapr-api-token'], 'explicit-token')
+
     @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '2.5')
     @patch('urllib.request.urlopen')
     def test_wait_until_ready_timeout(self, mock_urlopen):
