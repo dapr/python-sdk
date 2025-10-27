@@ -49,7 +49,7 @@ class DaprActorHttpClient(DaprActorClientBase):
                 falls back to DAPR_API_TOKEN environment variable.
         """
         self._client = DaprHttpClient(
-            message_serializer, timeout, headers_callback, retry_policy, api_token=api_token
+            message_serializer, timeout, headers_callback, retry_policy, api_token
         )
 
     async def invoke_method(
