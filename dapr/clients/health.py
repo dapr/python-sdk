@@ -23,7 +23,7 @@ from dapr.conf import settings
 
 class DaprHealth:
     @staticmethod
-    def wait_until_ready(api_token: str = None):
+    def wait_until_ready(api_token: Optional[str] = None):
         health_url = f'{get_api_url()}/healthz/outbound'
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
         token = api_token if api_token is not None else settings.DAPR_API_TOKEN
