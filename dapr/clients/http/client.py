@@ -54,10 +54,10 @@ class DaprHttpClient:
             api_token (str, optional): Dapr API token for authentication. If not provided,
                 falls back to DAPR_API_TOKEN environment variable.
         """
-        self._api_token = api_token
-        # For health check, use explicit token or fall back to global setting
-        health_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
-        DaprHealth.wait_until_ready(api_token=health_token)
+        # use provided api_token if any or fallback to env var DAPR_API_TOKEN
+        self._api_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
+
+        DaprHealth.wait_until_ready(api_token=self._api_token)
 
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
@@ -78,9 +78,8 @@ class DaprHttpClient:
             headers_map[CONTENT_TYPE_HEADER] = DEFAULT_JSON_CONTENT_TYPE
 
         # Use explicit token if provided, otherwise fall back to global setting
-        token = self._api_token if self._api_token is not None else settings.DAPR_API_TOKEN
-        if token is not None:
-            headers_map[DAPR_API_TOKEN_HEADER] = token
+        if self._api_token is not None:
+            headers_map[DAPR_API_TOKEN_HEADER] = self._api_token
 
         if self._headers_callback is not None:
             trace_headers = self._headers_callback()

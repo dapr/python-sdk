@@ -256,7 +256,10 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
 
     def test_invoke_method_with_api_token(self):
         self.server.set_response(b'FOO')
+
+        # settings (env vars) should be set before creating client
         settings.DAPR_API_TOKEN = 'c29saSBkZW8gZ2xvcmlhCg=='
+        self.client = DaprClient()
 
         req = common_v1.StateItem(key='test')
         resp = self.client.invoke_method(

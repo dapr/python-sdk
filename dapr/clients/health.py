@@ -16,6 +16,8 @@ import time
 import urllib.error
 import urllib.request
 
+from typing import Optional
+
 from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, DAPR_USER_AGENT, USER_AGENT_HEADER
 from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings

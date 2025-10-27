@@ -148,10 +148,10 @@ class DaprGrpcClient:
             api_token (str, optional): Dapr API token for authentication. If not provided,
                 falls back to DAPR_API_TOKEN environment variable.
         """
-        self._api_token = api_token
-        # For health check, use explicit token or fall back to global setting
-        health_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
-        DaprHealth.wait_until_ready(api_token=health_token)
+        # Use explicit token if provided, otherwise fall back to global setting
+        api_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
+
+        DaprHealth.wait_until_ready(api_token=api_token)
         self.retry_policy = retry_policy or RetryPolicy()
 
         useragent = f'dapr-sdk-python/{__version__}'
@@ -190,12 +190,10 @@ class DaprGrpcClient:
 
         self._channel = grpc.intercept_channel(self._channel, DaprClientTimeoutInterceptor())  # type: ignore
 
-        # Use explicit token if provided, otherwise fall back to global setting
-        token = self._api_token if self._api_token is not None else settings.DAPR_API_TOKEN
-        if token:
+        if api_token:
             api_token_interceptor = DaprClientInterceptor(
                 [
-                    ('dapr-api-token', token),
+                    ('dapr-api-token', api_token),
                 ]
             )
             self._channel = grpc.intercept_channel(  # type: ignore

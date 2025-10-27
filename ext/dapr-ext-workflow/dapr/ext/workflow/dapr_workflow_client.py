@@ -62,12 +62,11 @@ class DaprWorkflowClient:
             raise DaprInternalError(f'{error}') from error
 
         self._logger = Logger('DaprWorkflowClient', logger_options)
-        self._api_token = api_token
 
         metadata = tuple()
-        token = self._api_token if self._api_token is not None else settings.DAPR_API_TOKEN
-        if token:
-            metadata = ((DAPR_API_TOKEN_HEADER, token),)
+        api_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
+        if api_token:
+            metadata = ((DAPR_API_TOKEN_HEADER, api_token),)
         options = self._logger.get_options()
         self.__obj = client.TaskHubGrpcClient(
             host_address=uri.endpoint,

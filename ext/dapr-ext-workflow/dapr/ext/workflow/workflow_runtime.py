@@ -46,11 +46,10 @@ class WorkflowRuntime:
         api_token: Optional[str] = None,
     ):
         self._logger = Logger('WorkflowRuntime', logger_options)
-        self._api_token = api_token
         metadata = tuple()
-        token = self._api_token if self._api_token is not None else settings.DAPR_API_TOKEN
-        if token:
-            metadata = ((DAPR_API_TOKEN_HEADER, token),)
+        api_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
+        if api_token:
+            metadata = ((DAPR_API_TOKEN_HEADER, api_token),)
         address = getAddress(host, port)
 
         try:
