@@ -65,7 +65,7 @@ class DaprWorkflowClient:
 
         metadata = tuple()
         api_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
-        if api_token:
+        if api_token is not None:
             metadata = ((DAPR_API_TOKEN_HEADER, api_token),)
         options = self._logger.get_options()
         self.__obj = client.TaskHubGrpcClient(
