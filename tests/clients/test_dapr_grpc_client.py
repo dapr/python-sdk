@@ -413,6 +413,40 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
 
+    def test_explicit_api_token(self):
+        """Test that explicit api_token parameter is used in client"""
+        dapr = DaprGrpcClient(
+            f'{self.scheme}localhost:{self.grpc_port}', api_token='explicit-token'
+        )
+        resp = dapr.invoke_method(
+            app_id='targetId',
+            method_name='bytes',
+            data=b'test',
+            content_type='text/plain',
+            metadata=(('key1', 'value1'),),
+        )
+
+        self.assertEqual(b'test', resp.data)
+        self.assertEqual('text/plain', resp.content_type)
+        self.assertEqual(['explicit-token'], resp.headers['hdapr-api-token'])
+
+    @patch.object(settings, 'DAPR_API_TOKEN', 'global-token')
+    def test_explicit_api_token_overrides_global(self):
+        """Test that explicit api_token parameter overrides global setting"""
+        dapr = DaprGrpcClient(
+            f'{self.scheme}localhost:{self.grpc_port}', api_token='override-token'
+        )
+        resp = dapr.invoke_method(
+            app_id='targetId',
+            method_name='bytes',
+            data=b'test',
+            content_type='text/plain',
+        )
+
+        self.assertEqual(b'test', resp.data)
+        # Should use explicit token, not global
+        self.assertEqual(['override-token'], resp.headers['hdapr-api-token'])
+
     def test_get_save_delete_state(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         key = 'key_1'

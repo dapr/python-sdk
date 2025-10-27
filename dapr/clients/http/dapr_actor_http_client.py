@@ -36,6 +36,7 @@ class DaprActorHttpClient(DaprActorClientBase):
         timeout: int = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        api_token: Optional[str] = None,
     ):
         """Invokes Dapr Actors over HTTP.
 
@@ -44,8 +45,12 @@ class DaprActorHttpClient(DaprActorClientBase):
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
             retry_policy (RetryPolicy optional): Specifies retry behaviour
+            api_token (str, optional): Dapr API token for authentication. If not provided,
+                falls back to DAPR_API_TOKEN environment variable.
         """
-        self._client = DaprHttpClient(message_serializer, timeout, headers_callback, retry_policy)
+        self._client = DaprHttpClient(
+            message_serializer, timeout, headers_callback, retry_policy, api_token
+        )
 
     async def invoke_method(
         self, actor_type: str, actor_id: str, method: str, data: Optional[bytes] = None

@@ -141,6 +141,7 @@ class DaprGrpcClientAsync:
         ] = None,
         max_grpc_message_length: Optional[int] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        api_token: Optional[str] = None,
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -152,8 +153,13 @@ class DaprGrpcClientAsync:
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
             max_grpc_message_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
+            api_token (str, optional): Dapr API token for authentication. If not provided,
+                falls back to DAPR_API_TOKEN environment variable.
         """
-        DaprHealth.wait_until_ready()
+        # Use explicit token if provided, otherwise fall back to global setting
+        api_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
+
+        DaprHealth.wait_until_ready(api_token=api_token)
         self.retry_policy = retry_policy or RetryPolicy()
 
         useragent = f'dapr-sdk-python/{__version__}'
@@ -184,10 +190,10 @@ class DaprGrpcClientAsync:
         else:
             interceptors.append(DaprClientTimeoutInterceptorAsync())
 
-        if settings.DAPR_API_TOKEN:
+        if api_token is not None:
             api_token_interceptor = DaprClientInterceptorAsync(
                 [
-                    ('dapr-api-token', settings.DAPR_API_TOKEN),
+                    ('dapr-api-token', api_token),
                 ]
             )
             interceptors.append(api_token_interceptor)

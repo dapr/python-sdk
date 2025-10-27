@@ -43,6 +43,7 @@ class DaprHttpClient:
         timeout: Optional[int] = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        api_token: Optional[str] = None,
     ):
         """Invokes Dapr over HTTP.
 
@@ -50,8 +51,13 @@ class DaprHttpClient:
             message_serializer (Serializer): Dapr serializer.
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
+            api_token (str, optional): Dapr API token for authentication. If not provided,
+                falls back to DAPR_API_TOKEN environment variable.
         """
-        DaprHealth.wait_until_ready()
+        # use provided api_token if any or fallback to env var DAPR_API_TOKEN
+        self._api_token = api_token if api_token is not None else settings.DAPR_API_TOKEN
+
+        DaprHealth.wait_until_ready(api_token=self._api_token)
 
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer
@@ -71,8 +77,9 @@ class DaprHttpClient:
         if not headers_map.get(CONTENT_TYPE_HEADER):
             headers_map[CONTENT_TYPE_HEADER] = DEFAULT_JSON_CONTENT_TYPE
 
-        if settings.DAPR_API_TOKEN is not None:
-            headers_map[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
+        # Use explicit token if provided, otherwise fall back to global setting
+        if self._api_token is not None:
+            headers_map[DAPR_API_TOKEN_HEADER] = self._api_token
 
         if self._headers_callback is not None:
             trace_headers = self._headers_callback()

@@ -22,6 +22,7 @@ from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from durabletask import client
 import durabletask.internal.orchestrator_service_pb2 as pb
 from grpc import RpcError
+from dapr.conf import settings
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
@@ -171,3 +172,58 @@ class WorkflowClientTest(unittest.TestCase):
 
             actual_purge_result = wfClient.purge_workflow(instance_id=mock_instance_id)
             assert actual_purge_result == mock_purge_result
+
+    def test_client_with_explicit_api_token(self):
+        """Test that DaprWorkflowClient accepts and uses explicit api_token"""
+        with mock.patch(
+            'durabletask.client.TaskHubGrpcClient', return_value=FakeTaskHubGrpcClient()
+        ) as mock_grpc_client:
+            _ = DaprWorkflowClient(api_token='explicit-token')
+
+            # Verify the client was created with the correct metadata
+            call_kwargs = mock_grpc_client.call_args[1]
+            assert 'metadata' in call_kwargs
+            metadata = call_kwargs['metadata']
+            assert len(metadata) == 1
+            assert metadata[0] == ('dapr-api-token', 'explicit-token')
+
+    @mock.patch.object(settings, 'DAPR_API_TOKEN', 'global-token')
+    def test_client_explicit_token_overrides_global(self):
+        """Test that explicit api_token overrides global DAPR_API_TOKEN"""
+        with mock.patch(
+            'durabletask.client.TaskHubGrpcClient', return_value=FakeTaskHubGrpcClient()
+        ) as mock_grpc_client:
+            _ = DaprWorkflowClient(api_token='explicit-token')
+
+            # Verify explicit token is used, not global
+            call_kwargs = mock_grpc_client.call_args[1]
+            metadata = call_kwargs['metadata']
+            assert len(metadata) == 1
+            assert metadata[0] == ('dapr-api-token', 'explicit-token')
+
+    @mock.patch.object(settings, 'DAPR_API_TOKEN', 'global-token')
+    def test_client_falls_back_to_global_token(self):
+        """Test that client falls back to global DAPR_API_TOKEN when no explicit token"""
+        with mock.patch(
+            'durabletask.client.TaskHubGrpcClient', return_value=FakeTaskHubGrpcClient()
+        ) as mock_grpc_client:
+            _ = DaprWorkflowClient()
+
+            # Verify global token is used
+            call_kwargs = mock_grpc_client.call_args[1]
+            metadata = call_kwargs['metadata']
+            assert len(metadata) == 1
+            assert metadata[0] == ('dapr-api-token', 'global-token')
+
+    @mock.patch.object(settings, 'DAPR_API_TOKEN', None)
+    def test_client_no_token(self):
+        """Test that client works without any token"""
+        with mock.patch(
+            'durabletask.client.TaskHubGrpcClient', return_value=FakeTaskHubGrpcClient()
+        ) as mock_grpc_client:
+            _ = DaprWorkflowClient()
+
+            # Verify no token metadata is passed
+            call_kwargs = mock_grpc_client.call_args[1]
+            metadata = call_kwargs['metadata']
+            assert len(metadata) == 0
