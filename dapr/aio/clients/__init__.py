@@ -83,7 +83,7 @@ class DaprClient(DaprGrpcClientAsync):
             api_token (str, optional): Dapr API token for authentication. If not provided,
                 falls back to DAPR_API_TOKEN environment variable.
         """
-        super().__init__(address, interceptors, max_grpc_message_length, api_token=api_token)
+        super().__init__(address, interceptors, max_grpc_message_length, api_token)
         self.invocation_client = None
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
