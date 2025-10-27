@@ -190,7 +190,7 @@ class DaprGrpcClientAsync:
         else:
             interceptors.append(DaprClientTimeoutInterceptorAsync())
 
-        if api_token:
+        if api_token is not None:
             api_token_interceptor = DaprClientInterceptorAsync(
                 [
                     ('dapr-api-token', api_token),
