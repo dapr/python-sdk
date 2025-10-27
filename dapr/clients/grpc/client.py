@@ -190,7 +190,7 @@ class DaprGrpcClient:
 
         self._channel = grpc.intercept_channel(self._channel, DaprClientTimeoutInterceptor())  # type: ignore
 
-        if api_token:
+        if api_token is not None:
             api_token_interceptor = DaprClientInterceptor(
                 [
                     ('dapr-api-token', api_token),
