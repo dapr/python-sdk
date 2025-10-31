@@ -1,5 +1,5 @@
+from urllib.parse import ParseResult, parse_qs, urlparse
 from warnings import warn
-from urllib.parse import urlparse, parse_qs, ParseResult
 
 
 class URIParseConfig:
@@ -174,7 +174,7 @@ class GrpcEndpoint:
     def _validate_path_and_query(self) -> None:
         if self._parsed_url.path:
             raise ValueError(
-                f'paths are not supported for gRPC endpoints:' f" '{self._parsed_url.path}'"
+                f"paths are not supported for gRPC endpoints: '{self._parsed_url.path}'"
             )
         if self._parsed_url.query:
             query_dict = parse_qs(self._parsed_url.query)

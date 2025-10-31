@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import ssl
 import typing
 from asyncio import TimeoutError
@@ -29,8 +30,7 @@ from dapr.clients.http.client import DaprHttpClient
 from dapr.conf import settings
 from dapr.proto import common_v1
 
-
-from .certs import replacement_get_health_context, replacement_get_credentials_func, GrpcCerts
+from .certs import GrpcCerts, replacement_get_credentials_func, replacement_get_health_context
 from .fake_http_server import FakeHttpServer
 from .test_http_service_invocation_client import DaprInvocationHttpClientTests
 

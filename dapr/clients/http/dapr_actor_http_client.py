@@ -13,15 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Callable, Dict, Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Dict, Optional, Union
 
 from dapr.clients.http.helpers import get_api_url
 
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
-from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.base import DaprActorClientBase
+from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.retry import RetryPolicy
 
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'

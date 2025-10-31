@@ -12,24 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from dapr.serializers.json import DefaultJSONSerializer
-import asyncio
 
+import asyncio
 from datetime import timedelta
 from typing import Optional
 
-from dapr.actor.runtime.actor import Actor
-from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.actor_interface import ActorInterface, actormethod
-
+from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+from dapr.actor.runtime.remindable import Remindable
+from dapr.serializers.json import DefaultJSONSerializer
 
 
 # Fake Simple Actor Class for testing
 class FakeSimpleActorInterface(ActorInterface):
     @actormethod(name='ActorMethod')
-    async def actor_method(self, arg: int) -> dict:
-        ...
+    async def actor_method(self, arg: int) -> dict: ...
 
 
 class FakeSimpleActor(Actor, FakeSimpleActorInterface):
@@ -89,40 +87,32 @@ class FakeSimpleTimerActor(Actor, FakeSimpleActorInterface):
 class FakeActorCls1Interface(ActorInterface):
     # Fake Actor Class deriving multiple ActorInterfaces
     @actormethod(name='ActorCls1Method')
-    async def actor_cls1_method(self, arg):
-        ...
+    async def actor_cls1_method(self, arg): ...
 
     @actormethod(name='ActorCls1Method1')
-    async def actor_cls1_method1(self, arg):
-        ...
+    async def actor_cls1_method1(self, arg): ...
 
     @actormethod(name='ActorCls1Method2')
-    async def actor_cls1_method2(self, arg):
-        ...
+    async def actor_cls1_method2(self, arg): ...
 
 
 class FakeActorCls2Interface(ActorInterface):
     @actormethod(name='ActorCls2Method')
-    async def actor_cls2_method(self, arg):
-        ...
+    async def actor_cls2_method(self, arg): ...
 
     @actormethod(name='ActionMethod')
-    async def action(self, data: object) -> str:
-        ...
+    async def action(self, data: object) -> str: ...
 
     @actormethod(name='ActionMethodWithoutArg')
-    async def action_no_arg(self) -> str:
-        ...
+    async def action_no_arg(self) -> str: ...
 
 
 class ReentrantActorInterface(ActorInterface):
     @actormethod(name='ReentrantMethod')
-    async def reentrant_method(self, data: object) -> str:
-        ...
+    async def reentrant_method(self, data: object) -> str: ...
 
     @actormethod(name='ReentrantMethodWithPassthrough')
-    async def reentrant_pass_through_method(self, arg):
-        ...
+    async def reentrant_pass_through_method(self, arg): ...
 
 
 class FakeMultiInterfacesActor(

@@ -2,9 +2,8 @@ import logging
 
 import grpc
 import helloworld_service_pb2_grpc
-from helloworld_service_pb2 import HelloRequest, HelloReply
 from dapr.ext.grpc import App
-import json
+from helloworld_service_pb2 import HelloReply, HelloRequest
 
 
 class HelloWorldService(helloworld_service_pb2_grpc.HelloWorldService):

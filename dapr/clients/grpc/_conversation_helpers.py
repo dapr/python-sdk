@@ -16,6 +16,7 @@ limitations under the License.
 import inspect
 import random
 import string
+import types
 from dataclasses import fields, is_dataclass
 from enum import Enum
 from typing import (
@@ -23,20 +24,18 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
     Union,
-    Literal,
+    cast,
     get_args,
     get_origin,
     get_type_hints,
-    cast,
 )
 
 from dapr.conf import settings
-
-import types
 
 # Make mypy happy. Runtime handle: real class on 3.10+, else None.
 # TODO: Python 3.9 is about to be end-of-life, so we can drop this at some point next year (2026)
@@ -190,14 +189,14 @@ def _python_type_to_json_schema(python_type: Any, field_name: str = '') -> Dict[
         if settings.DAPR_CONVERSATION_TOOLS_LARGE_ENUM_BEHAVIOR == 'error':
             raise ValueError(
                 f"Enum '{getattr(python_type, '__name__', str(python_type))}' has {count} members, "
-                f"exceeding DAPR_CONVERSATION_MAX_ENUM_ITEMS={settings.DAPR_CONVERSATION_TOOLS_MAX_ENUM_ITEMS}. "
-                f"Either reduce the enum size or set DAPR_CONVERSATION_LARGE_ENUM_BEHAVIOR=string to allow compact schema."
+                f'exceeding DAPR_CONVERSATION_MAX_ENUM_ITEMS={settings.DAPR_CONVERSATION_TOOLS_MAX_ENUM_ITEMS}. '
+                f'Either reduce the enum size or set DAPR_CONVERSATION_LARGE_ENUM_BEHAVIOR=string to allow compact schema.'
             )
         # Default behavior: compact schema as a string with helpful context and a few examples
         example_values = [item.value for item in members[:5]] if members else []
         desc = (
-            f"{getattr(python_type, '__name__', 'Enum')} (enum with {count} values). "
-            f"Provide a valid value. Schema compacted to avoid oversized enum listing."
+            f'{getattr(python_type, "__name__", "Enum")} (enum with {count} values). '
+            f'Provide a valid value. Schema compacted to avoid oversized enum listing.'
         )
         schema = {'type': 'string', 'description': desc}
         if example_values:
@@ -696,8 +695,8 @@ def stringify_tool_output(value: Any) -> str:
         * dataclass -> asdict
       If JSON serialization still fails, fallback to str(value). If that fails, return '<unserializable>'.
     """
-    import json as _json
     import base64 as _b64
+    import json as _json
     from dataclasses import asdict as _asdict
 
     if isinstance(value, str):
@@ -760,20 +759,16 @@ def stringify_tool_output(value: Any) -> str:
 # --- Errors ----
 
 
-class ToolError(RuntimeError):
-    ...
+class ToolError(RuntimeError): ...
 
 
-class ToolNotFoundError(ToolError):
-    ...
+class ToolNotFoundError(ToolError): ...
 
 
-class ToolExecutionError(ToolError):
-    ...
+class ToolExecutionError(ToolError): ...
 
 
-class ToolArgumentError(ToolError):
-    ...
+class ToolArgumentError(ToolError): ...
 
 
 def _coerce_bool(value: Any) -> bool:
@@ -962,7 +957,7 @@ def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
                         missing.append(pname)
             if missing:
                 raise ValueError(
-                    f"Missing required constructor arg(s) for {expected_type.__name__}: {', '.join(missing)}"
+                    f'Missing required constructor arg(s) for {expected_type.__name__}: {", ".join(missing)}'
                 )
             try:
                 return expected_type(**kwargs)
@@ -978,7 +973,7 @@ def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
         if expected_type is Any or isinstance(value, expected_type):
             return value
         raise ValueError(
-            f"Expected {getattr(expected_type, '__name__', str(expected_type))}, got {type(value).__name__}"
+            f'Expected {getattr(expected_type, "__name__", str(expected_type))}, got {type(value).__name__}'
         )
 
 
@@ -1014,12 +1009,12 @@ def bind_params_to_func(fn: Callable[..., Any], params: Params):
             and p.name not in bound.arguments
         ]
         if missing:
-            raise ToolArgumentError(f"Missing required parameter(s): {', '.join(missing)}")
+            raise ToolArgumentError(f'Missing required parameter(s): {", ".join(missing)}')
         # unexpected kwargs unless **kwargs present
         if not any(p.kind is inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
             extra = set(params) - set(sig.parameters)
             if extra:
-                raise ToolArgumentError(f"Unexpected parameter(s): {', '.join(sorted(extra))}")
+                raise ToolArgumentError(f'Unexpected parameter(s): {", ".join(sorted(extra))}')
     elif isinstance(params, Sequence):
         bound = sig.bind(*params)
     else:

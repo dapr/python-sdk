@@ -14,20 +14,17 @@ limitations under the License.
 """
 
 import unittest
-
 from datetime import timedelta
 
-from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.actor.runtime.config import ActorRuntimeConfig
+from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer
-
 from tests.actor.fake_actor_classes import (
-    FakeSimpleActor,
     FakeMultiInterfacesActor,
+    FakeSimpleActor,
     FakeSimpleTimerActor,
 )
-
 from tests.actor.utils import _run
 from tests.clients.fake_http_server import FakeHttpServer
 

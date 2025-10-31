@@ -2,10 +2,9 @@
 dapr run python3 state_store_query.py
 """
 
-from dapr.clients import DaprClient
-
 import json
 
+from dapr.clients import DaprClient
 
 with DaprClient() as d:
     store_name = 'statestore'

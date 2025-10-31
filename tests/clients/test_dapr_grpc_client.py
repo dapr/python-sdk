@@ -13,43 +13,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import json
 import socket
 import tempfile
 import time
 import unittest
 import uuid
-import asyncio
-
 from unittest.mock import patch
 
-from google.rpc import status_pb2, code_pb2
+from google.rpc import code_pb2, status_pb2
 
-from dapr.clients.exceptions import DaprGrpcError
-from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients import DaprClient
-from dapr.clients.grpc.subscription import StreamInactiveError
-from dapr.proto import common_v1
-from .fake_dapr_server import FakeDaprSidecar
-from dapr.conf import settings
+from dapr.clients.exceptions import DaprGrpcError
+from dapr.clients.grpc import conversation
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import to_bytes
+from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._request import (
     TransactionalStateOperation,
     TransactionOperationType,
 )
-from dapr.clients.grpc._jobs import Job
-from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.clients.grpc._response import (
     ConfigurationItem,
     ConfigurationResponse,
     ConfigurationWatcher,
     DaprResponse,
+    TopicEventResponse,
     UnlockResponseStatus,
     WorkflowRuntimeStatus,
-    TopicEventResponse,
 )
-from dapr.clients.grpc import conversation
+from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
+from dapr.clients.grpc.client import DaprGrpcClient
+from dapr.clients.grpc.subscription import StreamInactiveError
+from dapr.conf import settings
+from dapr.proto import common_v1
+
+from .fake_dapr_server import FakeDaprSidecar
 
 
 class DaprGrpcClientTests(unittest.TestCase):
@@ -1000,7 +1000,6 @@ class DaprGrpcClientTests(unittest.TestCase):
                 self.assertEqual(response.extended_metadata[metadata_key], metadata_value)
 
     def test_set_metadata_input_validation(self):
-        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         valid_attr_name = 'attribute name'
         valid_attr_value = 'attribute value'
         # Invalid inputs for string arguments
@@ -1694,7 +1693,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_jobs_error_handling(self):
         """Test error handling for Jobs API using fake server's exception mechanism."""
-        from google.rpc import status_pb2, code_pb2
+        from google.rpc import code_pb2, status_pb2
 
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 

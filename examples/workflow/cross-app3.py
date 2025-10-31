@@ -10,19 +10,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import dapr.ext.workflow as wf
 import time
+
+import dapr.ext.workflow as wf
 
 wfr = wf.WorkflowRuntime()
 
 
 @wfr.activity
 def app3_activity(ctx: wf.DaprWorkflowContext) -> int:
-    print(f'app3 - received activity call', flush=True)
+    print('app3 - received activity call', flush=True)
     if os.getenv('ERROR_ACTIVITY_MODE', 'false') == 'true':
-        print(f'app3 - raising error in activity due to error mode being enabled', flush=True)
+        print('app3 - raising error in activity due to error mode being enabled', flush=True)
         raise ValueError('Error in activity due to error mode being enabled')
-    print(f'app3 - returning activity result', flush=True)
+    print('app3 - returning activity result', flush=True)
     return 3
 
 

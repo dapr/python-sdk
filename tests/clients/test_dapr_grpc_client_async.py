@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import json
 import socket
 import tempfile
@@ -19,28 +20,29 @@ import unittest
 import uuid
 from unittest.mock import patch
 
-from google.rpc import status_pb2, code_pb2
+from google.rpc import code_pb2, status_pb2
 
-from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.aio.clients import DaprClient
+from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.clients.exceptions import DaprGrpcError
-from dapr.common.pubsub.subscription import StreamInactiveError
-from dapr.proto import common_v1
-from .fake_dapr_server import FakeDaprSidecar
-from dapr.conf import settings
-from dapr.clients.grpc._helpers import to_bytes
-from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc import conversation
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
+from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._jobs import Job
-from dapr.clients.grpc._state import StateOptions, Consistency, Concurrency, StateItem
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients.grpc._request import TransactionalStateOperation
 from dapr.clients.grpc._response import (
     ConfigurationItem,
-    ConfigurationWatcher,
     ConfigurationResponse,
+    ConfigurationWatcher,
     DaprResponse,
     UnlockResponseStatus,
 )
+from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
+from dapr.common.pubsub.subscription import StreamInactiveError
+from dapr.conf import settings
+from dapr.proto import common_v1
+
+from .fake_dapr_server import FakeDaprSidecar
 
 
 class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
@@ -929,7 +931,6 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.extended_metadata[metadata_key], metadata_value)
 
     async def test_set_metadata_input_validation(self):
-        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
         valid_attr_name = 'attribute name'
         valid_attr_value = 'attribute value'
         # Invalid inputs for string arguments

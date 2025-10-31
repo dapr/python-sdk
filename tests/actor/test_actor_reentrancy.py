@@ -13,22 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import unittest
 import asyncio
-
+import unittest
 from unittest import mock
 
+from dapr.actor.runtime.config import ActorReentrancyConfig, ActorRuntimeConfig
 from dapr.actor.runtime.runtime import ActorRuntime
-from dapr.actor.runtime.config import ActorRuntimeConfig, ActorReentrancyConfig
 from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer
-
 from tests.actor.fake_actor_classes import (
-    FakeReentrantActor,
     FakeMultiInterfacesActor,
+    FakeReentrantActor,
     FakeSlowReentrantActor,
 )
-
 from tests.actor.utils import _run
 from tests.clients.fake_http_server import FakeHttpServer
 
@@ -212,8 +209,9 @@ class ActorRuntimeTests(unittest.TestCase):
             _run(ActorRuntime.deactivate(FakeReentrantActor.__name__, 'test-id'))
 
     def test_parse_incoming_reentrancy_header_flask(self):
-        from ext.flask_dapr import flask_dapr
         from flask import Flask
+
+        from ext.flask_dapr import flask_dapr
 
         app = Flask(f'{FakeReentrantActor.__name__}Service')
         flask_dapr.DaprActor(app)
@@ -244,9 +242,9 @@ class ActorRuntimeTests(unittest.TestCase):
             )
 
     def test_parse_incoming_reentrancy_header_fastapi(self):
+        from dapr.ext import fastapi
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from dapr.ext import fastapi
 
         app = FastAPI(title=f'{FakeReentrantActor.__name__}Service')
         fastapi.DaprActor(app)

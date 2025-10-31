@@ -13,6 +13,7 @@ limitations under the License.
 """
 
 from typing import Dict, List, Optional
+
 from fastapi import FastAPI  # type: ignore
 
 

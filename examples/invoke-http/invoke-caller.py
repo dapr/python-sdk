@@ -1,5 +1,4 @@
 import json
-import time
 
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprHttpError

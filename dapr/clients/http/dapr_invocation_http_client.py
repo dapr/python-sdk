@@ -14,13 +14,13 @@ limitations under the License.
 """
 
 import asyncio
-
 from typing import Callable, Dict, Optional, Union
+
 from multidict import MultiDict
 
-from dapr.clients.http.client import DaprHttpClient
-from dapr.clients.grpc._helpers import MetadataTuple, GrpcMessage
+from dapr.clients.grpc._helpers import GrpcMessage, MetadataTuple
 from dapr.clients.grpc._response import InvokeMethodResponse
+from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.http.conf import CONTENT_TYPE_HEADER
 from dapr.clients.http.helpers import get_api_url
 from dapr.clients.retry import RetryPolicy

@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import base64
 import json
 from typing import TYPE_CHECKING, Optional
@@ -20,9 +21,9 @@ if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
 from google.protobuf.json_format import MessageToDict
+from google.rpc import error_details_pb2  # type: ignore
 from grpc import RpcError  # type: ignore
 from grpc_status import rpc_status  # type: ignore
-from google.rpc import error_details_pb2  # type: ignore
 
 ERROR_CODE_UNKNOWN = 'UNKNOWN'
 ERROR_CODE_DOES_NOT_EXIST = 'ERR_DOES_NOT_EXIST'

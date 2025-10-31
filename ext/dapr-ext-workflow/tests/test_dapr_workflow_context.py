@@ -13,9 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import unittest
 from datetime import datetime
 from unittest import mock
-import unittest
+
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from durabletask import worker

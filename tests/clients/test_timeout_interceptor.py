@@ -15,6 +15,7 @@ limitations under the License.
 
 import unittest
 from unittest.mock import Mock, patch
+
 from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 from dapr.conf import settings
 

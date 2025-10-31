@@ -30,9 +30,6 @@ jobs:
             echo "Source files are not formatted correctly. Run 'tox -e ruff' to autoformat."
             exit 1
         fi
-    - name: Run Linter
-      run: |
-        tox -e flake8
 
   build:
     needs: lint
