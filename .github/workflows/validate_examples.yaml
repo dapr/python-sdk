@@ -58,7 +58,7 @@ jobs:
           fi
 
       - name: Check out code onto GOPATH
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ env.CHECKOUT_REPO }}
           ref: ${{ env.CHECKOUT_REF }}
@@ -74,7 +74,7 @@ jobs:
           echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
           echo "Found $CLI_VERSION"
       - name: Set up Python ${{ matrix.python_ver }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_ver }}
       - name: Install dependencies
@@ -89,14 +89,14 @@ jobs:
         with:
           go-version: ${{ env.GOVER }}
       - name: Checkout Dapr CLI repo to override dapr command.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         if: env.DAPR_CLI_REF != ''
         with:
           repository: dapr/cli
           ref: ${{ env.DAPR_CLI_REF }}
           path: cli
       - name: Checkout Dapr repo to override daprd.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         if: env.DAPR_REF != ''
         with:
           repository: dapr/dapr
