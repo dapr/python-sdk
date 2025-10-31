@@ -1,5 +1,6 @@
 import logging
 from typing import Union
+
 from dapr.ext.workflow.logger.options import LoggerOptions
 
 

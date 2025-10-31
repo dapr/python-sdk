@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import unittest
 from unittest.mock import patch
 
@@ -19,8 +20,8 @@ from dapr.clients.grpc.client import DaprGrpcClient
 from dapr.clients.health import DaprHealth
 from dapr.conf import settings
 from tests.clients.certs import replacement_get_credentials_func, replacement_get_health_context
-
 from tests.clients.test_dapr_grpc_client import DaprGrpcClientTests
+
 from .fake_dapr_server import FakeDaprSidecar
 
 

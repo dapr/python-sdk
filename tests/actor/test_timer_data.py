@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any
 import unittest
 from datetime import timedelta
+from typing import Any
 
 from dapr.actor.runtime._timer_data import ActorTimerData
 

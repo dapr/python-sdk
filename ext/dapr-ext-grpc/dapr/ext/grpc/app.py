@@ -13,14 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import grpc
-
 from concurrent import futures
 from typing import Dict, Optional
 
-from dapr.conf import settings
-from dapr.ext.grpc._servicer import _CallbackServicer, Rule  # type: ignore
 from dapr.ext.grpc._health_servicer import _HealthCheckServicer  # type: ignore
+from dapr.ext.grpc._servicer import Rule, _CallbackServicer  # type: ignore
+
+import grpc
+from dapr.conf import settings
 from dapr.proto import appcallback_service_v1
 
 

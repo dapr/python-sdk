@@ -24,13 +24,12 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-
+from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprInternalError
 from dapr.conf import settings
 from dapr.proto import common_v1
 
 from .fake_http_server import FakeHttpServer
-from dapr.clients import DaprClient
 
 
 class DaprInvocationHttpClientTests(unittest.TestCase):

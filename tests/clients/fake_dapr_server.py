@@ -1,48 +1,47 @@
-import grpc
 import json
-
 from concurrent import futures
-from google.protobuf.any_pb2 import Any as GrpcAny
+from typing import Dict
+
+import grpc
 from google.protobuf import empty_pb2, struct_pb2
-from google.rpc import status_pb2, code_pb2
+from google.protobuf.any_pb2 import Any as GrpcAny
+from google.rpc import code_pb2, status_pb2
 from grpc_status import rpc_status
 
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.proto import api_service_v1, common_v1, api_v1, appcallback_v1
-from dapr.proto.common.v1.common_pb2 import ConfigurationItem
 from dapr.clients.grpc._response import WorkflowRuntimeStatus
+from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
+from dapr.proto.common.v1.common_pb2 import ConfigurationItem
 from dapr.proto.runtime.v1.dapr_pb2 import (
     ActiveActorsCount,
+    ConversationResponseAlpha2,
+    ConversationResultAlpha2,
+    ConversationResultChoices,
+    ConversationResultMessage,
+    ConversationToolCalls,
+    ConversationToolCallsOfFunction,
+    DecryptRequest,
+    DecryptResponse,
+    EncryptRequest,
+    EncryptResponse,
     GetMetadataResponse,
+    GetWorkflowRequest,
+    GetWorkflowResponse,
+    PauseWorkflowRequest,
+    PurgeWorkflowRequest,
     QueryStateItem,
+    RaiseEventWorkflowRequest,
     RegisteredComponents,
+    ResumeWorkflowRequest,
     SetMetadataRequest,
+    StartWorkflowRequest,
+    StartWorkflowResponse,
+    TerminateWorkflowRequest,
     TryLockRequest,
     TryLockResponse,
     UnlockRequest,
     UnlockResponse,
-    StartWorkflowRequest,
-    StartWorkflowResponse,
-    GetWorkflowRequest,
-    GetWorkflowResponse,
-    PauseWorkflowRequest,
-    ResumeWorkflowRequest,
-    TerminateWorkflowRequest,
-    PurgeWorkflowRequest,
-    RaiseEventWorkflowRequest,
-    EncryptRequest,
-    EncryptResponse,
-    DecryptRequest,
-    DecryptResponse,
-    ConversationResultAlpha2,
-    ConversationResultChoices,
-    ConversationResultMessage,
-    ConversationResponseAlpha2,
-    ConversationToolCalls,
-    ConversationToolCallsOfFunction,
 )
-from typing import Dict
-
 from tests.clients.certs import GrpcCerts
 from tests.clients.fake_http_server import FakeHttpServer
 

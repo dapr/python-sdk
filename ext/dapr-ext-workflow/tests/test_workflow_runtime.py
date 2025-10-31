@@ -13,12 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import List
 import unittest
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from typing import List
 from unittest import mock
-from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
+
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 
 listOrchestrators: List[str] = []
 listActivities: List[str] = []

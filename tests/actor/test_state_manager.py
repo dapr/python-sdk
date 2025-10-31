@@ -15,19 +15,16 @@ limitations under the License.
 
 import base64
 import unittest
-
 from unittest import mock
 
 from dapr.actor.id import ActorId
+from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.state_change import StateChangeKind
 from dapr.actor.runtime.state_manager import ActorStateManager
-from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.serializers import DefaultJSONSerializer
-
 from tests.actor.fake_actor_classes import FakeSimpleActor
 from tests.actor.fake_client import FakeDaprActorClient
-
 from tests.actor.utils import _async_mock, _run
 
 

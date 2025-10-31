@@ -21,19 +21,19 @@ import threading
 from datetime import datetime
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Dict,
-    List,
-    Optional,
-    Text,
-    Union,
-    Sequence,
-    TYPE_CHECKING,
-    NamedTuple,
     Generator,
-    TypeVar,
     Generic,
+    List,
     Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Text,
+    TypeVar,
+    Union,
 )
 
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -43,11 +43,11 @@ from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._helpers import (
     MetadataDict,
     MetadataTuple,
+    WorkflowRuntimeStatus,
     to_bytes,
     to_str,
     tuple_to_dict,
     unpack,
-    WorkflowRuntimeStatus,
 )
 from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
 
@@ -707,9 +707,9 @@ class ConfigurationWatcher:
         handler: Callable[[Text, ConfigurationResponse], None],
     ):
         try:
-            responses: List[
-                api_v1.SubscribeConfigurationResponse
-            ] = stub.SubscribeConfigurationAlpha1(req)
+            responses: List[api_v1.SubscribeConfigurationResponse] = (
+                stub.SubscribeConfigurationAlpha1(req)
+            )
             isFirst = True
             for response in responses:
                 if isFirst:
@@ -719,7 +719,7 @@ class ConfigurationWatcher:
                 if len(response.items) > 0:
                     handler(response.id, ConfigurationResponse(response.items))
         except Exception:
-            print(f'{self.store_name} configuration watcher for keys ' f'{self.keys} stopped.')
+            print(f'{self.store_name} configuration watcher for keys {self.keys} stopped.')
             pass
 
 
@@ -1065,9 +1065,7 @@ class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):
         return data[:size]
 
 
-class EncryptResponse(CryptoResponse[TCryptoResponse]):
-    ...
+class EncryptResponse(CryptoResponse[TCryptoResponse]): ...
 
 
-class DecryptResponse(CryptoResponse[TCryptoResponse]):
-    ...
+class DecryptResponse(CryptoResponse[TCryptoResponse]): ...

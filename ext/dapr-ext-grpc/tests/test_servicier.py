@@ -14,15 +14,14 @@ limitations under the License.
 """
 
 import unittest
-
 from unittest.mock import MagicMock, Mock
+
+from dapr.ext.grpc._servicer import _CallbackServicer
+from google.protobuf.any_pb2 import Any as GrpcAny
 
 from dapr.clients.grpc._request import InvokeMethodRequest
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
-from dapr.ext.grpc._servicer import _CallbackServicer
-from dapr.proto import common_v1, appcallback_v1
-
-from google.protobuf.any_pb2 import Any as GrpcAny
+from dapr.proto import appcallback_v1, common_v1
 
 
 class OnInvokeTests(unittest.TestCase):

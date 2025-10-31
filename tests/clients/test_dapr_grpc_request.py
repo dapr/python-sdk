@@ -16,13 +16,13 @@ limitations under the License.
 import io
 import unittest
 
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._request import (
-    InvokeMethodRequest,
     BindingRequest,
-    EncryptRequestIterator,
     DecryptRequestIterator,
+    EncryptRequestIterator,
+    InvokeMethodRequest,
 )
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
 from dapr.proto import api_v1, common_v1
 
 

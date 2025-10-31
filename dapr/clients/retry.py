@@ -12,11 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import asyncio
-from typing import Optional, List, Callable
+import time
+from typing import Callable, List, Optional
 
 from grpc import RpcError, StatusCode  # type: ignore
-import time
 
 from dapr.conf import settings
 

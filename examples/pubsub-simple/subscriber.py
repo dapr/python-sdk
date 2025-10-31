@@ -11,13 +11,14 @@
 # limitations under the License.
 # ------------------------------------------------------------
 
+import json
 from time import sleep
+
 from cloudevents.sdk.event import v1
 from dapr.ext.grpc import App
+
 from dapr.clients.grpc._response import TopicEventResponse
 from dapr.proto import appcallback_v1
-
-import json
 
 app = App()
 should_retry = True  # To control whether dapr should retry sending a message

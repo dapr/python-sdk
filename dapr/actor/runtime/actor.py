@@ -14,16 +14,15 @@ limitations under the License.
 """
 
 import uuid
-
 from datetime import timedelta
 from typing import Any, Optional
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._method_context import ActorMethodContext
-from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.state_manager import ActorStateManager
 from dapr.actor.runtime._reminder_data import ActorReminderData
 from dapr.actor.runtime._timer_data import TIMER_CALLBACK, ActorTimerData
+from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.state_manager import ActorStateManager
 
 
 class Actor:

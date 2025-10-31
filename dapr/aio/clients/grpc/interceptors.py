@@ -16,7 +16,11 @@ limitations under the License.
 from collections import namedtuple
 from typing import List, Tuple
 
-from grpc.aio import UnaryUnaryClientInterceptor, StreamStreamClientInterceptor, ClientCallDetails  # type: ignore
+from grpc.aio import (  # type: ignore
+    ClientCallDetails,
+    StreamStreamClientInterceptor,
+    UnaryUnaryClientInterceptor,
+)
 
 from dapr.conf import settings
 

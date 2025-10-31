@@ -5,9 +5,10 @@ Unit tests for the Job class and its proto conversion methods.
 """
 
 import unittest
+
 from google.protobuf.any_pb2 import Any as GrpcAny
 
-from dapr.clients.grpc._jobs import Job, DropFailurePolicy, ConstantFailurePolicy
+from dapr.clients.grpc._jobs import ConstantFailurePolicy, DropFailurePolicy, Job
 from dapr.proto.runtime.v1 import dapr_pb2 as api_v1
 
 

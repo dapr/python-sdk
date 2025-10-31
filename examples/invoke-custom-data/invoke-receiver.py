@@ -1,6 +1,5 @@
-from dapr.ext.grpc import App, InvokeMethodRequest
-
 import proto.response_pb2 as response_messages
+from dapr.ext.grpc import App, InvokeMethodRequest
 
 app = App()
 
