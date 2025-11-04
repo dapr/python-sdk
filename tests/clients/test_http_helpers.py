@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 
-from dapr.conf import settings
 from dapr.clients.http.helpers import get_api_url
+from dapr.conf import settings
 
 
 class DaprHttpClientHelpersTests(unittest.TestCase):

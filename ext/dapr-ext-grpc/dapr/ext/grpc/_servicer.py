@@ -12,25 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import grpc
 
-from cloudevents.sdk.event import v1  # type: ignore
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
+from cloudevents.sdk.event import v1  # type: ignore
 from google.protobuf import empty_pb2
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.struct_pb2 import Struct
 
-from dapr.proto import appcallback_service_v1, common_v1, appcallback_v1
+import grpc
+from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
+from dapr.clients.grpc._request import BindingRequest, InvokeMethodRequest, JobEvent
+from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
+from dapr.proto import appcallback_service_v1, appcallback_v1, common_v1
+from dapr.proto.common.v1.common_pb2 import InvokeRequest
 from dapr.proto.runtime.v1.appcallback_pb2 import (
-    TopicEventRequest,
     BindingEventRequest,
     JobEventRequest,
+    TopicEventRequest,
 )
-from dapr.proto.common.v1.common_pb2 import InvokeRequest
-from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
-from dapr.clients.grpc._request import InvokeMethodRequest, BindingRequest, JobEvent
-from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
 
 InvokeMethodCallable = Callable[[InvokeMethodRequest], Union[str, bytes, InvokeMethodResponse]]
 TopicSubscribeCallable = Callable[[v1.Event], Optional[TopicEventResponse]]

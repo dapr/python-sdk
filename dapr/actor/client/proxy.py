@@ -21,8 +21,8 @@ from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_utils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 from dapr.clients.retry import RetryPolicy
-from dapr.serializers import Serializer, DefaultJSONSerializer
 from dapr.conf import settings
+from dapr.serializers import DefaultJSONSerializer, Serializer
 
 # Actor factory Callable type hint.
 ACTOR_FACTORY_CALLBACK = Callable[[ActorInterface, str, str], 'ActorProxy']
@@ -35,8 +35,7 @@ class ActorFactoryBase(ABC):
         actor_type: str,
         actor_id: ActorId,
         actor_interface: Optional[Type[ActorInterface]] = None,
-    ) -> 'ActorProxy':
-        ...
+    ) -> 'ActorProxy': ...
 
 
 class ActorProxyFactory(ActorFactoryBase):

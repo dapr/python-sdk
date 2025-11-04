@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 import asyncio
 import json
 import unittest
@@ -33,7 +32,14 @@ from dapr.clients.grpc._conversation_helpers import (
 from dapr.clients.grpc.conversation import (
     ConversationInput,
     ConversationInputAlpha2,
+    ConversationMessage,
+    ConversationMessageOfAssistant,
     ConversationResponseAlpha2,
+    ConversationResultAlpha2,
+    ConversationResultAlpha2Choices,
+    ConversationResultAlpha2Message,
+    ConversationToolCalls,
+    ConversationToolCallsOfFunction,
     ConversationTools,
     ConversationToolsFunction,
     FunctionBackend,
@@ -41,18 +47,11 @@ from dapr.clients.grpc.conversation import (
     create_system_message,
     create_tool_message,
     create_user_message,
+    execute_registered_tool,
     execute_registered_tool_async,
     get_registered_tools,
     register_tool,
     unregister_tool,
-    ConversationResultAlpha2Message,
-    ConversationResultAlpha2Choices,
-    ConversationResultAlpha2,
-    ConversationMessage,
-    ConversationMessageOfAssistant,
-    ConversationToolCalls,
-    ConversationToolCallsOfFunction,
-    execute_registered_tool,
 )
 from dapr.clients.grpc.conversation import (
     tool as tool_decorator,
@@ -1010,7 +1009,7 @@ class TestIndentLines(unittest.TestCase):
 
     def test_zero_indent(self):
         result = conversation._indent_lines('Title', 'Line one\nLine two', 0)
-        expected = 'Title: Line one\n' '       Line two'
+        expected = 'Title: Line one\n       Line two'
         self.assertEqual(result, expected)
 
     def test_empty_string(self):
@@ -1026,7 +1025,7 @@ class TestIndentLines(unittest.TestCase):
         # Title length is 1, indent_after_first_line should be indent + len(title) + 2
         # indent=2, len(title)=1 => 2 + 1 + 2 = 5 spaces on continuation lines
         result = conversation._indent_lines('T', 'a\nb', 2)
-        expected = '  T: a\n' '     b'
+        expected = '  T: a\n     b'
         self.assertEqual(result, expected)
 
 

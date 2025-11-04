@@ -3,8 +3,7 @@ import logging
 
 import grpc
 import helloworld_service_pb2_grpc
-from helloworld_service_pb2 import HelloRequest, HelloReply
-import json, time
+from helloworld_service_pb2 import HelloRequest
 
 
 async def run() -> None:

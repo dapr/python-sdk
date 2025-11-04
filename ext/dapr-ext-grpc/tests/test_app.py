@@ -16,7 +16,7 @@ limitations under the License.
 import unittest
 
 from cloudevents.sdk.event import v1
-from dapr.ext.grpc import App, Rule, InvokeMethodRequest, BindingRequest
+from dapr.ext.grpc import App, BindingRequest, InvokeMethodRequest, Rule
 
 
 class AppTests(unittest.TestCase):

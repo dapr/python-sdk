@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Optional
 from contextvars import ContextVar
+from typing import Optional
 
 reentrancy_ctx: ContextVar[Optional[str]] = ContextVar('reentrancy_ctx', default=None)

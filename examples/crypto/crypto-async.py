@@ -14,7 +14,7 @@
 import asyncio
 
 from dapr.aio.clients import DaprClient
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 
 # Name of the crypto component to use
 CRYPTO_COMPONENT_NAME = 'crypto-localstorage'

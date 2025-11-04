@@ -1,16 +1,17 @@
-from grpc import RpcError, StatusCode, Call  # type: ignore
+import queue
+import threading
+from typing import Optional
+
+from grpc import Call, RpcError, StatusCode  # type: ignore
 
 from dapr.clients.grpc._response import TopicEventResponse
 from dapr.clients.health import DaprHealth
 from dapr.common.pubsub.subscription import (
+    StreamCancelledError,
     StreamInactiveError,
     SubscriptionMessage,
-    StreamCancelledError,
 )
 from dapr.proto import api_v1, appcallback_v1
-import queue
-import threading
-from typing import Optional
 
 
 class Subscription:

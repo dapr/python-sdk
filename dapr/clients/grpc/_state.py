@@ -1,6 +1,7 @@
 from enum import Enum
-from dapr.proto import common_v1
 from typing import Dict, Optional, Union
+
+from dapr.proto import common_v1
 
 
 class Consistency(Enum):

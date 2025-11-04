@@ -5,10 +5,8 @@ dapr run python3 state_store.py
 import grpc
 
 from dapr.clients import DaprClient
-
 from dapr.clients.grpc._request import TransactionalStateOperation, TransactionOperationType
 from dapr.clients.grpc._state import StateItem
-
 
 with DaprClient() as d:
     storeName = 'statestore'
