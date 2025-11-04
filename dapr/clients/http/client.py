@@ -51,7 +51,7 @@ class DaprHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
         """
-        DaprHealth.wait_until_ready()
+        DaprHealth.wait_for_sidecar()
 
         self._timeout = aiohttp.ClientTimeout(total=timeout)
         self._serializer = message_serializer

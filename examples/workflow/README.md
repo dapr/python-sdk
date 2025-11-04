@@ -20,7 +20,7 @@ pip3 install -r requirements.txt
 Each of the examples in this directory can be run directly from the command line.
 
 ### Simple Workflow
-This example represents a workflow that manages counters through a series of activities and child workflows. 
+This example represents a workflow that manages counters through a series of activities and child workflows.
 It shows several Dapr Workflow features including:
 - Basic activity execution with counter increments
 - Retryable activities with configurable retry policies
@@ -57,7 +57,7 @@ timeout_seconds: 30
 -->
 
 ```sh
-dapr run --app-id wf-simple-example --dapr-grpc-port 50001 -- python3 simple.py
+dapr run --app-id wf-simple-example -- python3 simple.py
 ```
 <!--END_STEP-->
 
@@ -99,7 +99,7 @@ timeout_seconds: 30
 -->
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001 -- python3 task_chaining.py
+dapr run --app-id wfexample -- python3 task_chaining.py
 ```
 <!--END_STEP-->
 
@@ -146,7 +146,7 @@ timeout_seconds: 30
 -->
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001 -- python3 fan_out_fan_in.py
+dapr run --app-id wfexample -- python3 fan_out_fan_in.py
 ```
 <!--END_STEP-->
 
@@ -186,7 +186,7 @@ This example demonstrates how to use a workflow to interact with a human user. T
 The Dapr CLI can be started using the following command:
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001
+dapr run --app-id wfexample
 ```
 
 In a separate terminal window, run the following command to start the Python workflow app:
@@ -222,7 +222,7 @@ This example demonstrates how to eternally running workflow that polls an endpoi
 The Dapr CLI can be started using the following command:
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001
+dapr run --app-id wfexample
 ```
 
 In a separate terminal window, run the following command to start the Python workflow app:
@@ -254,7 +254,7 @@ This workflow runs forever or until you press `ENTER` to stop it. Starting the a
 This example demonstrates how to call a child workflow. The Dapr CLI can be started using the following command:
 
 ```sh
-dapr run --app-id wfexample --dapr-grpc-port 50001
+dapr run --app-id wfexample
 ```
 
 In a separate terminal window, run the following command to start the Python workflow app:
@@ -270,3 +270,128 @@ When you run the example, you will see output like this:
 *** Child workflow 6feadc5370184b4998e50875b20084f6 called
 ...
 ```
+
+
+### Cross-app Workflow
+
+This example demonstrates how to call child workflows and activities in different apps. The multiple Dapr CLI instances can be started using the following commands:
+
+<!-- STEP
+name: Run apps
+expected_stdout_lines:
+  - '== APP == app1 - triggering app1 workflow'
+  - '== APP == app1 - received workflow call'
+  - '== APP == app1 - triggering app2 workflow'
+  - '== APP == app2 - received workflow call'
+  - '== APP == app2 - triggering app3 activity'
+  - '== APP == app3 - received activity call'
+  - '== APP == app3 - returning activity result'
+  - '== APP == app2 - received activity result'
+  - '== APP == app2 - returning workflow result'
+  - '== APP == app1 - received workflow result'
+  - '== APP == app1 - returning workflow result'
+background: true
+sleep: 20
+-->
+
+```sh
+dapr run --app-id wfexample3 python3 cross-app3.py &
+dapr run --app-id wfexample2 python3 cross-app2.py &
+dapr run --app-id wfexample1 python3 cross-app1.py
+```
+<!-- END_STEP -->
+
+When you run the apps, you will see output like this:
+```
+...
+app1 - triggering app2 workflow
+app2 - triggering app3 activity
+...
+```
+among others. This shows that the workflow calls are working as expected.
+
+
+#### Error handling on activity calls
+
+This example demonstrates how the error handling works on activity calls across apps.
+
+Error handling on activity calls across apps works as normal workflow activity calls.
+
+In this example we run `app3` in failing mode, which makes the activity call return error constantly. The activity call from `app2` will fail after the retry policy is exhausted.
+
+<!-- STEP
+name: Run apps
+expected_stdout_lines:
+  - '== APP == app1 - triggering app1 workflow'
+  - '== APP == app1 - received workflow call'
+  - '== APP == app1 - triggering app2 workflow'
+  - '== APP == app2 - received workflow call'
+  - '== APP == app2 - triggering app3 activity'
+  - '== APP == app3 - received activity call'
+  - '== APP == app3 - raising error in activity due to error mode being enabled'
+  - '== APP == app2 - received activity error from app3'
+  - '== APP == app2 - returning workflow result'
+  - '== APP == app1 - received workflow result'
+  - '== APP == app1 - returning workflow result'
+sleep: 20
+-->
+
+```sh
+export ERROR_ACTIVITY_MODE=true
+dapr run --app-id wfexample3 python3 cross-app3.py &
+dapr run --app-id wfexample2 python3 cross-app2.py &
+dapr run --app-id wfexample1 python3 cross-app1.py
+```
+<!-- END_STEP -->
+
+
+When you run the apps with the `ERROR_ACTIVITY_MODE` environment variable set, you will see output like this:
+```
+...
+app3 - received activity call
+app3 - raising error in activity due to error mode being enabled
+app2 - received activity error from app3
+...
+```
+among others. This shows that the activity calls are failing as expected, and they are being handled as expected too.
+
+
+#### Error handling on workflow calls
+
+This example demonstrates how the error handling works on workflow calls across apps.
+
+Error handling on workflow calls across apps works as normal workflow calls.
+
+In this example we run `app2` in failing mode, which makes the workflow call return error constantly. The workflow call from `app1` will fail after the retry policy is exhausted.
+
+<!-- STEP
+name: Run apps
+expected_stdout_lines:
+  - '== APP == app1 - triggering app1 workflow'
+  - '== APP == app1 - received workflow call'
+  - '== APP == app1 - triggering app2 workflow'
+  - '== APP == app2 - received workflow call'
+  - '== APP == app2 - raising error in workflow due to error mode being enabled'
+  - '== APP == app1 - received workflow error from app2'
+  - '== APP == app1 - returning workflow result'
+sleep: 20
+-->
+
+```sh
+export ERROR_WORKFLOW_MODE=true
+dapr run --app-id wfexample3 python3 cross-app3.py &
+dapr run --app-id wfexample2 python3 cross-app2.py &
+dapr run --app-id wfexample1 python3 cross-app1.py
+```
+<!-- END_STEP -->
+
+When you run the apps with the `ERROR_WORKFLOW_MODE` environment variable set, you will see output like this:
+```
+...
+app2 - received workflow call
+app2 - raising error in workflow due to error mode being enabled
+app1 - received workflow error from app2
+...
+```
+among others. This shows that the workflow calls are failing as expected, and they are being handled as expected too.
+
