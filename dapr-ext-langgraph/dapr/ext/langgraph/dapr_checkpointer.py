@@ -1,10 +1,11 @@
-from typing import Sequence, Tuple, Any 
 import json
 from typing import Any, Sequence, Tuple
+
+from langchain_core.load import dumps
+from langchain_core.runnables import RunnableConfig
+
 from dapr.clients import DaprClient
 from langgraph.checkpoint.base import BaseCheckpointSaver, Checkpoint, CheckpointTuple
-from langchain_core.runnables import RunnableConfig
-from langchain_core.load import dumps
 
 
 class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
@@ -13,7 +14,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
     Compatible with LangGraph >= 0.3.6 and LangChain Core >= 1.0.0.
     """
 
-    REGISTRY_KEY = "dapr_checkpoint_registry"
+    REGISTRY_KEY = 'dapr_checkpoint_registry'
 
     def __init__(self, store_name: str, key_prefix: str):
         self.store_name = store_name
@@ -23,12 +24,12 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
     def _get_key(self, config: RunnableConfig) -> str:
         thread_id = None
         if isinstance(config, dict):
-            thread_id = config.get("configurable", {}).get("thread_id")
+            thread_id = config.get('configurable', {}).get('thread_id')
             if not thread_id:
-                thread_id = config.get("thread_id")
+                thread_id = config.get('thread_id')
         if not thread_id:
-            thread_id = "default"
-        return f"{self.key_prefix}:{thread_id}"
+            thread_id = 'default'
+        return f'{self.key_prefix}:{thread_id}'
 
     # restore a checkpoint
     def get_tuple(self, config: RunnableConfig) -> CheckpointTuple | None:
@@ -39,10 +40,10 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
                 return None
 
             wrapper = json.loads(resp.data)
-            cp_data = wrapper.get("checkpoint", wrapper)
-            metadata = wrapper.get("metadata", {"step": 0})
-            if "step" not in metadata:
-                metadata["step"] = 0
+            cp_data = wrapper.get('checkpoint', wrapper)
+            metadata = wrapper.get('metadata', {'step': 0})
+            if 'step' not in metadata:
+                metadata['step'] = 0
 
             cp = Checkpoint(**cp_data)
             return CheckpointTuple(
@@ -63,26 +64,24 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         key = self._get_key(config)
         with DaprClient() as client:
             checkpoint_serializable = {
-                "v": checkpoint["v"],
-                "id": checkpoint["id"],
-                "ts": checkpoint["ts"],
-                "channel_values": checkpoint["channel_values"],
-                "channel_versions": checkpoint["channel_versions"],
-                "versions_seen": checkpoint["versions_seen"],
+                'v': checkpoint['v'],
+                'id': checkpoint['id'],
+                'ts': checkpoint['ts'],
+                'channel_values': checkpoint['channel_values'],
+                'channel_versions': checkpoint['channel_versions'],
+                'versions_seen': checkpoint['versions_seen'],
             }
-            wrapper = {"checkpoint": checkpoint_serializable, "metadata": metadata}
+            wrapper = {'checkpoint': checkpoint_serializable, 'metadata': metadata}
 
             # Save checkpoint to Dapr
             client.save_state(self.store_name, key, dumps(wrapper))
-            
+
             # Maintain registry of all checkpoint keys
             reg_resp = client.get_state(store_name=self.store_name, key=self.REGISTRY_KEY)
             registry = json.loads(reg_resp.data) if reg_resp.data else []
             if key not in registry:
                 registry.append(key)
-                client.save_state(
-                    self.store_name, self.REGISTRY_KEY, json.dumps(registry)
-                )
+                client.save_state(self.store_name, self.REGISTRY_KEY, json.dumps(registry))
 
     # incremental persistence (for streamed runs)
     def put_writes(
@@ -90,7 +89,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         config: RunnableConfig,
         writes: Sequence[Tuple[str, Any]],
         task_id: str,
-        task_path: str = "",
+        task_path: str = '',
     ) -> None:
         """Persist incremental updates for streaming or async workflows."""
         key = self._get_key(config)
@@ -100,12 +99,12 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
                 return
 
             wrapper = json.loads(resp.data)
-            cp = wrapper.get("checkpoint", {})
+            cp = wrapper.get('checkpoint', {})
 
             for field, value in writes:
-                cp["channel_values"][field] = value
+                cp['channel_values'][field] = value
 
-            wrapper["checkpoint"] = cp
+            wrapper['checkpoint'] = cp
             client.save_state(self.store_name, key, json.dumps(wrapper))
 
     # enumerate all saved checkpoints
@@ -124,8 +123,8 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
                     continue
 
                 wrapper = json.loads(cp_resp.data)
-                cp_data = wrapper.get("checkpoint", {})
-                metadata = wrapper.get("metadata", {})
+                cp_data = wrapper.get('checkpoint', {})
+                metadata = wrapper.get('metadata', {})
                 cp = Checkpoint(**cp_data)
 
                 checkpoints.append(
@@ -138,7 +137,6 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
                 )
 
             return checkpoints
-
 
     # remove a checkpoint and update the registry
     def delete_thread(self, config: RunnableConfig) -> None:
@@ -158,4 +156,3 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
                     key=self.REGISTRY_KEY,
                     value=json.dumps(registry),
                 )
-                

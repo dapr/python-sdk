@@ -51,7 +51,9 @@ if not is_release():
     name += '-dev'
     version = f'{__version__}{build_number}'
     description = 'The developmental release for the Dapr Checkpointer extension for LangGraph'
-    long_description = 'This is the developmental release for the Dapr Checkpointer extension for LangGraph'
+    long_description = (
+        'This is the developmental release for the Dapr Checkpointer extension for LangGraph'
+    )
 
 print(f'package name: {name}, version: {version}', flush=True)
 
