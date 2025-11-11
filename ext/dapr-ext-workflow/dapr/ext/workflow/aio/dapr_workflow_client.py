@@ -36,7 +36,7 @@ TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
 
-class DaprWorkflowClientAsync:
+class DaprWorkflowClient:
     """Async client for managing Dapr Workflow instances.
 
     This uses a gRPC async connection to send commands directly to the workflow engine,
@@ -56,7 +56,7 @@ class DaprWorkflowClientAsync:
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
 
-        self._logger = Logger('DaprWorkflowClientAsync', logger_options)
+        self._logger = Logger('DaprWorkflowClient', logger_options)
 
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
