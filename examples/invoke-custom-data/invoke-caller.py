@@ -1,6 +1,6 @@
-from dapr.clients import DaprClient
-
 import proto.response_pb2 as response_messages
+
+from dapr.clients import DaprClient
 
 with DaprClient() as d:
     # Create a typed message with content type and body

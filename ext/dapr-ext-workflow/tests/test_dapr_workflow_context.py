@@ -13,9 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import unittest
 from datetime import datetime
 from unittest import mock
-import unittest
+
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from durabletask import worker
@@ -36,10 +37,10 @@ class FakeOrchestrationContext:
     def create_timer(self, fire_at):
         return mock_create_timer
 
-    def call_activity(self, activity, input):
+    def call_activity(self, activity, input, app_id):
         return mock_call_activity
 
-    def call_sub_orchestrator(self, orchestrator, input, instance_id):
+    def call_sub_orchestrator(self, orchestrator, input, instance_id, app_id):
         return mock_call_sub_orchestrator
 
     def set_custom_status(self, custom_status):

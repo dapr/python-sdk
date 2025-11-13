@@ -17,10 +17,10 @@ import unittest
 
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from tests.actor.fake_actor_classes import (
-    FakeSimpleActor,
-    FakeMultiInterfacesActor,
     FakeActorCls1Interface,
     FakeActorCls2Interface,
+    FakeMultiInterfacesActor,
+    FakeSimpleActor,
     ReentrantActorInterface,
 )
 

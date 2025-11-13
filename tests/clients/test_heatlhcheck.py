@@ -12,9 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import time
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from dapr.clients.health import DaprHealth
 from dapr.conf import settings
@@ -24,13 +25,13 @@ from dapr.version import __version__
 class DaprHealthCheckTests(unittest.TestCase):
     @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'http://domain.com:3500')
     @patch('urllib.request.urlopen')
-    def test_wait_until_ready_success(self, mock_urlopen):
+    def test_wait_for_sidecar_success(self, mock_urlopen):
         mock_urlopen.return_value.__enter__.return_value = MagicMock(status=200)
 
         try:
-            DaprHealth.wait_until_ready()
+            DaprHealth.wait_for_sidecar()
         except Exception as e:
-            self.fail(f'wait_until_ready() raised an exception unexpectedly: {e}')
+            self.fail(f'wait_for_sidecar() raised an exception unexpectedly: {e}')
 
         mock_urlopen.assert_called_once()
 
@@ -45,13 +46,13 @@ class DaprHealthCheckTests(unittest.TestCase):
     @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'http://domain.com:3500')
     @patch.object(settings, 'DAPR_API_TOKEN', 'mytoken')
     @patch('urllib.request.urlopen')
-    def test_wait_until_ready_success_with_api_token(self, mock_urlopen):
+    def test_wait_for_sidecar_success_with_api_token(self, mock_urlopen):
         mock_urlopen.return_value.__enter__.return_value = MagicMock(status=200)
 
         try:
-            DaprHealth.wait_until_ready()
+            DaprHealth.wait_for_sidecar()
         except Exception as e:
-            self.fail(f'wait_until_ready() raised an exception unexpectedly: {e}')
+            self.fail(f'wait_for_sidecar() raised an exception unexpectedly: {e}')
 
         mock_urlopen.assert_called_once()
 
@@ -64,13 +65,13 @@ class DaprHealthCheckTests(unittest.TestCase):
 
     @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '2.5')
     @patch('urllib.request.urlopen')
-    def test_wait_until_ready_timeout(self, mock_urlopen):
+    def test_wait_for_sidecar_timeout(self, mock_urlopen):
         mock_urlopen.return_value.__enter__.return_value = MagicMock(status=500)
 
         start = time.time()
 
         with self.assertRaises(TimeoutError):
-            DaprHealth.wait_until_ready()
+            DaprHealth.wait_for_sidecar()
 
         self.assertGreaterEqual(time.time() - start, 2.5)
         self.assertGreater(mock_urlopen.call_count, 1)

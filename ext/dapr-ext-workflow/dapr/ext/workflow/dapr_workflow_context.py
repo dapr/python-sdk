@@ -13,15 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Callable, List, Optional, TypeVar, Union
 from datetime import datetime, timedelta
+from typing import Any, Callable, List, Optional, TypeVar, Union
 
-from durabletask import task
-
-from dapr.ext.workflow.workflow_context import WorkflowContext, Workflow
-from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
-from dapr.ext.workflow.logger import LoggerOptions, Logger
+from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.retry_policy import RetryPolicy
+from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow.workflow_context import Workflow, WorkflowContext
+from durabletask import task
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -63,11 +62,29 @@ class DaprWorkflowContext(WorkflowContext):
 
     def call_activity(
         self,
-        activity: Callable[[WorkflowActivityContext, TInput], TOutput],
+        activity: Union[Callable[[WorkflowActivityContext, TInput], TOutput], str],
         *,
         input: TInput = None,
         retry_policy: Optional[RetryPolicy] = None,
+        app_id: Optional[str] = None,
     ) -> task.Task[TOutput]:
+        # Handle string activity names for cross-app scenarios
+        if isinstance(activity, str):
+            activity_name = activity
+            if app_id is not None:
+                self._logger.debug(
+                    f'{self.instance_id}: Creating cross-app activity {activity_name} for app {app_id}'
+                )
+            else:
+                self._logger.debug(f'{self.instance_id}: Creating activity {activity_name}')
+
+            if retry_policy is None:
+                return self.__obj.call_activity(activity=activity_name, input=input, app_id=app_id)
+            return self.__obj.call_activity(
+                activity=activity_name, input=input, retry_policy=retry_policy.obj, app_id=app_id
+            )
+
+        # Handle function activity objects (original behavior)
         self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
         if hasattr(activity, '_dapr_alternate_name'):
             act = activity.__dict__['_dapr_alternate_name']
@@ -75,17 +92,38 @@ class DaprWorkflowContext(WorkflowContext):
             # this case should ideally never happen
             act = activity.__name__
         if retry_policy is None:
-            return self.__obj.call_activity(activity=act, input=input)
-        return self.__obj.call_activity(activity=act, input=input, retry_policy=retry_policy.obj)
+            return self.__obj.call_activity(activity=act, input=input, app_id=app_id)
+        return self.__obj.call_activity(
+            activity=act, input=input, retry_policy=retry_policy.obj, app_id=app_id
+        )
 
     def call_child_workflow(
         self,
-        workflow: Workflow,
+        workflow: Union[Workflow, str],
         *,
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        app_id: Optional[str] = None,
     ) -> task.Task[TOutput]:
+        # Handle string workflow names for cross-app scenarios
+        if isinstance(workflow, str):
+            workflow_name = workflow
+            self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow_name}')
+
+            if retry_policy is None:
+                return self.__obj.call_sub_orchestrator(
+                    workflow_name, input=input, instance_id=instance_id, app_id=app_id
+                )
+            return self.__obj.call_sub_orchestrator(
+                workflow_name,
+                input=input,
+                instance_id=instance_id,
+                retry_policy=retry_policy.obj,
+                app_id=app_id,
+            )
+
+        # Handle function workflow objects (original behavior)
         self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
 
         def wf(ctx: task.OrchestrationContext, inp: TInput):
@@ -100,9 +138,11 @@ class DaprWorkflowContext(WorkflowContext):
             # this case should ideally never happen
             wf.__name__ = workflow.__name__
         if retry_policy is None:
-            return self.__obj.call_sub_orchestrator(wf, input=input, instance_id=instance_id)
+            return self.__obj.call_sub_orchestrator(
+                wf, input=input, instance_id=instance_id, app_id=app_id
+            )
         return self.__obj.call_sub_orchestrator(
-            wf, input=input, instance_id=instance_id, retry_policy=retry_policy.obj
+            wf, input=input, instance_id=instance_id, retry_policy=retry_policy.obj, app_id=app_id
         )
 
     def wait_for_external_event(self, name: str) -> task.Task:

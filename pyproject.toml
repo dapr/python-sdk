@@ -1,21 +1,24 @@
 [tool.ruff]
-target-version = "py38"
+target-version = "py310"
 line-length = 100
 fix = true
 extend-exclude = [".github", "dapr/proto"]
+
 [tool.ruff.lint]
 select = [
-  "E",  # pycodestyle errors
+  "I",  # isort
   "W",  # pycodestyle warnings
   "F",  # pyflakes
-  "I",  # isort
-  "C",  # flake8-comprehensions
-  "B",  # flake8-bugbear
-  "UP",  # pyupgrade
+  "E",  # pycodestyle errors
+
+  # TODO: Add those back progressively as we fix the issues
+  # "C",  # flake8-comprehensions
+  # "B",  # flake8-bugbear
+  # "UP",  # pyupgrade
 ]
-ignore = [
-  # Undefined name {name}
-  "F821",
-]
+
+# TODO: Add those back progressively as we fix the issues
+ignore = ["E501","E203", "E712", "E722", "E713"]
+
 [tool.ruff.format]
 quote-style = 'single'

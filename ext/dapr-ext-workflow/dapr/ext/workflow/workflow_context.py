@@ -14,13 +14,13 @@ limitations under the License.
 """
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, Optional, TypeVar, Union
 
-from durabletask import task
-
 from dapr.ext.workflow.workflow_activity_context import Activity
+from durabletask import task
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -107,18 +107,22 @@ class WorkflowContext(ABC):
 
     @abstractmethod
     def call_activity(
-        self, activity: Activity[TOutput], *, input: Optional[TInput] = None
+        self,
+        activity: Union[Activity[TOutput], str],
+        *,
+        input: Optional[TInput] = None,
+        app_id: Optional[str] = None,
     ) -> task.Task[TOutput]:
         """Schedule an activity for execution.
 
         Parameters
         ----------
-        activity: Activity[TInput, TOutput]
-            A reference to the activity function to call.
+        activity: Activity[TInput, TOutput] | str
+            A reference to the activity function to call, or a string name for cross-app activities.
         input: TInput | None
             The JSON-serializable input (or None) to pass to the activity.
-        return_type: task.Task[TOutput]
-            The JSON-serializable output type to expect from the activity result.
+        app_id: str | None
+            The AppID that will execute the activity.
 
         Returns
         -------
@@ -130,22 +134,25 @@ class WorkflowContext(ABC):
     @abstractmethod
     def call_child_workflow(
         self,
-        orchestrator: Workflow[TOutput],
+        orchestrator: Union[Workflow[TOutput], str],
         *,
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
+        app_id: Optional[str] = None,
     ) -> task.Task[TOutput]:
         """Schedule child-workflow function for execution.
 
         Parameters
         ----------
-        orchestrator: Orchestrator[TInput, TOutput]
-            A reference to the orchestrator function to call.
+        orchestrator: Orchestrator[TInput, TOutput] | str
+            A reference to the orchestrator function to call, or a string name for cross-app workflows.
         input: TInput
             The optional JSON-serializable input to pass to the orchestrator function.
         instance_id: str
             A unique ID to use for the sub-orchestration instance. If not specified, a
             random UUID will be used.
+        app_id: str
+            The AppID that will execute the workflow.
 
         Returns
         -------

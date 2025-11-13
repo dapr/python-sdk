@@ -18,15 +18,14 @@ import unittest
 from google.protobuf.any_pb2 import Any as GrpcAny
 
 from dapr.clients.grpc._response import (
-    DaprResponse,
-    InvokeMethodResponse,
     BindingResponse,
-    StateResponse,
     BulkStateItem,
-    EncryptResponse,
+    DaprResponse,
     DecryptResponse,
+    EncryptResponse,
+    InvokeMethodResponse,
+    StateResponse,
 )
-
 from dapr.proto import api_v1, common_v1
 
 

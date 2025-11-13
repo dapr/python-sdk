@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from dapr.actor.runtime.remindable import Remindable
-from dapr.actor.runtime._type_utils import is_dapr_actor, get_actor_interfaces
+from typing import TYPE_CHECKING, List, Type
 
-from typing import List, Type, TYPE_CHECKING
+from dapr.actor.runtime._type_utils import get_actor_interfaces, is_dapr_actor
+from dapr.actor.runtime.remindable import Remindable
 
 if TYPE_CHECKING:
     from dapr.actor.actor_interface import ActorInterface  # noqa: F401

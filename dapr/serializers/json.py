@@ -14,18 +14,18 @@ limitations under the License.
 """
 
 import base64
-import re
 import datetime
 import json
-
+import re
 from typing import Any, Callable, Optional, Type
+
 from dateutil import parser
 
 from dapr.serializers.base import Serializer
 from dapr.serializers.util import (
+    DAPR_DURATION_PARSER,
     convert_from_dapr_duration,
     convert_to_dapr_duration,
-    DAPR_DURATION_PARSER,
 )
 
 

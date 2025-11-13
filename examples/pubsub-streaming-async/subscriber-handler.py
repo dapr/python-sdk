@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+
 from dapr.aio.clients import DaprClient
 from dapr.clients.grpc._response import TopicEventResponse
 

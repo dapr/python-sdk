@@ -12,11 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import unittest
 from unittest import mock
-from unittest.mock import Mock, MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
-from grpc import StatusCode, RpcError
+from grpc import RpcError, StatusCode
 
 from dapr.clients.retry import RetryPolicy
 from dapr.serializers import DefaultJSONSerializer
