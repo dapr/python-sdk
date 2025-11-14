@@ -26,15 +26,15 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         thread_id = None
 
         if isinstance(config, dict):
-            thread_id = config.get("configurable", {}).get("thread_id")
+            thread_id = config.get('configurable', {}).get('thread_id')
 
             if not thread_id:
-                thread_id = config.get("thread_id")
+                thread_id = config.get('thread_id')
 
         if not thread_id:
-            thread_id = "default"
+            thread_id = 'default'
 
-        return f"{self.key_prefix}:{thread_id}"
+        return f'{self.key_prefix}:{thread_id}'
 
     # restore a checkpoint
     def get_tuple(self, config: RunnableConfig) -> CheckpointTuple | None:
@@ -66,7 +66,6 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         parent_config: RunnableConfig | None,
         metadata: dict[str, Any],
     ) -> None:
-
         key = self._get_key(config)
 
         checkpoint_serializable = {
@@ -87,9 +86,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
 
         if key not in registry:
             registry.append(key)
-            self.client.save_state(
-                self.store_name, self.REGISTRY_KEY, json.dumps(registry)
-            )
+            self.client.save_state(self.store_name, self.REGISTRY_KEY, json.dumps(registry))
 
     # incremental persistence (for streamed runs)
     def put_writes(
@@ -99,7 +96,6 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         task_id: str,
         task_path: str = '',
     ) -> None:
-
         _ = task_id, task_path
 
         key = self._get_key(config)
