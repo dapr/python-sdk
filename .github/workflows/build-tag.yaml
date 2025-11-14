@@ -115,3 +115,11 @@ jobs:
         cd ext/dapr-ext-fastapi
         python setup.py sdist bdist_wheel
         twine upload dist/*
+    - name: Build and publish dapr-ext-langgraph
+      if: startsWith(github.ref_name, 'langgraph-v')
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd ext/dapr-ext-langgraph
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
