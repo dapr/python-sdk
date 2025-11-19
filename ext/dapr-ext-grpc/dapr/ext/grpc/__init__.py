@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from dapr.ext.grpc.app import App, Rule  # type:ignore
-
 from dapr.clients.grpc._jobs import ConstantFailurePolicy, DropFailurePolicy, FailurePolicy, Job
 from dapr.clients.grpc._request import BindingRequest, InvokeMethodRequest, JobEvent
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
+from dapr.ext.grpc.app import App, Rule  # type:ignore
 
 __all__ = [
     'App',

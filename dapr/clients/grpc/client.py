@@ -87,7 +87,7 @@ from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
-from dapr.conf.helpers import GrpcEndpoint
+from dapr.conf.helpers import GrpcEndpoint, build_grpc_channel_options
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
@@ -146,11 +146,9 @@ class DaprGrpcClient:
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
-            options = [
-                ('grpc.primary_user_agent', useragent),
-            ]
+            base_options = [('grpc.primary_user_agent', useragent)]
         else:
-            options = [
+            base_options = [
                 ('grpc.max_send_message_length', max_grpc_message_length),  # type: ignore
                 ('grpc.max_receive_message_length', max_grpc_message_length),  # type: ignore
                 ('grpc.primary_user_agent', useragent),
@@ -165,6 +163,9 @@ class DaprGrpcClient:
             self._uri = GrpcEndpoint(address)
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
+
+        # Merge standard + keepalive + retry options
+        options = build_grpc_channel_options(base_options)
 
         if self._uri.tls:
             self._channel = grpc.secure_channel(  # type: ignore

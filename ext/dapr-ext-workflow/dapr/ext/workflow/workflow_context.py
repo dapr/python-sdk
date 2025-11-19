@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +15,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Callable, Generator, Optional, TypeVar, Union
+from typing import Any, Callable, Generator, TypeVar, Union
 
-from dapr.ext.workflow.workflow_activity_context import Activity
 from durabletask import task
+
+from dapr.ext.workflow.retry_policy import RetryPolicy
+from dapr.ext.workflow.workflow_activity_context import Activity
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -90,7 +90,7 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
+    def create_timer(self, fire_at: datetime | timedelta) -> task.Task:
         """Create a Timer Task to fire after at the specified deadline.
 
         Parameters
@@ -110,8 +110,8 @@ class WorkflowContext(ABC):
         self,
         activity: Union[Activity[TOutput], str],
         *,
-        input: Optional[TInput] = None,
-        app_id: Optional[str] = None,
+        input: TInput | None = None,
+        app_id: str | None = None,
     ) -> task.Task[TOutput]:
         """Schedule an activity for execution.
 
@@ -123,6 +123,8 @@ class WorkflowContext(ABC):
             The JSON-serializable input (or None) to pass to the activity.
         app_id: str | None
             The AppID that will execute the activity.
+        return_type: task.Task[TOutput]
+            The JSON-serializable output type to expect from the activity result.
 
         Returns
         -------
@@ -136,9 +138,10 @@ class WorkflowContext(ABC):
         self,
         orchestrator: Union[Workflow[TOutput], str],
         *,
-        input: Optional[TInput] = None,
-        instance_id: Optional[str] = None,
-        app_id: Optional[str] = None,
+        input: TInput | None = None,
+        instance_id: str | None = None,
+        app_id: str | None = None,
+        retry_policy: RetryPolicy | None = None,
     ) -> task.Task[TOutput]:
         """Schedule child-workflow function for execution.
 
@@ -153,6 +156,9 @@ class WorkflowContext(ABC):
             random UUID will be used.
         app_id: str
             The AppID that will execute the workflow.
+        retry_policy: RetryPolicy | None
+            Optional retry policy for the child-workflow. When provided, failures will be retried
+            according to the policy.
 
         Returns
         -------
