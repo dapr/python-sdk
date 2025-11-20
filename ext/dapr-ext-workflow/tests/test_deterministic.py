@@ -16,7 +16,6 @@ from __future__ import annotations
 import datetime as _dt
 
 import pytest
-
 from dapr.ext.workflow.aio import AsyncWorkflowContext
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 

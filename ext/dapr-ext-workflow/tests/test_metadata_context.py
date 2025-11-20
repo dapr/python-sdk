@@ -17,7 +17,6 @@ from datetime import datetime
 from typing import Any, Optional
 
 import pytest
-
 from dapr.ext.workflow import (
     ClientInterceptor,
     DaprWorkflowClient,
@@ -73,7 +72,9 @@ class _FakeOrchCtx:
 
         return _T(input)
 
-    def call_sub_orchestrator(self, wf, *, input=None, instance_id=None, retry_policy=None, app_id=None):
+    def call_sub_orchestrator(
+        self, wf, *, input=None, instance_id=None, retry_policy=None, app_id=None
+    ):
         class _T:
             def __init__(self, v):
                 self._v = v

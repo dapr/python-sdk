@@ -16,8 +16,12 @@ limitations under the License.
 import time
 
 import pytest
-
-from dapr.ext.workflow import AsyncWorkflowContext, DaprWorkflowClient, WorkflowRuntime
+from dapr.ext.workflow import (
+    AsyncWorkflowContext,
+    DaprWorkflowClient,
+    DaprWorkflowContext,
+    WorkflowRuntime,
+)
 from dapr.ext.workflow.interceptors import (
     BaseRuntimeInterceptor,
     ExecuteActivityRequest,
@@ -88,7 +92,7 @@ def test_integration_generator_metadata_propagation():
         return ctx.get_metadata() or {}
 
     @runtime.workflow(name='gen_parent_sets_md')
-    def parent_gen(ctx: 'WorkflowContext'):
+    def parent_gen(ctx: DaprWorkflowContext):
         ctx.set_metadata({'tenant': 'acme', 'tier': 'gold'})
         md = yield ctx.call_activity(recv_md_gen, input=None)
         return md
@@ -182,8 +186,6 @@ def test_integration_trace_context_child_workflow_injected_metadata():
         BaseWorkflowOutboundInterceptor,
         CallActivityRequest,
         CallChildWorkflowRequest,
-        ExecuteActivityRequest,
-        ExecuteWorkflowRequest,
         ScheduleWorkflowRequest,
     )
 
@@ -865,6 +867,7 @@ def test_integration_async_contextvars_trace_propagation(monkeypatch):
     finally:
         runtime.shutdown()
 
+
 def test_runtime_interceptor_shapes_async_input():
     runtime = WorkflowRuntime()
 
@@ -883,7 +886,7 @@ def test_runtime_interceptor_shapes_async_input():
     runtime = WorkflowRuntime(runtime_interceptors=[ShapeInput()])
 
     @runtime.async_workflow(name='wf_shape_input')
-    async def wf_shape_input(ctx: AsyncWorkflowContext, arg: Optional[dict] = None):
+    async def wf_shape_input(ctx: AsyncWorkflowContext, arg: dict | None = None):
         # Verify shaped input is observed by the workflow
         return arg
 
@@ -938,7 +941,7 @@ def test_runtime_interceptor_context_manager_with_async_workflow():
     runtime = WorkflowRuntime(runtime_interceptors=[ContextInterceptor()])
 
     @runtime.async_workflow(name='wf_context_test')
-    async def wf_context_test(ctx: AsyncWorkflowContext, arg: Optional[dict] = None):
+    async def wf_context_test(ctx: AsyncWorkflowContext, arg: dict | None = None):
         context_state['workflow_ran'] = True
         return {'result': 'ok'}
 

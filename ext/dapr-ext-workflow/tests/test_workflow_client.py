@@ -24,9 +24,6 @@ from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from durabletask import client
 from grpc import RpcError
 
-from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
 mock_terminate_result = 'terminate001'

@@ -17,7 +17,6 @@ from unittest.mock import patch
 from dapr.ext.workflow.util import getAddress
 
 from dapr.conf import settings
-from dapr.ext.workflow.util import getAddress
 
 
 class DaprWorkflowUtilTest(unittest.TestCase):

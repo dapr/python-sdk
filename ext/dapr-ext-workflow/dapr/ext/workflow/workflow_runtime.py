@@ -14,24 +14,12 @@ limitations under the License.
 """
 
 import asyncio
-import grpc
 import inspect
 import traceback
 from functools import wraps
 from typing import Any, Awaitable, Callable, List, Optional, Sequence, TypeVar, Union
 
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from dapr.ext.workflow.logger import Logger, LoggerOptions
-from dapr.ext.workflow.util import getAddress
-from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
-from dapr.ext.workflow.workflow_context import Workflow
-from durabletask import task, worker
-from durabletask.aio.sandbox import SandboxMode
-
-from dapr.clients import DaprInternalError
-from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
-from dapr.conf import settings
-from dapr.conf.helpers import GrpcEndpoint
+import grpc
 from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, Handlers
 from dapr.ext.workflow.execution_info import ActivityExecutionInfo, WorkflowExecutionInfo
@@ -51,6 +39,13 @@ from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
 from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
 from dapr.ext.workflow.workflow_context import Workflow
+from durabletask import task, worker
+from durabletask.aio.sandbox import SandboxMode
+
+from dapr.clients import DaprInternalError
+from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
+from dapr.conf import settings
+from dapr.conf.helpers import GrpcEndpoint
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

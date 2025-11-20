@@ -15,8 +15,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from dapr.ext.workflow.aio import AsyncWorkflowContext
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.execution_info import ActivityExecutionInfo, WorkflowExecutionInfo
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 
@@ -48,14 +46,14 @@ def test_workflow_execution_info_minimal():
 
 
 def test_activity_execution_info_minimal():
-    aei = ActivityExecutionInfo(inbound_metadata={'m': 'v'}, activity_name="act_name")
+    aei = ActivityExecutionInfo(inbound_metadata={'m': 'v'}, activity_name='act_name')
     assert aei.inbound_metadata == {'m': 'v'}
 
 
 def test_workflow_activity_context_execution_info_trace_fields():
     base = _FakeActivityCtx()
     actx = WorkflowActivityContext(base)
-    aei = ActivityExecutionInfo(inbound_metadata={}, activity_name="act_name")
+    aei = ActivityExecutionInfo(inbound_metadata={}, activity_name='act_name')
     actx._set_execution_info(aei)
     got = actx.execution_info
     assert got is not None

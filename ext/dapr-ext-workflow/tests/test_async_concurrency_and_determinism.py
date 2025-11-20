@@ -15,10 +15,9 @@ limitations under the License.
 
 from datetime import datetime
 
+from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 from durabletask import task as durable_task_module
 from durabletask.deterministic import deterministic_random, deterministic_uuid4
-
-from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 
 
 class FakeTask:

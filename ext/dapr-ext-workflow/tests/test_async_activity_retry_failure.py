@@ -14,7 +14,6 @@ limitations under the License.
 """
 
 import pytest
-
 from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 
 

@@ -14,9 +14,8 @@ limitations under the License.
 import types
 from datetime import datetime, timedelta, timezone
 
-from dapr.ext.workflow import AsyncWorkflowContext, WorkflowRuntime
+from dapr.ext.workflow import AsyncWorkflowContext
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from dapr.ext.workflow.interceptors import BaseRuntimeInterceptor, ExecuteWorkflowRequest
 from dapr.ext.workflow.workflow_context import WorkflowContext
 
 
@@ -188,10 +187,14 @@ def test_public_api_parity_against_workflowcontext_abc():
         def continue_as_new(self, new_input, *, save_events: bool = False):
             pass
 
-        def call_activity(self, *, activity, input=None, retry_policy=None, app_id: str | None = None):
+        def call_activity(
+            self, *, activity, input=None, retry_policy=None, app_id: str | None = None
+        ):
             return object()
 
-        def call_sub_orchestrator(self, fn, *, input=None, instance_id=None, retry_policy=None, app_id: str | None = None):
+        def call_sub_orchestrator(
+            self, fn, *, input=None, instance_id=None, retry_policy=None, app_id: str | None = None
+        ):
             return object()
 
     sync_ctx = DaprWorkflowContext(_FakeOrchCtx())

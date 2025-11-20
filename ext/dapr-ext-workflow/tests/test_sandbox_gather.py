@@ -17,10 +17,9 @@ import asyncio
 from datetime import datetime, timedelta
 
 import pytest
-from durabletask.aio.sandbox import SandboxMode
-
 from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 from dapr.ext.workflow.aio.sandbox import sandbox_scope
+from durabletask.aio.sandbox import SandboxMode
 
 """
 Tests for sandboxed asyncio.gather behavior in async orchestrators.

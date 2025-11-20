@@ -156,8 +156,7 @@ class ClientInterceptor(Protocol, Generic[TInput]):
         self,
         input: ScheduleWorkflowRequest[TInput],
         next: Callable[[ScheduleWorkflowRequest[TInput]], Any],
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
 
 # -------------------------------
@@ -186,15 +185,13 @@ class RuntimeInterceptor(Protocol, Generic[TWorkflowInput, TActivityInput]):
         self,
         input: ExecuteWorkflowRequest[TWorkflowInput],
         next: Callable[[ExecuteWorkflowRequest[TWorkflowInput]], Any],
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     def execute_activity(
         self,
         input: ExecuteActivityRequest[TActivityInput],
         next: Callable[[ExecuteActivityRequest[TActivityInput]], Any],
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
 
 # ------------------------------
@@ -276,22 +273,19 @@ class WorkflowOutboundInterceptor(Protocol, Generic[TWorkflowInput, TActivityInp
         self,
         input: CallChildWorkflowRequest[TWorkflowInput],
         next: Callable[[CallChildWorkflowRequest[TWorkflowInput]], Any],
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     def continue_as_new(
         self,
         input: ContinueAsNewRequest[TWorkflowInput],
         next: Callable[[ContinueAsNewRequest[TWorkflowInput]], Any],
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     def call_activity(
         self,
         input: CallActivityRequest[TActivityInput],
         next: Callable[[CallActivityRequest[TActivityInput]], Any],
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
 
 class BaseWorkflowOutboundInterceptor(Generic[TWorkflowInput, TActivityInput]):

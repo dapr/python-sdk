@@ -17,9 +17,8 @@ from __future__ import annotations
 
 from typing import Callable, TypeVar
 
-from durabletask import task
-
 from dapr.ext.workflow.execution_info import ActivityExecutionInfo
+from durabletask import task
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

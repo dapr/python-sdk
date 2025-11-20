@@ -18,10 +18,9 @@ import random
 import time
 
 import pytest
+from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 from durabletask.aio.errors import SandboxViolationError
 from durabletask.aio.sandbox import SandboxMode
-
-from dapr.ext.workflow.aio import AsyncWorkflowContext, CoroutineOrchestratorRunner
 
 
 class FakeTask:

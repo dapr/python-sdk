@@ -88,18 +88,15 @@ def _ensure_json(obj: Any, *, strict: bool) -> Any:
 class CanonicalSerializable(Protocol):
     """Objects implementing this can produce a canonical JSON-serializable structure."""
 
-    def to_canonical_json(self, *, strict: bool = True) -> Any:
-        ...
+    def to_canonical_json(self, *, strict: bool = True) -> Any: ...
 
 
 class GenericSerializer(Protocol):
     """Serializer that converts arbitrary Python objects to/from JSON-serializable data."""
 
-    def serialize(self, obj: Any, *, strict: bool = True) -> Any:
-        ...
+    def serialize(self, obj: Any, *, strict: bool = True) -> Any: ...
 
-    def deserialize(self, data: Any) -> Any:
-        ...
+    def deserialize(self, data: Any) -> Any: ...
 
 
 _SERIALIZERS: Dict[str, GenericSerializer] = {}
@@ -132,11 +129,9 @@ def ensure_canonical_json(obj: Any, *, strict: bool = True) -> Any:
 class ActivityIOAdapter(Protocol):
     """Adapter to control how activity inputs/outputs are serialized."""
 
-    def serialize_input(self, input: Any, *, strict: bool = True) -> Any:
-        ...
+    def serialize_input(self, input: Any, *, strict: bool = True) -> Any: ...
 
-    def serialize_output(self, output: Any, *, strict: bool = True) -> Any:
-        ...
+    def serialize_output(self, output: Any, *, strict: bool = True) -> Any: ...
 
 
 _ACTIVITY_ADAPTERS: Dict[str, ActivityIOAdapter] = {}

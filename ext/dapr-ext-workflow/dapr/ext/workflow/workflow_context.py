@@ -17,10 +17,9 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, TypeVar, Union
 
-from durabletask import task
-
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import Activity
+from durabletask import task
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

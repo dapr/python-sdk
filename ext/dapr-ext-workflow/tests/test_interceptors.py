@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-
 from dapr.ext.workflow import RuntimeInterceptor, WorkflowRuntime
 
 from ._fakes import make_act_ctx as _make_act_ctx

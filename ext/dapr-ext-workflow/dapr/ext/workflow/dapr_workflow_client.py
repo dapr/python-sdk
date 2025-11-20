@@ -19,13 +19,6 @@ from datetime import datetime
 from typing import Any, Optional, TypeVar
 
 import durabletask.internal.orchestrator_service_pb2 as pb
-from durabletask import client
-from grpc import RpcError
-
-from dapr.clients import DaprInternalError
-from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
-from dapr.conf import settings
-from dapr.conf.helpers import GrpcEndpoint, build_grpc_channel_options
 from dapr.ext.workflow.interceptors import (
     ClientInterceptor,
     ScheduleWorkflowRequest,
@@ -36,6 +29,13 @@ from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.workflow_state import WorkflowState
+from durabletask import client
+from grpc import RpcError
+
+from dapr.clients import DaprInternalError
+from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
+from dapr.conf import settings
+from dapr.conf.helpers import GrpcEndpoint, build_grpc_channel_options
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -58,7 +58,7 @@ class DaprWorkflowClient:
         port: Optional[str] = None,
         logger_options: Optional[LoggerOptions] = None,
         *,
-        interceptors: Optional[List[ClientInterceptor]] = None,
+        interceptors: list[ClientInterceptor] | None = None,
     ):
         address = getAddress(host, port)
 

@@ -15,17 +15,16 @@ import enum
 from datetime import datetime, timedelta
 from typing import Any, Callable, List, Optional, TypeVar, Union
 
-from durabletask import task
-from durabletask.deterministic import (  # type: ignore[F401]
-    DeterministicContextMixin,
-)
-
 from dapr.ext.workflow.execution_info import WorkflowExecutionInfo
 from dapr.ext.workflow.interceptors import unwrap_payload_with_metadata, wrap_payload_with_metadata
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_context import Workflow, WorkflowContext
+from durabletask import task
+from durabletask.deterministic import (  # type: ignore[F401]
+    DeterministicContextMixin,
+)
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -57,9 +56,11 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
     """
 
     def __init__(
-        self, ctx: task.OrchestrationContext, logger_options: Optional[LoggerOptions] = None,
-            *,
-            outbound_handlers: dict[Handlers, Any] | None = None,
+        self,
+        ctx: task.OrchestrationContext,
+        logger_options: Optional[LoggerOptions] = None,
+        *,
+        outbound_handlers: dict[Handlers, Any] | None = None,
     ):
         self.__obj = ctx
         self._logger = Logger('DaprWorkflowContext', logger_options)
@@ -214,7 +215,11 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
                 wf, input=transformed_input, instance_id=instance_id, app_id=app_id
             )
         return self.__obj.call_sub_orchestrator(
-            wf, input=transformed_input, instance_id=instance_id, retry_policy=retry_policy.obj, app_id=app_id
+            wf,
+            input=transformed_input,
+            instance_id=instance_id,
+            retry_policy=retry_policy.obj,
+            app_id=app_id,
         )
 
     def wait_for_external_event(self, name: str) -> task.Task:
