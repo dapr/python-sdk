@@ -1,2 +1,12 @@
-dapr-ext-workflow>=1.16.0.dev
-dapr>=1.16.0.dev
+# dapr-ext-workflow-dev>=1.16.0.dev
+# dapr-dev>=1.16.0.dev
+
+# local development: install local packages in editable mode
+
+# if using dev version of durabletask-python
+-e ../../../durabletask-python
+
+# if using dev version of dapr-ext-workflow
+-e ../../ext/dapr-ext-workflow
+-e ../..
+

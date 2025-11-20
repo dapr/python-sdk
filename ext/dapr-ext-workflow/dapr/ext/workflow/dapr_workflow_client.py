@@ -19,6 +19,12 @@ from datetime import datetime
 from typing import Any, Optional, TypeVar
 
 import durabletask.internal.orchestrator_service_pb2 as pb
+from dapr.ext.workflow.interceptors import (
+    ClientInterceptor,
+    ScheduleWorkflowRequest,
+    compose_client_chain,
+    wrap_payload_with_metadata,
+)
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
 from dapr.ext.workflow.workflow_context import Workflow
@@ -51,6 +57,8 @@ class DaprWorkflowClient:
         host: Optional[str] = None,
         port: Optional[str] = None,
         logger_options: Optional[LoggerOptions] = None,
+        *,
+        interceptors: list[ClientInterceptor] | None = None,
     ):
         address = getAddress(host, port)
 
@@ -61,17 +69,30 @@ class DaprWorkflowClient:
 
         self._logger = Logger('DaprWorkflowClient', logger_options)
 
-        metadata = tuple()
+        metadata = ()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         options = self._logger.get_options()
+        # Optional gRPC channel options (keepalive, retry policy) via helpers
+        # channel_options = build_grpc_channel_options()
+
+        # Construct base kwargs for TaskHubGrpcClient
+        base_kwargs = {
+            'host_address': uri.endpoint,
+            'metadata': metadata,
+            'secure_channel': uri.tls,
+            'log_handler': options.log_handler,
+            'log_formatter': options.log_formatter,
+        }
+
+        # Initialize TaskHubGrpcClient (DurableTask supports options)
         self.__obj = client.TaskHubGrpcClient(
-            host_address=uri.endpoint,
-            metadata=metadata,
-            secure_channel=uri.tls,
-            log_handler=options.log_handler,
-            log_formatter=options.log_formatter,
+            **base_kwargs,
+            # channel_options=channel_options,
         )
+
+        # Interceptors
+        self._client_interceptors: list[ClientInterceptor] = list(interceptors or [])
 
     def schedule_new_workflow(
         self,
@@ -81,6 +102,7 @@ class DaprWorkflowClient:
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
         reuse_id_policy: Optional[pb.OrchestrationIdReusePolicy] = None,
+        metadata: dict[str, str] | None = None,
     ) -> str:
         """Schedules a new workflow instance for execution.
 
@@ -95,25 +117,39 @@ class DaprWorkflowClient:
             be scheduled immediately.
             reuse_id_policy: Optional policy to reuse the workflow id when there is a conflict with
             an existing workflow instance.
+            metadata (dict[str, str] | None): Optional dictionary of key-value pairs
+                to be included as metadata/headers for the workflow.
 
         Returns:
             The ID of the scheduled workflow instance.
         """
-        if hasattr(workflow, '_dapr_alternate_name'):
+        wf_name = (
+            workflow.__dict__['_dapr_alternate_name']
+            if hasattr(workflow, '_dapr_alternate_name')
+            else workflow.__name__
+        )
+
+        # Build interceptor chain around schedule call
+        def terminal(term_req: ScheduleWorkflowRequest) -> str:
+            payload = wrap_payload_with_metadata(term_req.input, term_req.metadata)
             return self.__obj.schedule_new_orchestration(
-                workflow.__dict__['_dapr_alternate_name'],
-                input=input,
-                instance_id=instance_id,
-                start_at=start_at,
-                reuse_id_policy=reuse_id_policy,
+                term_req.workflow_name,
+                input=payload,
+                instance_id=term_req.instance_id,
+                start_at=term_req.start_at,
+                reuse_id_policy=term_req.reuse_id_policy,
             )
-        return self.__obj.schedule_new_orchestration(
-            workflow.__name__,
+
+        chain = compose_client_chain(self._client_interceptors, terminal)
+        schedule_req = ScheduleWorkflowRequest(
+            workflow_name=wf_name,
             input=input,
             instance_id=instance_id,
             start_at=start_at,
             reuse_id_policy=reuse_id_policy,
+            metadata=metadata,
         )
+        return chain(schedule_req)
 
     def get_workflow_state(
         self, instance_id: str, *, fetch_payloads: bool = True
