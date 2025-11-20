@@ -57,7 +57,9 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
     """
 
     def __init__(
-        self, ctx: task.OrchestrationContext, logger_options: Optional[LoggerOptions] = None
+        self, ctx: task.OrchestrationContext, logger_options: Optional[LoggerOptions] = None,
+            *,
+            outbound_handlers: dict[Handlers, Any] | None = None,
     ):
         self.__obj = ctx
         self._logger = Logger('DaprWorkflowContext', logger_options)
@@ -153,9 +155,9 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
                 self, activity, input, retry_policy, metadata or self.get_metadata()
             )
         if retry_policy is None:
-            return self.__obj.call_activity(activity=act, input=input, app_id=app_id)
+            return self.__obj.call_activity(activity=act, input=transformed_input, app_id=app_id)
         return self.__obj.call_activity(
-            activity=act, input=input, retry_policy=retry_policy.obj, app_id=app_id
+            activity=act, input=transformed_input, retry_policy=retry_policy.obj, app_id=app_id
         )
 
     def call_child_workflow(

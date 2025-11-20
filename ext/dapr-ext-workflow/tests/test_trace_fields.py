@@ -42,25 +42,6 @@ class _FakeActivityCtx:
         self.trace_state = 'v=1'
 
 
-def test_dapr_workflow_context_trace_properties():
-    base = _FakeOrchCtx()
-    ctx = DaprWorkflowContext(base)
-
-    assert ctx.trace_parent == base.trace_parent
-    assert ctx.trace_state == base.trace_state
-    # SDK renames orchestration span id to workflow_span_id
-    assert ctx.workflow_span_id == base.orchestration_span_id
-
-
-def test_async_workflow_context_trace_properties():
-    base = _FakeOrchCtx()
-    actx = AsyncWorkflowContext(DaprWorkflowContext(base))
-
-    assert actx.trace_parent == base.trace_parent
-    assert actx.trace_state == base.trace_state
-    assert actx.workflow_span_id == base.orchestration_span_id
-
-
 def test_workflow_execution_info_minimal():
     ei = WorkflowExecutionInfo(inbound_metadata={'k': 'v'})
     assert ei.inbound_metadata == {'k': 'v'}

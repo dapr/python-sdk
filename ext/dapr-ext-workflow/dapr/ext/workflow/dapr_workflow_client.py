@@ -88,11 +88,11 @@ class DaprWorkflowClient:
         # Initialize TaskHubGrpcClient (DurableTask supports options)
         self.__obj = client.TaskHubGrpcClient(
             **base_kwargs,
-            options=channel_options,
+            channel_options=channel_options,
         )
 
         # Interceptors
-        self._client_interceptors: List[ClientInterceptor] = list(interceptors or [])
+        self._client_interceptors: list[ClientInterceptor] = list(interceptors or [])
 
     def schedule_new_workflow(
         self,
@@ -102,7 +102,7 @@ class DaprWorkflowClient:
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
         reuse_id_policy: Optional[pb.OrchestrationIdReusePolicy] = None,
-        metadata: Optional[dict[str, str]] = None,
+        metadata: dict[str, str] | None = None,
     ) -> str:
         """Schedules a new workflow instance for execution.
 

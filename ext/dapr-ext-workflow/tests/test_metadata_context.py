@@ -66,14 +66,14 @@ class _FakeOrchCtx:
         self.trace_state = None
         self.orchestration_span_id = None
 
-    def call_activity(self, activity, *, input=None, retry_policy=None):
+    def call_activity(self, activity, *, input=None, retry_policy=None, app_id=None):
         class _T:
             def __init__(self, v):
                 self._v = v
 
         return _T(input)
 
-    def call_sub_orchestrator(self, wf, *, input=None, instance_id=None, retry_policy=None):
+    def call_sub_orchestrator(self, wf, *, input=None, instance_id=None, retry_policy=None, app_id=None):
         class _T:
             def __init__(self, v):
                 self._v = v

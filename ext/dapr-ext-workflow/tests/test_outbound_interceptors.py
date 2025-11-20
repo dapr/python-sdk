@@ -54,7 +54,7 @@ class _FakeOrchCtx:
         self._continued_payload = None
         self.workflow_attempt = None
 
-    def call_activity(self, activity, *, input=None, retry_policy=None):
+    def call_activity(self, activity, *, input=None, retry_policy=None, app_id=None):
         # return input back for assertion through driver
         class _T:
             def __init__(self, v):
@@ -62,7 +62,7 @@ class _FakeOrchCtx:
 
         return _T(input)
 
-    def call_sub_orchestrator(self, wf, *, input=None, instance_id=None, retry_policy=None):
+    def call_sub_orchestrator(self, wf, *, input=None, instance_id=None, retry_policy=None, app_id=None):
         class _T:
             def __init__(self, v):
                 self._v = v

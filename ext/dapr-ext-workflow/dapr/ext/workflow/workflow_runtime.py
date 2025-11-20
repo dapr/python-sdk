@@ -18,8 +18,7 @@ import grpc
 import inspect
 import traceback
 from functools import wraps
-from typing import Any, Awaitable, Callable, List, Optional, TypeVar
-
+from typing import Any, Awaitable, Callable, List, Optional, Sequence, TypeVar, Union
 
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.logger import Logger, LoggerOptions
