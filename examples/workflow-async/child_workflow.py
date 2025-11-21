@@ -17,6 +17,7 @@ from dapr.ext.workflow import (
     AsyncWorkflowContext,
     DaprWorkflowClient,
     WorkflowRuntime,
+    WorkflowStatus,
 )
 
 wfr = WorkflowRuntime()
@@ -35,12 +36,20 @@ async def parent(ctx: AsyncWorkflowContext, n: int) -> int:
 
 
 def main():
-    wfr.start()
-    client = DaprWorkflowClient()
-    instance_id = 'parent_async_instance'
-    client.schedule_new_workflow(workflow=parent, input=5, instance_id=instance_id)
-    client.wait_for_workflow_completion(instance_id, timeout_in_seconds=60)
-    wfr.shutdown()
+    with wfr:
+        # the context manager starts the workflow runtime on __enter__ and shutdown on __exit__
+        client = DaprWorkflowClient()
+        instance_id = 'parent_async_instance'
+        client.schedule_new_workflow(workflow=parent, input=5, instance_id=instance_id)
+        wf_state = client.wait_for_workflow_completion(instance_id, timeout_in_seconds=60)
+
+    # simple test
+    if wf_state.runtime_status != WorkflowStatus.COMPLETED:
+        print('Workflow failed with status ', wf_state.runtime_status)
+        exit(1)
+    if wf_state.serialized_output != '11':
+        print('Workflow result is incorrect!')
+        exit(1)
 
 
 if __name__ == '__main__':

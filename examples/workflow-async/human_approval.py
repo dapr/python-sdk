@@ -13,23 +13,35 @@ See the specific language governing permissions and
 limitations under the License.
 """
 
-from dapr.ext.workflow import AsyncWorkflowContext, DaprWorkflowClient, WorkflowRuntime
+import time
+from datetime import timedelta
+
+from dapr.ext.workflow import (
+    AsyncWorkflowContext,
+    DaprWorkflowClient,
+    WorkflowRuntime,
+    WorkflowStatus,
+)
 
 wfr = WorkflowRuntime()
 
 
 @wfr.async_workflow(name='human_approval_async')
 async def orchestrator(ctx: AsyncWorkflowContext, request_id: str):
+    approve = ctx.wait_for_external_event(f'approve:{request_id}')
+    reject = ctx.wait_for_external_event(f'reject:{request_id}')
     decision = await ctx.when_any(
         [
-            ctx.wait_for_external_event(f'approve:{request_id}'),
-            ctx.wait_for_external_event(f'reject:{request_id}'),
-            ctx.create_timer(300.0),
+            approve,
+            reject,
+            ctx.create_timer(timedelta(seconds=5)),
         ]
     )
-    if isinstance(decision, dict) and decision.get('approved'):
-        return 'APPROVED'
-    if isinstance(decision, dict) and decision.get('rejected'):
+    if decision == approve:
+        print(f'Decision Approved')
+        return request_id
+    if decision == reject:
+        print(f'Decision Rejected')
         return 'REJECTED'
     return 'TIMEOUT'
 
@@ -38,9 +50,28 @@ def main():
     wfr.start()
     client = DaprWorkflowClient()
     instance_id = 'human_approval_async_1'
-    client.schedule_new_workflow(workflow=orchestrator, input='REQ-1', instance_id=instance_id)
+    try:
+        # clean up previous workflow with this ID
+        client.terminate_workflow(instance_id)
+        client.purge_workflow(instance_id)
+    except Exception:
+        pass
+    client.schedule_new_workflow(workflow=orchestrator, input='req-1', instance_id=instance_id)
+    time.sleep(1)
+    client.raise_workflow_event(instance_id, 'approve:req-1')
     # In a real scenario, raise approve/reject event from another service.
+    wf_state = client.wait_for_workflow_completion(instance_id, timeout_in_seconds=20)
+    print(f'Workflow state: {wf_state}')
+
     wfr.shutdown()
+
+    # simple test
+    if wf_state.runtime_status != WorkflowStatus.COMPLETED:
+        print('Workflow failed with status ', wf_state.runtime_status)
+        exit(1)
+    if wf_state.serialized_output != '"req-1"':
+        print('Workflow result is incorrect!')
+        exit(1)
 
 
 if __name__ == '__main__':

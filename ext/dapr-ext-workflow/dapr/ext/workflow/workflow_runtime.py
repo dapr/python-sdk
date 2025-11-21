@@ -306,6 +306,10 @@ class WorkflowRuntime:
         """Starts the listening for work items on a background thread."""
         self.__worker.start()
 
+    def __enter__(self):
+        self.start()
+        return self
+
     def shutdown(self):
         """Stops the listening for work items on a background thread."""
         try:
@@ -315,6 +319,10 @@ class WorkflowRuntime:
         except Exception as exc:  # pragma: no cover
             # DurableTask worker may emit CANCELLED warnings during local shutdown; not fatal
             self._logger.warning(f'Worker stop encountered {type(exc).__name__}: {exc}')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.shutdown()
+        return False
 
     def workflow(self, __fn: Workflow = None, *, name: Optional[str] = None):
         """Decorator to register a workflow function.

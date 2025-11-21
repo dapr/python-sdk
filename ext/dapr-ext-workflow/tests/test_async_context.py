@@ -37,6 +37,11 @@ class DummyBaseCtx:
             parent_instance_id=None,
         )
 
+    # Minimal orchestration API used by async awaitables
+    def create_timer(self, fire_at):
+        # In unit tests we don't run the task; just return a simple sentinel object
+        return object()
+
     def set_custom_status(self, s: str):
         self._custom_status = s
 

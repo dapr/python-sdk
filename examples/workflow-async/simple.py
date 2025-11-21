@@ -11,6 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the specific language governing permissions and
 limitations under the License.
 """
+import json
 
 from datetime import timedelta
 from time import sleep
@@ -21,6 +22,7 @@ from dapr.ext.workflow import (
     RetryPolicy,
     WorkflowActivityContext,
     WorkflowRuntime,
+    WorkflowStatus,
 )
 
 counter = 0
@@ -58,18 +60,19 @@ async def hello_world_wf(ctx: AsyncWorkflowContext, wf_input):
     print(f'Child workflow returned {result_4}')
 
     # Event vs timeout using when_any
+    event_1 = ctx.wait_for_external_event(event_name)
     first = await ctx.when_any(
         [
-            ctx.wait_for_external_event(event_name),
+            event_1,
             ctx.create_timer(timedelta(seconds=30)),
         ]
     )
 
     # Proceed only if event won
-    if isinstance(first, dict) and 'event' in first:
-        await ctx.call_activity(hello_act, input=100)
-        await ctx.call_activity(hello_act, input=1000)
-        return 'Completed'
+    if first == event_1:
+        result_5 = await ctx.call_activity(hello_act, input=100)
+        result_6 = await ctx.call_activity(hello_act, input=1000)
+        return dict(result_1=result_1, result_2=result_2, result_3=result_3, result_4=result_4, result_5=result_5, result_6=result_6)
     return 'Timeout'
 
 
@@ -108,28 +111,37 @@ def act_for_child_wf(ctx: WorkflowActivityContext, inp):
 
 
 def main():
-    wfr.start()
-    wf_client = DaprWorkflowClient()
+    wf_state = {}
+    with wfr:
+        wf_client = DaprWorkflowClient()
 
-    wf_client.schedule_new_workflow(
-        workflow=hello_world_wf, input=input_data, instance_id=instance_id
-    )
+        wf_client.schedule_new_workflow(
+            workflow=hello_world_wf, input=input_data, instance_id=instance_id
+        )
 
-    wf_client.wait_for_workflow_start(instance_id)
+        wf_client.wait_for_workflow_start(instance_id)
 
-    # Let initial activities run
-    sleep(5)
+        # Let initial activities run
+        sleep(5)
 
-    # Raise event to continue
-    wf_client.raise_workflow_event(
-        instance_id=instance_id, event_name=event_name, data={'ok': True}
-    )
+        # Raise event to continue
+        wf_client.raise_workflow_event(
+            instance_id=instance_id, event_name=event_name, data={'ok': True}
+        )
 
-    # Wait for completion
-    state = wf_client.wait_for_workflow_completion(instance_id, timeout_in_seconds=60)
-    print(f'Workflow status: {state.runtime_status.name}')
+        # Wait for completion
+        wf_state = wf_client.wait_for_workflow_completion(instance_id, timeout_in_seconds=60)
 
-    wfr.shutdown()
+    # simple test
+    if wf_state.runtime_status != WorkflowStatus.COMPLETED:
+        print('Workflow failed with status ', wf_state.runtime_status)
+        exit(1)
+    output = json.loads(wf_state.serialized_output)
+    if (output["result_1"] != 'Activity returned 1' or output["result_2"] != 'Activity returned 10' or
+            output["result_3"] != 'Activity returned 2' or output["result_4"] != 'ok' or
+            output["result_5"] != 'Activity returned 100' or output["result_6"] != 'Activity returned 1000'):
+        print('Workflow result is incorrect!')
+        exit(1)
 
 
 if __name__ == '__main__':
