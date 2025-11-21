@@ -374,7 +374,7 @@ class WorkflowRuntime:
         fn: Callable[[AsyncWorkflowContext, Any], Awaitable[Any]],
         *,
         name: Optional[str] = None,
-        sandbox_mode: SandboxMode = SandboxMode.OFF,
+        sandbox_mode: SandboxMode = SandboxMode.BEST_EFFORT,
     ) -> None:
         """Register an async workflow function.
 
