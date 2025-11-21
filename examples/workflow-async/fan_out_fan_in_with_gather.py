@@ -12,6 +12,8 @@ See the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
+
 from dapr.ext.workflow import (
     AsyncWorkflowContext,
     DaprWorkflowClient,
@@ -20,36 +22,40 @@ from dapr.ext.workflow import (
     WorkflowStatus,
 )
 
+# test using sandbox to convert asyncio methods into deterministic ones
+
 wfr = WorkflowRuntime()
 
 
-@wfr.activity(name='sum')
-def sum_act(ctx: WorkflowActivityContext, nums):
-    return sum(nums)
+@wfr.activity(name='square')
+def square(ctx: WorkflowActivityContext, x: int) -> int:
+    return x * x
 
 
-@wfr.async_workflow(name='task_chaining_async')
+#  workflow function auto-recognize coroutine function and converts this into wfr.async_workflow
+@wfr.workflow(name='fan_out_fan_in_async')
 async def orchestrator(ctx: AsyncWorkflowContext):
-    a = await ctx.call_activity(sum_act, input=[1, 2])
-    b = await ctx.call_activity(sum_act, input=[a, 3])
-    c = await ctx.call_activity(sum_act, input=[b, 4])
-    return c
+    tasks = [ctx.call_activity(square, input=i) for i in range(1, 6)]
+    # 1 + 4 + 9 + 16 + 25 = 55
+    results = await asyncio.gather(*tasks)
+    total = sum(results)
+    return total
 
 
 def main():
     wfr.start()
     client = DaprWorkflowClient()
-    instance_id = 'task_chain_async'
+    instance_id = 'fofi_async'
     client.schedule_new_workflow(workflow=orchestrator, instance_id=instance_id)
     wf_state = client.wait_for_workflow_completion(instance_id, timeout_in_seconds=60)
+    print(f'Workflow state: {wf_state}')
     wfr.shutdown()
 
     # simple test
     if wf_state.runtime_status != WorkflowStatus.COMPLETED:
         print('Workflow failed with status ', wf_state.runtime_status)
         exit(1)
-    # 1 + 2 + 3 + 4 = 10
-    if wf_state.serialized_output != '10':
+    if wf_state.serialized_output != '55':
         print('Workflow result is incorrect!')
         exit(1)
 

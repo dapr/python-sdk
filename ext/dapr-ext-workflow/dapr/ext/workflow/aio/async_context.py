@@ -86,14 +86,14 @@ class AsyncWorkflowContext(DeterministicContextMixin):
         return self._base_ctx.is_replaying
 
     # Timers & Events
-    def create_timer(self, fire_at: float | timedelta | datetime) -> Awaitable[None]:
+    def create_timer(self, fire_at: int | float | timedelta | datetime) -> Awaitable[None]:
         # If float provided, interpret as seconds
-        if isinstance(fire_at, (int, float)):
-            fire_at = timedelta(seconds=float(fire_at))
-        return SleepAwaitable(self._base_ctx, fire_at)
+        return self.sleep(fire_at)
 
-    def sleep(self, duration: float | timedelta | datetime) -> Awaitable[None]:
-        return self.create_timer(duration)
+    def sleep(self, duration: int | float | timedelta | datetime) -> Awaitable[None]:
+        if isinstance(duration, (int, float)):
+            duration = timedelta(seconds=float(duration))
+        return SleepAwaitable(self._base_ctx, duration)
 
     def wait_for_external_event(self, name: str) -> Awaitable[Any]:
         return ExternalEventAwaitable(self._base_ctx, name)

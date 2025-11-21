@@ -37,7 +37,9 @@ class FakeCtx:
 
         return _T()
 
-    def call_child_workflow(self, workflow, *, input=None, instance_id=None, retry_policy=None, app_id=None):
+    def call_child_workflow(
+        self, workflow, *, input=None, instance_id=None, retry_policy=None, app_id=None
+    ):
         class _T:
             pass
 
