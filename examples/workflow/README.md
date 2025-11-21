@@ -12,6 +12,8 @@ This directory contains examples of using the [Dapr Workflow](https://docs.dapr.
 You can install dapr SDK package using pip command:
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
 pip3 install -r requirements.txt
 ```
 
