@@ -58,12 +58,10 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         new_versions: ChannelVersions,
     ) -> RunnableConfig:
         """Store a checkpoint to Redis with separate blob storage."""
-        configurable = config['configurable'].copy()
-
-        thread_id = configurable.pop('thread_id')
-        checkpoint_ns = configurable.pop('checkpoint_ns')
-        config_checkpoint_id = configurable.pop('checkpoint_id', None)
-        thread_ts = configurable.pop('thread_ts', '')
+        thread_id = config['configurable']['thread_id']
+        checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
+        config_checkpoint_id = config['configurable'].get('checkpoint_id', '')
+        thread_ts = config['configurable'].get('thread_ts', '')
 
         checkpoint_id = config_checkpoint_id or thread_ts or checkpoint.get('id', '')
 
