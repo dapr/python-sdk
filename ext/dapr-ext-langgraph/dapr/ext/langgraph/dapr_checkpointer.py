@@ -1,21 +1,21 @@
 import base64
 import json
-import msgpack
 import time
-from ulid import ULID
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
+import msgpack
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from ulid import ULID
 
 from dapr.clients import DaprClient
 from langgraph.checkpoint.base import (
-    BaseCheckpointSaver,
-    Checkpoint, 
-    CheckpointTuple, 
     WRITES_IDX_MAP,
-    CheckpointMetadata,
+    BaseCheckpointSaver,
     ChannelVersions,
+    Checkpoint,
+    CheckpointMetadata,
+    CheckpointTuple,
 )
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
@@ -58,23 +58,23 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         new_versions: ChannelVersions,
     ) -> RunnableConfig:
         """Store a checkpoint to Redis with separate blob storage."""
-        configurable = config["configurable"].copy()
+        configurable = config['configurable'].copy()
 
-        thread_id = configurable.pop("thread_id")
-        checkpoint_ns = configurable.pop("checkpoint_ns")
-        config_checkpoint_id = configurable.pop("checkpoint_id", None)
-        thread_ts = configurable.pop("thread_ts", "")
+        thread_id = configurable.pop('thread_id')
+        checkpoint_ns = configurable.pop('checkpoint_ns')
+        config_checkpoint_id = configurable.pop('checkpoint_id', None)
+        thread_ts = configurable.pop('thread_ts', '')
 
-        checkpoint_id = config_checkpoint_id or thread_ts or checkpoint.get("id", "")
+        checkpoint_id = config_checkpoint_id or thread_ts or checkpoint.get('id', '')
 
         parent_checkpoint_id = None
         if (
-            checkpoint.get("id")
+            checkpoint.get('id')
             and config_checkpoint_id
-            and checkpoint.get("id") != config_checkpoint_id
+            and checkpoint.get('id') != config_checkpoint_id
         ):
             parent_checkpoint_id = config_checkpoint_id
-            checkpoint_id = checkpoint["id"]
+            checkpoint_id = checkpoint['id']
 
         storage_safe_thread_id = self._safe_redis_id(thread_id)
         storage_safe_checkpoint_ns = self._safe_redis_ns(checkpoint_ns)
@@ -82,10 +82,10 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
 
         copy = checkpoint.copy()
         next_config = {
-            "configurable": {
-                "thread_id": thread_id,
-                "checkpoint_ns": checkpoint_ns,
-                "checkpoint_id": checkpoint_id,
+            'configurable': {
+                'thread_id': thread_id,
+                'checkpoint_ns': checkpoint_ns,
+                'checkpoint_id': checkpoint_id,
             }
         }
 
@@ -98,45 +98,37 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
                 checkpoint_ts = time.time() * 1000
 
         checkpoint_data = {
-            "thread_id": storage_safe_thread_id,
-            "checkpoint_ns": storage_safe_checkpoint_ns,
-            "checkpoint_id": storage_safe_checkpoint_id,
-            "parent_checkpoint_id": (
-                "00000000-0000-0000-0000-000000000000" if (
-                    parent_checkpoint_id if parent_checkpoint_id else ""
-                ) == "" else parent_checkpoint_id
+            'thread_id': storage_safe_thread_id,
+            'checkpoint_ns': storage_safe_checkpoint_ns,
+            'checkpoint_id': storage_safe_checkpoint_id,
+            'parent_checkpoint_id': (
+                '00000000-0000-0000-0000-000000000000'
+                if (parent_checkpoint_id if parent_checkpoint_id else '') == ''
+                else parent_checkpoint_id
             ),
-            "checkpoint_ts": checkpoint_ts,
-            "checkpoint": self._dump_checkpoint(copy),
-            "metadata": self._dump_metadata(metadata),
-            "has_writes": False,
+            'checkpoint_ts': checkpoint_ts,
+            'checkpoint': self._dump_checkpoint(copy),
+            'metadata': self._dump_metadata(metadata),
+            'has_writes': False,
         }
 
-        if all(key in metadata for key in ["source", "step"]):
-            checkpoint_data["source"] = metadata["source"]
-            checkpoint_data["step"] = metadata["step"]
+        if all(key in metadata for key in ['source', 'step']):
+            checkpoint_data['source'] = metadata['source']
+            checkpoint_data['step'] = metadata['step']
 
         checkpoint_key = self._make_redis_checkpoint_key(
-            thread_id=thread_id, 
-            checkpoint_ns=checkpoint_ns, 
-            checkpoint_id=checkpoint_id
+            thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
         )
 
         _, data = self.serde.dumps_typed(checkpoint_data)
-        self.client.save_state(
-            store_name=self.store_name,
-            key=checkpoint_key,
-            value=data
-        )
+        self.client.save_state(store_name=self.store_name, key=checkpoint_key, value=data)
 
         latest_pointer_key = (
-            f"checkpoint_latest:{storage_safe_thread_id}:{storage_safe_checkpoint_ns}"
+            f'checkpoint_latest:{storage_safe_thread_id}:{storage_safe_checkpoint_ns}'
         )
 
         self.client.save_state(
-            store_name=self.store_name,
-            key=latest_pointer_key,
-            value=checkpoint_key
+            store_name=self.store_name, key=latest_pointer_key, value=checkpoint_key
         )
 
         return next_config
@@ -146,62 +138,50 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         config: RunnableConfig,
         writes: Sequence[Tuple[str, Any]],
         task_id: str,
-        task_path: str = "",
+        task_path: str = '',
     ) -> None:
         """Store intermediate writes linked to a checkpoint with integrated key registry."""
-        thread_id = config["configurable"]["thread_id"]
-        checkpoint_ns = config["configurable"].get("checkpoint_ns", "")
-        checkpoint_id = config["configurable"]["checkpoint_id"]
-        storage_safe_thread_id = self._safe_redis_id(thread_id),
+        thread_id = config['configurable']['thread_id']
+        checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
+        checkpoint_id = config['configurable']['checkpoint_id']
+        storage_safe_thread_id = (self._safe_redis_id(thread_id),)
         storage_safe_checkpoint_ns = self._safe_redis_ns(checkpoint_ns)
 
         writes_objects: List[Dict[str, Any]] = []
         for idx, (channel, value) in enumerate(writes):
             type_, blob = self.serde.dumps_typed(value)
             write_obj: Dict[str, Any] = {
-                "thread_id": storage_safe_thread_id,
-                "checkpoint_ns": storage_safe_checkpoint_ns,
-                "checkpoint_id": self._safe_redis_id(checkpoint_id),
-                "task_id": task_id,
-                "task_path": task_path,
-                "idx": WRITES_IDX_MAP.get(channel, idx),
-                "channel": channel,
-                "type": type_,
-                "blob": self._encode_blob(
-                    blob
-                ),
+                'thread_id': storage_safe_thread_id,
+                'checkpoint_ns': storage_safe_checkpoint_ns,
+                'checkpoint_id': self._safe_redis_id(checkpoint_id),
+                'task_id': task_id,
+                'task_path': task_path,
+                'idx': WRITES_IDX_MAP.get(channel, idx),
+                'channel': channel,
+                'type': type_,
+                'blob': self._encode_blob(blob),
             }
             writes_objects.append(write_obj)
 
         for write_obj in writes_objects:
-            idx_value = write_obj["idx"]
+            idx_value = write_obj['idx']
             assert isinstance(idx_value, int)
             key = self._make_redis_checkpoint_key(
-                thread_id=thread_id,
-                checkpoint_ns=checkpoint_ns,
-                checkpoint_id=checkpoint_id
+                thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
             )
 
-            self.client.save_state(
-                store_name=self.store_name,
-                key=key,
-                value=json.dumps(write_obj)
-            )
+            self.client.save_state(store_name=self.store_name, key=key, value=json.dumps(write_obj))
 
             checkpoint_key = self._make_redis_checkpoint_key(
-                thread_id=thread_id, 
-                checkpoint_ns=checkpoint_ns, 
-                checkpoint_id=checkpoint_id
+                thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
             )
 
             latest_pointer_key = (
-                f"checkpoint_latest:{storage_safe_thread_id}:{storage_safe_checkpoint_ns}"
+                f'checkpoint_latest:{storage_safe_thread_id}:{storage_safe_checkpoint_ns}'
             )
 
             self.client.save_state(
-                store_name=self.store_name,
-                key=latest_pointer_key,
-                value=checkpoint_key
+                store_name=self.store_name, key=latest_pointer_key, value=checkpoint_key
             )
 
     def list(self, config: RunnableConfig) -> list[CheckpointTuple]:
@@ -253,33 +233,37 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             )
 
     def get_tuple(self, config: RunnableConfig) -> Optional[CheckpointTuple]:
-        thread_id = config["configurable"]["thread_id"]
-        checkpoint_ns = config["configurable"].get("checkpoint_ns", "")
+        thread_id = config['configurable']['thread_id']
+        checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
 
         storage_safe_thread_id = self._safe_redis_id(thread_id)
         storage_safe_checkpoint_ns = self._safe_redis_ns(checkpoint_ns)
 
-        key = ":".join([
-            "checkpoint_latest",
-            storage_safe_thread_id,
-            storage_safe_checkpoint_ns,
-        ])
+        key = ':'.join(
+            [
+                'checkpoint_latest',
+                storage_safe_thread_id,
+                storage_safe_checkpoint_ns,
+            ]
+        )
 
         # First we extract the latest checkpoint key
         checkpoint_key = self.client.get_state(store_name=self.store_name, key=key)
         # To then derive the checkpoint data
-        checkpoint_data = self.client.get_state(store_name=self.store_name, key=checkpoint_key.data.decode())
+        checkpoint_data = self.client.get_state(
+            store_name=self.store_name, key=checkpoint_key.data.decode()
+        )
 
         if not checkpoint_data.data:
             return None
 
         unpacked = msgpack.unpackb(checkpoint_data.data)
 
-        checkpoint = unpacked[b"checkpoint"]
-        channel_values = checkpoint[b"channel_values"]
+        checkpoint = unpacked[b'checkpoint']
+        channel_values = checkpoint[b'channel_values']
 
         decoded_messages = []
-        for item in channel_values[b"messages"]:
+        for item in channel_values[b'messages']:
             if isinstance(item, msgpack.ExtType):
                 decoded_messages.append(
                     self._convert_checkpoint_message(
@@ -289,22 +273,23 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             else:
                 decoded_messages.append(item)
 
-        checkpoint[b"channel_values"][b"messages"] = decoded_messages
+        checkpoint[b'channel_values'][b'messages'] = decoded_messages
 
-        mdata = unpacked.get(b"metadata")
+        mdata = unpacked.get(b'metadata')
         if isinstance(mdata, bytes):
             mdata = self._load_metadata(msgpack.unpackb(mdata))
 
         metadata = {
-            k.decode() if isinstance(k, bytes) else k:
-            v.decode() if isinstance(v, bytes) else v
+            k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v
             for k, v in mdata.items()
         }
 
-        checkpoint_obj = Checkpoint(**{
-            key.decode() if isinstance(key, bytes) else key:
-                value for key, value in checkpoint.items()
-        })
+        checkpoint_obj = Checkpoint(
+            **{
+                key.decode() if isinstance(key, bytes) else key: value
+                for key, value in checkpoint.items()
+            }
+        )
 
         decoded_checkpoint = self._decode_bytes(checkpoint_obj)
 
@@ -315,27 +300,27 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             parent_config=None,
             pending_writes=[],
         )
-    
+
     def _safe_redis_id(self, id) -> str:
-        return "00000000-0000-0000-0000-000000000000" if id == "" else id
-    
+        return '00000000-0000-0000-0000-000000000000' if id == '' else id
+
     def _safe_redis_ns(self, ns) -> str:
-        return "__empty__" if ns == "" else ns
-    
+        return '__empty__' if ns == '' else ns
+
     def _convert_checkpoint_message(self, msg_item):
         _, _, data_dict, _ = msg_item
         data_dict = self._decode_bytes(data_dict)
 
-        msg_type = data_dict.get("type")
-        
-        if msg_type == "human":
+        msg_type = data_dict.get('type')
+
+        if msg_type == 'human':
             return HumanMessage(**data_dict)
-        elif msg_type == "ai":
+        elif msg_type == 'ai':
             return AIMessage(**data_dict)
-        elif msg_type == "tool":
+        elif msg_type == 'tool':
             return ToolMessage(**data_dict)
         else:
-            raise ValueError(f"Unknown message type: {msg_type}")
+            raise ValueError(f'Unknown message type: {msg_type}')
 
     def _decode_bytes(self, obj):
         if isinstance(obj, bytes):
@@ -360,28 +345,28 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         if isinstance(blob, bytes):
             return base64.b64encode(blob).decode()
         return blob
-    
+
     def _dump_checkpoint(self, checkpoint: Checkpoint) -> dict[str, Any]:
         type_, data = self.serde.dumps_typed(checkpoint)
 
-        if type_ == "json":
+        if type_ == 'json':
             checkpoint_data = cast(dict, json.loads(data))
         else:
             checkpoint_data = cast(dict, self.serde.loads_typed((type_, data)))
 
-            if "channel_values" in checkpoint_data:
-                for key, value in checkpoint_data["channel_values"].items():
+            if 'channel_values' in checkpoint_data:
+                for key, value in checkpoint_data['channel_values'].items():
                     if isinstance(value, bytes):
-                        checkpoint_data["channel_values"][key] = {
-                            "__bytes__": self._encode_blob(value)
+                        checkpoint_data['channel_values'][key] = {
+                            '__bytes__': self._encode_blob(value)
                         }
 
-        if "channel_versions" in checkpoint_data:
-            checkpoint_data["channel_versions"] = {
-                k: str(v) for k, v in checkpoint_data["channel_versions"].items()
+        if 'channel_versions' in checkpoint_data:
+            checkpoint_data['channel_versions'] = {
+                k: str(v) for k, v in checkpoint_data['channel_versions'].items()
             }
 
-        return {"type": type_, **checkpoint_data, "pending_sends": []}
+        return {'type': type_, **checkpoint_data, 'pending_sends': []}
 
     def _load_metadata(self, metadata: dict[str, Any]) -> CheckpointMetadata:
         type_str, data_bytes = self.serde.dumps_typed(metadata)
@@ -390,16 +375,18 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
     def _dump_metadata(self, metadata: CheckpointMetadata) -> str:
         _, serialized_bytes = self.serde.dumps_typed(metadata)
         return serialized_bytes
-    
+
     def _make_redis_checkpoint_key(
         self,
         thread_id: str,
         checkpoint_ns: str,
         checkpoint_id: str,
     ) -> str:
-        return ":".join([
-                "checkpoint",
+        return ':'.join(
+            [
+                'checkpoint',
                 thread_id,
                 checkpoint_ns,
                 checkpoint_id,
-            ])
+            ]
+        )
