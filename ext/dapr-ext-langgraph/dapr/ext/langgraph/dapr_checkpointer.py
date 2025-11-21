@@ -143,7 +143,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         """Store intermediate writes linked to a checkpoint with integrated key registry."""
         thread_id = config['configurable']['thread_id']
         checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
-        checkpoint_id = config['configurable']['checkpoint_id']
+        checkpoint_id = config['configurable'].get('checkpoint_id', '')
         storage_safe_thread_id = (self._safe_redis_id(thread_id),)
         storage_safe_checkpoint_ns = self._safe_redis_ns(checkpoint_ns)
 
