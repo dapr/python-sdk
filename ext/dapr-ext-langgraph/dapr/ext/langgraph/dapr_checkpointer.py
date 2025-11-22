@@ -57,7 +57,6 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         metadata: CheckpointMetadata,
         new_versions: ChannelVersions,
     ) -> RunnableConfig:
-        """Store a checkpoint to Redis with separate blob storage."""
         thread_id = config['configurable']['thread_id']
         checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
         config_checkpoint_id = config['configurable'].get('checkpoint_id', '')
@@ -74,9 +73,9 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             parent_checkpoint_id = config_checkpoint_id
             checkpoint_id = checkpoint['id']
 
-        storage_safe_thread_id = self._safe_redis_id(thread_id)
-        storage_safe_checkpoint_ns = self._safe_redis_ns(checkpoint_ns)
-        storage_safe_checkpoint_id = self._safe_redis_id(checkpoint_id)
+        storage_safe_thread_id = self._safe_id(thread_id)
+        storage_safe_checkpoint_ns = self._safe_ns(checkpoint_ns)
+        storage_safe_checkpoint_id = self._safe_id(checkpoint_id)
 
         copy = checkpoint.copy()
         next_config = {
@@ -114,7 +113,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             checkpoint_data['source'] = metadata['source']
             checkpoint_data['step'] = metadata['step']
 
-        checkpoint_key = self._make_redis_checkpoint_key(
+        checkpoint_key = self._make_safe_checkpoint_key(
             thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
         )
 
@@ -142,8 +141,8 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         thread_id = config['configurable']['thread_id']
         checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
         checkpoint_id = config['configurable'].get('checkpoint_id', '')
-        storage_safe_thread_id = (self._safe_redis_id(thread_id),)
-        storage_safe_checkpoint_ns = self._safe_redis_ns(checkpoint_ns)
+        storage_safe_thread_id = (self._safe_id(thread_id),)
+        storage_safe_checkpoint_ns = self._safe_ns(checkpoint_ns)
 
         writes_objects: List[Dict[str, Any]] = []
         for idx, (channel, value) in enumerate(writes):
@@ -151,7 +150,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             write_obj: Dict[str, Any] = {
                 'thread_id': storage_safe_thread_id,
                 'checkpoint_ns': storage_safe_checkpoint_ns,
-                'checkpoint_id': self._safe_redis_id(checkpoint_id),
+                'checkpoint_id': self._safe_id(checkpoint_id),
                 'task_id': task_id,
                 'task_path': task_path,
                 'idx': WRITES_IDX_MAP.get(channel, idx),
@@ -164,13 +163,13 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         for write_obj in writes_objects:
             idx_value = write_obj['idx']
             assert isinstance(idx_value, int)
-            key = self._make_redis_checkpoint_key(
+            key = self._make_safe_checkpoint_key(
                 thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
             )
 
             self.client.save_state(store_name=self.store_name, key=key, value=json.dumps(write_obj))
 
-            checkpoint_key = self._make_redis_checkpoint_key(
+            checkpoint_key = self._make_safe_checkpoint_key(
                 thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
             )
 
@@ -234,8 +233,8 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         thread_id = config['configurable']['thread_id']
         checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
 
-        storage_safe_thread_id = self._safe_redis_id(thread_id)
-        storage_safe_checkpoint_ns = self._safe_redis_ns(checkpoint_ns)
+        storage_safe_thread_id = self._safe_id(thread_id)
+        storage_safe_checkpoint_ns = self._safe_ns(checkpoint_ns)
 
         key = ':'.join(
             [
@@ -252,10 +251,11 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
 
         # To then derive the checkpoint data
         checkpoint_data = self.client.get_state(
-            store_name=self.store_name, key=
-                # checkpoint_key.data can either be str or bytes
-                checkpoint_key.data.decode() if isinstance(checkpoint_key.data, bytes) else 
-                checkpoint_key.data
+            store_name=self.store_name,
+            # checkpoint_key.data can either be str or bytes
+            key=checkpoint_key.data.decode()
+            if isinstance(checkpoint_key.data, bytes)
+            else checkpoint_key.data,
         )
 
         if not checkpoint_data.data:
@@ -315,10 +315,10 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             pending_writes=[],
         )
 
-    def _safe_redis_id(self, id) -> str:
+    def _safe_id(self, id) -> str:
         return '00000000-0000-0000-0000-000000000000' if id == '' else id
 
-    def _safe_redis_ns(self, ns) -> str:
+    def _safe_ns(self, ns) -> str:
         return '__empty__' if ns == '' else ns
 
     def _convert_checkpoint_message(self, msg_item):
@@ -390,7 +390,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         _, serialized_bytes = self.serde.dumps_typed(metadata)
         return serialized_bytes
 
-    def _make_redis_checkpoint_key(
+    def _make_safe_checkpoint_key(
         self,
         thread_id: str,
         checkpoint_ns: str,
