@@ -11,8 +11,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the specific language governing permissions and
 limitations under the License.
 """
-import json
 
+import json
 from datetime import timedelta
 from time import sleep
 
@@ -72,7 +72,14 @@ async def hello_world_wf(ctx: AsyncWorkflowContext, wf_input):
     if first == event_1:
         result_5 = await ctx.call_activity(hello_act, input=100)
         result_6 = await ctx.call_activity(hello_act, input=1000)
-        return dict(result_1=result_1, result_2=result_2, result_3=result_3, result_4=result_4, result_5=result_5, result_6=result_6)
+        return dict(
+            result_1=result_1,
+            result_2=result_2,
+            result_3=result_3,
+            result_4=result_4,
+            result_5=result_5,
+            result_6=result_6,
+        )
     return 'Timeout'
 
 
@@ -137,9 +144,14 @@ def main():
         print('Workflow failed with status ', wf_state.runtime_status)
         exit(1)
     output = json.loads(wf_state.serialized_output)
-    if (output["result_1"] != 'Activity returned 1' or output["result_2"] != 'Activity returned 10' or
-            output["result_3"] != 'Activity returned 2' or output["result_4"] != 'ok' or
-            output["result_5"] != 'Activity returned 100' or output["result_6"] != 'Activity returned 1000'):
+    if (
+        output['result_1'] != 'Activity returned 1'
+        or output['result_2'] != 'Activity returned 10'
+        or output['result_3'] != 'Activity returned 2'
+        or output['result_4'] != 'ok'
+        or output['result_5'] != 'Activity returned 100'
+        or output['result_6'] != 'Activity returned 1000'
+    ):
         print('Workflow result is incorrect!')
         exit(1)
 
