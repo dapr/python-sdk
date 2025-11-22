@@ -34,19 +34,6 @@ from dapr.ext.workflow.interceptors import (
     compose_workflow_outbound_chain,
 )
 from dapr.ext.workflow.retry_policy import RetryPolicy
-from dapr.ext.workflow.serializers import (
-    ActivityIOAdapter,
-    CanonicalSerializable,
-    GenericSerializer,
-    ensure_canonical_json,
-    get_activity_adapter,
-    get_serializer,
-    register_activity_adapter,
-    register_serializer,
-    serialize_activity_input,
-    serialize_activity_output,
-    use_activity_adapter,
-)
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
@@ -79,16 +66,4 @@ __all__ = [
     'compose_runtime_chain',
     'WorkflowExecutionInfo',
     'ActivityExecutionInfo',
-    # serializers
-    'CanonicalSerializable',
-    'GenericSerializer',
-    'ActivityIOAdapter',
-    'ensure_canonical_json',
-    'register_serializer',
-    'get_serializer',
-    'register_activity_adapter',
-    'get_activity_adapter',
-    'use_activity_adapter',
-    'serialize_activity_input',
-    'serialize_activity_output',
 ]
