@@ -1,0 +1,11 @@
+version: 1
+common:
+  resourcesPath: ./components
+  logLevel: info
+  appLogDestination: console
+  daprdLogDestination: console
+
+apps:
+- appID: langgraph_app
+  appDirPath: .
+  command: ["python", "main.py"]
