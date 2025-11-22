@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: langgraph_checkpoint
+  name: dapr-redis
 spec:
   type: state.redis
   version: v1
