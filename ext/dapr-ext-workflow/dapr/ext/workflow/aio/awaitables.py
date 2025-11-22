@@ -13,7 +13,6 @@ limitations under the License.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from typing import Any, Callable
 
 from durabletask import task
@@ -109,67 +108,3 @@ class WhenAllAwaitable(_DTWhenAllAwaitable):
 
 class WhenAnyAwaitable(_DTWhenAnyAwaitable):
     pass
-    # def __init__(self, tasks_like: Iterable[AwaitableBase | task.Task]):
-    #     self._tasks_like = list(tasks_like)
-    #
-    # def _to_task(self) -> task.Task:
-    #     underlying: list[task.Task] = []
-    #     for a in self._tasks_like:
-    #         if isinstance(a, AwaitableBase):
-    #             underlying.append(a._to_task())  # type: ignore[attr-defined]
-    #         elif isinstance(a, task.Task):
-    #             underlying.append(a)
-    #         else:
-    #             raise TypeError('when_any expects AwaitableBase or durabletask.task.Task')
-    #     return task.when_any(underlying)
-# class WhenAnyAwaitable(AwaitableBase):
-#     def __init__(self, tasks_like: Iterable[AwaitableBase | task.Task]):
-#         # Defer conversion; unit tests create awaitables with fakes lacking create_timer()
-#         self._tasks_like: list[AwaitableBase | task.Task] = list(tasks_like)
-
-#     def _to_task(self) -> task.Task:
-#         underlying: list[task.Task] = []
-#         for a in self._tasks_like:
-#             if isinstance(a, AwaitableBase):
-#                 underlying.append(a._to_task())  # type: ignore[attr-defined]
-#             elif isinstance(a, task.Task):
-#                 underlying.append(a)
-#             else:
-#                 raise TypeError('when_any expects AwaitableBase or durabletask.task.Task')
-#         return task.when_any(underlying)
-
-#     def __await__(self):
-#         when_any_task = self._to_task()
-#         completed = yield when_any_task
-
-#         # Tests sometimes send sentinels (non-Task). Pass through in that case.
-#         if not isinstance(completed, task.Task):
-#             return completed
-
-#         # Map completed back to original for identity checks if needed
-#         underlying: list[task.Task] = []
-#         for a in self._tasks_like:
-#             if isinstance(a, AwaitableBase):
-#                 underlying.append(a._to_task())  # type: ignore[attr-defined]
-#             elif isinstance(a, task.Task):
-#                 underlying.append(a)
-
-#         class _CompletedProxy:
-#             __slots__ = ('_original', '_completed')
-
-#             def __init__(self, original: Any, completed_obj: Any):
-#                 self._original = original
-#                 self._completed = completed_obj
-
-#             def __eq__(self, other: object) -> bool:
-#                 return other is self._original
-
-#             def get_result(self) -> Any:
-#                 if hasattr(self._completed, 'get_result') and callable(self._completed.get_result):
-#                     return self._completed.get_result()
-#                 return getattr(self._completed, 'result', None)
-
-#         for original, under in zip(self._tasks_like, underlying, strict=False):
-#             if completed == under:
-#                 return _CompletedProxy(original, completed)
-#         return _CompletedProxy(self._tasks_like[0], completed)
