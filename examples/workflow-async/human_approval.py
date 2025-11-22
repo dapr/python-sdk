@@ -38,10 +38,10 @@ async def orchestrator(ctx: AsyncWorkflowContext, request_id: str):
         ]
     )
     if decision == approve:
-        print(f'Decision Approved')
+        print('Decision Approved')
         return request_id
     if decision == reject:
-        print(f'Decision Rejected')
+        print('Decision Rejected')
         return 'REJECTED'
     return 'TIMEOUT'
 

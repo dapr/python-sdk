@@ -65,7 +65,8 @@ If you need a context manager to remain active during the workflow execution:
         def wrapper():
             with setup_context():
                 gen = next(input)
-                yield from gen  # Keep context alive while generator executes
+                result = yield from gen  # Keep context alive while generator executes
+                return result  # MUST return the result to propagate workflow output
         return wrapper()
 
 For more complex scenarios with ExitStack or async context managers, wrap the generator
@@ -85,7 +86,8 @@ Example with ExitStack:
                 gen = next(input)
 
                 # Keep contexts alive while generator executes
-                yield from gen
+                result = yield from gen
+                return result  # MUST return the result to propagate workflow output
         return wrapper()
 
 This pattern ensures your context manager remains active during:
@@ -93,6 +95,10 @@ This pattern ensures your context manager remains active during:
 - Replays from durable state
 - Continuation after awaits
 - Activity calls and child workflow invocations
+
+CRITICAL: When using `yield from gen`, you MUST capture and return the result explicitly.
+Without `return result`, the wrapper generator will return None and the workflow output
+will be lost (serialized_output will be null).
 """
 
 
@@ -357,9 +363,64 @@ _PAYLOAD_KEY = '__dapr_payload__'
 
 
 def wrap_payload_with_metadata(payload: Any, metadata: dict[str, str] | None) -> Any:
-    """If metadata is provided and non-empty, wrap payload in an envelope for persistence.
+    """Wrap payload in an envelope with metadata for durable persistence.
 
-    Backward compatible: if metadata is falsy, return payload unchanged.
+    The envelope structure allows metadata to be propagated across workflow boundaries
+    (client → workflow → activity → child workflow) and persisted durably alongside the
+    payload. This metadata survives replays, retries, and continues-as-new operations.
+
+    Envelope structure (when metadata is present):
+    ```python
+    {
+        '__dapr_meta__': {
+            'v': 1,  # Version for future compatibility
+            'metadata': {
+                # String key-value pairs only
+                'tenant': 'acme-corp',
+                'request_id': 'req-12345',
+                'otel.trace_id': 'abc123...',
+                # ... other metadata
+            }
+        },
+        '__dapr_payload__': <original_payload>
+    }
+    ```
+
+    When serialized to JSON and stored in Dapr state/history:
+    ```json
+    {
+        "__dapr_meta__": {
+            "v": 1,
+            "metadata": {
+                "tenant": "acme-corp",
+                "request_id": "req-12345"
+            }
+        },
+        "__dapr_payload__": {"user_input": "some data"}
+    }
+    ```
+
+    Usage:
+    - **Client scheduling**: Metadata set by client interceptors is wrapped before
+      scheduling workflows
+    - **Activity calls**: Metadata is wrapped before calling activities from workflows
+    - **Child workflows**: Metadata is wrapped before calling child workflows
+    - **Continue-as-new**: Metadata can be carried over or reset
+
+    Args:
+        payload: The actual data to be passed (can be any JSON-serializable type)
+        metadata: Optional string-only dictionary with cross-cutting concerns
+                  (e.g., trace IDs, tenant info, request IDs)
+
+    Returns:
+        If metadata is provided and non-empty, returns the envelope dict.
+        Otherwise returns payload unchanged (backward compatible).
+
+    Note:
+        - User code never sees the envelope; it's unwrapped before execution
+        - Only string keys/values should be stored in metadata
+        - Metadata should be kept small (avoid large values, no binary data)
+        - Consider size limits and PII redaction policies
     """
     if metadata:
         return {
@@ -375,7 +436,40 @@ def wrap_payload_with_metadata(payload: Any, metadata: dict[str, str] | None) ->
 def unwrap_payload_with_metadata(obj: Any) -> tuple[Any, dict[str, str] | None]:
     """Extract payload and metadata from envelope if present.
 
-    Returns (payload, metadata_dict_or_none).
+    This function is called by the runtime before executing workflows/activities to
+    separate the user payload from the metadata. The payload is passed to user code,
+    while metadata is made available through the execution context.
+
+    Args:
+        obj: The potentially-wrapped input (may be an envelope or raw payload)
+
+    Returns:
+        A tuple of (payload, metadata_dict_or_none):
+        - If obj is an envelope: (extracted_payload, extracted_metadata)
+        - If obj is not an envelope: (obj, None)
+
+    Example:
+        ```python
+        # Envelope case
+        envelope = {
+            '__dapr_meta__': {'v': 1, 'metadata': {'tenant': 'acme'}},
+            '__dapr_payload__': {'x': 1}
+        }
+        payload, metadata = unwrap_payload_with_metadata(envelope)
+        # payload = {'x': 1}
+        # metadata = {'tenant': 'acme'}
+
+        # Non-envelope case (backward compatibility)
+        raw = {'x': 1}
+        payload, metadata = unwrap_payload_with_metadata(raw)
+        # payload = {'x': 1}
+        # metadata = None
+        ```
+
+    Note:
+        - Robust error handling: any exception during unwrapping treats input as raw payload
+        - Validates envelope structure (must have both __dapr_meta__ and __dapr_payload__)
+        - Returns None for metadata if envelope is malformed or metadata is not a dict
     """
     try:
         if isinstance(obj, dict) and _META_KEY in obj and _PAYLOAD_KEY in obj:
