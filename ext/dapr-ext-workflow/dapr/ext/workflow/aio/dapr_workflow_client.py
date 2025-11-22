@@ -96,16 +96,13 @@ class DaprWorkflowClient:
         Returns:
             The ID of the scheduled workflow instance.
         """
-        if hasattr(workflow, '_dapr_alternate_name'):
-            return await self.__obj.schedule_new_orchestration(
-                workflow.__dict__['_dapr_alternate_name'],
-                input=input,
-                instance_id=instance_id,
-                start_at=start_at,
-                reuse_id_policy=reuse_id_policy,
-            )
+        workflow_name = (
+            workflow.__dict__['_dapr_alternate_name']
+            if hasattr(workflow, '_dapr_alternate_name')
+            else workflow.__name__
+        )
         return await self.__obj.schedule_new_orchestration(
-            workflow.__name__,
+            workflow_name,
             input=input,
             instance_id=instance_id,
             start_at=start_at,
