@@ -247,53 +247,69 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
 
         # First we extract the latest checkpoint key
         checkpoint_key = self.client.get_state(store_name=self.store_name, key=key)
+        if not checkpoint_key.data:
+            return None
+
         # To then derive the checkpoint data
         checkpoint_data = self.client.get_state(
-            store_name=self.store_name, key=checkpoint_key.data.decode()
+            store_name=self.store_name, key=
+                # checkpoint_key.data can either be str or bytes
+                checkpoint_key.data.decode() if isinstance(checkpoint_key.data, bytes) else 
+                checkpoint_key.data
         )
 
         if not checkpoint_data.data:
             return None
 
-        unpacked = msgpack.unpackb(checkpoint_data.data)
+        if isinstance(checkpoint_data.data, bytes):
+            unpacked = msgpack.unpackb(checkpoint_data.data)
 
-        checkpoint = unpacked[b'checkpoint']
-        channel_values = checkpoint[b'channel_values']
+            checkpoint_values = unpacked[b'checkpoint']
+            channel_values = checkpoint_values[b'channel_values']
 
-        decoded_messages = []
-        for item in channel_values[b'messages']:
-            if isinstance(item, msgpack.ExtType):
-                decoded_messages.append(
-                    self._convert_checkpoint_message(
-                        self._load_metadata(msgpack.unpackb(item.data))
+            decoded_messages = []
+            for item in channel_values[b'messages']:
+                if isinstance(item, msgpack.ExtType):
+                    decoded_messages.append(
+                        self._convert_checkpoint_message(
+                            self._load_metadata(msgpack.unpackb(item.data))
+                        )
                     )
-                )
-            else:
-                decoded_messages.append(item)
+                else:
+                    decoded_messages.append(item)
 
-        checkpoint[b'channel_values'][b'messages'] = decoded_messages
+            checkpoint_values[b'channel_values'][b'messages'] = decoded_messages
 
-        mdata = unpacked.get(b'metadata')
-        if isinstance(mdata, bytes):
-            mdata = self._load_metadata(msgpack.unpackb(mdata))
+            mdata = unpacked.get(b'metadata')
+            if isinstance(mdata, bytes):
+                mdata = self._load_metadata(msgpack.unpackb(mdata))
 
-        metadata = {
-            k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v
-            for k, v in mdata.items()
-        }
-
-        checkpoint_obj = Checkpoint(
-            **{
-                key.decode() if isinstance(key, bytes) else key: value
-                for key, value in checkpoint.items()
+            metadata = {
+                k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v
+                for k, v in mdata.items()
             }
-        )
 
-        decoded_checkpoint = self._decode_bytes(checkpoint_obj)
+            checkpoint_obj = Checkpoint(
+                **{
+                    key.decode() if isinstance(key, bytes) else key: value
+                    for key, value in checkpoint_values.items()
+                }
+            )
+
+            checkpoint = self._decode_bytes(checkpoint_obj)
+        elif isinstance(checkpoint_data.data, str):
+            unpacked = json.loads(checkpoint_data.data)
+            checkpoint = unpacked.get('checkpoint', None)
+            metadata = unpacked.get('metadata', None)
+
+            if not metadata or not checkpoint:
+                return None
+        else:
+            return None
 
         return CheckpointTuple(
             config=config,
-            checkpoint=decoded_checkpoint,
+            checkpoint=checkpoint,
             metadata=metadata,
             parent_config=None,
             pending_writes=[],
