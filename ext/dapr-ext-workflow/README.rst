@@ -21,6 +21,19 @@ Async authoring (experimental)
 
 This package supports authoring workflows with ``async def`` in addition to the existing generator-based orchestrators.
 
+**When to use async workflows:**
+
+Async workflows are a **special case** for integrating external async libraries into the deterministic workflow
+execution path. Use async workflows when:
+
+- You need to call async libraries that provide deterministic operations (e.g., async graph execution frameworks,
+  async state machines, async DSL interpreters)
+- You're building workflow orchestration on top of existing async code that must run deterministically
+- You want to use ``async``/``await`` syntax with durable task operations for code clarity
+
+**Note:** Most workflows should use regular (generator-based) orchestrators and call async I/O through activities.
+Async workflows don't run a real event loop - the durable task runtime drives execution deterministically.
+
 - Register async workflows using ``WorkflowRuntime.workflow`` (auto-detects coroutine) or ``async_workflow`` / ``register_async_workflow``.
 - Use ``AsyncWorkflowContext`` for deterministic operations:
 
@@ -35,11 +48,18 @@ Interceptors (client/runtime/outbound)
 --------------------------------------
 
 Interceptors provide a simple, composable way to apply cross-cutting behavior with a single
-enter/exit per call. There are three types:
+enter/exit per call.
 
-- Client interceptors: wrap outbound scheduling from the client (schedule_new_workflow).
-- Workflow outbound interceptors: wrap calls made inside workflows (call_activity, call_child_workflow).
-- Runtime interceptors: wrap inbound execution of workflows and activities (before user code).
+**Inbound vs Outbound:**
+
+- **Outbound**: Calls going OUT from your code (scheduling workflows, calling activities/children)
+- **Inbound**: Calls coming IN to execute your code (runtime invoking workflows/activities)
+
+**Three interceptor types:**
+
+- **Client interceptors**: wrap outbound scheduling from the client (``schedule_new_workflow``)
+- **Workflow outbound interceptors**: wrap outbound calls made inside workflows (``call_activity``, ``call_child_workflow``)
+- **Runtime interceptors**: wrap inbound execution when the runtime invokes workflows and activities (before user code runs)
 
 Use cases include context propagation, request metadata stamping, replay-aware logging, validation,
 and policy enforcement.
@@ -454,25 +474,12 @@ Recommended tracing restoration
 - Suppress workflow spans during replay by checking ``input.ctx.is_replaying`` in runtime
   interceptors.
 
-Engine-provided tracing
-~~~~~~~~~~~~~~~~~~~~~~~
-
-- When available from the runtime, use engine-provided fields surfaced on the contexts instead of
-  reconstructing from headers/metadata:
-
-  - ``ctx.trace_parent`` / ``ctx.trace_state`` (and the same on ``activity_ctx``)
-  - ``ctx.workflow_span_id`` (identifier for the workflow span)
-
-- Interceptors should prefer these fields. Use headers/metadata only as a fallback or for
-  application-specific context.
-
 Execution info (minimal) and context properties
 -----------------------------------------------
 
-``execution_info`` is now minimal and only includes the durable ``inbound_metadata`` that was
+``execution_info`` is minimal and only includes the durable ``inbound_metadata`` that was
 propagated into this activation. Use context properties directly for all engine fields:
 
-- ``ctx.trace_parent``, ``ctx.workflow_span_id``, ``ctx.workflow_attempt`` on workflow contexts.
 - Manage outbound propagation via ``ctx.set_metadata(...)`` / ``ctx.get_metadata()``. The runtime
   persists and propagates these values through the metadata envelope.
 
@@ -563,15 +570,6 @@ when_any losers diagnostics (integration)
 -----------------------------------------
 
 - When the sidecar exposes command diagnostics, you can assert only a single command set is emitted for a ``when_any`` (the orchestrator completes after the first winner without emitting cancels). Until then, unit tests assert single-yield behavior and README documents the expected semantics.
-
-Micro-bench guidance
---------------------
-
-- The coroutine-to-generator driver yields at each deterministic suspension point and avoids polling. In practice, overhead vs. generator orchestrators is negligible relative to activity I/O. To measure locally:
-
-  - Create paired generator/async orchestrators that call N no-op activities and 1 timer.
-  - Drive them against a local sidecar and compare wall-clock per activation and total completion time.
-  - Ensure identical history/inputs; differences should be within noise vs. activity latency.
 
 Notes
 -----

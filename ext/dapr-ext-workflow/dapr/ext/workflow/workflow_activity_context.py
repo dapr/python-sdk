@@ -30,8 +30,6 @@ class WorkflowActivityContext:
 
     Purpose
     -------
-    - Provide pass-throughs for engine fields (``trace_parent``, ``trace_state``,
-      and parent ``workflow_span_id`` when available).
     - Surface ``execution_info``: a per-activation snapshot that includes the
       ``inbound_metadata`` actually received for this activity.
     - Offer ``get_metadata()/set_metadata()`` for SDK-level durable metadata management.

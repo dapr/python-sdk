@@ -55,10 +55,14 @@ expected_stdout_lines:
   - "== APP == New counter value is: 111!"
   - "== APP == New counter value is: 1111!"
   - "== APP == Workflow completed! Result: Completed"
-timeout_seconds: 30
+timeout_seconds: 40
 -->
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
+
 dapr run --app-id wf-simple-example -- python3 simple.py
 ```
 <!--END_STEP-->
@@ -101,6 +105,10 @@ timeout_seconds: 30
 -->
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
+
 dapr run --app-id wfexample -- python3 task_chaining.py
 ```
 <!--END_STEP-->
@@ -148,6 +156,10 @@ timeout_seconds: 30
 -->
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
+
 dapr run --app-id wfexample -- python3 fan_out_fan_in.py
 ```
 <!--END_STEP-->
@@ -297,6 +309,10 @@ sleep: 20
 -->
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
+
 dapr run --app-id wfexample3 python3 cross-app3.py &
 dapr run --app-id wfexample2 python3 cross-app2.py &
 dapr run --app-id wfexample1 python3 cross-app1.py
@@ -339,6 +355,10 @@ sleep: 20
 -->
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
+
 export ERROR_ACTIVITY_MODE=true
 dapr run --app-id wfexample3 python3 cross-app3.py &
 dapr run --app-id wfexample2 python3 cross-app2.py &
@@ -380,6 +400,10 @@ sleep: 20
 -->
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
+
 export ERROR_WORKFLOW_MODE=true
 dapr run --app-id wfexample3 python3 cross-app3.py &
 dapr run --app-id wfexample2 python3 cross-app2.py &
