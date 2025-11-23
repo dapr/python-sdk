@@ -109,6 +109,9 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             'has_writes': False,
         }
 
+        # Guard case where metadata is None
+        metadata = metadata or {}
+
         if all(key in metadata for key in ['source', 'step']):
             checkpoint_data['source'] = metadata['source']
             checkpoint_data['step'] = metadata['step']
