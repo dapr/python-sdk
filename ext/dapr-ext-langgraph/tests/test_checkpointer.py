@@ -2,6 +2,8 @@
 
 import json
 import unittest
+import msgpack
+import base64
 from datetime import datetime
 from unittest import mock
 
@@ -61,17 +63,33 @@ class DaprCheckpointerTest(unittest.TestCase):
         mock_client.get_state.return_value.data = json.dumps([])
 
         cp = DaprCheckpointer(self.store, self.prefix)
-        cp.put(self.config, self.checkpoint, None, {'step': 10})
+        cp.put(self.config, self.checkpoint, {'step': 10}, None)
 
-        first_call = mock_client.save_state.call_args_list[0][0]
-        assert first_call[0] == 'statestore'
-        assert first_call[1] == 'lg:t1'
-        saved_payload = json.loads(first_call[2])
+        first_call = mock_client.save_state.call_args_list[0]
+        first_call_kwargs = first_call.kwargs
+        assert first_call_kwargs['store_name'] == 'statestore'
+        assert first_call_kwargs['key'] == 'checkpoint:t1::cp1'
+        unpacked = msgpack.unpackb(first_call_kwargs['value']) # We're packing bytes
+        saved_payload = {}
+        for k, v in unpacked.items():
+            k = k.decode() if isinstance(k, bytes) else k
+            if k == 'checkpoint' or k == 'metadata': # Need to convert b'' on checkpoint/metadata dict key/values
+                if k == 'metadata':
+                    v = msgpack.unpackb(v) # Metadata value is packed
+                val = {}
+                for sk, sv in v.items():
+                    sk = sk.decode() if isinstance(sk, bytes) else sk
+                    sv = sv.decode() if isinstance(sv, bytes) else sv
+                    val[sk] = sv
+            else:
+                val = v.decode() if isinstance(v, bytes) else v
+            saved_payload[k] = val
         assert saved_payload['metadata']['step'] == 10
 
-        second_call = mock_client.save_state.call_args_list[1][0]
-        assert second_call[0] == 'statestore'
-        assert second_call[1] == DaprCheckpointer.REGISTRY_KEY
+        second_call = mock_client.save_state.call_args_list[1]
+        second_call_kwargs = second_call.kwargs
+        assert second_call_kwargs['store_name'] == 'statestore'
+        assert second_call_kwargs['value'] == 'checkpoint:t1::cp1' # Here we're testing if the last checkpoint is the first_call above
 
     def test_put_writes_updates_channel_values(self, mock_client_cls):
         mock_client = mock_client_cls.return_value
@@ -93,9 +111,12 @@ class DaprCheckpointerTest(unittest.TestCase):
         cp.put_writes(self.config, writes=[('a', 99)], task_id='task1')
 
         # save_state is called with updated checkpoint
-        call = mock_client.save_state.call_args[0]
-        saved = json.loads(call[2])
-        assert saved['checkpoint']['channel_values']['a'] == 99
+        call = mock_client.save_state.call_args_list[0]
+        # As we're using named input params we've got to fetch through kwargs
+        kwargs = call.kwargs
+        saved = json.loads(kwargs['value'])
+        # As the value obj is base64 encoded in 'blob' we got to unpack it
+        assert msgpack.unpackb(base64.b64decode(saved['blob'])) == 99
 
     def test_list_returns_all_checkpoints(self, mock_client_cls):
         mock_client = mock_client_cls.return_value
