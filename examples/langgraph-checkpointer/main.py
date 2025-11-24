@@ -54,7 +54,6 @@ builder.add_conditional_edges(
     tools_condition,
 )
 builder.add_edge('tools', 'assistant')
-react_graph = builder.compile()
 
 memory = DaprCheckpointer(store_name='dapr-redis', key_prefix='dapr')
 react_graph_memory = builder.compile(checkpointer=memory)
