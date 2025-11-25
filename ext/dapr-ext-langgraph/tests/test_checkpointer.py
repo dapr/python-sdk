@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import base64
 import json
 import unittest
-import msgpack
-import base64
 from datetime import datetime
 from unittest import mock
 
+import msgpack
 from dapr.ext.langgraph.dapr_checkpointer import DaprCheckpointer
 from langgraph.checkpoint.base import Checkpoint
 
@@ -69,13 +69,15 @@ class DaprCheckpointerTest(unittest.TestCase):
         first_call_kwargs = first_call.kwargs
         assert first_call_kwargs['store_name'] == 'statestore'
         assert first_call_kwargs['key'] == 'checkpoint:t1::cp1'
-        unpacked = msgpack.unpackb(first_call_kwargs['value']) # We're packing bytes
+        unpacked = msgpack.unpackb(first_call_kwargs['value'])  # We're packing bytes
         saved_payload = {}
         for k, v in unpacked.items():
             k = k.decode() if isinstance(k, bytes) else k
-            if k == 'checkpoint' or k == 'metadata': # Need to convert b'' on checkpoint/metadata dict key/values
+            if (
+                k == 'checkpoint' or k == 'metadata'
+            ):  # Need to convert b'' on checkpoint/metadata dict key/values
                 if k == 'metadata':
-                    v = msgpack.unpackb(v) # Metadata value is packed
+                    v = msgpack.unpackb(v)  # Metadata value is packed
                 val = {}
                 for sk, sv in v.items():
                     sk = sk.decode() if isinstance(sk, bytes) else sk
@@ -89,7 +91,9 @@ class DaprCheckpointerTest(unittest.TestCase):
         second_call = mock_client.save_state.call_args_list[1]
         second_call_kwargs = second_call.kwargs
         assert second_call_kwargs['store_name'] == 'statestore'
-        assert second_call_kwargs['value'] == 'checkpoint:t1::cp1' # Here we're testing if the last checkpoint is the first_call above
+        assert (
+            second_call_kwargs['value'] == 'checkpoint:t1::cp1'
+        )  # Here we're testing if the last checkpoint is the first_call above
 
     def test_put_writes_updates_channel_values(self, mock_client_cls):
         mock_client = mock_client_cls.return_value
