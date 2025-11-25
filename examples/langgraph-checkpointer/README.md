@@ -17,6 +17,12 @@ pip3 install -r requirements.txt
 
 ## Run the example
 
+Export your `OPENAI_API_KEY`:
+
+```bash
+export OPENAI_API_KEY="SK-..."
+```
+
 Run the following command in a terminal/command prompt:
 
 <!-- STEP
