@@ -121,53 +121,54 @@ async def main():
     wfr.start()
     wf_client = DaprWorkflowClient()
 
-    print('==========Start Counter Increase as per Input:==========')
-    await wf_client.schedule_new_workflow(
-        workflow=hello_world_wf, input=input_data, instance_id=instance_id
-    )
-
-    await wf_client.wait_for_workflow_start(instance_id)
-
-    # Sleep to let the workflow run initial activities
-    await asyncio.sleep(12)
-
-    assert counter == 11
-    assert retry_count == 2
-    assert child_orchestrator_string == '1aa2bb3cc'
-
-    # Pause Test
-    await wf_client.pause_workflow(instance_id=instance_id)
-    metadata = await wf_client.get_workflow_state(instance_id=instance_id)
-    print(f'Get response from {workflow_name} after pause call: {metadata.runtime_status.name}')
-
-    # Resume Test
-    await wf_client.resume_workflow(instance_id=instance_id)
-    metadata = await wf_client.get_workflow_state(instance_id=instance_id)
-    print(f'Get response from {workflow_name} after resume call: {metadata.runtime_status.name}')
-
-    await asyncio.sleep(2)  # Give the workflow time to reach the event wait state
-    await wf_client.raise_workflow_event(
-        instance_id=instance_id, event_name=event_name, data=event_data
-    )
-
-    print('========= Waiting for Workflow completion', flush=True)
     try:
-        state = await wf_client.wait_for_workflow_completion(instance_id, timeout_in_seconds=30)
-        if state.runtime_status.name == 'COMPLETED':
-            print('Workflow completed! Result: {}'.format(state.serialized_output.strip('"')))
-        else:
-            print(f'Workflow failed! Status: {state.runtime_status.name}')
-    except TimeoutError:
-        print('*** Workflow timed out!')
+        print('==========Start Counter Increase as per Input:==========')
+        await wf_client.schedule_new_workflow(
+            workflow=hello_world_wf, input=input_data, instance_id=instance_id
+        )
 
-    await wf_client.purge_workflow(instance_id=instance_id)
-    try:
-        await wf_client.get_workflow_state(instance_id=instance_id)
-    except DaprInternalError as err:
-        if non_existent_id_error in err._message:
-            print('Instance Successfully Purged')
+        await wf_client.wait_for_workflow_start(instance_id)
 
-    wfr.shutdown()
+        # Sleep to let the workflow run initial activities
+        await asyncio.sleep(12)
+
+        assert counter == 11
+        assert retry_count == 2
+        assert child_orchestrator_string == '1aa2bb3cc'
+
+        # Pause Test
+        await wf_client.pause_workflow(instance_id=instance_id)
+        metadata = await wf_client.get_workflow_state(instance_id=instance_id)
+        print(f'Get response from {workflow_name} after pause call: {metadata.runtime_status.name}')
+
+        # Resume Test
+        await wf_client.resume_workflow(instance_id=instance_id)
+        metadata = await wf_client.get_workflow_state(instance_id=instance_id)
+        print(f'Get response from {workflow_name} after resume call: {metadata.runtime_status.name}')
+
+        await asyncio.sleep(2)  # Give the workflow time to reach the event wait state
+        await wf_client.raise_workflow_event(
+            instance_id=instance_id, event_name=event_name, data=event_data
+        )
+
+        print('========= Waiting for Workflow completion', flush=True)
+        try:
+            state = await wf_client.wait_for_workflow_completion(instance_id, timeout_in_seconds=30)
+            if state.runtime_status.name == 'COMPLETED':
+                print('Workflow completed! Result: {}'.format(state.serialized_output.strip('"')))
+            else:
+                print(f'Workflow failed! Status: {state.runtime_status.name}')
+        except TimeoutError:
+            print('*** Workflow timed out!')
+
+        await wf_client.purge_workflow(instance_id=instance_id)
+        try:
+            await wf_client.get_workflow_state(instance_id=instance_id)
+        except DaprInternalError as err:
+            if non_existent_id_error in err._message:
+                print('Instance Successfully Purged')
+    finally:
+        wfr.shutdown()
 
 
 if __name__ == '__main__':
