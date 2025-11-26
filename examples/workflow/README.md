@@ -85,6 +85,72 @@ The output of this example should look like this:
   - "== APP == Workflow completed! Result: Completed"
 ```
 
+### Simple Workflow with async workflow client
+This example represents a workflow that manages counters through a series of activities and child workflows. It features using the async workflow client.
+It shows several Dapr Workflow features including:
+- Basic activity execution with counter increments
+- Retryable activities with configurable retry policies
+- Child workflow orchestration with retry logic
+- External event handling with timeouts
+- Workflow state management (pause/resume)
+- Activity error handling and retry backoff
+- Global state tracking across workflow components
+- Workflow lifecycle management (start, pause, resume, purge)
+
+<!--STEP
+name: Run the simple workflow example
+expected_stdout_lines:
+  - "== APP == Hi Counter!"
+  - "== APP == New counter value is: 1!"
+  - "== APP == New counter value is: 11!"
+  - "== APP == Retry count value is: 0!"
+  - "== APP == Retry count value is: 1! This print statement verifies retry"
+  - "== APP == Appending 1 to child_orchestrator_string!"
+  - "== APP == Appending a to child_orchestrator_string!"
+  - "== APP == Appending a to child_orchestrator_string!"
+  - "== APP == Appending 2 to child_orchestrator_string!"
+  - "== APP == Appending b to child_orchestrator_string!"
+  - "== APP == Appending b to child_orchestrator_string!"
+  - "== APP == Appending 3 to child_orchestrator_string!"
+  - "== APP == Appending c to child_orchestrator_string!"
+  - "== APP == Appending c to child_orchestrator_string!"
+  - "== APP == Get response from hello_world_wf after pause call: SUSPENDED"
+  - "== APP == Get response from hello_world_wf after resume call: RUNNING"
+  - "== APP == New counter value is: 111!"
+  - "== APP == New counter value is: 1111!"
+  - "== APP == Workflow completed! Result: Completed"
+timeout_seconds: 30
+-->
+
+```sh
+dapr run --app-id wf-simple-aio-example -- python3 simple_aio_client.py
+```
+<!--END_STEP-->
+
+The output of this example should look like this:
+
+```
+ - "== APP == Hi Counter!"
+  - "== APP == New counter value is: 1!"
+  - "== APP == New counter value is: 11!"
+  - "== APP == Retry count value is: 0!"
+  - "== APP == Retry count value is: 1! This print statement verifies retry"
+  - "== APP == Appending 1 to child_orchestrator_string!"
+  - "== APP == Appending a to child_orchestrator_string!"
+  - "== APP == Appending a to child_orchestrator_string!"
+  - "== APP == Appending 2 to child_orchestrator_string!"
+  - "== APP == Appending b to child_orchestrator_string!"
+  - "== APP == Appending b to child_orchestrator_string!"
+  - "== APP == Appending 3 to child_orchestrator_string!"
+  - "== APP == Appending c to child_orchestrator_string!"
+  - "== APP == Appending c to child_orchestrator_string!"
+  - "== APP == Get response from hello_world_wf after pause call: SUSPENDED"
+  - "== APP == Get response from hello_world_wf after resume call: RUNNING"
+  - "== APP == New counter value is: 111!"
+  - "== APP == New counter value is: 1111!"
+  - "== APP == Workflow completed! Result: Completed"
+```
+
 ### Task Chaining
 
 This example demonstrates how to chain "activity" tasks together in a workflow. You can run this sample using the following command:
