@@ -9,7 +9,6 @@ to isolate environment issues from WorkflowRuntime wiring.
 
 from __future__ import annotations
 
-import os
 import time
 
 import pytest
@@ -17,36 +16,29 @@ from durabletask.aio import AsyncWorkflowContext
 from durabletask.client import TaskHubGrpcClient
 from durabletask.worker import TaskHubGrpcWorker
 
-pytestmark = pytest.mark.e2e
+from .dapr_test_utils import dapr_sidecar_fixture, skip_if_no_dapr
+
+pytestmark = [pytest.mark.e2e, skip_if_no_dapr]
+
+# Dapr configuration for e2e tests
+DAPR_GRPC_PORT = 50012
+DAPR_HTTP_PORT = 3502
 
 
-def _is_runtime_available(ep_str: str) -> bool:
-    import socket
-
-    try:
-        host, port = ep_str.split(':')
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        result = sock.connect_ex((host, int(port)))
-        sock.close()
-        return result == 0
-    except Exception:
-        return False
+@pytest.fixture(scope='module')
+def dapr_sidecar():
+    """Start Dapr sidecar for all e2e tests in this module."""
+    yield from dapr_sidecar_fixture('test-e2e-dt', DAPR_GRPC_PORT, DAPR_HTTP_PORT)
 
 
-endpoint = os.getenv('DAPR_GRPC_ENDPOINT', 'localhost:50001')
-
-skip_if_no_runtime = pytest.mark.skipif(
-    not _is_runtime_available(endpoint),
-    reason='DurableTask runtime not available',
-)
+def get_workger_client_worker() -> tuple[TaskHubGrpcWorker, TaskHubGrpcClient]:
+    return TaskHubGrpcWorker(host_address=f'localhost:{DAPR_GRPC_PORT}'), TaskHubGrpcClient(
+        host_address=f'localhost:{DAPR_GRPC_PORT}'
+    )
 
 
-@skip_if_no_runtime
-def test_dt_simple_activity_e2e():
-    # using global read-only endpoint variable
-    worker = TaskHubGrpcWorker(host_address=endpoint)
-    client = TaskHubGrpcClient(host_address=endpoint)
+def test_dt_simple_activity_e2e(dapr_sidecar):
+    worker, client = get_workger_client_worker()
 
     def act(ctx, x: int) -> int:
         return x * 3
@@ -78,16 +70,13 @@ def test_dt_simple_activity_e2e():
             pass
 
 
-@skip_if_no_runtime
-def test_dt_timer_e2e():
-    # using global read-only endpoint variable
-    worker = TaskHubGrpcWorker(host_address=endpoint)
-    client = TaskHubGrpcClient(host_address=endpoint)
+def test_dt_timer_e2e(dapr_sidecar):
+    worker, client = get_workger_client_worker()
 
     @worker.add_async_orchestrator
     async def orch(ctx: AsyncWorkflowContext, delay: float) -> dict:
         start = ctx.now()
-        await ctx.sleep(delay)
+        await ctx.create_timer(delay)
         end = ctx.now()
         return {'start': start.isoformat(), 'end': end.isoformat(), 'delay': delay}
 
@@ -111,11 +100,8 @@ def test_dt_timer_e2e():
             pass
 
 
-@skip_if_no_runtime
-def test_dt_sub_orchestrator_e2e():
-    # using global read-only endpoint variable
-    worker = TaskHubGrpcWorker(host_address=endpoint)
-    client = TaskHubGrpcClient(host_address=endpoint)
+def test_dt_sub_orchestrator_e2e(dapr_sidecar):
+    worker, client = get_workger_client_worker()
 
     def act(ctx, s: str) -> str:
         return f'A:{s}'
@@ -179,6 +165,56 @@ def test_dt_sub_orchestrator_e2e():
             print('output=', getattr(st, 'serialized_output', None))
             print('failure=', getattr(st, 'failure_details', None))
         assert st.runtime_status.name == 'COMPLETED'
+    finally:
+        try:
+            worker.stop()
+        except Exception:
+            pass
+
+
+def test_dt_async_activity_e2e(dapr_sidecar):
+    """Test async activities with actual async I/O operations."""
+    worker, client = get_workger_client_worker()
+
+    # Define an async activity that performs async work
+    async def async_io_activity(ctx, x: int) -> dict:
+        """Async activity that simulates I/O-bound work."""
+        import asyncio
+
+        # Simulate async I/O (e.g., network request, database query)
+        await asyncio.sleep(0.01)
+        result = x * 5
+        await asyncio.sleep(0.01)
+        return {'input': x, 'output': result, 'async': True}
+
+    worker.add_activity(async_io_activity)
+
+    @worker.add_async_orchestrator
+    async def orch(ctx: AsyncWorkflowContext, x: int) -> dict:
+        # Call async activity
+        result = await ctx.call_activity(async_io_activity, input=x)
+        return result
+
+    worker.start()
+    try:
+        try:
+            if hasattr(worker, 'wait_for_ready'):
+                worker.wait_for_ready(timeout=10)  # type: ignore[attr-defined]
+        except Exception:
+            pass
+        iid = f'dt-e2e-async-act-{int(time.time() * 1000)}'
+        client.schedule_new_orchestration(orch, input=7, instance_id=iid)
+        st = client.wait_for_orchestration_completion(iid, timeout=30)
+        assert st is not None
+        assert st.runtime_status.name == 'COMPLETED'
+
+        # Verify the output contains expected values
+        import json
+
+        output = json.loads(st.serialized_output)
+        assert output['input'] == 7
+        assert output['output'] == 35
+        assert output['async'] is True
     finally:
         try:
             worker.stop()

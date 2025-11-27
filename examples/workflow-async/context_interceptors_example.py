@@ -52,6 +52,7 @@ Note: This requires a running Dapr sidecar to execute.
 from __future__ import annotations
 
 import contextvars
+from dataclasses import replace
 from typing import Any, Callable
 
 from dapr.ext.workflow import (
@@ -102,15 +103,7 @@ class ContextClientInterceptor(BaseClientInterceptor):
         print('[Client] Scheduling workflow with metadata:', metadata)
 
         # Set metadata on the request (runtime will wrap in envelope)
-        modified_request = ScheduleWorkflowRequest(
-            workflow_name=request.workflow_name,
-            input=request.input,
-            instance_id=request.instance_id,
-            start_at=request.start_at,
-            reuse_id_policy=request.reuse_id_policy,
-            metadata=metadata,
-        )
-        return nxt(modified_request)
+        return nxt(replace(request, metadata=metadata))
 
 
 class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
@@ -126,15 +119,7 @@ class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
         ctx = get_request_context()
         metadata = ctx.copy() if ctx else {}
 
-        return nxt(
-            CallActivityRequest(
-                activity_name=request.activity_name,
-                input=request.input,
-                retry_policy=request.retry_policy,
-                workflow_ctx=request.workflow_ctx,
-                metadata=metadata,
-            )
-        )
+        return nxt(replace(request, metadata=metadata))
 
     def call_child_workflow(
         self, request: CallChildWorkflowRequest, nxt: Callable[[CallChildWorkflowRequest], Any]
@@ -143,15 +128,7 @@ class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
         ctx = get_request_context()
         metadata = ctx.copy() if ctx else {}
 
-        return nxt(
-            CallChildWorkflowRequest(
-                workflow_name=request.workflow_name,
-                input=request.input,
-                instance_id=request.instance_id,
-                workflow_ctx=request.workflow_ctx,
-                metadata=metadata,
-            )
-        )
+        return nxt(replace(request, metadata=metadata))
 
 
 class ContextRuntimeInterceptor(BaseRuntimeInterceptor):

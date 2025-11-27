@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import asyncio
 import inspect
 import traceback
 from functools import wraps
@@ -113,6 +112,7 @@ class WorkflowRuntime:
         activity: Callable[..., Any] | str,
         input: Any,
         retry_policy: Any | None,
+        app_id: str | None,
         metadata: dict[str, str] | None = None,
     ):
         # Build workflow-outbound chain to transform CallActivityRequest
@@ -136,19 +136,27 @@ class WorkflowRuntime:
             activity_name=name,
             input=input,
             retry_policy=retry_policy,
+            app_id=app_id,
             workflow_ctx=ctx,
             metadata=metadata,
         )
         out = chain(act_req)
         if isinstance(out, CallActivityRequest):
-            return wrap_payload_with_metadata(out.input, out.metadata)
-        return input
+            return (
+                wrap_payload_with_metadata(out.input, out.metadata),
+                out.retry_policy,
+                out.app_id,
+            )
+        return input, retry_policy, app_id
 
     def _apply_outbound_child(
         self,
         ctx: Any,
         workflow: Callable[..., Any] | str,
         input: Any,
+        instance_id: str | None,
+        retry_policy: Any | None,
+        app_id: str | None,
         metadata: dict[str, str] | None = None,
     ):
         name = (
@@ -167,12 +175,23 @@ class WorkflowRuntime:
         chain = compose_workflow_outbound_chain(self._workflow_outbound_interceptors, terminal)
         metadata = metadata or ctx.get_metadata()
         child_req = CallChildWorkflowRequest(
-            workflow_name=name, input=input, instance_id=None, workflow_ctx=ctx, metadata=metadata
+            workflow_name=name,
+            input=input,
+            instance_id=instance_id,
+            retry_policy=retry_policy,
+            app_id=app_id,
+            workflow_ctx=ctx,
+            metadata=metadata,
         )
         out = chain(child_req)
         if isinstance(out, CallChildWorkflowRequest):
-            return wrap_payload_with_metadata(out.input, out.metadata)
-        return input
+            return (
+                wrap_payload_with_metadata(out.input, out.metadata),
+                out.instance_id,
+                out.retry_policy,
+                out.app_id,
+            )
+        return input, instance_id, retry_policy, app_id
 
     def _apply_outbound_continue_as_new(
         self,
@@ -246,32 +265,39 @@ class WorkflowRuntime:
         """
         self._logger.info(f"Registering activity '{fn.__name__}' with runtime")
 
-        def activity_wrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
-            """Activity entrypoint wrapped by runtime interceptors."""
-            wf_activity_context = WorkflowActivityContext(ctx)
-            payload, md = unwrap_payload_with_metadata(inp)
-            # Populate inbound metadata onto activity context
-            wf_activity_context.set_metadata(md or {})
+        # TODO: This dual-wrapper approach could be simplified if interceptors were moved
+        # to durabletask-python. Another option is to wait for potential merge of durabletask-python and python-sdk
+        # repos, which would eliminate the need for separate wrapper detection logic here.
+        # This would simplify the architecture by having a single execution path handle both
+        # sync and async activities with interceptor support built-in at the durabletask level.
 
-            # Populate execution info
-            try:
-                # Determine activity name (registered alternate name or function __name__)
-                act_name = getattr(fn, '_dapr_alternate_name', fn.__name__)
-                ainfo = ActivityExecutionInfo(inbound_metadata=md or {}, activity_name=act_name)
-                wf_activity_context._set_execution_info(ainfo)
-            except Exception:
-                pass
+        if inspect.iscoroutinefunction(fn):
+            # Create async wrapper for async activities
+            async def async_activity_wrapper(
+                ctx: task.ActivityContext, inp: Optional[TInput] = None
+            ):
+                """Async activity entrypoint wrapped by runtime interceptors."""
+                wf_activity_context = WorkflowActivityContext(ctx)
+                payload, md = unwrap_payload_with_metadata(inp)
+                # Populate inbound metadata onto activity context
+                wf_activity_context.set_metadata(md or {})
 
-            def final_handler(exec_req: ExecuteActivityRequest) -> Any:
+                # Populate execution info
                 try:
-                    # Support async and sync activities
-                    if inspect.iscoroutinefunction(fn):
-                        if exec_req.input is None:
-                            return asyncio.run(fn(wf_activity_context))
-                        return asyncio.run(fn(wf_activity_context, exec_req.input))
-                    if exec_req.input is None:
-                        return fn(wf_activity_context)
-                    return fn(wf_activity_context, exec_req.input)
+                    # Determine activity name (registered alternate name or function __name__)
+                    act_name = getattr(fn, '_dapr_alternate_name', fn.__name__)
+                    ainfo = ActivityExecutionInfo(inbound_metadata=md or {}, activity_name=act_name)
+                    wf_activity_context._set_execution_info(ainfo)
+                except Exception:
+                    pass
+
+                # Execute the async activity BEFORE the interceptor chain
+                # This ensures interceptors see actual results, not coroutines
+                try:
+                    if payload is None:
+                        activity_result = await fn(wf_activity_context)
+                    else:
+                        activity_result = await fn(wf_activity_context, payload)
                 except Exception as exc:
                     # Log details for troubleshooting (metadata, error type)
                     self._logger.error(
@@ -280,10 +306,55 @@ class WorkflowRuntime:
                     self._logger.error(traceback.format_exc())
                     raise
 
-            chain = compose_runtime_chain(self._runtime_interceptors, final_handler)
-            return chain(
-                ExecuteActivityRequest(ctx=wf_activity_context, input=payload, metadata=md)
-            )
+                # Now pass the result through the interceptor chain
+                # Interceptors can log/transform the result but not wrap the async execution
+                def final_handler(exec_req: ExecuteActivityRequest) -> Any:
+                    return activity_result
+
+                chain = compose_runtime_chain(self._runtime_interceptors, final_handler)
+                return chain(
+                    ExecuteActivityRequest(ctx=wf_activity_context, input=payload, metadata=md)
+                )
+
+            wrapper = async_activity_wrapper
+        else:
+            # Create sync wrapper for sync activities
+            def sync_activity_wrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
+                """Activity entrypoint wrapped by runtime interceptors."""
+                wf_activity_context = WorkflowActivityContext(ctx)
+                payload, md = unwrap_payload_with_metadata(inp)
+                # Populate inbound metadata onto activity context
+                wf_activity_context.set_metadata(md or {})
+
+                # Populate execution info
+                try:
+                    # Determine activity name (registered alternate name or function __name__)
+                    act_name = getattr(fn, '_dapr_alternate_name', fn.__name__)
+                    ainfo = ActivityExecutionInfo(inbound_metadata=md or {}, activity_name=act_name)
+                    wf_activity_context._set_execution_info(ainfo)
+                except Exception:
+                    pass
+
+                def final_handler(exec_req: ExecuteActivityRequest) -> Any:
+                    try:
+                        # Call sync activity
+                        if exec_req.input is None:
+                            return fn(wf_activity_context)
+                        return fn(wf_activity_context, exec_req.input)
+                    except Exception as exc:
+                        # Log details for troubleshooting (metadata, error type)
+                        self._logger.error(
+                            f"{ctx.orchestration_id}:{ctx.task_id} activity '{fn.__name__}' failed with {type(exc).__name__}: {exc}"
+                        )
+                        self._logger.error(traceback.format_exc())
+                        raise
+
+                chain = compose_runtime_chain(self._runtime_interceptors, final_handler)
+                return chain(
+                    ExecuteActivityRequest(ctx=wf_activity_context, input=payload, metadata=md)
+                )
+
+            wrapper = sync_activity_wrapper
 
         if hasattr(fn, '_activity_registered'):
             # whenever an activity is registered, it has a _dapr_alternate_name attribute
@@ -297,9 +368,7 @@ class WorkflowRuntime:
         else:
             fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
-        self.__worker._registry.add_named_activity(
-            fn.__dict__['_dapr_alternate_name'], activity_wrapper
-        )
+        self.__worker._registry.add_named_activity(fn.__dict__['_dapr_alternate_name'], wrapper)
         fn.__dict__['_activity_registered'] = True
 
     def start(self):

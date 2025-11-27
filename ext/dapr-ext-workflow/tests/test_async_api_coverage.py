@@ -76,7 +76,7 @@ def test_async_context_exposes_required_methods():
     # awaitable constructors do not raise
     ctx.call_activity(lambda: None, input={'x': 1})
     ctx.call_child_workflow(lambda: None)
-    ctx.sleep(1.0)
+    ctx.create_timer(1.0)
     ctx.wait_for_external_event('go')
     ctx.when_all([])
     ctx.when_any([])

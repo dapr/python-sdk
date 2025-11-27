@@ -17,7 +17,6 @@ from datetime import datetime, timedelta
 from typing import Any, Awaitable, Callable, Sequence
 
 from durabletask import task
-from durabletask.aio.awaitables import gather as _dt_gather  # type: ignore[import-not-found]
 from durabletask.deterministic import (  # type: ignore[F401]
     DeterministicContextMixin,
 )
@@ -40,6 +39,11 @@ external events, and concurrency, along with deterministic utilities.
 class AsyncWorkflowContext(DeterministicContextMixin):
     def __init__(self, base_ctx: task.OrchestrationContext):
         self._base_ctx = base_ctx
+        # Initialize metadata from base context if available
+        base_metadata = None
+        if hasattr(base_ctx, 'get_metadata') and callable(base_ctx.get_metadata):
+            base_metadata = base_ctx.get_metadata()
+        self._metadata: dict[str, str] | None = base_metadata
 
     # Core workflow metadata parity with sync context
     @property
@@ -88,12 +92,9 @@ class AsyncWorkflowContext(DeterministicContextMixin):
     # Timers & Events
     def create_timer(self, fire_at: int | float | timedelta | datetime) -> Awaitable[None]:
         # If float provided, interpret as seconds
-        return self.sleep(fire_at)
-
-    def sleep(self, duration: int | float | timedelta | datetime) -> Awaitable[None]:
-        if isinstance(duration, (int, float)):
-            duration = timedelta(seconds=float(duration))
-        return SleepAwaitable(self._base_ctx, duration)
+        if isinstance(fire_at, (int, float)):
+            fire_at = timedelta(seconds=float(fire_at))
+        return SleepAwaitable(self._base_ctx, fire_at)
 
     def wait_for_external_event(self, name: str) -> Awaitable[Any]:
         return ExternalEventAwaitable(self._base_ctx, name)
@@ -104,9 +105,6 @@ class AsyncWorkflowContext(DeterministicContextMixin):
 
     def when_any(self, awaitables: Sequence[Awaitable[Any]]) -> Awaitable[Any]:
         return WhenAnyAwaitable(awaitables)
-
-    def gather(self, *aws: Awaitable[Any], return_exceptions: bool = False) -> Awaitable[list[Any]]:
-        return _dt_gather(*aws, return_exceptions=return_exceptions)
 
     # Deterministic utilities are provided by mixin (now, random, uuid4, new_guid)
 
@@ -141,13 +139,13 @@ class AsyncWorkflowContext(DeterministicContextMixin):
 
     # Metadata parity
     def set_metadata(self, metadata: dict[str, str] | None) -> None:
-        setter = getattr(self._base_ctx, 'set_metadata', None)
-        if callable(setter):
-            setter(metadata)
+        self._metadata = dict(metadata) if metadata else None
+        # Sync with base context if it supports metadata
+        if hasattr(self._base_ctx, 'set_metadata') and callable(self._base_ctx.set_metadata):
+            self._base_ctx.set_metadata(self._metadata)
 
     def get_metadata(self) -> dict[str, str] | None:
-        getter = getattr(self._base_ctx, 'get_metadata', None)
-        return getter() if callable(getter) else None
+        return dict(self._metadata) if self._metadata else None
 
     # Header aliases (ergonomic alias for users familiar with Temporal terminology)
     def set_headers(self, headers: dict[str, str] | None) -> None:
@@ -156,10 +154,10 @@ class AsyncWorkflowContext(DeterministicContextMixin):
     def get_headers(self) -> dict[str, str] | None:
         return self.get_metadata()
 
-    # Execution info parity
+    # Execution info parity - use our own managed _execution_info attribute
     @property
     def execution_info(self):  # type: ignore[override]
-        return getattr(self._base_ctx, 'execution_info', None)
+        return getattr(self._base_ctx, '_execution_info', None)
 
 
 __all__ = [

@@ -16,8 +16,8 @@ CRITICAL: Workflow interceptors MUST use the wrapper pattern and return the resu
             setup_context()
             try:
                 gen = nxt(request)
-                result = yield from gen  # Keep context alive
-                return result  # MUST return to propagate workflow output
+                result = yield from gen     # Keep context alive
+                return result               # MUST return to propagate workflow output
             finally:
                 cleanup_context()
         return wrapper()
@@ -52,6 +52,7 @@ from __future__ import annotations
 
 import contextvars
 import json
+from dataclasses import replace
 from typing import Any, Callable
 
 from dapr.ext.workflow import (
@@ -100,15 +101,7 @@ class ContextClientInterceptor(BaseClientInterceptor):
         print('[Client] Scheduling workflow with metadata:', metadata)
 
         # Set metadata on the request (runtime will wrap in envelope)
-        modified_request = ScheduleWorkflowRequest(
-            workflow_name=request.workflow_name,
-            input=request.input,  # Input unchanged - metadata stored separately
-            instance_id=request.instance_id,
-            start_at=request.start_at,
-            reuse_id_policy=request.reuse_id_policy,
-            metadata=metadata,
-        )
-        return nxt(modified_request)
+        return nxt(replace(request, metadata=metadata))
 
 
 class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
@@ -126,15 +119,8 @@ class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
 
         print('[Outbound] Calling child workflow with metadata:', metadata)
 
-        return nxt(
-            CallChildWorkflowRequest(
-                workflow_name=request.workflow_name,
-                input=request.input,  # Input unchanged - metadata stored separately
-                instance_id=request.instance_id,
-                workflow_ctx=request.workflow_ctx,
-                metadata=metadata,
-            )
-        )
+        # Use dataclasses.replace() to create a modified copy
+        return nxt(replace(request, metadata=metadata))
 
     def call_activity(
         self, request: CallActivityRequest, nxt: Callable[[CallActivityRequest], Any]
@@ -147,15 +133,8 @@ class ContextWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
         print(f'  -- input: {request.input}')
         print(f'  -- metadata: {metadata}')
 
-        return nxt(
-            CallActivityRequest(
-                activity_name=request.activity_name,
-                input=request.input,  # Input unchanged - metadata stored separately
-                retry_policy=request.retry_policy,
-                workflow_ctx=request.workflow_ctx,
-                metadata=metadata,
-            )
-        )
+        # Use dataclasses.replace() to create a modified copy
+        return nxt(replace(request, metadata=metadata))
 
 
 class ContextRuntimeInterceptor(BaseRuntimeInterceptor):

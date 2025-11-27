@@ -124,7 +124,7 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
         app_id: Optional[str] = None,
         metadata: dict[str, str] | None = None,
     ) -> task.Task[TOutput]:
-        # Handle string activity names for cross-app scenarios
+        # Determine activity name
         if isinstance(activity, str):
             activity_name = activity
             if app_id is not None:
@@ -133,32 +133,41 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
                 )
             else:
                 self._logger.debug(f'{self.instance_id}: Creating activity {activity_name}')
-
-            if retry_policy is None:
-                return self.__obj.call_activity(activity=activity_name, input=input, app_id=app_id)
-            return self.__obj.call_activity(
-                activity=activity_name, input=input, retry_policy=retry_policy.obj, app_id=app_id
-            )
-
-        # Handle function activity objects (original behavior)
-        self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
-        if hasattr(activity, '_dapr_alternate_name'):
-            act = activity.__dict__['_dapr_alternate_name']
         else:
-            # this case should ideally never happen
-            act = activity.__name__
-        # Apply outbound client interceptor transformations if provided via runtime wiring
+            # Handle function activity objects
+            self._logger.debug(f'{self.instance_id}: Creating activity {activity.__name__}')
+            if hasattr(activity, '_dapr_alternate_name'):
+                activity_name = activity.__dict__['_dapr_alternate_name']
+            else:
+                # this case should ideally never happen
+                activity_name = activity.__name__
+
+        # Apply outbound interceptor transformations for ALL activity calls (string and function)
         transformed_input: Any = input
+        modified_retry_policy = retry_policy
+        modified_app_id = app_id
         if Handlers.CALL_ACTIVITY in self._outbound_handlers and callable(
             self._outbound_handlers[Handlers.CALL_ACTIVITY]
         ):
-            transformed_input = self._outbound_handlers[Handlers.CALL_ACTIVITY](
-                self, activity, input, retry_policy, metadata or self.get_metadata()
+            result = self._outbound_handlers[Handlers.CALL_ACTIVITY](
+                self, activity, input, retry_policy, app_id, metadata or self.get_metadata()
             )
-        if retry_policy is None:
-            return self.__obj.call_activity(activity=act, input=transformed_input, app_id=app_id)
+            # Handle tuple return (input, retry_policy, app_id) or just input for backward compat
+            if isinstance(result, tuple) and len(result) == 3:
+                transformed_input, modified_retry_policy, modified_app_id = result
+            else:
+                transformed_input = result
+
+        # Make the actual call with potentially modified parameters
+        if modified_retry_policy is None:
+            return self.__obj.call_activity(
+                activity=activity_name, input=transformed_input, app_id=modified_app_id
+            )
         return self.__obj.call_activity(
-            activity=act, input=transformed_input, retry_policy=retry_policy.obj, app_id=app_id
+            activity=activity_name,
+            input=transformed_input,
+            retry_policy=modified_retry_policy.obj,
+            app_id=modified_app_id,
         )
 
     def call_child_workflow(
@@ -171,55 +180,73 @@ class DaprWorkflowContext(WorkflowContext, DeterministicContextMixin):
         app_id: Optional[str] = None,
         metadata: dict[str, str] | None = None,
     ) -> task.Task[TOutput]:
-        # Handle string workflow names for cross-app scenarios
-        if isinstance(workflow, str):
+        # Determine if this is a string workflow name or function workflow
+        is_string_workflow = isinstance(workflow, str)
+
+        if is_string_workflow:
             workflow_name = workflow
             self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow_name}')
-
-            if retry_policy is None:
-                return self.__obj.call_sub_orchestrator(
-                    workflow_name, input=input, instance_id=instance_id, app_id=app_id
-                )
-            return self.__obj.call_sub_orchestrator(
-                workflow_name,
-                input=input,
-                instance_id=instance_id,
-                retry_policy=retry_policy.obj,
-                app_id=app_id,
-            )
-
-        # Handle function workflow objects (original behavior)
-        self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
-
-        def wf(ctx: task.OrchestrationContext, inp: TInput):
-            dapr_wf_context = DaprWorkflowContext(ctx, self._logger.get_options())
-            return workflow(dapr_wf_context, inp)
-
-        # copy workflow name so durabletask.worker can find the orchestrator in its registry
-
-        if hasattr(workflow, '_dapr_alternate_name'):
-            wf.__name__ = workflow.__dict__['_dapr_alternate_name']
+            workflow_callable = None
         else:
-            # this case should ideally never happen
-            wf.__name__ = workflow.__name__
-        # Apply outbound client interceptor transformations if provided via runtime wiring
+            # Handle function workflow objects
+            self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow.__name__}')
+
+            def wf(ctx: task.OrchestrationContext, inp: TInput):
+                dapr_wf_context = DaprWorkflowContext(ctx, self._logger.get_options())
+                return workflow(dapr_wf_context, inp)
+
+            # copy workflow name so durabletask.worker can find the orchestrator in its registry
+            if hasattr(workflow, '_dapr_alternate_name'):
+                wf.__name__ = workflow.__dict__['_dapr_alternate_name']
+            else:
+                # this case should ideally never happen
+                wf.__name__ = workflow.__name__
+
+            workflow_callable = wf
+            workflow_name = wf.__name__
+
+        # Apply outbound interceptor transformations for ALL child workflow calls (string and function)
         transformed_input: Any = input
+        modified_instance_id = instance_id
+        modified_retry_policy = retry_policy
+        modified_app_id = app_id
         if Handlers.CALL_CHILD_WORKFLOW in self._outbound_handlers and callable(
             self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW]
         ):
-            transformed_input = self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW](
-                self, workflow, input, metadata or self.get_metadata()
+            result = self._outbound_handlers[Handlers.CALL_CHILD_WORKFLOW](
+                self,
+                workflow,
+                input,
+                instance_id,
+                retry_policy,
+                app_id,
+                metadata or self.get_metadata(),
             )
-        if retry_policy is None:
+            # Handle tuple return (input, instance_id, retry_policy, app_id) or just input for backward compat
+            if isinstance(result, tuple) and len(result) == 4:
+                transformed_input, modified_instance_id, modified_retry_policy, modified_app_id = (
+                    result
+                )
+            else:
+                transformed_input = result
+
+        # Make the actual call with potentially modified parameters
+        # For string workflows, use the workflow_name directly; for functions, use the wrapper
+        target = workflow_name if is_string_workflow else workflow_callable
+
+        if modified_retry_policy is None:
             return self.__obj.call_sub_orchestrator(
-                wf, input=transformed_input, instance_id=instance_id, app_id=app_id
+                target,
+                input=transformed_input,
+                instance_id=modified_instance_id,
+                app_id=modified_app_id,
             )
         return self.__obj.call_sub_orchestrator(
-            wf,
+            target,
             input=transformed_input,
-            instance_id=instance_id,
-            retry_policy=retry_policy.obj,
-            app_id=app_id,
+            instance_id=modified_instance_id,
+            retry_policy=modified_retry_policy.obj,
+            app_id=modified_app_id,
         )
 
     def wait_for_external_event(self, name: str) -> task.Task:

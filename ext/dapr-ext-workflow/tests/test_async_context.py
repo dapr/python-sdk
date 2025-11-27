@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import types
 from datetime import datetime, timedelta, timezone
 
 from dapr.ext.workflow import AsyncWorkflowContext
@@ -28,14 +27,6 @@ class DummyBaseCtx:
         self._custom_status = None
         self._continued = None
         self._metadata = None
-        self._ei = types.SimpleNamespace(
-            workflow_id='abc-123',
-            workflow_name='wf',
-            is_replaying=False,
-            history_event_sequence=1,
-            inbound_metadata={'a': 'b'},
-            parent_instance_id=None,
-        )
 
     # Minimal orchestration API used by async awaitables
     def create_timer(self, fire_at):
@@ -89,16 +80,14 @@ def test_wait_for_external_event_and_concurrency_factories():
     evt = ctx.wait_for_external_event('go')
     assert hasattr(evt, '__await__')
 
-    # when_all/when_any/gather return awaitables
+    # when_all/when_any return awaitables
     a = ctx.create_timer(0.1)
     b = ctx.create_timer(0.2)
 
     all_aw = ctx.when_all([a, b])
     any_aw = ctx.when_any([a, b])
-    gat_aw = ctx.gather(a, b)
-    gat_exc_aw = ctx.gather(a, b, return_exceptions=True)
 
-    for x in (all_aw, any_aw, gat_aw, gat_exc_aw):
+    for x in (all_aw, any_aw):
         assert hasattr(x, '__await__')
 
 
@@ -129,10 +118,10 @@ def test_async_metadata_api_and_execution_info():
     base = DummyBaseCtx()
     ctx = AsyncWorkflowContext(base)
     ctx.set_metadata({'k': 'v'})
-    assert base._metadata == {'k': 'v'}
+    assert ctx._metadata == {'k': 'v'}
     assert ctx.get_metadata() == {'k': 'v'}
-    ei = ctx.execution_info
-    assert ei and ei.workflow_id == 'abc-123' and ei.workflow_name == 'wf'
+    # Note: execution_info is no longer directly accessible on AsyncWorkflowContext
+    # (it was removed from durabletask). Use DaprWorkflowContext for execution_info.
 
 
 def test_async_outbound_metadata_plumbed_into_awaitables():

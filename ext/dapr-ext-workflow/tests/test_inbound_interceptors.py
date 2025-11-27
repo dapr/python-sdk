@@ -407,7 +407,8 @@ def test_async_activity_with_interceptors(monkeypatch):
 
     reg = rt._WorkflowRuntime__worker._registry
     act = reg.activities['async_act']
-    result = act(_make_act_ctx(), 3)
+    # Async wrapper returns a coroutine that must be awaited
+    result = asyncio.run(act(_make_act_ctx(), 3))
 
     assert result == 12
     assert events == [

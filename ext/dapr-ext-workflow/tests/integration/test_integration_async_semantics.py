@@ -13,32 +13,87 @@ See the specific language governing permissions and
 limitations under the License.
 """
 
+import dataclasses
 import time
+from datetime import timedelta
+from typing import Any
 
 import pytest
 from dapr.ext.workflow import (
     AsyncWorkflowContext,
     DaprWorkflowClient,
     DaprWorkflowContext,
+    RetryPolicy,
     WorkflowRuntime,
 )
 from dapr.ext.workflow.interceptors import (
     BaseRuntimeInterceptor,
+    BaseWorkflowOutboundInterceptor,
+    CallActivityRequest,
+    CallChildWorkflowRequest,
+    ClientInterceptor,
     ExecuteActivityRequest,
     ExecuteWorkflowRequest,
 )
 
-pytestmark = pytest.mark.e2e
+from .dapr_test_utils import dapr_sidecar_fixture, skip_if_no_dapr
 
-skip_integration = pytest.mark.skipif(
-    False,
-    reason='integration enabled',
-)
+pytestmark = [pytest.mark.e2e, skip_if_no_dapr]
+
+# Dapr configuration for integration tests - use function scope with unique ports
+_port_counter = 0
+
+# Whether to purge workflows after tests
+purge = False
 
 
-@skip_integration
-def test_integration_suspension_and_buffering():
-    runtime = WorkflowRuntime()
+@pytest.fixture(scope='function')
+def dapr_config():
+    """Allocate unique Dapr configuration for each test.
+
+    We had problems with module-wise tests hanging when running multiple tests had run.
+    """
+    global _port_counter
+    _port_counter += 1
+    return {
+        'app_id': f'test-integration-{_port_counter}',
+        'grpc_port': 50011 + _port_counter,
+        'http_port': 3501 + _port_counter,
+    }
+
+
+@pytest.fixture(scope='function')
+def dapr_sidecar(dapr_config):
+    """Start fresh Dapr sidecar for each test to avoid degradation."""
+    yield from dapr_sidecar_fixture(
+        dapr_config['app_id'],
+        dapr_config['grpc_port'],
+        dapr_config['http_port'],
+        keep_alive_seconds=120,
+    )
+
+
+def wf_client(dapr_config, interceptors: list[ClientInterceptor] = None):
+    return DaprWorkflowClient(
+        host='127.0.0.1', port=str(dapr_config['grpc_port']), interceptors=interceptors
+    )
+
+
+def wfr(
+    dapr_config,
+    runtime_interceptors: list[BaseRuntimeInterceptor] = None,
+    workflow_outbound_interceptors: list[BaseWorkflowOutboundInterceptor] = None,
+):
+    return WorkflowRuntime(
+        host='127.0.0.1',
+        port=str(dapr_config['grpc_port']),
+        runtime_interceptors=runtime_interceptors,
+        workflow_outbound_interceptors=workflow_outbound_interceptors,
+    )
+
+
+def test_integration_suspension_and_buffering(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.async_workflow(name='suspend_orchestrator_async')
     async def suspend_orchestrator(ctx: AsyncWorkflowContext):
@@ -53,7 +108,7 @@ def test_integration_suspension_and_buffering():
         # Allow connection to stabilize before scheduling
         time.sleep(3)
 
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         instance_id = f'suspend-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=suspend_orchestrator, instance_id=instance_id)
 
@@ -83,9 +138,8 @@ def test_integration_suspension_and_buffering():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_generator_metadata_propagation():
-    runtime = WorkflowRuntime()
+def test_integration_generator_metadata_propagation(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.activity(name='recv_md_gen')
     def recv_md_gen(ctx, _=None):
@@ -100,7 +154,7 @@ def test_integration_generator_metadata_propagation():
     runtime.start()
     try:
         time.sleep(3)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'gen-md-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=parent_gen, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -116,9 +170,8 @@ def test_integration_generator_metadata_propagation():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_trace_context_child_workflow():
-    runtime = WorkflowRuntime()
+def test_integration_trace_context_child_workflow(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.activity(name='trace_probe')
     def trace_probe(ctx, _=None):
@@ -149,7 +202,7 @@ def test_integration_trace_context_child_workflow():
     runtime.start()
     try:
         time.sleep(3)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'trace-child-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=parent, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -177,8 +230,7 @@ def test_integration_trace_context_child_workflow():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_trace_context_child_workflow_injected_metadata():
+def test_integration_trace_context_child_workflow_injected_metadata(dapr_sidecar, dapr_config):
     # Deterministic trace propagation using interceptors via durable metadata
     from dapr.ext.workflow import (
         BaseClientInterceptor,
@@ -210,28 +262,12 @@ def test_integration_trace_context_child_workflow_injected_metadata():
         def call_activity(self, request: CallActivityRequest, next):
             md = dict(request.metadata or {})
             md.setdefault(TRACE_KEY, 'sdk-trace-123')
-            return next(
-                CallActivityRequest(
-                    activity_name=request.activity_name,
-                    input=request.input,
-                    retry_policy=request.retry_policy,
-                    workflow_ctx=request.workflow_ctx,
-                    metadata=md,
-                )
-            )
+            return next(dataclasses.replace(request, metadata=md))
 
         def call_child_workflow(self, request: CallChildWorkflowRequest, next):
             md = dict(request.metadata or {})
             md.setdefault(TRACE_KEY, 'sdk-trace-123')
-            return next(
-                CallChildWorkflowRequest(
-                    workflow_name=request.workflow_name,
-                    input=request.input,
-                    instance_id=request.instance_id,
-                    workflow_ctx=request.workflow_ctx,
-                    metadata=md,
-                )
-            )
+            return next(dataclasses.replace(request, metadata=md))
 
     class RestoreTraceRuntime(BaseRuntimeInterceptor):
         def execute_workflow(self, request: ExecuteWorkflowRequest, next):
@@ -243,7 +279,8 @@ def test_integration_trace_context_child_workflow_injected_metadata():
             assert isinstance((request.metadata or {}).get(TRACE_KEY), str)
             return next(request)
 
-    runtime = WorkflowRuntime(
+    runtime = wfr(
+        dapr_config,
         runtime_interceptors=[RestoreTraceRuntime()],
         workflow_outbound_interceptors=[InjectTraceOutbound()],
     )
@@ -270,7 +307,7 @@ def test_integration_trace_context_child_workflow_injected_metadata():
     runtime.start()
     try:
         time.sleep(3)
-        client = DaprWorkflowClient(interceptors=[InjectTraceClient()])
+        client = wf_client(dapr_config, interceptors=[InjectTraceClient()])
         iid = f'trace-child-md-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=parent2, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -287,9 +324,8 @@ def test_integration_trace_context_child_workflow_injected_metadata():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_termination_semantics():
-    runtime = WorkflowRuntime()
+def test_integration_termination_semantics(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.async_workflow(name='termination_orchestrator_async')
     async def termination_orchestrator(ctx: AsyncWorkflowContext):
@@ -303,7 +339,7 @@ def test_integration_termination_semantics():
     try:
         time.sleep(3)
 
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         instance_id = f'term-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=termination_orchestrator, instance_id=instance_id)
         client.wait_for_workflow_start(instance_id, timeout_in_seconds=30)
@@ -317,9 +353,8 @@ def test_integration_termination_semantics():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_when_any_first_wins():
-    runtime = WorkflowRuntime()
+def test_integration_when_any_first_wins(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.async_workflow(name='when_any_async')
     async def when_any_orchestrator(ctx: AsyncWorkflowContext):
@@ -338,15 +373,9 @@ def test_integration_when_any_first_wins():
 
     runtime.start()
     try:
-        # Ensure worker has established streams before scheduling
-        try:
-            if hasattr(runtime, 'wait_for_ready'):
-                runtime.wait_for_ready(timeout=15)  # type: ignore[attr-defined]
-        except Exception:
-            pass
         time.sleep(2)
 
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         instance_id = f'whenany-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=when_any_orchestrator, instance_id=instance_id)
         client.wait_for_workflow_start(instance_id, timeout_in_seconds=30)
@@ -397,9 +426,8 @@ def test_integration_when_any_first_wins():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_async_activity_completes():
-    runtime = WorkflowRuntime()
+def test_integration_async_activity_completes(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.activity(name='echo_int')
     def echo_act(ctx, x: int) -> int:
@@ -411,9 +439,10 @@ def test_integration_async_activity_completes():
         return out
 
     runtime.start()
+    iid = None
     try:
         time.sleep(3)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'act-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=wf, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -427,11 +456,15 @@ def test_integration_async_activity_completes():
         assert state.runtime_status.name == 'COMPLETED'
     finally:
         runtime.shutdown()
+        if iid:
+            try:
+                client.purge_workflow(iid, recursive=True)
+            except Exception:
+                pass
 
 
-@skip_integration
-def test_integration_metadata_outbound_to_activity():
-    runtime = WorkflowRuntime()
+def test_integration_metadata_outbound_to_activity(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.activity(name='recv_md')
     def recv_md(ctx, _=None):
@@ -447,7 +480,7 @@ def test_integration_metadata_outbound_to_activity():
     runtime.start()
     try:
         time.sleep(3)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'md-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=wf, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -458,9 +491,8 @@ def test_integration_metadata_outbound_to_activity():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_metadata_outbound_to_child_workflow():
-    runtime = WorkflowRuntime()
+def test_integration_metadata_outbound_to_child_workflow(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.async_workflow(name='child_recv_md')
     async def child(ctx: AsyncWorkflowContext, _=None):
@@ -476,7 +508,7 @@ def test_integration_metadata_outbound_to_child_workflow():
     runtime.start()
     try:
         time.sleep(3)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'md-child-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=parent, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -494,8 +526,7 @@ def test_integration_metadata_outbound_to_child_workflow():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_trace_context_with_runtime_interceptors():
+def test_integration_trace_context_with_runtime_interceptors(dapr_sidecar, dapr_config):
     """E2E: Verify trace_parent and orchestration_span_id via runtime interceptors."""
     records = {  # captured by interceptor
         'wf_tp': None,
@@ -524,7 +555,7 @@ def test_integration_trace_context_with_runtime_interceptors():
                 pass
             return next(request)
 
-    runtime = WorkflowRuntime(runtime_interceptors=[TraceInterceptor()])
+    runtime = wfr(dapr_config, runtime_interceptors=[TraceInterceptor()])
 
     @runtime.activity(name='trace_probe')
     def trace_probe(ctx, _=None):
@@ -544,7 +575,7 @@ def test_integration_trace_context_with_runtime_interceptors():
     runtime.start()
     try:
         time.sleep(3)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'trace-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=wf, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -572,9 +603,8 @@ def test_integration_trace_context_with_runtime_interceptors():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_runtime_shutdown_is_clean():
-    runtime = WorkflowRuntime()
+def test_integration_runtime_shutdown_is_clean(dapr_sidecar, dapr_config):
+    runtime = wfr(dapr_config)
 
     @runtime.async_workflow(name='noop')
     async def noop(ctx: AsyncWorkflowContext):
@@ -583,7 +613,7 @@ def test_integration_runtime_shutdown_is_clean():
     runtime.start()
     try:
         time.sleep(2)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'shutdown-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=noop, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -598,7 +628,7 @@ def test_integration_runtime_shutdown_is_clean():
                 # Test should not raise even if worker logs cancellation warnings
                 assert False, 'runtime.shutdown() raised unexpectedly'
         # Recreate and shutdown again to ensure no lingering background threads break next startup
-        rt2 = WorkflowRuntime()
+        rt2 = wfr(dapr_config)
         rt2.start()
         try:
             time.sleep(1)
@@ -609,8 +639,7 @@ def test_integration_runtime_shutdown_is_clean():
                 assert False, 'second runtime.shutdown() raised unexpectedly'
 
 
-@skip_integration
-def test_integration_continue_as_new_outbound_interceptor_metadata():
+def test_integration_continue_as_new_outbound_interceptor_metadata(dapr_sidecar, dapr_config):
     # Verify continue_as_new outbound interceptor can inject metadata carried to the new run
     from dapr.ext.workflow import BaseWorkflowOutboundInterceptor
 
@@ -623,9 +652,7 @@ def test_integration_continue_as_new_outbound_interceptor_metadata():
             request.metadata = md
             return next(request)
 
-    runtime = WorkflowRuntime(
-        workflow_outbound_interceptors=[InjectOnContinueAsNew()],
-    )
+    runtime = wfr(dapr_config, workflow_outbound_interceptors=[InjectOnContinueAsNew()])
 
     @runtime.workflow(name='continue_as_new_probe')
     def wf(ctx, arg: dict | None = None):
@@ -640,7 +667,7 @@ def test_integration_continue_as_new_outbound_interceptor_metadata():
     runtime.start()
     try:
         time.sleep(2)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'can-int-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=wf, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -656,10 +683,9 @@ def test_integration_continue_as_new_outbound_interceptor_metadata():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_child_workflow_attempt_exposed():
+def test_integration_child_workflow_attempt_exposed(dapr_sidecar, dapr_config):
     # Verify that child workflow ctx exposes workflow_attempt
-    runtime = WorkflowRuntime()
+    runtime = wfr(dapr_config)
 
     @runtime.async_workflow(name='child_probe_attempt')
     async def child_probe_attempt(ctx: AsyncWorkflowContext, _=None):
@@ -673,7 +699,7 @@ def test_integration_child_workflow_attempt_exposed():
     runtime.start()
     try:
         time.sleep(2)
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'child-attempt-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=parent_calls_child_for_attempt, instance_id=iid)
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -688,8 +714,7 @@ def test_integration_child_workflow_attempt_exposed():
         runtime.shutdown()
 
 
-@skip_integration
-def test_integration_async_contextvars_trace_propagation(monkeypatch):
+def test_integration_async_contextvars_trace_propagation(dapr_sidecar, dapr_config):
     # Demonstrates contextvars-based trace propagation via interceptors in async workflows
     import contextvars
     import json as _json
@@ -726,28 +751,12 @@ def test_integration_async_contextvars_trace_propagation(monkeypatch):
         def call_activity(self, request: CallActivityRequest, next):  # type: ignore[override]
             md = dict(request.metadata or {})
             md.setdefault(TRACE_KEY, current_trace.get())
-            return next(
-                CallActivityRequest(
-                    activity_name=request.activity_name,
-                    input=request.input,
-                    retry_policy=request.retry_policy,
-                    workflow_ctx=request.workflow_ctx,
-                    metadata=md,
-                )
-            )
+            return next(dataclasses.replace(request, metadata=md))
 
         def call_child_workflow(self, request: CallChildWorkflowRequest, next):  # type: ignore[override]
             md = dict(request.metadata or {})
             md.setdefault(TRACE_KEY, current_trace.get())
-            return next(
-                CallChildWorkflowRequest(
-                    workflow_name=request.workflow_name,
-                    input=request.input,
-                    instance_id=request.instance_id,
-                    workflow_ctx=request.workflow_ctx,
-                    metadata=md,
-                )
-            )
+            return next(dataclasses.replace(request, metadata=md))
 
     class CVRuntime(BaseRuntimeInterceptor):
         def execute_workflow(self, request: ExecuteWorkflowRequest, next):  # type: ignore[override]
@@ -764,8 +773,10 @@ def test_integration_async_contextvars_trace_propagation(monkeypatch):
             finally:
                 current_trace.reset(prev)
 
-    runtime = WorkflowRuntime(
-        runtime_interceptors=[CVRuntime()], workflow_outbound_interceptors=[CVOutbound()]
+    runtime = wfr(
+        dapr_config,
+        runtime_interceptors=[CVRuntime()],
+        workflow_outbound_interceptors=[CVOutbound()],
     )
 
     @runtime.activity(name='cv_probe')
@@ -839,11 +850,12 @@ def test_integration_async_contextvars_trace_propagation(monkeypatch):
         }
 
     runtime.start()
+    client = wf_client(dapr_config, interceptors=[CVClient()])
     try:
         time.sleep(2)
-        client = DaprWorkflowClient(interceptors=[CVClient()])
         iid = f'cv-ctx-{int(time.time() * 1000)}'
         client.schedule_new_workflow(workflow=cv_parent, instance_id=iid)
+        purge = True
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
         st = client.wait_for_workflow_completion(iid, timeout_in_seconds=60)
         assert st is not None and st.runtime_status.name == 'COMPLETED'
@@ -865,12 +877,12 @@ def test_integration_async_contextvars_trace_propagation(monkeypatch):
         assert act_retry.get('inner') == 'wf-parent/act-retry'
         assert act_retry.get('after') == 'wf-parent'
     finally:
+        if purge:
+            client.purge_workflow(iid, recursive=True)
         runtime.shutdown()
 
 
-def test_runtime_interceptor_shapes_async_input():
-    runtime = WorkflowRuntime()
-
+def test_runtime_interceptor_shapes_async_input(dapr_sidecar, dapr_config):
     class ShapeInput(BaseRuntimeInterceptor):
         def execute_workflow(self, request: ExecuteWorkflowRequest, next):  # type: ignore[override]
             data = request.input
@@ -883,7 +895,7 @@ def test_runtime_interceptor_shapes_async_input():
             return next(request)
 
     # Recreate runtime with interceptor wired in
-    runtime = WorkflowRuntime(runtime_interceptors=[ShapeInput()])
+    runtime = wfr(dapr_config, runtime_interceptors=[ShapeInput()])
 
     @runtime.async_workflow(name='wf_shape_input')
     async def wf_shape_input(ctx: AsyncWorkflowContext, arg: dict | None = None):
@@ -892,9 +904,7 @@ def test_runtime_interceptor_shapes_async_input():
 
     runtime.start()
     try:
-        from dapr.ext.workflow import DaprWorkflowClient
-
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'shape-{id(runtime)}'
         client.schedule_new_workflow(workflow=wf_shape_input, instance_id=iid, input={'x': 1})
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -910,9 +920,9 @@ def test_runtime_interceptor_shapes_async_input():
         runtime.shutdown()
 
 
-def test_runtime_interceptor_context_manager_with_async_workflow():
+def test_runtime_interceptor_context_manager_with_async_workflow(dapr_sidecar, dapr_config):
     """Test that context managers stay active during async workflow execution."""
-    runtime = WorkflowRuntime()
+    runtime = wfr(dapr_config)
 
     # Track when context enters and exits
     context_state = {'entered': False, 'exited': False, 'workflow_ran': False}
@@ -938,7 +948,7 @@ def test_runtime_interceptor_context_manager_with_async_workflow():
 
             return wrapper()
 
-    runtime = WorkflowRuntime(runtime_interceptors=[ContextInterceptor()])
+    runtime = wfr(dapr_config, runtime_interceptors=[ContextInterceptor()])
 
     @runtime.async_workflow(name='wf_context_test')
     async def wf_context_test(ctx: AsyncWorkflowContext, arg: dict | None = None):
@@ -947,9 +957,7 @@ def test_runtime_interceptor_context_manager_with_async_workflow():
 
     runtime.start()
     try:
-        from dapr.ext.workflow import DaprWorkflowClient
-
-        client = DaprWorkflowClient()
+        client = wf_client(dapr_config)
         iid = f'ctx-test-{id(runtime)}'
         client.schedule_new_workflow(workflow=wf_context_test, instance_id=iid, input={})
         client.wait_for_workflow_start(iid, timeout_in_seconds=30)
@@ -962,4 +970,86 @@ def test_runtime_interceptor_context_manager_with_async_workflow():
         assert context_state['workflow_ran'], 'Workflow should have executed'
         assert context_state['exited'], 'Context should have exited after completion'
     finally:
+        runtime.shutdown()
+
+
+def test_outbound_interceptor_can_modify_retry_policy(dapr_sidecar, dapr_config):
+    """Test that outbound interceptors can inspect and modify retry_policy and app_id fields."""
+    captured_requests: dict[str, Any] = {}
+
+    class CaptureAndModifyInterceptor(BaseWorkflowOutboundInterceptor):
+        def call_activity(self, request: CallActivityRequest, next):
+            # Capture the request details
+            captured_requests['activity_name'] = request.activity_name
+            captured_requests['activity_retry_policy'] = request.retry_policy
+
+            # Modify retry_policy and app_id if not set
+            retry_policy = request.retry_policy
+            if retry_policy is None:
+                retry_policy = RetryPolicy(
+                    max_number_of_attempts=2,
+                    first_retry_interval=timedelta(milliseconds=200),
+                    max_retry_interval=timedelta(seconds=3),
+                )
+                captured_requests['activity_retry_modified'] = True
+
+            return next(dataclasses.replace(request, retry_policy=retry_policy))
+
+        def call_child_workflow(self, request: CallChildWorkflowRequest, next):
+            # Capture the request details
+            captured_requests['child_workflow_name'] = request.workflow_name
+            captured_requests['child_retry_policy'] = request.retry_policy
+
+            # Modify retry_policy if not set
+            retry_policy = request.retry_policy
+            if retry_policy is None:
+                retry_policy = RetryPolicy(
+                    max_number_of_attempts=2,
+                    first_retry_interval=timedelta(milliseconds=200),
+                    max_retry_interval=timedelta(seconds=3),
+                )
+                captured_requests['child_retry_modified'] = True
+
+            return next(dataclasses.replace(request, retry_policy=retry_policy))
+
+    runtime = wfr(dapr_config, workflow_outbound_interceptors=[CaptureAndModifyInterceptor()])
+
+    @runtime.activity(name='test_activity')
+    def test_activity(ctx, arg):
+        return 'activity-result'
+
+    @runtime.workflow(name='child_wf')
+    def child_wf(ctx, arg):
+        return 'child-result'
+
+    @runtime.workflow(name='parent_wf')
+    def parent_wf(ctx, arg):
+        # Call activity without retry_policy or app_id
+        result1 = yield ctx.call_activity('test_activity', input={'x': 1})
+        # Call child workflow without retry_policy or app_id
+        result2 = yield ctx.call_child_workflow('child_wf', input={'y': 2})
+        return {'activity': result1, 'child': result2}
+
+    runtime.start()
+    client = wf_client(dapr_config)
+    purge = False
+    try:
+        iid = f'retry-appid-test-{id(runtime)}'
+        client.schedule_new_workflow(workflow=parent_wf, instance_id=iid, input={})
+        purge = True
+        st = client.wait_for_workflow_completion(iid, timeout_in_seconds=60)
+        assert st is not None
+        assert st.runtime_status.name == 'COMPLETED'
+
+        # Verify interceptor captured and modified the requests
+        assert captured_requests['activity_name'] == 'test_activity'
+        assert captured_requests['activity_retry_policy'] is None
+        assert captured_requests.get('activity_retry_modified') is True
+
+        assert captured_requests['child_workflow_name'] == 'child_wf'
+        assert captured_requests['child_retry_policy'] is None
+        assert captured_requests.get('child_retry_modified') is True
+    finally:
+        if purge:
+            client.purge_workflow(iid, recursive=True)
         runtime.shutdown()
