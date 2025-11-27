@@ -121,7 +121,9 @@ class ScheduleWorkflowRequest(Generic[TInput]):
     input: TInput
     instance_id: str | None
     start_at: Any | None
-    reuse_id_policy: Any | None
+    reuse_id_policy: (
+        Any | None
+    )  # should be used to handle the case where you want to schedule a workflow with an ID that might already exist.
     # Durable context serialized and propagated across boundaries
     metadata: dict[str, str] | None = None
 
@@ -131,7 +133,9 @@ class CallChildWorkflowRequest(Generic[TInput]):
     workflow_name: str
     input: TInput
     instance_id: str | None
-    # Optional workflow context for outbound calls made inside workflows
+    retry_policy: Any | None
+    app_id: str | None
+    # Optional workflow context for outbound calls made inside workflows (not serialized and propagated across boundaries)
     workflow_ctx: Any | None = None
     # Durable context serialized and propagated across boundaries
     metadata: dict[str, str] | None = None
@@ -151,6 +155,7 @@ class CallActivityRequest(Generic[TInput]):
     activity_name: str
     input: TInput
     retry_policy: Any | None
+    app_id: str | None
     # Optional workflow context for outbound calls made inside workflows
     workflow_ctx: Any | None = None
     # Durable context serialized and propagated across boundaries

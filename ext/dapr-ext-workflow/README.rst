@@ -195,33 +195,18 @@ Quick start
 
     class ContextClientInterceptor(ClientInterceptor[MyWorkflowInput]):
         def schedule_new_workflow(self, input: ScheduleWorkflowRequest[MyWorkflowInput], nxt: Callable[[ScheduleWorkflowRequest[MyWorkflowInput]], Any]) -> Any:
-            input = ScheduleWorkflowRequest(
-                workflow_name=input.workflow_name,
-                input=_merge_ctx(input.input),
-                instance_id=input.instance_id,
-                start_at=input.start_at,
-                reuse_id_policy=input.reuse_id_policy,
-            )
-            return nxt(input)
+            from dataclasses import replace
+            return nxt(replace(input, input=_merge_ctx(input.input)))
 
     class ContextWorkflowOutboundInterceptor(WorkflowOutboundInterceptor[MyWorkflowInput, MyActivityInput]):
         def call_child_workflow(self, input: CallChildWorkflowRequest[MyWorkflowInput], nxt: Callable[[CallChildWorkflowRequest[MyWorkflowInput]], Any]) -> Any:
-            return nxt(CallChildWorkflowRequest[MyWorkflowInput](
-                workflow_name=input.workflow_name,
-                input=_merge_ctx(input.input),
-                instance_id=input.instance_id,
-                workflow_ctx=input.workflow_ctx,
-                metadata=input.metadata,
-            ))
+            # Use dataclasses.replace() to create a modified copy
+            from dataclasses import replace
+            return nxt(replace(input, input=_merge_ctx(input.input)))
 
         def call_activity(self, input: CallActivityRequest[MyActivityInput], nxt: Callable[[CallActivityRequest[MyActivityInput]], Any]) -> Any:
-            return nxt(CallActivityRequest[MyActivityInput](
-                activity_name=input.activity_name,
-                input=_merge_ctx(input.input),
-                retry_policy=input.retry_policy,
-                workflow_ctx=input.workflow_ctx,
-                metadata=input.metadata,
-            ))
+            from dataclasses import replace
+            return nxt(replace(input, input=_merge_ctx(input.input)))
 
     class ContextRuntimeInterceptor(RuntimeInterceptor[MyWorkflowInput, MyActivityInput]):
         def execute_workflow(self, input: ExecuteWorkflowRequest[MyWorkflowInput], nxt: Callable[[ExecuteWorkflowRequest[MyWorkflowInput]], Any]) -> Any:
@@ -253,6 +238,32 @@ Quick start
     )
 
     client = DaprWorkflowClient(interceptors=[ContextClientInterceptor()])
+
+**Tip: Using dataclasses.replace() for cleaner interceptors**
+
+Since interceptor request objects are dataclasses, you can use ``dataclasses.replace()`` to create
+modified copies without manually copying all fields:
+
+.. code-block:: python
+
+    from dataclasses import replace
+
+    class MyInterceptor(BaseWorkflowOutboundInterceptor):
+        def call_activity(self, request: CallActivityRequest, nxt):
+            # Instead of manually listing all fields:
+            # return nxt(CallActivityRequest(
+            #     activity_name=request.activity_name,
+            #     input=request.input,
+            #     retry_policy=modified_policy,
+            #     app_id=request.app_id,
+            #     workflow_ctx=request.workflow_ctx,
+            #     metadata=request.metadata,
+            # ))
+
+            # Use replace() to only specify changed fields:
+            return nxt(replace(request, retry_policy=modified_policy))
+
+This is more concise, future-proof and less error-prone when adding or modifying fields.
 
 Context metadata (durable propagation)
 -------------------------------------
@@ -412,14 +423,7 @@ spans during replay. A minimal sketch:
         def schedule_new_workflow(self, input: ScheduleWorkflowRequest, next):
             md = dict(input.metadata or {})
             md.setdefault(TRACE_ID_KEY, self._get())
-            return next(ScheduleWorkflowRequest(
-                workflow_name=input.workflow_name,
-                input=input.input,
-                instance_id=input.instance_id,
-                start_at=input.start_at,
-                reuse_id_policy=input.reuse_id_policy,
-                metadata=md,
-            ))
+            return next(replace(input, metadata=md))
 
     class TracingWorkflowOutboundInterceptor(BaseWorkflowOutboundInterceptor):
         def __init__(self, get_trace: Callable[[], str]):
@@ -499,10 +503,10 @@ Notes
 - User functions never see the envelope keys; they get the same input as before.
 - Only string keys/values should be stored in headers/metadata; enforce size limits and redaction
   policies as needed.
-- With newer durabletask-python, the engine provides deterministic context fields directly on
-  ``OrchestrationContext`` (accessible via ``ctx.workflow_name``, ``ctx.parent_instance_id``,
-  and ``ctx.history_event_sequence``). Note that ``ctx.execution_info`` only contains
-  ``inbound_metadata``; use context properties directly for engine fields.
+- The workflow context provides deterministic fields such as ``ctx.workflow_name``,
+  ``ctx.instance_id``, ``ctx.is_replaying``, and ``ctx.current_utc_datetime``. 
+  Note that ``ctx.execution_info`` only contains ``inbound_metadata``; use context properties 
+  directly for engine-provided fields.
 - Interceptors are synchronous and must not perform I/O in orchestrators. Activities may perform
   I/O inside the user function; interceptor code should remain fast and replay-safe.
 - Client interceptors are applied when calling ``DaprWorkflowClient.schedule_new_workflow(...)`` and
@@ -517,11 +521,45 @@ Opt-in scoped compatibility mode maps ``asyncio.sleep``, ``random``, ``uuid.uuid
 Examples
 ~~~~~~~~
 
-See ``ext/dapr-ext-workflow/examples`` for:
+See ``examples/workflow-async/`` for complete examples:
 
-- ``async_activity_sequence.py``
-- ``async_external_event.py``
-- ``async_sub_orchestrator.py``
+- ``simple.py`` - Comprehensive example with activities, child workflows, retry policies, and external events
+- ``task_chaining.py`` - Sequential activity calls
+- ``child_workflow.py`` - Parent/child workflow patterns
+- ``fan_out_fan_in.py`` - Parallel activity execution
+- ``human_approval.py`` - External event handling
+- ``async_http_activity.py`` - Async activities with HTTP requests
+- ``context_interceptors_example.py`` - Context propagation using interceptors
+
+Async Activities
+~~~~~~~~~~~~~~~~
+
+Activities can be either synchronous or asynchronous functions. Async activities are useful for I/O-bound operations like HTTP requests, database queries, or file operations:
+
+.. code-block:: python
+
+    from durabletask.task import ActivityContext
+
+    # Synchronous activity
+    def sync_activity(ctx: ActivityContext, data: str) -> str:
+        return data.upper()
+
+    # Asynchronous activity
+    async def async_activity(ctx: ActivityContext, data: str) -> str:
+        # Perform async I/O operations
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://api.example.com/{data}") as response:
+                result = await response.json()
+        return result
+
+Both sync and async activities are registered the same way:
+
+.. code-block:: python
+
+    worker.add_activity(sync_activity)
+    worker.add_activity(async_activity)
+
+Orchestrators call them identically regardless of whether they're sync or async - the SDK handles the execution automatically.
 
 Determinism and semantics
 ~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -13,8 +13,11 @@ limitations under the License.
 
 from __future__ import annotations
 
+import durabletask.worker as worker_mod
 from dapr.ext.workflow import (
     BaseWorkflowOutboundInterceptor,
+    CallActivityRequest,
+    CallChildWorkflowRequest,
     WorkflowOutboundInterceptor,
     WorkflowRuntime,
 )
@@ -46,8 +49,6 @@ class _FakeOrchCtx:
         self.is_replaying = False
         self._custom_status = None
         self.workflow_name = 'wf'
-        self.parent_instance_id = None
-        self.history_event_sequence = 1
         self.trace_parent = None
         self.trace_state = None
         self.orchestration_span_id = None
@@ -113,12 +114,16 @@ class _InjectTrace(WorkflowOutboundInterceptor):
                 activity_name=request.activity_name,
                 input={'tracing': 'T'},
                 retry_policy=request.retry_policy,
+                app_id=request.app_id,
             )
         elif isinstance(x, dict):
             out = dict(x)
             out.setdefault('tracing', 'T')
             request = type(request)(
-                activity_name=request.activity_name, input=out, retry_policy=request.retry_policy
+                activity_name=request.activity_name,
+                input=out,
+                retry_policy=request.retry_policy,
+                app_id=request.app_id,
             )
         return next(request)
 
@@ -128,6 +133,8 @@ class _InjectTrace(WorkflowOutboundInterceptor):
                 workflow_name=request.workflow_name,
                 input={'child': request.input},
                 instance_id=request.instance_id,
+                retry_policy=request.retry_policy,
+                app_id=request.app_id,
             )
         )
 
@@ -201,3 +208,91 @@ def test_outbound_continue_as_new_injection(monkeypatch):
     assert isinstance(meta, dict) and isinstance(payload, dict)
     assert meta.get('metadata', {}).get('x') == '1'
     assert payload == {'p': 1}
+
+
+def test_interceptor_called_for_string_activity_names(monkeypatch):
+    """Test that outbound interceptors are invoked for string-based activity names.
+
+    Regression test: Previously, interceptors were only called for function activities,
+    not for string activity names (cross-app scenario).
+    """
+    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
+
+    interceptor_calls = []
+
+    class TrackingInterceptor(BaseWorkflowOutboundInterceptor):
+        def call_activity(self, request: CallActivityRequest, next):
+            # Track that interceptor was called with these parameters
+            interceptor_calls.append(
+                {
+                    'activity_name': request.activity_name,
+                    'app_id': request.app_id,
+                    'retry_policy': request.retry_policy,
+                }
+            )
+            return next(request)
+
+    rt = WorkflowRuntime(workflow_outbound_interceptors=[TrackingInterceptor()])
+
+    @rt.workflow(name='w_string_activity')
+    def w_string_activity(ctx, x):
+        # Call activity with STRING name and app_id (cross-app scenario)
+        # The activity doesn't need to exist for this test - we're just testing
+        # that the interceptor gets called
+        yield ctx.call_activity('remote_activity', input=x, app_id='remote-app')
+        return 'done'
+
+    orch = rt._WorkflowRuntime__worker._registry.orchestrators['w_string_activity']
+    gen = orch(_FakeOrchCtx(), {'data': 1})
+    drive(gen, 'mock-result')
+
+    # Verify interceptor was called for string-based activity
+    assert len(interceptor_calls) == 1
+    assert interceptor_calls[0]['activity_name'] == 'remote_activity'
+    assert interceptor_calls[0]['app_id'] == 'remote-app'
+
+
+def test_interceptor_called_for_string_workflow_names(monkeypatch):
+    """Test that outbound interceptors are invoked for string-based workflow names.
+
+    Regression test: Previously, interceptors were only called for function workflows,
+    not for string workflow names (cross-app scenario).
+    """
+    monkeypatch.setattr(worker_mod, 'TaskHubGrpcWorker', _FakeWorker)
+
+    interceptor_calls = []
+
+    class TrackingInterceptor(BaseWorkflowOutboundInterceptor):
+        def call_child_workflow(self, request: CallChildWorkflowRequest, next):
+            # Track that interceptor was called with these parameters
+            interceptor_calls.append(
+                {
+                    'workflow_name': request.workflow_name,
+                    'app_id': request.app_id,
+                    'retry_policy': request.retry_policy,
+                    'instance_id': request.instance_id,
+                }
+            )
+            return next(request)
+
+    rt = WorkflowRuntime(workflow_outbound_interceptors=[TrackingInterceptor()])
+
+    @rt.workflow(name='w_string_workflow')
+    def w_string_workflow(ctx, x):
+        # Call child workflow with STRING name and app_id (cross-app scenario)
+        # The workflow doesn't need to exist for this test - we're just testing
+        # that the interceptor gets called
+        yield ctx.call_child_workflow(
+            'remote_workflow', input=x, instance_id='test-id', app_id='remote-workflow-app'
+        )
+        return 'done'
+
+    orch = rt._WorkflowRuntime__worker._registry.orchestrators['w_string_workflow']
+    gen = orch(_FakeOrchCtx(), {'data': 1})
+    drive(gen, 'mock-result')
+
+    # Verify interceptor was called for string-based workflow
+    assert len(interceptor_calls) == 1
+    assert interceptor_calls[0]['workflow_name'] == 'remote_workflow'
+    assert interceptor_calls[0]['app_id'] == 'remote-workflow-app'
+    assert interceptor_calls[0]['instance_id'] == 'test-id'

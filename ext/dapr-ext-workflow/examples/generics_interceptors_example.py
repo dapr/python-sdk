@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import List
 
 from dapr.ext.workflow import (
@@ -100,14 +100,7 @@ class MyOutboundInterceptor(BaseWorkflowOutboundInterceptor[MyWorkflowInput, MyA
         payload = (
             asdict(input.input) if hasattr(input.input, '__dataclass_fields__') else input.input
         )
-        shaped = CallChildWorkflowRequest[MyWorkflowInput](
-            workflow_name=input.workflow_name,
-            input=payload,  # type: ignore[arg-type]
-            instance_id=input.instance_id,
-            workflow_ctx=input.workflow_ctx,
-            metadata=input.metadata,
-        )
-        return nxt(shaped)
+        return nxt(replace(input, input=payload))  # type: ignore[arg-type]
 
     def continue_as_new(
         self,
@@ -132,14 +125,7 @@ class MyOutboundInterceptor(BaseWorkflowOutboundInterceptor[MyWorkflowInput, MyA
         payload = (
             asdict(input.input) if hasattr(input.input, '__dataclass_fields__') else input.input
         )
-        shaped = CallActivityRequest[MyActivityInput](
-            activity_name=input.activity_name,
-            input=payload,  # type: ignore[arg-type]
-            retry_policy=input.retry_policy,
-            workflow_ctx=input.workflow_ctx,
-            metadata=input.metadata,
-        )
-        return nxt(shaped)
+        return nxt(replace(input, input=payload))  # type: ignore[arg-type]
 
 
 # ------------------------------

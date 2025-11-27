@@ -25,8 +25,6 @@ class FakeOrchestrationContext:
         current_utc_datetime: datetime | None = None,
         is_replaying: bool = False,
         workflow_name: str = 'wf',
-        parent_instance_id: str | None = None,
-        history_event_sequence: int | None = 1,
         trace_parent: str | None = None,
         trace_state: str | None = None,
         orchestration_span_id: str | None = None,
@@ -38,8 +36,6 @@ class FakeOrchestrationContext:
         )
         self.is_replaying = is_replaying
         self.workflow_name = workflow_name
-        self.parent_instance_id = parent_instance_id
-        self.history_event_sequence = history_event_sequence
         self.trace_parent = trace_parent
         self.trace_state = trace_state
         self.orchestration_span_id = orchestration_span_id

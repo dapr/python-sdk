@@ -59,8 +59,6 @@ class _FakeOrchCtx:
         self._custom_status = None
         self.is_replaying = False
         self.workflow_name = 'wf'
-        self.parent_instance_id = None
-        self.history_event_sequence = 1
         self.trace_parent = None
         self.trace_state = None
         self.orchestration_span_id = None
@@ -214,6 +212,7 @@ def test_outbound_activity_and_child_wrap_metadata(monkeypatch):
                     activity_name=request.activity_name,
                     input=request.input,
                     retry_policy=request.retry_policy,
+                    app_id=request.app_id,
                     workflow_ctx=request.workflow_ctx,
                     metadata={'k': 'v'},
                 )
@@ -225,6 +224,8 @@ def test_outbound_activity_and_child_wrap_metadata(monkeypatch):
                     workflow_name=request.workflow_name,
                     input=request.input,
                     instance_id=request.instance_id,
+                    retry_policy=request.retry_policy,
+                    app_id=request.app_id,
                     workflow_ctx=request.workflow_ctx,
                     metadata={'p': 'q'},
                 )
