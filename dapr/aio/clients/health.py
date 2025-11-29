@@ -12,9 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import aiohttp
 import asyncio
-import urllib.request
-import urllib.error
 import time
 
 from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, USER_AGENT_HEADER, DAPR_USER_AGENT
@@ -32,21 +31,24 @@ class DaprHealth:
         timeout = float(settings.DAPR_HEALTH_TIMEOUT)
 
         start = time.time()
-        while True:
-            try:
-                req = urllib.request.Request(health_url, headers=headers)
-                with urllib.request.urlopen(req, context=DaprHealth.get_ssl_context()) as response:
-                    if 200 <= response.status < 300:
-                        break
-            except urllib.error.URLError as e:
-                print(f'Health check on {health_url} failed: {e.reason}')
-            except Exception as e:
-                print(f'Unexpected error during health check: {e}')
+        ssl_context = DaprHealth.get_ssl_context()
 
-            remaining = (start + timeout) - time.time()
-            if remaining <= 0:
-                raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
-            await asyncio.sleep(min(1.0, remaining))
+        connector = aiohttp.TCPConnector(ssl=ssl_context)
+        async with aiohttp.ClientSession(connector=connector) as session:
+            while True:
+                try:
+                    async with session.get(health_url, headers=headers) as response:
+                        if 200 <= response.status < 300:
+                            break
+                except aiohttp.ClientError as e:
+                    print(f'Health check on {health_url} failed: {e}')
+                except Exception as e:
+                    print(f'Unexpected error during health check: {e}')
+
+                remaining = (start + timeout) - time.time()
+                if remaining <= 0:
+                    raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
+                await asyncio.sleep(min(1.0, remaining))
 
     @staticmethod
     def get_ssl_context():
