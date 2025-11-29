@@ -11,16 +11,18 @@
 # limitations under the License.
 from datetime import timedelta
 from time import sleep
+
 from dapr.ext.workflow import (
-    WorkflowRuntime,
-    DaprWorkflowContext,
-    WorkflowActivityContext,
-    RetryPolicy,
     DaprWorkflowClient,
+    DaprWorkflowContext,
+    RetryPolicy,
+    WorkflowActivityContext,
+    WorkflowRuntime,
     when_any,
 )
-from dapr.conf import Settings
+
 from dapr.clients.exceptions import DaprInternalError
+from dapr.conf import Settings
 
 settings = Settings()
 

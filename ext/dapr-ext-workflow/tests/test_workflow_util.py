@@ -1,6 +1,7 @@
 import unittest
-from dapr.ext.workflow.util import getAddress
 from unittest.mock import patch
+
+from dapr.ext.workflow.util import getAddress
 
 from dapr.conf import settings
 

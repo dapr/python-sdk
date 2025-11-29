@@ -1,13 +1,13 @@
 # Dapr SDK for Python
 
-[![PyPI - Version](https://img.shields.io/pypi/v/dapr?style=flat&logo=pypi&logoColor=white&label=Latest%20version)](https://pypi.org/project/dapr/) 
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/dapr?style=flat&logo=pypi&logoColor=white&label=Downloads)](https://pypi.org/project/dapr/) 
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/dapr/python-sdk/.github%2Fworkflows%2Fbuild.yaml?branch=main&label=Build&logo=github)](https://github.com/dapr/python-sdk/actions/workflows/build.yaml) 
-[![codecov](https://codecov.io/gh/dapr/python-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk) 
-[![GitHub License](https://img.shields.io/github/license/dapr/python-sdk?style=flat&label=License&logo=github)](https://github.com/dapr/python-sdk/blob/main/LICENSE) 
-[![GitHub issue custom search in repo](https://img.shields.io/github/issues-search/dapr/python-sdk?query=type%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22&label=Good%20first%20issues&style=flat&logo=github)](https://github.com/dapr/python-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 
-[![Discord](https://img.shields.io/discord/778680217417809931?label=Discord&style=flat&logo=discord)](http://bit.ly/dapr-discord) 
-[![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCtpSQ9BLB_3EXdWAUQYwnRA?style=flat&label=YouTube%20views&logo=youtube)](https://youtube.com/@daprdev) 
+[![PyPI - Version](https://img.shields.io/pypi/v/dapr?style=flat&logo=pypi&logoColor=white&label=Latest%20version)](https://pypi.org/project/dapr/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/dapr?style=flat&logo=pypi&logoColor=white&label=Downloads)](https://pypi.org/project/dapr/)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/dapr/python-sdk/.github%2Fworkflows%2Fbuild.yaml?branch=main&label=Build&logo=github)](https://github.com/dapr/python-sdk/actions/workflows/build.yaml)
+[![codecov](https://codecov.io/gh/dapr/python-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/dapr/python-sdk)
+[![GitHub License](https://img.shields.io/github/license/dapr/python-sdk?style=flat&label=License&logo=github)](https://github.com/dapr/python-sdk/blob/main/LICENSE)
+[![GitHub issue custom search in repo](https://img.shields.io/github/issues-search/dapr/python-sdk?query=type%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22&label=Good%20first%20issues&style=flat&logo=github)](https://github.com/dapr/python-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+[![Discord](https://img.shields.io/discord/778680217417809931?label=Discord&style=flat&logo=discord)](http://bit.ly/dapr-discord)
+[![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCtpSQ9BLB_3EXdWAUQYwnRA?style=flat&label=YouTube%20views&logo=youtube)](https://youtube.com/@daprdev)
 <!-- IGNORE_LINKS -->
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/daprdev?logo=x&style=flat)](https://twitter.com/daprdev)
 <!-- END_IGNORE -->
@@ -86,6 +86,7 @@ pip3 install -e .
 pip3 install -e ./ext/dapr-ext-grpc/
 pip3 install -e ./ext/dapr-ext-fastapi/
 pip3 install -e ./ext/dapr-ext-workflow/
+pip3 install -e ./ext/dapr-ext-langgraph/
 ```
 
 3. Install required packages
@@ -94,31 +95,25 @@ pip3 install -e ./ext/dapr-ext-workflow/
 pip3 install -r dev-requirements.txt
 ```
 
-4. Run linter
-
-```bash
-tox -e flake8
-```
-
-5. Run autofix
+4. Run linter and autofix
 
 ```bash
 tox -e ruff
 ```
 
-6. Run unit-test
+5. Run unit-test
 
 ```bash
 tox -e py311
 ```
 
-7. Run type check
+6. Run type check
 
 ```bash
 tox -e type
 ```
 
-8. Run examples
+7. Run examples
 
 ```bash
 tox -e examples
@@ -153,7 +148,7 @@ export DAPR_BRANCH=release-1.16 # Optional, defaults to master
 ./tools/regen_grpcclient.sh
 ```
 
-> Note: The `grpcio-tools` version we're using doesn't support Python 3.13. 
+> Note: The `grpcio-tools` version we're using doesn't support Python 3.13.
 
 ## Help & Feedback
 

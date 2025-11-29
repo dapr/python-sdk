@@ -11,8 +11,9 @@
 # limitations under the License.
 # ------------------------------------------------------------
 
-from dapr.clients import DaprClient
 import warnings
+
+from dapr.clients import DaprClient
 
 
 def main():

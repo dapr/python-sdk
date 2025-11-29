@@ -14,7 +14,6 @@ limitations under the License.
 """
 
 import base64
-
 from datetime import timedelta
 from typing import Any, Dict, Optional
 

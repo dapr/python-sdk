@@ -14,7 +14,6 @@ from time import sleep
 
 import dapr.ext.workflow as wf
 
-
 wfr = wf.WorkflowRuntime()
 
 

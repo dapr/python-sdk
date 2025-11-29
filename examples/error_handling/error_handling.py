@@ -1,7 +1,6 @@
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprGrpcError
 
-
 with DaprClient() as d:
     storeName = 'statestore'
 

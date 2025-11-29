@@ -14,96 +14,90 @@ limitations under the License.
 """
 
 import asyncio
-import time
-import socket
 import json
+import socket
+import time
 import uuid
-
 from datetime import datetime
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
 from urllib.parse import urlencode
-
 from warnings import warn
 
-from typing import Callable, Dict, Optional, Text, Union, Sequence, List, Any, Awaitable
+import grpc.aio  # type: ignore
+from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.empty_pb2 import Empty as GrpcEmpty
+from google.protobuf.message import Message as GrpcMessage
+from grpc.aio import (  # type: ignore
+    AioRpcError,
+    StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    UnaryUnaryClientInterceptor,
+)
 from typing_extensions import Self
 
-from google.protobuf.message import Message as GrpcMessage
-from google.protobuf.empty_pb2 import Empty as GrpcEmpty
-from google.protobuf.any_pb2 import Any as GrpcAny
-
-import grpc.aio  # type: ignore
-from grpc.aio import (  # type: ignore
-    UnaryUnaryClientInterceptor,
-    UnaryStreamClientInterceptor,
-    StreamUnaryClientInterceptor,
-    StreamStreamClientInterceptor,
-    AioRpcError,
+from dapr.aio.clients.grpc._request import (
+    DecryptRequestIterator,
+    EncryptRequestIterator,
 )
-
-from dapr.aio.clients.grpc.subscription import Subscription
-from dapr.clients.exceptions import DaprInternalError, DaprGrpcError
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.clients.grpc._state import StateOptions, StateItem
-from dapr.clients.grpc._helpers import getWorkflowRuntimeStatus
-from dapr.clients.health import DaprHealth
-from dapr.clients.retry import RetryPolicy
-from dapr.common.pubsub.subscription import StreamInactiveError
-from dapr.conf.helpers import GrpcEndpoint
-from dapr.conf import settings
-from dapr.proto import api_v1, api_service_v1, common_v1
-from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
-from dapr.version import __version__
-
+from dapr.aio.clients.grpc._response import (
+    DecryptResponse,
+    EncryptResponse,
+)
 from dapr.aio.clients.grpc.interceptors import (
     DaprClientInterceptorAsync,
     DaprClientTimeoutInterceptorAsync,
 )
+from dapr.aio.clients.grpc.subscription import Subscription
+from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
+from dapr.clients.grpc import conversation
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataTuple,
-    to_bytes,
-    validateNotNone,
-    validateNotBlankString,
     convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
+    getWorkflowRuntimeStatus,
+    to_bytes,
+    validateNotBlankString,
+    validateNotNone,
 )
-from dapr.aio.clients.grpc._request import (
-    EncryptRequestIterator,
-    DecryptRequestIterator,
-)
-from dapr.aio.clients.grpc._response import (
-    EncryptResponse,
-    DecryptResponse,
-)
+from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._request import (
-    InvokeMethodRequest,
     BindingRequest,
+    InvokeMethodRequest,
     TransactionalStateOperation,
 )
-from dapr.clients.grpc import conversation
-
-from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._response import (
     BindingResponse,
+    BulkStateItem,
+    BulkStatesResponse,
+    ConfigurationResponse,
+    ConfigurationWatcher,
     DaprResponse,
-    GetSecretResponse,
     GetBulkSecretResponse,
     GetMetadataResponse,
+    GetSecretResponse,
+    GetWorkflowResponse,
     InvokeMethodResponse,
-    UnlockResponseStatus,
-    StateResponse,
-    BulkStatesResponse,
-    BulkStateItem,
-    ConfigurationResponse,
     QueryResponse,
     QueryResponseItem,
     RegisteredComponents,
-    ConfigurationWatcher,
+    StartWorkflowResponse,
+    StateResponse,
+    TopicEventResponse,
     TryLockResponse,
     UnlockResponse,
-    GetWorkflowResponse,
-    StartWorkflowResponse,
-    TopicEventResponse,
+    UnlockResponseStatus,
 )
+from dapr.clients.grpc._state import StateItem, StateOptions
+from dapr.clients.health import DaprHealth
+from dapr.clients.retry import RetryPolicy
+from dapr.common.pubsub.subscription import StreamInactiveError
+from dapr.conf import settings
+from dapr.conf.helpers import GrpcEndpoint
+from dapr.proto import api_service_v1, api_v1, common_v1
+from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
+from dapr.version import __version__
 
 
 class DaprGrpcClientAsync:
@@ -170,7 +164,7 @@ class DaprGrpcClientAsync:
 
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or (
-                f'{settings.DAPR_RUNTIME_HOST}:' f'{settings.DAPR_GRPC_PORT}'
+                f'{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}'
             )
 
         try:

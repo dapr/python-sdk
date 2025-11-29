@@ -10,11 +10,11 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
-    - name: Set up Python 3.9
+    - uses: actions/checkout@v6
+    - name: Set up Python 3.10
       uses: actions/setup-python@v6
       with:
-        python-version: 3.9
+        python-version: '3.10'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -30,9 +30,6 @@ jobs:
             echo "Source files are not formatted correctly. Run 'tox -e ruff' to autoformat."
             exit 1
         fi
-    - name: Run Linter
-      run: |
-        tox -e flake8
 
   build:
     needs: lint
@@ -40,9 +37,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_ver: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python_ver: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python_ver }}
       uses: actions/setup-python@v6
       with:
@@ -66,11 +63,11 @@ jobs:
     env:
       TWINE_USERNAME: "__token__"
     steps:
-    - uses: actions/checkout@v5
-    - name: Set up Python 3.9
+    - uses: actions/checkout@v6
+    - name: Set up Python 3.10
       uses: actions/setup-python@v6
       with:
-        python-version: 3.9
+        python-version: '3.10'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -107,5 +104,12 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-fastapi
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish dapr-ext-langgraph
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd ext/dapr-ext-langgraph
         python setup.py sdist bdist_wheel
         twine upload dist/*

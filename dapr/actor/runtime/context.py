@@ -13,16 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import TYPE_CHECKING, Callable, Optional
+
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._state_provider import StateProvider
 from dapr.clients.base import DaprActorClientBase
 from dapr.serializers import Serializer
 
-from typing import Callable, Optional, TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from dapr.actor.runtime.actor import Actor
     from dapr.actor.runtime._type_information import ActorTypeInformation
+    from dapr.actor.runtime.actor import Actor
 
 
 class ActorRuntimeContext:

@@ -1,8 +1,9 @@
 import json
 from datetime import datetime, timedelta
 
-from dapr.clients import DaprClient, Job, DropFailurePolicy, ConstantFailurePolicy
 from google.protobuf.any_pb2 import Any as GrpcAny
+
+from dapr.clients import ConstantFailurePolicy, DaprClient, DropFailurePolicy, Job
 
 
 def create_job_data(message: str):
@@ -20,7 +21,7 @@ def main():
 
         try:
             client.schedule_job_alpha1(job=simple_job, overwrite=True)
-            print(f'✓ Simple job scheduled successfully', flush=True)
+            print('✓ Simple job scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule simple job: {e}', flush=True)
             return
@@ -37,7 +38,7 @@ def main():
 
         try:
             client.schedule_job_alpha1(job=recurring_job, overwrite=True)
-            print(f'✓ Recurring job scheduled successfully', flush=True)
+            print('✓ Recurring job scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule recurring job: {e}', flush=True)
             return
@@ -53,7 +54,7 @@ def main():
 
         try:
             client.schedule_job_alpha1(one_time_job)
-            print(f'✓ One-time job scheduled successfully', flush=True)
+            print('✓ One-time job scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule one-time job: {e}', flush=True)
             return
@@ -71,7 +72,7 @@ def main():
 
         try:
             client.schedule_job_alpha1(job=drop_policy_job, overwrite=True)
-            print(f'✓ Job with drop failure policy scheduled successfully', flush=True)
+            print('✓ Job with drop failure policy scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule job with drop policy: {e}', flush=True)
 
@@ -85,7 +86,7 @@ def main():
 
         try:
             client.schedule_job_alpha1(job=constant_policy_job, overwrite=True)
-            print(f'✓ Job with constant retry policy scheduled successfully', flush=True)
+            print('✓ Job with constant retry policy scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule job with retry policy: {e}', flush=True)
 
@@ -93,7 +94,7 @@ def main():
         print('\n4. Getting job details...', flush=True)
         try:
             job = client.get_job_alpha1('recurring-hello-job')
-            print(f'✓ Retrieved job details:', flush=True)
+            print('✓ Retrieved job details:', flush=True)
             print(f'  - Name: {job.name}', flush=True)
             print(f'  - Schedule: {job.schedule}', flush=True)
             print(f'  - TTL: {job.ttl}', flush=True)
@@ -104,7 +105,7 @@ def main():
                 except Exception:
                     print(f'  - Data: <binary data, {len(job.data.value)} bytes>', flush=True)
             else:
-                print(f'  - Data: None', flush=True)
+                print('  - Data: None', flush=True)
         except Exception as e:
             print(f'✗ Failed to get job details: {e}', flush=True)
 

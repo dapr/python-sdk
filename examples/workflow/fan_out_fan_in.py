@@ -12,6 +12,7 @@
 
 import time
 from typing import List
+
 import dapr.ext.workflow as wf
 
 wfr = wf.WorkflowRuntime()

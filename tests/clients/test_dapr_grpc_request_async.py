@@ -16,8 +16,8 @@ limitations under the License.
 import io
 import unittest
 
-from dapr.clients.grpc._crypto import EncryptOptions, DecryptOptions
-from dapr.aio.clients.grpc._request import EncryptRequestIterator, DecryptRequestIterator
+from dapr.aio.clients.grpc._request import DecryptRequestIterator, EncryptRequestIterator
+from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.proto import api_v1
 
 

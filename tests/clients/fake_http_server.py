@@ -1,8 +1,7 @@
 import time
-from ssl import PROTOCOL_TLS_SERVER, SSLContext
-
-from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from ssl import PROTOCOL_TLS_SERVER, SSLContext
+from threading import Thread
 
 from tests.clients.certs import HttpCerts
 

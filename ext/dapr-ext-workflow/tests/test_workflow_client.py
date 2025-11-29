@@ -13,14 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import unittest
 from datetime import datetime
 from typing import Any, Union
-import unittest
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from unittest import mock
-from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
-from durabletask import client
+
 import durabletask.internal.orchestrator_service_pb2 as pb
+from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from durabletask import client
 from grpc import RpcError
 
 mock_schedule_result = 'workflow001'
