@@ -19,7 +19,6 @@ from unittest.mock import patch
 
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.aio.clients.health import DaprHealth as DaprHealthAsync
-from dapr.clients.health import DaprHealth as DaprHealth
 from tests.clients.certs import replacement_get_credentials_func, replacement_get_health_context
 from tests.clients.test_dapr_grpc_client_async import DaprGrpcClientAsyncTests
 from .fake_dapr_server import FakeDaprSidecar
@@ -28,7 +27,6 @@ from dapr.conf import settings
 
 DaprGrpcClientAsync.get_credentials = replacement_get_credentials_func
 DaprHealthAsync.get_ssl_context = replacement_get_health_context
-DaprHealth.get_ssl_context = replacement_get_health_context
 
 
 class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
