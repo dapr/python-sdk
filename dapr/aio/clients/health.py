@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import aiohttp
 import asyncio
 import time
-from warnings import warn
+
+import aiohttp
 
 from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, DAPR_USER_AGENT, USER_AGENT_HEADER
 from dapr.clients.http.helpers import get_api_url
