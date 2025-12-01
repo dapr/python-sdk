@@ -144,7 +144,9 @@ async def main():
         # Resume Test
         await wf_client.resume_workflow(instance_id=instance_id)
         metadata = await wf_client.get_workflow_state(instance_id=instance_id)
-        print(f'Get response from {workflow_name} after resume call: {metadata.runtime_status.name}')
+        print(
+            f'Get response from {workflow_name} after resume call: {metadata.runtime_status.name}'
+        )
 
         await asyncio.sleep(2)  # Give the workflow time to reach the event wait state
         await wf_client.raise_workflow_event(
