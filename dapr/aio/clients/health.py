@@ -25,15 +25,6 @@ from dapr.conf import settings
 
 class DaprHealth:
     @staticmethod
-    async def wait_until_ready():
-        warn(
-            'This method is deprecated. Use DaprHealth.wait_for_sidecar instead.',
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        await DaprHealth.wait_for_sidecar()
-
-    @staticmethod
     async def wait_for_sidecar():
         health_url = f'{get_api_url()}/healthz/outbound'
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
