@@ -12,10 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import asyncio
 import time
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from dapr.aio.clients.health import DaprHealth
 from dapr.conf import settings
@@ -24,88 +25,98 @@ from dapr.version import __version__
 
 class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
     @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'http://domain.com:3500')
-    @patch('urllib.request.urlopen')
-    async def test_wait_until_ready_success(self, mock_urlopen):
-        mock_urlopen.return_value.__enter__.return_value = MagicMock(status=200)
+    @patch('aiohttp.ClientSession.get')
+    async def test_wait_for_sidecar_success(self, mock_get):
+        # Create mock response
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_response.__aexit__ = AsyncMock(return_value=None)
+        mock_get.return_value = mock_response
 
         try:
-            await DaprHealth.wait_until_ready()
+            await DaprHealth.wait_for_sidecar()
         except Exception as e:
-            self.fail(f'wait_until_ready() raised an exception unexpectedly: {e}')
+            self.fail(f'wait_for_sidecar() raised an exception unexpectedly: {e}')
 
-        mock_urlopen.assert_called_once()
+        mock_get.assert_called_once()
 
-        called_url = mock_urlopen.call_args[0][0].full_url
+        # Check URL
+        called_url = mock_get.call_args[0][0]
         self.assertEqual(called_url, 'http://domain.com:3500/v1.0/healthz/outbound')
 
         # Check headers are properly set
-        headers = mock_urlopen.call_args[0][0].headers
-        self.assertIn('User-agent', headers)
-        self.assertEqual(headers['User-agent'], f'dapr-sdk-python/{__version__}')
+        headers = mock_get.call_args[1]['headers']
+        self.assertIn('User-Agent', headers)
+        self.assertEqual(headers['User-Agent'], f'dapr-sdk-python/{__version__}')
 
     @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'http://domain.com:3500')
     @patch.object(settings, 'DAPR_API_TOKEN', 'mytoken')
-    @patch('urllib.request.urlopen')
-    async def test_wait_until_ready_success_with_api_token(self, mock_urlopen):
-        mock_urlopen.return_value.__enter__.return_value = MagicMock(status=200)
+    @patch('aiohttp.ClientSession.get')
+    async def test_wait_for_sidecar_success_with_api_token(self, mock_get):
+        # Create mock response
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_response.__aexit__ = AsyncMock(return_value=None)
+        mock_get.return_value = mock_response
 
         try:
-            await DaprHealth.wait_until_ready()
+            await DaprHealth.wait_for_sidecar()
         except Exception as e:
-            self.fail(f'wait_until_ready() raised an exception unexpectedly: {e}')
+            self.fail(f'wait_for_sidecar() raised an exception unexpectedly: {e}')
 
-        mock_urlopen.assert_called_once()
+        mock_get.assert_called_once()
 
         # Check headers are properly set
-        headers = mock_urlopen.call_args[0][0].headers
-        self.assertIn('User-agent', headers)
-        self.assertEqual(headers['User-agent'], f'dapr-sdk-python/{__version__}')
-        self.assertIn('Dapr-api-token', headers)
-        self.assertEqual(headers['Dapr-api-token'], 'mytoken')
+        headers = mock_get.call_args[1]['headers']
+        self.assertIn('User-Agent', headers)
+        self.assertEqual(headers['User-Agent'], f'dapr-sdk-python/{__version__}')
+        self.assertIn('dapr-api-token', headers)
+        self.assertEqual(headers['dapr-api-token'], 'mytoken')
 
     @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '2.5')
-    @patch('urllib.request.urlopen')
-    async def test_wait_until_ready_timeout(self, mock_urlopen):
-        mock_urlopen.return_value.__enter__.return_value = MagicMock(status=500)
+    @patch('aiohttp.ClientSession.get')
+    async def test_wait_for_sidecar_timeout(self, mock_get):
+        # Create mock response that always returns 500
+        mock_response = MagicMock()
+        mock_response.status = 500
+        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_response.__aexit__ = AsyncMock(return_value=None)
+        mock_get.return_value = mock_response
 
         start = time.time()
 
         with self.assertRaises(TimeoutError):
-            await DaprHealth.wait_until_ready()
+            await DaprHealth.wait_for_sidecar()
 
         self.assertGreaterEqual(time.time() - start, 2.5)
-        self.assertGreater(mock_urlopen.call_count, 1)
+        self.assertGreater(mock_get.call_count, 1)
 
     @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'http://domain.com:3500')
     @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '5.0')
-    @patch('urllib.request.urlopen')
-    async def test_health_check_does_not_block(self, mock_urlopen):
+    @patch('aiohttp.ClientSession.get')
+    async def test_health_check_does_not_block(self, mock_get):
         """Test that health check doesn't block other async tasks from running"""
         # Mock health check to retry several times before succeeding
         call_count = [0]  # Use list to allow modification in nested function
 
-        class MockResponse:
-            def __init__(self, status):
-                self.status = status
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                return None
-
         def side_effect(*args, **kwargs):
             call_count[0] += 1
-            # First 2 calls fail with URLError, then succeed
+            # First 2 calls fail with ClientError, then succeed
             # This will cause ~2 seconds of retries (1 second sleep after each failure)
             if call_count[0] <= 2:
-                import urllib.error
+                import aiohttp
 
-                raise urllib.error.URLError('Connection refused')
+                raise aiohttp.ClientError('Connection refused')
             else:
-                return MockResponse(status=200)
+                mock_response = MagicMock()
+                mock_response.status = 200
+                mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+                mock_response.__aexit__ = AsyncMock(return_value=None)
+                return mock_response
 
-        mock_urlopen.side_effect = side_effect
+        mock_get.side_effect = side_effect
 
         # Counter that will be incremented by background task
         counter = [0]  # Use list to allow modification in nested function
@@ -122,7 +133,7 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         try:
             # Run health check (will take ~2 seconds with retries)
-            await DaprHealth.wait_until_ready()
+            await DaprHealth.wait_for_sidecar()
 
             # Stop the background task
             is_running[0] = False
@@ -150,17 +161,22 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
                 pass
 
     @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'http://domain.com:3500')
-    @patch('urllib.request.urlopen')
-    async def test_multiple_health_checks_concurrent(self, mock_urlopen):
+    @patch('aiohttp.ClientSession.get')
+    async def test_multiple_health_checks_concurrent(self, mock_get):
         """Test that multiple health check calls can run concurrently"""
-        mock_urlopen.return_value.__enter__.return_value = MagicMock(status=200)
+        # Create mock response
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_response.__aexit__ = AsyncMock(return_value=None)
+        mock_get.return_value = mock_response
 
         # Run multiple health checks concurrently
         start_time = time.time()
         results = await asyncio.gather(
-            DaprHealth.wait_until_ready(),
-            DaprHealth.wait_until_ready(),
-            DaprHealth.wait_until_ready(),
+            DaprHealth.wait_for_sidecar(),
+            DaprHealth.wait_for_sidecar(),
+            DaprHealth.wait_for_sidecar(),
         )
         elapsed = time.time() - start_time
 
@@ -174,7 +190,7 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertLess(elapsed, 1.0)
 
         # Verify multiple calls were made
-        self.assertGreaterEqual(mock_urlopen.call_count, 3)
+        self.assertGreaterEqual(mock_get.call_count, 3)
 
 
 if __name__ == '__main__':

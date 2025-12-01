@@ -12,11 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import aiohttp
 import asyncio
 import time
+from warnings import warn
 
-from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, USER_AGENT_HEADER, DAPR_USER_AGENT
+from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, DAPR_USER_AGENT, USER_AGENT_HEADER
 from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings
 
@@ -24,6 +26,15 @@ from dapr.conf import settings
 class DaprHealth:
     @staticmethod
     async def wait_until_ready():
+        warn(
+            'This method is deprecated. Use DaprHealth.wait_for_sidecar instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        await DaprHealth.wait_for_sidecar()
+
+    @staticmethod
+    async def wait_for_sidecar():
         health_url = f'{get_api_url()}/healthz/outbound'
         headers = {USER_AGENT_HEADER: DAPR_USER_AGENT}
         if settings.DAPR_API_TOKEN is not None:
@@ -48,7 +59,7 @@ class DaprHealth:
                 remaining = (start + timeout) - time.time()
                 if remaining <= 0:
                     raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
-                await asyncio.sleep(min(1.0, remaining))
+                await asyncio.sleep(min(1, remaining))
 
     @staticmethod
     def get_ssl_context():
