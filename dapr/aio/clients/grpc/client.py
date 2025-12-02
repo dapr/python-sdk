@@ -90,7 +90,7 @@ from dapr.clients.grpc._response import (
     UnlockResponseStatus,
 )
 from dapr.clients.grpc._state import StateItem, StateOptions
-from dapr.aio.clients.health import DaprHealth
+from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.conf import settings
