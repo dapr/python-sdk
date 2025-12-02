@@ -18,15 +18,9 @@ It demonstrates the following APIs:
 
 You can install dapr SDK package using pip command:
 
-<!-- STEP
-name: Install requirements
--->
-
 ```sh
 pip3 install -r demo_workflow/requirements.txt
 ```
-
-<!-- END_STEP -->
 
 <!-- STEP
 name: Running this example
