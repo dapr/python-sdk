@@ -158,8 +158,3 @@ class AsyncWorkflowContext(DeterministicContextMixin):
     @property
     def execution_info(self):  # type: ignore[override]
         return getattr(self._base_ctx, '_execution_info', None)
-
-
-__all__ = [
-    'AsyncWorkflowContext',
-]

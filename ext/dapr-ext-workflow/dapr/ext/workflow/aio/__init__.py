@@ -14,7 +14,18 @@ limitations under the License.
 """
 
 from .dapr_workflow_client import DaprWorkflowClient
+from .async_context import AsyncWorkflowContext
+from .async_driver import CoroutineOrchestratorRunner
+from .awaitables import ActivityAwaitable, ExternalEventAwaitable, SleepAwaitable, SubOrchestratorAwaitable, WhenAnyAwaitable, WhenAllAwaitable
 
 __all__ = [
+    'ActivityAwaitable',
+    'AsyncWorkflowContext',
+    'CoroutineOrchestratorRunner',
+    'ExternalEventAwaitable',
     'DaprWorkflowClient',
+    'SleepAwaitable',
+    'SubOrchestratorAwaitable',
+    'WhenAnyAwaitable',
+    'WhenAllAwaitable',
 ]

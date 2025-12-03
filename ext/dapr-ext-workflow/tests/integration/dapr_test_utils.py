@@ -3,7 +3,7 @@
 """
 Utility functions for Dapr integration/e2e tests.
 
-Provides helpers for starting Dapr sidecars and managing test infrastructure.
+Provides helpers for starting Dapr sidecars and managing test infrastructure during integratino (e2e) tests
 """
 
 from __future__ import annotations
