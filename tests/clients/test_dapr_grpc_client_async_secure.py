@@ -22,6 +22,7 @@ from dapr.clients.health import DaprHealth
 from dapr.conf import settings
 from tests.clients.certs import replacement_get_credentials_func, replacement_get_health_context
 from tests.clients.test_dapr_grpc_client_async import DaprGrpcClientAsyncTests
+
 from .fake_dapr_server import FakeDaprSidecar
 
 DaprGrpcClientAsync.get_credentials = replacement_get_credentials_func

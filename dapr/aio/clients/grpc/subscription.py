@@ -3,8 +3,8 @@ import asyncio
 from grpc import StatusCode
 from grpc.aio import AioRpcError
 
-from dapr.clients.grpc._response import TopicEventResponse
 from dapr.aio.clients.health import DaprHealth
+from dapr.clients.grpc._response import TopicEventResponse
 from dapr.common.pubsub.subscription import (
     StreamCancelledError,
     StreamInactiveError,
