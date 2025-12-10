@@ -26,7 +26,7 @@ def multiply(a: int, b: int) -> int:
 
 
 tools = [add, multiply]
-llm = ChatOllama(model="llama3.2:1b")
+llm = ChatOllama(model='llama3.2:1b')
 llm_with_tools = llm.bind_tools(tools)
 
 sys_msg = SystemMessage(
