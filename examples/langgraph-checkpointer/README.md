@@ -11,9 +11,15 @@ Supporting Dapr backed Checkpointer for LangGraph based Agents.
 
 <!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 
-```bash
+<!-- STEP
+name: Install deps
+-->
+
+```sh
 pip3 install -r requirements.txt
 ```
+
+<!-- END_STEP -->
 
 ## Run the example
 
