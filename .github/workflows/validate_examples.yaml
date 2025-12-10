@@ -88,6 +88,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GOVER }}
+      - name: Set up Llama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama pull llama3.2:1b
       - name: Checkout Dapr CLI repo to override dapr command.
         uses: actions/checkout@v6
         if: env.DAPR_CLI_REF != ''

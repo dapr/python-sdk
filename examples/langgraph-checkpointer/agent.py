@@ -1,8 +1,6 @@
-import os
-
 from dapr.ext.langgraph import DaprCheckpointer
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
@@ -28,7 +26,7 @@ def multiply(a: int, b: int) -> int:
 
 
 tools = [add, multiply]
-llm = ChatOpenAI(model='gpt-4o', api_key=os.environ['OPENAI_API_KEY'])
+llm = ChatOllama(model="llama3.2:1b")
 llm_with_tools = llm.bind_tools(tools)
 
 sys_msg = SystemMessage(

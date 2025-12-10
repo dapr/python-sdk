@@ -57,7 +57,7 @@ sleep: 15
 
 ```bash
 # 1. Run the LangGraph agent
-dapr run --app-id langgraph-checkpointer --app-port 5001 -- python3 agent.py
+dapr run --app-id langgraph-checkpointer --app-port 5001 --resources-path ./components -- python3 agent.py
 ```
 
 <!-- END_STEP -->
