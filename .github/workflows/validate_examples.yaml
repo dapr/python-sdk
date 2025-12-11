@@ -91,6 +91,7 @@ jobs:
       - name: Set up Llama
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
+          nohup ollama serve &
           ollama pull llama3.2:1b
       - name: Checkout Dapr CLI repo to override dapr command.
         uses: actions/checkout@v6
