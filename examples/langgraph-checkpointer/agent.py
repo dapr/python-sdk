@@ -60,7 +60,7 @@ messages = react_graph_memory.invoke({'messages': messages}, config)
 for m in messages['messages']:
     m.pretty_print()
 
-messages = [HumanMessage(content='Multiply that by 2.')]
+messages = [HumanMessage(content='Multiply the result by 2.')]
 messages = react_graph_memory.invoke({'messages': messages}, config)
 for m in messages['messages']:
     m.pretty_print()

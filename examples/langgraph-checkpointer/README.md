@@ -43,7 +43,7 @@ expected_stdout_lines:
   - '== APP == Name: add'
   - '== APP == 7'
   - '== APP == The result of adding 3 and 4 is 7.'
-  - '== APP == Multiply that by 2.'
+  - '== APP == Multiply the result by 2.'
   - '== APP ==   Args:'
   - '== APP ==     a: 7'
   - '== APP ==     b: 2'
