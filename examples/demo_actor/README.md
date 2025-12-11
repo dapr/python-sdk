@@ -17,15 +17,9 @@ This document describes how to create an Actor(DemoActor) and invoke its methods
 
 You can install dapr SDK package using pip command:
 
-<!-- STEP 
-name: Install requirements
--->
-
 ```sh
 pip3 install -r demo_actor/requirements.txt
 ```
-
-<!-- END_STEP -->
 
 ## Run in self-hosted mode
 

@@ -3,8 +3,8 @@ import asyncio
 from grpc import StatusCode
 from grpc.aio import AioRpcError
 
+from dapr.aio.clients.health import DaprHealth
 from dapr.clients.grpc._response import TopicEventResponse
-from dapr.clients.health import DaprHealth
 from dapr.common.pubsub.subscription import (
     StreamCancelledError,
     StreamInactiveError,
@@ -52,7 +52,7 @@ class Subscription:
 
     async def reconnect_stream(self):
         await self.close()
-        DaprHealth.wait_for_sidecar()
+        await DaprHealth.wait_for_sidecar()
         print('Attempting to reconnect...')
         await self.start()
 
@@ -67,7 +67,7 @@ class Subscription:
                     return None
                 return SubscriptionMessage(message.event_message)
         except AioRpcError as e:
-            if e.code() == StatusCode.UNAVAILABLE:
+            if e.code() == StatusCode.UNAVAILABLE or e.code() == StatusCode.UNKNOWN:
                 print(
                     f'gRPC error while reading from stream: {e.details()}, '
                     f'Status Code: {e.code()}. '

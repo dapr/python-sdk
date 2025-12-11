@@ -1906,7 +1906,7 @@ class DaprGrpcClientAsync:
                     remaining = (start + timeout_s) - time.time()
                     if remaining < 0:
                         raise e
-                    asyncio.sleep(min(1, remaining))
+                    await asyncio.sleep(min(1, remaining))
 
     async def get_metadata(self) -> GetMetadataResponse:
         """Returns information about the sidecar allowing for runtime
