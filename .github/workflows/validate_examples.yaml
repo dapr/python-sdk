@@ -92,7 +92,8 @@ jobs:
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           nohup ollama serve &
-          ollama pull llama3.2:1b
+          sleep 10
+          ollama pull llama3.2:latest
       - name: Checkout Dapr CLI repo to override dapr command.
         uses: actions/checkout@v6
         if: env.DAPR_CLI_REF != ''
