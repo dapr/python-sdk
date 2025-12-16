@@ -2,8 +2,13 @@
 target-version = "py310"
 line-length = 100
 fix = true
-extend-exclude = [".github", "dapr/proto"]
-
+extend-exclude = [
+  ".github",
+  "dapr/proto",
+  "*_pb2.py",
+  "*_pb2_grpc.py",
+  "examples/**/.venv",
+]
 [tool.ruff.lint]
 select = [
   "I",  # isort
