@@ -50,10 +50,10 @@ build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 if not is_release():
     name += '-dev'
     version = f'{__version__}{build_number}'
-    description = 'The developmental release for the Dapr Session Manager extension for Strands Agents'
-    long_description = (
-        'This is the developmental release for the Dapr Session Manager extension for Strands Agents'
+    description = (
+        'The developmental release for the Dapr Session Manager extension for Strands Agents'
     )
+    long_description = 'This is the developmental release for the Dapr Session Manager extension for Strands Agents'
 
 print(f'package name: {name}, version: {version}', flush=True)
 

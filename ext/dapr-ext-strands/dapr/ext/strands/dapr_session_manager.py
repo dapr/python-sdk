@@ -6,19 +6,19 @@ from typing import Any, Dict, List, Literal, Optional, cast
 
 from dapr.clients import DaprClient
 from dapr.clients.grpc._state import Consistency, StateOptions
-
-from strands.types.exceptions import SessionException
-from strands.types.session import Session, SessionAgent, SessionMessage
+from strands import _identifier
 from strands.session.repository_session_manager import RepositorySessionManager
 from strands.session.session_repository import SessionRepository
-from strands import _identifier
+from strands.types.exceptions import SessionException
+from strands.types.session import Session, SessionAgent, SessionMessage
 
 logger = logging.getLogger(__name__)
 
 # Type-safe consistency constants
-ConsistencyLevel = Literal["eventual", "strong"]
-DAPR_CONSISTENCY_EVENTUAL: ConsistencyLevel = "eventual"
-DAPR_CONSISTENCY_STRONG: ConsistencyLevel = "strong"
+ConsistencyLevel = Literal['eventual', 'strong']
+DAPR_CONSISTENCY_EVENTUAL: ConsistencyLevel = 'eventual'
+DAPR_CONSISTENCY_STRONG: ConsistencyLevel = 'strong'
+
 
 class DaprSessionManager(RepositorySessionManager, SessionRepository):
     """Dapr state store session manager for distributed storage.
@@ -65,9 +65,9 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         cls,
         session_id: str,
         state_store_name: str,
-        dapr_address: str = "localhost:50001",
+        dapr_address: str = 'localhost:50001',
         **kwargs: Any,
-    ) -> "DaprSessionManager":
+    ) -> 'DaprSessionManager':
         """Create DaprSessionManager from Dapr address.
 
         Args:
@@ -80,7 +80,9 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             DaprSessionManager instance with owned client.
         """
         dapr_client = DaprClient(address=dapr_address)
-        manager = cls(session_id, state_store_name=state_store_name, dapr_client=dapr_client, **kwargs)
+        manager = cls(
+            session_id, state_store_name=state_store_name, dapr_client=dapr_client, **kwargs
+        )
         manager._owns_client = True
         return manager
 
@@ -97,7 +99,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             ValueError: If session id contains a path separator.
         """
         session_id = _identifier.validate(session_id, _identifier.Identifier.SESSION)
-        return f"{session_id}:session"
+        return f'{session_id}:session'
 
     def _get_agent_key(self, session_id: str, agent_id: str) -> str:
         """Get agent state key.
@@ -114,7 +116,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         """
         session_id = _identifier.validate(session_id, _identifier.Identifier.SESSION)
         agent_id = _identifier.validate(agent_id, _identifier.Identifier.AGENT)
-        return f"{session_id}:agents:{agent_id}"
+        return f'{session_id}:agents:{agent_id}'
 
     def _get_messages_key(self, session_id: str, agent_id: str) -> str:
         """Get messages list state key.
@@ -131,7 +133,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         """
         session_id = _identifier.validate(session_id, _identifier.Identifier.SESSION)
         agent_id = _identifier.validate(agent_id, _identifier.Identifier.AGENT)
-        return f"{session_id}:messages:{agent_id}"
+        return f'{session_id}:messages:{agent_id}'
 
     def _get_read_metadata(self) -> Dict[str, str]:
         """Get metadata for read operations (consistency).
@@ -141,7 +143,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         """
         metadata: Dict[str, str] = {}
         if self._consistency:
-            metadata["consistency"] = self._consistency
+            metadata['consistency'] = self._consistency
         return metadata
 
     def _get_write_metadata(self) -> Dict[str, str]:
@@ -152,7 +154,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         """
         metadata: Dict[str, str] = {}
         if self._ttl is not None:
-            metadata["ttlInSeconds"] = str(self._ttl)
+            metadata['ttlInSeconds'] = str(self._ttl)
         return metadata
 
     def _get_state_options(self) -> Optional[StateOptions]:
@@ -189,13 +191,13 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             if not response.data:
                 return None
 
-            content = response.data.decode("utf-8")
+            content = response.data.decode('utf-8')
             return cast(Dict[str, Any], json.loads(content))
 
         except json.JSONDecodeError as e:
-            raise SessionException(f"Invalid JSON in state key {key}: {e}") from e
+            raise SessionException(f'Invalid JSON in state key {key}: {e}') from e
         except Exception as e:
-            raise SessionException(f"Failed to read state key {key}: {e}") from e
+            raise SessionException(f'Failed to read state key {key}: {e}') from e
 
     def _write_state(self, key: str, data: Dict[str, Any]) -> None:
         """Write JSON state to Dapr.
@@ -217,7 +219,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
                 options=self._get_state_options(),
             )
         except Exception as e:
-            raise SessionException(f"Failed to write state key {key}: {e}") from e
+            raise SessionException(f'Failed to write state key {key}: {e}') from e
 
     def _delete_state(self, key: str) -> None:
         """Delete state from Dapr.
@@ -235,12 +237,12 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
                 options=self._get_state_options(),
             )
         except Exception as e:
-            raise SessionException(f"Failed to delete state key {key}: {e}") from e
+            raise SessionException(f'Failed to delete state key {key}: {e}') from e
 
     def _get_manifest_key(self, session_id: str) -> str:
         """Get session manifest key (tracks agent_ids for deletion)."""
         session_id = _identifier.validate(session_id, _identifier.Identifier.SESSION)
-        return f"{session_id}:manifest"
+        return f'{session_id}:manifest'
 
     def create_session(self, session: Session, **kwargs: Any) -> Session:
         """Create a new session.
@@ -260,7 +262,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         # Check if session already exists
         existing = self.read_session(session.session_id)
         if existing is not None:
-            raise SessionException(f"Session {session.session_id} already exists")
+            raise SessionException(f'Session {session.session_id} already exists')
 
         # Write session data
         session_dict = session.to_dict()
@@ -298,7 +300,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
 
         # Read manifest (may be missing if no agents created)
         manifest = self._read_state(manifest_key)
-        agent_ids: list[str] = manifest.get("agents", []) if manifest else []
+        agent_ids: list[str] = manifest.get('agents', []) if manifest else []
 
         # Delete agent and message keys
         for agent_id in agent_ids:
@@ -329,13 +331,13 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
 
         # Initialize empty messages list
         messages_key = self._get_messages_key(session_id, session_agent.agent_id)
-        self._write_state(messages_key, {"messages": []})
+        self._write_state(messages_key, {'messages': []})
 
         # Update manifest with this agent
         manifest_key = self._get_manifest_key(session_id)
-        manifest = self._read_state(manifest_key) or {"agents": []}
-        if session_agent.agent_id not in manifest["agents"]:
-            manifest["agents"].append(session_agent.agent_id)
+        manifest = self._read_state(manifest_key) or {'agents': []}
+        if session_agent.agent_id not in manifest['agents']:
+            manifest['agents'].append(session_agent.agent_id)
         self._write_state(manifest_key, manifest)
 
     def read_agent(self, session_id: str, agent_id: str, **kwargs: Any) -> Optional[SessionAgent]:
@@ -373,7 +375,9 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         """
         previous_agent = self.read_agent(session_id=session_id, agent_id=session_agent.agent_id)
         if previous_agent is None:
-            raise SessionException(f"Agent {session_agent.agent_id} in session {session_id} does not exist")
+            raise SessionException(
+                f'Agent {session_agent.agent_id} in session {session_id} does not exist'
+            )
 
         # Preserve creation timestamp
         session_agent.created_at = previous_agent.created_at
@@ -382,7 +386,9 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
 
         self._write_state(agent_key, session_agent.to_dict())
 
-    def create_message(self, session_id: str, agent_id: str, session_message: SessionMessage, **kwargs: Any) -> None:
+    def create_message(
+        self, session_id: str, agent_id: str, session_message: SessionMessage, **kwargs: Any
+    ) -> None:
         """Create a new message for the agent.
 
         Args:
@@ -401,7 +407,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         if messages_data is None:
             messages_list = []
         else:
-            messages_list = messages_data.get("messages", [])
+            messages_list = messages_data.get('messages', [])
             if not isinstance(messages_list, list):
                 messages_list = []
 
@@ -409,9 +415,11 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         messages_list.append(session_message.to_dict())
 
         # Write back
-        self._write_state(messages_key, {"messages": messages_list})
+        self._write_state(messages_key, {'messages': messages_list})
 
-    def read_message(self, session_id: str, agent_id: str, message_id: int, **kwargs: Any) -> Optional[SessionMessage]:
+    def read_message(
+        self, session_id: str, agent_id: str, message_id: int, **kwargs: Any
+    ) -> Optional[SessionMessage]:
         """Read message data.
 
         Args:
@@ -428,7 +436,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             SessionException: If read fails.
         """
         if not isinstance(message_id, int):
-            raise ValueError(f"message_id=<{message_id}> | message id must be an integer")
+            raise ValueError(f'message_id=<{message_id}> | message id must be an integer')
 
         messages_key = self._get_messages_key(session_id, agent_id)
 
@@ -436,18 +444,20 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         if messages_data is None:
             return None
 
-        messages_list = messages_data.get("messages", [])
+        messages_list = messages_data.get('messages', [])
         if not isinstance(messages_list, list):
             messages_list = []
 
         # Find message by ID
         for msg_dict in messages_list:
-            if msg_dict.get("message_id") == message_id:
+            if msg_dict.get('message_id') == message_id:
                 return SessionMessage.from_dict(msg_dict)
 
         return None
 
-    def update_message(self, session_id: str, agent_id: str, session_message: SessionMessage, **kwargs: Any) -> None:
+    def update_message(
+        self, session_id: str, agent_id: str, session_message: SessionMessage, **kwargs: Any
+    ) -> None:
         """Update message data.
 
         Args:
@@ -463,7 +473,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             session_id=session_id, agent_id=agent_id, message_id=session_message.message_id
         )
         if previous_message is None:
-            raise SessionException(f"Message {session_message.message_id} does not exist")
+            raise SessionException(f'Message {session_message.message_id} does not exist')
 
         # Preserve creation timestamp
         session_message.created_at = previous_message.created_at
@@ -473,28 +483,35 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         # Read existing messages
         messages_data = self._read_state(messages_key)
         if messages_data is None:
-            raise SessionException(f"Messages not found for agent {agent_id} in session {session_id}")
+            raise SessionException(
+                f'Messages not found for agent {agent_id} in session {session_id}'
+            )
 
-        messages_list = messages_data.get("messages", [])
+        messages_list = messages_data.get('messages', [])
         if not isinstance(messages_list, list):
             messages_list = []
 
         # Find and update message
         updated = False
         for i, msg_dict in enumerate(messages_list):
-            if msg_dict.get("message_id") == session_message.message_id:
+            if msg_dict.get('message_id') == session_message.message_id:
                 messages_list[i] = session_message.to_dict()
                 updated = True
                 break
 
         if not updated:
-            raise SessionException(f"Message {session_message.message_id} not found in list")
+            raise SessionException(f'Message {session_message.message_id} not found in list')
 
         # Write back
-        self._write_state(messages_key, {"messages": messages_list})
+        self._write_state(messages_key, {'messages': messages_list})
 
     def list_messages(
-        self, session_id: str, agent_id: str, limit: Optional[int] = None, offset: int = 0, **kwargs: Any
+        self,
+        session_id: str,
+        agent_id: str,
+        limit: Optional[int] = None,
+        offset: int = 0,
+        **kwargs: Any,
     ) -> List[SessionMessage]:
         """List messages for an agent with pagination.
 
@@ -517,7 +534,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         if messages_data is None:
             return []
 
-        messages_list = messages_data.get("messages", [])
+        messages_list = messages_data.get('messages', [])
         if not isinstance(messages_list, list):
             messages_list = []
 
