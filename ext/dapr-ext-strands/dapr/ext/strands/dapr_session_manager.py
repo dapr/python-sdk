@@ -11,8 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-"""Dapr state store session manager for distributed storage."""
-
 import json
 import logging
 from typing import Any, Dict, List, Literal, Optional, cast
@@ -62,7 +60,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             dapr_client: DaprClient instance for state operations.
             ttl: Optional time-to-live in seconds for state items.
             consistency: Consistency level for state operations ("eventual" or "strong").
-            **kwargs: Additional keyword arguments for future extensibility.
         """
         self._state_store_name = state_store_name
         self._dapr_client = dapr_client
@@ -85,15 +82,12 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             session_id: ID for the session.
             state_store_name: Name of the Dapr state store component.
             dapr_address: Dapr gRPC endpoint (default: localhost:50001).
-            **kwargs: Additional arguments passed to __init__ (ttl, consistency, etc.).
 
         Returns:
             DaprSessionManager instance with owned client.
         """
         dapr_client = DaprClient(address=dapr_address)
-        manager = cls(
-            session_id, state_store_name=state_store_name, dapr_client=dapr_client, **kwargs
-        )
+        manager = cls(session_id, state_store_name=state_store_name, dapr_client=dapr_client)
         manager._owns_client = True
         return manager
 
@@ -255,7 +249,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         except Exception as e:
             raise SessionException(f'Failed to delete state key {key}: {e}') from e
 
-
     def create_session(self, session: Session) -> Session:
         """Create a new session.
 
@@ -394,7 +387,10 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         self._write_state(agent_key, session_agent.to_dict())
 
     def create_message(
-        self, session_id: str, agent_id: str, session_message: SessionMessage,
+        self,
+        session_id: str,
+        agent_id: str,
+        session_message: SessionMessage,
     ) -> None:
         """Create a new message for the agent.
 
@@ -432,7 +428,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             session_id: ID of the session.
             agent_id: ID of the agent.
             message_id: Index of the message.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Returns:
             SessionMessage if found, None otherwise.
