@@ -81,19 +81,20 @@ class HTTPExtension(google.protobuf.message.Message):
 
     VERB_FIELD_NUMBER: builtins.int
     QUERYSTRING_FIELD_NUMBER: builtins.int
-    verb: global___HTTPExtension.Verb.ValueType
+    verb: Global___HTTPExtension.Verb.ValueType
     """Required. HTTP verb."""
     querystring: builtins.str
     """Optional. querystring represents an encoded HTTP url query string in the following format: name=value&name2=value2"""
     def __init__(
         self,
         *,
-        verb: global___HTTPExtension.Verb.ValueType = ...,
+        verb: Global___HTTPExtension.Verb.ValueType = ...,
         querystring: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["querystring", b"querystring", "verb", b"verb"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["querystring", b"querystring", "verb", b"verb"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___HTTPExtension = HTTPExtension
+Global___HTTPExtension: typing_extensions.TypeAlias = HTTPExtension
 
 @typing.final
 class InvokeRequest(google.protobuf.message.Message):
@@ -123,7 +124,7 @@ class InvokeRequest(google.protobuf.message.Message):
         """
 
     @property
-    def http_extension(self) -> global___HTTPExtension:
+    def http_extension(self) -> Global___HTTPExtension:
         """HTTP specific fields if request conveys http-compatible request.
 
         This field is required for http-compatible request. Otherwise,
@@ -136,12 +137,14 @@ class InvokeRequest(google.protobuf.message.Message):
         method: builtins.str = ...,
         data: google.protobuf.any_pb2.Any | None = ...,
         content_type: builtins.str = ...,
-        http_extension: global___HTTPExtension | None = ...,
+        http_extension: Global___HTTPExtension | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["data", b"data", "http_extension", b"http_extension"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["content_type", b"content_type", "data", b"data", "http_extension", b"http_extension", "method", b"method"]) -> None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "http_extension", b"http_extension"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["content_type", b"content_type", "data", b"data", "http_extension", b"http_extension", "method", b"method"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___InvokeRequest = InvokeRequest
+Global___InvokeRequest: typing_extensions.TypeAlias = InvokeRequest
 
 @typing.final
 class InvokeResponse(google.protobuf.message.Message):
@@ -167,10 +170,12 @@ class InvokeResponse(google.protobuf.message.Message):
         data: google.protobuf.any_pb2.Any | None = ...,
         content_type: builtins.str = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["data", b"data"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["content_type", b"content_type", "data", b"data"]) -> None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["content_type", b"content_type", "data", b"data"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___InvokeResponse = InvokeResponse
+Global___InvokeResponse: typing_extensions.TypeAlias = InvokeResponse
 
 @typing.final
 class StreamPayload(google.protobuf.message.Message):
@@ -196,9 +201,10 @@ class StreamPayload(google.protobuf.message.Message):
         data: builtins.bytes = ...,
         seq: builtins.int = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["data", b"data", "seq", b"seq"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "seq", b"seq"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___StreamPayload = StreamPayload
+Global___StreamPayload: typing_extensions.TypeAlias = StreamPayload
 
 @typing.final
 class StateItem(google.protobuf.message.Message):
@@ -220,7 +226,8 @@ class StateItem(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
     KEY_FIELD_NUMBER: builtins.int
     VALUE_FIELD_NUMBER: builtins.int
@@ -232,7 +239,7 @@ class StateItem(google.protobuf.message.Message):
     value: builtins.bytes
     """Required. The state data for key"""
     @property
-    def etag(self) -> global___Etag:
+    def etag(self) -> Global___Etag:
         """The entity tag which represents the specific version of data.
         The exact ETag format is defined by the corresponding data store.
         """
@@ -242,7 +249,7 @@ class StateItem(google.protobuf.message.Message):
         """The metadata which will be passed to state store component."""
 
     @property
-    def options(self) -> global___StateOptions:
+    def options(self) -> Global___StateOptions:
         """Options for concurrency and consistency to save the state."""
 
     def __init__(
@@ -250,14 +257,16 @@ class StateItem(google.protobuf.message.Message):
         *,
         key: builtins.str = ...,
         value: builtins.bytes = ...,
-        etag: global___Etag | None = ...,
+        etag: Global___Etag | None = ...,
         metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        options: global___StateOptions | None = ...,
+        options: Global___StateOptions | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["etag", b"etag", "options", b"options"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["etag", b"etag", "key", b"key", "metadata", b"metadata", "options", b"options", "value", b"value"]) -> None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["etag", b"etag", "options", b"options"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["etag", b"etag", "key", b"key", "metadata", b"metadata", "options", b"options", "value", b"value"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___StateItem = StateItem
+Global___StateItem: typing_extensions.TypeAlias = StateItem
 
 @typing.final
 class Etag(google.protobuf.message.Message):
@@ -273,9 +282,10 @@ class Etag(google.protobuf.message.Message):
         *,
         value: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["value", b"value"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___Etag = Etag
+Global___Etag: typing_extensions.TypeAlias = Etag
 
 @typing.final
 class StateOptions(google.protobuf.message.Message):
@@ -319,17 +329,18 @@ class StateOptions(google.protobuf.message.Message):
 
     CONCURRENCY_FIELD_NUMBER: builtins.int
     CONSISTENCY_FIELD_NUMBER: builtins.int
-    concurrency: global___StateOptions.StateConcurrency.ValueType
-    consistency: global___StateOptions.StateConsistency.ValueType
+    concurrency: Global___StateOptions.StateConcurrency.ValueType
+    consistency: Global___StateOptions.StateConsistency.ValueType
     def __init__(
         self,
         *,
-        concurrency: global___StateOptions.StateConcurrency.ValueType = ...,
-        consistency: global___StateOptions.StateConsistency.ValueType = ...,
+        concurrency: Global___StateOptions.StateConcurrency.ValueType = ...,
+        consistency: Global___StateOptions.StateConsistency.ValueType = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["concurrency", b"concurrency", "consistency", b"consistency"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["concurrency", b"concurrency", "consistency", b"consistency"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___StateOptions = StateOptions
+Global___StateOptions: typing_extensions.TypeAlias = StateOptions
 
 @typing.final
 class ConfigurationItem(google.protobuf.message.Message):
@@ -351,7 +362,8 @@ class ConfigurationItem(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
     VALUE_FIELD_NUMBER: builtins.int
     VERSION_FIELD_NUMBER: builtins.int
@@ -371,9 +383,10 @@ class ConfigurationItem(google.protobuf.message.Message):
         version: builtins.str = ...,
         metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["metadata", b"metadata", "value", b"value", "version", b"version"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["metadata", b"metadata", "value", b"value", "version", b"version"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___ConfigurationItem = ConfigurationItem
+Global___ConfigurationItem: typing_extensions.TypeAlias = ConfigurationItem
 
 @typing.final
 class JobFailurePolicy(google.protobuf.message.Message):
@@ -384,20 +397,24 @@ class JobFailurePolicy(google.protobuf.message.Message):
     DROP_FIELD_NUMBER: builtins.int
     CONSTANT_FIELD_NUMBER: builtins.int
     @property
-    def drop(self) -> global___JobFailurePolicyDrop: ...
+    def drop(self) -> Global___JobFailurePolicyDrop: ...
     @property
-    def constant(self) -> global___JobFailurePolicyConstant: ...
+    def constant(self) -> Global___JobFailurePolicyConstant: ...
     def __init__(
         self,
         *,
-        drop: global___JobFailurePolicyDrop | None = ...,
-        constant: global___JobFailurePolicyConstant | None = ...,
+        drop: Global___JobFailurePolicyDrop | None = ...,
+        constant: Global___JobFailurePolicyConstant | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing.Literal["policy", b"policy"]) -> typing.Literal["drop", "constant"] | None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType_policy: typing_extensions.TypeAlias = typing.Literal["drop", "constant"]
+    _WhichOneofArgType_policy: typing_extensions.TypeAlias = typing.Literal["policy", b"policy"]
+    def WhichOneof(self, oneof_group: _WhichOneofArgType_policy) -> _WhichOneofReturnType_policy | None: ...
 
-global___JobFailurePolicy = JobFailurePolicy
+Global___JobFailurePolicy: typing_extensions.TypeAlias = JobFailurePolicy
 
 @typing.final
 class JobFailurePolicyDrop(google.protobuf.message.Message):
@@ -409,7 +426,7 @@ class JobFailurePolicyDrop(google.protobuf.message.Message):
         self,
     ) -> None: ...
 
-global___JobFailurePolicyDrop = JobFailurePolicyDrop
+Global___JobFailurePolicyDrop: typing_extensions.TypeAlias = JobFailurePolicyDrop
 
 @typing.final
 class JobFailurePolicyConstant(google.protobuf.message.Message):
@@ -433,8 +450,12 @@ class JobFailurePolicyConstant(google.protobuf.message.Message):
         interval: google.protobuf.duration_pb2.Duration | None = ...,
         max_retries: builtins.int | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing.Literal["_max_retries", b"_max_retries"]) -> typing.Literal["max_retries"] | None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__max_retries: typing_extensions.TypeAlias = typing.Literal["max_retries"]
+    _WhichOneofArgType__max_retries: typing_extensions.TypeAlias = typing.Literal["_max_retries", b"_max_retries"]
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__max_retries) -> _WhichOneofReturnType__max_retries | None: ...
 
-global___JobFailurePolicyConstant = JobFailurePolicyConstant
+Global___JobFailurePolicyConstant: typing_extensions.TypeAlias = JobFailurePolicyConstant
