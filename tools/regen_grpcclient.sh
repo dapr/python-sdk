@@ -39,24 +39,14 @@ if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
 else
     wget -q -O - "$url" | tar --strip-components=1 -xzf -
 fi
+
+files=("dapr/proto/common/v1/common.proto")
+while IFS= read -r -d '' file; do
+    files+=("$file")
+done < <(find "dapr/proto/runtime/v1" -name '*.proto' -print0)
+
 popd
 
-python3 -m grpc_tools.protoc -I ${target} --proto_path="${tmp}" --python_out=${target} --grpc_python_out=${target} --mypy_out=${target} \
-    "dapr/proto/common/v1/common.proto" \
-    "dapr/proto/runtime/v1/appcallback.proto" \
-    "dapr/proto/runtime/v1/dapr.proto" \
-    "dapr/proto/runtime/v1/actors.proto" \
-    "dapr/proto/runtime/v1/pubsub.proto" \
-    "dapr/proto/runtime/v1/invoke.proto" \
-    "dapr/proto/runtime/v1/state.proto" \
-    "dapr/proto/runtime/v1/binding.proto" \
-    "dapr/proto/runtime/v1/secret.proto" \
-    "dapr/proto/runtime/v1/metadata.proto" \
-    "dapr/proto/runtime/v1/configuration.proto" \
-    "dapr/proto/runtime/v1/lock.proto" \
-    "dapr/proto/runtime/v1/crypto.proto" \
-    "dapr/proto/runtime/v1/workflow.proto" \
-    "dapr/proto/runtime/v1/jobs.proto" \
-    "dapr/proto/runtime/v1/ai.proto" \
 
+python3 -m grpc_tools.protoc -I ${target} --proto_path="${tmp}" --python_out=${target} --grpc_python_out=${target} --mypy_out=${target} ${files[@]}
 echo -e "\ngRPC interface and proto buf generated successfully!"
