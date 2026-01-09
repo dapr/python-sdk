@@ -96,7 +96,6 @@ from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
-from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 
@@ -1206,7 +1205,9 @@ class DaprGrpcClientAsync:
             bool: True if unsubscribed successfully, False otherwise
         """
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
-        response: UnsubscribeConfigurationResponse = await self._stub.UnsubscribeConfiguration(req)
+        response: api_v1.UnsubscribeConfigurationResponse = (
+            await self._stub.UnsubscribeConfiguration(req)
+        )
         return response.ok
 
     async def try_lock(

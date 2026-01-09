@@ -21,8 +21,9 @@ from typing import Optional
 from dapr.conf import settings
 
 from dapr.proto.common.v1 import common_pb2 as common_v1
-from dapr.proto.runtime.v1 import dapr_pb2 as api_v1
+import dapr.proto.runtime.v1 as api_v1
 from dapr.proto.runtime.v1 import dapr_pb2_grpc as api_service_v1
+
 from dapr.proto.runtime.v1 import appcallback_pb2 as appcallback_v1
 from dapr.proto.runtime.v1 import appcallback_pb2_grpc as appcallback_service_v1
 

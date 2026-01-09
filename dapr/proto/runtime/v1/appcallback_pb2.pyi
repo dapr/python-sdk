@@ -73,10 +73,12 @@ class JobEventRequest(google.protobuf.message.Message):
         content_type: builtins.str = ...,
         http_extension: dapr.proto.common.v1.common_pb2.HTTPExtension | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["data", b"data", "http_extension", b"http_extension"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["content_type", b"content_type", "data", b"data", "http_extension", b"http_extension", "method", b"method", "name", b"name"]) -> None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "http_extension", b"http_extension"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["content_type", b"content_type", "data", b"data", "http_extension", b"http_extension", "method", b"method", "name", b"name"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___JobEventRequest = JobEventRequest
+Global___JobEventRequest: typing_extensions.TypeAlias = JobEventRequest
 
 @typing.final
 class JobEventResponse(google.protobuf.message.Message):
@@ -88,7 +90,7 @@ class JobEventResponse(google.protobuf.message.Message):
         self,
     ) -> None: ...
 
-global___JobEventResponse = JobEventResponse
+Global___JobEventResponse: typing_extensions.TypeAlias = JobEventResponse
 
 @typing.final
 class TopicEventRequest(google.protobuf.message.Message):
@@ -154,10 +156,12 @@ class TopicEventRequest(google.protobuf.message.Message):
         path: builtins.str = ...,
         extensions: google.protobuf.struct_pb2.Struct | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["extensions", b"extensions"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["data", b"data", "data_content_type", b"data_content_type", "extensions", b"extensions", "id", b"id", "path", b"path", "pubsub_name", b"pubsub_name", "source", b"source", "spec_version", b"spec_version", "topic", b"topic", "type", b"type"]) -> None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["extensions", b"extensions"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "data_content_type", b"data_content_type", "extensions", b"extensions", "id", b"id", "path", b"path", "pubsub_name", b"pubsub_name", "source", b"source", "spec_version", b"spec_version", "topic", b"topic", "type", b"type"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicEventRequest = TopicEventRequest
+Global___TopicEventRequest: typing_extensions.TypeAlias = TopicEventRequest
 
 @typing.final
 class TopicEventResponse(google.protobuf.message.Message):
@@ -189,16 +193,17 @@ class TopicEventResponse(google.protobuf.message.Message):
     """DROP status signals Dapr to drop the message as part of an unexpected scenario (warning is logged)."""
 
     STATUS_FIELD_NUMBER: builtins.int
-    status: global___TopicEventResponse.TopicEventResponseStatus.ValueType
+    status: Global___TopicEventResponse.TopicEventResponseStatus.ValueType
     """The list of output bindings."""
     def __init__(
         self,
         *,
-        status: global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...,
+        status: Global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["status", b"status"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["status", b"status"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicEventResponse = TopicEventResponse
+Global___TopicEventResponse: typing_extensions.TypeAlias = TopicEventResponse
 
 @typing.final
 class TopicEventCERequest(google.protobuf.message.Message):
@@ -240,10 +245,12 @@ class TopicEventCERequest(google.protobuf.message.Message):
         data: builtins.bytes = ...,
         extensions: google.protobuf.struct_pb2.Struct | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["extensions", b"extensions"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["data", b"data", "data_content_type", b"data_content_type", "extensions", b"extensions", "id", b"id", "source", b"source", "spec_version", b"spec_version", "type", b"type"]) -> None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["extensions", b"extensions"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "data_content_type", b"data_content_type", "extensions", b"extensions", "id", b"id", "source", b"source", "spec_version", b"spec_version", "type", b"type"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicEventCERequest = TopicEventCERequest
+Global___TopicEventCERequest: typing_extensions.TypeAlias = TopicEventCERequest
 
 @typing.final
 class TopicEventBulkRequestEntry(google.protobuf.message.Message):
@@ -265,7 +272,8 @@ class TopicEventBulkRequestEntry(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
     ENTRY_ID_FIELD_NUMBER: builtins.int
     BYTES_FIELD_NUMBER: builtins.int
@@ -278,7 +286,7 @@ class TopicEventBulkRequestEntry(google.protobuf.message.Message):
     content_type: builtins.str
     """content type of the event contained."""
     @property
-    def cloud_event(self) -> global___TopicEventCERequest: ...
+    def cloud_event(self) -> Global___TopicEventCERequest: ...
     @property
     def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
         """The metadata associated with the event."""
@@ -288,15 +296,19 @@ class TopicEventBulkRequestEntry(google.protobuf.message.Message):
         *,
         entry_id: builtins.str = ...,
         bytes: builtins.bytes = ...,
-        cloud_event: global___TopicEventCERequest | None = ...,
+        cloud_event: Global___TopicEventCERequest | None = ...,
         content_type: builtins.str = ...,
         metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["bytes", b"bytes", "cloud_event", b"cloud_event", "event", b"event"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["bytes", b"bytes", "cloud_event", b"cloud_event", "content_type", b"content_type", "entry_id", b"entry_id", "event", b"event", "metadata", b"metadata"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing.Literal["event", b"event"]) -> typing.Literal["bytes", "cloud_event"] | None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["bytes", b"bytes", "cloud_event", b"cloud_event", "event", b"event"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["bytes", b"bytes", "cloud_event", b"cloud_event", "content_type", b"content_type", "entry_id", b"entry_id", "event", b"event", "metadata", b"metadata"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType_event: typing_extensions.TypeAlias = typing.Literal["bytes", "cloud_event"]
+    _WhichOneofArgType_event: typing_extensions.TypeAlias = typing.Literal["event", b"event"]
+    def WhichOneof(self, oneof_group: _WhichOneofArgType_event) -> _WhichOneofReturnType_event | None: ...
 
-global___TopicEventBulkRequestEntry = TopicEventBulkRequestEntry
+Global___TopicEventBulkRequestEntry: typing_extensions.TypeAlias = TopicEventBulkRequestEntry
 
 @typing.final
 class TopicEventBulkRequest(google.protobuf.message.Message):
@@ -318,7 +330,8 @@ class TopicEventBulkRequest(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
     ID_FIELD_NUMBER: builtins.int
     ENTRIES_FIELD_NUMBER: builtins.int
@@ -340,7 +353,7 @@ class TopicEventBulkRequest(google.protobuf.message.Message):
     This value is used by OnTopicEvent to "switch" inside the handler.
     """
     @property
-    def entries(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicEventBulkRequestEntry]:
+    def entries(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___TopicEventBulkRequestEntry]:
         """The list of items inside this bulk request."""
 
     @property
@@ -351,16 +364,17 @@ class TopicEventBulkRequest(google.protobuf.message.Message):
         self,
         *,
         id: builtins.str = ...,
-        entries: collections.abc.Iterable[global___TopicEventBulkRequestEntry] | None = ...,
+        entries: collections.abc.Iterable[Global___TopicEventBulkRequestEntry] | None = ...,
         metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         topic: builtins.str = ...,
         pubsub_name: builtins.str = ...,
         type: builtins.str = ...,
         path: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["entries", b"entries", "id", b"id", "metadata", b"metadata", "path", b"path", "pubsub_name", b"pubsub_name", "topic", b"topic", "type", b"type"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["entries", b"entries", "id", b"id", "metadata", b"metadata", "path", b"path", "pubsub_name", b"pubsub_name", "topic", b"topic", "type", b"type"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicEventBulkRequest = TopicEventBulkRequest
+Global___TopicEventBulkRequest: typing_extensions.TypeAlias = TopicEventBulkRequest
 
 @typing.final
 class TopicEventBulkResponseEntry(google.protobuf.message.Message):
@@ -374,17 +388,18 @@ class TopicEventBulkResponseEntry(google.protobuf.message.Message):
     STATUS_FIELD_NUMBER: builtins.int
     entry_id: builtins.str
     """Unique identifier associated the message."""
-    status: global___TopicEventResponse.TopicEventResponseStatus.ValueType
+    status: Global___TopicEventResponse.TopicEventResponseStatus.ValueType
     """The status of the response."""
     def __init__(
         self,
         *,
         entry_id: builtins.str = ...,
-        status: global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...,
+        status: Global___TopicEventResponse.TopicEventResponseStatus.ValueType = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["entry_id", b"entry_id", "status", b"status"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["entry_id", b"entry_id", "status", b"status"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicEventBulkResponseEntry = TopicEventBulkResponseEntry
+Global___TopicEventBulkResponseEntry: typing_extensions.TypeAlias = TopicEventBulkResponseEntry
 
 @typing.final
 class TopicEventBulkResponse(google.protobuf.message.Message):
@@ -394,17 +409,18 @@ class TopicEventBulkResponse(google.protobuf.message.Message):
 
     STATUSES_FIELD_NUMBER: builtins.int
     @property
-    def statuses(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicEventBulkResponseEntry]:
+    def statuses(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___TopicEventBulkResponseEntry]:
         """The list of all responses for the bulk request."""
 
     def __init__(
         self,
         *,
-        statuses: collections.abc.Iterable[global___TopicEventBulkResponseEntry] | None = ...,
+        statuses: collections.abc.Iterable[Global___TopicEventBulkResponseEntry] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["statuses", b"statuses"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["statuses", b"statuses"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicEventBulkResponse = TopicEventBulkResponse
+Global___TopicEventBulkResponse: typing_extensions.TypeAlias = TopicEventBulkResponse
 
 @typing.final
 class BindingEventRequest(google.protobuf.message.Message):
@@ -426,7 +442,8 @@ class BindingEventRequest(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
     NAME_FIELD_NUMBER: builtins.int
     DATA_FIELD_NUMBER: builtins.int
@@ -446,9 +463,10 @@ class BindingEventRequest(google.protobuf.message.Message):
         data: builtins.bytes = ...,
         metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["data", b"data", "metadata", b"metadata", "name", b"name"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "metadata", b"metadata", "name", b"name"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___BindingEventRequest = BindingEventRequest
+Global___BindingEventRequest: typing_extensions.TypeAlias = BindingEventRequest
 
 @typing.final
 class BindingEventResponse(google.protobuf.message.Message):
@@ -486,7 +504,7 @@ class BindingEventResponse(google.protobuf.message.Message):
     """The name of state store where states are saved."""
     data: builtins.bytes
     """The content which will be sent to "to" output bindings."""
-    concurrency: global___BindingEventResponse.BindingEventConcurrency.ValueType
+    concurrency: Global___BindingEventResponse.BindingEventConcurrency.ValueType
     """The concurrency of output bindings to send data to
     "to" output bindings list. The default is SEQUENTIAL.
     """
@@ -505,11 +523,12 @@ class BindingEventResponse(google.protobuf.message.Message):
         states: collections.abc.Iterable[dapr.proto.common.v1.common_pb2.StateItem] | None = ...,
         to: collections.abc.Iterable[builtins.str] | None = ...,
         data: builtins.bytes = ...,
-        concurrency: global___BindingEventResponse.BindingEventConcurrency.ValueType = ...,
+        concurrency: Global___BindingEventResponse.BindingEventConcurrency.ValueType = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["concurrency", b"concurrency", "data", b"data", "states", b"states", "store_name", b"store_name", "to", b"to"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["concurrency", b"concurrency", "data", b"data", "states", b"states", "store_name", b"store_name", "to", b"to"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___BindingEventResponse = BindingEventResponse
+Global___BindingEventResponse: typing_extensions.TypeAlias = BindingEventResponse
 
 @typing.final
 class ListTopicSubscriptionsResponse(google.protobuf.message.Message):
@@ -519,17 +538,18 @@ class ListTopicSubscriptionsResponse(google.protobuf.message.Message):
 
     SUBSCRIPTIONS_FIELD_NUMBER: builtins.int
     @property
-    def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicSubscription]:
+    def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___TopicSubscription]:
         """The list of topics."""
 
     def __init__(
         self,
         *,
-        subscriptions: collections.abc.Iterable[global___TopicSubscription] | None = ...,
+        subscriptions: collections.abc.Iterable[Global___TopicSubscription] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["subscriptions", b"subscriptions"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["subscriptions", b"subscriptions"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___ListTopicSubscriptionsResponse = ListTopicSubscriptionsResponse
+Global___ListTopicSubscriptionsResponse: typing_extensions.TypeAlias = ListTopicSubscriptionsResponse
 
 @typing.final
 class TopicSubscription(google.protobuf.message.Message):
@@ -551,7 +571,8 @@ class TopicSubscription(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
     PUBSUB_NAME_FIELD_NUMBER: builtins.int
     TOPIC_FIELD_NUMBER: builtins.int
@@ -570,13 +591,13 @@ class TopicSubscription(google.protobuf.message.Message):
         """The optional properties used for this topic's subscription e.g. session id"""
 
     @property
-    def routes(self) -> global___TopicRoutes:
+    def routes(self) -> Global___TopicRoutes:
         """The optional routing rules to match against. In the gRPC interface, OnTopicEvent
         is still invoked but the matching path is sent in the TopicEventRequest.
         """
 
     @property
-    def bulk_subscribe(self) -> global___BulkSubscribeConfig:
+    def bulk_subscribe(self) -> Global___BulkSubscribeConfig:
         """The optional bulk subscribe settings for this topic."""
 
     def __init__(
@@ -585,14 +606,16 @@ class TopicSubscription(google.protobuf.message.Message):
         pubsub_name: builtins.str = ...,
         topic: builtins.str = ...,
         metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        routes: global___TopicRoutes | None = ...,
+        routes: Global___TopicRoutes | None = ...,
         dead_letter_topic: builtins.str = ...,
-        bulk_subscribe: global___BulkSubscribeConfig | None = ...,
+        bulk_subscribe: Global___BulkSubscribeConfig | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["bulk_subscribe", b"bulk_subscribe", "routes", b"routes"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["bulk_subscribe", b"bulk_subscribe", "dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "routes", b"routes", "topic", b"topic"]) -> None: ...
+    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["bulk_subscribe", b"bulk_subscribe", "routes", b"routes"]
+    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["bulk_subscribe", b"bulk_subscribe", "dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "routes", b"routes", "topic", b"topic"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicSubscription = TopicSubscription
+Global___TopicSubscription: typing_extensions.TypeAlias = TopicSubscription
 
 @typing.final
 class TopicRoutes(google.protobuf.message.Message):
@@ -603,18 +626,19 @@ class TopicRoutes(google.protobuf.message.Message):
     default: builtins.str
     """The default path for this topic."""
     @property
-    def rules(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TopicRule]:
+    def rules(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___TopicRule]:
         """The list of rules for this topic."""
 
     def __init__(
         self,
         *,
-        rules: collections.abc.Iterable[global___TopicRule] | None = ...,
+        rules: collections.abc.Iterable[Global___TopicRule] | None = ...,
         default: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["default", b"default", "rules", b"rules"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["default", b"default", "rules", b"rules"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicRoutes = TopicRoutes
+Global___TopicRoutes: typing_extensions.TypeAlias = TopicRoutes
 
 @typing.final
 class TopicRule(google.protobuf.message.Message):
@@ -638,9 +662,10 @@ class TopicRule(google.protobuf.message.Message):
         match: builtins.str = ...,
         path: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["match", b"match", "path", b"path"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["match", b"match", "path", b"path"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___TopicRule = TopicRule
+Global___TopicRule: typing_extensions.TypeAlias = TopicRule
 
 @typing.final
 class BulkSubscribeConfig(google.protobuf.message.Message):
@@ -664,9 +689,10 @@ class BulkSubscribeConfig(google.protobuf.message.Message):
         max_messages_count: builtins.int = ...,
         max_await_duration_ms: builtins.int = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["enabled", b"enabled", "max_await_duration_ms", b"max_await_duration_ms", "max_messages_count", b"max_messages_count"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["enabled", b"enabled", "max_await_duration_ms", b"max_await_duration_ms", "max_messages_count", b"max_messages_count"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___BulkSubscribeConfig = BulkSubscribeConfig
+Global___BulkSubscribeConfig: typing_extensions.TypeAlias = BulkSubscribeConfig
 
 @typing.final
 class ListInputBindingsResponse(google.protobuf.message.Message):
@@ -684,9 +710,10 @@ class ListInputBindingsResponse(google.protobuf.message.Message):
         *,
         bindings: collections.abc.Iterable[builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["bindings", b"bindings"]) -> None: ...
+    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["bindings", b"bindings"]
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___ListInputBindingsResponse = ListInputBindingsResponse
+Global___ListInputBindingsResponse: typing_extensions.TypeAlias = ListInputBindingsResponse
 
 @typing.final
 class HealthCheckResponse(google.protobuf.message.Message):
@@ -700,4 +727,4 @@ class HealthCheckResponse(google.protobuf.message.Message):
         self,
     ) -> None: ...
 
-global___HealthCheckResponse = HealthCheckResponse
+Global___HealthCheckResponse: typing_extensions.TypeAlias = HealthCheckResponse

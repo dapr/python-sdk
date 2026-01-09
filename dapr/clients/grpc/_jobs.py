@@ -119,7 +119,7 @@ class Job:
         """
         from google.protobuf.any_pb2 import Any as GrpcAny
 
-        from dapr.proto.runtime.v1 import dapr_pb2 as api_v1
+        from dapr.proto import api_v1
 
         # Build the job proto
         job_proto = api_v1.Job(name=self.name)

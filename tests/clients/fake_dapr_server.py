@@ -12,36 +12,6 @@ from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._response import WorkflowRuntimeStatus
 from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
-from dapr.proto.runtime.v1.dapr_pb2 import (
-    ActiveActorsCount,
-    ConversationResponseAlpha2,
-    ConversationResultAlpha2,
-    ConversationResultChoices,
-    ConversationResultMessage,
-    ConversationToolCalls,
-    ConversationToolCallsOfFunction,
-    DecryptRequest,
-    DecryptResponse,
-    EncryptRequest,
-    EncryptResponse,
-    GetMetadataResponse,
-    GetWorkflowRequest,
-    GetWorkflowResponse,
-    PauseWorkflowRequest,
-    PurgeWorkflowRequest,
-    QueryStateItem,
-    RaiseEventWorkflowRequest,
-    RegisteredComponents,
-    ResumeWorkflowRequest,
-    SetMetadataRequest,
-    StartWorkflowRequest,
-    StartWorkflowResponse,
-    TerminateWorkflowRequest,
-    TryLockRequest,
-    TryLockResponse,
-    UnlockRequest,
-    UnlockResponse,
-)
 from tests.clients.certs import GrpcCerts
 from tests.clients.fake_http_server import FakeHttpServer
 
@@ -368,7 +338,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.check_for_exception(context)
 
         items = [
-            QueryStateItem(key=str(key), data=bytes('value of ' + str(key), 'UTF-8'))
+            api_v1.QueryStateItem(key=str(key), data=bytes('value of ' + str(key), 'UTF-8'))
             for key in range(1, 11)
         ]
         query = json.loads(request.query)
@@ -387,55 +357,55 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return api_v1.QueryStateResponse(results=items, token=str(tokenIndex))
 
-    def TryLockAlpha1(self, request: TryLockRequest, context):
+    def TryLockAlpha1(self, request: api_v1.TryLockRequest, context):
         lock_id = (request.store_name, request.resource_id)
 
         if lock_id not in self.locks_to_owner:
             self.locks_to_owner[lock_id] = request.lock_owner
-            return TryLockResponse(success=True)
+            return api_v1.TryLockResponse(success=True)
         else:
             # Lock already acquired
-            return TryLockResponse(success=False)
+            return api_v1.TryLockResponse(success=False)
 
-    def UnlockAlpha1(self, request: UnlockRequest, context):
+    def UnlockAlpha1(self, request: api_v1.UnlockRequest, context):
         lock_id = (request.store_name, request.resource_id)
 
         if lock_id not in self.locks_to_owner:
-            return UnlockResponse(status=UnlockResponse.Status.LOCK_DOES_NOT_EXIST)
+            return api_v1.UnlockResponse(status=api_v1.UnlockResponse.Status.LOCK_DOES_NOT_EXIST)
         elif self.locks_to_owner[lock_id] == request.lock_owner:
             del self.locks_to_owner[lock_id]
-            return UnlockResponse(status=UnlockResponse.Status.SUCCESS)
+            return api_v1.UnlockResponse(status=api_v1.UnlockResponse.Status.SUCCESS)
         else:
-            return UnlockResponse(status=UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS)
+            return api_v1.UnlockResponse(status=api_v1.UnlockResponse.Status.LOCK_BELONGS_TO_OTHERS)
 
-    def EncryptAlpha1(self, requests: EncryptRequest, context):
+    def EncryptAlpha1(self, requests: api_v1.EncryptRequest, context):
         for req in requests:
             # mock encrypt operation by uppercasing the data
             req.payload.data = req.payload.data.upper()
-            yield EncryptResponse(payload=req.payload)
+            yield api_v1.EncryptResponse(payload=req.payload)
 
-    def DecryptAlpha1(self, requests: DecryptRequest, context):
+    def DecryptAlpha1(self, requests: api_v1.DecryptRequest, context):
         for req in requests:
             # mock decrypt operation by lowercasing the data
             req.payload.data = req.payload.data.lower()
-            yield DecryptResponse(payload=req.payload)
+            yield api_v1.DecryptResponse(payload=req.payload)
 
-    def StartWorkflowBeta1(self, request: StartWorkflowRequest, context):
+    def StartWorkflowBeta1(self, request: api_v1.StartWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id not in self.workflow_status:
             self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
-            return StartWorkflowResponse(instance_id=instance_id)
+            return api_v1.StartWorkflowResponse(instance_id=instance_id)
         else:
             # workflow already running
             raise Exception('Unable to start insance of the workflow')
 
-    def GetWorkflowBeta1(self, request: GetWorkflowRequest, context):
+    def GetWorkflowBeta1(self, request: api_v1.GetWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
             status = str(self.workflow_status[instance_id])[len('WorkflowRuntimeStatus.') :]
-            return GetWorkflowResponse(
+            return api_v1.GetWorkflowResponse(
                 instance_id=instance_id,
                 workflow_name='example',
                 created_at=None,
@@ -447,7 +417,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             # workflow non-existent
             raise Exception('Workflow instance does not exist')
 
-    def PauseWorkflowBeta1(self, request: PauseWorkflowRequest, context):
+    def PauseWorkflowBeta1(self, request: api_v1.PauseWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
@@ -457,7 +427,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             # workflow non-existent
             raise Exception('Workflow instance could not be paused')
 
-    def ResumeWorkflowBeta1(self, request: ResumeWorkflowRequest, context):
+    def ResumeWorkflowBeta1(self, request: api_v1.ResumeWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
@@ -467,7 +437,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             # workflow non-existent
             raise Exception('Workflow instance could not be resumed')
 
-    def TerminateWorkflowBeta1(self, request: TerminateWorkflowRequest, context):
+    def TerminateWorkflowBeta1(self, request: api_v1.TerminateWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
@@ -477,7 +447,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             # workflow non-existent
             raise Exception('Workflow instance could not be terminated')
 
-    def PurgeWorkflowBeta1(self, request: PurgeWorkflowRequest, context):
+    def PurgeWorkflowBeta1(self, request: api_v1.PurgeWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
@@ -487,7 +457,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             # workflow non-existent
             raise Exception('Workflow instance could not be purged')
 
-    def RaiseEventWorkflowBeta1(self, request: RaiseEventWorkflowRequest, context):
+    def RaiseEventWorkflowBeta1(self, request: api_v1.RaiseEventWorkflowRequest, context):
         instance_id = request.instance_id
 
         if instance_id in self.workflow_status:
@@ -499,25 +469,25 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
     def GetMetadata(self, request, context):
         self.check_for_exception(context)
 
-        return GetMetadataResponse(
+        return api_v1.GetMetadataResponse(
             id='myapp',
             active_actors_count=[
-                ActiveActorsCount(
+                api_v1.ActiveActorsCount(
                     type='Nichelle Nichols',
                     count=1,
                 ),
             ],
             registered_components=[
-                RegisteredComponents(
+                api_v1.RegisteredComponents(
                     name='lockstore',
                     type='lock.redis',
                     version='',
                     # Missing capabilities definition,
                 ),
-                RegisteredComponents(
+                api_v1.RegisteredComponents(
                     name='pubsub', type='pubsub.redis', version='v1', capabilities=[]
                 ),
-                RegisteredComponents(
+                api_v1.RegisteredComponents(
                     name='statestore',
                     type='state.redis',
                     version='v1',
@@ -587,9 +557,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                     # Simulate a tool call for weather requests
                     for tool in request.tools:
                         if tool.function and 'weather' in tool.function.name.lower():
-                            tool_call = ConversationToolCalls(
+                            tool_call = api_v1.ConversationToolCalls(
                                 id=f'call_{input_idx}_{msg_idx}',
-                                function=ConversationToolCallsOfFunction(
+                                function=api_v1.ConversationToolCallsOfFunction(
                                     name=tool.function.name,
                                     arguments='{"location": "San Francisco", "unit": "celsius"}',
                                 ),
@@ -599,22 +569,22 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                             break
 
                 # Create result message
-                result_message = ConversationResultMessage(
+                result_message = api_v1.ConversationResultMessage(
                     content=response_content, tool_calls=tool_calls
                 )
 
                 # Create choice
                 finish_reason = 'tool_calls' if tool_calls else 'stop'
-                choice = ConversationResultChoices(
+                choice = api_v1.ConversationResultChoices(
                     finish_reason=finish_reason, index=msg_idx, message=result_message
                 )
                 choices.append(choice)
 
             # Create result for this input
-            result = ConversationResultAlpha2(choices=choices)
+            result = api_v1.ConversationResultAlpha2(choices=choices)
             outputs.append(result)
 
-        return ConversationResponseAlpha2(
+        return api_v1.ConversationResponseAlpha2(
             context_id=request.context_id if request.HasField('context_id') else None,
             outputs=outputs,
         )
@@ -662,7 +632,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return empty_pb2.Empty()
 
-    def SetMetadata(self, request: SetMetadataRequest, context):
+    def SetMetadata(self, request: api_v1.SetMetadataRequest, context):
         self.metadata[request.key] = request.value
         return empty_pb2.Empty()
 
