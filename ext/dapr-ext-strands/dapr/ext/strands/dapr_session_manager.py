@@ -1,3 +1,16 @@
+"""
+Copyright 2026 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 """Dapr state store session manager for distributed storage."""
 
 import json
@@ -39,7 +52,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         dapr_client: DaprClient,
         ttl: Optional[int] = None,
         consistency: ConsistencyLevel = DAPR_CONSISTENCY_EVENTUAL,
-        **kwargs: Any,
     ):
         """Initialize DaprSessionManager.
 
@@ -66,7 +78,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         session_id: str,
         state_store_name: str,
         dapr_address: str = 'localhost:50001',
-        **kwargs: Any,
     ) -> 'DaprSessionManager':
         """Create DaprSessionManager from Dapr address.
 
@@ -134,6 +145,11 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         session_id = _identifier.validate(session_id, _identifier.Identifier.SESSION)
         agent_id = _identifier.validate(agent_id, _identifier.Identifier.AGENT)
         return f'{session_id}:messages:{agent_id}'
+
+    def _get_manifest_key(self, session_id: str) -> str:
+        """Get session manifest key (tracks agent_ids for deletion)."""
+        session_id = _identifier.validate(session_id, _identifier.Identifier.SESSION)
+        return f'{session_id}:manifest'
 
     def _get_read_metadata(self) -> Dict[str, str]:
         """Get metadata for read operations (consistency).
@@ -239,17 +255,12 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         except Exception as e:
             raise SessionException(f'Failed to delete state key {key}: {e}') from e
 
-    def _get_manifest_key(self, session_id: str) -> str:
-        """Get session manifest key (tracks agent_ids for deletion)."""
-        session_id = _identifier.validate(session_id, _identifier.Identifier.SESSION)
-        return f'{session_id}:manifest'
 
-    def create_session(self, session: Session, **kwargs: Any) -> Session:
+    def create_session(self, session: Session) -> Session:
         """Create a new session.
 
         Args:
             session: Session to create.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Returns:
             Created session.
@@ -269,12 +280,11 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         self._write_state(session_key, session_dict)
         return session
 
-    def read_session(self, session_id: str, **kwargs: Any) -> Optional[Session]:
+    def read_session(self, session_id: str) -> Optional[Session]:
         """Read session data.
 
         Args:
             session_id: ID of the session to read.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Returns:
             Session if found, None otherwise.
@@ -290,7 +300,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
 
         return Session.from_dict(session_data)
 
-    def delete_session(self, session_id: str, **kwargs: Any) -> None:
+    def delete_session(self, session_id: str) -> None:
         """Delete session and all associated data.
 
         Uses a session manifest to discover agent IDs for cleanup.
@@ -313,13 +323,12 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         self._delete_state(manifest_key)
         self._delete_state(session_key)
 
-    def create_agent(self, session_id: str, session_agent: SessionAgent, **kwargs: Any) -> None:
+    def create_agent(self, session_id: str, session_agent: SessionAgent) -> None:
         """Create a new agent in the session.
 
         Args:
             session_id: ID of the session.
             session_agent: Agent to create.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Raises:
             SessionException: If creation fails.
@@ -340,13 +349,12 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             manifest['agents'].append(session_agent.agent_id)
         self._write_state(manifest_key, manifest)
 
-    def read_agent(self, session_id: str, agent_id: str, **kwargs: Any) -> Optional[SessionAgent]:
+    def read_agent(self, session_id: str, agent_id: str) -> Optional[SessionAgent]:
         """Read agent data.
 
         Args:
             session_id: ID of the session.
             agent_id: ID of the agent.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Returns:
             SessionAgent if found, None otherwise.
@@ -362,13 +370,12 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
 
         return SessionAgent.from_dict(agent_data)
 
-    def update_agent(self, session_id: str, session_agent: SessionAgent, **kwargs: Any) -> None:
+    def update_agent(self, session_id: str, session_agent: SessionAgent) -> None:
         """Update agent data.
 
         Args:
             session_id: ID of the session.
             session_agent: Agent to update.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Raises:
             SessionException: If agent doesn't exist or update fails.
@@ -387,7 +394,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         self._write_state(agent_key, session_agent.to_dict())
 
     def create_message(
-        self, session_id: str, agent_id: str, session_message: SessionMessage, **kwargs: Any
+        self, session_id: str, agent_id: str, session_message: SessionMessage,
     ) -> None:
         """Create a new message for the agent.
 
@@ -395,7 +402,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             session_id: ID of the session.
             agent_id: ID of the agent.
             session_message: Message to create.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Raises:
             SessionException: If creation fails.
@@ -418,7 +424,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         self._write_state(messages_key, {'messages': messages_list})
 
     def read_message(
-        self, session_id: str, agent_id: str, message_id: int, **kwargs: Any
+        self, session_id: str, agent_id: str, message_id: int
     ) -> Optional[SessionMessage]:
         """Read message data.
 
@@ -456,7 +462,7 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         return None
 
     def update_message(
-        self, session_id: str, agent_id: str, session_message: SessionMessage, **kwargs: Any
+        self, session_id: str, agent_id: str, session_message: SessionMessage
     ) -> None:
         """Update message data.
 
@@ -464,7 +470,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             session_id: ID of the session.
             agent_id: ID of the agent.
             session_message: Message to update.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Raises:
             SessionException: If message doesn't exist or update fails.
@@ -511,7 +516,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         agent_id: str,
         limit: Optional[int] = None,
         offset: int = 0,
-        **kwargs: Any,
     ) -> List[SessionMessage]:
         """List messages for an agent with pagination.
 
@@ -520,7 +524,6 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
             agent_id: ID of the agent.
             limit: Maximum number of messages to return.
             offset: Number of messages to skip.
-            **kwargs: Additional keyword arguments for future extensibility.
 
         Returns:
             List of SessionMessage objects.
