@@ -1205,7 +1205,9 @@ class DaprGrpcClientAsync:
             bool: True if unsubscribed successfully, False otherwise
         """
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
-        response: api_v1.UnsubscribeConfigurationResponse = await self._stub.UnsubscribeConfiguration(req)
+        response: api_v1.UnsubscribeConfigurationResponse = (
+            await self._stub.UnsubscribeConfiguration(req)
+        )
         return response.ok
 
     async def try_lock(
