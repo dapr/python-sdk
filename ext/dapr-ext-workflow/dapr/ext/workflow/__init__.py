@@ -14,8 +14,25 @@ limitations under the License.
 """
 
 # Import your main classes here
+from dapr.ext.workflow.aio import AsyncWorkflowContext
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
+from dapr.ext.workflow.execution_info import ActivityExecutionInfo, WorkflowExecutionInfo
+from dapr.ext.workflow.interceptors import (
+    BaseClientInterceptor,
+    BaseRuntimeInterceptor,
+    BaseWorkflowOutboundInterceptor,
+    CallActivityRequest,
+    CallChildWorkflowRequest,
+    ClientInterceptor,
+    ExecuteActivityRequest,
+    ExecuteWorkflowRequest,
+    RuntimeInterceptor,
+    ScheduleWorkflowRequest,
+    WorkflowOutboundInterceptor,
+    compose_runtime_chain,
+    compose_workflow_outbound_chain,
+)
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
@@ -25,6 +42,7 @@ __all__ = [
     'WorkflowRuntime',
     'DaprWorkflowClient',
     'DaprWorkflowContext',
+    'AsyncWorkflowContext',
     'WorkflowActivityContext',
     'WorkflowState',
     'WorkflowStatus',
@@ -32,4 +50,20 @@ __all__ = [
     'when_any',
     'alternate_name',
     'RetryPolicy',
+    # interceptors
+    'ClientInterceptor',
+    'BaseClientInterceptor',
+    'WorkflowOutboundInterceptor',
+    'BaseWorkflowOutboundInterceptor',
+    'RuntimeInterceptor',
+    'BaseRuntimeInterceptor',
+    'ScheduleWorkflowRequest',
+    'CallChildWorkflowRequest',
+    'CallActivityRequest',
+    'ExecuteWorkflowRequest',
+    'ExecuteActivityRequest',
+    'compose_workflow_outbound_chain',
+    'compose_runtime_chain',
+    'WorkflowExecutionInfo',
+    'ActivityExecutionInfo',
 ]

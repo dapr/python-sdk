@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright 2025 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,19 +11,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .dapr_workflow_client import DaprWorkflowClient
-from .async_context import AsyncWorkflowContext
-from .async_driver import CoroutineOrchestratorRunner
-from .awaitables import ActivityAwaitable, ExternalEventAwaitable, SleepAwaitable, SubOrchestratorAwaitable, WhenAnyAwaitable, WhenAllAwaitable
+from __future__ import annotations
+
+# Backward-compatible shim: import deterministic utilities from durabletask
+from durabletask.deterministic import (  # type: ignore[F401]
+    DeterministicContextMixin,
+    deterministic_random,
+    deterministic_uuid4,
+)
 
 __all__ = [
-    'ActivityAwaitable',
-    'AsyncWorkflowContext',
-    'CoroutineOrchestratorRunner',
-    'ExternalEventAwaitable',
-    'DaprWorkflowClient',
-    'SleepAwaitable',
-    'SubOrchestratorAwaitable',
-    'WhenAnyAwaitable',
-    'WhenAllAwaitable',
+    'DeterministicContextMixin',
+    'deterministic_random',
+    'deterministic_uuid4',
 ]
