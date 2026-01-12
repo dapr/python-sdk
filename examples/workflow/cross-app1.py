@@ -10,19 +10,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 from datetime import timedelta
 
-import dapr.ext.workflow as wf
 from durabletask.task import TaskFailedError
+import dapr.ext.workflow as wf
+import time
 
 wfr = wf.WorkflowRuntime()
 
 
 @wfr.workflow
 def app1_workflow(ctx: wf.DaprWorkflowContext):
-    print('app1 - received workflow call', flush=True)
-    print('app1 - triggering app2 workflow', flush=True)
+    print(f'app1 - received workflow call', flush=True)
+    print(f'app1 - triggering app2 workflow', flush=True)
 
     try:
         retry_policy = wf.RetryPolicy(
@@ -36,11 +36,11 @@ def app1_workflow(ctx: wf.DaprWorkflowContext):
             app_id='wfexample2',
             retry_policy=retry_policy,
         )
-        print('app1 - received workflow result', flush=True)
-    except TaskFailedError:
-        print('app1 - received workflow error from app2', flush=True)
+        print(f'app1 - received workflow result', flush=True)
+    except TaskFailedError as e:
+        print(f'app1 - received workflow error from app2', flush=True)
 
-    print('app1 - returning workflow result', flush=True)
+    print(f'app1 - returning workflow result', flush=True)
     return 1
 
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     time.sleep(10)  # wait for workflow runtime to start
 
     wf_client = wf.DaprWorkflowClient()
-    print('app1 - triggering app1 workflow', flush=True)
+    print(f'app1 - triggering app1 workflow', flush=True)
     instance_id = wf_client.schedule_new_workflow(workflow=app1_workflow)
 
     # Wait for the workflow to complete

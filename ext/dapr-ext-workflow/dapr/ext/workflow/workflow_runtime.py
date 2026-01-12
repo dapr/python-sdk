@@ -15,7 +15,8 @@ limitations under the License.
 
 import inspect
 from functools import wraps
-from typing import Optional, Sequence, TypeVar, Union
+from typing import Optional, TypeVar, Union, Sequence
+import grpc
 
 import grpc
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext

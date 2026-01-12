@@ -24,6 +24,7 @@ def app3_activity(ctx: wf.DaprWorkflowContext) -> int:
         print('app3 - raising error in activity due to error mode being enabled', flush=True)
         raise ValueError('Error in activity due to error mode being enabled')
     print('app3 - returning activity result', flush=True)
+
     return 3
 
 
