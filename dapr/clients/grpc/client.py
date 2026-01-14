@@ -525,9 +525,6 @@ class DaprGrpcClient:
             handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
-            timeout (Optional[int]): The time in seconds to wait for a message before returning None
-                                     If not set, the `next_message` method will block indefinitely
-                                     until a message is received.
         """
         subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
 
