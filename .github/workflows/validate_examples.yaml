@@ -11,6 +11,8 @@ on:
       - grpc-v*
       - fastapi-v*
       - flask-v*
+      - langgraph-v*
+      - strands-v*
   pull_request:
     branches:
       - main
