@@ -500,9 +500,6 @@ class DaprGrpcClient:
             topic (str): The name of the topic.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
-            timeout (Optional[int]): The time in seconds to wait for a message before returning None
-                                     If not set, the `next_message` method will block indefinitely
-                                     until a message is received.
 
         Returns:
             Subscription: The Subscription object managing the stream.
