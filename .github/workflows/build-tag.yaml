@@ -8,6 +8,8 @@ on:
       - grpc-v*
       - flask-v*
       - fastapi-v*
+      - langgraph-v*
+      - strands-v*
   workflow_dispatch:
 
 jobs:
