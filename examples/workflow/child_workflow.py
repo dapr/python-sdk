@@ -40,12 +40,10 @@ def child_workflow(ctx: wf.DaprWorkflowContext):
 
 if __name__ == '__main__':
     wfr.start()
-    time.sleep(10)  # wait for workflow runtime to start
 
     wf_client = wf.DaprWorkflowClient()
     instance_id = wf_client.schedule_new_workflow(workflow=main_workflow)
 
-    # Wait for the workflow to complete
-    time.sleep(5)
+    wf_client.wait_for_workflow_completion(instance_id)
 
     wfr.shutdown()
