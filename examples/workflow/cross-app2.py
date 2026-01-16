@@ -46,5 +46,5 @@ def app2_workflow(ctx: wf.DaprWorkflowContext):
 
 if __name__ == '__main__':
     wfr.start()
-    time.sleep(15)  # wait for workflow runtime to start
+    time.sleep(15)  # Keep the workflow runtime running for a while to process workflows
     wfr.shutdown()

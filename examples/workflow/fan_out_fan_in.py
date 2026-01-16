@@ -55,7 +55,6 @@ def process_results(ctx, final_result: int):
 
 if __name__ == '__main__':
     wfr.start()
-    time.sleep(10)  # wait for workflow runtime to start
 
     wf_client = wf.DaprWorkflowClient()
     instance_id = wf_client.schedule_new_workflow(workflow=batch_processing_workflow, input=10)
