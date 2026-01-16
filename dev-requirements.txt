@@ -14,7 +14,7 @@ Flask>=1.1
 # needed for auto fix
 ruff===0.14.1
 # needed for dapr-ext-workflow
-durabletask-dapr >= 0.2.0a9
+durabletask-dapr >= 0.2.0a15
 # needed for .env file loading in examples
 python-dotenv>=1.0.0
 # needed for enhanced schema generation from function features
