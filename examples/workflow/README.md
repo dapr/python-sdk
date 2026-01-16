@@ -461,3 +461,44 @@ app1 - received workflow error from app2
 ```
 among others. This shows that the workflow calls are failing as expected, and they are being handled as expected too.
 
+
+### Versioning
+
+This example demonstrates how to version a workflow. The Dapr CLI can be started using the following command:
+
+<!--STEP
+name: Run the versioning example
+match_order: none
+expected_stdout_lines:
+  - "== APP == test1: triggering workflow"
+  - "== APP == test1: Received workflow call for version1"
+  - "== APP == test1: Finished workflow for version1"
+  - "== APP == test2: triggering workflow"
+  - "== APP == test2: Received workflow call for version1"
+  - "== APP == test2: Finished workflow for version1"
+  - "== APP == test3: triggering workflow"
+  - "== APP == test3: Received workflow call for version2"
+  - "== APP == test3: Finished workflow for version2"
+  - "== APP == test4: start"
+  - "== APP == test4: patch1 is patched"
+  - "== APP == test5: start"
+  - "== APP == test5: patch1 is not patched"
+  - "== APP == test5: patch2 is patched"
+  - "== APP == test6: start"
+  - "== APP == test6: patch1 is patched"
+  - "== APP == test6: patch2 is patched"
+  - "== APP == test7: Received workflow call for version1"
+  - "== APP == test7: Workflow is stalled"
+  - "== APP == test8: Workflow is stalled"
+  - "== APP == test100: part2"
+  - "== APP == test100: Received workflow call for version1"
+  - "== APP == test100: Finished stalled version1 workflow"
+  - "== APP == test100: Finished stalled patching workflow"
+timeout_seconds: 60
+-->
+
+```sh
+dapr run --app-id wf-versioning-example -- python3 versioning.py part1
+dapr run --app-id wf-versioning-example -- python3 versioning.py part2
+```
+<!--END_STEP-->

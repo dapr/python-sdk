@@ -154,6 +154,11 @@ class DaprWorkflowContext(WorkflowContext):
         self.__obj.continue_as_new(new_input, save_events=save_events)
 
 
+    def is_patched(self, patch_name: str) -> bool:
+        self._logger.debug(f'{self.instance_id}: Checking if {patch_name} is patched')
+        return self.__obj.is_patched(patch_name)
+
+
 def when_all(tasks: List[task.Task[T]]) -> task.WhenAllTask[T]:
     """Returns a task that completes when all of the provided tasks complete or when one of the
     tasks fail."""

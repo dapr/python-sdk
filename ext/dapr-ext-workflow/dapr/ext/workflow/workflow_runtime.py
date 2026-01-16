@@ -108,6 +108,38 @@ class WorkflowRuntime:
         )
         fn.__dict__['_workflow_registered'] = True
 
+    def register_versioned_workflow(self, fn: Workflow, *, name: str, version_name: Optional[str] = None, is_latest: bool):
+        self._logger.info(f"Registering version {version_name} of workflow '{fn.__name__}' with runtime")
+
+        def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
+            """Responsible to call Workflow function in orchestrationWrapper"""
+            daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
+            if inp is None:
+                return fn(daprWfContext)
+            return fn(daprWfContext, inp)
+
+        if hasattr(fn, '_workflow_registered'):
+            # whenever a workflow is registered, it has a _dapr_alternate_name attribute
+            alt_name = fn.__dict__['_dapr_alternate_name']
+            raise ValueError(f'Workflow {fn.__name__} already registered as {alt_name}')
+        if hasattr(fn, '_dapr_alternate_name'):
+            alt_name = fn._dapr_alternate_name
+            if name is not None:
+                m = f'Workflow {fn.__name__} already has an alternate name {alt_name}'
+                raise ValueError(m)
+        else:
+            fn.__dict__['_dapr_alternate_name'] = name
+
+        actual_version_name = version_name if version_name is not None else fn.__name__
+
+        self.__worker._registry.add_named_orchestrator(
+            name,
+            orchestrationWrapper,
+            version_name=actual_version_name,
+            is_latest=is_latest,
+        )
+        fn.__dict__['_workflow_registered'] = True
+
     def register_activity(self, fn: Activity, *, name: Optional[str] = None):
         """Registers a workflow activity as a function that takes
         a specified input type and returns a specified output type.
@@ -145,6 +177,29 @@ class WorkflowRuntime:
     def shutdown(self):
         """Stops the listening for work items on a background thread."""
         self.__worker.stop()
+
+    def versioned_workflow(self, __fn: Workflow = None, *, name: str, version_name: Optional[str] = None, is_latest: bool):
+        def wrapper(fn: Workflow):
+            self.register_versioned_workflow(fn, name=name, version_name=version_name, is_latest=is_latest)
+
+            @wraps(fn)
+            def innerfn():
+                return fn
+
+            if hasattr(fn, '_dapr_alternate_name'):
+                innerfn.__dict__['_dapr_alternate_name'] = fn.__dict__['_dapr_alternate_name']
+            else:
+                innerfn.__dict__['_dapr_alternate_name'] = name
+
+            innerfn.__signature__ = inspect.signature(fn)
+            return innerfn
+
+        if __fn:
+            # This case is true when the decorator is used without arguments
+            # and the function to be decorated is passed as the first argument.
+            return wrapper(__fn)
+
+        return wrapper
 
     def workflow(self, __fn: Workflow = None, *, name: Optional[str] = None):
         """Decorator to register a workflow function.
