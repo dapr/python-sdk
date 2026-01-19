@@ -29,5 +29,5 @@ def app3_activity(ctx: wf.DaprWorkflowContext) -> int:
 
 if __name__ == '__main__':
     wfr.start()
-    time.sleep(15)  # wait for workflow runtime to start
+    time.sleep(15)  # Keep the workflow runtime alive for a while to process requests
     wfr.shutdown()
