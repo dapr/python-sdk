@@ -10,7 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 from datetime import timedelta
 
 import dapr.ext.workflow as wf
@@ -46,13 +45,11 @@ def app1_workflow(ctx: wf.DaprWorkflowContext):
 
 if __name__ == '__main__':
     wfr.start()
-    time.sleep(10)  # wait for workflow runtime to start
 
     wf_client = wf.DaprWorkflowClient()
     print('app1 - triggering app1 workflow', flush=True)
     instance_id = wf_client.schedule_new_workflow(workflow=app1_workflow)
 
-    # Wait for the workflow to complete
-    time.sleep(7)
+    wf_client.wait_for_workflow_completion(instance_id)
 
     wfr.shutdown()
