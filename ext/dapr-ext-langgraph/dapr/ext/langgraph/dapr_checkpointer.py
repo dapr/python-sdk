@@ -22,6 +22,7 @@ from langchain_core.runnables import RunnableConfig
 from ulid import ULID
 
 from dapr.clients import DaprClient
+from dapr.ext.agent_core import AgentRegistryAdapter
 from langgraph.checkpoint.base import (
     WRITES_IDX_MAP,
     BaseCheckpointSaver,
@@ -47,6 +48,15 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         self.serde = JsonPlusSerializer()
         self.client = DaprClient()
         self._key_cache: Dict[str, str] = {}
+
+
+    def set_agent(self, agent: Any) -> None:
+        self.registry_adapter = AgentRegistryAdapter(
+            registry=None,
+            framework='langgraph',
+            agent=agent,
+        )
+
 
     # helper: construct Dapr key for a thread
     def _get_key(self, config: RunnableConfig) -> str:
