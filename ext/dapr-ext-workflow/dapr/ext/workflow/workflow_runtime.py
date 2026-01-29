@@ -57,7 +57,7 @@ class WorkflowRuntime:
         maximum_thread_pool_workers: Optional[int] = None,
     ):
         self._logger = Logger('WorkflowRuntime', logger_options)
-        
+
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
@@ -89,7 +89,7 @@ class WorkflowRuntime:
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
             instance_id = getattr(ctx, 'instance_id', 'unknown')
-            
+
             try:
                 daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
                 if inp is None:
@@ -164,7 +164,7 @@ class WorkflowRuntime:
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
             activity_id = getattr(ctx, 'task_id', 'unknown')
-            
+
             try:
                 wfActivityContext = WorkflowActivityContext(ctx)
                 if inp is None:
@@ -210,16 +210,16 @@ class WorkflowRuntime:
         """
         if not hasattr(self.__worker, 'is_worker_ready'):
             return False
-        
+
         elapsed = 0.0
         poll_interval = 0.1  # 100ms
-        
+
         while elapsed < timeout:
             if self.__worker.is_worker_ready():
                 return True
             time.sleep(poll_interval)
             elapsed += poll_interval
-        
+
         self._logger.warning(
             f"WorkflowRuntime worker readiness check timed out after {timeout} seconds"
         )
@@ -240,7 +240,7 @@ class WorkflowRuntime:
                     f"WorkflowRuntime worker did not start: {start_error}"
                 )
                 raise
-            
+
             # Verify the worker and its stream reader are ready
             if hasattr(self.__worker, 'is_worker_ready'):
                 try:
@@ -260,7 +260,7 @@ class WorkflowRuntime:
                 )
         except Exception:
             raise
-    
+
 
     def shutdown(self):
         """Stops the listening for work items on a background thread."""
