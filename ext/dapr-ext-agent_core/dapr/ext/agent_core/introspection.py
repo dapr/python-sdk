@@ -22,6 +22,7 @@ def find_agent_in_stack() -> Optional[Any]:
     
     Currently supports:
     - LangGraph: CompiledStateGraph or SyncPregelLoop
+    - Strands: DaprSessionManager
     
     Returns:
         The agent/graph object if found, None otherwise.
@@ -37,6 +38,10 @@ def find_agent_in_stack() -> Optional[Any]:
             
             # LangGraph support - CompiledStateGraph
             if obj_type == 'CompiledStateGraph':
+                return obj
+            
+            # Strands support - DaprSessionManager
+            if obj_type == 'DaprSessionManager':
                 return obj
             
             # If we found a checkpointer, use gc to find the graph that references it
@@ -71,5 +76,9 @@ def detect_framework(agent: Any) -> Optional[str]:
     # Dapr Agents
     if 'dapr_agents' in agent_module:
         return 'dapr_agents'
+    
+    # Strands
+    if agent_type == 'DaprSessionManager' or 'strands' in agent_module:
+        return 'strands'
     
     return None

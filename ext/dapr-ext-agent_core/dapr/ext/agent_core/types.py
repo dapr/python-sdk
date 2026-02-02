@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 class SupportedFrameworks(StrEnum):
     DAPR_AGENTS = "dapr-agents"
     LANGGRAPH = "langgraph"
+    STRANDS = "strands"
 
 
 class AgentMetadata(BaseModel):

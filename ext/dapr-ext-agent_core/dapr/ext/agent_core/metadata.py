@@ -125,6 +125,7 @@ class AgentRegistryAdapter:
         framework_mappers = {
             SupportedFrameworks.DAPR_AGENTS: dapr.ext.agent_core.mapping.DaprAgentsMapper().map_agent_metadata,
             SupportedFrameworks.LANGGRAPH: dapr.ext.agent_core.mapping.LangGraphMapper().map_agent_metadata,
+            SupportedFrameworks.STRANDS: dapr.ext.agent_core.mapping.StrandsMapper().map_agent_metadata,
         }
 
         mapper = framework_mappers.get(self._framework)

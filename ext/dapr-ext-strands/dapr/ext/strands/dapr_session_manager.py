@@ -66,8 +66,12 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         self._ttl = ttl
         self._consistency = consistency
         self._owns_client = False
+        self._session_id = session_id
 
         super().__init__(session_id=session_id, session_repository=self)
+        
+        # Register with agent registry after initialization
+        self._register_with_agent_registry()
 
     @classmethod
     def from_address(
@@ -549,3 +553,14 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         """Close the Dapr client if owned by this manager."""
         if self._owns_client:
             self._dapr_client.close()
+
+    def _register_with_agent_registry(self) -> None:
+        """Register this session manager with the agent registry."""
+        try:
+            from dapr.ext.agent_core import AgentRegistryAdapter
+            
+            AgentRegistryAdapter.create_from_stack(registry=None)
+        except ImportError:
+            logger.debug("dapr-ext-agent_core not available, skipping registry registration")
+        except Exception as e:
+            logger.warning(f"Failed to register with agent registry: {e}")
