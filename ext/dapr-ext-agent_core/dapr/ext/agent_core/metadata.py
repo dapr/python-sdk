@@ -262,7 +262,7 @@ class AgentRegistryAdapter:
             key: Registry document key.
             meta: Dapr state metadata to use for the operation.
         """
-        current, etag = self.registry_state.load_with_etag(  # type: ignore[union-attr]
+        _, etag = self.registry_state.load_with_etag(  # type: ignore[union-attr]
             key=key,
             default={},
             state_metadata=meta,

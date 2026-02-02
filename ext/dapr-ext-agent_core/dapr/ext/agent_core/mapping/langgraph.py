@@ -1,9 +1,9 @@
 
 from datetime import datetime, timezone
-import json
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional
 from dapr.ext.agent_core.types import AgentMetadata, AgentMetadataSchema, LLMMetadata, MemoryMetadata, PubSubMetadata, RegistryMetadata, ToolMetadata
+from langgraph.pregel._read import PregelNode
 
 if TYPE_CHECKING:
     from dapr.ext.langgraph import DaprCheckpointer
@@ -14,19 +14,86 @@ class LangGraphMapper:
     def __init__(self) -> None:
         pass
 
+    def _extract_provider(self, module_name: str) -> str:
+        """Extract provider name from module path."""
+        module_lower = module_name.lower()
+        if 'openai' in module_lower and 'azure' not in module_lower:
+            return 'openai'
+        elif 'azure' in module_lower:
+            return 'azure_openai'
+        elif 'anthropic' in module_lower:
+            return 'anthropic'
+        elif 'ollama' in module_lower:
+            return 'ollama'
+        elif 'google' in module_lower or 'gemini' in module_lower:
+            return 'google'
+        elif 'cohere' in module_lower:
+            return 'cohere'
+        return 'unknown'
+
     def map_agent_metadata(self, agent: Any, schema_version: str) -> AgentMetadataSchema:
 
-        logger.info(f"LangGraph log vars: {vars(agent)}")
-        print(f"LangGraph print vars: {vars(agent)}")
-        logger.info(f"LangGraph log dir: {dir(agent)}")
-        print(f"LangGraph print dir: {dir(agent)}")
-
         introspected_vars: Dict[str, Any] = vars(agent) # type: ignore
-        introspected_dir = dir(agent)
+
+        nodes: Dict[str, object] = introspected_vars.get("nodes", {}) # type: ignore
+
+        tools: list[Dict[str, Any]] = []
+        llm_metadata: Optional[Dict[str, Any]] = None
+        system_prompt: Optional[str] = None
+
+        for node_name, obj in nodes.items(): # type: ignore
+            if node_name == "__start__":
+                # We don't want to process the start node
+                continue
+
+            if isinstance(obj, PregelNode):
+                node_vars = vars(obj)
+                if "bound" in node_vars.keys():
+                    bound = node_vars["bound"]
+                    
+                    # Check if it's a ToolNode
+                    if hasattr(bound, "_tools_by_name"):
+                        tools_by_name = getattr(bound, "_tools_by_name", {})
+                        tools.extend([
+                            {
+                                "name": name,
+                                "description": getattr(tool, "description", ""),
+                                "args_schema": getattr(tool, "args_schema", {}), # TODO: See if we can extract the pydantic model
+                            }
+                            for name, tool in tools_by_name.items()
+                        ])
+                    
+                    # Check if it's an assistant RunnableCallable
+                    elif type(bound).__name__ == "RunnableCallable":
+                        logger.info(f"Node '{node_name}' is a RunnableCallable")
+                        
+                        func = getattr(bound, "func", None)
+                        if func and hasattr(func, "__globals__"):
+                            func_globals = func.__globals__
+                            
+                            for _, global_value in func_globals.items():
+                                var_type = type(global_value).__name__
+                                var_module = type(global_value).__module__
+                                
+                                if 'chat' in var_type.lower():
+                                    model = getattr(global_value, 'model_name', None) or \
+                                           getattr(global_value, 'model', None)
+                                    
+                                    if model and not llm_metadata:
+                                        llm_metadata = {
+                                            'client': var_type,
+                                            'provider': self._extract_provider(var_module),
+                                            'model': model,
+                                            'base_url': getattr(global_value, 'base_url', None),
+                                        }
+                                
+                                # Look for system message
+                                elif var_type == 'SystemMessage':
+                                    content = getattr(global_value, 'content', None)
+                                    if content and not system_prompt:
+                                        system_prompt = content
 
         checkpointer: Optional["DaprCheckpointer"] = introspected_vars.get("checkpointer", None) # type: ignore
-        tools = introspected_vars.get("tools", []) # type: ignore
-        print(f"LangGraph tools: {tools}")
 
         return AgentMetadataSchema(
             schema_version=schema_version,
@@ -34,10 +101,10 @@ class LangGraphMapper:
                 appid="",
                 type=type(agent).__name__,
                 orchestrator=False,
-                role="",
-                goal="",
+                role="Assistant",
+                goal=system_prompt or "",
                 instructions=[],
-                statestore=checkpointer.store_name if checkpointer else None,
+                statestore=checkpointer.store_name if checkpointer else None, # type: ignore
                 system_prompt="",
             ),
             name=agent.get_name() if hasattr(agent, "get_name") else "",
@@ -50,17 +117,17 @@ class LangGraphMapper:
             memory=MemoryMetadata(
                 type="DaprCheckpointer",
                 session_id=None,
-                statestore=checkpointer.store_name if checkpointer else None,
+                statestore=checkpointer.store_name if checkpointer else None, # type: ignore
             ),
             llm=LLMMetadata(
-                client="",
-                provider="unknown",
-                api="unknown",
-                model="unknown",
+                client=llm_metadata.get('client', '') if llm_metadata else '',
+                provider=llm_metadata.get('provider', 'unknown') if llm_metadata else 'unknown',
+                api="chat",
+                model=llm_metadata.get('model', 'unknown') if llm_metadata else 'unknown',
                 component_name=None,
-                base_url=None,
-                azure_endpoint=None,
-                azure_deployment=None,
+                base_url=llm_metadata.get('base_url') if llm_metadata else None,
+                azure_endpoint=llm_metadata.get('azure_endpoint') if llm_metadata else None,
+                azure_deployment=llm_metadata.get('azure_deployment') if llm_metadata else None,
                 prompt_template=None,
             ),
             registry=RegistryMetadata(
@@ -69,14 +136,13 @@ class LangGraphMapper:
             ),
             tools=[
                 ToolMetadata(
-                    tool_name="",
-                    tool_description="",
-                    tool_args=json.dumps({})
-                    if hasattr(tool, "args_schema") else "{}",
+                    tool_name=tool.get("name", ""),
+                    tool_description=tool.get("description", ""),
+                    tool_args="",
                 )
-                for tool in getattr(agent, "tools", [])
+                for tool in tools
             ],
-            max_iterations=None,
-            tool_choice=None,
+            max_iterations=1,
+            tool_choice="auto",
             agent_metadata=None,
         )
