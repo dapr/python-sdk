@@ -22,12 +22,36 @@ from dapr_agents.storage.daprstores.stateservice import (
 )
 
 from dapr.ext.agent_core import SupportedFrameworks, AgentMetadataSchema
+from dapr.ext.agent_core.introspection import find_agent_in_stack, detect_framework
 import dapr.ext.agent_core.mapping
 
 logger = logging.getLogger(__name__)
 
 
 class AgentRegistryAdapter:
+    @classmethod
+    def create_from_stack(
+        cls, registry: Optional[AgentRegistryConfig] = None
+    ) -> Optional['AgentRegistryAdapter']:
+        """
+        Auto-detect and create an AgentRegistryAdapter by walking the call stack.
+        
+        Args:
+            registry: Optional registry configuration. If None, will attempt auto-discovery.
+        
+        Returns:
+            AgentRegistryAdapter instance if agent found, None otherwise.
+        """
+        agent = find_agent_in_stack()
+        if not agent:
+            return None
+        
+        framework = detect_framework(agent)
+        if not framework:
+            return None
+        
+        return cls(registry=registry, framework=framework, agent=agent)
+    
     def __init__(self, registry: Optional[AgentRegistryConfig], framework: str, agent: Any) -> None:
         self._registry = registry
 

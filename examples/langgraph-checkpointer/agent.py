@@ -52,7 +52,6 @@ builder.add_edge('tools', 'assistant')
 
 memory = DaprCheckpointer(store_name='statestore', key_prefix='dapr')
 react_graph_memory = builder.compile(checkpointer=memory)
-memory.set_agent(react_graph_memory)
 
 config = {'configurable': {'thread_id': '1'}}
 

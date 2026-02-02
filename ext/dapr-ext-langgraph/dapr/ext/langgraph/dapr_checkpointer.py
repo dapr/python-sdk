@@ -48,15 +48,8 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         self.serde = JsonPlusSerializer()
         self.client = DaprClient()
         self._key_cache: Dict[str, str] = {}
-
-
-    def set_agent(self, agent: Any) -> None:
-        self.registry_adapter = AgentRegistryAdapter(
-            registry=None,
-            framework='langgraph',
-            agent=agent,
-        )
-
+        self.registry_adapter: Optional[AgentRegistryAdapter] = None
+        self._registry_initialized = False
 
     # helper: construct Dapr key for a thread
     def _get_key(self, config: RunnableConfig) -> str:
@@ -80,6 +73,10 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         metadata: CheckpointMetadata,
         new_versions: ChannelVersions,
     ) -> RunnableConfig:
+        if not self._registry_initialized:
+            self.registry_adapter = AgentRegistryAdapter.create_from_stack(registry=None)
+            self._registry_initialized = True
+        
         thread_id = config['configurable']['thread_id']
         checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
         config_checkpoint_id = config['configurable'].get('checkpoint_id', '')
