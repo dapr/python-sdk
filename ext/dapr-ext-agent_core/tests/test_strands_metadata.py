@@ -1,121 +1,159 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
-Test script to verify Strands metadata integration with agent registry.
+Copyright 2026 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
-import sys
-import os
-
-# Add the extensions to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'ext/dapr-ext-agent_core'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'ext/dapr-ext-strands'))
+import unittest
 
 from dapr.ext.agent_core.types import SupportedFrameworks
 from dapr.ext.agent_core.introspection import detect_framework
 from dapr.ext.agent_core.mapping.strands import StrandsMapper
 
 
-def test_supported_frameworks():
-    """Test that STRANDS framework is in the enum."""
-    print("✓ Testing SupportedFrameworks enum...")
-    assert hasattr(SupportedFrameworks, 'STRANDS'), "STRANDS not in SupportedFrameworks"
-    assert SupportedFrameworks.STRANDS.value == 'strands', "STRANDS value incorrect"
-    print("  ✓ STRANDS framework is supported")
-    return True
+class MockSessionManager:
+    """Mock DaprSessionManager for testing."""
+
+    def __init__(self, state_store_name='test-statestore', session_id='test-session-123'):
+        self._state_store_name = state_store_name
+        self._session_id = session_id
 
 
-def test_mapper_instantiation():
-    """Test that StrandsMapper can be instantiated."""
-    print("✓ Testing StrandsMapper instantiation...")
-    mapper = StrandsMapper()
-    assert mapper is not None, "Failed to instantiate StrandsMapper"
-    print("  ✓ StrandsMapper instantiated successfully")
-    return True
+class StrandsMapperTest(unittest.TestCase):
+    """Tests for StrandsMapper metadata extraction."""
+
+    def test_mapper_instantiation(self):
+        """Test that StrandsMapper can be instantiated."""
+        mapper = StrandsMapper()
+        self.assertIsNotNone(mapper)
+
+    def test_metadata_extraction_basic(self):
+        """Test basic metadata extraction from a mock session manager."""
+        mock_manager = MockSessionManager()
+        mapper = StrandsMapper()
+
+        metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
+
+        self.assertEqual(metadata.schema_version, '1.0.0')
+        self.assertEqual(metadata.agent.type, 'Strands')
+        self.assertEqual(metadata.agent.role, 'Session Manager')
+        self.assertEqual(metadata.agent.orchestrator, False)
+        self.assertEqual(
+            metadata.agent.goal, 'Manages multi-agent sessions with distributed state storage'
+        )
+
+    def test_metadata_memory_extraction(self):
+        """Test memory metadata extraction."""
+        mock_manager = MockSessionManager(
+            state_store_name='custom-store', session_id='session-456'
+        )
+        mapper = StrandsMapper()
+
+        metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
+
+        self.assertEqual(metadata.memory.type, 'DaprSessionManager')
+        self.assertEqual(metadata.memory.session_id, 'session-456')
+        self.assertEqual(metadata.memory.statestore, 'custom-store')
+
+    def test_metadata_name_generation(self):
+        """Test agent name generation with session ID."""
+        mock_manager = MockSessionManager(session_id='my-session')
+        mapper = StrandsMapper()
+
+        metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
+
+        self.assertEqual(metadata.name, 'strands-session-my-session')
+
+    def test_metadata_name_without_session_id(self):
+        """Test agent name generation without session ID."""
+        mock_manager = MockSessionManager(session_id=None)
+        mapper = StrandsMapper()
+
+        metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
+
+        self.assertEqual(metadata.name, 'strands-session')
+
+    def test_metadata_agent_metadata_field(self):
+        """Test agent_metadata field contains framework info."""
+        mock_manager = MockSessionManager(
+            state_store_name='store1', session_id='sess1'
+        )
+        mapper = StrandsMapper()
+
+        metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
+
+        self.assertEqual(metadata.agent_metadata['framework'], 'strands')
+        self.assertEqual(metadata.agent_metadata['session_id'], 'sess1')
+        self.assertEqual(metadata.agent_metadata['state_store'], 'store1')
+
+    def test_metadata_registry_defaults(self):
+        """Test registry metadata has correct defaults."""
+        mock_manager = MockSessionManager()
+        mapper = StrandsMapper()
+
+        metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
+
+        self.assertIsNotNone(metadata.registry)
+        self.assertIsNone(metadata.registry.statestore)
+        self.assertIsNone(metadata.registry.name)
+
+    def test_metadata_optional_fields_are_none(self):
+        """Test optional fields are None when not applicable."""
+        mock_manager = MockSessionManager()
+        mapper = StrandsMapper()
+
+        metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
+
+        self.assertIsNone(metadata.pubsub)
+        self.assertIsNone(metadata.llm)
+        self.assertIsNone(metadata.tools)
+        self.assertIsNone(metadata.max_iterations)
+        self.assertIsNone(metadata.tool_choice)
+
+    def test_metadata_registered_at_is_set(self):
+        """Test registered_at timestamp is set."""
+        mock_manager = MockSessionManager()
+        mapper = StrandsMapper()
+
+        metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
+
+        self.assertIsNotNone(metadata.registered_at)
+        self.assertIn('T', metadata.registered_at)
 
 
-def test_mapper_metadata_extraction():
-    """Test that StrandsMapper can extract metadata from a mock object."""
-    print("✓ Testing StrandsMapper metadata extraction...")
-    
-    # Create a mock DaprSessionManager-like object
-    class MockSessionManager:
-        def __init__(self):
-            self._state_store_name = "test-statestore"
-            self._session_id = "test-session-123"
-    
-    mock_manager = MockSessionManager()
-    mapper = StrandsMapper()
-    
-    metadata = mapper.map_agent_metadata(mock_manager, schema_version="1.0.0")
-    
-    assert metadata.schema_version == "1.0.0", "Schema version mismatch"
-    assert metadata.agent.type == "Strands", "Agent type mismatch"
-    assert metadata.agent.role == "Session Manager", "Agent role mismatch"
-    assert metadata.memory.type == "DaprSessionManager", "Memory type mismatch"
-    assert metadata.memory.session_id == "test-session-123", "Session ID mismatch"
-    assert metadata.memory.statestore == "test-statestore", "State store mismatch"
-    assert metadata.name == "strands-session-test-session-123", "Agent name mismatch"
-    
-    print("  ✓ Metadata extraction successful")
-    print(f"    - Agent type: {metadata.agent.type}")
-    print(f"    - Agent name: {metadata.name}")
-    print(f"    - Memory type: {metadata.memory.type}")
-    print(f"    - Session ID: {metadata.memory.session_id}")
-    print(f"    - State store: {metadata.memory.statestore}")
-    return True
+class StrandsFrameworkDetectionTest(unittest.TestCase):
+    """Tests for framework detection with Strands objects."""
+
+    def test_detect_framework_by_class_name(self):
+        """Test detection by DaprSessionManager class name."""
+
+        class DaprSessionManager:
+            pass
+
+        mock = DaprSessionManager()
+        framework = detect_framework(mock)
+        self.assertEqual(framework, 'strands')
+
+    def test_detect_framework_by_module(self):
+        """Test detection by strands module path."""
+
+        class MockAgent:
+            pass
+
+        MockAgent.__module__ = 'strands.session.manager'
+        mock = MockAgent()
+        framework = detect_framework(mock)
+        self.assertEqual(framework, 'strands')
 
 
-def test_framework_detection():
-    """Test that detect_framework can identify a Strands object."""
-    print("✓ Testing framework detection...")
-    
-    class MockSessionManager:
-        def __init__(self):
-            self._state_store_name = "test-statestore"
-            self._session_id = "test-session-123"
-    
-    MockSessionManager.__name__ = "DaprSessionManager"
-    mock_manager = MockSessionManager()
-    
-    framework = detect_framework(mock_manager)
-    assert framework == "strands", f"Expected 'strands', got '{framework}'"
-    
-    print("  ✓ Framework detection successful")
-    print(f"    - Detected framework: {framework}")
-    return True
-
-
-def main():
-    """Run all tests."""
-    print("\n" + "="*60)
-    print("Testing Strands Metadata Integration")
-    print("="*60 + "\n")
-    
-    tests = [
-        test_supported_frameworks,
-        test_mapper_instantiation,
-        test_mapper_metadata_extraction,
-        test_framework_detection,
-    ]
-    
-    passed = 0
-    failed = 0
-    
-    for test in tests:
-        try:
-            if test():
-                passed += 1
-        except Exception as e:
-            print(f"  ✗ Test failed: {e}")
-            failed += 1
-        print()
-    
-    print("="*60)
-    print(f"Tests completed: {passed} passed, {failed} failed")
-    print("="*60 + "\n")
-    
-    return 0 if failed == 0 else 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__ == '__main__':
+    unittest.main()
