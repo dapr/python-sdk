@@ -1,0 +1,7 @@
+{
+  "current_version": "1.17.0.dev",
+  "schema_url": "https://raw.githubusercontent.com/dapr/python-sdk/main/ext/dapr-ext-agent_core/schemas/agent-metadata/v1.17.0.dev.json",
+  "available_versions": [
+    "v1.17.0.dev"
+  ]
+}

@@ -10,7 +10,7 @@ from dapr.ext.agent_core import AgentMetadataSchema
 def get_auto_version() -> str:
     """Get current package version automatically."""
     try:
-        return version("dapr-agents")
+        return version("dapr-ext-agent_core")
     except PackageNotFoundError:
         return "0.0.0.dev0"
 
@@ -47,7 +47,7 @@ def generate_schema(output_dir: Path, schema_version: Optional[str] = None):
     # Write index with all versions
     index: dict[Any, Any] = {
         "current_version": current_version,
-        "schema_url": f"https://raw.githubusercontent.com/dapr/python-sdk/main/ext/dapr-ext-agent-core/schemas/agent-metadata/v{current_version}.json",
+        "schema_url": f"https://raw.githubusercontent.com/dapr/python-sdk/main/ext/dapr-ext-agent_core/schemas/agent-metadata/v{current_version}.json",
         "available_versions": sorted(
             [f.stem for f in schema_dir.glob("v*.json")], reverse=True
         ),
