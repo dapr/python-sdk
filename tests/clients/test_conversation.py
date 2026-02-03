@@ -17,7 +17,9 @@ import asyncio
 import json
 import unittest
 import uuid
+from unittest.mock import Mock, patch
 
+from google.protobuf.struct_pb2 import Struct
 from google.rpc import code_pb2, status_pb2
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
@@ -1250,6 +1252,51 @@ class TestConversationResultAlpha2ModelAndUsage(unittest.TestCase):
         self.assertIsNone(out.model)
         self.assertIsNone(out.usage)
         self.assertEqual(out.choices[0].message.content, 'Echo')
+
+
+class ConverseAlpha2ResponseFormatTests(unittest.TestCase):
+    """Unit tests for converse_alpha2 response_format parameter."""
+
+    def test_converse_alpha2_passes_response_format_on_request(self):
+        """converse_alpha2 sets response_format on the gRPC request when provided."""
+        user_message = create_user_message('Structured output please')
+        input_alpha2 = ConversationInputAlpha2(messages=[user_message])
+        response_format = Struct()
+        response_format.update({'type': 'json_schema', 'json_schema': {'name': 'test', 'schema': {}}})
+
+        captured_requests = []
+        mock_choice_msg = Mock()
+        mock_choice_msg.content = 'ok'
+        mock_choice_msg.tool_calls = []
+        mock_choice = Mock()
+        mock_choice.finish_reason = 'stop'
+        mock_choice.index = 0
+        mock_choice.message = mock_choice_msg
+        mock_output = Mock()
+        mock_output.choices = [mock_choice]
+        mock_response = Mock()
+        mock_response.outputs = [mock_output]
+        mock_response.context_id = ''
+        mock_call = Mock()
+
+        def capture_run_rpc(rpc, request, *args, **kwargs):
+            captured_requests.append(request)
+            return (mock_response, mock_call)
+
+        with patch('dapr.clients.health.DaprHealth.wait_for_sidecar'):
+            client = DaprClient('localhost:50011')
+        with patch.object(client.retry_policy, 'run_rpc', side_effect=capture_run_rpc):
+            client.converse_alpha2(
+                name='test-llm',
+                inputs=[input_alpha2],
+                response_format=response_format,
+            )
+
+        self.assertEqual(len(captured_requests), 1)
+        req = captured_requests[0]
+        self.assertTrue(hasattr(req, 'response_format'))
+        self.assertEqual(req.response_format['type'], 'json_schema')
+        self.assertEqual(req.response_format['json_schema']['name'], 'test')
 
 
 class ExecuteRegisteredToolSyncTests(unittest.TestCase):
