@@ -18,7 +18,6 @@ from typing import List
 from unittest import mock
 
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from dapr.ext.workflow.logger import Logger
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 
@@ -268,4 +267,3 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as ctx:
             self.runtime.shutdown()
         self.assertIn('stop failed', str(ctx.exception))
-
