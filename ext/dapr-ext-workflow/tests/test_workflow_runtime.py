@@ -18,6 +18,7 @@ from typing import List
 from unittest import mock
 
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from dapr.ext.workflow.logger import Logger
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 
@@ -26,11 +27,17 @@ listActivities: List[str] = []
 
 
 class FakeTaskHubGrpcWorker:
+    def __init__(self):
+        self._orchestrator_fns = {}
+        self._activity_fns = {}
+
     def add_named_orchestrator(self, name: str, fn):
         listOrchestrators.append(name)
+        self._orchestrator_fns[name] = fn
 
     def add_named_activity(self, name: str, fn):
         listActivities.append(name)
+        self._activity_fns[name] = fn
 
 
 class WorkflowRuntimeTest(unittest.TestCase):
@@ -234,3 +241,31 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
         mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
         rt = WorkflowRuntime(worker_ready_timeout=15.0)
         self.assertEqual(rt._worker_ready_timeout, 15.0)
+
+    def test_start_raises_when_worker_start_fails(self):
+        mock_worker = mock.MagicMock()
+        mock_worker.is_worker_ready.return_value = True
+        mock_worker.start.side_effect = RuntimeError('start failed')
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        with self.assertRaises(RuntimeError) as ctx:
+            self.runtime.start()
+        self.assertIn('start failed', str(ctx.exception))
+        mock_worker.start.assert_called_once()
+
+    def test_start_raises_when_wait_for_worker_ready_raises(self):
+        mock_worker = mock.MagicMock()
+        mock_worker.start.return_value = None
+        mock_worker.is_worker_ready.side_effect = ValueError('ready check failed')
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        with self.assertRaises(ValueError) as ctx:
+            self.runtime.start()
+        self.assertIn('ready check failed', str(ctx.exception))
+
+    def test_shutdown_raises_when_worker_stop_fails(self):
+        mock_worker = mock.MagicMock()
+        mock_worker.stop.side_effect = RuntimeError('stop failed')
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        with self.assertRaises(RuntimeError) as ctx:
+            self.runtime.shutdown()
+        self.assertIn('stop failed', str(ctx.exception))
+
