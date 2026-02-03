@@ -1,0 +1,3 @@
+dapr>=1.15.0
+dapr-ext-strands>=0.1.0
+strands-agents>=1.24.0

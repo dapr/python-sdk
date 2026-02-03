@@ -22,8 +22,8 @@ from dapr.ext.agent_core.mapping.langgraph import LangGraphMapper
 class MockCheckpointer:
     """Mock DaprCheckpointer for testing."""
 
-    def __init__(self, store_name='test-store'):
-        self.store_name = store_name
+    def __init__(self, state_store_name='test-store'):
+        self.state_store_name = state_store_name
 
 
 class MockCompiledStateGraph:
@@ -54,7 +54,7 @@ class LangGraphMapperTest(unittest.TestCase):
     @mock.patch('dapr.ext.agent_core.mapping.langgraph.PregelNode')
     def test_basic_metadata_extraction(self, mock_pregel_node):
         """Test basic metadata extraction from a mock graph."""
-        checkpointer = MockCheckpointer(store_name='my-store')
+        checkpointer = MockCheckpointer(state_store_name='my-store')
         graph = MockCompiledStateGraph(
             name='my-graph',
             checkpointer=checkpointer,

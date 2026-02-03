@@ -13,7 +13,10 @@ limitations under the License.
 
 import gc
 import inspect
+import logging
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 def find_agent_in_stack() -> Optional[Any]:
@@ -41,8 +44,17 @@ def find_agent_in_stack() -> Optional[Any]:
                 return obj
             
             # Strands support - DaprSessionManager
+            # Use gc to find the Agent that owns this session manager (similar to LangGraph checkpointer)
             if obj_type == 'DaprSessionManager':
-                return obj
+                referrers = gc.get_referrers(obj)
+                for ref in referrers:
+                    ref_type = type(ref).__name__
+                    ref_module = type(ref).__module__
+                    # Look for Strands Agent that owns this session manager
+                    if ref_type == 'Agent' and 'strands' in ref_module:
+                        return ref
+                # Don't register bare DaprSessionManager - only register when Agent exists
+                return None
             
             # If we found a checkpointer, use gc to find the graph that references it
             if obj_type == 'DaprCheckpointer':
@@ -77,8 +89,10 @@ def detect_framework(agent: Any) -> Optional[str]:
     if 'dapr_agents' in agent_module:
         return 'dapr_agents'
     
-    # Strands
-    if agent_type == 'DaprSessionManager' or 'strands' in agent_module:
+    # Strands - detect both Agent class and DaprSessionManager
+    if agent_type == 'Agent' and 'strands' in agent_module:
+        return 'strands'
+    if agent_type == 'DaprSessionManager':
         return 'strands'
     
     return None

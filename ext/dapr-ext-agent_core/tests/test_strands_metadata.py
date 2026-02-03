@@ -26,6 +26,10 @@ class MockSessionManager:
     def __init__(self, state_store_name='test-statestore', session_id='test-session-123'):
         self._state_store_name = state_store_name
         self._session_id = session_id
+        
+    @property
+    def state_store_name(self) -> str:
+        return self._state_store_name
 
 
 class StrandsMapperTest(unittest.TestCase):
@@ -71,6 +75,7 @@ class StrandsMapperTest(unittest.TestCase):
 
         metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
 
+        # Fallback path generates different name
         self.assertEqual(metadata.name, 'strands-session-my-session')
 
     def test_metadata_name_without_session_id(self):
@@ -94,6 +99,8 @@ class StrandsMapperTest(unittest.TestCase):
         self.assertEqual(metadata.agent_metadata['framework'], 'strands')
         self.assertEqual(metadata.agent_metadata['session_id'], 'sess1')
         self.assertEqual(metadata.agent_metadata['state_store'], 'store1')
+        # agent_id is None in fallback path when no SessionAgent exists
+        self.assertIsNone(metadata.agent_metadata['agent_id'])
 
     def test_metadata_registry_defaults(self):
         """Test registry metadata has correct defaults."""
@@ -115,7 +122,7 @@ class StrandsMapperTest(unittest.TestCase):
 
         self.assertIsNone(metadata.pubsub)
         self.assertIsNone(metadata.llm)
-        self.assertIsNone(metadata.tools)
+        self.assertEqual(metadata.tools, [])  # Empty list, not None
         self.assertIsNone(metadata.max_iterations)
         self.assertIsNone(metadata.tool_choice)
 
@@ -149,7 +156,9 @@ class StrandsFrameworkDetectionTest(unittest.TestCase):
         class MockAgent:
             pass
 
-        MockAgent.__module__ = 'strands.session.manager'
+        # Use actual type name and module that detection looks for
+        MockAgent.__module__ = 'strands.agent'
+        MockAgent.__name__ = 'Agent'
         mock = MockAgent()
         framework = detect_framework(mock)
         self.assertEqual(framework, 'strands')

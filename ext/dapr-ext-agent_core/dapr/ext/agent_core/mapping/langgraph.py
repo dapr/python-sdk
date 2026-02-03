@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional
+from dapr.ext.agent_core.mapping.base import BaseAgentMapper
 from dapr.ext.agent_core.types import AgentMetadata, AgentMetadataSchema, LLMMetadata, MemoryMetadata, PubSubMetadata, RegistryMetadata, ToolMetadata
 from langgraph.pregel._read import PregelNode
 
@@ -10,26 +11,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-class LangGraphMapper:
+class LangGraphMapper(BaseAgentMapper):
     def __init__(self) -> None:
         pass
-
-    def _extract_provider(self, module_name: str) -> str:
-        """Extract provider name from module path."""
-        module_lower = module_name.lower()
-        if 'openai' in module_lower and 'azure' not in module_lower:
-            return 'openai'
-        elif 'azure' in module_lower:
-            return 'azure_openai'
-        elif 'anthropic' in module_lower:
-            return 'anthropic'
-        elif 'ollama' in module_lower:
-            return 'ollama'
-        elif 'google' in module_lower or 'gemini' in module_lower:
-            return 'google'
-        elif 'cohere' in module_lower:
-            return 'cohere'
-        return 'unknown'
 
     def map_agent_metadata(self, agent: Any, schema_version: str) -> AgentMetadataSchema:
 

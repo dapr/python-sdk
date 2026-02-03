@@ -3,12 +3,13 @@ from datetime import datetime, timezone
 import json
 import logging
 from typing import Any
+from dapr.ext.agent_core.mapping.base import BaseAgentMapper
 from dapr.ext.agent_core.types import AgentMetadata, AgentMetadataSchema, LLMMetadata, MemoryMetadata, PubSubMetadata, RegistryMetadata, ToolMetadata
 
 logger = logging.getLogger(__name__)
 
 
-class DaprAgentsMapper:
+class DaprAgentsMapper(BaseAgentMapper):
     def __init__(self) -> None:
         pass
 

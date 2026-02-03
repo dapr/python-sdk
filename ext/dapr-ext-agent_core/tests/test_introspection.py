@@ -69,7 +69,9 @@ class DetectFrameworkTest(unittest.TestCase):
         class MockSessionManager:
             pass
 
-        MockSessionManager.__module__ = 'strands.session.manager'
+        # Use actual type name that detection looks for
+        MockSessionManager.__module__ = 'dapr.ext.strands'
+        MockSessionManager.__name__ = 'DaprSessionManager'
         agent = MockSessionManager()
         result = detect_framework(agent)
         self.assertEqual(result, 'strands')
