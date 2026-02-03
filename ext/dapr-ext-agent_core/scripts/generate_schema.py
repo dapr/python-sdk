@@ -1,7 +1,7 @@
 import argparse
 import json
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from importlib.metadata import version, PackageNotFoundError
 from typing import Any, Optional
 
 from dapr.ext.agent_core import AgentMetadataSchema
@@ -67,13 +67,13 @@ def main():
 Examples:
   # Auto-detect version from installed package
   python scripts/generate_schema.py
-  
+
   # Generate schema for specific version
   python scripts/generate_schema.py --version 1.0.0
-  
+
   # Generate for pre-release
   python scripts/generate_schema.py --version 1.1.0-rc1
-  
+
   # Custom output directory
   python scripts/generate_schema.py --version 1.0.0 --output ./custom-schemas
         """,

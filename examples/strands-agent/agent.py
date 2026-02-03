@@ -9,9 +9,11 @@ This example shows how to:
 """
 
 import os
+
+from dapr.ext.strands import DaprSessionManager
 from strands import Agent, tool
 from strands.models import OpenAIModel
-from dapr.ext.strands import DaprSessionManager
+
 from dapr.clients import DaprClient
 
 

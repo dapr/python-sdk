@@ -17,12 +17,12 @@ import time
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 import msgpack
+from dapr.ext.agent_core import AgentRegistryAdapter
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from ulid import ULID
 
 from dapr.clients import DaprClient
-from dapr.ext.agent_core import AgentRegistryAdapter
 from langgraph.checkpoint.base import (
     WRITES_IDX_MAP,
     BaseCheckpointSaver,

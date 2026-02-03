@@ -12,6 +12,7 @@ limitations under the License.
 """
 
 import unittest
+
 from dapr.ext.agent_core.mapping import BaseAgentMapper
 
 

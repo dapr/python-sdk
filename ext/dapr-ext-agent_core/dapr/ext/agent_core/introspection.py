@@ -26,6 +26,7 @@ def find_agent_in_stack() -> Optional[Any]:
     Currently supports:
     - LangGraph: CompiledStateGraph or SyncPregelLoop
     - Strands: DaprSessionManager
+    - Dapr Agents: Any object from dapr_agents module
 
     Returns:
         The agent/graph object if found, None otherwise.
@@ -38,9 +39,28 @@ def find_agent_in_stack() -> Optional[Any]:
         if 'self' in frame_locals:
             obj = frame_locals['self']
             obj_type = type(obj).__name__
+            obj_module = type(obj).__module__
 
             # LangGraph support - CompiledStateGraph
             if obj_type == 'CompiledStateGraph':
+                return obj
+
+            # Dapr Agents support - any agent from dapr_agents module
+            # Use GC to find the actual derived agent that may reference this object
+            if 'dapr_agents' in obj_module:
+                # If this is a base class (DaprInfra, AgentBase), use GC to find derived agent
+                if obj_type in ('DaprInfra', 'AgentBase'):
+                    referrers = gc.get_referrers(obj)
+                    for ref in referrers:
+                        ref_type = type(ref).__name__
+                        ref_module = type(ref).__module__
+                        # Look for derived agent classes that own this base object
+                        if 'dapr_agents' in ref_module and ref_type not in (
+                            'DaprInfra',
+                            'AgentBase',
+                        ):
+                            return ref
+                # Return the object directly if it's already a derived class
                 return obj
 
             # Strands support - DaprSessionManager

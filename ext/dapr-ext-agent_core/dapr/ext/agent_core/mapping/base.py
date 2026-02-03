@@ -13,6 +13,7 @@ limitations under the License.
 
 from abc import ABC, abstractmethod
 from typing import Any
+
 from dapr.ext.agent_core.types import AgentMetadataSchema
 
 

@@ -15,7 +15,6 @@ limitations under the License.
 
 import unittest
 
-from dapr.ext.agent_core.types import SupportedFrameworks
 from dapr.ext.agent_core.introspection import detect_framework
 from dapr.ext.agent_core.mapping.strands import StrandsMapper
 

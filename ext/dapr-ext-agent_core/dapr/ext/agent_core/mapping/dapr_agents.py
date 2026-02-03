@@ -1,7 +1,9 @@
-from datetime import datetime, timezone
+import gc
 import json
 import logging
+from datetime import datetime, timezone
 from typing import Any
+
 from dapr.ext.agent_core.mapping.base import BaseAgentMapper
 from dapr.ext.agent_core.types import (
     AgentMetadata,
@@ -21,6 +23,18 @@ class DaprAgentsMapper(BaseAgentMapper):
         pass
 
     def map_agent_metadata(self, agent: Any, schema_version: str) -> AgentMetadataSchema:
+        # If we received a base class (DaprInfra, AgentBase), try to find the actual derived agent via GC
+        agent_type = type(agent).__name__
+        if agent_type in ('DaprInfra', 'AgentBase'):
+            referrers = gc.get_referrers(agent)
+            for ref in referrers:
+                ref_type = type(ref).__name__
+                ref_module = type(ref).__module__
+                # Look for derived agent classes in dapr_agents module
+                if 'dapr_agents' in ref_module and ref_type not in ('DaprInfra', 'AgentBase'):
+                    agent = ref
+                    break
+
         profile = getattr(agent, 'profile', None)
         memory = getattr(agent, 'memory', None)
         pubsub = getattr(agent, 'pubsub', None)

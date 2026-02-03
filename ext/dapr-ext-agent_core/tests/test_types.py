@@ -16,14 +16,14 @@ limitations under the License.
 import unittest
 
 from dapr.ext.agent_core.types import (
-    SupportedFrameworks,
     AgentMetadata,
     AgentMetadataSchema,
     LLMMetadata,
-    PubSubMetadata,
-    ToolMetadata,
-    RegistryMetadata,
     MemoryMetadata,
+    PubSubMetadata,
+    RegistryMetadata,
+    SupportedFrameworks,
+    ToolMetadata,
 )
 
 
