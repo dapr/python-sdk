@@ -694,7 +694,7 @@ def _get_outputs_from_grpc_response(
 
         model: Optional[str] = None
         usage: Optional[ConversationResultAlpha2CompletionUsage] = None
-        if hasattr(output, 'model') and getattr(output, 'model', ''):
+        if hasattr(output, 'model') and getattr(output, 'model', None):
             model = output.model
         if hasattr(output, 'usage') and output.usage:
             u = output.usage
