@@ -339,10 +339,45 @@ class ConversationResultAlpha2Choices:
 
 
 @dataclass
+class ConversationResultAlpha2CompletionUsageCompletionTokensDetails:
+    """Breakdown of tokens used in the completion."""
+
+    accepted_prediction_tokens: int = 0
+    audio_tokens: int = 0
+    reasoning_tokens: int = 0
+    rejected_prediction_tokens: int = 0
+
+
+@dataclass
+class ConversationResultAlpha2CompletionUsagePromptTokensDetails:
+    """Breakdown of tokens used in the prompt."""
+
+    audio_tokens: int = 0
+    cached_tokens: int = 0
+
+
+@dataclass
+class ConversationResultAlpha2CompletionUsage:
+    """Token usage for one Alpha2 conversation result."""
+
+    completion_tokens: int = 0
+    prompt_tokens: int = 0
+    total_tokens: int = 0
+    completion_tokens_details: Optional[
+        ConversationResultAlpha2CompletionUsageCompletionTokensDetails
+    ] = None
+    prompt_tokens_details: Optional[ConversationResultAlpha2CompletionUsagePromptTokensDetails] = (
+        None
+    )
+
+
+@dataclass
 class ConversationResultAlpha2:
     """One of the outputs in Alpha2 response from conversation input."""
 
     choices: List[ConversationResultAlpha2Choices] = field(default_factory=list)
+    model: Optional[str] = None
+    usage: Optional[ConversationResultAlpha2CompletionUsage] = None
 
 
 @dataclass
@@ -657,5 +692,38 @@ def _get_outputs_from_grpc_response(
                 )
             )
 
-        outputs.append(ConversationResultAlpha2(choices=choices))
+        model: Optional[str] = None
+        usage: Optional[ConversationResultAlpha2CompletionUsage] = None
+        if hasattr(output, 'model') and getattr(output, 'model', ''):
+            model = output.model
+        if hasattr(output, 'usage') and output.usage:
+            u = output.usage
+            completion_details: Optional[
+                ConversationResultAlpha2CompletionUsageCompletionTokensDetails
+            ] = None
+            prompt_details: Optional[ConversationResultAlpha2CompletionUsagePromptTokensDetails] = (
+                None
+            )
+            if hasattr(u, 'completion_tokens_details') and u.completion_tokens_details:
+                cd = u.completion_tokens_details
+                completion_details = ConversationResultAlpha2CompletionUsageCompletionTokensDetails(
+                    accepted_prediction_tokens=getattr(cd, 'accepted_prediction_tokens', 0) or 0,
+                    audio_tokens=getattr(cd, 'audio_tokens', 0) or 0,
+                    reasoning_tokens=getattr(cd, 'reasoning_tokens', 0) or 0,
+                    rejected_prediction_tokens=getattr(cd, 'rejected_prediction_tokens', 0) or 0,
+                )
+            if hasattr(u, 'prompt_tokens_details') and u.prompt_tokens_details:
+                pd = u.prompt_tokens_details
+                prompt_details = ConversationResultAlpha2CompletionUsagePromptTokensDetails(
+                    audio_tokens=getattr(pd, 'audio_tokens', 0) or 0,
+                    cached_tokens=getattr(pd, 'cached_tokens', 0) or 0,
+                )
+            usage = ConversationResultAlpha2CompletionUsage(
+                completion_tokens=getattr(u, 'completion_tokens', 0) or 0,
+                prompt_tokens=getattr(u, 'prompt_tokens', 0) or 0,
+                total_tokens=getattr(u, 'total_tokens', 0) or 0,
+                completion_tokens_details=completion_details,
+                prompt_tokens_details=prompt_details,
+            )
+        outputs.append(ConversationResultAlpha2(choices=choices, model=model, usage=usage))
     return outputs

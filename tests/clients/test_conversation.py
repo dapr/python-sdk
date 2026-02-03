@@ -37,12 +37,16 @@ from dapr.clients.grpc.conversation import (
     ConversationResponseAlpha2,
     ConversationResultAlpha2,
     ConversationResultAlpha2Choices,
+    ConversationResultAlpha2CompletionUsage,
+    ConversationResultAlpha2CompletionUsageCompletionTokensDetails,
+    ConversationResultAlpha2CompletionUsagePromptTokensDetails,
     ConversationResultAlpha2Message,
     ConversationToolCalls,
     ConversationToolCallsOfFunction,
     ConversationTools,
     ConversationToolsFunction,
     FunctionBackend,
+    _get_outputs_from_grpc_response,
     create_assistant_message,
     create_system_message,
     create_tool_message,
@@ -247,6 +251,14 @@ class ConversationAlpha2SyncTests(ConversationTestBaseSync):
         choice = response.outputs[0].choices[0]
         self.assertEqual(choice.finish_reason, 'stop')
         self.assertIn('Hello Alpha2!', choice.message.content)
+
+        out = response.outputs[0]
+        if out.model is not None:
+            self.assertEqual(out.model, 'test-llm')
+        if out.usage is not None:
+            self.assertGreaterEqual(out.usage.total_tokens, 15)
+            self.assertGreaterEqual(out.usage.prompt_tokens, 5)
+            self.assertGreaterEqual(out.usage.completion_tokens, 10)
 
     def test_conversation_alpha2_with_system_message(self):
         """Test Alpha2 conversation with system message."""
@@ -1105,6 +1117,139 @@ class TestToAssistantMessages(unittest.TestCase):
         # None outputs (even though type says List, code handles None via `or []`)
         response_none = ConversationResponseAlpha2(context_id=None, outputs=None)  # type: ignore[arg-type]
         self.assertEqual(response_none.to_assistant_messages(), [])
+
+
+class TestConversationResultAlpha2ModelAndUsage(unittest.TestCase):
+    """Tests for model and usage fields on ConversationResultAlpha2 and related types."""
+
+    def test_result_alpha2_has_model_and_usage_attributes(self):
+        """ConversationResultAlpha2 accepts and exposes model and usage."""
+        msg = ConversationResultAlpha2Message(content='Hi', tool_calls=[])
+        choice = ConversationResultAlpha2Choices(finish_reason='stop', index=0, message=msg)
+        usage = ConversationResultAlpha2CompletionUsage(
+            completion_tokens=10,
+            prompt_tokens=5,
+            total_tokens=15,
+        )
+        result = ConversationResultAlpha2(
+            choices=[choice],
+            model='test-model-1',
+            usage=usage,
+        )
+        self.assertEqual(result.model, 'test-model-1')
+        self.assertIsNotNone(result.usage)
+        self.assertEqual(result.usage.completion_tokens, 10)
+        self.assertEqual(result.usage.prompt_tokens, 5)
+        self.assertEqual(result.usage.total_tokens, 15)
+
+    def test_result_alpha2_model_and_usage_default_none(self):
+        """ConversationResultAlpha2 optional fields default to None when not provided.
+
+        When the API returns a response, model and usage are set from the conversation
+        component. This test only checks that the dataclass defaults are None when
+        constructing with choices only.
+        """
+        msg = ConversationResultAlpha2Message(content='Hi', tool_calls=[])
+        choice = ConversationResultAlpha2Choices(finish_reason='stop', index=0, message=msg)
+        result = ConversationResultAlpha2(choices=[choice])
+        self.assertIsNone(result.model)
+        self.assertIsNone(result.usage)
+
+    def test_usage_completion_and_prompt_details(self):
+        """ConversationResultAlpha2CompletionUsage supports details."""
+        completion_details = ConversationResultAlpha2CompletionUsageCompletionTokensDetails(
+            accepted_prediction_tokens=1,
+            audio_tokens=2,
+            reasoning_tokens=3,
+            rejected_prediction_tokens=0,
+        )
+        prompt_details = ConversationResultAlpha2CompletionUsagePromptTokensDetails(
+            audio_tokens=0,
+            cached_tokens=4,
+        )
+        usage = ConversationResultAlpha2CompletionUsage(
+            completion_tokens=10,
+            prompt_tokens=5,
+            total_tokens=15,
+            completion_tokens_details=completion_details,
+            prompt_tokens_details=prompt_details,
+        )
+        self.assertEqual(usage.completion_tokens_details.accepted_prediction_tokens, 1)
+        self.assertEqual(usage.completion_tokens_details.audio_tokens, 2)
+        self.assertEqual(usage.completion_tokens_details.reasoning_tokens, 3)
+        self.assertEqual(usage.completion_tokens_details.rejected_prediction_tokens, 0)
+        self.assertEqual(usage.prompt_tokens_details.audio_tokens, 0)
+        self.assertEqual(usage.prompt_tokens_details.cached_tokens, 4)
+        self.assertEqual(usage.total_tokens, 15)
+        self.assertEqual(usage.completion_tokens, 10)
+        self.assertEqual(usage.prompt_tokens, 5)
+
+    def test_get_outputs_from_grpc_response_populates_model_and_usage(self):
+        """_get_outputs_from_grpc_response sets model and usage when present on proto."""
+        from unittest import mock
+
+        # Build a mock proto response with one output that has model and usage
+        mock_usage = mock.Mock()
+        mock_usage.completion_tokens = 20
+        mock_usage.prompt_tokens = 8
+        mock_usage.total_tokens = 28
+        mock_usage.completion_tokens_details = None
+        mock_usage.prompt_tokens_details = None
+
+        mock_choice_msg = mock.Mock()
+        mock_choice_msg.content = 'Hello'
+        mock_choice_msg.tool_calls = []
+
+        mock_choice = mock.Mock()
+        mock_choice.finish_reason = 'stop'
+        mock_choice.index = 0
+        mock_choice.message = mock_choice_msg
+
+        mock_output = mock.Mock()
+        mock_output.model = 'gpt-4o-mini'
+        mock_output.usage = mock_usage
+        mock_output.choices = [mock_choice]
+
+        mock_response = mock.Mock()
+        mock_response.outputs = [mock_output]
+
+        outputs = _get_outputs_from_grpc_response(mock_response)
+        self.assertEqual(len(outputs), 1)
+        out = outputs[0]
+        self.assertEqual(out.model, 'gpt-4o-mini')
+        self.assertIsNotNone(out.usage)
+        self.assertEqual(out.usage.completion_tokens, 20)
+        self.assertEqual(out.usage.prompt_tokens, 8)
+        self.assertEqual(out.usage.total_tokens, 28)
+        self.assertEqual(len(out.choices), 1)
+        self.assertEqual(out.choices[0].message.content, 'Hello')
+
+    def test_get_outputs_from_grpc_response_without_model_usage(self):
+        """_get_outputs_from_grpc_response leaves model and usage None when absent."""
+        from unittest import mock
+
+        mock_choice_msg = mock.Mock()
+        mock_choice_msg.content = 'Echo'
+        mock_choice_msg.tool_calls = []
+
+        mock_choice = mock.Mock()
+        mock_choice.finish_reason = 'stop'
+        mock_choice.index = 0
+        mock_choice.message = mock_choice_msg
+
+        mock_output = mock.Mock(spec=['choices'])
+        mock_output.choices = [mock_choice]
+        # No model or usage attributes
+
+        mock_response = mock.Mock()
+        mock_response.outputs = [mock_output]
+
+        outputs = _get_outputs_from_grpc_response(mock_response)
+        self.assertEqual(len(outputs), 1)
+        out = outputs[0]
+        self.assertIsNone(out.model)
+        self.assertIsNone(out.usage)
+        self.assertEqual(out.choices[0].message.content, 'Echo')
 
 
 class ExecuteRegisteredToolSyncTests(unittest.TestCase):
