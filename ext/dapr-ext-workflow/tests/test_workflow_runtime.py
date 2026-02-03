@@ -201,6 +201,14 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
         self.assertTrue(self.runtime.wait_for_worker_ready(timeout=1.0))
         mock_worker.is_worker_ready.assert_called()
 
+    def test_wait_for_worker_ready_returns_true_after_poll(self):
+        """Worker becomes ready on second poll."""
+        mock_worker = mock.MagicMock()
+        mock_worker.is_worker_ready.side_effect = [False, True]
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        self.assertTrue(self.runtime.wait_for_worker_ready(timeout=1.0))
+        self.assertEqual(mock_worker.is_worker_ready.call_count, 2)
+
     def test_wait_for_worker_ready_returns_false_on_timeout(self):
         mock_worker = mock.MagicMock()
         mock_worker.is_worker_ready.return_value = False
