@@ -171,3 +171,66 @@ class WorkflowRuntimeTest(unittest.TestCase):
         wanted_activity = ['test_act']
         assert listActivities == wanted_activity
         assert client_act._dapr_alternate_name == 'test_act'
+
+
+class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
+    """Tests for wait_for_worker_ready() and start() stream readiness."""
+
+    def setUp(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        self.runtime = WorkflowRuntime()
+
+    def test_wait_for_worker_ready_returns_false_when_no_is_worker_ready(self):
+        mock_worker = mock.MagicMock(spec=['start', 'stop', '_registry'])
+        del mock_worker.is_worker_ready
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        self.assertFalse(self.runtime.wait_for_worker_ready(timeout=0.1))
+
+    def test_wait_for_worker_ready_returns_true_when_ready(self):
+        mock_worker = mock.MagicMock()
+        mock_worker.is_worker_ready.return_value = True
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        self.assertTrue(self.runtime.wait_for_worker_ready(timeout=1.0))
+        mock_worker.is_worker_ready.assert_called()
+
+    def test_wait_for_worker_ready_returns_false_on_timeout(self):
+        mock_worker = mock.MagicMock()
+        mock_worker.is_worker_ready.return_value = False
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        self.assertFalse(self.runtime.wait_for_worker_ready(timeout=0.2))
+
+    def test_start_succeeds_when_worker_ready(self):
+        mock_worker = mock.MagicMock()
+        mock_worker.is_worker_ready.return_value = True
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        self.runtime.start()
+        mock_worker.start.assert_called_once()
+        mock_worker.is_worker_ready.assert_called()
+
+    def test_start_raises_when_worker_not_ready(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        runtime = WorkflowRuntime(worker_ready_timeout=0.2)
+        mock_worker = mock.MagicMock()
+        mock_worker.is_worker_ready.return_value = False
+        runtime._WorkflowRuntime__worker = mock_worker
+        with self.assertRaises(RuntimeError) as ctx:
+            runtime.start()
+        self.assertIn('not ready', str(ctx.exception))
+
+    def test_start_logs_warning_when_no_is_worker_ready(self):
+        mock_worker = mock.MagicMock(spec=['start', 'stop', '_registry'])
+        del mock_worker.is_worker_ready
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        self.runtime.start()
+        mock_worker.start.assert_called_once()
+
+    def test_worker_ready_timeout_init(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        rt = WorkflowRuntime(worker_ready_timeout=15.0)
+        self.assertEqual(rt._worker_ready_timeout, 15.0)
