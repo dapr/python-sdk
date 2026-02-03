@@ -88,7 +88,7 @@ class LangGraphMapper(BaseAgentMapper):
                 role="Assistant",
                 goal=system_prompt or "",
                 instructions=[],
-                statestore=checkpointer.store_name if checkpointer else None, # type: ignore
+                statestore=checkpointer.state_store_name if checkpointer else None, # type: ignore
                 system_prompt="",
             ),
             name=agent.get_name() if hasattr(agent, "get_name") else "",
@@ -101,7 +101,7 @@ class LangGraphMapper(BaseAgentMapper):
             memory=MemoryMetadata(
                 type="DaprCheckpointer",
                 session_id=None,
-                statestore=checkpointer.store_name if checkpointer else None, # type: ignore
+                statestore=checkpointer.state_store_name if checkpointer else None, # type: ignore
             ),
             llm=LLMMetadata(
                 client=llm_metadata.get('client', '') if llm_metadata else '',

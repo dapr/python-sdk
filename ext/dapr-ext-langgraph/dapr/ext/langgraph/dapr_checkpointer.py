@@ -42,8 +42,8 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
 
     REGISTRY_KEY = 'dapr_checkpoint_registry'
 
-    def __init__(self, store_name: str, key_prefix: str):
-        self.store_name = store_name
+    def __init__(self, state_store_name: str, key_prefix: str):
+        self.state_store_name = state_store_name
         self.key_prefix = key_prefix
         self.serde = JsonPlusSerializer()
         self.client = DaprClient()
@@ -141,14 +141,14 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         )
 
         _, data = self.serde.dumps_typed(checkpoint_data)
-        self.client.save_state(store_name=self.store_name, key=checkpoint_key, value=data)
+        self.client.save_state(store_name=self.state_store_name, key=checkpoint_key, value=data)
 
         latest_pointer_key = (
             f'checkpoint_latest:{storage_safe_thread_id}:{storage_safe_checkpoint_ns}'
         )
 
         self.client.save_state(
-            store_name=self.store_name, key=latest_pointer_key, value=checkpoint_key
+            store_name=self.state_store_name, key=latest_pointer_key, value=checkpoint_key
         )
 
         return next_config
@@ -190,7 +190,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
                 thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
             )
 
-            self.client.save_state(store_name=self.store_name, key=key, value=json.dumps(write_obj))
+            self.client.save_state(store_name=self.state_store_name, key=key, value=json.dumps(write_obj))
 
             checkpoint_key = self._make_safe_checkpoint_key(
                 thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
@@ -201,11 +201,11 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
             )
 
             self.client.save_state(
-                store_name=self.store_name, key=latest_pointer_key, value=checkpoint_key
+                store_name=self.state_store_name, key=latest_pointer_key, value=checkpoint_key
             )
 
     def list(self, config: RunnableConfig) -> list[CheckpointTuple]:
-        reg_resp = self.client.get_state(store_name=self.store_name, key=self.REGISTRY_KEY)
+        reg_resp = self.client.get_state(store_name=self.state_store_name, key=self.REGISTRY_KEY)
         if not reg_resp.data:
             return []
 
@@ -213,7 +213,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         checkpoints: list[CheckpointTuple] = []
 
         for key in keys:
-            cp_resp = self.client.get_state(store_name=self.store_name, key=key)
+            cp_resp = self.client.get_state(store_name=self.state_store_name, key=key)
             if not cp_resp.data:
                 continue
 
@@ -236,9 +236,9 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
     def delete_thread(self, config: RunnableConfig) -> None:
         key = self._get_key(config)
 
-        self.client.delete_state(store_name=self.store_name, key=key)
+        self.client.delete_state(store_name=self.state_store_name, key=key)
 
-        reg_resp = self.client.get_state(store_name=self.store_name, key=self.REGISTRY_KEY)
+        reg_resp = self.client.get_state(store_name=self.state_store_name, key=self.REGISTRY_KEY)
         if not reg_resp.data:
             return
 
@@ -247,7 +247,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         if key in registry:
             registry.remove(key)
             self.client.save_state(
-                store_name=self.store_name,
+                store_name=self.state_store_name,
                 key=self.REGISTRY_KEY,
                 value=json.dumps(registry),
             )
@@ -268,13 +268,13 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         )
 
         # First we extract the latest checkpoint key
-        checkpoint_key = self.client.get_state(store_name=self.store_name, key=key)
+        checkpoint_key = self.client.get_state(store_name=self.state_store_name, key=key)
         if not checkpoint_key.data:
             return None
 
         # To then derive the checkpoint data
         checkpoint_data = self.client.get_state(
-            store_name=self.store_name,
+            store_name=self.state_store_name,
             # checkpoint_key.data can either be str or bytes
             key=checkpoint_key.data.decode()
             if isinstance(checkpoint_key.data, bytes)
