@@ -1262,7 +1262,9 @@ class ConverseAlpha2ResponseFormatTests(unittest.TestCase):
         user_message = create_user_message('Structured output please')
         input_alpha2 = ConversationInputAlpha2(messages=[user_message])
         response_format = Struct()
-        response_format.update({'type': 'json_schema', 'json_schema': {'name': 'test', 'schema': {}}})
+        response_format.update(
+            {'type': 'json_schema', 'json_schema': {'name': 'test', 'schema': {}}}
+        )
 
         captured_requests = []
         mock_choice_msg = Mock()
