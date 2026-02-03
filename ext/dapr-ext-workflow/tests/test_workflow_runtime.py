@@ -223,6 +223,29 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
         mock_worker.start.assert_called_once()
         mock_worker.is_worker_ready.assert_called()
 
+    def test_start_logs_debug_when_worker_stream_ready(self):
+        """start() logs at debug when worker and stream are ready."""
+        mock_worker = mock.MagicMock()
+        mock_worker.is_worker_ready.return_value = True
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        with mock.patch.object(self.runtime._logger, 'debug') as mock_debug:
+            self.runtime.start()
+        mock_debug.assert_called_once()
+        call_args = mock_debug.call_args[0][0]
+        self.assertIn('ready', call_args)
+        self.assertIn('stream', call_args)
+
+    def test_start_logs_exception_when_worker_start_fails(self):
+        """start() logs exception when worker.start() raises."""
+        mock_worker = mock.MagicMock()
+        mock_worker.start.side_effect = RuntimeError('start failed')
+        self.runtime._WorkflowRuntime__worker = mock_worker
+        with mock.patch.object(self.runtime._logger, 'exception') as mock_exception:
+            with self.assertRaises(RuntimeError):
+                self.runtime.start()
+        mock_exception.assert_called_once()
+        self.assertIn('did not start', mock_exception.call_args[0][0])
+
     def test_start_raises_when_worker_not_ready(self):
         listActivities.clear()
         listOrchestrators.clear()
