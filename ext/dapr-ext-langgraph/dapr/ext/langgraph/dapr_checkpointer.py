@@ -76,7 +76,7 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
         if not self._registry_initialized:
             self.registry_adapter = AgentRegistryAdapter.create_from_stack(registry=None)
             self._registry_initialized = True
-        
+
         thread_id = config['configurable']['thread_id']
         checkpoint_ns = config['configurable'].get('checkpoint_ns', '')
         config_checkpoint_id = config['configurable'].get('checkpoint_id', '')
@@ -190,7 +190,9 @@ class DaprCheckpointer(BaseCheckpointSaver[Checkpoint]):
                 thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id
             )
 
-            self.client.save_state(store_name=self.state_store_name, key=key, value=json.dumps(write_obj))
+            self.client.save_state(
+                store_name=self.state_store_name, key=key, value=json.dumps(write_obj)
+            )
 
             checkpoint_key = self._make_safe_checkpoint_key(
                 thread_id=thread_id, checkpoint_ns=checkpoint_ns, checkpoint_id=checkpoint_id

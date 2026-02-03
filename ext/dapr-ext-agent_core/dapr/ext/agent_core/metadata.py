@@ -16,10 +16,7 @@ from dapr.clients.grpc._state import Concurrency, Consistency
 from dapr_agents.agents.configs import (
     AgentRegistryConfig,
 )
-from dapr_agents.storage.daprstores.stateservice import (
-    StateStoreError,
-    StateStoreService
-)
+from dapr_agents.storage.daprstores.stateservice import StateStoreError, StateStoreService
 
 from dapr.ext.agent_core import SupportedFrameworks, AgentMetadataSchema
 from dapr.ext.agent_core.introspection import find_agent_in_stack, detect_framework
@@ -35,23 +32,23 @@ class AgentRegistryAdapter:
     ) -> Optional['AgentRegistryAdapter']:
         """
         Auto-detect and create an AgentRegistryAdapter by walking the call stack.
-        
+
         Args:
             registry: Optional registry configuration. If None, will attempt auto-discovery.
-        
+
         Returns:
             AgentRegistryAdapter instance if agent found, None otherwise.
         """
         agent = find_agent_in_stack()
         if not agent:
             return None
-        
+
         framework = detect_framework(agent)
         if not framework:
             return None
-        
+
         return cls(registry=registry, framework=framework, agent=agent)
-    
+
     def __init__(self, registry: Optional[AgentRegistryConfig], framework: str, agent: Any) -> None:
         self._registry = registry
 
@@ -62,39 +59,34 @@ class AgentRegistryAdapter:
                 if self._registry is None:
                     components: Sequence[RegisteredComponents] = resp.registered_components
                     for component in components:
-                        if (
-                            "state" in component.type
-                            and component.name == "agent-registry"
-                        ):
+                        if 'state' in component.type and component.name == 'agent-registry':
                             self._registry = AgentRegistryConfig(
                                 store=StateStoreService(store_name=component.name),
-                                team_name="default",
+                                team_name='default',
                             )
         except TimeoutError:
-            logger.warning(
-                "Dapr sidecar not responding; proceeding without auto-configuration."
-            )
+            logger.warning('Dapr sidecar not responding; proceeding without auto-configuration.')
 
         if self._registry is None:
             return
 
         self.registry_state: StateStoreService = self._registry.store
-        self._registry_prefix: str = "agents:"
-        self._meta: Dict[str, str] = {"contentType": "application/json"}
+        self._registry_prefix: str = 'agents:'
+        self._meta: Dict[str, str] = {'contentType': 'application/json'}
         self._max_etag_attempts: int = 10
         self._save_options: Dict[str, Any] = {
-            "concurrency": Concurrency.first_write,
-            "consistency": Consistency.strong,
+            'concurrency': Concurrency.first_write,
+            'consistency': Consistency.strong,
         }
 
         if not self._can_handle(framework):
             raise ValueError(f"Adapter cannot handle framework '{framework}'")
-        
+
         _metadata = self._extract_metadata(agent)
 
         # We need to handle some null values here to avoid issues during registration
-        if _metadata.agent.appid == "":
-            _metadata.agent.appid = self.appid or ""
+        if _metadata.agent.appid == '':
+            _metadata.agent.appid = self.appid or ''
 
         if _metadata.registry:
             if _metadata.registry.name is None:
@@ -106,21 +98,20 @@ class AgentRegistryAdapter:
 
     def _can_handle(self, framework: str) -> bool:
         """Check if this adapter can handle the given Agent."""
-        
+
         for fw in SupportedFrameworks:
             if framework.lower() == fw.value.lower():
                 self._framework = fw
                 return True
         return False
 
-
     def _extract_metadata(self, agent: Any) -> AgentMetadataSchema:
         """Extract metadata from the given Agent."""
 
         try:
-            schema_version = version("dapr-ext-agent_core")
+            schema_version = version('dapr-ext-agent_core')
         except PackageNotFoundError:
-            schema_version = "edge"
+            schema_version = 'edge'
 
         framework_mappers = {
             SupportedFrameworks.DAPR_AGENTS: dapr.ext.agent_core.mapping.DaprAgentsMapper().map_agent_metadata,
@@ -144,7 +135,7 @@ class AgentRegistryAdapter:
             team: Team override; falls back to configured default team.
         """
         if not metadata.registry:
-            raise ValueError("Registry metadata is required for registration")
+            raise ValueError('Registry metadata is required for registration')
 
         self._upsert_agent_entry(
             team=metadata.registry.name,
@@ -171,12 +162,10 @@ class AgentRegistryAdapter:
             StateStoreError: If the mutation fails after retries due to contention.
         """
         if not self.registry_state:
-            raise RuntimeError(
-                "registry_state must be provided to mutate the agent registry"
-            )
+            raise RuntimeError('registry_state must be provided to mutate the agent registry')
 
-        key = f"agents:{team or 'default'}"
-        self._meta["partitionKey"] = key
+        key = f'agents:{team or "default"}'
+        self._meta['partitionKey'] = key
         attempts = max_attempts or self._max_etag_attempts
 
         self._ensure_registry_initialized(key=key, meta=self._meta)
@@ -244,7 +233,7 @@ class AgentRegistryAdapter:
             current[agent_name] = agent_metadata
             return current
 
-        logger.debug("Upserting agent '%s' in team '%s' registry", agent_name, team or "default")
+        logger.debug("Upserting agent '%s' in team '%s' registry", agent_name, team or 'default')
         self._mutate_registry_entry(
             team=team,
             mutator=mutator,

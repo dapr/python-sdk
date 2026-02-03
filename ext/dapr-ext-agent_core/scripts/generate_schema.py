@@ -10,9 +10,9 @@ from dapr.ext.agent_core import AgentMetadataSchema
 def get_auto_version() -> str:
     """Get current package version automatically."""
     try:
-        return version("dapr-ext-agent_core")
+        return version('dapr-ext-agent_core')
     except PackageNotFoundError:
-        return "0.0.0.dev0"
+        return '0.0.0.dev0'
 
 
 def generate_schema(output_dir: Path, schema_version: Optional[str] = None):
@@ -26,44 +26,42 @@ def generate_schema(output_dir: Path, schema_version: Optional[str] = None):
     # Use provided version or auto-detect
     current_version = schema_version or get_auto_version()
 
-    print(f"Generating schema for version: {current_version}")
-    schema_dir = output_dir / "agent-metadata"
+    print(f'Generating schema for version: {current_version}')
+    schema_dir = output_dir / 'agent-metadata'
 
     # Export schema
     schema: dict[Any, Any] = AgentMetadataSchema.export_json_schema(current_version)
 
     # Write versioned file
-    version_file = schema_dir / f"v{current_version}.json"
-    with open(version_file, "w") as f:
+    version_file = schema_dir / f'v{current_version}.json'
+    with open(version_file, 'w') as f:
         json.dump(schema, f, indent=2)
-    print(f"✓ Generated {version_file}")
+    print(f'✓ Generated {version_file}')
 
     # Write latest.json
-    latest_file = schema_dir / "latest.json"
-    with open(latest_file, "w") as f:
+    latest_file = schema_dir / 'latest.json'
+    with open(latest_file, 'w') as f:
         json.dump(schema, f, indent=2)
-    print(f"✓ Generated {latest_file}")
+    print(f'✓ Generated {latest_file}')
 
     # Write index with all versions
     index: dict[Any, Any] = {
-        "current_version": current_version,
-        "schema_url": f"https://raw.githubusercontent.com/dapr/python-sdk/main/ext/dapr-ext-agent_core/schemas/agent-metadata/v{current_version}.json",
-        "available_versions": sorted(
-            [f.stem for f in schema_dir.glob("v*.json")], reverse=True
-        ),
+        'current_version': current_version,
+        'schema_url': f'https://raw.githubusercontent.com/dapr/python-sdk/main/ext/dapr-ext-agent_core/schemas/agent-metadata/v{current_version}.json',
+        'available_versions': sorted([f.stem for f in schema_dir.glob('v*.json')], reverse=True),
     }
 
-    index_file = schema_dir / "index.json"
-    with open(index_file, "w") as f:
+    index_file = schema_dir / 'index.json'
+    with open(index_file, 'w') as f:
         json.dump(index, f, indent=2)
-    print(f"✓ Generated {index_file}")
-    print(f"\nSchema generation complete for version {current_version}")
+    print(f'✓ Generated {index_file}')
+    print(f'\nSchema generation complete for version {current_version}')
 
 
 def main():
     """Main entry point with CLI argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Generate JSON schema files for agent metadata",
+        description='Generate JSON schema files for agent metadata',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -82,16 +80,16 @@ Examples:
     )
 
     parser.add_argument(
-        "--version",
-        "-v",
+        '--version',
+        '-v',
         type=str,
         default=None,
-        help="Specific version to use for schema generation. If not provided, auto-detects from installed package.",
+        help='Specific version to use for schema generation. If not provided, auto-detects from installed package.',
     )
 
     parser.add_argument(
-        "--output",
-        "-o",
+        '--output',
+        '-o',
         type=Path,
         default=None,
         help="Output directory for schemas. Defaults to 'schemas' in repo root.",
@@ -104,11 +102,11 @@ Examples:
         schemas_dir = args.output
     else:
         repo_root = Path(__file__).parent.parent
-        schemas_dir = repo_root / "schemas"
+        schemas_dir = repo_root / 'schemas'
 
     # Generate schemas
     generate_schema(schemas_dir, schema_version=args.version)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

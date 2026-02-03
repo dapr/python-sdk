@@ -26,7 +26,7 @@ class MockSessionManager:
     def __init__(self, state_store_name='test-statestore', session_id='test-session-123'):
         self._state_store_name = state_store_name
         self._session_id = session_id
-        
+
     @property
     def state_store_name(self) -> str:
         return self._state_store_name
@@ -57,9 +57,7 @@ class StrandsMapperTest(unittest.TestCase):
 
     def test_metadata_memory_extraction(self):
         """Test memory metadata extraction."""
-        mock_manager = MockSessionManager(
-            state_store_name='custom-store', session_id='session-456'
-        )
+        mock_manager = MockSessionManager(state_store_name='custom-store', session_id='session-456')
         mapper = StrandsMapper()
 
         metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')
@@ -89,9 +87,7 @@ class StrandsMapperTest(unittest.TestCase):
 
     def test_metadata_agent_metadata_field(self):
         """Test agent_metadata field contains framework info."""
-        mock_manager = MockSessionManager(
-            state_store_name='store1', session_id='sess1'
-        )
+        mock_manager = MockSessionManager(state_store_name='store1', session_id='sess1')
         mapper = StrandsMapper()
 
         metadata = mapper.map_agent_metadata(mock_manager, schema_version='1.0.0')

@@ -18,23 +18,23 @@ from dapr.ext.agent_core.types import AgentMetadataSchema
 
 class BaseAgentMapper(ABC):
     """Abstract base class for agent metadata mappers.
-    
+
     Provides common functionality for extracting metadata from different
     agent frameworks (Strands, LangGraph, Dapr Agents).
     """
-    
+
     @staticmethod
     def _extract_provider(module_name: str) -> str:
         """Extract provider name from module path.
-        
+
         Args:
             module_name: Python module name (e.g., 'langchain_openai.chat_models')
-            
+
         Returns:
             Provider identifier (e.g., 'openai', 'anthropic', 'azure_openai')
         """
         module_lower = module_name.lower()
-        
+
         # Check more specific providers first
         if 'vertexai' in module_lower:
             return 'vertexai'
@@ -52,17 +52,17 @@ class BaseAgentMapper(ABC):
             return 'google'
         elif 'cohere' in module_lower:
             return 'cohere'
-        
+
         return 'unknown'
-    
+
     @abstractmethod
     def map_agent_metadata(self, agent: Any, schema_version: str) -> AgentMetadataSchema:
         """Map agent to standardized metadata schema.
-        
+
         Args:
             agent: Framework-specific agent instance
             schema_version: Schema version to use
-            
+
         Returns:
             AgentMetadataSchema with extracted metadata
         """

@@ -46,26 +46,26 @@ class TestStrandsMapper(unittest.TestCase):
         """Test mapping when no SessionAgent exists in the session."""
         session_manager = make_mock_session_manager()
         session_manager._read_state.return_value = None
-        
-        result = self.mapper.map_agent_metadata(session_manager, "edge")
-        
+
+        result = self.mapper.map_agent_metadata(session_manager, 'edge')
+
         # Should use fallback values
-        self.assertEqual(result.schema_version, "edge")
-        self.assertEqual(result.agent.role, "Session Manager")
-        self.assertEqual(result.agent.type, "Strands")
+        self.assertEqual(result.schema_version, 'edge')
+        self.assertEqual(result.agent.role, 'Session Manager')
+        self.assertEqual(result.agent.type, 'Strands')
         self.assertIsNone(result.llm)
         self.assertEqual(result.tools, [])  # Empty list, not None
         self.assertIsNone(result.tool_choice)
         self.assertIsNone(result.max_iterations)
-        self.assertEqual(result.name, "strands-session-test-session")
+        self.assertEqual(result.name, 'strands-session-test-session')
 
     def test_map_agent_metadata_with_basic_agent(self):
         """Test mapping with a basic SessionAgent."""
         session_manager = make_mock_session_manager()
-        
+
         # Mock manifest
         session_manager._read_state.return_value = {'agents': ['assistant']}
-        
+
         # Mock agent
         agent_state = {
             'system_prompt': 'You are a helpful assistant',
@@ -74,58 +74,62 @@ class TestStrandsMapper(unittest.TestCase):
         }
         mock_agent = make_mock_session_agent('assistant', agent_state)
         session_manager.read_agent.return_value = mock_agent
-        
-        result = self.mapper.map_agent_metadata(session_manager, "edge")
-        
+
+        result = self.mapper.map_agent_metadata(session_manager, 'edge')
+
         # Should extract from SessionAgent
-        self.assertEqual(result.agent.role, "AI Assistant")
-        self.assertEqual(result.agent.goal, "Help users")
-        self.assertEqual(result.agent.system_prompt, "You are a helpful assistant")
-        self.assertEqual(result.name, "strands-test-session-assistant")
+        self.assertEqual(result.agent.role, 'AI Assistant')
+        self.assertEqual(result.agent.goal, 'Help users')
+        self.assertEqual(result.agent.system_prompt, 'You are a helpful assistant')
+        self.assertEqual(result.name, 'strands-test-session-assistant')
         self.assertEqual(result.agent_metadata['agent_id'], 'assistant')
 
     def test_map_agent_metadata_with_llm_config(self):
         """Test mapping with LLM configuration."""
         session_manager = make_mock_session_manager()
         session_manager._read_state.return_value = {'agents': ['assistant']}
-        
+
         agent_state = {
             'system_prompt': 'You are helpful',
             'conversation_provider': 'openai',
             'llm_config': {
                 'provider': 'openai',
                 'model': 'gpt-4',
-            }
+            },
         }
         mock_agent = make_mock_session_agent('assistant', agent_state)
         session_manager.read_agent.return_value = mock_agent
-        
-        result = self.mapper.map_agent_metadata(session_manager, "edge")
-        
+
+        result = self.mapper.map_agent_metadata(session_manager, 'edge')
+
         # Should extract LLM metadata
         self.assertIsNotNone(result.llm)
-        self.assertEqual(result.llm.client, "dapr_conversation")
-        self.assertEqual(result.llm.provider, "openai")
-        self.assertEqual(result.llm.model, "gpt-4")
-        self.assertEqual(result.llm.component_name, "openai")
+        self.assertEqual(result.llm.client, 'dapr_conversation')
+        self.assertEqual(result.llm.provider, 'openai')
+        self.assertEqual(result.llm.model, 'gpt-4')
+        self.assertEqual(result.llm.component_name, 'openai')
 
     def test_map_agent_metadata_with_tools(self):
         """Test mapping with tools configuration."""
         session_manager = make_mock_session_manager()
         session_manager._read_state.return_value = {'agents': ['assistant']}
-        
+
         agent_state = {
             'tools': [
-                {'name': 'calculator', 'description': 'Calculate math', 'args': {'x': 'int', 'y': 'int'}},
+                {
+                    'name': 'calculator',
+                    'description': 'Calculate math',
+                    'args': {'x': 'int', 'y': 'int'},
+                },
                 {'name': 'search', 'description': 'Search web', 'args': {'query': 'str'}},
             ],
             'tool_choice': 'auto',
         }
         mock_agent = make_mock_session_agent('assistant', agent_state)
         session_manager.read_agent.return_value = mock_agent
-        
-        result = self.mapper.map_agent_metadata(session_manager, "edge")
-        
+
+        result = self.mapper.map_agent_metadata(session_manager, 'edge')
+
         # Should extract tools metadata
         self.assertIsNotNone(result.tools)
         self.assertEqual(len(result.tools), 2)
@@ -138,16 +142,16 @@ class TestStrandsMapper(unittest.TestCase):
         """Test mapping with instructions."""
         session_manager = make_mock_session_manager()
         session_manager._read_state.return_value = {'agents': ['assistant']}
-        
+
         agent_state = {
             'instructions': ['Be concise', 'Be helpful', 'Be friendly'],
             'max_iterations': 10,
         }
         mock_agent = make_mock_session_agent('assistant', agent_state)
         session_manager.read_agent.return_value = mock_agent
-        
-        result = self.mapper.map_agent_metadata(session_manager, "edge")
-        
+
+        result = self.mapper.map_agent_metadata(session_manager, 'edge')
+
         # Should extract instructions and max_iterations
         self.assertIsNotNone(result.agent.instructions)
         self.assertEqual(len(result.agent.instructions), 3)
@@ -170,10 +174,10 @@ class TestStrandsMapper(unittest.TestCase):
         mock_tool.name = 'my_tool'
         mock_tool.description = 'My tool description'
         mock_tool.args = {'param': 'value'}
-        
+
         agent_state = {'tools': [mock_tool]}
         result = self.mapper._extract_tools_metadata(agent_state)
-        
+
         self.assertIsNotNone(result)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0].tool_name, 'my_tool')

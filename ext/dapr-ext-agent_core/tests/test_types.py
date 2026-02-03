@@ -213,9 +213,7 @@ class AgentMetadataSchemaTest(unittest.TestCase):
             llm=LLMMetadata(client='OpenAI', provider='openai'),
             registry=RegistryMetadata(name='team-1'),
             tools=[
-                ToolMetadata(
-                    tool_name='search', tool_description='Search tool', tool_args='{}'
-                )
+                ToolMetadata(tool_name='search', tool_description='Search tool', tool_args='{}')
             ],
             max_iterations=10,
             tool_choice='auto',

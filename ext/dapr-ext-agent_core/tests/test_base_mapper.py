@@ -20,19 +20,25 @@ class TestBaseAgentMapper(unittest.TestCase):
 
     def test_extract_provider_openai(self):
         """Test provider extraction for OpenAI modules."""
-        self.assertEqual(BaseAgentMapper._extract_provider('langchain_openai.chat_models'), 'openai')
+        self.assertEqual(
+            BaseAgentMapper._extract_provider('langchain_openai.chat_models'), 'openai'
+        )
         self.assertEqual(BaseAgentMapper._extract_provider('openai.resources'), 'openai')
         self.assertEqual(BaseAgentMapper._extract_provider('strands.models.openai'), 'openai')
 
     def test_extract_provider_azure_openai(self):
         """Test provider extraction for Azure OpenAI modules."""
-        self.assertEqual(BaseAgentMapper._extract_provider('langchain_openai.azure'), 'azure_openai')
+        self.assertEqual(
+            BaseAgentMapper._extract_provider('langchain_openai.azure'), 'azure_openai'
+        )
         self.assertEqual(BaseAgentMapper._extract_provider('azure.openai'), 'azure_openai')
         self.assertEqual(BaseAgentMapper._extract_provider('AZURE_OPENAI'), 'azure_openai')
 
     def test_extract_provider_anthropic(self):
         """Test provider extraction for Anthropic modules."""
-        self.assertEqual(BaseAgentMapper._extract_provider('langchain_anthropic.chat_models'), 'anthropic')
+        self.assertEqual(
+            BaseAgentMapper._extract_provider('langchain_anthropic.chat_models'), 'anthropic'
+        )
         self.assertEqual(BaseAgentMapper._extract_provider('anthropic.client'), 'anthropic')
         self.assertEqual(BaseAgentMapper._extract_provider('strands.models.anthropic'), 'anthropic')
 
