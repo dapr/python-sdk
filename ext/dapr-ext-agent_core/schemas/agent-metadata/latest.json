@@ -199,19 +199,6 @@
           "default": null,
           "description": "Dapr state store component name for memory",
           "title": "Statestore"
-        },
-        "session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Default session ID for the agent's memory",
-          "title": "Session Id"
         }
       },
       "required": [

@@ -48,9 +48,6 @@ class MemoryMetadata(BaseModel):
     statestore: Optional[str] = Field(
         default=None, description='Dapr state store component name for memory'
     )
-    session_id: Optional[str] = Field(
-        default=None, description="Default session ID for the agent's memory"
-    )
 
 
 class LLMMetadata(BaseModel):

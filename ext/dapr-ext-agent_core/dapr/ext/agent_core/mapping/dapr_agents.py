@@ -63,7 +63,6 @@ class DaprAgentsMapper(BaseAgentMapper):
             ),
             memory=MemoryMetadata(
                 type=type(memory).__name__ if memory else '',
-                session_id=getattr(memory, 'session_id', None) if memory else None,
                 statestore=getattr(memory, 'store_name', None) if memory else None,
             ),
             llm=LLMMetadata(

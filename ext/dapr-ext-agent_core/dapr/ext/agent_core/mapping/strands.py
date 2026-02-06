@@ -423,7 +423,6 @@ class StrandsMapper(BaseAgentMapper):
             pubsub=None,
             memory=MemoryMetadata(
                 type='DaprSessionManager',
-                session_id=session_id,
                 statestore=state_store_name,
             ),
             llm=llm_metadata,
