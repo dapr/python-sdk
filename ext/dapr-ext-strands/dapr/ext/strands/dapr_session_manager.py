@@ -66,8 +66,38 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         self._ttl = ttl
         self._consistency = consistency
         self._owns_client = False
+        self._session_id = session_id
+        self._registry_initialized = False
 
         super().__init__(session_id=session_id, session_repository=self)
+
+    @property
+    def state_store_name(self) -> str:
+        """Get the Dapr state store name.
+
+        Returns:
+            Name of the Dapr state store component.
+        """
+        return self._state_store_name
+
+    def _register_with_agent_registry(self) -> Optional[Any]:
+        """Register or update this session manager in the agent registry.
+
+        Returns:
+            AgentRegistryAdapter if registration succeeded, None otherwise.
+        """
+        try:
+            from dapr.ext.agent_core.metadata import AgentRegistryAdapter
+
+            return AgentRegistryAdapter.create_from_stack(registry=None)
+
+        except ImportError:
+            # agent_core extension not installed, skip registration
+            pass
+        except Exception as e:
+            logger.debug(f'Agent registry registration skipped: {e}')
+
+        return None
 
     @classmethod
     def from_address(
@@ -219,6 +249,12 @@ class DaprSessionManager(RepositorySessionManager, SessionRepository):
         Raises:
             SessionException: If write fails.
         """
+        # Register with agent registry on first write (similar to LangGraph's put())
+        if not self._registry_initialized:
+            registry_adapter = self._register_with_agent_registry()
+            if registry_adapter:
+                self._registry_initialized = True
+
         try:
             content = json.dumps(data, ensure_ascii=False)
             self._dapr_client.save_state(
