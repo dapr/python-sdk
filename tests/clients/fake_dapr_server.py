@@ -582,6 +582,20 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
             # Create result for this input
             result = api_v1.ConversationResultAlpha2(choices=choices)
+            if hasattr(result, 'model'):
+                result.model = 'test-llm'
+            if hasattr(result, 'usage'):
+                try:
+                    usage_cls = getattr(api_v1, 'ConversationResultAlpha2CompletionUsage', None)
+                    if usage_cls is not None:
+                        u = usage_cls(
+                            completion_tokens=10,
+                            prompt_tokens=5,
+                            total_tokens=15,
+                        )
+                        result.usage.CopyFrom(u)
+                except Exception:
+                    pass
             outputs.append(result)
 
         return api_v1.ConversationResponseAlpha2(
