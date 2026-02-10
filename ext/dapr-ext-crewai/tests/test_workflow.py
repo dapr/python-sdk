@@ -15,6 +15,8 @@ limitations under the License.
 
 # Tests for workflow and activities.
 
+import unittest
+
 from dapr.ext.crewai.models import (
     AgentConfig,
     TaskConfig,
@@ -30,8 +32,8 @@ from dapr.ext.crewai.workflow import (
 )
 
 
-class TestToolRegistry:
-    def setup_method(self):
+class TestToolRegistry(unittest.TestCase):
+    def setUp(self):
         """Clear registry before each test."""
         clear_tool_registry()
 
@@ -63,7 +65,7 @@ class TestToolRegistry:
         assert get_registered_tool('my_tool') is None
 
 
-class TestExecuteTool:
+class TestExecuteTool(unittest.TestCase):
     def test_execute_callable(self):
         def add(a: int, b: int) -> int:
             return a + b
@@ -99,7 +101,7 @@ class TestExecuteTool:
         assert 'invoked with' in result
 
 
-class TestBuildSystemPrompt:
+class TestBuildSystemPrompt(unittest.TestCase):
     def test_default_prompt(self):
         agent_config = AgentConfig(
             role='Research Assistant',

@@ -16,6 +16,7 @@ limitations under the License.
 # Tests for data models.
 
 import json
+import unittest
 
 from dapr.ext.crewai.models import (
     AgentConfig,
@@ -32,7 +33,7 @@ from dapr.ext.crewai.models import (
 )
 
 
-class TestToolCall:
+class TestToolCall(unittest.TestCase):
     def test_to_dict(self):
         tc = ToolCall(id='call_123', name='search', args={'query': 'test'})
         result = tc.to_dict()
@@ -57,7 +58,7 @@ class TestToolCall:
         assert original.args == roundtripped.args
 
 
-class TestToolResult:
+class TestToolResult(unittest.TestCase):
     def test_to_dict(self):
         tr = ToolResult(
             tool_call_id='call_123',
@@ -82,7 +83,7 @@ class TestToolResult:
         assert tr.result is None
 
 
-class TestMessage:
+class TestMessage(unittest.TestCase):
     def test_user_message(self):
         msg = Message(role=MessageRole.USER, content='Hello')
         data = msg.to_dict()
@@ -127,7 +128,7 @@ class TestMessage:
         assert len(original.tool_calls) == len(roundtripped.tool_calls)
 
 
-class TestAgentConfig:
+class TestAgentConfig(unittest.TestCase):
     def test_to_dict(self):
         config = AgentConfig(
             role='Research Assistant',
@@ -159,7 +160,7 @@ class TestAgentConfig:
         assert config.verbose is True
 
 
-class TestAgentWorkflowInput:
+class TestAgentWorkflowInput(unittest.TestCase):
     def test_json_serializable(self):
         """Test that the entire input can be JSON serialized."""
         agent_config = AgentConfig(
@@ -189,7 +190,7 @@ class TestAgentWorkflowInput:
         assert parsed.agent_config.role == 'Assistant'
 
 
-class TestAgentWorkflowOutput:
+class TestAgentWorkflowOutput(unittest.TestCase):
     def test_completed_output(self):
         output = AgentWorkflowOutput(
             final_response='The answer is 42',
@@ -214,7 +215,7 @@ class TestAgentWorkflowOutput:
         assert data['error'] == 'Something went wrong'
 
 
-class TestCallLlmInput:
+class TestCallLlmInput(unittest.TestCase):
     def test_to_dict(self):
         agent_config = AgentConfig(
             role='Assistant',
@@ -237,7 +238,7 @@ class TestCallLlmInput:
         assert 'messages' in data
 
 
-class TestExecuteToolInput:
+class TestExecuteToolInput(unittest.TestCase):
     def test_to_dict(self):
         tc = ToolCall(id='call_123', name='search', args={'query': 'test'})
         tool_input = ExecuteToolInput(
