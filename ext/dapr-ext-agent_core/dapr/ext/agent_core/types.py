@@ -1,10 +1,10 @@
-from enum import StrEnum
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 
-class SupportedFrameworks(StrEnum):
+class SupportedFrameworks(str, Enum):
     DAPR_AGENTS = 'dapr_agents'
     LANGGRAPH = 'langgraph'
     STRANDS = 'strands'
