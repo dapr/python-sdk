@@ -76,15 +76,14 @@
         "framework": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/$defs/SupportedFrameworks"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Framework or library the agent is built with",
-          "title": "Framework"
+          "description": "Framework or library the agent is built with"
         }
       },
       "required": [
@@ -293,6 +292,15 @@
       },
       "title": "RegistryMetadata",
       "type": "object"
+    },
+    "SupportedFrameworks": {
+      "enum": [
+        "Dapr Agents",
+        "LangGraph",
+        "Strands"
+      ],
+      "title": "SupportedFrameworks",
+      "type": "string"
     },
     "ToolMetadata": {
       "description": "Metadata about a tool available to the agent.",

@@ -5,10 +5,9 @@ from pydantic import BaseModel, Field
 
 
 class SupportedFrameworks(str, Enum):
-    DAPR_AGENTS = 'dapr_agents'
-    LANGGRAPH = 'langgraph'
-    STRANDS = 'strands'
-
+    DAPR_AGENTS = 'Dapr Agents'
+    LANGGRAPH = 'LangGraph'
+    STRANDS = 'Strands'
 
 class AgentMetadata(BaseModel):
     """Metadata about an agent's configuration and capabilities."""
@@ -27,7 +26,7 @@ class AgentMetadata(BaseModel):
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt guiding the agent's behavior"
     )
-    framework: Optional[str] = Field(
+    framework: Optional[SupportedFrameworks] = Field(
         default=None, description='Framework or library the agent is built with'
     )
 

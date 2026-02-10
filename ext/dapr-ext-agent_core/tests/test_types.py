@@ -32,22 +32,21 @@ class SupportedFrameworksTest(unittest.TestCase):
 
     def test_dapr_agents_value(self):
         """Test DAPR_AGENTS enum value."""
-        self.assertEqual(SupportedFrameworks.DAPR_AGENTS.value, 'dapr-agents')
+        self.assertEqual(SupportedFrameworks.DAPR_AGENTS.value, 'Dapr Agents')
 
     def test_langgraph_value(self):
         """Test LANGGRAPH enum value."""
-        self.assertEqual(SupportedFrameworks.LANGGRAPH.value, 'langgraph')
-
+        self.assertEqual(SupportedFrameworks.LANGGRAPH.value, 'LangGraph')
     def test_strands_value(self):
         """Test STRANDS enum value."""
-        self.assertEqual(SupportedFrameworks.STRANDS.value, 'strands')
+        self.assertEqual(SupportedFrameworks.STRANDS.value, 'Strands')
 
     def test_all_frameworks_present(self):
         """Test all expected frameworks are present."""
         framework_values = [f.value for f in SupportedFrameworks]
-        self.assertIn('dapr-agents', framework_values)
-        self.assertIn('langgraph', framework_values)
-        self.assertIn('strands', framework_values)
+        self.assertIn('Dapr Agents', framework_values)
+        self.assertIn('LangGraph', framework_values)
+        self.assertIn('Strands', framework_values)
 
 
 class AgentMetadataTest(unittest.TestCase):

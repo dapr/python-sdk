@@ -12,9 +12,8 @@ from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union
 from dapr.clients.grpc._response import BulkStateItem, StateResponse
 from pydantic import BaseModel, ValidationError
 
-from dapr.ext.agent_core import (
+from dapr.ext.agent_core.state import (
     DaprStateStore,
-    _coerce_state_options,
 )
 
 logger = logging.getLogger(__name__)

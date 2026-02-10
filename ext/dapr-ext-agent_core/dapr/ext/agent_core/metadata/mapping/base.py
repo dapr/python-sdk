@@ -12,9 +12,10 @@ limitations under the License.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from dapr.ext.agent_core.types import AgentMetadataSchema
+if TYPE_CHECKING:
+    from dapr.ext.agent_core.types import AgentMetadataSchema
 
 
 class BaseAgentMapper(ABC):

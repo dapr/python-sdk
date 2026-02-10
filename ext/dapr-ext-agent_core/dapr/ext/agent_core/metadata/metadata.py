@@ -7,9 +7,11 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from dapr.ext.agent_core.metadata.mapping import DaprAgentsMapper, LangGraphMapper, StrandsMapper
-from dapr.ext.agent_core import (
+from dapr.ext.agent_core.metadata import (
     detect_framework,
     find_agent_in_stack,
+)
+from dapr.ext.agent_core.types import (
     AgentMetadataSchema,
     SupportedFrameworks,
     StateStoreError,

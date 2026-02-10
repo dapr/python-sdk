@@ -11,7 +11,7 @@ from dapr.clients.grpc._response import (
 )
 from dapr.clients.grpc._state import StateItem, StateOptions
 
-from dapr.ext.agent_core import DaprStoreBase
+from dapr.ext.agent_core.state import DaprStoreBase
 
 
 def coerce_state_options(
