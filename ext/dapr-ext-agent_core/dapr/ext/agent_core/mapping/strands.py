@@ -334,6 +334,7 @@ class StrandsMapper(BaseAgentMapper):
                     else None,
                     statestore=state_store_name,  # Set from session manager
                     system_prompt=extracted.get('system_prompt'),
+                    framework='Strands',
                 ),
                 name=full_name,
                 registered_at=datetime.now(timezone.utc).isoformat(),

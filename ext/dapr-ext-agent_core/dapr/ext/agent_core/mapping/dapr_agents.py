@@ -53,6 +53,7 @@ class DaprAgentsMapper(BaseAgentMapper):
                 instructions=getattr(profile, 'instructions', None) if profile else [],
                 statestore=getattr(memory, 'store_name', '') if memory else '',
                 system_prompt=getattr(profile, 'system_prompt', '') if profile else '',
+                framework='Dapr Agents',
             ),
             name=getattr(agent, 'name', ''),
             registered_at=datetime.now(timezone.utc).isoformat(),

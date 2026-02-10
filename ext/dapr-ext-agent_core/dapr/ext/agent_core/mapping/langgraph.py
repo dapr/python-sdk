@@ -103,6 +103,7 @@ class LangGraphMapper(BaseAgentMapper):
                 instructions=[],
                 statestore=checkpointer.state_store_name if checkpointer else None,  # type: ignore
                 system_prompt='',
+                framework='LangGraph',
             ),
             name=agent.get_name() if hasattr(agent, 'get_name') else '',
             registered_at=datetime.now(timezone.utc).isoformat(),
