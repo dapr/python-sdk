@@ -16,6 +16,10 @@ updates:
     directory: "/ext/flask_dapr"
     schedule:
       interval: "daily"
+  - package-ecosystem: "pip"
+    directory: "/ext/dapr-ext-crewai"
+    schedule:
+      interval: "daily"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

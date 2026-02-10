@@ -28,6 +28,7 @@ on:
       - fastapi-v*
       - langgraph-v*
       - strands-v*
+      - crewai-v*
   pull_request:
     branches:
       - main

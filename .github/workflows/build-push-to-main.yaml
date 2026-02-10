@@ -120,3 +120,10 @@ jobs:
         cd ext/dapr-ext-strands
         python setup.py sdist bdist_wheel
         twine upload dist/*
+    - name: Build and publish dapr-ext-crewai
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd ext/dapr-ext-crewai
+        python setup.py sdist bdist_wheel
+        twine upload dist/*

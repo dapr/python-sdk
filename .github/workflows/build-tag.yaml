@@ -10,6 +10,7 @@ on:
       - fastapi-v*
       - langgraph-v*
       - strands-v*
+      - crewai-v*
   workflow_dispatch:
 
 jobs:
@@ -131,5 +132,13 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-strands
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish dapr-ext-crewai
+      if: startsWith(github.ref_name, 'crewai-v')
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd ext/dapr-ext-crewai
         python setup.py sdist bdist_wheel
         twine upload dist/*
