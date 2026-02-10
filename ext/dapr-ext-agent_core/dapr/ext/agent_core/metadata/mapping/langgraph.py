@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from dapr.ext.agent_core.mapping.base import BaseAgentMapper
+from dapr.ext.agent_core.metadata.mapping.base import BaseAgentMapper
 from dapr.ext.agent_core.types import (
     AgentMetadata,
     AgentMetadataSchema,

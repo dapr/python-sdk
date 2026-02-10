@@ -6,13 +6,10 @@ import time
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Callable, Dict, Optional, Sequence
 
-import dapr.ext.agent_core.mapping
-from dapr.ext.agent_core.introspection import detect_framework, find_agent_in_stack
-from dapr.ext.agent_core.types import AgentMetadataSchema, SupportedFrameworks
-from dapr_agents.agents.configs import (
-    AgentRegistryConfig,
-)
-from dapr_agents.storage.daprstores.stateservice import StateStoreError, StateStoreService
+from dapr.ext.agent_core.metadata.mapping import DaprAgentsMapper, LangGraphMapper, StrandsMapper
+from dapr.ext.agent_core import detect_framework, find_agent_in_stack, AgentMetadataSchema, SupportedFrameworks, StateStoreError, AgentRegistryConfig
+
+from dapr_agents.storage.daprstores.stateservice import StateStoreService
 
 from dapr.clients import DaprClient
 from dapr.clients.grpc._response import (
@@ -113,9 +110,9 @@ class AgentRegistryAdapter:
             schema_version = 'edge'
 
         framework_mappers = {
-            SupportedFrameworks.DAPR_AGENTS: dapr.ext.agent_core.mapping.DaprAgentsMapper().map_agent_metadata,
-            SupportedFrameworks.LANGGRAPH: dapr.ext.agent_core.mapping.LangGraphMapper().map_agent_metadata,
-            SupportedFrameworks.STRANDS: dapr.ext.agent_core.mapping.StrandsMapper().map_agent_metadata,
+            SupportedFrameworks.DAPR_AGENTS: DaprAgentsMapper().map_agent_metadata,
+            SupportedFrameworks.LANGGRAPH: LangGraphMapper().map_agent_metadata,
+            SupportedFrameworks.STRANDS: StrandsMapper().map_agent_metadata,
         }
 
         mapper = framework_mappers.get(self._framework)

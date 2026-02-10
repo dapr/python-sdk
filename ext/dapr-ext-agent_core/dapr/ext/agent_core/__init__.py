@@ -1,5 +1,8 @@
-from .introspection import detect_framework, find_agent_in_stack
-from .metadata import AgentRegistryAdapter
+from .metadata import (
+    AgentRegistryAdapter,
+    detect_framework, 
+    find_agent_in_stack,
+)
 from .types import (
     AgentMetadata,
     AgentMetadataSchema,
@@ -9,6 +12,14 @@ from .types import (
     RegistryMetadata,
     SupportedFrameworks,
     ToolMetadata,
+    StateStoreError,
+    AgentRegistryConfig,
+)
+from .state import (
+    DaprStoreBase,
+    DaprStateStore,
+    coerce_state_options,
+    StateStoreService,
 )
 
 __all__ = [
@@ -23,4 +34,10 @@ __all__ = [
     'AgentRegistryAdapter',
     'find_agent_in_stack',
     'detect_framework',
+    'StateStoreError',
+    'AgentRegistryConfig',
+    'DaprStoreBase',
+    'DaprStateStore',
+    'coerce_state_options',
+    'StateStoreService',
 ]
