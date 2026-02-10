@@ -72,6 +72,19 @@
           "default": null,
           "description": "System prompt guiding the agent's behavior",
           "title": "System Prompt"
+        },
+        "framework": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Framework or library the agent is built with",
+          "title": "Framework"
         }
       },
       "required": [
