@@ -47,7 +47,7 @@ class DaprAgentsMapper(BaseAgentMapper):
             agent=AgentMetadata(
                 appid=getattr(agent, 'appid', ''),
                 type=type(agent).__name__,
-                orchestrator=False,
+                orchestrator=True if (getattr(execution, 'orchestration_mode', None) if execution else None) else False,
                 role=getattr(profile, 'role', '') if profile else '',
                 goal=getattr(profile, 'goal', '') if profile else '',
                 instructions=getattr(profile, 'instructions', None) if profile else [],
