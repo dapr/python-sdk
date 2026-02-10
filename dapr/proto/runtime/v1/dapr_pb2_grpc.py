@@ -100,6 +100,11 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishResponse.FromString,
                 _registered_method=True)
+        self.BulkPublishEvent = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/BulkPublishEvent',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishResponse.FromString,
+                _registered_method=True)
         self.SubscribeTopicEventsAlpha1 = channel.stream_stream(
                 '/dapr.proto.runtime.v1.Dapr/SubscribeTopicEventsAlpha1',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.SubscribeTopicEventsRequestAlpha1.SerializeToString,
@@ -446,6 +451,13 @@ class DaprServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def BulkPublishEventAlpha1(self, request, context):
+        """Deprecated: Bulk Publishes multiple events to the specified topic.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def BulkPublishEvent(self, request, context):
         """Bulk Publishes multiple events to the specified topic.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -884,6 +896,11 @@ def add_DaprServicer_to_server(servicer, server):
             ),
             'BulkPublishEventAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.BulkPublishEventAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishResponse.SerializeToString,
+            ),
+            'BulkPublishEvent': grpc.unary_unary_rpc_method_handler(
+                    servicer.BulkPublishEvent,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishResponse.SerializeToString,
             ),
@@ -1432,6 +1449,33 @@ class Dapr(object):
             request,
             target,
             '/dapr.proto.runtime.v1.Dapr/BulkPublishEventAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def BulkPublishEvent(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/BulkPublishEvent',
             dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2.BulkPublishResponse.FromString,
             options,

@@ -25,8 +25,10 @@ from warnings import warn
 
 import grpc  # type: ignore
 from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.duration_pb2 import Duration as GrpcDuration
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.struct_pb2 import Struct as GrpcStruct
 from grpc import (  # type: ignore
     RpcError,
     StreamStreamClientInterceptor,
@@ -1787,6 +1789,8 @@ class DaprGrpcClient:
         temperature: Optional[float] = None,
         tools: Optional[List[conversation.ConversationTools]] = None,
         tool_choice: Optional[str] = None,
+        response_format: Optional[GrpcStruct] = None,
+        prompt_cache_retention: Optional[GrpcDuration] = None,
     ) -> conversation.ConversationResponseAlpha2:
         """Invoke an LLM using the conversation API (Alpha2) with tool calling support.
 
@@ -1800,6 +1804,8 @@ class DaprGrpcClient:
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
             tools: Optional list of tools available for the LLM to call
             tool_choice: Optional control over which tools can be called ('none', 'auto', 'required', or specific tool name)
+            response_format: Optional response format (google.protobuf.struct_pb2.Struct, ex: json_schema for structured output)
+            prompt_cache_retention: Optional retention for prompt cache (google.protobuf.duration_pb2.Duration)
 
         Returns:
             ConversationResponseAlpha2 containing the conversation results with choices and tool calls
@@ -1856,6 +1862,10 @@ class DaprGrpcClient:
             request.temperature = temperature
         if tool_choice is not None:
             request.tool_choice = tool_choice
+        if response_format is not None and hasattr(request, 'response_format'):
+            request.response_format.CopyFrom(response_format)
+        if prompt_cache_retention is not None and hasattr(request, 'prompt_cache_retention'):
+            request.prompt_cache_retention.CopyFrom(prompt_cache_retention)
 
         try:
             response, call = self.retry_policy.run_rpc(self._stub.ConverseAlpha2.with_call, request)
