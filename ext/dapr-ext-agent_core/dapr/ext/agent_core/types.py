@@ -27,6 +27,9 @@ class AgentMetadata(BaseModel):
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt guiding the agent's behavior"
     )
+    framework: Optional[str] = Field(
+        default=None, description='Framework or library the agent is built with'
+    )
 
 
 class PubSubMetadata(BaseModel):
