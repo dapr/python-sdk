@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from dapr.ext.agent_core.types import SupportedFrameworks
 from dapr.ext.agent_core.metadata.mapping.base import BaseAgentMapper
 from dapr.ext.agent_core.types import (
     AgentMetadata,
@@ -334,14 +335,13 @@ class StrandsMapper(BaseAgentMapper):
                     else None,
                     statestore=state_store_name,  # Set from session manager
                     system_prompt=extracted.get('system_prompt'),
-                    framework='Strands',
+                    framework=SupportedFrameworks.STRANDS,
                 ),
                 name=full_name,
                 registered_at=datetime.now(timezone.utc).isoformat(),
                 pubsub=None,
                 memory=MemoryMetadata(
                     type=memory_type,
-                    session_id=session_id_value,  # Set session_id
                     statestore=state_store_name,  # Set statestore
                 ),
                 llm=llm_metadata,
@@ -418,6 +418,7 @@ class StrandsMapper(BaseAgentMapper):
                 instructions=instructions if instructions else None,
                 statestore=state_store_name,
                 system_prompt=system_prompt,
+                framework=SupportedFrameworks.STRANDS,
             ),
             name=agent_name,
             registered_at=datetime.now(timezone.utc).isoformat(),

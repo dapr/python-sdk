@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
+from dapr.ext.agent_core.types import SupportedFrameworks
 from dapr.ext.agent_core.metadata.mapping import BaseAgentMapper
 from dapr.ext.agent_core.types import (
     AgentMetadata,
@@ -55,7 +56,7 @@ class DaprAgentsMapper(BaseAgentMapper):
                 instructions=getattr(profile, 'instructions', None) if profile else [],
                 statestore=getattr(memory, 'store_name', '') if memory else '',
                 system_prompt=getattr(profile, 'system_prompt', '') if profile else '',
-                framework='Dapr Agents',
+                framework=SupportedFrameworks.DAPR_AGENTS,
             ),
             name=getattr(agent, 'name', ''),
             registered_at=datetime.now(timezone.utc).isoformat(),
