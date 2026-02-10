@@ -1,6 +1,6 @@
 from .metadata import (
     AgentRegistryAdapter,
-    detect_framework, 
+    detect_framework,
     find_agent_in_stack,
 )
 from .types import (

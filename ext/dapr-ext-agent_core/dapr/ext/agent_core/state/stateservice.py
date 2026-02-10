@@ -19,6 +19,7 @@ from dapr.ext.agent_core import (
 
 logger = logging.getLogger(__name__)
 
+
 class StateStoreService:
     """
     High-level state helper that composes a `DaprStateStore` instance.
@@ -33,7 +34,7 @@ class StateStoreService:
         self,
         *,
         store_name: str,
-        key_prefix: str = "",
+        key_prefix: str = '',
         model: Optional[Type[BaseModel]] = None,
         mirror_writes: bool = False,
         local_mirror_path: Optional[str] = None,
@@ -57,7 +58,7 @@ class StateStoreService:
             retry_jitter: Proportional jitter [0,1] applied to backoff.
         """
         if not store_name:
-            raise StateStoreError("State store name is required (store_name).")
+            raise StateStoreError('State store name is required (store_name).')
 
         self.store_name = store_name
         self.key_prefix = key_prefix
@@ -69,9 +70,7 @@ class StateStoreService:
         self.retry_backoff_multiplier = max(1.0, retry_backoff_multiplier)
         self.retry_jitter = max(0.0, retry_jitter)
 
-        self._store_factory = store_factory or (
-            lambda: DaprStateStore(store_name=self.store_name)
-        )
+        self._store_factory = store_factory or (lambda: DaprStateStore(store_name=self.store_name))
         self._store_cached: Optional[DaprStateStore] = None
 
     def _store(self) -> DaprStateStore:
@@ -82,7 +81,7 @@ class StateStoreService:
 
     def _qualify(self, key: str) -> str:
         """Apply the configured key prefix to a logical key."""
-        return f"{self.key_prefix}{key}" if self.key_prefix else key
+        return f'{self.key_prefix}{key}' if self.key_prefix else key
 
     def _strip_prefix(self, qualified: str) -> str:
         """Remove the configured key prefix from a qualified key (best effort)."""
@@ -101,23 +100,19 @@ class StateStoreService:
                 attempt += 1
                 if attempt >= self.retry_attempts:
                     raise
-                sleep_for = delay * (
-                    1 + random.uniform(-self.retry_jitter, self.retry_jitter)
-                )
+                sleep_for = delay * (1 + random.uniform(-self.retry_jitter, self.retry_jitter))
                 if sleep_for > 0:
                     time.sleep(max(0.0, sleep_for))
                 delay *= self.retry_backoff_multiplier
-                logger.debug(
-                    "Retrying state operation after error: %s", exc, exc_info=True
-                )
+                logger.debug('Retrying state operation after error: %s', exc, exc_info=True)
 
     def _model_dump(self, model: BaseModel) -> Dict[str, Any]:
         """Dump a Pydantic model to dict (v2/v1 support)."""
-        if hasattr(model, "model_dump"):
+        if hasattr(model, 'model_dump'):
             return model.model_dump()
-        if hasattr(model, "dict"):
+        if hasattr(model, 'dict'):
             return model.dict()
-        raise StateStoreError(f"Unsupported pydantic model type: {type(model)}")
+        raise StateStoreError(f'Unsupported pydantic model type: {type(model)}')
 
     def _ensure_dict(self, value: Any) -> Dict[str, Any]:
         """
@@ -137,14 +132,14 @@ class StateStoreService:
             try:
                 parsed = json.loads(value)
             except json.JSONDecodeError as exc:
-                raise StateStoreError(f"State string is not valid JSON: {exc}") from exc
+                raise StateStoreError(f'State string is not valid JSON: {exc}') from exc
             if not isinstance(parsed, dict):
-                raise StateStoreError(f"Expected dict JSON, got {type(parsed)}")
+                raise StateStoreError(f'Expected dict JSON, got {type(parsed)}')
             return parsed
         if isinstance(value, bytes):
-            return self._ensure_dict(value.decode("utf-8"))
+            return self._ensure_dict(value.decode('utf-8'))
         raise StateStoreError(
-            f"Unsupported state type: {type(value)}. Expected dict, BaseModel, str, or bytes."
+            f'Unsupported state type: {type(value)}. Expected dict, BaseModel, str, or bytes.'
         )
 
     def _validate_model(
@@ -156,7 +151,7 @@ class StateStoreService:
         try:
             parsed = self.model(**payload)
         except ValidationError as exc:
-            raise StateStoreError(f"State validation failed: {exc.errors()}") from exc
+            raise StateStoreError(f'State validation failed: {exc.errors()}') from exc
         return parsed if return_model else self._model_dump(parsed)
 
     def _save_local_copy(self, *, key: str, data: Dict[str, Any]) -> None:
@@ -167,7 +162,7 @@ class StateStoreService:
         """
         directory = self.local_mirror_path or os.getcwd()
         os.makedirs(directory, exist_ok=True)
-        filename = f"{key}.json"
+        filename = f'{key}.json'
         file_path = os.path.join(directory, filename)
 
         tmp_fd, tmp_path = tempfile.mkstemp(dir=directory)
@@ -177,22 +172,20 @@ class StateStoreService:
                 existing: Dict[str, Any] = {}
                 if os.path.exists(file_path):
                     try:
-                        with open(file_path, "r", encoding="utf-8") as current:
+                        with open(file_path, 'r', encoding='utf-8') as current:
                             existing = json.load(current)
                     except json.JSONDecodeError:
-                        logger.debug(
-                            "Existing state file corrupt; overwriting", exc_info=True
-                        )
+                        logger.debug('Existing state file corrupt; overwriting', exc_info=True)
 
                 merged = _deep_merge(existing, data)
 
-                with open(tmp_path, "w", encoding="utf-8") as tmp_file:
+                with open(tmp_path, 'w', encoding='utf-8') as tmp_file:
                     json.dump(merged, tmp_file, indent=2)
 
                 os.replace(tmp_path, file_path)
         except Exception as exc:  # noqa: BLE001
-            logger.error("Failed to mirror state locally", exc_info=True)
-            raise StateStoreError(f"Failed to save local state mirror: {exc}") from exc
+            logger.error('Failed to mirror state locally', exc_info=True)
+            raise StateStoreError(f'Failed to save local state mirror: {exc}') from exc
         finally:
             if os.path.exists(tmp_path):
                 try:
@@ -221,7 +214,7 @@ class StateStoreService:
             Dict payload or model instance.
         """
         qualified = self._qualify(key)
-        logger.debug("Loading state from %s key=%s", self.store_name, qualified)
+        logger.debug('Loading state from %s key=%s', self.store_name, qualified)
 
         def call() -> StateResponse:
             return self._store().get_state(
@@ -232,19 +225,15 @@ class StateStoreService:
         try:
             response = self._with_retries(call)
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(
-                f"Failed to load state for key '{qualified}': {exc}"
-            ) from exc
+            raise StateStoreError(f"Failed to load state for key '{qualified}': {exc}") from exc
 
-        if not response or not getattr(response, "data", None):
+        if not response or not getattr(response, 'data', None):
             return default.copy() if isinstance(default, dict) else (default or {})
 
         try:
             state_data = response.json()
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(
-                f"State for key '{qualified}' is not valid JSON: {exc}"
-            ) from exc
+            raise StateStoreError(f"State for key '{qualified}' is not valid JSON: {exc}") from exc
 
         if not isinstance(state_data, dict):
             raise StateStoreError(
@@ -274,9 +263,7 @@ class StateStoreService:
             (dict_or_model, etag_or_none)
         """
         qualified = self._qualify(key)
-        logger.debug(
-            "Loading state with etag from %s key=%s", self.store_name, qualified
-        )
+        logger.debug('Loading state with etag from %s key=%s', self.store_name, qualified)
 
         def call() -> StateResponse:
             return self._store().get_state(
@@ -287,20 +274,16 @@ class StateStoreService:
         try:
             response = self._with_retries(call)
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(
-                f"Failed to load state for key '{qualified}': {exc}"
-            ) from exc
+            raise StateStoreError(f"Failed to load state for key '{qualified}': {exc}") from exc
 
-        if not response or not getattr(response, "data", None):
+        if not response or not getattr(response, 'data', None):
             data = default.copy() if isinstance(default, dict) else (default or {})
             return data, None
 
         try:
             state_data = response.json()
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(
-                f"State for key '{qualified}' is not valid JSON: {exc}"
-            ) from exc
+            raise StateStoreError(f"State for key '{qualified}' is not valid JSON: {exc}") from exc
 
         if not isinstance(state_data, dict):
             raise StateStoreError(
@@ -308,7 +291,7 @@ class StateStoreService:
             )
 
         payload = self._validate_model(state_data, return_model=return_model)
-        etag = getattr(response, "etag", None)
+        etag = getattr(response, 'etag', None)
         return payload, etag
 
     def load_many(
@@ -332,9 +315,7 @@ class StateStoreService:
             Mapping of logical key -> dict/model for keys that existed.
         """
         qualified_keys = [self._qualify(k) for k in keys]
-        logger.debug(
-            "Loading bulk state from %s keys=%s", self.store_name, qualified_keys
-        )
+        logger.debug('Loading bulk state from %s keys=%s', self.store_name, qualified_keys)
 
         def call() -> Sequence[BulkStateItem]:
             return self._store().get_bulk_state(
@@ -346,7 +327,7 @@ class StateStoreService:
         try:
             items = self._with_retries(call)
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(f"Failed to bulk load state: {exc}") from exc
+            raise StateStoreError(f'Failed to bulk load state: {exc}') from exc
 
         results: Dict[str, Union[Dict[str, Any], BaseModel]] = {}
         for item in items or []:
@@ -354,7 +335,7 @@ class StateStoreService:
             if not data_raw:
                 continue
             if isinstance(data_raw, bytes):
-                data_raw = data_raw.decode("utf-8")
+                data_raw = data_raw.decode('utf-8')
             try:
                 parsed = json.loads(data_raw)
             except Exception as exc:  # noqa: BLE001
@@ -362,9 +343,7 @@ class StateStoreService:
                     f"State for key '{item.key}' is not valid JSON: {exc}"
                 ) from exc
             logical_key = self._strip_prefix(item.key)
-            results[logical_key] = self._validate_model(
-                parsed, return_model=return_model
-            )
+            results[logical_key] = self._validate_model(parsed, return_model=return_model)
         return results
 
     def save(
@@ -394,10 +373,10 @@ class StateStoreService:
 
         metadata = dict(state_metadata or {})
         if ttl_in_seconds is not None:
-            metadata.setdefault("ttlInSeconds", str(ttl_in_seconds))
+            metadata.setdefault('ttlInSeconds', str(ttl_in_seconds))
 
         logger.debug(
-            "Saving state to %s key=%s etag=%s ttl=%s",
+            'Saving state to %s key=%s etag=%s ttl=%s',
             self.store_name,
             qualified,
             etag,
@@ -416,9 +395,7 @@ class StateStoreService:
         try:
             self._with_retries(call)
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(
-                f"Failed to save state for key '{qualified}': {exc}"
-            ) from exc
+            raise StateStoreError(f"Failed to save state for key '{qualified}': {exc}") from exc
 
         if self.mirror_writes:
             self._save_local_copy(key=qualified, data=payload_dict)
@@ -441,9 +418,7 @@ class StateStoreService:
             state_options: Dict or `StateOptions` controlling delete behavior.
         """
         qualified = self._qualify(key)
-        logger.debug(
-            "Deleting state from %s key=%s etag=%s", self.store_name, qualified, etag
-        )
+        logger.debug('Deleting state from %s key=%s etag=%s', self.store_name, qualified, etag)
 
         def call() -> None:
             self._store().delete_state(
@@ -456,9 +431,7 @@ class StateStoreService:
         try:
             self._with_retries(call)
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(
-                f"Failed to delete state for key '{qualified}': {exc}"
-            ) from exc
+            raise StateStoreError(f"Failed to delete state for key '{qualified}': {exc}") from exc
 
     def exists(self, *, key: str) -> bool:
         """
@@ -482,9 +455,7 @@ class StateStoreService:
             state_metadata: Optional metadata applied to each save.
             state_options: Dict or `StateOptions` applied to each save.
         """
-        logger.debug(
-            "Saving bulk state to %s keys=%s", self.store_name, list(items.keys())
-        )
+        logger.debug('Saving bulk state to %s keys=%s', self.store_name, list(items.keys()))
         metadata = state_metadata or {}
         options = _coerce_state_options(state_options)
 
@@ -505,7 +476,7 @@ class StateStoreService:
         try:
             self._with_retries(call)
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(f"Failed to bulk save state: {exc}") from exc
+            raise StateStoreError(f'Failed to bulk save state: {exc}') from exc
 
     def execute_transaction(
         self,
@@ -521,7 +492,7 @@ class StateStoreService:
             metadata: Optional request metadata.
         """
         logger.debug(
-            "Executing state transaction on %s operations=%s",
+            'Executing state transaction on %s operations=%s',
             self.store_name,
             operations,
         )
@@ -532,9 +503,7 @@ class StateStoreService:
         try:
             self._with_retries(call)
         except Exception as exc:  # noqa: BLE001
-            raise StateStoreError(
-                f"Failed to execute state transaction: {exc}"
-            ) from exc
+            raise StateStoreError(f'Failed to execute state transaction: {exc}') from exc
 
 
 def _deep_merge(original: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
