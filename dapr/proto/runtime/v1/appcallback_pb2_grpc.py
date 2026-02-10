@@ -64,6 +64,11 @@ class AppCallbackStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.BindingEventRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.BindingEventResponse.FromString,
                 _registered_method=True)
+        self.OnBulkTopicEvent = channel.unary_unary(
+                '/dapr.proto.runtime.v1.AppCallback/OnBulkTopicEvent',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkResponse.FromString,
+                _registered_method=True)
 
 
 class AppCallbackServicer(object):
@@ -110,6 +115,13 @@ class AppCallbackServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def OnBulkTopicEvent(self, request, context):
+        """Subscribes bulk events from Pubsub
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AppCallbackServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -137,6 +149,11 @@ def add_AppCallbackServicer_to_server(servicer, server):
                     servicer.OnBindingEvent,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.BindingEventRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.BindingEventResponse.SerializeToString,
+            ),
+            'OnBulkTopicEvent': grpc.unary_unary_rpc_method_handler(
+                    servicer.OnBulkTopicEvent,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -277,6 +294,33 @@ class AppCallback(object):
             '/dapr.proto.runtime.v1.AppCallback/OnBindingEvent',
             dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.BindingEventRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.BindingEventResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def OnBulkTopicEvent(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.AppCallback/OnBulkTopicEvent',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkResponse.FromString,
             options,
             channel_credentials,
             insecure,
