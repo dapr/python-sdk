@@ -14,60 +14,60 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import dapr.proto.runtime.v1.appcallback_pb2
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
+from collections import abc as _abc
+from dapr.proto.runtime.v1 import appcallback_pb2 as _appcallback_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class PublishEventRequest(google.protobuf.message.Message):
+@_typing.final
+class PublishEventRequest(_message.Message):
     """PublishEventRequest is the message to publish event data to pubsub topic"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    PUBSUB_NAME_FIELD_NUMBER: builtins.int
-    TOPIC_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    DATA_CONTENT_TYPE_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    pubsub_name: builtins.str
+    PUBSUB_NAME_FIELD_NUMBER: _builtins.int
+    TOPIC_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    DATA_CONTENT_TYPE_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    pubsub_name: _builtins.str
     """The name of the pubsub component"""
-    topic: builtins.str
+    topic: _builtins.str
     """The pubsub topic"""
-    data: builtins.bytes
+    data: _builtins.bytes
     """The data which will be published to topic."""
-    data_content_type: builtins.str
+    data_content_type: _builtins.str
     """The content type for the data (optional)."""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata passing to pub components
 
         metadata property:
@@ -77,178 +77,178 @@ class PublishEventRequest(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        pubsub_name: builtins.str = ...,
-        topic: builtins.str = ...,
-        data: builtins.bytes = ...,
-        data_content_type: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        pubsub_name: _builtins.str = ...,
+        topic: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        data_content_type: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "data_content_type", b"data_content_type", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "topic", b"topic"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "data_content_type", b"data_content_type", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "topic", b"topic"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___PublishEventRequest: typing_extensions.TypeAlias = PublishEventRequest
+Global___PublishEventRequest: _TypeAlias = PublishEventRequest  # noqa: Y015
 
-@typing.final
-class BulkPublishRequest(google.protobuf.message.Message):
+@_typing.final
+class BulkPublishRequest(_message.Message):
     """BulkPublishRequest is the message to bulk publish events to pubsub topic"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    PUBSUB_NAME_FIELD_NUMBER: builtins.int
-    TOPIC_FIELD_NUMBER: builtins.int
-    ENTRIES_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    pubsub_name: builtins.str
+    PUBSUB_NAME_FIELD_NUMBER: _builtins.int
+    TOPIC_FIELD_NUMBER: _builtins.int
+    ENTRIES_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    pubsub_name: _builtins.str
     """The name of the pubsub component"""
-    topic: builtins.str
+    topic: _builtins.str
     """The pubsub topic"""
-    @property
-    def entries(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___BulkPublishRequestEntry]:
+    @_builtins.property
+    def entries(self) -> _containers.RepeatedCompositeFieldContainer[Global___BulkPublishRequestEntry]:
         """The entries which contain the individual events and associated details to be published"""
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The request level metadata passing to to the pubsub components"""
 
     def __init__(
         self,
         *,
-        pubsub_name: builtins.str = ...,
-        topic: builtins.str = ...,
-        entries: collections.abc.Iterable[Global___BulkPublishRequestEntry] | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        pubsub_name: _builtins.str = ...,
+        topic: _builtins.str = ...,
+        entries: _abc.Iterable[Global___BulkPublishRequestEntry] | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["entries", b"entries", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "topic", b"topic"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["entries", b"entries", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "topic", b"topic"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___BulkPublishRequest: typing_extensions.TypeAlias = BulkPublishRequest
+Global___BulkPublishRequest: _TypeAlias = BulkPublishRequest  # noqa: Y015
 
-@typing.final
-class BulkPublishRequestEntry(google.protobuf.message.Message):
+@_typing.final
+class BulkPublishRequestEntry(_message.Message):
     """BulkPublishRequestEntry is the message containing the event to be bulk published"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    ENTRY_ID_FIELD_NUMBER: builtins.int
-    EVENT_FIELD_NUMBER: builtins.int
-    CONTENT_TYPE_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    entry_id: builtins.str
+    ENTRY_ID_FIELD_NUMBER: _builtins.int
+    EVENT_FIELD_NUMBER: _builtins.int
+    CONTENT_TYPE_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    entry_id: _builtins.str
     """The request scoped unique ID referring to this message. Used to map status in response"""
-    event: builtins.bytes
+    event: _builtins.bytes
     """The event which will be pulished to the topic"""
-    content_type: builtins.str
+    content_type: _builtins.str
     """The content type for the event"""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The event level metadata passing to the pubsub component"""
 
     def __init__(
         self,
         *,
-        entry_id: builtins.str = ...,
-        event: builtins.bytes = ...,
-        content_type: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        entry_id: _builtins.str = ...,
+        event: _builtins.bytes = ...,
+        content_type: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["content_type", b"content_type", "entry_id", b"entry_id", "event", b"event", "metadata", b"metadata"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["content_type", b"content_type", "entry_id", b"entry_id", "event", b"event", "metadata", b"metadata"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___BulkPublishRequestEntry: typing_extensions.TypeAlias = BulkPublishRequestEntry
+Global___BulkPublishRequestEntry: _TypeAlias = BulkPublishRequestEntry  # noqa: Y015
 
-@typing.final
-class BulkPublishResponse(google.protobuf.message.Message):
+@_typing.final
+class BulkPublishResponse(_message.Message):
     """BulkPublishResponse is the message returned from a BulkPublishEvent call"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    FAILEDENTRIES_FIELD_NUMBER: builtins.int
-    @property
-    def failedEntries(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___BulkPublishResponseFailedEntry]:
+    FAILEDENTRIES_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def failedEntries(self) -> _containers.RepeatedCompositeFieldContainer[Global___BulkPublishResponseFailedEntry]:
         """The entries for different events that failed publish in the BulkPublishEvent call"""
 
     def __init__(
         self,
         *,
-        failedEntries: collections.abc.Iterable[Global___BulkPublishResponseFailedEntry] | None = ...,
+        failedEntries: _abc.Iterable[Global___BulkPublishResponseFailedEntry] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["failedEntries", b"failedEntries"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["failedEntries", b"failedEntries"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___BulkPublishResponse: typing_extensions.TypeAlias = BulkPublishResponse
+Global___BulkPublishResponse: _TypeAlias = BulkPublishResponse  # noqa: Y015
 
-@typing.final
-class BulkPublishResponseFailedEntry(google.protobuf.message.Message):
+@_typing.final
+class BulkPublishResponseFailedEntry(_message.Message):
     """BulkPublishResponseFailedEntry is the message containing the entryID and error of a failed event in BulkPublishEvent call"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ENTRY_ID_FIELD_NUMBER: builtins.int
-    ERROR_FIELD_NUMBER: builtins.int
-    entry_id: builtins.str
+    ENTRY_ID_FIELD_NUMBER: _builtins.int
+    ERROR_FIELD_NUMBER: _builtins.int
+    entry_id: _builtins.str
     """The response scoped unique ID referring to this message"""
-    error: builtins.str
+    error: _builtins.str
     """The error message if any on failure"""
     def __init__(
         self,
         *,
-        entry_id: builtins.str = ...,
-        error: builtins.str = ...,
+        entry_id: _builtins.str = ...,
+        error: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["entry_id", b"entry_id", "error", b"error"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["entry_id", b"entry_id", "error", b"error"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___BulkPublishResponseFailedEntry: typing_extensions.TypeAlias = BulkPublishResponseFailedEntry
+Global___BulkPublishResponseFailedEntry: _TypeAlias = BulkPublishResponseFailedEntry  # noqa: Y015
 
-@typing.final
-class SubscribeTopicEventsRequestAlpha1(google.protobuf.message.Message):
+@_typing.final
+class SubscribeTopicEventsRequestAlpha1(_message.Message):
     """SubscribeTopicEventsRequestAlpha1 is a message containing the details for
     subscribing to a topic via streaming.
     The first message must always be the initial request. All subsequent
     messages must be event processed responses.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INITIAL_REQUEST_FIELD_NUMBER: builtins.int
-    EVENT_PROCESSED_FIELD_NUMBER: builtins.int
-    @property
+    INITIAL_REQUEST_FIELD_NUMBER: _builtins.int
+    EVENT_PROCESSED_FIELD_NUMBER: _builtins.int
+    @_builtins.property
     def initial_request(self) -> Global___SubscribeTopicEventsRequestInitialAlpha1: ...
-    @property
+    @_builtins.property
     def event_processed(self) -> Global___SubscribeTopicEventsRequestProcessedAlpha1: ...
     def __init__(
         self,
@@ -256,55 +256,55 @@ class SubscribeTopicEventsRequestAlpha1(google.protobuf.message.Message):
         initial_request: Global___SubscribeTopicEventsRequestInitialAlpha1 | None = ...,
         event_processed: Global___SubscribeTopicEventsRequestProcessedAlpha1 | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["event_processed", b"event_processed", "initial_request", b"initial_request", "subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["event_processed", b"event_processed", "initial_request", b"initial_request", "subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["event_processed", b"event_processed", "initial_request", b"initial_request", "subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["event_processed", b"event_processed", "initial_request", b"initial_request", "subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType_subscribe_topic_events_request_type: typing_extensions.TypeAlias = typing.Literal["initial_request", "event_processed"]
-    _WhichOneofArgType_subscribe_topic_events_request_type: typing_extensions.TypeAlias = typing.Literal["subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]
+    _WhichOneofReturnType_subscribe_topic_events_request_type: _TypeAlias = _typing.Literal["initial_request", "event_processed"]  # noqa: Y015
+    _WhichOneofArgType_subscribe_topic_events_request_type: _TypeAlias = _typing.Literal["subscribe_topic_events_request_type", b"subscribe_topic_events_request_type"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType_subscribe_topic_events_request_type) -> _WhichOneofReturnType_subscribe_topic_events_request_type | None: ...
 
-Global___SubscribeTopicEventsRequestAlpha1: typing_extensions.TypeAlias = SubscribeTopicEventsRequestAlpha1
+Global___SubscribeTopicEventsRequestAlpha1: _TypeAlias = SubscribeTopicEventsRequestAlpha1  # noqa: Y015
 
-@typing.final
-class SubscribeTopicEventsRequestInitialAlpha1(google.protobuf.message.Message):
+@_typing.final
+class SubscribeTopicEventsRequestInitialAlpha1(_message.Message):
     """SubscribeTopicEventsRequestInitialAlpha1 is the initial message containing
     the details for subscribing to a topic via streaming.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    PUBSUB_NAME_FIELD_NUMBER: builtins.int
-    TOPIC_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    DEAD_LETTER_TOPIC_FIELD_NUMBER: builtins.int
-    pubsub_name: builtins.str
+    PUBSUB_NAME_FIELD_NUMBER: _builtins.int
+    TOPIC_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    DEAD_LETTER_TOPIC_FIELD_NUMBER: _builtins.int
+    pubsub_name: _builtins.str
     """The name of the pubsub component"""
-    topic: builtins.str
+    topic: _builtins.str
     """The pubsub topic"""
-    dead_letter_topic: builtins.str
+    dead_letter_topic: _builtins.str
     """dead_letter_topic is the topic to which messages that fail to be processed
     are sent.
     """
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata passing to pub components
 
         metadata property:
@@ -314,90 +314,90 @@ class SubscribeTopicEventsRequestInitialAlpha1(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        pubsub_name: builtins.str = ...,
-        topic: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        dead_letter_topic: builtins.str | None = ...,
+        pubsub_name: _builtins.str = ...,
+        topic: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+        dead_letter_topic: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_dead_letter_topic", b"_dead_letter_topic", "dead_letter_topic", b"dead_letter_topic"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_dead_letter_topic", b"_dead_letter_topic", "dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "topic", b"topic"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_dead_letter_topic", b"_dead_letter_topic", "dead_letter_topic", b"dead_letter_topic"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_dead_letter_topic", b"_dead_letter_topic", "dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "topic", b"topic"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__dead_letter_topic: typing_extensions.TypeAlias = typing.Literal["dead_letter_topic"]
-    _WhichOneofArgType__dead_letter_topic: typing_extensions.TypeAlias = typing.Literal["_dead_letter_topic", b"_dead_letter_topic"]
+    _WhichOneofReturnType__dead_letter_topic: _TypeAlias = _typing.Literal["dead_letter_topic"]  # noqa: Y015
+    _WhichOneofArgType__dead_letter_topic: _TypeAlias = _typing.Literal["_dead_letter_topic", b"_dead_letter_topic"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__dead_letter_topic) -> _WhichOneofReturnType__dead_letter_topic | None: ...
 
-Global___SubscribeTopicEventsRequestInitialAlpha1: typing_extensions.TypeAlias = SubscribeTopicEventsRequestInitialAlpha1
+Global___SubscribeTopicEventsRequestInitialAlpha1: _TypeAlias = SubscribeTopicEventsRequestInitialAlpha1  # noqa: Y015
 
-@typing.final
-class SubscribeTopicEventsRequestProcessedAlpha1(google.protobuf.message.Message):
+@_typing.final
+class SubscribeTopicEventsRequestProcessedAlpha1(_message.Message):
     """SubscribeTopicEventsRequestProcessedAlpha1 is the message containing the
     subscription to a topic.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ID_FIELD_NUMBER: builtins.int
-    STATUS_FIELD_NUMBER: builtins.int
-    id: builtins.str
+    ID_FIELD_NUMBER: _builtins.int
+    STATUS_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
     """id is the unique identifier for the subscription request."""
-    @property
-    def status(self) -> dapr.proto.runtime.v1.appcallback_pb2.TopicEventResponse:
+    @_builtins.property
+    def status(self) -> _appcallback_pb2.TopicEventResponse:
         """status is the result of the subscription request."""
 
     def __init__(
         self,
         *,
-        id: builtins.str = ...,
-        status: dapr.proto.runtime.v1.appcallback_pb2.TopicEventResponse | None = ...,
+        id: _builtins.str = ...,
+        status: _appcallback_pb2.TopicEventResponse | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["status", b"status"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["id", b"id", "status", b"status"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["status", b"status"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id", "status", b"status"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubscribeTopicEventsRequestProcessedAlpha1: typing_extensions.TypeAlias = SubscribeTopicEventsRequestProcessedAlpha1
+Global___SubscribeTopicEventsRequestProcessedAlpha1: _TypeAlias = SubscribeTopicEventsRequestProcessedAlpha1  # noqa: Y015
 
-@typing.final
-class SubscribeTopicEventsResponseAlpha1(google.protobuf.message.Message):
+@_typing.final
+class SubscribeTopicEventsResponseAlpha1(_message.Message):
     """SubscribeTopicEventsResponseAlpha1 is a message returned from daprd
     when subscribing to a topic via streaming.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INITIAL_RESPONSE_FIELD_NUMBER: builtins.int
-    EVENT_MESSAGE_FIELD_NUMBER: builtins.int
-    @property
+    INITIAL_RESPONSE_FIELD_NUMBER: _builtins.int
+    EVENT_MESSAGE_FIELD_NUMBER: _builtins.int
+    @_builtins.property
     def initial_response(self) -> Global___SubscribeTopicEventsResponseInitialAlpha1: ...
-    @property
-    def event_message(self) -> dapr.proto.runtime.v1.appcallback_pb2.TopicEventRequest: ...
+    @_builtins.property
+    def event_message(self) -> _appcallback_pb2.TopicEventRequest: ...
     def __init__(
         self,
         *,
         initial_response: Global___SubscribeTopicEventsResponseInitialAlpha1 | None = ...,
-        event_message: dapr.proto.runtime.v1.appcallback_pb2.TopicEventRequest | None = ...,
+        event_message: _appcallback_pb2.TopicEventRequest | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["event_message", b"event_message", "initial_response", b"initial_response", "subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["event_message", b"event_message", "initial_response", b"initial_response", "subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["event_message", b"event_message", "initial_response", b"initial_response", "subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["event_message", b"event_message", "initial_response", b"initial_response", "subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType_subscribe_topic_events_response_type: typing_extensions.TypeAlias = typing.Literal["initial_response", "event_message"]
-    _WhichOneofArgType_subscribe_topic_events_response_type: typing_extensions.TypeAlias = typing.Literal["subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]
+    _WhichOneofReturnType_subscribe_topic_events_response_type: _TypeAlias = _typing.Literal["initial_response", "event_message"]  # noqa: Y015
+    _WhichOneofArgType_subscribe_topic_events_response_type: _TypeAlias = _typing.Literal["subscribe_topic_events_response_type", b"subscribe_topic_events_response_type"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType_subscribe_topic_events_response_type) -> _WhichOneofReturnType_subscribe_topic_events_response_type | None: ...
 
-Global___SubscribeTopicEventsResponseAlpha1: typing_extensions.TypeAlias = SubscribeTopicEventsResponseAlpha1
+Global___SubscribeTopicEventsResponseAlpha1: _TypeAlias = SubscribeTopicEventsResponseAlpha1  # noqa: Y015
 
-@typing.final
-class SubscribeTopicEventsResponseInitialAlpha1(google.protobuf.message.Message):
+@_typing.final
+class SubscribeTopicEventsResponseInitialAlpha1(_message.Message):
     """SubscribeTopicEventsResponseInitialAlpha1 is the initial response from daprd
     when subscribing to a topic.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___SubscribeTopicEventsResponseInitialAlpha1: typing_extensions.TypeAlias = SubscribeTopicEventsResponseInitialAlpha1
+Global___SubscribeTopicEventsResponseInitialAlpha1: _TypeAlias = SubscribeTopicEventsResponseInitialAlpha1  # noqa: Y015

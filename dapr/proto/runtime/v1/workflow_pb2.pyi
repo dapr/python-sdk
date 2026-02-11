@@ -14,301 +14,301 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
-import google.protobuf.timestamp_pb2
+from collections import abc as _abc
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf import timestamp_pb2 as _timestamp_pb2
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class GetWorkflowRequest(google.protobuf.message.Message):
+@_typing.final
+class GetWorkflowRequest(_message.Message):
     """GetWorkflowRequest is the request for GetWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """ID of the workflow instance to query."""
-    workflow_component: builtins.str
+    workflow_component: _builtins.str
     """Name of the workflow component."""
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
-        workflow_component: builtins.str = ...,
+        instance_id: _builtins.str = ...,
+        workflow_component: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetWorkflowRequest: typing_extensions.TypeAlias = GetWorkflowRequest
+Global___GetWorkflowRequest: _TypeAlias = GetWorkflowRequest  # noqa: Y015
 
-@typing.final
-class GetWorkflowResponse(google.protobuf.message.Message):
+@_typing.final
+class GetWorkflowResponse(_message.Message):
     """GetWorkflowResponse is the response for GetWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class PropertiesEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class PropertiesEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    WORKFLOW_NAME_FIELD_NUMBER: builtins.int
-    CREATED_AT_FIELD_NUMBER: builtins.int
-    LAST_UPDATED_AT_FIELD_NUMBER: builtins.int
-    RUNTIME_STATUS_FIELD_NUMBER: builtins.int
-    PROPERTIES_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    WORKFLOW_NAME_FIELD_NUMBER: _builtins.int
+    CREATED_AT_FIELD_NUMBER: _builtins.int
+    LAST_UPDATED_AT_FIELD_NUMBER: _builtins.int
+    RUNTIME_STATUS_FIELD_NUMBER: _builtins.int
+    PROPERTIES_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """ID of the workflow instance."""
-    workflow_name: builtins.str
+    workflow_name: _builtins.str
     """Name of the workflow."""
-    runtime_status: builtins.str
+    runtime_status: _builtins.str
     """The current status of the workflow instance, for example, "PENDING", "RUNNING", "SUSPENDED", "COMPLETED", "FAILED", and "TERMINATED"."""
-    @property
-    def created_at(self) -> google.protobuf.timestamp_pb2.Timestamp:
+    @_builtins.property
+    def created_at(self) -> _timestamp_pb2.Timestamp:
         """The time at which the workflow instance was created."""
 
-    @property
-    def last_updated_at(self) -> google.protobuf.timestamp_pb2.Timestamp:
+    @_builtins.property
+    def last_updated_at(self) -> _timestamp_pb2.Timestamp:
         """The last time at which the workflow instance had its state changed."""
 
-    @property
-    def properties(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def properties(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """Additional component-specific properties of the workflow instance."""
 
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
-        workflow_name: builtins.str = ...,
-        created_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
-        last_updated_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
-        runtime_status: builtins.str = ...,
-        properties: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        instance_id: _builtins.str = ...,
+        workflow_name: _builtins.str = ...,
+        created_at: _timestamp_pb2.Timestamp | None = ...,
+        last_updated_at: _timestamp_pb2.Timestamp | None = ...,
+        runtime_status: _builtins.str = ...,
+        properties: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["created_at", b"created_at", "last_updated_at", b"last_updated_at"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["created_at", b"created_at", "instance_id", b"instance_id", "last_updated_at", b"last_updated_at", "properties", b"properties", "runtime_status", b"runtime_status", "workflow_name", b"workflow_name"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["created_at", b"created_at", "last_updated_at", b"last_updated_at"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["created_at", b"created_at", "instance_id", b"instance_id", "last_updated_at", b"last_updated_at", "properties", b"properties", "runtime_status", b"runtime_status", "workflow_name", b"workflow_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetWorkflowResponse: typing_extensions.TypeAlias = GetWorkflowResponse
+Global___GetWorkflowResponse: _TypeAlias = GetWorkflowResponse  # noqa: Y015
 
-@typing.final
-class StartWorkflowRequest(google.protobuf.message.Message):
+@_typing.final
+class StartWorkflowRequest(_message.Message):
     """StartWorkflowRequest is the request for StartWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class OptionsEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class OptionsEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    WORKFLOW_NAME_FIELD_NUMBER: builtins.int
-    OPTIONS_FIELD_NUMBER: builtins.int
-    INPUT_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    WORKFLOW_NAME_FIELD_NUMBER: _builtins.int
+    OPTIONS_FIELD_NUMBER: _builtins.int
+    INPUT_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """The ID to assign to the started workflow instance. If empty, a random ID is generated."""
-    workflow_component: builtins.str
+    workflow_component: _builtins.str
     """Name of the workflow component."""
-    workflow_name: builtins.str
+    workflow_name: _builtins.str
     """Name of the workflow."""
-    input: builtins.bytes
+    input: _builtins.bytes
     """Input data for the workflow instance."""
-    @property
-    def options(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def options(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """Additional component-specific options for starting the workflow instance."""
 
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
-        workflow_component: builtins.str = ...,
-        workflow_name: builtins.str = ...,
-        options: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        input: builtins.bytes = ...,
+        instance_id: _builtins.str = ...,
+        workflow_component: _builtins.str = ...,
+        workflow_name: _builtins.str = ...,
+        options: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+        input: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["input", b"input", "instance_id", b"instance_id", "options", b"options", "workflow_component", b"workflow_component", "workflow_name", b"workflow_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "instance_id", b"instance_id", "options", b"options", "workflow_component", b"workflow_component", "workflow_name", b"workflow_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___StartWorkflowRequest: typing_extensions.TypeAlias = StartWorkflowRequest
+Global___StartWorkflowRequest: _TypeAlias = StartWorkflowRequest  # noqa: Y015
 
-@typing.final
-class StartWorkflowResponse(google.protobuf.message.Message):
+@_typing.final
+class StartWorkflowResponse(_message.Message):
     """StartWorkflowResponse is the response for StartWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """ID of the started workflow instance."""
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
+        instance_id: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["instance_id", b"instance_id"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___StartWorkflowResponse: typing_extensions.TypeAlias = StartWorkflowResponse
+Global___StartWorkflowResponse: _TypeAlias = StartWorkflowResponse  # noqa: Y015
 
-@typing.final
-class TerminateWorkflowRequest(google.protobuf.message.Message):
+@_typing.final
+class TerminateWorkflowRequest(_message.Message):
     """TerminateWorkflowRequest is the request for TerminateWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """ID of the workflow instance to terminate."""
-    workflow_component: builtins.str
+    workflow_component: _builtins.str
     """Name of the workflow component."""
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
-        workflow_component: builtins.str = ...,
+        instance_id: _builtins.str = ...,
+        workflow_component: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___TerminateWorkflowRequest: typing_extensions.TypeAlias = TerminateWorkflowRequest
+Global___TerminateWorkflowRequest: _TypeAlias = TerminateWorkflowRequest  # noqa: Y015
 
-@typing.final
-class PauseWorkflowRequest(google.protobuf.message.Message):
+@_typing.final
+class PauseWorkflowRequest(_message.Message):
     """PauseWorkflowRequest is the request for PauseWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """ID of the workflow instance to pause."""
-    workflow_component: builtins.str
+    workflow_component: _builtins.str
     """Name of the workflow component."""
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
-        workflow_component: builtins.str = ...,
+        instance_id: _builtins.str = ...,
+        workflow_component: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___PauseWorkflowRequest: typing_extensions.TypeAlias = PauseWorkflowRequest
+Global___PauseWorkflowRequest: _TypeAlias = PauseWorkflowRequest  # noqa: Y015
 
-@typing.final
-class ResumeWorkflowRequest(google.protobuf.message.Message):
+@_typing.final
+class ResumeWorkflowRequest(_message.Message):
     """ResumeWorkflowRequest is the request for ResumeWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """ID of the workflow instance to resume."""
-    workflow_component: builtins.str
+    workflow_component: _builtins.str
     """Name of the workflow component."""
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
-        workflow_component: builtins.str = ...,
+        instance_id: _builtins.str = ...,
+        workflow_component: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ResumeWorkflowRequest: typing_extensions.TypeAlias = ResumeWorkflowRequest
+Global___ResumeWorkflowRequest: _TypeAlias = ResumeWorkflowRequest  # noqa: Y015
 
-@typing.final
-class RaiseEventWorkflowRequest(google.protobuf.message.Message):
+@_typing.final
+class RaiseEventWorkflowRequest(_message.Message):
     """RaiseEventWorkflowRequest is the request for RaiseEventWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    EVENT_NAME_FIELD_NUMBER: builtins.int
-    EVENT_DATA_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    EVENT_NAME_FIELD_NUMBER: _builtins.int
+    EVENT_DATA_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """ID of the workflow instance to raise an event for."""
-    workflow_component: builtins.str
+    workflow_component: _builtins.str
     """Name of the workflow component."""
-    event_name: builtins.str
+    event_name: _builtins.str
     """Name of the event."""
-    event_data: builtins.bytes
+    event_data: _builtins.bytes
     """Data associated with the event."""
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
-        workflow_component: builtins.str = ...,
-        event_name: builtins.str = ...,
-        event_data: builtins.bytes = ...,
+        instance_id: _builtins.str = ...,
+        workflow_component: _builtins.str = ...,
+        event_name: _builtins.str = ...,
+        event_data: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["event_data", b"event_data", "event_name", b"event_name", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["event_data", b"event_data", "event_name", b"event_name", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___RaiseEventWorkflowRequest: typing_extensions.TypeAlias = RaiseEventWorkflowRequest
+Global___RaiseEventWorkflowRequest: _TypeAlias = RaiseEventWorkflowRequest  # noqa: Y015
 
-@typing.final
-class PurgeWorkflowRequest(google.protobuf.message.Message):
+@_typing.final
+class PurgeWorkflowRequest(_message.Message):
     """PurgeWorkflowRequest is the request for PurgeWorkflowBeta1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INSTANCE_ID_FIELD_NUMBER: builtins.int
-    WORKFLOW_COMPONENT_FIELD_NUMBER: builtins.int
-    instance_id: builtins.str
+    INSTANCE_ID_FIELD_NUMBER: _builtins.int
+    WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    instance_id: _builtins.str
     """ID of the workflow instance to purge."""
-    workflow_component: builtins.str
+    workflow_component: _builtins.str
     """Name of the workflow component."""
     def __init__(
         self,
         *,
-        instance_id: builtins.str = ...,
-        workflow_component: builtins.str = ...,
+        instance_id: _builtins.str = ...,
+        workflow_component: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___PurgeWorkflowRequest: typing_extensions.TypeAlias = PurgeWorkflowRequest
+Global___PurgeWorkflowRequest: _TypeAlias = PurgeWorkflowRequest  # noqa: Y015

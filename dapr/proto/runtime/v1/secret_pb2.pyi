@@ -14,93 +14,93 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
+from collections import abc as _abc
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class GetSecretRequest(google.protobuf.message.Message):
+@_typing.final
+class GetSecretRequest(_message.Message):
     """GetSecretRequest is the message to get secret from secret store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    KEY_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    KEY_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of secret store."""
-    key: builtins.str
+    key: _builtins.str
     """The name of secret key."""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to secret store components."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        key: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        store_name: _builtins.str = ...,
+        key: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "metadata", b"metadata", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "metadata", b"metadata", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetSecretRequest: typing_extensions.TypeAlias = GetSecretRequest
+Global___GetSecretRequest: _TypeAlias = GetSecretRequest  # noqa: Y015
 
-@typing.final
-class GetSecretResponse(google.protobuf.message.Message):
+@_typing.final
+class GetSecretResponse(_message.Message):
     """GetSecretResponse is the response message to convey the requested secret."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class DataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class DataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    DATA_FIELD_NUMBER: builtins.int
-    @property
-    def data(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    DATA_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def data(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """data is the secret value. Some secret store, such as kubernetes secret
         store, can save multiple secrets for single secret key.
         """
@@ -108,120 +108,120 @@ class GetSecretResponse(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        data: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        data: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetSecretResponse: typing_extensions.TypeAlias = GetSecretResponse
+Global___GetSecretResponse: _TypeAlias = GetSecretResponse  # noqa: Y015
 
-@typing.final
-class GetBulkSecretRequest(google.protobuf.message.Message):
+@_typing.final
+class GetBulkSecretRequest(_message.Message):
     """GetBulkSecretRequest is the message to get the secrets from secret store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of secret store."""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to secret store components."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        store_name: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["metadata", b"metadata", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["metadata", b"metadata", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetBulkSecretRequest: typing_extensions.TypeAlias = GetBulkSecretRequest
+Global___GetBulkSecretRequest: _TypeAlias = GetBulkSecretRequest  # noqa: Y015
 
-@typing.final
-class SecretResponse(google.protobuf.message.Message):
+@_typing.final
+class SecretResponse(_message.Message):
     """SecretResponse is a map of decrypted string/string values"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class SecretsEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class SecretsEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    SECRETS_FIELD_NUMBER: builtins.int
-    @property
-    def secrets(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    SECRETS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def secrets(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]: ...
     def __init__(
         self,
         *,
-        secrets: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        secrets: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["secrets", b"secrets"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["secrets", b"secrets"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SecretResponse: typing_extensions.TypeAlias = SecretResponse
+Global___SecretResponse: _TypeAlias = SecretResponse  # noqa: Y015
 
-@typing.final
-class GetBulkSecretResponse(google.protobuf.message.Message):
+@_typing.final
+class GetBulkSecretResponse(_message.Message):
     """GetBulkSecretResponse is the response message to convey the requested secrets."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class DataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class DataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        @property
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        @_builtins.property
         def value(self) -> Global___SecretResponse: ...
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
+            key: _builtins.str = ...,
             value: Global___SecretResponse | None = ...,
         ) -> None: ...
-        _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
-        def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _HasFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    DATA_FIELD_NUMBER: builtins.int
-    @property
-    def data(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, Global___SecretResponse]:
+    DATA_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def data(self) -> _containers.MessageMap[_builtins.str, Global___SecretResponse]:
         """data hold the secret values. Some secret store, such as kubernetes secret
         store, can save multiple secrets for single secret key.
         """
@@ -229,9 +229,9 @@ class GetBulkSecretResponse(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        data: collections.abc.Mapping[builtins.str, Global___SecretResponse] | None = ...,
+        data: _abc.Mapping[_builtins.str, Global___SecretResponse] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetBulkSecretResponse: typing_extensions.TypeAlias = GetBulkSecretResponse
+Global___GetBulkSecretResponse: _TypeAlias = GetBulkSecretResponse  # noqa: Y015
