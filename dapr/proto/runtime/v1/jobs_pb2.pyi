@@ -14,41 +14,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import dapr.proto.common.v1.common_pb2
-import google.protobuf.any_pb2
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
+from collections import abc as _abc
+from dapr.proto.common.v1 import common_pb2 as _common_pb2
+from google.protobuf import any_pb2 as _any_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class Job(google.protobuf.message.Message):
+@_typing.final
+class Job(_message.Message):
     """Job is the definition of a job. At least one of schedule or due_time must be
     provided but can also be provided together.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    SCHEDULE_FIELD_NUMBER: builtins.int
-    REPEATS_FIELD_NUMBER: builtins.int
-    DUE_TIME_FIELD_NUMBER: builtins.int
-    TTL_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    FAILURE_POLICY_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    SCHEDULE_FIELD_NUMBER: _builtins.int
+    REPEATS_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    TTL_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    FAILURE_POLICY_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """The unique name for the job."""
-    schedule: builtins.str
+    schedule: _builtins.str
     """schedule is an optional schedule at which the job is to be run.
     Accepts both systemd timer style cron expressions, as well as human
     readable '@' prefixed period strings as defined below.
@@ -70,80 +70,80 @@ class Job(google.protobuf.message.Message):
     @daily (or @midnight)  | Run once a day, midnight                     | 0 0 0 * * *
     @hourly                | Run once an hour, beginning of hour          | 0 0 * * * *
     """
-    repeats: builtins.int
+    repeats: _builtins.int
     """repeats is the optional number of times in which the job should be
     triggered. If not set, the job will run indefinitely or until expiration.
     """
-    due_time: builtins.str
+    due_time: _builtins.str
     """due_time is the optional time at which the job should be active, or the
     "one shot" time if other scheduling type fields are not provided. Accepts
     a "point in time" string in the format of RFC3339, Go duration string
     (calculated from job creation time), or non-repeating ISO8601.
     """
-    ttl: builtins.str
+    ttl: _builtins.str
     """ttl is the optional time to live or expiration of the job. Accepts a
     "point in time" string in the format of RFC3339, Go duration string
     (calculated from job creation time), or non-repeating ISO8601.
     """
-    @property
-    def data(self) -> google.protobuf.any_pb2.Any:
+    @_builtins.property
+    def data(self) -> _any_pb2.Any:
         """payload is the serialized job payload that will be sent to the recipient
         when the job is triggered.
         """
 
-    @property
-    def failure_policy(self) -> dapr.proto.common.v1.common_pb2.JobFailurePolicy:
+    @_builtins.property
+    def failure_policy(self) -> _common_pb2.JobFailurePolicy:
         """failure_policy is the optional policy for handling job failures."""
 
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
-        schedule: builtins.str | None = ...,
-        repeats: builtins.int | None = ...,
-        due_time: builtins.str | None = ...,
-        ttl: builtins.str | None = ...,
-        data: google.protobuf.any_pb2.Any | None = ...,
-        failure_policy: dapr.proto.common.v1.common_pb2.JobFailurePolicy | None = ...,
+        name: _builtins.str = ...,
+        schedule: _builtins.str | None = ...,
+        repeats: _builtins.int | None = ...,
+        due_time: _builtins.str | None = ...,
+        ttl: _builtins.str | None = ...,
+        data: _any_pb2.Any | None = ...,
+        failure_policy: _common_pb2.JobFailurePolicy | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__due_time: typing_extensions.TypeAlias = typing.Literal["due_time"]
-    _WhichOneofArgType__due_time: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time"]
-    _WhichOneofReturnType__failure_policy: typing_extensions.TypeAlias = typing.Literal["failure_policy"]
-    _WhichOneofArgType__failure_policy: typing_extensions.TypeAlias = typing.Literal["_failure_policy", b"_failure_policy"]
-    _WhichOneofReturnType__repeats: typing_extensions.TypeAlias = typing.Literal["repeats"]
-    _WhichOneofArgType__repeats: typing_extensions.TypeAlias = typing.Literal["_repeats", b"_repeats"]
-    _WhichOneofReturnType__schedule: typing_extensions.TypeAlias = typing.Literal["schedule"]
-    _WhichOneofArgType__schedule: typing_extensions.TypeAlias = typing.Literal["_schedule", b"_schedule"]
-    _WhichOneofReturnType__ttl: typing_extensions.TypeAlias = typing.Literal["ttl"]
-    _WhichOneofArgType__ttl: typing_extensions.TypeAlias = typing.Literal["_ttl", b"_ttl"]
-    @typing.overload
+    _WhichOneofReturnType__due_time: _TypeAlias = _typing.Literal["due_time"]  # noqa: Y015
+    _WhichOneofArgType__due_time: _TypeAlias = _typing.Literal["_due_time", b"_due_time"]  # noqa: Y015
+    _WhichOneofReturnType__failure_policy: _TypeAlias = _typing.Literal["failure_policy"]  # noqa: Y015
+    _WhichOneofArgType__failure_policy: _TypeAlias = _typing.Literal["_failure_policy", b"_failure_policy"]  # noqa: Y015
+    _WhichOneofReturnType__repeats: _TypeAlias = _typing.Literal["repeats"]  # noqa: Y015
+    _WhichOneofArgType__repeats: _TypeAlias = _typing.Literal["_repeats", b"_repeats"]  # noqa: Y015
+    _WhichOneofReturnType__schedule: _TypeAlias = _typing.Literal["schedule"]  # noqa: Y015
+    _WhichOneofArgType__schedule: _TypeAlias = _typing.Literal["_schedule", b"_schedule"]  # noqa: Y015
+    _WhichOneofReturnType__ttl: _TypeAlias = _typing.Literal["ttl"]  # noqa: Y015
+    _WhichOneofArgType__ttl: _TypeAlias = _typing.Literal["_ttl", b"_ttl"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__due_time) -> _WhichOneofReturnType__due_time | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__failure_policy) -> _WhichOneofReturnType__failure_policy | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__repeats) -> _WhichOneofReturnType__repeats | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__schedule) -> _WhichOneofReturnType__schedule | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__ttl) -> _WhichOneofReturnType__ttl | None: ...
 
-Global___Job: typing_extensions.TypeAlias = Job
+Global___Job: _TypeAlias = Job  # noqa: Y015
 
-@typing.final
-class ScheduleJobRequest(google.protobuf.message.Message):
+@_typing.final
+class ScheduleJobRequest(_message.Message):
     """ScheduleJobRequest is the message to create/schedule the job."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    JOB_FIELD_NUMBER: builtins.int
-    OVERWRITE_FIELD_NUMBER: builtins.int
-    overwrite: builtins.bool
+    JOB_FIELD_NUMBER: _builtins.int
+    OVERWRITE_FIELD_NUMBER: _builtins.int
+    overwrite: _builtins.bool
     """If true, allows this job to overwrite an existing job with the same name."""
-    @property
+    @_builtins.property
     def job(self) -> Global___Job:
         """The job details."""
 
@@ -151,56 +151,56 @@ class ScheduleJobRequest(google.protobuf.message.Message):
         self,
         *,
         job: Global___Job | None = ...,
-        overwrite: builtins.bool = ...,
+        overwrite: _builtins.bool = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["job", b"job"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["job", b"job", "overwrite", b"overwrite"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["job", b"job"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["job", b"job", "overwrite", b"overwrite"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ScheduleJobRequest: typing_extensions.TypeAlias = ScheduleJobRequest
+Global___ScheduleJobRequest: _TypeAlias = ScheduleJobRequest  # noqa: Y015
 
-@typing.final
-class ScheduleJobResponse(google.protobuf.message.Message):
+@_typing.final
+class ScheduleJobResponse(_message.Message):
     """ScheduleJobResponse is the message response to create/schedule the job.
     Empty
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___ScheduleJobResponse: typing_extensions.TypeAlias = ScheduleJobResponse
+Global___ScheduleJobResponse: _TypeAlias = ScheduleJobResponse  # noqa: Y015
 
-@typing.final
-class GetJobRequest(google.protobuf.message.Message):
+@_typing.final
+class GetJobRequest(_message.Message):
     """GetJobRequest is the message to retrieve a job."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """The name of the job."""
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
+        name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["name", b"name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetJobRequest: typing_extensions.TypeAlias = GetJobRequest
+Global___GetJobRequest: _TypeAlias = GetJobRequest  # noqa: Y015
 
-@typing.final
-class GetJobResponse(google.protobuf.message.Message):
+@_typing.final
+class GetJobResponse(_message.Message):
     """GetJobResponse is the message's response for a job retrieved."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    JOB_FIELD_NUMBER: builtins.int
-    @property
+    JOB_FIELD_NUMBER: _builtins.int
+    @_builtins.property
     def job(self) -> Global___Job:
         """The job details."""
 
@@ -209,113 +209,113 @@ class GetJobResponse(google.protobuf.message.Message):
         *,
         job: Global___Job | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["job", b"job"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["job", b"job"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["job", b"job"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["job", b"job"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetJobResponse: typing_extensions.TypeAlias = GetJobResponse
+Global___GetJobResponse: _TypeAlias = GetJobResponse  # noqa: Y015
 
-@typing.final
-class DeleteJobRequest(google.protobuf.message.Message):
+@_typing.final
+class DeleteJobRequest(_message.Message):
     """DeleteJobRequest is the message to delete the job by name."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """The name of the job."""
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
+        name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["name", b"name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___DeleteJobRequest: typing_extensions.TypeAlias = DeleteJobRequest
+Global___DeleteJobRequest: _TypeAlias = DeleteJobRequest  # noqa: Y015
 
-@typing.final
-class DeleteJobResponse(google.protobuf.message.Message):
+@_typing.final
+class DeleteJobResponse(_message.Message):
     """DeleteJobResponse is the message response to delete the job by name.
     Empty
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___DeleteJobResponse: typing_extensions.TypeAlias = DeleteJobResponse
+Global___DeleteJobResponse: _TypeAlias = DeleteJobResponse  # noqa: Y015
 
-@typing.final
-class DeleteJobsByPrefixRequestAlpha1(google.protobuf.message.Message):
+@_typing.final
+class DeleteJobsByPrefixRequestAlpha1(_message.Message):
     """DeleteJobsByPrefixRequest is the message to delete jobs by name prefix."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_PREFIX_FIELD_NUMBER: builtins.int
-    name_prefix: builtins.str
+    NAME_PREFIX_FIELD_NUMBER: _builtins.int
+    name_prefix: _builtins.str
     """name_prefix is the prefix of the job names to delete. If not provided, all
     jobs associated with this app ID will be deleted.
     """
     def __init__(
         self,
         *,
-        name_prefix: builtins.str | None = ...,
+        name_prefix: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name_prefix", b"_name_prefix", "name_prefix", b"name_prefix"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name_prefix", b"_name_prefix", "name_prefix", b"name_prefix"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_name_prefix", b"_name_prefix", "name_prefix", b"name_prefix"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name_prefix", b"_name_prefix", "name_prefix", b"name_prefix"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__name_prefix: typing_extensions.TypeAlias = typing.Literal["name_prefix"]
-    _WhichOneofArgType__name_prefix: typing_extensions.TypeAlias = typing.Literal["_name_prefix", b"_name_prefix"]
+    _WhichOneofReturnType__name_prefix: _TypeAlias = _typing.Literal["name_prefix"]  # noqa: Y015
+    _WhichOneofArgType__name_prefix: _TypeAlias = _typing.Literal["_name_prefix", b"_name_prefix"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__name_prefix) -> _WhichOneofReturnType__name_prefix | None: ...
 
-Global___DeleteJobsByPrefixRequestAlpha1: typing_extensions.TypeAlias = DeleteJobsByPrefixRequestAlpha1
+Global___DeleteJobsByPrefixRequestAlpha1: _TypeAlias = DeleteJobsByPrefixRequestAlpha1  # noqa: Y015
 
-@typing.final
-class DeleteJobsByPrefixResponseAlpha1(google.protobuf.message.Message):
+@_typing.final
+class DeleteJobsByPrefixResponseAlpha1(_message.Message):
     """Empty"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___DeleteJobsByPrefixResponseAlpha1: typing_extensions.TypeAlias = DeleteJobsByPrefixResponseAlpha1
+Global___DeleteJobsByPrefixResponseAlpha1: _TypeAlias = DeleteJobsByPrefixResponseAlpha1  # noqa: Y015
 
-@typing.final
-class ListJobsRequestAlpha1(google.protobuf.message.Message):
+@_typing.final
+class ListJobsRequestAlpha1(_message.Message):
     """Empty"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___ListJobsRequestAlpha1: typing_extensions.TypeAlias = ListJobsRequestAlpha1
+Global___ListJobsRequestAlpha1: _TypeAlias = ListJobsRequestAlpha1  # noqa: Y015
 
-@typing.final
-class ListJobsResponseAlpha1(google.protobuf.message.Message):
+@_typing.final
+class ListJobsResponseAlpha1(_message.Message):
     """ListJobsResponse is the message response containing the list of jobs."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    JOBS_FIELD_NUMBER: builtins.int
-    @property
-    def jobs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___Job]:
+    JOBS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def jobs(self) -> _containers.RepeatedCompositeFieldContainer[Global___Job]:
         """The list of jobs."""
 
     def __init__(
         self,
         *,
-        jobs: collections.abc.Iterable[Global___Job] | None = ...,
+        jobs: _abc.Iterable[Global___Job] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["jobs", b"jobs"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["jobs", b"jobs"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ListJobsResponseAlpha1: typing_extensions.TypeAlias = ListJobsResponseAlpha1
+Global___ListJobsResponseAlpha1: _TypeAlias = ListJobsResponseAlpha1  # noqa: Y015

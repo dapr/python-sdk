@@ -14,114 +14,114 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import dapr.proto.common.v1.common_pb2
-import google.protobuf.any_pb2
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
+from collections import abc as _abc
+from dapr.proto.common.v1 import common_pb2 as _common_pb2
+from google.protobuf import any_pb2 as _any_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class RegisterActorTimerRequest(google.protobuf.message.Message):
+@_typing.final
+class RegisterActorTimerRequest(_message.Message):
     """RegisterActorTimerRequest is the message to register a timer for an actor of a given type and id."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    NAME_FIELD_NUMBER: builtins.int
-    DUE_TIME_FIELD_NUMBER: builtins.int
-    PERIOD_FIELD_NUMBER: builtins.int
-    CALLBACK_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    TTL_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    name: builtins.str
-    due_time: builtins.str
-    period: builtins.str
-    callback: builtins.str
-    data: builtins.bytes
-    ttl: builtins.str
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    PERIOD_FIELD_NUMBER: _builtins.int
+    CALLBACK_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    TTL_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    name: _builtins.str
+    due_time: _builtins.str
+    period: _builtins.str
+    callback: _builtins.str
+    data: _builtins.bytes
+    ttl: _builtins.str
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        name: builtins.str = ...,
-        due_time: builtins.str = ...,
-        period: builtins.str = ...,
-        callback: builtins.str = ...,
-        data: builtins.bytes = ...,
-        ttl: builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        name: _builtins.str = ...,
+        due_time: _builtins.str = ...,
+        period: _builtins.str = ...,
+        callback: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        ttl: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "name", b"name", "period", b"period", "ttl", b"ttl"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "name", b"name", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___RegisterActorTimerRequest: typing_extensions.TypeAlias = RegisterActorTimerRequest
+Global___RegisterActorTimerRequest: _TypeAlias = RegisterActorTimerRequest  # noqa: Y015
 
-@typing.final
-class UnregisterActorTimerRequest(google.protobuf.message.Message):
+@_typing.final
+class UnregisterActorTimerRequest(_message.Message):
     """UnregisterActorTimerRequest is the message to unregister an actor timer"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    NAME_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    name: builtins.str
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    name: _builtins.str
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        name: builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "name", b"name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___UnregisterActorTimerRequest: typing_extensions.TypeAlias = UnregisterActorTimerRequest
+Global___UnregisterActorTimerRequest: _TypeAlias = UnregisterActorTimerRequest  # noqa: Y015
 
-@typing.final
-class RegisterActorReminderRequest(google.protobuf.message.Message):
+@_typing.final
+class RegisterActorReminderRequest(_message.Message):
     """RegisterActorReminderRequest is the message to register a reminder for an actor of a given type and id."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    NAME_FIELD_NUMBER: builtins.int
-    DUE_TIME_FIELD_NUMBER: builtins.int
-    PERIOD_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    TTL_FIELD_NUMBER: builtins.int
-    OVERWRITE_FIELD_NUMBER: builtins.int
-    FAILURE_POLICY_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    name: builtins.str
-    due_time: builtins.str
-    period: builtins.str
-    data: builtins.bytes
-    ttl: builtins.str
-    overwrite: builtins.bool
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    PERIOD_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    TTL_FIELD_NUMBER: _builtins.int
+    OVERWRITE_FIELD_NUMBER: _builtins.int
+    FAILURE_POLICY_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    name: _builtins.str
+    due_time: _builtins.str
+    period: _builtins.str
+    data: _builtins.bytes
+    ttl: _builtins.str
+    overwrite: _builtins.bool
     """If true, allows this reminder to overwrite an existing reminder with the
     same name. If not set, defaults to true.
     """
-    @property
-    def failure_policy(self) -> dapr.proto.common.v1.common_pb2.JobFailurePolicy:
+    @_builtins.property
+    def failure_policy(self) -> _common_pb2.JobFailurePolicy:
         """failure_policy is the optional policy for handling job failures. If not
         set, the reminder will have the failure policy of trying 3 times on a
         single tick before giving up.
@@ -130,178 +130,178 @@ class RegisterActorReminderRequest(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        name: builtins.str = ...,
-        due_time: builtins.str = ...,
-        period: builtins.str = ...,
-        data: builtins.bytes = ...,
-        ttl: builtins.str = ...,
-        overwrite: builtins.bool | None = ...,
-        failure_policy: dapr.proto.common.v1.common_pb2.JobFailurePolicy | None = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        name: _builtins.str = ...,
+        due_time: _builtins.str = ...,
+        period: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        ttl: _builtins.str = ...,
+        overwrite: _builtins.bool | None = ...,
+        failure_policy: _common_pb2.JobFailurePolicy | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_failure_policy", b"_failure_policy", "_overwrite", b"_overwrite", "failure_policy", b"failure_policy", "overwrite", b"overwrite"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_failure_policy", b"_failure_policy", "_overwrite", b"_overwrite", "actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "overwrite", b"overwrite", "period", b"period", "ttl", b"ttl"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_failure_policy", b"_failure_policy", "_overwrite", b"_overwrite", "failure_policy", b"failure_policy", "overwrite", b"overwrite"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_failure_policy", b"_failure_policy", "_overwrite", b"_overwrite", "actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "overwrite", b"overwrite", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__failure_policy: typing_extensions.TypeAlias = typing.Literal["failure_policy"]
-    _WhichOneofArgType__failure_policy: typing_extensions.TypeAlias = typing.Literal["_failure_policy", b"_failure_policy"]
-    _WhichOneofReturnType__overwrite: typing_extensions.TypeAlias = typing.Literal["overwrite"]
-    _WhichOneofArgType__overwrite: typing_extensions.TypeAlias = typing.Literal["_overwrite", b"_overwrite"]
-    @typing.overload
+    _WhichOneofReturnType__failure_policy: _TypeAlias = _typing.Literal["failure_policy"]  # noqa: Y015
+    _WhichOneofArgType__failure_policy: _TypeAlias = _typing.Literal["_failure_policy", b"_failure_policy"]  # noqa: Y015
+    _WhichOneofReturnType__overwrite: _TypeAlias = _typing.Literal["overwrite"]  # noqa: Y015
+    _WhichOneofArgType__overwrite: _TypeAlias = _typing.Literal["_overwrite", b"_overwrite"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__failure_policy) -> _WhichOneofReturnType__failure_policy | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__overwrite) -> _WhichOneofReturnType__overwrite | None: ...
 
-Global___RegisterActorReminderRequest: typing_extensions.TypeAlias = RegisterActorReminderRequest
+Global___RegisterActorReminderRequest: _TypeAlias = RegisterActorReminderRequest  # noqa: Y015
 
-@typing.final
-class UnregisterActorReminderRequest(google.protobuf.message.Message):
+@_typing.final
+class UnregisterActorReminderRequest(_message.Message):
     """UnregisterActorReminderRequest is the message to unregister an actor reminder."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    NAME_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    name: builtins.str
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    name: _builtins.str
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        name: builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "name", b"name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___UnregisterActorReminderRequest: typing_extensions.TypeAlias = UnregisterActorReminderRequest
+Global___UnregisterActorReminderRequest: _TypeAlias = UnregisterActorReminderRequest  # noqa: Y015
 
-@typing.final
-class GetActorStateRequest(google.protobuf.message.Message):
+@_typing.final
+class GetActorStateRequest(_message.Message):
     """GetActorStateRequest is the message to get key-value states from specific actor."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    KEY_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    key: builtins.str
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    KEY_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    key: _builtins.str
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        key: builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        key: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "key", b"key"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "key", b"key"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetActorStateRequest: typing_extensions.TypeAlias = GetActorStateRequest
+Global___GetActorStateRequest: _TypeAlias = GetActorStateRequest  # noqa: Y015
 
-@typing.final
-class GetActorStateResponse(google.protobuf.message.Message):
+@_typing.final
+class GetActorStateResponse(_message.Message):
     """GetActorStateResponse is the response conveying the actor's state value."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    DATA_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    data: _builtins.bytes
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to app."""
 
     def __init__(
         self,
         *,
-        data: builtins.bytes = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        data: _builtins.bytes = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "metadata", b"metadata"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "metadata", b"metadata"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetActorStateResponse: typing_extensions.TypeAlias = GetActorStateResponse
+Global___GetActorStateResponse: _TypeAlias = GetActorStateResponse  # noqa: Y015
 
-@typing.final
-class ExecuteActorStateTransactionRequest(google.protobuf.message.Message):
+@_typing.final
+class ExecuteActorStateTransactionRequest(_message.Message):
     """ExecuteActorStateTransactionRequest is the message to execute multiple operations on a specified actor."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    OPERATIONS_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    @property
-    def operations(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___TransactionalActorStateOperation]: ...
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    OPERATIONS_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    @_builtins.property
+    def operations(self) -> _containers.RepeatedCompositeFieldContainer[Global___TransactionalActorStateOperation]: ...
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        operations: collections.abc.Iterable[Global___TransactionalActorStateOperation] | None = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        operations: _abc.Iterable[Global___TransactionalActorStateOperation] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "operations", b"operations"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "operations", b"operations"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ExecuteActorStateTransactionRequest: typing_extensions.TypeAlias = ExecuteActorStateTransactionRequest
+Global___ExecuteActorStateTransactionRequest: _TypeAlias = ExecuteActorStateTransactionRequest  # noqa: Y015
 
-@typing.final
-class TransactionalActorStateOperation(google.protobuf.message.Message):
+@_typing.final
+class TransactionalActorStateOperation(_message.Message):
     """TransactionalActorStateOperation is the message to execute a specified operation with a key-value pair."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    OPERATIONTYPE_FIELD_NUMBER: builtins.int
-    KEY_FIELD_NUMBER: builtins.int
-    VALUE_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    operationType: builtins.str
-    key: builtins.str
-    @property
-    def value(self) -> google.protobuf.any_pb2.Any: ...
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    OPERATIONTYPE_FIELD_NUMBER: _builtins.int
+    KEY_FIELD_NUMBER: _builtins.int
+    VALUE_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    operationType: _builtins.str
+    key: _builtins.str
+    @_builtins.property
+    def value(self) -> _any_pb2.Any: ...
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata used for transactional operations.
 
         Common metadata property:
@@ -311,300 +311,300 @@ class TransactionalActorStateOperation(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        operationType: builtins.str = ...,
-        key: builtins.str = ...,
-        value: google.protobuf.any_pb2.Any | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        operationType: _builtins.str = ...,
+        key: _builtins.str = ...,
+        value: _any_pb2.Any | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "metadata", b"metadata", "operationType", b"operationType", "value", b"value"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "metadata", b"metadata", "operationType", b"operationType", "value", b"value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___TransactionalActorStateOperation: typing_extensions.TypeAlias = TransactionalActorStateOperation
+Global___TransactionalActorStateOperation: _TypeAlias = TransactionalActorStateOperation  # noqa: Y015
 
-@typing.final
-class InvokeActorRequest(google.protobuf.message.Message):
+@_typing.final
+class InvokeActorRequest(_message.Message):
     """InvokeActorRequest is the message to call an actor."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    METHOD_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    method: builtins.str
-    data: builtins.bytes
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    METHOD_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    method: _builtins.str
+    data: _builtins.bytes
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]: ...
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        method: builtins.str = ...,
-        data: builtins.bytes = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        method: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "metadata", b"metadata", "method", b"method"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "metadata", b"metadata", "method", b"method"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___InvokeActorRequest: typing_extensions.TypeAlias = InvokeActorRequest
+Global___InvokeActorRequest: _TypeAlias = InvokeActorRequest  # noqa: Y015
 
-@typing.final
-class InvokeActorResponse(google.protobuf.message.Message):
+@_typing.final
+class InvokeActorResponse(_message.Message):
     """InvokeActorResponse is the method that returns an actor invocation response."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes
+    DATA_FIELD_NUMBER: _builtins.int
+    data: _builtins.bytes
     def __init__(
         self,
         *,
-        data: builtins.bytes = ...,
+        data: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___InvokeActorResponse: typing_extensions.TypeAlias = InvokeActorResponse
+Global___InvokeActorResponse: _TypeAlias = InvokeActorResponse  # noqa: Y015
 
-@typing.final
-class GetActorReminderRequest(google.protobuf.message.Message):
+@_typing.final
+class GetActorReminderRequest(_message.Message):
     """GetActorReminderRequest is the message to get an already-registered actor reminder"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    NAME_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    name: builtins.str
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    name: _builtins.str
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        name: builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "name", b"name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetActorReminderRequest: typing_extensions.TypeAlias = GetActorReminderRequest
+Global___GetActorReminderRequest: _TypeAlias = GetActorReminderRequest  # noqa: Y015
 
-@typing.final
-class GetActorReminderResponse(google.protobuf.message.Message):
+@_typing.final
+class GetActorReminderResponse(_message.Message):
     """GetActorReminderResponse is the response conveying an actor's reminder."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    DUE_TIME_FIELD_NUMBER: builtins.int
-    PERIOD_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    TTL_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    due_time: builtins.str
-    period: builtins.str
-    ttl: builtins.str
-    @property
-    def data(self) -> google.protobuf.any_pb2.Any: ...
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    PERIOD_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    TTL_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    due_time: _builtins.str
+    period: _builtins.str
+    ttl: _builtins.str
+    @_builtins.property
+    def data(self) -> _any_pb2.Any: ...
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        due_time: builtins.str | None = ...,
-        period: builtins.str | None = ...,
-        data: google.protobuf.any_pb2.Any | None = ...,
-        ttl: builtins.str | None = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        due_time: _builtins.str | None = ...,
+        period: _builtins.str | None = ...,
+        data: _any_pb2.Any | None = ...,
+        ttl: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__due_time: typing_extensions.TypeAlias = typing.Literal["due_time"]
-    _WhichOneofArgType__due_time: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time"]
-    _WhichOneofReturnType__period: typing_extensions.TypeAlias = typing.Literal["period"]
-    _WhichOneofArgType__period: typing_extensions.TypeAlias = typing.Literal["_period", b"_period"]
-    _WhichOneofReturnType__ttl: typing_extensions.TypeAlias = typing.Literal["ttl"]
-    _WhichOneofArgType__ttl: typing_extensions.TypeAlias = typing.Literal["_ttl", b"_ttl"]
-    @typing.overload
+    _WhichOneofReturnType__due_time: _TypeAlias = _typing.Literal["due_time"]  # noqa: Y015
+    _WhichOneofArgType__due_time: _TypeAlias = _typing.Literal["_due_time", b"_due_time"]  # noqa: Y015
+    _WhichOneofReturnType__period: _TypeAlias = _typing.Literal["period"]  # noqa: Y015
+    _WhichOneofArgType__period: _TypeAlias = _typing.Literal["_period", b"_period"]  # noqa: Y015
+    _WhichOneofReturnType__ttl: _TypeAlias = _typing.Literal["ttl"]  # noqa: Y015
+    _WhichOneofArgType__ttl: _TypeAlias = _typing.Literal["_ttl", b"_ttl"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__due_time) -> _WhichOneofReturnType__due_time | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__period) -> _WhichOneofReturnType__period | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__ttl) -> _WhichOneofReturnType__ttl | None: ...
 
-Global___GetActorReminderResponse: typing_extensions.TypeAlias = GetActorReminderResponse
+Global___GetActorReminderResponse: _TypeAlias = GetActorReminderResponse  # noqa: Y015
 
-@typing.final
-class ListActorRemindersRequest(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class ListActorRemindersRequest(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str | None = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_actor_id", b"_actor_id", "actor_id", b"actor_id"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_actor_id", b"_actor_id", "actor_id", b"actor_id", "actor_type", b"actor_type"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_actor_id", b"_actor_id", "actor_id", b"actor_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_actor_id", b"_actor_id", "actor_id", b"actor_id", "actor_type", b"actor_type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__actor_id: typing_extensions.TypeAlias = typing.Literal["actor_id"]
-    _WhichOneofArgType__actor_id: typing_extensions.TypeAlias = typing.Literal["_actor_id", b"_actor_id"]
+    _WhichOneofReturnType__actor_id: _TypeAlias = _typing.Literal["actor_id"]  # noqa: Y015
+    _WhichOneofArgType__actor_id: _TypeAlias = _typing.Literal["_actor_id", b"_actor_id"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__actor_id) -> _WhichOneofReturnType__actor_id | None: ...
 
-Global___ListActorRemindersRequest: typing_extensions.TypeAlias = ListActorRemindersRequest
+Global___ListActorRemindersRequest: _TypeAlias = ListActorRemindersRequest  # noqa: Y015
 
-@typing.final
-class ListActorRemindersResponse(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class ListActorRemindersResponse(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    REMINDERS_FIELD_NUMBER: builtins.int
-    @property
-    def reminders(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___NamedActorReminder]: ...
+    REMINDERS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def reminders(self) -> _containers.RepeatedCompositeFieldContainer[Global___NamedActorReminder]: ...
     def __init__(
         self,
         *,
-        reminders: collections.abc.Iterable[Global___NamedActorReminder] | None = ...,
+        reminders: _abc.Iterable[Global___NamedActorReminder] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["reminders", b"reminders"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["reminders", b"reminders"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ListActorRemindersResponse: typing_extensions.TypeAlias = ListActorRemindersResponse
+Global___ListActorRemindersResponse: _TypeAlias = ListActorRemindersResponse  # noqa: Y015
 
-@typing.final
-class NamedActorReminder(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class NamedActorReminder(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    REMINDER_FIELD_NUMBER: builtins.int
-    name: builtins.str
-    @property
+    NAME_FIELD_NUMBER: _builtins.int
+    REMINDER_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    @_builtins.property
     def reminder(self) -> Global___ActorReminder: ...
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
+        name: _builtins.str = ...,
         reminder: Global___ActorReminder | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["reminder", b"reminder"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["name", b"name", "reminder", b"reminder"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["reminder", b"reminder"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "reminder", b"reminder"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___NamedActorReminder: typing_extensions.TypeAlias = NamedActorReminder
+Global___NamedActorReminder: _TypeAlias = NamedActorReminder  # noqa: Y015
 
-@typing.final
-class ActorReminder(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class ActorReminder(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    DUE_TIME_FIELD_NUMBER: builtins.int
-    PERIOD_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    TTL_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
-    due_time: builtins.str
-    period: builtins.str
-    ttl: builtins.str
-    @property
-    def data(self) -> google.protobuf.any_pb2.Any: ...
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    PERIOD_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    TTL_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    due_time: _builtins.str
+    period: _builtins.str
+    ttl: _builtins.str
+    @_builtins.property
+    def data(self) -> _any_pb2.Any: ...
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str = ...,
-        due_time: builtins.str | None = ...,
-        period: builtins.str | None = ...,
-        data: google.protobuf.any_pb2.Any | None = ...,
-        ttl: builtins.str | None = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        due_time: _builtins.str | None = ...,
+        period: _builtins.str | None = ...,
+        data: _any_pb2.Any | None = ...,
+        ttl: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__due_time: typing_extensions.TypeAlias = typing.Literal["due_time"]
-    _WhichOneofArgType__due_time: typing_extensions.TypeAlias = typing.Literal["_due_time", b"_due_time"]
-    _WhichOneofReturnType__period: typing_extensions.TypeAlias = typing.Literal["period"]
-    _WhichOneofArgType__period: typing_extensions.TypeAlias = typing.Literal["_period", b"_period"]
-    _WhichOneofReturnType__ttl: typing_extensions.TypeAlias = typing.Literal["ttl"]
-    _WhichOneofArgType__ttl: typing_extensions.TypeAlias = typing.Literal["_ttl", b"_ttl"]
-    @typing.overload
+    _WhichOneofReturnType__due_time: _TypeAlias = _typing.Literal["due_time"]  # noqa: Y015
+    _WhichOneofArgType__due_time: _TypeAlias = _typing.Literal["_due_time", b"_due_time"]  # noqa: Y015
+    _WhichOneofReturnType__period: _TypeAlias = _typing.Literal["period"]  # noqa: Y015
+    _WhichOneofArgType__period: _TypeAlias = _typing.Literal["_period", b"_period"]  # noqa: Y015
+    _WhichOneofReturnType__ttl: _TypeAlias = _typing.Literal["ttl"]  # noqa: Y015
+    _WhichOneofArgType__ttl: _TypeAlias = _typing.Literal["_ttl", b"_ttl"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__due_time) -> _WhichOneofReturnType__due_time | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__period) -> _WhichOneofReturnType__period | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__ttl) -> _WhichOneofReturnType__ttl | None: ...
 
-Global___ActorReminder: typing_extensions.TypeAlias = ActorReminder
+Global___ActorReminder: _TypeAlias = ActorReminder  # noqa: Y015
 
-@typing.final
-class UnregisterActorRemindersByTypeRequest(google.protobuf.message.Message):
+@_typing.final
+class UnregisterActorRemindersByTypeRequest(_message.Message):
     """UnregisterActorRemindersByTypeRequest is the message to unregister an actor
     reminders by the given type. Optional actor_id can be provided to limit the
     scope of the operation to a specific actor instance.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ACTOR_TYPE_FIELD_NUMBER: builtins.int
-    ACTOR_ID_FIELD_NUMBER: builtins.int
-    actor_type: builtins.str
-    actor_id: builtins.str
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
     def __init__(
         self,
         *,
-        actor_type: builtins.str = ...,
-        actor_id: builtins.str | None = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_actor_id", b"_actor_id", "actor_id", b"actor_id"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_actor_id", b"_actor_id", "actor_id", b"actor_id", "actor_type", b"actor_type"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_actor_id", b"_actor_id", "actor_id", b"actor_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_actor_id", b"_actor_id", "actor_id", b"actor_id", "actor_type", b"actor_type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__actor_id: typing_extensions.TypeAlias = typing.Literal["actor_id"]
-    _WhichOneofArgType__actor_id: typing_extensions.TypeAlias = typing.Literal["_actor_id", b"_actor_id"]
+    _WhichOneofReturnType__actor_id: _TypeAlias = _typing.Literal["actor_id"]  # noqa: Y015
+    _WhichOneofArgType__actor_id: _TypeAlias = _typing.Literal["_actor_id", b"_actor_id"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__actor_id) -> _WhichOneofReturnType__actor_id | None: ...
 
-Global___UnregisterActorRemindersByTypeRequest: typing_extensions.TypeAlias = UnregisterActorRemindersByTypeRequest
+Global___UnregisterActorRemindersByTypeRequest: _TypeAlias = UnregisterActorRemindersByTypeRequest  # noqa: Y015
 
-@typing.final
-class UnregisterActorRemindersByTypeResponse(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class UnregisterActorRemindersByTypeResponse(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___UnregisterActorRemindersByTypeResponse: typing_extensions.TypeAlias = UnregisterActorRemindersByTypeResponse
+Global___UnregisterActorRemindersByTypeResponse: _TypeAlias = UnregisterActorRemindersByTypeResponse  # noqa: Y015

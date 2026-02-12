@@ -14,33 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import dapr.proto.common.v1.common_pb2
-import google.protobuf.descriptor
-import google.protobuf.internal.enum_type_wrapper
-import google.protobuf.message
+from dapr.proto.common.v1 import common_pb2 as _common_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class SubtleGetKeyRequest(google.protobuf.message.Message):
+@_typing.final
+class SubtleGetKeyRequest(_message.Message):
     """SubtleGetKeyRequest is the request object for SubtleGetKeyAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     class _KeyFormat:
-        ValueType = typing.NewType("ValueType", builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
+        ValueType = _typing.NewType("ValueType", _builtins.int)
+        V: _TypeAlias = ValueType  # noqa: Y015
 
-    class _KeyFormatEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[SubtleGetKeyRequest._KeyFormat.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+    class _KeyFormatEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[SubtleGetKeyRequest._KeyFormat.ValueType], _builtins.type):
+        DESCRIPTOR: _descriptor.EnumDescriptor
         PEM: SubtleGetKeyRequest._KeyFormat.ValueType  # 0
         """PEM (PKIX) (default)"""
         JSON: SubtleGetKeyRequest._KeyFormat.ValueType  # 1
@@ -52,477 +52,477 @@ class SubtleGetKeyRequest(google.protobuf.message.Message):
     JSON: SubtleGetKeyRequest.KeyFormat.ValueType  # 1
     """JSON (JSON Web Key) as string"""
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    NAME_FIELD_NUMBER: builtins.int
-    FORMAT_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    FORMAT_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component"""
-    name: builtins.str
+    name: _builtins.str
     """Name (or name/version) of the key to use in the key vault"""
     format: Global___SubtleGetKeyRequest.KeyFormat.ValueType
     """Response format"""
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        name: builtins.str = ...,
+        component_name: _builtins.str = ...,
+        name: _builtins.str = ...,
         format: Global___SubtleGetKeyRequest.KeyFormat.ValueType = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["component_name", b"component_name", "format", b"format", "name", b"name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["component_name", b"component_name", "format", b"format", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleGetKeyRequest: typing_extensions.TypeAlias = SubtleGetKeyRequest
+Global___SubtleGetKeyRequest: _TypeAlias = SubtleGetKeyRequest  # noqa: Y015
 
-@typing.final
-class SubtleGetKeyResponse(google.protobuf.message.Message):
+@_typing.final
+class SubtleGetKeyResponse(_message.Message):
     """SubtleGetKeyResponse is the response for SubtleGetKeyAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    PUBLIC_KEY_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    PUBLIC_KEY_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """Name (or name/version) of the key.
     This is returned as response too in case there is a version.
     """
-    public_key: builtins.str
+    public_key: _builtins.str
     """Public key, encoded in the requested format"""
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
-        public_key: builtins.str = ...,
+        name: _builtins.str = ...,
+        public_key: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["name", b"name", "public_key", b"public_key"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "public_key", b"public_key"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleGetKeyResponse: typing_extensions.TypeAlias = SubtleGetKeyResponse
+Global___SubtleGetKeyResponse: _TypeAlias = SubtleGetKeyResponse  # noqa: Y015
 
-@typing.final
-class SubtleEncryptRequest(google.protobuf.message.Message):
+@_typing.final
+class SubtleEncryptRequest(_message.Message):
     """SubtleEncryptRequest is the request for SubtleEncryptAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    PLAINTEXT_FIELD_NUMBER: builtins.int
-    ALGORITHM_FIELD_NUMBER: builtins.int
-    KEY_NAME_FIELD_NUMBER: builtins.int
-    NONCE_FIELD_NUMBER: builtins.int
-    ASSOCIATED_DATA_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    PLAINTEXT_FIELD_NUMBER: _builtins.int
+    ALGORITHM_FIELD_NUMBER: _builtins.int
+    KEY_NAME_FIELD_NUMBER: _builtins.int
+    NONCE_FIELD_NUMBER: _builtins.int
+    ASSOCIATED_DATA_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component"""
-    plaintext: builtins.bytes
+    plaintext: _builtins.bytes
     """Message to encrypt."""
-    algorithm: builtins.str
+    algorithm: _builtins.str
     """Algorithm to use, as in the JWA standard."""
-    key_name: builtins.str
+    key_name: _builtins.str
     """Name (or name/version) of the key."""
-    nonce: builtins.bytes
+    nonce: _builtins.bytes
     """Nonce / initialization vector.
     Ignored with asymmetric ciphers.
     """
-    associated_data: builtins.bytes
+    associated_data: _builtins.bytes
     """Associated Data when using AEAD ciphers (optional)."""
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        plaintext: builtins.bytes = ...,
-        algorithm: builtins.str = ...,
-        key_name: builtins.str = ...,
-        nonce: builtins.bytes = ...,
-        associated_data: builtins.bytes = ...,
+        component_name: _builtins.str = ...,
+        plaintext: _builtins.bytes = ...,
+        algorithm: _builtins.str = ...,
+        key_name: _builtins.str = ...,
+        nonce: _builtins.bytes = ...,
+        associated_data: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "plaintext", b"plaintext"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "plaintext", b"plaintext"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleEncryptRequest: typing_extensions.TypeAlias = SubtleEncryptRequest
+Global___SubtleEncryptRequest: _TypeAlias = SubtleEncryptRequest  # noqa: Y015
 
-@typing.final
-class SubtleEncryptResponse(google.protobuf.message.Message):
+@_typing.final
+class SubtleEncryptResponse(_message.Message):
     """SubtleEncryptResponse is the response for SubtleEncryptAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    CIPHERTEXT_FIELD_NUMBER: builtins.int
-    TAG_FIELD_NUMBER: builtins.int
-    ciphertext: builtins.bytes
+    CIPHERTEXT_FIELD_NUMBER: _builtins.int
+    TAG_FIELD_NUMBER: _builtins.int
+    ciphertext: _builtins.bytes
     """Encrypted ciphertext."""
-    tag: builtins.bytes
+    tag: _builtins.bytes
     """Authentication tag.
     This is nil when not using an authenticated cipher.
     """
     def __init__(
         self,
         *,
-        ciphertext: builtins.bytes = ...,
-        tag: builtins.bytes = ...,
+        ciphertext: _builtins.bytes = ...,
+        tag: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["ciphertext", b"ciphertext", "tag", b"tag"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["ciphertext", b"ciphertext", "tag", b"tag"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleEncryptResponse: typing_extensions.TypeAlias = SubtleEncryptResponse
+Global___SubtleEncryptResponse: _TypeAlias = SubtleEncryptResponse  # noqa: Y015
 
-@typing.final
-class SubtleDecryptRequest(google.protobuf.message.Message):
+@_typing.final
+class SubtleDecryptRequest(_message.Message):
     """SubtleDecryptRequest is the request for SubtleDecryptAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    CIPHERTEXT_FIELD_NUMBER: builtins.int
-    ALGORITHM_FIELD_NUMBER: builtins.int
-    KEY_NAME_FIELD_NUMBER: builtins.int
-    NONCE_FIELD_NUMBER: builtins.int
-    TAG_FIELD_NUMBER: builtins.int
-    ASSOCIATED_DATA_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    CIPHERTEXT_FIELD_NUMBER: _builtins.int
+    ALGORITHM_FIELD_NUMBER: _builtins.int
+    KEY_NAME_FIELD_NUMBER: _builtins.int
+    NONCE_FIELD_NUMBER: _builtins.int
+    TAG_FIELD_NUMBER: _builtins.int
+    ASSOCIATED_DATA_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component"""
-    ciphertext: builtins.bytes
+    ciphertext: _builtins.bytes
     """Message to decrypt."""
-    algorithm: builtins.str
+    algorithm: _builtins.str
     """Algorithm to use, as in the JWA standard."""
-    key_name: builtins.str
+    key_name: _builtins.str
     """Name (or name/version) of the key."""
-    nonce: builtins.bytes
+    nonce: _builtins.bytes
     """Nonce / initialization vector.
     Ignored with asymmetric ciphers.
     """
-    tag: builtins.bytes
+    tag: _builtins.bytes
     """Authentication tag.
     This is nil when not using an authenticated cipher.
     """
-    associated_data: builtins.bytes
+    associated_data: _builtins.bytes
     """Associated Data when using AEAD ciphers (optional)."""
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        ciphertext: builtins.bytes = ...,
-        algorithm: builtins.str = ...,
-        key_name: builtins.str = ...,
-        nonce: builtins.bytes = ...,
-        tag: builtins.bytes = ...,
-        associated_data: builtins.bytes = ...,
+        component_name: _builtins.str = ...,
+        ciphertext: _builtins.bytes = ...,
+        algorithm: _builtins.str = ...,
+        key_name: _builtins.str = ...,
+        nonce: _builtins.bytes = ...,
+        tag: _builtins.bytes = ...,
+        associated_data: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "ciphertext", b"ciphertext", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "tag", b"tag"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "ciphertext", b"ciphertext", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "tag", b"tag"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleDecryptRequest: typing_extensions.TypeAlias = SubtleDecryptRequest
+Global___SubtleDecryptRequest: _TypeAlias = SubtleDecryptRequest  # noqa: Y015
 
-@typing.final
-class SubtleDecryptResponse(google.protobuf.message.Message):
+@_typing.final
+class SubtleDecryptResponse(_message.Message):
     """SubtleDecryptResponse is the response for SubtleDecryptAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    PLAINTEXT_FIELD_NUMBER: builtins.int
-    plaintext: builtins.bytes
+    PLAINTEXT_FIELD_NUMBER: _builtins.int
+    plaintext: _builtins.bytes
     """Decrypted plaintext."""
     def __init__(
         self,
         *,
-        plaintext: builtins.bytes = ...,
+        plaintext: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["plaintext", b"plaintext"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["plaintext", b"plaintext"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleDecryptResponse: typing_extensions.TypeAlias = SubtleDecryptResponse
+Global___SubtleDecryptResponse: _TypeAlias = SubtleDecryptResponse  # noqa: Y015
 
-@typing.final
-class SubtleWrapKeyRequest(google.protobuf.message.Message):
+@_typing.final
+class SubtleWrapKeyRequest(_message.Message):
     """SubtleWrapKeyRequest is the request for SubtleWrapKeyAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    PLAINTEXT_KEY_FIELD_NUMBER: builtins.int
-    ALGORITHM_FIELD_NUMBER: builtins.int
-    KEY_NAME_FIELD_NUMBER: builtins.int
-    NONCE_FIELD_NUMBER: builtins.int
-    ASSOCIATED_DATA_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    PLAINTEXT_KEY_FIELD_NUMBER: _builtins.int
+    ALGORITHM_FIELD_NUMBER: _builtins.int
+    KEY_NAME_FIELD_NUMBER: _builtins.int
+    NONCE_FIELD_NUMBER: _builtins.int
+    ASSOCIATED_DATA_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component"""
-    plaintext_key: builtins.bytes
+    plaintext_key: _builtins.bytes
     """Key to wrap"""
-    algorithm: builtins.str
+    algorithm: _builtins.str
     """Algorithm to use, as in the JWA standard."""
-    key_name: builtins.str
+    key_name: _builtins.str
     """Name (or name/version) of the key."""
-    nonce: builtins.bytes
+    nonce: _builtins.bytes
     """Nonce / initialization vector.
     Ignored with asymmetric ciphers.
     """
-    associated_data: builtins.bytes
+    associated_data: _builtins.bytes
     """Associated Data when using AEAD ciphers (optional)."""
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        plaintext_key: builtins.bytes = ...,
-        algorithm: builtins.str = ...,
-        key_name: builtins.str = ...,
-        nonce: builtins.bytes = ...,
-        associated_data: builtins.bytes = ...,
+        component_name: _builtins.str = ...,
+        plaintext_key: _builtins.bytes = ...,
+        algorithm: _builtins.str = ...,
+        key_name: _builtins.str = ...,
+        nonce: _builtins.bytes = ...,
+        associated_data: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "plaintext_key", b"plaintext_key"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "plaintext_key", b"plaintext_key"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleWrapKeyRequest: typing_extensions.TypeAlias = SubtleWrapKeyRequest
+Global___SubtleWrapKeyRequest: _TypeAlias = SubtleWrapKeyRequest  # noqa: Y015
 
-@typing.final
-class SubtleWrapKeyResponse(google.protobuf.message.Message):
+@_typing.final
+class SubtleWrapKeyResponse(_message.Message):
     """SubtleWrapKeyResponse is the response for SubtleWrapKeyAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    WRAPPED_KEY_FIELD_NUMBER: builtins.int
-    TAG_FIELD_NUMBER: builtins.int
-    wrapped_key: builtins.bytes
+    WRAPPED_KEY_FIELD_NUMBER: _builtins.int
+    TAG_FIELD_NUMBER: _builtins.int
+    wrapped_key: _builtins.bytes
     """Wrapped key."""
-    tag: builtins.bytes
+    tag: _builtins.bytes
     """Authentication tag.
     This is nil when not using an authenticated cipher.
     """
     def __init__(
         self,
         *,
-        wrapped_key: builtins.bytes = ...,
-        tag: builtins.bytes = ...,
+        wrapped_key: _builtins.bytes = ...,
+        tag: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["tag", b"tag", "wrapped_key", b"wrapped_key"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["tag", b"tag", "wrapped_key", b"wrapped_key"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleWrapKeyResponse: typing_extensions.TypeAlias = SubtleWrapKeyResponse
+Global___SubtleWrapKeyResponse: _TypeAlias = SubtleWrapKeyResponse  # noqa: Y015
 
-@typing.final
-class SubtleUnwrapKeyRequest(google.protobuf.message.Message):
+@_typing.final
+class SubtleUnwrapKeyRequest(_message.Message):
     """SubtleUnwrapKeyRequest is the request for SubtleUnwrapKeyAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    WRAPPED_KEY_FIELD_NUMBER: builtins.int
-    ALGORITHM_FIELD_NUMBER: builtins.int
-    KEY_NAME_FIELD_NUMBER: builtins.int
-    NONCE_FIELD_NUMBER: builtins.int
-    TAG_FIELD_NUMBER: builtins.int
-    ASSOCIATED_DATA_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    WRAPPED_KEY_FIELD_NUMBER: _builtins.int
+    ALGORITHM_FIELD_NUMBER: _builtins.int
+    KEY_NAME_FIELD_NUMBER: _builtins.int
+    NONCE_FIELD_NUMBER: _builtins.int
+    TAG_FIELD_NUMBER: _builtins.int
+    ASSOCIATED_DATA_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component"""
-    wrapped_key: builtins.bytes
+    wrapped_key: _builtins.bytes
     """Wrapped key."""
-    algorithm: builtins.str
+    algorithm: _builtins.str
     """Algorithm to use, as in the JWA standard."""
-    key_name: builtins.str
+    key_name: _builtins.str
     """Name (or name/version) of the key."""
-    nonce: builtins.bytes
+    nonce: _builtins.bytes
     """Nonce / initialization vector.
     Ignored with asymmetric ciphers.
     """
-    tag: builtins.bytes
+    tag: _builtins.bytes
     """Authentication tag.
     This is nil when not using an authenticated cipher.
     """
-    associated_data: builtins.bytes
+    associated_data: _builtins.bytes
     """Associated Data when using AEAD ciphers (optional)."""
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        wrapped_key: builtins.bytes = ...,
-        algorithm: builtins.str = ...,
-        key_name: builtins.str = ...,
-        nonce: builtins.bytes = ...,
-        tag: builtins.bytes = ...,
-        associated_data: builtins.bytes = ...,
+        component_name: _builtins.str = ...,
+        wrapped_key: _builtins.bytes = ...,
+        algorithm: _builtins.str = ...,
+        key_name: _builtins.str = ...,
+        nonce: _builtins.bytes = ...,
+        tag: _builtins.bytes = ...,
+        associated_data: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "tag", b"tag", "wrapped_key", b"wrapped_key"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["algorithm", b"algorithm", "associated_data", b"associated_data", "component_name", b"component_name", "key_name", b"key_name", "nonce", b"nonce", "tag", b"tag", "wrapped_key", b"wrapped_key"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleUnwrapKeyRequest: typing_extensions.TypeAlias = SubtleUnwrapKeyRequest
+Global___SubtleUnwrapKeyRequest: _TypeAlias = SubtleUnwrapKeyRequest  # noqa: Y015
 
-@typing.final
-class SubtleUnwrapKeyResponse(google.protobuf.message.Message):
+@_typing.final
+class SubtleUnwrapKeyResponse(_message.Message):
     """SubtleUnwrapKeyResponse is the response for SubtleUnwrapKeyAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    PLAINTEXT_KEY_FIELD_NUMBER: builtins.int
-    plaintext_key: builtins.bytes
+    PLAINTEXT_KEY_FIELD_NUMBER: _builtins.int
+    plaintext_key: _builtins.bytes
     """Key in plaintext"""
     def __init__(
         self,
         *,
-        plaintext_key: builtins.bytes = ...,
+        plaintext_key: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["plaintext_key", b"plaintext_key"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["plaintext_key", b"plaintext_key"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleUnwrapKeyResponse: typing_extensions.TypeAlias = SubtleUnwrapKeyResponse
+Global___SubtleUnwrapKeyResponse: _TypeAlias = SubtleUnwrapKeyResponse  # noqa: Y015
 
-@typing.final
-class SubtleSignRequest(google.protobuf.message.Message):
+@_typing.final
+class SubtleSignRequest(_message.Message):
     """SubtleSignRequest is the request for SubtleSignAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    DIGEST_FIELD_NUMBER: builtins.int
-    ALGORITHM_FIELD_NUMBER: builtins.int
-    KEY_NAME_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    DIGEST_FIELD_NUMBER: _builtins.int
+    ALGORITHM_FIELD_NUMBER: _builtins.int
+    KEY_NAME_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component"""
-    digest: builtins.bytes
+    digest: _builtins.bytes
     """Digest to sign."""
-    algorithm: builtins.str
+    algorithm: _builtins.str
     """Algorithm to use, as in the JWA standard."""
-    key_name: builtins.str
+    key_name: _builtins.str
     """Name (or name/version) of the key."""
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        digest: builtins.bytes = ...,
-        algorithm: builtins.str = ...,
-        key_name: builtins.str = ...,
+        component_name: _builtins.str = ...,
+        digest: _builtins.bytes = ...,
+        algorithm: _builtins.str = ...,
+        key_name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["algorithm", b"algorithm", "component_name", b"component_name", "digest", b"digest", "key_name", b"key_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["algorithm", b"algorithm", "component_name", b"component_name", "digest", b"digest", "key_name", b"key_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleSignRequest: typing_extensions.TypeAlias = SubtleSignRequest
+Global___SubtleSignRequest: _TypeAlias = SubtleSignRequest  # noqa: Y015
 
-@typing.final
-class SubtleSignResponse(google.protobuf.message.Message):
+@_typing.final
+class SubtleSignResponse(_message.Message):
     """SubtleSignResponse is the response for SubtleSignAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    SIGNATURE_FIELD_NUMBER: builtins.int
-    signature: builtins.bytes
+    SIGNATURE_FIELD_NUMBER: _builtins.int
+    signature: _builtins.bytes
     """The signature that was computed"""
     def __init__(
         self,
         *,
-        signature: builtins.bytes = ...,
+        signature: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["signature", b"signature"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["signature", b"signature"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleSignResponse: typing_extensions.TypeAlias = SubtleSignResponse
+Global___SubtleSignResponse: _TypeAlias = SubtleSignResponse  # noqa: Y015
 
-@typing.final
-class SubtleVerifyRequest(google.protobuf.message.Message):
+@_typing.final
+class SubtleVerifyRequest(_message.Message):
     """SubtleVerifyRequest is the request for SubtleVerifyAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    DIGEST_FIELD_NUMBER: builtins.int
-    ALGORITHM_FIELD_NUMBER: builtins.int
-    KEY_NAME_FIELD_NUMBER: builtins.int
-    SIGNATURE_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    DIGEST_FIELD_NUMBER: _builtins.int
+    ALGORITHM_FIELD_NUMBER: _builtins.int
+    KEY_NAME_FIELD_NUMBER: _builtins.int
+    SIGNATURE_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component"""
-    digest: builtins.bytes
+    digest: _builtins.bytes
     """Digest of the message."""
-    algorithm: builtins.str
+    algorithm: _builtins.str
     """Algorithm to use, as in the JWA standard."""
-    key_name: builtins.str
+    key_name: _builtins.str
     """Name (or name/version) of the key."""
-    signature: builtins.bytes
+    signature: _builtins.bytes
     """Signature to verify."""
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        digest: builtins.bytes = ...,
-        algorithm: builtins.str = ...,
-        key_name: builtins.str = ...,
-        signature: builtins.bytes = ...,
+        component_name: _builtins.str = ...,
+        digest: _builtins.bytes = ...,
+        algorithm: _builtins.str = ...,
+        key_name: _builtins.str = ...,
+        signature: _builtins.bytes = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["algorithm", b"algorithm", "component_name", b"component_name", "digest", b"digest", "key_name", b"key_name", "signature", b"signature"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["algorithm", b"algorithm", "component_name", b"component_name", "digest", b"digest", "key_name", b"key_name", "signature", b"signature"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleVerifyRequest: typing_extensions.TypeAlias = SubtleVerifyRequest
+Global___SubtleVerifyRequest: _TypeAlias = SubtleVerifyRequest  # noqa: Y015
 
-@typing.final
-class SubtleVerifyResponse(google.protobuf.message.Message):
+@_typing.final
+class SubtleVerifyResponse(_message.Message):
     """SubtleVerifyResponse is the response for SubtleVerifyAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    VALID_FIELD_NUMBER: builtins.int
-    valid: builtins.bool
+    VALID_FIELD_NUMBER: _builtins.int
+    valid: _builtins.bool
     """True if the signature is valid."""
     def __init__(
         self,
         *,
-        valid: builtins.bool = ...,
+        valid: _builtins.bool = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["valid", b"valid"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["valid", b"valid"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubtleVerifyResponse: typing_extensions.TypeAlias = SubtleVerifyResponse
+Global___SubtleVerifyResponse: _TypeAlias = SubtleVerifyResponse  # noqa: Y015
 
-@typing.final
-class EncryptRequest(google.protobuf.message.Message):
+@_typing.final
+class EncryptRequest(_message.Message):
     """EncryptRequest is the request for EncryptAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    OPTIONS_FIELD_NUMBER: builtins.int
-    PAYLOAD_FIELD_NUMBER: builtins.int
-    @property
+    OPTIONS_FIELD_NUMBER: _builtins.int
+    PAYLOAD_FIELD_NUMBER: _builtins.int
+    @_builtins.property
     def options(self) -> Global___EncryptRequestOptions:
         """Request details. Must be present in the first message only."""
 
-    @property
-    def payload(self) -> dapr.proto.common.v1.common_pb2.StreamPayload:
+    @_builtins.property
+    def payload(self) -> _common_pb2.StreamPayload:
         """Chunk of data of arbitrary size."""
 
     def __init__(
         self,
         *,
         options: Global___EncryptRequestOptions | None = ...,
-        payload: dapr.proto.common.v1.common_pb2.StreamPayload | None = ...,
+        payload: _common_pb2.StreamPayload | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["options", b"options", "payload", b"payload"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["options", b"options", "payload", b"payload"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["options", b"options", "payload", b"payload"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["options", b"options", "payload", b"payload"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___EncryptRequest: typing_extensions.TypeAlias = EncryptRequest
+Global___EncryptRequest: _TypeAlias = EncryptRequest  # noqa: Y015
 
-@typing.final
-class EncryptRequestOptions(google.protobuf.message.Message):
+@_typing.final
+class EncryptRequestOptions(_message.Message):
     """EncryptRequestOptions contains options for the first message in the EncryptAlpha1 request."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    KEY_NAME_FIELD_NUMBER: builtins.int
-    KEY_WRAP_ALGORITHM_FIELD_NUMBER: builtins.int
-    DATA_ENCRYPTION_CIPHER_FIELD_NUMBER: builtins.int
-    OMIT_DECRYPTION_KEY_NAME_FIELD_NUMBER: builtins.int
-    DECRYPTION_KEY_NAME_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    KEY_NAME_FIELD_NUMBER: _builtins.int
+    KEY_WRAP_ALGORITHM_FIELD_NUMBER: _builtins.int
+    DATA_ENCRYPTION_CIPHER_FIELD_NUMBER: _builtins.int
+    OMIT_DECRYPTION_KEY_NAME_FIELD_NUMBER: _builtins.int
+    DECRYPTION_KEY_NAME_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component. Required."""
-    key_name: builtins.str
+    key_name: _builtins.str
     """Name (or name/version) of the key. Required."""
-    key_wrap_algorithm: builtins.str
+    key_wrap_algorithm: _builtins.str
     """Key wrapping algorithm to use. Required.
     Supported options include: A256KW (alias: AES), A128CBC, A192CBC, A256CBC, RSA-OAEP-256 (alias: RSA).
     """
-    data_encryption_cipher: builtins.str
+    data_encryption_cipher: _builtins.str
     """Cipher used to encrypt data (optional): "aes-gcm" (default) or "chacha20-poly1305" """
-    omit_decryption_key_name: builtins.bool
+    omit_decryption_key_name: _builtins.bool
     """If true, the encrypted document does not contain a key reference.
     In that case, calls to the Decrypt method must provide a key reference (name or name/version).
     Defaults to false.
     """
-    decryption_key_name: builtins.str
+    decryption_key_name: _builtins.str
     """Key reference to embed in the encrypted document (name or name/version).
     This is helpful if the reference of the key used to decrypt the document is different from the one used to encrypt it.
     If unset, uses the reference of the key used to encrypt the document (this is the default behavior).
@@ -531,81 +531,81 @@ class EncryptRequestOptions(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        key_name: builtins.str = ...,
-        key_wrap_algorithm: builtins.str = ...,
-        data_encryption_cipher: builtins.str = ...,
-        omit_decryption_key_name: builtins.bool = ...,
-        decryption_key_name: builtins.str = ...,
+        component_name: _builtins.str = ...,
+        key_name: _builtins.str = ...,
+        key_wrap_algorithm: _builtins.str = ...,
+        data_encryption_cipher: _builtins.str = ...,
+        omit_decryption_key_name: _builtins.bool = ...,
+        decryption_key_name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["component_name", b"component_name", "data_encryption_cipher", b"data_encryption_cipher", "decryption_key_name", b"decryption_key_name", "key_name", b"key_name", "key_wrap_algorithm", b"key_wrap_algorithm", "omit_decryption_key_name", b"omit_decryption_key_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["component_name", b"component_name", "data_encryption_cipher", b"data_encryption_cipher", "decryption_key_name", b"decryption_key_name", "key_name", b"key_name", "key_wrap_algorithm", b"key_wrap_algorithm", "omit_decryption_key_name", b"omit_decryption_key_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___EncryptRequestOptions: typing_extensions.TypeAlias = EncryptRequestOptions
+Global___EncryptRequestOptions: _TypeAlias = EncryptRequestOptions  # noqa: Y015
 
-@typing.final
-class EncryptResponse(google.protobuf.message.Message):
+@_typing.final
+class EncryptResponse(_message.Message):
     """EncryptResponse is the response for EncryptAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    PAYLOAD_FIELD_NUMBER: builtins.int
-    @property
-    def payload(self) -> dapr.proto.common.v1.common_pb2.StreamPayload:
+    PAYLOAD_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def payload(self) -> _common_pb2.StreamPayload:
         """Chunk of data."""
 
     def __init__(
         self,
         *,
-        payload: dapr.proto.common.v1.common_pb2.StreamPayload | None = ...,
+        payload: _common_pb2.StreamPayload | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["payload", b"payload"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["payload", b"payload"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["payload", b"payload"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["payload", b"payload"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___EncryptResponse: typing_extensions.TypeAlias = EncryptResponse
+Global___EncryptResponse: _TypeAlias = EncryptResponse  # noqa: Y015
 
-@typing.final
-class DecryptRequest(google.protobuf.message.Message):
+@_typing.final
+class DecryptRequest(_message.Message):
     """DecryptRequest is the request for DecryptAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    OPTIONS_FIELD_NUMBER: builtins.int
-    PAYLOAD_FIELD_NUMBER: builtins.int
-    @property
+    OPTIONS_FIELD_NUMBER: _builtins.int
+    PAYLOAD_FIELD_NUMBER: _builtins.int
+    @_builtins.property
     def options(self) -> Global___DecryptRequestOptions:
         """Request details. Must be present in the first message only."""
 
-    @property
-    def payload(self) -> dapr.proto.common.v1.common_pb2.StreamPayload:
+    @_builtins.property
+    def payload(self) -> _common_pb2.StreamPayload:
         """Chunk of data of arbitrary size."""
 
     def __init__(
         self,
         *,
         options: Global___DecryptRequestOptions | None = ...,
-        payload: dapr.proto.common.v1.common_pb2.StreamPayload | None = ...,
+        payload: _common_pb2.StreamPayload | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["options", b"options", "payload", b"payload"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["options", b"options", "payload", b"payload"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["options", b"options", "payload", b"payload"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["options", b"options", "payload", b"payload"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___DecryptRequest: typing_extensions.TypeAlias = DecryptRequest
+Global___DecryptRequest: _TypeAlias = DecryptRequest  # noqa: Y015
 
-@typing.final
-class DecryptRequestOptions(google.protobuf.message.Message):
+@_typing.final
+class DecryptRequestOptions(_message.Message):
     """DecryptRequestOptions contains options for the first message in the DecryptAlpha1 request."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    COMPONENT_NAME_FIELD_NUMBER: builtins.int
-    KEY_NAME_FIELD_NUMBER: builtins.int
-    component_name: builtins.str
+    COMPONENT_NAME_FIELD_NUMBER: _builtins.int
+    KEY_NAME_FIELD_NUMBER: _builtins.int
+    component_name: _builtins.str
     """Name of the component"""
-    key_name: builtins.str
+    key_name: _builtins.str
     """Name (or name/version) of the key to decrypt the message.
     Overrides any key reference included in the message if present.
     This is required if the message doesn't include a key reference (i.e. was created with omit_decryption_key_name set to true).
@@ -613,33 +613,33 @@ class DecryptRequestOptions(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        component_name: builtins.str = ...,
-        key_name: builtins.str = ...,
+        component_name: _builtins.str = ...,
+        key_name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["component_name", b"component_name", "key_name", b"key_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["component_name", b"component_name", "key_name", b"key_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___DecryptRequestOptions: typing_extensions.TypeAlias = DecryptRequestOptions
+Global___DecryptRequestOptions: _TypeAlias = DecryptRequestOptions  # noqa: Y015
 
-@typing.final
-class DecryptResponse(google.protobuf.message.Message):
+@_typing.final
+class DecryptResponse(_message.Message):
     """DecryptResponse is the response for DecryptAlpha1."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    PAYLOAD_FIELD_NUMBER: builtins.int
-    @property
-    def payload(self) -> dapr.proto.common.v1.common_pb2.StreamPayload:
+    PAYLOAD_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def payload(self) -> _common_pb2.StreamPayload:
         """Chunk of data."""
 
     def __init__(
         self,
         *,
-        payload: dapr.proto.common.v1.common_pb2.StreamPayload | None = ...,
+        payload: _common_pb2.StreamPayload | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["payload", b"payload"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["payload", b"payload"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["payload", b"payload"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["payload", b"payload"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___DecryptResponse: typing_extensions.TypeAlias = DecryptResponse
+Global___DecryptResponse: _TypeAlias = DecryptResponse  # noqa: Y015
