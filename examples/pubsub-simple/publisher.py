@@ -105,8 +105,10 @@ with DaprClient() as d:
         data_content_type='application/json',
     )
 
-    print(f'Bulk published {len(bulk_events)} events. '
-          f'Failed entries: {len(resp.failed_entries)}', flush=True)
+    print(
+        f'Bulk published {len(bulk_events)} events. Failed entries: {len(resp.failed_entries)}',
+        flush=True,
+    )
 
     if resp.failed_entries:
         for entry in resp.failed_entries:
