@@ -14,193 +14,203 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import google.protobuf.any_pb2
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
-import google.protobuf.struct_pb2
+from collections import abc as _abc
+from google.protobuf import any_pb2 as _any_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import duration_pb2 as _duration_pb2
+from google.protobuf import message as _message
+from google.protobuf import struct_pb2 as _struct_pb2
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
 if sys.version_info >= (3, 13):
-    from warnings import deprecated
+    from warnings import deprecated as _deprecated
 else:
-    from typing_extensions import deprecated
+    from typing_extensions import deprecated as _deprecated
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@deprecated("""This message has been marked as deprecated using proto message options.""")
-@typing.final
-class ConversationRequest(google.protobuf.message.Message):
-    """ConversationRequest is the request object for Conversation."""
+@_deprecated("""This message has been marked as deprecated using proto message options.""")
+@_typing.final
+class ConversationRequest(_message.Message):
+    """Note: in general for conversation api reference these links:
+    https://platform.openai.com/docs/api-reference/chat/create
+    https://github.com/openai/openai-go/blob/main/chatcompletion.go
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    ConversationRequest is the request object for Conversation.
+    """
 
-    @typing.final
-    class ParametersEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        @property
-        def value(self) -> google.protobuf.any_pb2.Any: ...
+    @_typing.final
+    class ParametersEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        @_builtins.property
+        def value(self) -> _any_pb2.Any: ...
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: google.protobuf.any_pb2.Any | None = ...,
+            key: _builtins.str = ...,
+            value: _any_pb2.Any | None = ...,
         ) -> None: ...
-        _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
-        def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _HasFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    NAME_FIELD_NUMBER: builtins.int
-    CONTEXTID_FIELD_NUMBER: builtins.int
-    INPUTS_FIELD_NUMBER: builtins.int
-    PARAMETERS_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    SCRUBPII_FIELD_NUMBER: builtins.int
-    TEMPERATURE_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    CONTEXTID_FIELD_NUMBER: _builtins.int
+    INPUTS_FIELD_NUMBER: _builtins.int
+    PARAMETERS_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    SCRUBPII_FIELD_NUMBER: _builtins.int
+    TEMPERATURE_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """The name of Conversation component"""
-    contextID: builtins.str
+    contextID: _builtins.str
     """The ID of an existing chat (like in ChatGPT)"""
-    scrubPII: builtins.bool
+    scrubPII: _builtins.bool
     """Scrub PII data that comes back from the LLM"""
-    temperature: builtins.float
+    temperature: _builtins.float
     """Temperature for the LLM to optimize for creativity or predictability"""
-    @property
-    def inputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationInput]:
+    @_builtins.property
+    def inputs(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationInput]:
         """Inputs for the conversation, support multiple input in one time."""
 
-    @property
-    def parameters(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, google.protobuf.any_pb2.Any]:
+    @_builtins.property
+    def parameters(self) -> _containers.MessageMap[_builtins.str, _any_pb2.Any]:
         """Parameters for all custom fields."""
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata passing to conversation components."""
 
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
-        contextID: builtins.str | None = ...,
-        inputs: collections.abc.Iterable[Global___ConversationInput] | None = ...,
-        parameters: collections.abc.Mapping[builtins.str, google.protobuf.any_pb2.Any] | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        scrubPII: builtins.bool | None = ...,
-        temperature: builtins.float | None = ...,
+        name: _builtins.str = ...,
+        contextID: _builtins.str | None = ...,
+        inputs: _abc.Iterable[Global___ConversationInput] | None = ...,
+        parameters: _abc.Mapping[_builtins.str, _any_pb2.Any] | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+        scrubPII: _builtins.bool | None = ...,
+        temperature: _builtins.float | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_contextID", b"_contextID", "_scrubPII", b"_scrubPII", "_temperature", b"_temperature", "contextID", b"contextID", "scrubPII", b"scrubPII", "temperature", b"temperature"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_contextID", b"_contextID", "_scrubPII", b"_scrubPII", "_temperature", b"_temperature", "contextID", b"contextID", "inputs", b"inputs", "metadata", b"metadata", "name", b"name", "parameters", b"parameters", "scrubPII", b"scrubPII", "temperature", b"temperature"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_contextID", b"_contextID", "_scrubPII", b"_scrubPII", "_temperature", b"_temperature", "contextID", b"contextID", "scrubPII", b"scrubPII", "temperature", b"temperature"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_contextID", b"_contextID", "_scrubPII", b"_scrubPII", "_temperature", b"_temperature", "contextID", b"contextID", "inputs", b"inputs", "metadata", b"metadata", "name", b"name", "parameters", b"parameters", "scrubPII", b"scrubPII", "temperature", b"temperature"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__contextID: typing_extensions.TypeAlias = typing.Literal["contextID"]
-    _WhichOneofArgType__contextID: typing_extensions.TypeAlias = typing.Literal["_contextID", b"_contextID"]
-    _WhichOneofReturnType__scrubPII: typing_extensions.TypeAlias = typing.Literal["scrubPII"]
-    _WhichOneofArgType__scrubPII: typing_extensions.TypeAlias = typing.Literal["_scrubPII", b"_scrubPII"]
-    _WhichOneofReturnType__temperature: typing_extensions.TypeAlias = typing.Literal["temperature"]
-    _WhichOneofArgType__temperature: typing_extensions.TypeAlias = typing.Literal["_temperature", b"_temperature"]
-    @typing.overload
+    _WhichOneofReturnType__contextID: _TypeAlias = _typing.Literal["contextID"]  # noqa: Y015
+    _WhichOneofArgType__contextID: _TypeAlias = _typing.Literal["_contextID", b"_contextID"]  # noqa: Y015
+    _WhichOneofReturnType__scrubPII: _TypeAlias = _typing.Literal["scrubPII"]  # noqa: Y015
+    _WhichOneofArgType__scrubPII: _TypeAlias = _typing.Literal["_scrubPII", b"_scrubPII"]  # noqa: Y015
+    _WhichOneofReturnType__temperature: _TypeAlias = _typing.Literal["temperature"]  # noqa: Y015
+    _WhichOneofArgType__temperature: _TypeAlias = _typing.Literal["_temperature", b"_temperature"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__contextID) -> _WhichOneofReturnType__contextID | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__scrubPII) -> _WhichOneofReturnType__scrubPII | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__temperature) -> _WhichOneofReturnType__temperature | None: ...
 
-Global___ConversationRequest: typing_extensions.TypeAlias = ConversationRequest
+Global___ConversationRequest: _TypeAlias = ConversationRequest  # noqa: Y015
 
-@typing.final
-class ConversationRequestAlpha2(google.protobuf.message.Message):
-    """ConversationRequestAlpha2 is the new request object for Conversation.
+@_typing.final
+class ConversationRequestAlpha2(_message.Message):
+    """Also, when we go stable we need to remove context_id and parameters in ConversationRequestAlpha2 as these are not used.
+
+    ConversationRequestAlpha2 is the new request object for Conversation.
     Many of these fields are inspired by openai.ChatCompletionNewParams
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L2106
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class ParametersEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class ParametersEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        @property
-        def value(self) -> google.protobuf.any_pb2.Any: ...
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        @_builtins.property
+        def value(self) -> _any_pb2.Any: ...
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: google.protobuf.any_pb2.Any | None = ...,
+            key: _builtins.str = ...,
+            value: _any_pb2.Any | None = ...,
         ) -> None: ...
-        _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
-        def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _HasFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    NAME_FIELD_NUMBER: builtins.int
-    CONTEXT_ID_FIELD_NUMBER: builtins.int
-    INPUTS_FIELD_NUMBER: builtins.int
-    PARAMETERS_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    SCRUB_PII_FIELD_NUMBER: builtins.int
-    TEMPERATURE_FIELD_NUMBER: builtins.int
-    TOOLS_FIELD_NUMBER: builtins.int
-    TOOL_CHOICE_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    CONTEXT_ID_FIELD_NUMBER: _builtins.int
+    INPUTS_FIELD_NUMBER: _builtins.int
+    PARAMETERS_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    SCRUB_PII_FIELD_NUMBER: _builtins.int
+    TEMPERATURE_FIELD_NUMBER: _builtins.int
+    TOOLS_FIELD_NUMBER: _builtins.int
+    TOOL_CHOICE_FIELD_NUMBER: _builtins.int
+    RESPONSE_FORMAT_FIELD_NUMBER: _builtins.int
+    PROMPT_CACHE_RETENTION_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """The name of Conversation component"""
-    context_id: builtins.str
+    context_id: _builtins.str
     """The ID of an existing chat (like in ChatGPT)"""
-    scrub_pii: builtins.bool
+    scrub_pii: _builtins.bool
     """Scrub PII data that comes back from the LLM"""
-    temperature: builtins.float
+    temperature: _builtins.float
     """Temperature for the LLM to optimize for creativity or predictability"""
-    tool_choice: builtins.str
+    tool_choice: _builtins.str
     """Controls which (if any) tool is called by the model. 
     `none` means the model will not call any tool and instead generates a message. 
     `auto` means the model can pick between generating a message or calling one or more tools.
@@ -211,158 +221,198 @@ class ConversationRequestAlpha2(google.protobuf.message.Message):
     ref: https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1976
     ref: https://python.langchain.com/docs/how_to/tool_choice/
     """
-    @property
-    def inputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationInputAlpha2]:
-        """Inputs for the conversation, support multiple input in one time.
-        This is the revamped conversation inputs better matching openai.
-        """
+    @_builtins.property
+    def inputs(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationInputAlpha2]:
+        """Inputs for the conversation."""
 
-    @property
-    def parameters(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, google.protobuf.any_pb2.Any]:
+    @_builtins.property
+    def parameters(self) -> _containers.MessageMap[_builtins.str, _any_pb2.Any]:
         """Parameters for all custom fields."""
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
-        """The metadata passing to conversation components."""
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
+        """Set of 16 key-value pairs that can be attached to the conversation. 
+        This can be useful for storing additional information about the object in a structured format, 
+        and querying for objects via API or the dashboard.
+        Keys are strings with a maximum length of 64 characters.
+        Values are strings with a maximum length of 512 characters.
+        NOTE: In the next iteration of this API, this will be within the HTTP/gRPC headers instead.
+        """
 
-    @property
-    def tools(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationTools]:
+    @_builtins.property
+    def tools(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationTools]:
         """Tools register the tools available to be used by the LLM during the conversation.
         These are sent on a per request basis.
         The tools available during the first round of the conversation
         may be different than tools specified later on.
         """
 
+    @_builtins.property
+    def response_format(self) -> _struct_pb2.Struct:
+        """Structured outputs described using a JSON Schema object.
+        Use this when you want strict, typed structured output.
+        This corresponds to OpenAI's:
+          { "type": "json_schema", "json_schema": { ... } }
+
+        The schema must be provided as a parsed JSON object.
+        Note: This is currently only supported by OpenAI components.
+        This is only supported by Deepseek, GoogleAI, HuggingFace, OpenAI, and Anthropic.
+        inspired by openai.ResponseFormat
+        ref: https://github.com/openai/openai-go/blob/main/chatcompletion.go#L3111
+        """
+
+    @_builtins.property
+    def prompt_cache_retention(self) -> _duration_pb2.Duration:
+        """Retention policy for the prompt cache.
+        If using OpenAI with this value set to `24h` it enables extended prompt caching,
+        which keeps cached prefixes active for longer, up to a maximum of 24 hours.
+        [Learn more](https://platform.openai.com/docs/guides/prompt-caching#prompt-cache-retention).
+        inspired by openai.ChatCompletionMessageParamUnion.PromptCacheRetention
+        ref: https://github.com/openai/openai-go/blob/main/chatcompletion.go#L3030
+        """
+
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
-        context_id: builtins.str | None = ...,
-        inputs: collections.abc.Iterable[Global___ConversationInputAlpha2] | None = ...,
-        parameters: collections.abc.Mapping[builtins.str, google.protobuf.any_pb2.Any] | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        scrub_pii: builtins.bool | None = ...,
-        temperature: builtins.float | None = ...,
-        tools: collections.abc.Iterable[Global___ConversationTools] | None = ...,
-        tool_choice: builtins.str | None = ...,
+        name: _builtins.str = ...,
+        context_id: _builtins.str | None = ...,
+        inputs: _abc.Iterable[Global___ConversationInputAlpha2] | None = ...,
+        parameters: _abc.Mapping[_builtins.str, _any_pb2.Any] | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+        scrub_pii: _builtins.bool | None = ...,
+        temperature: _builtins.float | None = ...,
+        tools: _abc.Iterable[Global___ConversationTools] | None = ...,
+        tool_choice: _builtins.str | None = ...,
+        response_format: _struct_pb2.Struct | None = ...,
+        prompt_cache_retention: _duration_pb2.Duration | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_context_id", b"_context_id", "_scrub_pii", b"_scrub_pii", "_temperature", b"_temperature", "_tool_choice", b"_tool_choice", "context_id", b"context_id", "scrub_pii", b"scrub_pii", "temperature", b"temperature", "tool_choice", b"tool_choice"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_context_id", b"_context_id", "_scrub_pii", b"_scrub_pii", "_temperature", b"_temperature", "_tool_choice", b"_tool_choice", "context_id", b"context_id", "inputs", b"inputs", "metadata", b"metadata", "name", b"name", "parameters", b"parameters", "scrub_pii", b"scrub_pii", "temperature", b"temperature", "tool_choice", b"tool_choice", "tools", b"tools"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_context_id", b"_context_id", "_prompt_cache_retention", b"_prompt_cache_retention", "_response_format", b"_response_format", "_scrub_pii", b"_scrub_pii", "_temperature", b"_temperature", "_tool_choice", b"_tool_choice", "context_id", b"context_id", "prompt_cache_retention", b"prompt_cache_retention", "response_format", b"response_format", "scrub_pii", b"scrub_pii", "temperature", b"temperature", "tool_choice", b"tool_choice"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_context_id", b"_context_id", "_prompt_cache_retention", b"_prompt_cache_retention", "_response_format", b"_response_format", "_scrub_pii", b"_scrub_pii", "_temperature", b"_temperature", "_tool_choice", b"_tool_choice", "context_id", b"context_id", "inputs", b"inputs", "metadata", b"metadata", "name", b"name", "parameters", b"parameters", "prompt_cache_retention", b"prompt_cache_retention", "response_format", b"response_format", "scrub_pii", b"scrub_pii", "temperature", b"temperature", "tool_choice", b"tool_choice", "tools", b"tools"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__context_id: typing_extensions.TypeAlias = typing.Literal["context_id"]
-    _WhichOneofArgType__context_id: typing_extensions.TypeAlias = typing.Literal["_context_id", b"_context_id"]
-    _WhichOneofReturnType__scrub_pii: typing_extensions.TypeAlias = typing.Literal["scrub_pii"]
-    _WhichOneofArgType__scrub_pii: typing_extensions.TypeAlias = typing.Literal["_scrub_pii", b"_scrub_pii"]
-    _WhichOneofReturnType__temperature: typing_extensions.TypeAlias = typing.Literal["temperature"]
-    _WhichOneofArgType__temperature: typing_extensions.TypeAlias = typing.Literal["_temperature", b"_temperature"]
-    _WhichOneofReturnType__tool_choice: typing_extensions.TypeAlias = typing.Literal["tool_choice"]
-    _WhichOneofArgType__tool_choice: typing_extensions.TypeAlias = typing.Literal["_tool_choice", b"_tool_choice"]
-    @typing.overload
+    _WhichOneofReturnType__context_id: _TypeAlias = _typing.Literal["context_id"]  # noqa: Y015
+    _WhichOneofArgType__context_id: _TypeAlias = _typing.Literal["_context_id", b"_context_id"]  # noqa: Y015
+    _WhichOneofReturnType__prompt_cache_retention: _TypeAlias = _typing.Literal["prompt_cache_retention"]  # noqa: Y015
+    _WhichOneofArgType__prompt_cache_retention: _TypeAlias = _typing.Literal["_prompt_cache_retention", b"_prompt_cache_retention"]  # noqa: Y015
+    _WhichOneofReturnType__response_format: _TypeAlias = _typing.Literal["response_format"]  # noqa: Y015
+    _WhichOneofArgType__response_format: _TypeAlias = _typing.Literal["_response_format", b"_response_format"]  # noqa: Y015
+    _WhichOneofReturnType__scrub_pii: _TypeAlias = _typing.Literal["scrub_pii"]  # noqa: Y015
+    _WhichOneofArgType__scrub_pii: _TypeAlias = _typing.Literal["_scrub_pii", b"_scrub_pii"]  # noqa: Y015
+    _WhichOneofReturnType__temperature: _TypeAlias = _typing.Literal["temperature"]  # noqa: Y015
+    _WhichOneofArgType__temperature: _TypeAlias = _typing.Literal["_temperature", b"_temperature"]  # noqa: Y015
+    _WhichOneofReturnType__tool_choice: _TypeAlias = _typing.Literal["tool_choice"]  # noqa: Y015
+    _WhichOneofArgType__tool_choice: _TypeAlias = _typing.Literal["_tool_choice", b"_tool_choice"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__context_id) -> _WhichOneofReturnType__context_id | None: ...
-    @typing.overload
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__prompt_cache_retention) -> _WhichOneofReturnType__prompt_cache_retention | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__response_format) -> _WhichOneofReturnType__response_format | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__scrub_pii) -> _WhichOneofReturnType__scrub_pii | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__temperature) -> _WhichOneofReturnType__temperature | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__tool_choice) -> _WhichOneofReturnType__tool_choice | None: ...
 
-Global___ConversationRequestAlpha2: typing_extensions.TypeAlias = ConversationRequestAlpha2
+Global___ConversationRequestAlpha2: _TypeAlias = ConversationRequestAlpha2  # noqa: Y015
 
-@deprecated("""This message has been marked as deprecated using proto message options.""")
-@typing.final
-class ConversationInput(google.protobuf.message.Message):
+@_deprecated("""This message has been marked as deprecated using proto message options.""")
+@_typing.final
+class ConversationInput(_message.Message):
     """maintained for backwards compatibility"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    CONTENT_FIELD_NUMBER: builtins.int
-    ROLE_FIELD_NUMBER: builtins.int
-    SCRUBPII_FIELD_NUMBER: builtins.int
-    content: builtins.str
+    CONTENT_FIELD_NUMBER: _builtins.int
+    ROLE_FIELD_NUMBER: _builtins.int
+    SCRUBPII_FIELD_NUMBER: _builtins.int
+    content: _builtins.str
     """The content to send to the llm"""
-    role: builtins.str
+    role: _builtins.str
     """The role to set for the message"""
-    scrubPII: builtins.bool
+    scrubPII: _builtins.bool
     """Scrub PII data that goes into the LLM"""
     def __init__(
         self,
         *,
-        content: builtins.str = ...,
-        role: builtins.str | None = ...,
-        scrubPII: builtins.bool | None = ...,
+        content: _builtins.str = ...,
+        role: _builtins.str | None = ...,
+        scrubPII: _builtins.bool | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_role", b"_role", "_scrubPII", b"_scrubPII", "role", b"role", "scrubPII", b"scrubPII"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_role", b"_role", "_scrubPII", b"_scrubPII", "content", b"content", "role", b"role", "scrubPII", b"scrubPII"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_role", b"_role", "_scrubPII", b"_scrubPII", "role", b"role", "scrubPII", b"scrubPII"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_role", b"_role", "_scrubPII", b"_scrubPII", "content", b"content", "role", b"role", "scrubPII", b"scrubPII"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__role: typing_extensions.TypeAlias = typing.Literal["role"]
-    _WhichOneofArgType__role: typing_extensions.TypeAlias = typing.Literal["_role", b"_role"]
-    _WhichOneofReturnType__scrubPII: typing_extensions.TypeAlias = typing.Literal["scrubPII"]
-    _WhichOneofArgType__scrubPII: typing_extensions.TypeAlias = typing.Literal["_scrubPII", b"_scrubPII"]
-    @typing.overload
+    _WhichOneofReturnType__role: _TypeAlias = _typing.Literal["role"]  # noqa: Y015
+    _WhichOneofArgType__role: _TypeAlias = _typing.Literal["_role", b"_role"]  # noqa: Y015
+    _WhichOneofReturnType__scrubPII: _TypeAlias = _typing.Literal["scrubPII"]  # noqa: Y015
+    _WhichOneofArgType__scrubPII: _TypeAlias = _typing.Literal["_scrubPII", b"_scrubPII"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__role) -> _WhichOneofReturnType__role | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__scrubPII) -> _WhichOneofReturnType__scrubPII | None: ...
 
-Global___ConversationInput: typing_extensions.TypeAlias = ConversationInput
+Global___ConversationInput: _TypeAlias = ConversationInput  # noqa: Y015
 
-@typing.final
-class ConversationInputAlpha2(google.protobuf.message.Message):
-    """directly inspired by openai.ChatCompletionNewParams
+@_typing.final
+class ConversationInputAlpha2(_message.Message):
+    """TODO: when going stable just make these flat in the ConversationRequestAlpha2,
+    or reevaluate the grouping of fields...
+    directly inspired by openai.ChatCompletionNewParams
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L2106
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    MESSAGES_FIELD_NUMBER: builtins.int
-    SCRUB_PII_FIELD_NUMBER: builtins.int
-    scrub_pii: builtins.bool
+    MESSAGES_FIELD_NUMBER: _builtins.int
+    SCRUB_PII_FIELD_NUMBER: _builtins.int
+    scrub_pii: _builtins.bool
     """Scrub PII data that goes into the LLM"""
-    @property
-    def messages(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationMessage]:
+    @_builtins.property
+    def messages(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationMessage]:
         """The content to send to the llm"""
 
     def __init__(
         self,
         *,
-        messages: collections.abc.Iterable[Global___ConversationMessage] | None = ...,
-        scrub_pii: builtins.bool | None = ...,
+        messages: _abc.Iterable[Global___ConversationMessage] | None = ...,
+        scrub_pii: _builtins.bool | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_scrub_pii", b"_scrub_pii", "scrub_pii", b"scrub_pii"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_scrub_pii", b"_scrub_pii", "messages", b"messages", "scrub_pii", b"scrub_pii"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_scrub_pii", b"_scrub_pii", "scrub_pii", b"scrub_pii"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_scrub_pii", b"_scrub_pii", "messages", b"messages", "scrub_pii", b"scrub_pii"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__scrub_pii: typing_extensions.TypeAlias = typing.Literal["scrub_pii"]
-    _WhichOneofArgType__scrub_pii: typing_extensions.TypeAlias = typing.Literal["_scrub_pii", b"_scrub_pii"]
+    _WhichOneofReturnType__scrub_pii: _TypeAlias = _typing.Literal["scrub_pii"]  # noqa: Y015
+    _WhichOneofArgType__scrub_pii: _TypeAlias = _typing.Literal["_scrub_pii", b"_scrub_pii"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__scrub_pii) -> _WhichOneofReturnType__scrub_pii | None: ...
 
-Global___ConversationInputAlpha2: typing_extensions.TypeAlias = ConversationInputAlpha2
+Global___ConversationInputAlpha2: _TypeAlias = ConversationInputAlpha2  # noqa: Y015
 
-@typing.final
-class ConversationMessage(google.protobuf.message.Message):
+@_typing.final
+class ConversationMessage(_message.Message):
     """inspired by openai.ChatCompletionMessageParamUnion
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1449
     The role field is inherent to the type of ConversationMessage,
     and is propagated in the backend according to the underlying LLM provider type.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    OF_DEVELOPER_FIELD_NUMBER: builtins.int
-    OF_SYSTEM_FIELD_NUMBER: builtins.int
-    OF_USER_FIELD_NUMBER: builtins.int
-    OF_ASSISTANT_FIELD_NUMBER: builtins.int
-    OF_TOOL_FIELD_NUMBER: builtins.int
-    @property
+    OF_DEVELOPER_FIELD_NUMBER: _builtins.int
+    OF_SYSTEM_FIELD_NUMBER: _builtins.int
+    OF_USER_FIELD_NUMBER: _builtins.int
+    OF_ASSISTANT_FIELD_NUMBER: _builtins.int
+    OF_TOOL_FIELD_NUMBER: _builtins.int
+    @_builtins.property
     def of_developer(self) -> Global___ConversationMessageOfDeveloper: ...
-    @property
+    @_builtins.property
     def of_system(self) -> Global___ConversationMessageOfSystem: ...
-    @property
+    @_builtins.property
     def of_user(self) -> Global___ConversationMessageOfUser: ...
-    @property
+    @_builtins.property
     def of_assistant(self) -> Global___ConversationMessageOfAssistant: ...
-    @property
+    @_builtins.property
     def of_tool(self) -> Global___ConversationMessageOfTool:
         """Note: there could be a ConversationMessageOfFunction type here too, 
         but that is deprecated in openai, so we will not support this.
@@ -377,112 +427,112 @@ class ConversationMessage(google.protobuf.message.Message):
         of_assistant: Global___ConversationMessageOfAssistant | None = ...,
         of_tool: Global___ConversationMessageOfTool | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["message_types", b"message_types", "of_assistant", b"of_assistant", "of_developer", b"of_developer", "of_system", b"of_system", "of_tool", b"of_tool", "of_user", b"of_user"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["message_types", b"message_types", "of_assistant", b"of_assistant", "of_developer", b"of_developer", "of_system", b"of_system", "of_tool", b"of_tool", "of_user", b"of_user"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["message_types", b"message_types", "of_assistant", b"of_assistant", "of_developer", b"of_developer", "of_system", b"of_system", "of_tool", b"of_tool", "of_user", b"of_user"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["message_types", b"message_types", "of_assistant", b"of_assistant", "of_developer", b"of_developer", "of_system", b"of_system", "of_tool", b"of_tool", "of_user", b"of_user"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType_message_types: typing_extensions.TypeAlias = typing.Literal["of_developer", "of_system", "of_user", "of_assistant", "of_tool"]
-    _WhichOneofArgType_message_types: typing_extensions.TypeAlias = typing.Literal["message_types", b"message_types"]
+    _WhichOneofReturnType_message_types: _TypeAlias = _typing.Literal["of_developer", "of_system", "of_user", "of_assistant", "of_tool"]  # noqa: Y015
+    _WhichOneofArgType_message_types: _TypeAlias = _typing.Literal["message_types", b"message_types"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType_message_types) -> _WhichOneofReturnType_message_types | None: ...
 
-Global___ConversationMessage: typing_extensions.TypeAlias = ConversationMessage
+Global___ConversationMessage: _TypeAlias = ConversationMessage  # noqa: Y015
 
-@typing.final
-class ConversationMessageOfDeveloper(google.protobuf.message.Message):
+@_typing.final
+class ConversationMessageOfDeveloper(_message.Message):
     """inspired by openai.ChatCompletionDeveloperMessageParam
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1130
     ConversationMessageOfDeveloper is intended to be the contents of a conversation message,
     as the role of a developer.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    CONTENT_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    CONTENT_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """The name of the participant in the message."""
-    @property
-    def content(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
+    @_builtins.property
+    def content(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
     def __init__(
         self,
         *,
-        name: builtins.str | None = ...,
-        content: collections.abc.Iterable[Global___ConversationMessageContent] | None = ...,
+        name: _builtins.str | None = ...,
+        content: _abc.Iterable[Global___ConversationMessageContent] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name", b"_name", "name", b"name"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name", b"_name", "content", b"content", "name", b"name"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "content", b"content", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__name: typing_extensions.TypeAlias = typing.Literal["name"]
-    _WhichOneofArgType__name: typing_extensions.TypeAlias = typing.Literal["_name", b"_name"]
+    _WhichOneofReturnType__name: _TypeAlias = _typing.Literal["name"]  # noqa: Y015
+    _WhichOneofArgType__name: _TypeAlias = _typing.Literal["_name", b"_name"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__name) -> _WhichOneofReturnType__name | None: ...
 
-Global___ConversationMessageOfDeveloper: typing_extensions.TypeAlias = ConversationMessageOfDeveloper
+Global___ConversationMessageOfDeveloper: _TypeAlias = ConversationMessageOfDeveloper  # noqa: Y015
 
-@typing.final
-class ConversationMessageOfSystem(google.protobuf.message.Message):
+@_typing.final
+class ConversationMessageOfSystem(_message.Message):
     """inspired by openai.ChatCompletionSystemMessageParam
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1842
     ConversationMessageOfSystem is intended to be the contents of a conversation message,
     as the role of a system.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    CONTENT_FIELD_NUMBER: builtins.int
-    name: builtins.str
-    @property
-    def content(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
+    NAME_FIELD_NUMBER: _builtins.int
+    CONTENT_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    @_builtins.property
+    def content(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
     def __init__(
         self,
         *,
-        name: builtins.str | None = ...,
-        content: collections.abc.Iterable[Global___ConversationMessageContent] | None = ...,
+        name: _builtins.str | None = ...,
+        content: _abc.Iterable[Global___ConversationMessageContent] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name", b"_name", "name", b"name"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name", b"_name", "content", b"content", "name", b"name"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "content", b"content", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__name: typing_extensions.TypeAlias = typing.Literal["name"]
-    _WhichOneofArgType__name: typing_extensions.TypeAlias = typing.Literal["_name", b"_name"]
+    _WhichOneofReturnType__name: _TypeAlias = _typing.Literal["name"]  # noqa: Y015
+    _WhichOneofArgType__name: _TypeAlias = _typing.Literal["_name", b"_name"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__name) -> _WhichOneofReturnType__name | None: ...
 
-Global___ConversationMessageOfSystem: typing_extensions.TypeAlias = ConversationMessageOfSystem
+Global___ConversationMessageOfSystem: _TypeAlias = ConversationMessageOfSystem  # noqa: Y015
 
-@typing.final
-class ConversationMessageOfUser(google.protobuf.message.Message):
+@_typing.final
+class ConversationMessageOfUser(_message.Message):
     """inspired by openai.ChatCompletionUserMessageParam
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L2060C6-L2060C36
     ConversationMessageOfUser is intended to be the contents of a conversation message,
     as the role of an end user.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    CONTENT_FIELD_NUMBER: builtins.int
-    name: builtins.str
-    @property
-    def content(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
+    NAME_FIELD_NUMBER: _builtins.int
+    CONTENT_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    @_builtins.property
+    def content(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
     def __init__(
         self,
         *,
-        name: builtins.str | None = ...,
-        content: collections.abc.Iterable[Global___ConversationMessageContent] | None = ...,
+        name: _builtins.str | None = ...,
+        content: _abc.Iterable[Global___ConversationMessageContent] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name", b"_name", "name", b"name"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name", b"_name", "content", b"content", "name", b"name"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "content", b"content", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__name: typing_extensions.TypeAlias = typing.Literal["name"]
-    _WhichOneofArgType__name: typing_extensions.TypeAlias = typing.Literal["_name", b"_name"]
+    _WhichOneofReturnType__name: _TypeAlias = _typing.Literal["name"]  # noqa: Y015
+    _WhichOneofArgType__name: _TypeAlias = _typing.Literal["_name", b"_name"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__name) -> _WhichOneofReturnType__name | None: ...
 
-Global___ConversationMessageOfUser: typing_extensions.TypeAlias = ConversationMessageOfUser
+Global___ConversationMessageOfUser: _TypeAlias = ConversationMessageOfUser  # noqa: Y015
 
-@typing.final
-class ConversationMessageOfAssistant(google.protobuf.message.Message):
+@_typing.final
+class ConversationMessageOfAssistant(_message.Message):
     """inspired by openai.ChatCompletionAssistantMessageParam
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L310
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L2060C6-L2060C36
@@ -490,75 +540,77 @@ class ConversationMessageOfAssistant(google.protobuf.message.Message):
     as the role of an assistant.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    CONTENT_FIELD_NUMBER: builtins.int
-    TOOL_CALLS_FIELD_NUMBER: builtins.int
-    name: builtins.str
-    @property
-    def content(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]:
-        """TODO: there is an audio field here to bring in when the time comes 1.17 or later."""
-
-    @property
-    def tool_calls(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationToolCalls]:
+    NAME_FIELD_NUMBER: _builtins.int
+    CONTENT_FIELD_NUMBER: _builtins.int
+    TOOL_CALLS_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    @_builtins.property
+    def content(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
+    @_builtins.property
+    def tool_calls(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationToolCalls]:
         """Tool calls generated by the model, such as function calls for the client to then make."""
 
     def __init__(
         self,
         *,
-        name: builtins.str | None = ...,
-        content: collections.abc.Iterable[Global___ConversationMessageContent] | None = ...,
-        tool_calls: collections.abc.Iterable[Global___ConversationToolCalls] | None = ...,
+        name: _builtins.str | None = ...,
+        content: _abc.Iterable[Global___ConversationMessageContent] | None = ...,
+        tool_calls: _abc.Iterable[Global___ConversationToolCalls] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name", b"_name", "name", b"name"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_name", b"_name", "content", b"content", "name", b"name", "tool_calls", b"tool_calls"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "content", b"content", "name", b"name", "tool_calls", b"tool_calls"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__name: typing_extensions.TypeAlias = typing.Literal["name"]
-    _WhichOneofArgType__name: typing_extensions.TypeAlias = typing.Literal["_name", b"_name"]
+    _WhichOneofReturnType__name: _TypeAlias = _typing.Literal["name"]  # noqa: Y015
+    _WhichOneofArgType__name: _TypeAlias = _typing.Literal["_name", b"_name"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__name) -> _WhichOneofReturnType__name | None: ...
 
-Global___ConversationMessageOfAssistant: typing_extensions.TypeAlias = ConversationMessageOfAssistant
+Global___ConversationMessageOfAssistant: _TypeAlias = ConversationMessageOfAssistant  # noqa: Y015
 
-@typing.final
-class ConversationMessageOfTool(google.protobuf.message.Message):
-    """inspired by openai.ChatCompletionToolMessageParam
+@_typing.final
+class ConversationMessageOfTool(_message.Message):
+    """Note on ConversationMessageOfTool.tool_id: openai does have this as required; 
+    however, some llm providers (ie mistral) do not require this field,
+    so we denote as optional.
+
+    inspired by openai.ChatCompletionToolMessageParam
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L2011
     ConversationMessageOfTool is intended to be the contents of a conversation message,
     as the role of a tool.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    TOOL_ID_FIELD_NUMBER: builtins.int
-    NAME_FIELD_NUMBER: builtins.int
-    CONTENT_FIELD_NUMBER: builtins.int
-    tool_id: builtins.str
+    TOOL_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    CONTENT_FIELD_NUMBER: _builtins.int
+    tool_id: _builtins.str
     """Tool ID is helpful for tracking tool history"""
-    name: builtins.str
+    name: _builtins.str
     """Name of tool associated with the message"""
-    @property
-    def content(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
+    @_builtins.property
+    def content(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationMessageContent]: ...
     def __init__(
         self,
         *,
-        tool_id: builtins.str | None = ...,
-        name: builtins.str = ...,
-        content: collections.abc.Iterable[Global___ConversationMessageContent] | None = ...,
+        tool_id: _builtins.str | None = ...,
+        name: _builtins.str = ...,
+        content: _abc.Iterable[Global___ConversationMessageContent] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_tool_id", b"_tool_id", "tool_id", b"tool_id"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_tool_id", b"_tool_id", "content", b"content", "name", b"name", "tool_id", b"tool_id"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_tool_id", b"_tool_id", "tool_id", b"tool_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_tool_id", b"_tool_id", "content", b"content", "name", b"name", "tool_id", b"tool_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__tool_id: typing_extensions.TypeAlias = typing.Literal["tool_id"]
-    _WhichOneofArgType__tool_id: typing_extensions.TypeAlias = typing.Literal["_tool_id", b"_tool_id"]
+    _WhichOneofReturnType__tool_id: _TypeAlias = _typing.Literal["tool_id"]  # noqa: Y015
+    _WhichOneofArgType__tool_id: _TypeAlias = _typing.Literal["_tool_id", b"_tool_id"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__tool_id) -> _WhichOneofReturnType__tool_id | None: ...
 
-Global___ConversationMessageOfTool: typing_extensions.TypeAlias = ConversationMessageOfTool
+Global___ConversationMessageOfTool: _TypeAlias = ConversationMessageOfTool  # noqa: Y015
 
-@typing.final
-class ConversationToolCalls(google.protobuf.message.Message):
+@_typing.final
+class ConversationToolCalls(_message.Message):
     """inspired by openai.ChatCompletionMessageToolCallParam and openai.ChatCompletionMessageToolCall
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1669
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1611
@@ -567,46 +619,48 @@ class ConversationToolCalls(google.protobuf.message.Message):
     that this client can also have the tool handy itself to execute it.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ID_FIELD_NUMBER: builtins.int
-    FUNCTION_FIELD_NUMBER: builtins.int
-    id: builtins.str
-    @property
-    def function(self) -> Global___ConversationToolCallsOfFunction: ...
+    ID_FIELD_NUMBER: _builtins.int
+    FUNCTION_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    @_builtins.property
+    def function(self) -> Global___ConversationToolCallsOfFunction:
+        """TODO: we are currently missing an OfCustom -> ConversationToolCallsOfFunction"""
+
     def __init__(
         self,
         *,
-        id: builtins.str | None = ...,
+        id: _builtins.str | None = ...,
         function: Global___ConversationToolCallsOfFunction | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_id", b"_id", "function", b"function", "id", b"id", "tool_types", b"tool_types"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_id", b"_id", "function", b"function", "id", b"id", "tool_types", b"tool_types"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_id", b"_id", "function", b"function", "id", b"id", "tool_types", b"tool_types"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_id", b"_id", "function", b"function", "id", b"id", "tool_types", b"tool_types"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__id: typing_extensions.TypeAlias = typing.Literal["id"]
-    _WhichOneofArgType__id: typing_extensions.TypeAlias = typing.Literal["_id", b"_id"]
-    _WhichOneofReturnType_tool_types: typing_extensions.TypeAlias = typing.Literal["function"]
-    _WhichOneofArgType_tool_types: typing_extensions.TypeAlias = typing.Literal["tool_types", b"tool_types"]
-    @typing.overload
+    _WhichOneofReturnType__id: _TypeAlias = _typing.Literal["id"]  # noqa: Y015
+    _WhichOneofArgType__id: _TypeAlias = _typing.Literal["_id", b"_id"]  # noqa: Y015
+    _WhichOneofReturnType_tool_types: _TypeAlias = _typing.Literal["function"]  # noqa: Y015
+    _WhichOneofArgType_tool_types: _TypeAlias = _typing.Literal["tool_types", b"tool_types"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__id) -> _WhichOneofReturnType__id | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType_tool_types) -> _WhichOneofReturnType_tool_types | None: ...
 
-Global___ConversationToolCalls: typing_extensions.TypeAlias = ConversationToolCalls
+Global___ConversationToolCalls: _TypeAlias = ConversationToolCalls  # noqa: Y015
 
-@typing.final
-class ConversationToolCallsOfFunction(google.protobuf.message.Message):
+@_typing.final
+class ConversationToolCallsOfFunction(_message.Message):
     """inspired by openai.ChatCompletionMessageToolCallFunctionParam
-    https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1692
+    https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1859
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    ARGUMENTS_FIELD_NUMBER: builtins.int
-    name: builtins.str
-    arguments: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    ARGUMENTS_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    arguments: _builtins.str
     """The arguments to call the function with, as generated by the model in JSON
     format. Note that the model does not always generate valid JSON, and may
     hallucinate parameters not defined by your function schema. Validate the
@@ -615,16 +669,16 @@ class ConversationToolCallsOfFunction(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
-        arguments: builtins.str = ...,
+        name: _builtins.str = ...,
+        arguments: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["arguments", b"arguments", "name", b"name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["arguments", b"arguments", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ConversationToolCallsOfFunction: typing_extensions.TypeAlias = ConversationToolCallsOfFunction
+Global___ConversationToolCallsOfFunction: _TypeAlias = ConversationToolCallsOfFunction  # noqa: Y015
 
-@typing.final
-class ConversationMessageContent(google.protobuf.message.Message):
+@_typing.final
+class ConversationMessageContent(_message.Message):
     """inspired by openai.ChatCompletionContentPartTextParam & openai.ChatCompletionDeveloperMessageParamContentUnion
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1084
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1154C6-L1154C53
@@ -632,101 +686,237 @@ class ConversationMessageContent(google.protobuf.message.Message):
     so instead of this, we support that in one message type instead.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    TEXT_FIELD_NUMBER: builtins.int
-    text: builtins.str
+    TEXT_FIELD_NUMBER: _builtins.int
+    text: _builtins.str
     def __init__(
         self,
         *,
-        text: builtins.str = ...,
+        text: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["text", b"text"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["text", b"text"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ConversationMessageContent: typing_extensions.TypeAlias = ConversationMessageContent
+Global___ConversationMessageContent: _TypeAlias = ConversationMessageContent  # noqa: Y015
 
-@deprecated("""This message has been marked as deprecated using proto message options.""")
-@typing.final
-class ConversationResult(google.protobuf.message.Message):
+@_deprecated("""This message has been marked as deprecated using proto message options.""")
+@_typing.final
+class ConversationResult(_message.Message):
     """ConversationResult is the result for one input."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class ParametersEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class ParametersEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        @property
-        def value(self) -> google.protobuf.any_pb2.Any: ...
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        @_builtins.property
+        def value(self) -> _any_pb2.Any: ...
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: google.protobuf.any_pb2.Any | None = ...,
+            key: _builtins.str = ...,
+            value: _any_pb2.Any | None = ...,
         ) -> None: ...
-        _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
-        def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _HasFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    RESULT_FIELD_NUMBER: builtins.int
-    PARAMETERS_FIELD_NUMBER: builtins.int
-    result: builtins.str
+    RESULT_FIELD_NUMBER: _builtins.int
+    PARAMETERS_FIELD_NUMBER: _builtins.int
+    result: _builtins.str
     """Result for the one conversation input."""
-    @property
-    def parameters(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, google.protobuf.any_pb2.Any]:
+    @_builtins.property
+    def parameters(self) -> _containers.MessageMap[_builtins.str, _any_pb2.Any]:
         """Parameters for all custom fields."""
 
     def __init__(
         self,
         *,
-        result: builtins.str = ...,
-        parameters: collections.abc.Mapping[builtins.str, google.protobuf.any_pb2.Any] | None = ...,
+        result: _builtins.str = ...,
+        parameters: _abc.Mapping[_builtins.str, _any_pb2.Any] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["parameters", b"parameters", "result", b"result"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["parameters", b"parameters", "result", b"result"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ConversationResult: typing_extensions.TypeAlias = ConversationResult
+Global___ConversationResult: _TypeAlias = ConversationResult  # noqa: Y015
 
-@typing.final
-class ConversationResultAlpha2(google.protobuf.message.Message):
+@_typing.final
+class ConversationResultAlpha2(_message.Message):
     """inspired by openai.ChatCompletion
     ConversationResultAlpha2 is the result for one input.
+    https://github.com/openai/openai-go/blob/main/chatcompletion.go#L167
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    CHOICES_FIELD_NUMBER: builtins.int
-    @property
-    def choices(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationResultChoices]:
+    CHOICES_FIELD_NUMBER: _builtins.int
+    MODEL_FIELD_NUMBER: _builtins.int
+    USAGE_FIELD_NUMBER: _builtins.int
+    model: _builtins.str
+    """The model used for the conversation."""
+    @_builtins.property
+    def choices(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationResultChoices]:
         """Result for the conversation input."""
+
+    @_builtins.property
+    def usage(self) -> Global___ConversationResultAlpha2CompletionUsage:
+        """Usage statistics for the completion request."""
 
     def __init__(
         self,
         *,
-        choices: collections.abc.Iterable[Global___ConversationResultChoices] | None = ...,
+        choices: _abc.Iterable[Global___ConversationResultChoices] | None = ...,
+        model: _builtins.str | None = ...,
+        usage: Global___ConversationResultAlpha2CompletionUsage | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["choices", b"choices"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_model", b"_model", "_usage", b"_usage", "model", b"model", "usage", b"usage"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_model", b"_model", "_usage", b"_usage", "choices", b"choices", "model", b"model", "usage", b"usage"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__model: _TypeAlias = _typing.Literal["model"]  # noqa: Y015
+    _WhichOneofArgType__model: _TypeAlias = _typing.Literal["_model", b"_model"]  # noqa: Y015
+    _WhichOneofReturnType__usage: _TypeAlias = _typing.Literal["usage"]  # noqa: Y015
+    _WhichOneofArgType__usage: _TypeAlias = _typing.Literal["_usage", b"_usage"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__model) -> _WhichOneofReturnType__model | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__usage) -> _WhichOneofReturnType__usage | None: ...
+
+Global___ConversationResultAlpha2: _TypeAlias = ConversationResultAlpha2  # noqa: Y015
+
+@_typing.final
+class ConversationResultAlpha2CompletionUsage(_message.Message):
+    """ref: https://github.com/openai/openai-go/blob/main/completion.go#L162
+    inspired by openai.ChatCompletion.Usage of type CompletionUsage
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    COMPLETION_TOKENS_FIELD_NUMBER: _builtins.int
+    PROMPT_TOKENS_FIELD_NUMBER: _builtins.int
+    TOTAL_TOKENS_FIELD_NUMBER: _builtins.int
+    COMPLETION_TOKENS_DETAILS_FIELD_NUMBER: _builtins.int
+    PROMPT_TOKENS_DETAILS_FIELD_NUMBER: _builtins.int
+    completion_tokens: _builtins.int
+    """Number of tokens in the generated completion."""
+    prompt_tokens: _builtins.int
+    """Number of tokens in the prompt."""
+    total_tokens: _builtins.int
+    """Total number of tokens used in the request (prompt + completion)."""
+    @_builtins.property
+    def completion_tokens_details(self) -> Global___ConversationResultAlpha2CompletionUsageCompletionTokensDetails:
+        """Breakdown of tokens used in completion."""
+
+    @_builtins.property
+    def prompt_tokens_details(self) -> Global___ConversationResultAlpha2CompletionUsagePromptTokensDetails:
+        """Breakdown of tokens used in the prompt."""
+
+    def __init__(
+        self,
+        *,
+        completion_tokens: _builtins.int = ...,
+        prompt_tokens: _builtins.int = ...,
+        total_tokens: _builtins.int = ...,
+        completion_tokens_details: Global___ConversationResultAlpha2CompletionUsageCompletionTokensDetails | None = ...,
+        prompt_tokens_details: Global___ConversationResultAlpha2CompletionUsagePromptTokensDetails | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_completion_tokens_details", b"_completion_tokens_details", "_prompt_tokens_details", b"_prompt_tokens_details", "completion_tokens_details", b"completion_tokens_details", "prompt_tokens_details", b"prompt_tokens_details"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_completion_tokens_details", b"_completion_tokens_details", "_prompt_tokens_details", b"_prompt_tokens_details", "completion_tokens", b"completion_tokens", "completion_tokens_details", b"completion_tokens_details", "prompt_tokens", b"prompt_tokens", "prompt_tokens_details", b"prompt_tokens_details", "total_tokens", b"total_tokens"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__completion_tokens_details: _TypeAlias = _typing.Literal["completion_tokens_details"]  # noqa: Y015
+    _WhichOneofArgType__completion_tokens_details: _TypeAlias = _typing.Literal["_completion_tokens_details", b"_completion_tokens_details"]  # noqa: Y015
+    _WhichOneofReturnType__prompt_tokens_details: _TypeAlias = _typing.Literal["prompt_tokens_details"]  # noqa: Y015
+    _WhichOneofArgType__prompt_tokens_details: _TypeAlias = _typing.Literal["_prompt_tokens_details", b"_prompt_tokens_details"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__completion_tokens_details) -> _WhichOneofReturnType__completion_tokens_details | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__prompt_tokens_details) -> _WhichOneofReturnType__prompt_tokens_details | None: ...
+
+Global___ConversationResultAlpha2CompletionUsage: _TypeAlias = ConversationResultAlpha2CompletionUsage  # noqa: Y015
+
+@_typing.final
+class ConversationResultAlpha2CompletionUsageCompletionTokensDetails(_message.Message):
+    """inspired by openai.CompletionUsageCompletionTokensDetails
+    ref: https://github.com/openai/openai-go/blob/main/completion.go#L192
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ACCEPTED_PREDICTION_TOKENS_FIELD_NUMBER: _builtins.int
+    AUDIO_TOKENS_FIELD_NUMBER: _builtins.int
+    REASONING_TOKENS_FIELD_NUMBER: _builtins.int
+    REJECTED_PREDICTION_TOKENS_FIELD_NUMBER: _builtins.int
+    accepted_prediction_tokens: _builtins.int
+    """When using Predicted Outputs,
+    the number of tokens in the prediction that appeared in the completion.
+    """
+    audio_tokens: _builtins.int
+    """Audio input tokens generated by the model."""
+    reasoning_tokens: _builtins.int
+    """Tokens generated by the model for reasoning."""
+    rejected_prediction_tokens: _builtins.int
+    """When using Predicted Outputs, the number of tokens in the prediction that did
+    not appear in the completion. However, like reasoning tokens, these tokens are
+    still counted in the total completion tokens for purposes of billing, output,
+    and context window limits.
+    """
+    def __init__(
+        self,
+        *,
+        accepted_prediction_tokens: _builtins.int = ...,
+        audio_tokens: _builtins.int = ...,
+        reasoning_tokens: _builtins.int = ...,
+        rejected_prediction_tokens: _builtins.int = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["accepted_prediction_tokens", b"accepted_prediction_tokens", "audio_tokens", b"audio_tokens", "reasoning_tokens", b"reasoning_tokens", "rejected_prediction_tokens", b"rejected_prediction_tokens"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ConversationResultAlpha2: typing_extensions.TypeAlias = ConversationResultAlpha2
+Global___ConversationResultAlpha2CompletionUsageCompletionTokensDetails: _TypeAlias = ConversationResultAlpha2CompletionUsageCompletionTokensDetails  # noqa: Y015
 
-@typing.final
-class ConversationResultChoices(google.protobuf.message.Message):
+@_typing.final
+class ConversationResultAlpha2CompletionUsagePromptTokensDetails(_message.Message):
+    """inspired by openai.CompletionUsagePromptTokensDetails
+    ref: https://github.com/openai/openai-go/blob/main/completion.go#L223C6-L223C40
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    AUDIO_TOKENS_FIELD_NUMBER: _builtins.int
+    CACHED_TOKENS_FIELD_NUMBER: _builtins.int
+    audio_tokens: _builtins.int
+    """Audio input tokens present in the prompt."""
+    cached_tokens: _builtins.int
+    """Cached tokens present in the prompt."""
+    def __init__(
+        self,
+        *,
+        audio_tokens: _builtins.int = ...,
+        cached_tokens: _builtins.int = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["audio_tokens", b"audio_tokens", "cached_tokens", b"cached_tokens"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___ConversationResultAlpha2CompletionUsagePromptTokensDetails: _TypeAlias = ConversationResultAlpha2CompletionUsagePromptTokensDetails  # noqa: Y015
+
+@_typing.final
+class ConversationResultChoices(_message.Message):
     """inspired by openai.ChatCompletionChoice
     based on https://github.com/openai/openai-go/blob/main/chatcompletion.go#L226
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    FINISH_REASON_FIELD_NUMBER: builtins.int
-    INDEX_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
-    finish_reason: builtins.str
+    FINISH_REASON_FIELD_NUMBER: _builtins.int
+    INDEX_FIELD_NUMBER: _builtins.int
+    MESSAGE_FIELD_NUMBER: _builtins.int
+    finish_reason: _builtins.str
     """The reason the model stopped generating tokens. This will be `stop` if the model
     hit a natural stop point or a provided stop sequence, `length` if the maximum
     number of tokens specified in the request was reached, `content_filter` if
@@ -734,178 +924,180 @@ class ConversationResultChoices(google.protobuf.message.Message):
     model called a tool.
     Any of "stop", "length", "tool_calls", "content_filter".
     """
-    index: builtins.int
+    index: _builtins.int
     """The index of the choice in the list of choices."""
-    @property
-    def message(self) -> Global___ConversationResultMessage: ...
+    @_builtins.property
+    def message(self) -> Global___ConversationResultMessage:
+        """A chat completion message generated by the model."""
+
     def __init__(
         self,
         *,
-        finish_reason: builtins.str = ...,
-        index: builtins.int = ...,
+        finish_reason: _builtins.str = ...,
+        index: _builtins.int = ...,
         message: Global___ConversationResultMessage | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["message", b"message"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["finish_reason", b"finish_reason", "index", b"index", "message", b"message"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["message", b"message"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["finish_reason", b"finish_reason", "index", b"index", "message", b"message"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ConversationResultChoices: typing_extensions.TypeAlias = ConversationResultChoices
+Global___ConversationResultChoices: _TypeAlias = ConversationResultChoices  # noqa: Y015
 
-@typing.final
-class ConversationResultMessage(google.protobuf.message.Message):
+@_typing.final
+class ConversationResultMessage(_message.Message):
     """inspired by openai.ChatCompletionMessage
     based on https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1218C6-L1218C27
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    CONTENT_FIELD_NUMBER: builtins.int
-    TOOL_CALLS_FIELD_NUMBER: builtins.int
-    content: builtins.str
+    CONTENT_FIELD_NUMBER: _builtins.int
+    TOOL_CALLS_FIELD_NUMBER: _builtins.int
+    content: _builtins.str
     """The contents of the message."""
-    @property
-    def tool_calls(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationToolCalls]:
+    @_builtins.property
+    def tool_calls(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationToolCalls]:
         """The tool calls generated by the model."""
 
     def __init__(
         self,
         *,
-        content: builtins.str = ...,
-        tool_calls: collections.abc.Iterable[Global___ConversationToolCalls] | None = ...,
+        content: _builtins.str = ...,
+        tool_calls: _abc.Iterable[Global___ConversationToolCalls] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["content", b"content", "tool_calls", b"tool_calls"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["content", b"content", "tool_calls", b"tool_calls"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ConversationResultMessage: typing_extensions.TypeAlias = ConversationResultMessage
+Global___ConversationResultMessage: _TypeAlias = ConversationResultMessage  # noqa: Y015
 
-@deprecated("""This message has been marked as deprecated using proto message options.""")
-@typing.final
-class ConversationResponse(google.protobuf.message.Message):
+@_deprecated("""This message has been marked as deprecated using proto message options.""")
+@_typing.final
+class ConversationResponse(_message.Message):
     """ConversationResponse is the response for Conversation."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    CONTEXTID_FIELD_NUMBER: builtins.int
-    OUTPUTS_FIELD_NUMBER: builtins.int
-    contextID: builtins.str
+    CONTEXTID_FIELD_NUMBER: _builtins.int
+    OUTPUTS_FIELD_NUMBER: _builtins.int
+    contextID: _builtins.str
     """The ID of an existing chat (like in ChatGPT)"""
-    @property
-    def outputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationResult]:
+    @_builtins.property
+    def outputs(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationResult]:
         """An array of results."""
 
     def __init__(
         self,
         *,
-        contextID: builtins.str | None = ...,
-        outputs: collections.abc.Iterable[Global___ConversationResult] | None = ...,
+        contextID: _builtins.str | None = ...,
+        outputs: _abc.Iterable[Global___ConversationResult] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_contextID", b"_contextID", "contextID", b"contextID"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_contextID", b"_contextID", "contextID", b"contextID", "outputs", b"outputs"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_contextID", b"_contextID", "contextID", b"contextID"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_contextID", b"_contextID", "contextID", b"contextID", "outputs", b"outputs"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__contextID: typing_extensions.TypeAlias = typing.Literal["contextID"]
-    _WhichOneofArgType__contextID: typing_extensions.TypeAlias = typing.Literal["_contextID", b"_contextID"]
+    _WhichOneofReturnType__contextID: _TypeAlias = _typing.Literal["contextID"]  # noqa: Y015
+    _WhichOneofArgType__contextID: _TypeAlias = _typing.Literal["_contextID", b"_contextID"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__contextID) -> _WhichOneofReturnType__contextID | None: ...
 
-Global___ConversationResponse: typing_extensions.TypeAlias = ConversationResponse
+Global___ConversationResponse: _TypeAlias = ConversationResponse  # noqa: Y015
 
-@typing.final
-class ConversationResponseAlpha2(google.protobuf.message.Message):
+@_typing.final
+class ConversationResponseAlpha2(_message.Message):
     """ConversationResponseAlpha2 is the Alpha2 response for Conversation."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    CONTEXT_ID_FIELD_NUMBER: builtins.int
-    OUTPUTS_FIELD_NUMBER: builtins.int
-    context_id: builtins.str
+    CONTEXT_ID_FIELD_NUMBER: _builtins.int
+    OUTPUTS_FIELD_NUMBER: _builtins.int
+    context_id: _builtins.str
     """The ID of an existing chat (like in ChatGPT)"""
-    @property
-    def outputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ConversationResultAlpha2]:
+    @_builtins.property
+    def outputs(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationResultAlpha2]:
         """An array of results."""
 
     def __init__(
         self,
         *,
-        context_id: builtins.str | None = ...,
-        outputs: collections.abc.Iterable[Global___ConversationResultAlpha2] | None = ...,
+        context_id: _builtins.str | None = ...,
+        outputs: _abc.Iterable[Global___ConversationResultAlpha2] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_context_id", b"_context_id", "context_id", b"context_id"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_context_id", b"_context_id", "context_id", b"context_id", "outputs", b"outputs"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_context_id", b"_context_id", "context_id", b"context_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_context_id", b"_context_id", "context_id", b"context_id", "outputs", b"outputs"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__context_id: typing_extensions.TypeAlias = typing.Literal["context_id"]
-    _WhichOneofArgType__context_id: typing_extensions.TypeAlias = typing.Literal["_context_id", b"_context_id"]
+    _WhichOneofReturnType__context_id: _TypeAlias = _typing.Literal["context_id"]  # noqa: Y015
+    _WhichOneofArgType__context_id: _TypeAlias = _typing.Literal["_context_id", b"_context_id"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__context_id) -> _WhichOneofReturnType__context_id | None: ...
 
-Global___ConversationResponseAlpha2: typing_extensions.TypeAlias = ConversationResponseAlpha2
+Global___ConversationResponseAlpha2: _TypeAlias = ConversationResponseAlpha2  # noqa: Y015
 
-@typing.final
-class ConversationTools(google.protobuf.message.Message):
+@_typing.final
+class ConversationTools(_message.Message):
     """ConversationTools are the typed tools available to be called.
     inspired by openai.ChatCompletionToolParam
     https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1950
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    FUNCTION_FIELD_NUMBER: builtins.int
-    @property
+    FUNCTION_FIELD_NUMBER: _builtins.int
+    @_builtins.property
     def function(self) -> Global___ConversationToolsFunction: ...
     def __init__(
         self,
         *,
         function: Global___ConversationToolsFunction | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["function", b"function", "tool_types", b"tool_types"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["function", b"function", "tool_types", b"tool_types"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["function", b"function", "tool_types", b"tool_types"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["function", b"function", "tool_types", b"tool_types"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType_tool_types: typing_extensions.TypeAlias = typing.Literal["function"]
-    _WhichOneofArgType_tool_types: typing_extensions.TypeAlias = typing.Literal["tool_types", b"tool_types"]
+    _WhichOneofReturnType_tool_types: _TypeAlias = _typing.Literal["function"]  # noqa: Y015
+    _WhichOneofArgType_tool_types: _TypeAlias = _typing.Literal["tool_types", b"tool_types"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType_tool_types) -> _WhichOneofReturnType_tool_types | None: ...
 
-Global___ConversationTools: typing_extensions.TypeAlias = ConversationTools
+Global___ConversationTools: _TypeAlias = ConversationTools  # noqa: Y015
 
-@typing.final
-class ConversationToolsFunction(google.protobuf.message.Message):
+@_typing.final
+class ConversationToolsFunction(_message.Message):
     """ConversationToolsFunction is the main tool type to be used in a conversation.
     inspired by openai.FunctionDefinitionParam
     https://pkg.go.dev/github.com/openai/openai-go/shared#FunctionDefinitionParam
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    DESCRIPTION_FIELD_NUMBER: builtins.int
-    PARAMETERS_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    DESCRIPTION_FIELD_NUMBER: _builtins.int
+    PARAMETERS_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """The name of the function to be called."""
-    description: builtins.str
+    description: _builtins.str
     """A description of what the function does, 
     used by the model to choose when and how to call the function.
     """
-    @property
-    def parameters(self) -> google.protobuf.struct_pb2.Struct:
+    @_builtins.property
+    def parameters(self) -> _struct_pb2.Struct:
         """The parameters the functions accepts, described as a JSON Schema object. 
         See the [guide](https://platform.openai.com/docs/guides/function-calling) for examples,
-        and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
+        and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.	
         Omitting `parameters` defines a function with an empty parameter list.
         """
 
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
-        description: builtins.str | None = ...,
-        parameters: google.protobuf.struct_pb2.Struct | None = ...,
+        name: _builtins.str = ...,
+        description: _builtins.str | None = ...,
+        parameters: _struct_pb2.Struct | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_description", b"_description", "description", b"description", "parameters", b"parameters"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_description", b"_description", "description", b"description", "name", b"name", "parameters", b"parameters"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "description", b"description", "parameters", b"parameters"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "description", b"description", "name", b"name", "parameters", b"parameters"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__description: typing_extensions.TypeAlias = typing.Literal["description"]
-    _WhichOneofArgType__description: typing_extensions.TypeAlias = typing.Literal["_description", b"_description"]
+    _WhichOneofReturnType__description: _TypeAlias = _typing.Literal["description"]  # noqa: Y015
+    _WhichOneofArgType__description: _TypeAlias = _typing.Literal["_description", b"_description"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__description) -> _WhichOneofReturnType__description | None: ...
 
-Global___ConversationToolsFunction: typing_extensions.TypeAlias = ConversationToolsFunction
+Global___ConversationToolsFunction: _TypeAlias = ConversationToolsFunction  # noqa: Y015

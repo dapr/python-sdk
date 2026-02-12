@@ -25,14 +25,14 @@ _sym_db = _symbol_database.Default()
 from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\"dapr/proto/runtime/v1/invoke.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequestBi\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\"dapr/proto/runtime/v1/invoke.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a!dapr/proto/common/v1/common.proto\"X\n\x14InvokeServiceRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x34\n\x07message\x18\x03 \x01(\x0b\x32#.dapr.proto.common.v1.InvokeRequestBo\n\nio.dapr.v1B\x10\x44\x61prInvokeProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'dapr.proto.runtime.v1.invoke_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\252\002\033Dapr.Client.Autogen.Grpc.v1'
+  _globals['DESCRIPTOR']._serialized_options = b'\n\nio.dapr.v1B\020DaprInvokeProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\252\002\033Dapr.Client.Autogen.Grpc.v1'
   _globals['_INVOKESERVICEREQUEST']._serialized_start=96
   _globals['_INVOKESERVICEREQUEST']._serialized_end=184
 # @@protoc_insertion_point(module_scope)

@@ -14,35 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import google.protobuf.descriptor
-import google.protobuf.internal.enum_type_wrapper
-import google.protobuf.message
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class TryLockRequest(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class TryLockRequest(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    RESOURCE_ID_FIELD_NUMBER: builtins.int
-    LOCK_OWNER_FIELD_NUMBER: builtins.int
-    EXPIRY_IN_SECONDS_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    RESOURCE_ID_FIELD_NUMBER: _builtins.int
+    LOCK_OWNER_FIELD_NUMBER: _builtins.int
+    EXPIRY_IN_SECONDS_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """Required. The lock store name,e.g. `redis`."""
-    resource_id: builtins.str
+    resource_id: _builtins.str
     """Required. resource_id is the lock key. e.g. `order_id_111`
     It stands for "which resource I want to protect"
     """
-    lock_owner: builtins.str
+    lock_owner: _builtins.str
     """Required. lock_owner indicate the identifier of lock owner.
     You can generate a uuid as lock_owner.For example,in golang:
 
@@ -59,70 +59,70 @@ class TryLockRequest(google.protobuf.message.Message):
     3. When reentrant lock is needed,the existing lock_owner is required to identify client and check "whether this client can reenter this lock".
       So this field in the request shouldn't be removed.
     """
-    expiry_in_seconds: builtins.int
+    expiry_in_seconds: _builtins.int
     """Required. The time before expiry.The time unit is second."""
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        resource_id: builtins.str = ...,
-        lock_owner: builtins.str = ...,
-        expiry_in_seconds: builtins.int = ...,
+        store_name: _builtins.str = ...,
+        resource_id: _builtins.str = ...,
+        lock_owner: _builtins.str = ...,
+        expiry_in_seconds: _builtins.int = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["expiry_in_seconds", b"expiry_in_seconds", "lock_owner", b"lock_owner", "resource_id", b"resource_id", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["expiry_in_seconds", b"expiry_in_seconds", "lock_owner", b"lock_owner", "resource_id", b"resource_id", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___TryLockRequest: typing_extensions.TypeAlias = TryLockRequest
+Global___TryLockRequest: _TypeAlias = TryLockRequest  # noqa: Y015
 
-@typing.final
-class TryLockResponse(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class TryLockResponse(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    SUCCESS_FIELD_NUMBER: builtins.int
-    success: builtins.bool
+    SUCCESS_FIELD_NUMBER: _builtins.int
+    success: _builtins.bool
     def __init__(
         self,
         *,
-        success: builtins.bool = ...,
+        success: _builtins.bool = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["success", b"success"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["success", b"success"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___TryLockResponse: typing_extensions.TypeAlias = TryLockResponse
+Global___TryLockResponse: _TypeAlias = TryLockResponse  # noqa: Y015
 
-@typing.final
-class UnlockRequest(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class UnlockRequest(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    RESOURCE_ID_FIELD_NUMBER: builtins.int
-    LOCK_OWNER_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
-    resource_id: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    RESOURCE_ID_FIELD_NUMBER: _builtins.int
+    LOCK_OWNER_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
+    resource_id: _builtins.str
     """resource_id is the lock key."""
-    lock_owner: builtins.str
+    lock_owner: _builtins.str
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        resource_id: builtins.str = ...,
-        lock_owner: builtins.str = ...,
+        store_name: _builtins.str = ...,
+        resource_id: _builtins.str = ...,
+        lock_owner: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["lock_owner", b"lock_owner", "resource_id", b"resource_id", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["lock_owner", b"lock_owner", "resource_id", b"resource_id", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___UnlockRequest: typing_extensions.TypeAlias = UnlockRequest
+Global___UnlockRequest: _TypeAlias = UnlockRequest  # noqa: Y015
 
-@typing.final
-class UnlockResponse(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class UnlockResponse(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
     class _Status:
-        ValueType = typing.NewType("ValueType", builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
+        ValueType = _typing.NewType("ValueType", _builtins.int)
+        V: _TypeAlias = ValueType  # noqa: Y015
 
-    class _StatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[UnlockResponse._Status.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+    class _StatusEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[UnlockResponse._Status.ValueType], _builtins.type):
+        DESCRIPTOR: _descriptor.EnumDescriptor
         SUCCESS: UnlockResponse._Status.ValueType  # 0
         LOCK_DOES_NOT_EXIST: UnlockResponse._Status.ValueType  # 1
         LOCK_BELONGS_TO_OTHERS: UnlockResponse._Status.ValueType  # 2
@@ -134,14 +134,14 @@ class UnlockResponse(google.protobuf.message.Message):
     LOCK_BELONGS_TO_OTHERS: UnlockResponse.Status.ValueType  # 2
     INTERNAL_ERROR: UnlockResponse.Status.ValueType  # 3
 
-    STATUS_FIELD_NUMBER: builtins.int
+    STATUS_FIELD_NUMBER: _builtins.int
     status: Global___UnlockResponse.Status.ValueType
     def __init__(
         self,
         *,
         status: Global___UnlockResponse.Status.ValueType = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["status", b"status"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["status", b"status"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___UnlockResponse: typing_extensions.TypeAlias = UnlockResponse
+Global___UnlockResponse: _TypeAlias = UnlockResponse  # noqa: Y015
