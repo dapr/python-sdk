@@ -91,6 +91,29 @@ with DaprClient() as d:
 
     time.sleep(0.5)
 
+    # Bulk publish multiple events at once using publish_events
+    bulk_events = [
+        json.dumps({'id': 20, 'message': 'bulk event 1'}),
+        json.dumps({'id': 21, 'message': 'bulk event 2'}),
+        json.dumps({'id': 22, 'message': 'bulk event 3'}),
+    ]
+
+    resp = d.publish_events(
+        pubsub_name='pubsub',
+        topic_name='TOPIC_A',
+        data=bulk_events,
+        data_content_type='application/json',
+    )
+
+    print(f'Bulk published {len(bulk_events)} events. '
+          f'Failed entries: {len(resp.failed_entries)}', flush=True)
+
+    if resp.failed_entries:
+        for entry in resp.failed_entries:
+            print(f'  Failed entry_id={entry.entry_id}: {entry.error}', flush=True)
+
+    time.sleep(0.5)
+
     # Send a cloud event with plain text data
     id = 10
     cloud_event = {

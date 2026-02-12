@@ -31,6 +31,7 @@ from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.struct_pb2 import Struct as GrpcStruct
 from grpc import (  # type: ignore
     RpcError,
+    StatusCode,
     StreamStreamClientInterceptor,
     StreamUnaryClientInterceptor,
     UnaryStreamClientInterceptor,
@@ -60,6 +61,8 @@ from dapr.clients.grpc._request import (
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
+    BulkPublishResponse,
+    BulkPublishResponseFailedEntry,
     BulkStateItem,
     BulkStatesResponse,
     ConfigurationResponse,
@@ -486,6 +489,98 @@ class DaprGrpcClient:
             raise DaprGrpcError(err) from err
 
         return DaprResponse(call.initial_metadata())
+
+    def publish_events(
+        self,
+        pubsub_name: str,
+        topic_name: str,
+        data: Sequence[Union[bytes, str]],
+        publish_metadata: Dict[str, str] = {},
+        data_content_type: Optional[str] = None,
+    ) -> BulkPublishResponse:
+        """Bulk publish multiple events to a given topic.
+        This publishes multiple events to a specified topic and pubsub component.
+        Each event can be bytes or str. The str data is encoded into bytes with
+        default charset of utf-8.
+
+        The example publishes multiple string events to a topic:
+
+            from dapr.clients import DaprClient
+            with DaprClient() as d:
+                resp = d.publish_events(
+                    pubsub_name='pubsub_1',
+                    topic_name='TOPIC_A',
+                    data=['message1', 'message2', 'message3'],
+                    data_content_type='text/plain',
+                )
+                # resp.failed_entries includes any entries that failed to publish.
+
+        Args:
+            pubsub_name (str): the name of the pubsub component
+            topic_name (str): the topic name to publish to
+            data (Sequence[Union[bytes, str]]): sequence of events to publish;
+                each event must be bytes or str
+            publish_metadata (Dict[str, str], optional): Dapr metadata for the
+                bulk publish request
+            data_content_type (str, optional): content type of the event data
+
+        Returns:
+            :class:`BulkPublishResponse` with any failed entries
+        """
+        entries = []
+        for event in data:
+            entry_id = str(uuid.uuid4())
+            if isinstance(event, bytes):
+                event_data = event
+                content_type = data_content_type or 'application/octet-stream'
+            elif isinstance(event, str):
+                event_data = event.encode('utf-8')
+                content_type = data_content_type or 'text/plain'
+            else:
+                raise ValueError(f'invalid type for event {type(event)}')
+
+            entries.append(
+                api_v1.BulkPublishRequestEntry(
+                    entry_id=entry_id,
+                    event=event_data,
+                    content_type=content_type,
+                )
+            )
+
+        req = api_v1.BulkPublishRequest(
+            pubsub_name=pubsub_name,
+            topic=topic_name,
+            entries=entries,
+            metadata=publish_metadata,
+        )
+
+        try:
+            response, call = self.retry_policy.run_rpc(
+                self._stub.BulkPublishEvent.with_call, req
+            )
+        except RpcError as err:
+            if err.code() == StatusCode.UNIMPLEMENTED:
+                try:
+                    response, call = self.retry_policy.run_rpc(
+                        self._stub.BulkPublishEventAlpha1.with_call, req
+                    )
+                except RpcError as err2:
+                    raise DaprGrpcError(err2) from err2
+            else:
+                raise DaprGrpcError(err) from err
+
+        failed_entries = [
+            BulkPublishResponseFailedEntry(
+                entry_id=entry.entry_id,
+                error=entry.error,
+            )
+            for entry in response.failedEntries
+        ]
+
+        return BulkPublishResponse(
+            failed_entries=failed_entries,
+            headers=call.initial_metadata(),
+        )
 
     def subscribe(
         self,
