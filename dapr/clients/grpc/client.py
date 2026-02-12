@@ -555,9 +555,7 @@ class DaprGrpcClient:
         )
 
         try:
-            response, call = self.retry_policy.run_rpc(
-                self._stub.BulkPublishEvent.with_call, req
-            )
+            response, call = self.retry_policy.run_rpc(self._stub.BulkPublishEvent.with_call, req)
         except RpcError as err:
             if err.code() == StatusCode.UNIMPLEMENTED:
                 try:
