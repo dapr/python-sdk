@@ -10,14 +10,14 @@ It demonstrates the following APIs:
 - **etags**: Use of etag and error handling for etag mismatches
 
 It creates a client using `DaprClient` and calls all the state API methods available as example.
-It uses the default configuration from Dapr init in [self-hosted mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-self-hosted). 
+It uses the default configuration from Dapr init in [self-hosted mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-self-hosted).
 
 > **Note:** Make sure to use the latest proto bindings
 
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 

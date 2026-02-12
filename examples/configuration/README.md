@@ -9,7 +9,7 @@ It demonstrates the following APIs:
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -18,7 +18,7 @@ It demonstrates the following APIs:
 pip3 install dapr dapr-ext-grpc
 ```
 
-## Store the configuration in configurationstore 
+## Store the configuration in configurationstore
 <!-- STEP
 name: Set configuration value
 expected_stdout_lines:
@@ -38,7 +38,7 @@ docker exec dapr_redis redis-cli SET orderId2 "200||1"
 
 Change directory to this folder:
 ```bash
-cd examples/configuration 
+cd examples/configuration
 ```
 
 To run this example, use the following command:

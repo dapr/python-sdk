@@ -32,7 +32,7 @@ This includes the following packages:
 ### Prerequisites
 
 * [Install Dapr standalone mode](https://github.com/dapr/cli#install-dapr-on-your-local-machine-self-hosted)
-* [Install Python 3.9+](https://www.python.org/downloads/)
+* [Install Python 3.10+](https://www.python.org/downloads/)
 
 ### Install Dapr python sdk
 
@@ -145,11 +145,9 @@ The generated files will be found in `docs/_build`.
 
 ```sh
 pip3 install -r tools/requirements.txt
-export DAPR_BRANCH=release-1.16 # Optional, defaults to master
+export DAPR_BRANCH=release-1.17 # Optional, defaults to master
 ./tools/regen_grpcclient.sh
 ```
-
-> Note: The `grpcio-tools` version we're using doesn't support Python 3.13.
 
 ## Help & Feedback
 
