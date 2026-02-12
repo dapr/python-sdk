@@ -1,7 +1,7 @@
 # Example - Publish and subscribe to messages
 
-This example utilizes a publisher and a subscriber to show the pubsub pattern, it also shows `PublishEvent`, `OnTopicEvent`, `GetTopicSubscriptions`, and `TopicEventResponse` functionality.
-It creates a publisher and calls the `publish_event` method in the `DaprClient`.
+This example utilizes a publisher and a subscriber to show the pubsub pattern, it also shows `PublishEvent`, `PublishEvents` (bulk), `OnTopicEvent`, `GetTopicSubscriptions`, and `TopicEventResponse` functionality.
+It creates a publisher and calls the `publish_event` and `publish_events` methods in the `DaprClient`.
 It will create a gRPC subscriber and bind the `OnTopicEvent` method, which gets triggered after a message is published to the subscribed topic.
 The subscriber will tell dapr to retry delivery of the first message it receives, logging that the message will be retried, and printing it at least once to standard output.
 
@@ -39,6 +39,9 @@ expected_stdout_lines:
   - '== APP == Dead-Letter Subscriber. Originally intended topic: TOPIC_D'
   - '== APP == Subscriber received: TOPIC_CE'
   - '== APP == Subscriber received a json cloud event: id=8, message="hello world", content_type="application/json"'
+  - '== APP == Subscriber received: id=20, message="bulk event 1", content_type="application/json"'
+  - '== APP == Subscriber received: id=21, message="bulk event 2", content_type="application/json"'
+  - '== APP == Subscriber received: id=22, message="bulk event 3", content_type="application/json"'
   - '== APP == Subscriber received: TOPIC_CE'
   - '== APP == Subscriber received plain text cloud event: hello world, content_type="text/plain"'
     
@@ -68,6 +71,7 @@ expected_stdout_lines:
   - "== APP == {'id': 6, 'message': 'hello world'}"
   - "== APP == {'id': 7, 'message': 'hello world'}"
   - "== APP == {'specversion': '1.0', 'type': 'com.example.event', 'source': 'my-service', 'id': 'abc-8', 'data': {'id': 8, 'message': 'hello world'}, 'datacontenttype': 'application/json'}"
+  - "== APP == Bulk published 3 events. Failed entries: 0"
   - "== APP == {'specversion': '1.0', 'type': 'com.example.event', 'source': 'my-service', 'id': 'abc-10', 'data': 'hello world', 'datacontenttype': 'text/plain'}"
 background: true
 sleep: 15
