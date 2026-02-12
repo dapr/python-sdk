@@ -7,7 +7,7 @@ This example utilizes a publisher and a receiver for the InvokeBinding / OnBindi
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -26,7 +26,7 @@ name: Kafka install
 sleep: 30
 -->
 
-1. Start the kafka containers using docker compose 
+1. Start the kafka containers using docker compose
 
 ```bash
 docker compose -f ./docker-compose-single-kafka.yml up -d
@@ -36,7 +36,7 @@ docker compose -f ./docker-compose-single-kafka.yml up -d
 
 <!-- STEP
 name: Start Receiver
-expected_stdout_lines: 
+expected_stdout_lines:
   - '== APP == {"id": 1, "message": "hello world"}'
   - '== APP == {"id": 2, "message": "hello world"}'
   - '== APP == {"id": 3, "message": "hello world"}'
@@ -44,7 +44,7 @@ background: true
 sleep: 5
 -->
 
-2. Start Receiver (expose gRPC server receiver on port 50051) 
+2. Start Receiver (expose gRPC server receiver on port 50051)
 
 ```bash
 dapr run --app-id receiver --app-protocol grpc --app-port 50051 --resources-path ./components python3 invoke-input-binding.py
@@ -58,7 +58,7 @@ In another terminal/command-prompt run:
 
 <!-- STEP
 name: Start Publisher
-expected_stdout_lines: 
+expected_stdout_lines:
   - '== APP == Sending message id: 1, message "hello world"'
   - '== APP == Sending message id: 2, message "hello world"'
   - '== APP == Sending message id: 3, message "hello world"'

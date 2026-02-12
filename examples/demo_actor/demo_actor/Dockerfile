@@ -9,10 +9,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.9-slim-buster
+FROM python:3.10-slim-buster
 
 WORKDIR /app
-COPY . . 
+COPY . .
 
 RUN pip install -r requirements.txt
 

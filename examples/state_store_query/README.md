@@ -9,7 +9,7 @@ It demonstrates the following APIs:
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -18,7 +18,7 @@ It demonstrates the following APIs:
 pip3 install dapr dapr-ext-grpc
 ```
 
-## Store the configuration in configurationstore 
+## Store the configuration in configurationstore
 <!-- STEP
 name: Set configuration value
 timeout_seconds: 120

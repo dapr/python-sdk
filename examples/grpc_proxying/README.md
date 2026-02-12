@@ -7,7 +7,7 @@ This example creates a gRPC service using the protobuf file and adds it to the P
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -21,7 +21,7 @@ pip3 install dapr dapr-ext-grpc
 
 Run the following command in a terminal/command-prompt:
 
-<!-- STEP 
+<!-- STEP
 name: Run receiver
 expected_stdout_lines:
   - '== APP == INFO:root:name: "you"'
@@ -44,7 +44,7 @@ name: Run caller
 expected_stdout_lines:
   - '== APP == Greeter client received: Hello, you!'
 background: true
-sleep: 5 
+sleep: 5
 -->
 
 
@@ -58,7 +58,7 @@ dapr run --app-id  invoke-caller --dapr-grpc-port 50007 --config config.yaml -- 
 ## Cleanup
 
 <!-- STEP
-expected_stdout_lines: 
+expected_stdout_lines:
   - '✅  app stopped successfully: invoke-receiver'
 name: Shutdown dapr
 -->
@@ -97,17 +97,17 @@ dapr stop --app-id  invoke-receiver
    ```
    dapr  logs -a invoke-caller -k
    ```
-   
+
    Logs for caller app:
    ```
    kubectl logs -l app="invokecaller" -c invokecaller
    ```
-   
+
    Logs for receiver sidecar:
    ```
    dapr  logs -a invoke-receiver -k
    ```
-   
+
    Logs for receiver app:
    ```
    kubectl logs -l app="invokereceiver" -c invokereceiver

@@ -10,7 +10,7 @@ The subscriber will tell dapr to retry delivery of the first message it receives
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -41,11 +41,11 @@ expected_stdout_lines:
   - '== APP == Subscriber received a json cloud event: id=8, message="hello world", content_type="application/json"'
   - '== APP == Subscriber received: TOPIC_CE'
   - '== APP == Subscriber received plain text cloud event: hello world, content_type="text/plain"'
-    
+
 output_match_mode: substring
 background: true
 match_order: none
-sleep: 3 
+sleep: 3
 -->
 
 ```bash
@@ -83,7 +83,7 @@ dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --e
 ## Cleanup
 
 <!-- STEP
-expected_stdout_lines: 
+expected_stdout_lines:
   - '✅  app stopped successfully: python-subscriber'
 name: Shutdown dapr
 -->

@@ -16,7 +16,7 @@ It includes two examples that showcase different aspects of the Jobs API:
 ## Prerequisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 - Dapr runtime v1.15+ (Jobs API support)
 
 ## Install Dapr python-SDK
