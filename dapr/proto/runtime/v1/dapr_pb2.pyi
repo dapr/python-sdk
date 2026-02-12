@@ -14,28 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import google.protobuf.descriptor
-import google.protobuf.message
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class ShutdownRequest(google.protobuf.message.Message):
+@_typing.final
+class ShutdownRequest(_message.Message):
     """ShutdownRequest is the request for Shutdown.
     Empty
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___ShutdownRequest: typing_extensions.TypeAlias = ShutdownRequest
+Global___ShutdownRequest: _TypeAlias = ShutdownRequest  # noqa: Y015

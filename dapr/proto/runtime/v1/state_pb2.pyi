@@ -14,561 +14,561 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import dapr.proto.common.v1.common_pb2
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
+from collections import abc as _abc
+from dapr.proto.common.v1 import common_pb2 as _common_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class GetStateRequest(google.protobuf.message.Message):
+@_typing.final
+class GetStateRequest(_message.Message):
     """GetStateRequest is the message to get key-value states from specific state store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    KEY_FIELD_NUMBER: builtins.int
-    CONSISTENCY_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    KEY_FIELD_NUMBER: _builtins.int
+    CONSISTENCY_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of state store."""
-    key: builtins.str
+    key: _builtins.str
     """The key of the desired state"""
-    consistency: dapr.proto.common.v1.common_pb2.StateOptions.StateConsistency.ValueType
+    consistency: _common_pb2.StateOptions.StateConsistency.ValueType
     """The read consistency of the state store."""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to state store components."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        key: builtins.str = ...,
-        consistency: dapr.proto.common.v1.common_pb2.StateOptions.StateConsistency.ValueType = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        store_name: _builtins.str = ...,
+        key: _builtins.str = ...,
+        consistency: _common_pb2.StateOptions.StateConsistency.ValueType = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["consistency", b"consistency", "key", b"key", "metadata", b"metadata", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["consistency", b"consistency", "key", b"key", "metadata", b"metadata", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetStateRequest: typing_extensions.TypeAlias = GetStateRequest
+Global___GetStateRequest: _TypeAlias = GetStateRequest  # noqa: Y015
 
-@typing.final
-class GetBulkStateRequest(google.protobuf.message.Message):
+@_typing.final
+class GetBulkStateRequest(_message.Message):
     """GetBulkStateRequest is the message to get a list of key-value states from specific state store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    KEYS_FIELD_NUMBER: builtins.int
-    PARALLELISM_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    KEYS_FIELD_NUMBER: _builtins.int
+    PARALLELISM_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of state store."""
-    parallelism: builtins.int
+    parallelism: _builtins.int
     """The number of parallel operations executed on the state store for a get operation."""
-    @property
-    def keys(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    @_builtins.property
+    def keys(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """The keys to get."""
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to state store components."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        keys: collections.abc.Iterable[builtins.str] | None = ...,
-        parallelism: builtins.int = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        store_name: _builtins.str = ...,
+        keys: _abc.Iterable[_builtins.str] | None = ...,
+        parallelism: _builtins.int = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["keys", b"keys", "metadata", b"metadata", "parallelism", b"parallelism", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["keys", b"keys", "metadata", b"metadata", "parallelism", b"parallelism", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetBulkStateRequest: typing_extensions.TypeAlias = GetBulkStateRequest
+Global___GetBulkStateRequest: _TypeAlias = GetBulkStateRequest  # noqa: Y015
 
-@typing.final
-class GetBulkStateResponse(google.protobuf.message.Message):
+@_typing.final
+class GetBulkStateResponse(_message.Message):
     """GetBulkStateResponse is the response conveying the list of state values."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ITEMS_FIELD_NUMBER: builtins.int
-    @property
-    def items(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___BulkStateItem]:
+    ITEMS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def items(self) -> _containers.RepeatedCompositeFieldContainer[Global___BulkStateItem]:
         """The list of items containing the keys to get values for."""
 
     def __init__(
         self,
         *,
-        items: collections.abc.Iterable[Global___BulkStateItem] | None = ...,
+        items: _abc.Iterable[Global___BulkStateItem] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["items", b"items"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["items", b"items"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetBulkStateResponse: typing_extensions.TypeAlias = GetBulkStateResponse
+Global___GetBulkStateResponse: _TypeAlias = GetBulkStateResponse  # noqa: Y015
 
-@typing.final
-class BulkStateItem(google.protobuf.message.Message):
+@_typing.final
+class BulkStateItem(_message.Message):
     """BulkStateItem is the response item for a bulk get operation.
     Return values include the item key, data and etag.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    KEY_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    ETAG_FIELD_NUMBER: builtins.int
-    ERROR_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    key: builtins.str
+    KEY_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    ETAG_FIELD_NUMBER: _builtins.int
+    ERROR_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    key: _builtins.str
     """state item key"""
-    data: builtins.bytes
+    data: _builtins.bytes
     """The byte array data"""
-    etag: builtins.str
+    etag: _builtins.str
     """The entity tag which represents the specific version of data.
     ETag format is defined by the corresponding data store.
     """
-    error: builtins.str
+    error: _builtins.str
     """The error that was returned from the state store in case of a failed get operation."""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to app."""
 
     def __init__(
         self,
         *,
-        key: builtins.str = ...,
-        data: builtins.bytes = ...,
-        etag: builtins.str = ...,
-        error: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        key: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        etag: _builtins.str = ...,
+        error: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "error", b"error", "etag", b"etag", "key", b"key", "metadata", b"metadata"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "error", b"error", "etag", b"etag", "key", b"key", "metadata", b"metadata"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___BulkStateItem: typing_extensions.TypeAlias = BulkStateItem
+Global___BulkStateItem: _TypeAlias = BulkStateItem  # noqa: Y015
 
-@typing.final
-class GetStateResponse(google.protobuf.message.Message):
+@_typing.final
+class GetStateResponse(_message.Message):
     """GetStateResponse is the response conveying the state value and etag."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    DATA_FIELD_NUMBER: builtins.int
-    ETAG_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes
+    DATA_FIELD_NUMBER: _builtins.int
+    ETAG_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    data: _builtins.bytes
     """The byte array data"""
-    etag: builtins.str
+    etag: _builtins.str
     """The entity tag which represents the specific version of data.
     ETag format is defined by the corresponding data store.
     """
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to app."""
 
     def __init__(
         self,
         *,
-        data: builtins.bytes = ...,
-        etag: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        data: _builtins.bytes = ...,
+        etag: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "etag", b"etag", "metadata", b"metadata"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "etag", b"etag", "metadata", b"metadata"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetStateResponse: typing_extensions.TypeAlias = GetStateResponse
+Global___GetStateResponse: _TypeAlias = GetStateResponse  # noqa: Y015
 
-@typing.final
-class DeleteStateRequest(google.protobuf.message.Message):
+@_typing.final
+class DeleteStateRequest(_message.Message):
     """DeleteStateRequest is the message to delete key-value states in the specific state store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    KEY_FIELD_NUMBER: builtins.int
-    ETAG_FIELD_NUMBER: builtins.int
-    OPTIONS_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    KEY_FIELD_NUMBER: _builtins.int
+    ETAG_FIELD_NUMBER: _builtins.int
+    OPTIONS_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of state store."""
-    key: builtins.str
+    key: _builtins.str
     """The key of the desired state"""
-    @property
-    def etag(self) -> dapr.proto.common.v1.common_pb2.Etag:
+    @_builtins.property
+    def etag(self) -> _common_pb2.Etag:
         """The entity tag which represents the specific version of data.
         The exact ETag format is defined by the corresponding data store.
         """
 
-    @property
-    def options(self) -> dapr.proto.common.v1.common_pb2.StateOptions:
+    @_builtins.property
+    def options(self) -> _common_pb2.StateOptions:
         """State operation options which includes concurrency/
         consistency/retry_policy.
         """
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to state store components."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        key: builtins.str = ...,
-        etag: dapr.proto.common.v1.common_pb2.Etag | None = ...,
-        options: dapr.proto.common.v1.common_pb2.StateOptions | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        store_name: _builtins.str = ...,
+        key: _builtins.str = ...,
+        etag: _common_pb2.Etag | None = ...,
+        options: _common_pb2.StateOptions | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["etag", b"etag", "options", b"options"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["etag", b"etag", "key", b"key", "metadata", b"metadata", "options", b"options", "store_name", b"store_name"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["etag", b"etag", "options", b"options"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["etag", b"etag", "key", b"key", "metadata", b"metadata", "options", b"options", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___DeleteStateRequest: typing_extensions.TypeAlias = DeleteStateRequest
+Global___DeleteStateRequest: _TypeAlias = DeleteStateRequest  # noqa: Y015
 
-@typing.final
-class DeleteBulkStateRequest(google.protobuf.message.Message):
+@_typing.final
+class DeleteBulkStateRequest(_message.Message):
     """DeleteBulkStateRequest is the message to delete a list of key-value states from specific state store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    STATES_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    STATES_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of state store."""
-    @property
-    def states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.StateItem]:
+    @_builtins.property
+    def states(self) -> _containers.RepeatedCompositeFieldContainer[_common_pb2.StateItem]:
         """The array of the state key values."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        states: collections.abc.Iterable[dapr.proto.common.v1.common_pb2.StateItem] | None = ...,
+        store_name: _builtins.str = ...,
+        states: _abc.Iterable[_common_pb2.StateItem] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["states", b"states", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["states", b"states", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___DeleteBulkStateRequest: typing_extensions.TypeAlias = DeleteBulkStateRequest
+Global___DeleteBulkStateRequest: _TypeAlias = DeleteBulkStateRequest  # noqa: Y015
 
-@typing.final
-class SaveStateRequest(google.protobuf.message.Message):
+@_typing.final
+class SaveStateRequest(_message.Message):
     """SaveStateRequest is the message to save multiple states into state store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    STATES_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    STATES_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of state store."""
-    @property
-    def states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[dapr.proto.common.v1.common_pb2.StateItem]:
+    @_builtins.property
+    def states(self) -> _containers.RepeatedCompositeFieldContainer[_common_pb2.StateItem]:
         """The array of the state key values."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        states: collections.abc.Iterable[dapr.proto.common.v1.common_pb2.StateItem] | None = ...,
+        store_name: _builtins.str = ...,
+        states: _abc.Iterable[_common_pb2.StateItem] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["states", b"states", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["states", b"states", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SaveStateRequest: typing_extensions.TypeAlias = SaveStateRequest
+Global___SaveStateRequest: _TypeAlias = SaveStateRequest  # noqa: Y015
 
-@typing.final
-class QueryStateRequest(google.protobuf.message.Message):
+@_typing.final
+class QueryStateRequest(_message.Message):
     """QueryStateRequest is the message to query state store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    QUERY_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    QUERY_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of state store."""
-    query: builtins.str
+    query: _builtins.str
     """The query in JSON format."""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to state store components."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        query: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        store_name: _builtins.str = ...,
+        query: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["metadata", b"metadata", "query", b"query", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["metadata", b"metadata", "query", b"query", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___QueryStateRequest: typing_extensions.TypeAlias = QueryStateRequest
+Global___QueryStateRequest: _TypeAlias = QueryStateRequest  # noqa: Y015
 
-@typing.final
-class QueryStateItem(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class QueryStateItem(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    KEY_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    ETAG_FIELD_NUMBER: builtins.int
-    ERROR_FIELD_NUMBER: builtins.int
-    key: builtins.str
+    KEY_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    ETAG_FIELD_NUMBER: _builtins.int
+    ERROR_FIELD_NUMBER: _builtins.int
+    key: _builtins.str
     """The object key."""
-    data: builtins.bytes
+    data: _builtins.bytes
     """The object value."""
-    etag: builtins.str
+    etag: _builtins.str
     """The entity tag which represents the specific version of data.
     ETag format is defined by the corresponding data store.
     """
-    error: builtins.str
+    error: _builtins.str
     """The error message indicating an error in processing of the query result."""
     def __init__(
         self,
         *,
-        key: builtins.str = ...,
-        data: builtins.bytes = ...,
-        etag: builtins.str = ...,
-        error: builtins.str = ...,
+        key: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        etag: _builtins.str = ...,
+        error: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "error", b"error", "etag", b"etag", "key", b"key"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "error", b"error", "etag", b"etag", "key", b"key"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___QueryStateItem: typing_extensions.TypeAlias = QueryStateItem
+Global___QueryStateItem: _TypeAlias = QueryStateItem  # noqa: Y015
 
-@typing.final
-class QueryStateResponse(google.protobuf.message.Message):
+@_typing.final
+class QueryStateResponse(_message.Message):
     """QueryStateResponse is the response conveying the query results."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    RESULTS_FIELD_NUMBER: builtins.int
-    TOKEN_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    token: builtins.str
+    RESULTS_FIELD_NUMBER: _builtins.int
+    TOKEN_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    token: _builtins.str
     """Pagination token."""
-    @property
-    def results(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___QueryStateItem]:
+    @_builtins.property
+    def results(self) -> _containers.RepeatedCompositeFieldContainer[Global___QueryStateItem]:
         """An array of query results."""
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to app."""
 
     def __init__(
         self,
         *,
-        results: collections.abc.Iterable[Global___QueryStateItem] | None = ...,
-        token: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        results: _abc.Iterable[Global___QueryStateItem] | None = ...,
+        token: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["metadata", b"metadata", "results", b"results", "token", b"token"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["metadata", b"metadata", "results", b"results", "token", b"token"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___QueryStateResponse: typing_extensions.TypeAlias = QueryStateResponse
+Global___QueryStateResponse: _TypeAlias = QueryStateResponse  # noqa: Y015
 
-@typing.final
-class TransactionalStateOperation(google.protobuf.message.Message):
+@_typing.final
+class TransactionalStateOperation(_message.Message):
     """TransactionalStateOperation is the message to execute a specified operation with a key-value pair."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    OPERATIONTYPE_FIELD_NUMBER: builtins.int
-    REQUEST_FIELD_NUMBER: builtins.int
-    operationType: builtins.str
+    OPERATIONTYPE_FIELD_NUMBER: _builtins.int
+    REQUEST_FIELD_NUMBER: _builtins.int
+    operationType: _builtins.str
     """The type of operation to be executed"""
-    @property
-    def request(self) -> dapr.proto.common.v1.common_pb2.StateItem:
+    @_builtins.property
+    def request(self) -> _common_pb2.StateItem:
         """State values to be operated on"""
 
     def __init__(
         self,
         *,
-        operationType: builtins.str = ...,
-        request: dapr.proto.common.v1.common_pb2.StateItem | None = ...,
+        operationType: _builtins.str = ...,
+        request: _common_pb2.StateItem | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["request", b"request"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["operationType", b"operationType", "request", b"request"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["request", b"request"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["operationType", b"operationType", "request", b"request"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___TransactionalStateOperation: typing_extensions.TypeAlias = TransactionalStateOperation
+Global___TransactionalStateOperation: _TypeAlias = TransactionalStateOperation  # noqa: Y015
 
-@typing.final
-class ExecuteStateTransactionRequest(google.protobuf.message.Message):
+@_typing.final
+class ExecuteStateTransactionRequest(_message.Message):
     """ExecuteStateTransactionRequest is the message to execute multiple operations on a specified store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORENAME_FIELD_NUMBER: builtins.int
-    OPERATIONS_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    storeName: builtins.str
+    STORENAME_FIELD_NUMBER: _builtins.int
+    OPERATIONS_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    storeName: _builtins.str
     """Required. name of state store."""
-    @property
-    def operations(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___TransactionalStateOperation]:
+    @_builtins.property
+    def operations(self) -> _containers.RepeatedCompositeFieldContainer[Global___TransactionalStateOperation]:
         """Required. transactional operation list."""
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata used for transactional operations."""
 
     def __init__(
         self,
         *,
-        storeName: builtins.str = ...,
-        operations: collections.abc.Iterable[Global___TransactionalStateOperation] | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        storeName: _builtins.str = ...,
+        operations: _abc.Iterable[Global___TransactionalStateOperation] | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["metadata", b"metadata", "operations", b"operations", "storeName", b"storeName"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["metadata", b"metadata", "operations", b"operations", "storeName", b"storeName"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ExecuteStateTransactionRequest: typing_extensions.TypeAlias = ExecuteStateTransactionRequest
+Global___ExecuteStateTransactionRequest: _TypeAlias = ExecuteStateTransactionRequest  # noqa: Y015

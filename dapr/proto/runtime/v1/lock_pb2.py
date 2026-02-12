@@ -24,14 +24,14 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n dapr/proto/runtime/v1/lock.proto\x12\x15\x64\x61pr.proto.runtime.v1\"\x9b\x01\n\x0eTryLockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\x12*\n\x11\x65xpiry_in_seconds\x18\x04 \x01(\x05R\x0f\x65xpiryInSeconds\"\"\n\x0fTryLockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"n\n\rUnlockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\"\xae\x01\n\x0eUnlockResponse\x12<\n\x06status\x18\x01 \x01(\x0e\x32,.dapr.proto.runtime.v1.UnlockResponse.Status\"^\n\x06Status\x12\x0b\n\x07SUCCESS\x10\x00\x12\x17\n\x13LOCK_DOES_NOT_EXIST\x10\x01\x12\x1a\n\x16LOCK_BELONGS_TO_OTHERS\x10\x02\x12\x12\n\x0eINTERNAL_ERROR\x10\x03\x42i\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n dapr/proto/runtime/v1/lock.proto\x12\x15\x64\x61pr.proto.runtime.v1\"\x9b\x01\n\x0eTryLockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\x12*\n\x11\x65xpiry_in_seconds\x18\x04 \x01(\x05R\x0f\x65xpiryInSeconds\"\"\n\x0fTryLockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"n\n\rUnlockRequest\x12\x1d\n\nstore_name\x18\x01 \x01(\tR\tstoreName\x12\x1f\n\x0bresource_id\x18\x02 \x01(\tR\nresourceId\x12\x1d\n\nlock_owner\x18\x03 \x01(\tR\tlockOwner\"\xae\x01\n\x0eUnlockResponse\x12<\n\x06status\x18\x01 \x01(\x0e\x32,.dapr.proto.runtime.v1.UnlockResponse.Status\"^\n\x06Status\x12\x0b\n\x07SUCCESS\x10\x00\x12\x17\n\x13LOCK_DOES_NOT_EXIST\x10\x01\x12\x1a\n\x16LOCK_BELONGS_TO_OTHERS\x10\x02\x12\x12\n\x0eINTERNAL_ERROR\x10\x03\x42m\n\nio.dapr.v1B\x0e\x44\x61prLockProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'dapr.proto.runtime.v1.lock_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\nio.dapr.v1B\nDaprProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\252\002\033Dapr.Client.Autogen.Grpc.v1'
+  _globals['DESCRIPTOR']._serialized_options = b'\n\nio.dapr.v1B\016DaprLockProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\252\002\033Dapr.Client.Autogen.Grpc.v1'
   _globals['_TRYLOCKREQUEST']._serialized_start=60
   _globals['_TRYLOCKREQUEST']._serialized_end=215
   _globals['_TRYLOCKRESPONSE']._serialized_start=217

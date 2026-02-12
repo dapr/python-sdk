@@ -14,43 +14,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import dapr.proto.common.v1.common_pb2
-import google.protobuf.descriptor
-import google.protobuf.message
+from dapr.proto.common.v1 import common_pb2 as _common_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class InvokeServiceRequest(google.protobuf.message.Message):
+@_typing.final
+class InvokeServiceRequest(_message.Message):
     """InvokeServiceRequest represents the request message for Service invocation."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    ID_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
-    id: builtins.str
+    ID_FIELD_NUMBER: _builtins.int
+    MESSAGE_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
     """Required. Callee's app id."""
-    @property
-    def message(self) -> dapr.proto.common.v1.common_pb2.InvokeRequest:
+    @_builtins.property
+    def message(self) -> _common_pb2.InvokeRequest:
         """Required. message which will be delivered to callee."""
 
     def __init__(
         self,
         *,
-        id: builtins.str = ...,
-        message: dapr.proto.common.v1.common_pb2.InvokeRequest | None = ...,
+        id: _builtins.str = ...,
+        message: _common_pb2.InvokeRequest | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["message", b"message"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["id", b"id", "message", b"message"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["message", b"message"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id", "message", b"message"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___InvokeServiceRequest: typing_extensions.TypeAlias = InvokeServiceRequest
+Global___InvokeServiceRequest: _TypeAlias = InvokeServiceRequest  # noqa: Y015
