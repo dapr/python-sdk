@@ -10,7 +10,7 @@ In the s`subscriber.py` file it creates a subscriber object that can call the `n
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -36,7 +36,7 @@ expected_stdout_lines:
 output_match_mode: substring
 background: true
 match_order: none
-sleep: 3 
+sleep: 3
 -->
 
 ```bash
@@ -84,7 +84,7 @@ expected_stdout_lines:
 output_match_mode: substring
 background: true
 match_order: none
-sleep: 3 
+sleep: 3
 -->
 
 ```bash
@@ -114,7 +114,7 @@ sleep: 15
 dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check -- python3 publisher.py --topic=TOPIC_B2
 ```
 
-<!-- END_STEP --> 
+<!-- END_STEP -->
 
 
 ## Cleanup
