@@ -67,12 +67,12 @@ jobs:
       - uses: azure/setup-helm@v4
       - name: Determine latest Dapr Runtime version (including prerelease)
         run: |
-          RUNTIME_VERSION=$(curl -s "https://api.github.com/repos/dapr/dapr/releases" | grep '"tag_name"' | head -n 1 | cut -d ':' -f2 | tr -d '",v ')
+          RUNTIME_VERSION=$(curl -s "https://api.github.com/repos/dapr/dapr/releases" | sort -r | grep '"tag_name"' | head -n 1 | cut -d ':' -f2 | tr -d '",v ')
           echo "DAPR_RUNTIME_VER=$RUNTIME_VERSION" >> $GITHUB_ENV
           echo "Found $RUNTIME_VERSION"
       - name: Determine latest Dapr Cli version (including prerelease)
         run: |
-          CLI_VERSION=$(curl -s "https://api.github.com/repos/dapr/cli/releases" | grep '"tag_name"' | head -n 1 | cut -d ':' -f2 | tr -d '",v ')
+          CLI_VERSION=$(curl -s "https://api.github.com/repos/dapr/cli/releases" | sort -r | grep '"tag_name"' | head -n 1 | cut -d ':' -f2 | tr -d '",v ')
           echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
           echo "Found $CLI_VERSION"
       - name: Set up Python ${{ matrix.python_ver }}
