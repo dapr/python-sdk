@@ -266,25 +266,27 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 data=111,
             )
 
-    async def test_publish_bulk_event(self):
+    async def test_publish_events(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
-        resp = await dapr.publish_bulk_event(
+        resp = await dapr.publish_events(
             pubsub_name='pubsub',
             topic_name='example',
-            events=[
-                {'entry_id': '1', 'event': b'{"key": "value1"}'},
-                {'entry_id': '2', 'event': b'{"key": "value2"}'},
+            data=[
+                b'{"key": "value1"}',
+                b'{"key": "value2"}',
             ],
         )
         self.assertEqual(0, len(resp.failed_entries))
 
-    async def test_publish_bulk_event_invalid_event_type(self):
+    async def test_publish_events_invalid_event_type(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
-        with self.assertRaisesRegex(ValueError, 'invalid type for event data'):
-            await dapr.publish_bulk_event(
+        with self.assertRaisesRegex(ValueError, "invalid type for event <class 'dict'>"):
+            await dapr.publish_events(
                 pubsub_name='pubsub',
                 topic_name='example',
-                events=[{'entry_id': '1', 'event': 123}],
+                data=[
+                    {'entry_id': '1', 'event': 123},
+                ],
             )
 
     async def test_subscribe_topic(self):
