@@ -155,6 +155,14 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
+    def BulkPublishEvent(self, request, context):
+        self.check_for_exception(context)
+        return api_v1.BulkPublishResponse()
+
+    def BulkPublishEventAlpha1(self, request, context):
+        self.check_for_exception(context)
+        return api_v1.BulkPublishResponse()
+
     def SubscribeTopicEventsAlpha1(self, request_iterator, context):
         for request in request_iterator:
             if request.HasField('initial_request'):

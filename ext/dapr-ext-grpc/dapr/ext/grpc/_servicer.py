@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import warnings
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cloudevents.sdk.event import v1  # type: ignore
@@ -29,6 +30,8 @@ from dapr.proto.common.v1.common_pb2 import InvokeRequest
 from dapr.proto.runtime.v1.appcallback_pb2 import (
     BindingEventRequest,
     JobEventRequest,
+    TopicEventBulkRequest,
+    TopicEventBulkResponse,
     TopicEventRequest,
 )
 
@@ -276,3 +279,81 @@ class _CallbackServicer(
 
         # Return empty response
         return appcallback_v1.JobEventResponse()
+
+    def _handle_bulk_topic_event(
+        self, request: TopicEventBulkRequest, context
+    ) -> TopicEventBulkResponse:
+        """Process bulk topic event request - routes each entry to the appropriate topic handler."""
+        topic_key = request.pubsub_name + DELIMITER + request.topic + DELIMITER + request.path
+        no_validation_key = request.pubsub_name + DELIMITER + request.path
+
+        if topic_key not in self._topic_map and no_validation_key not in self._topic_map:
+            return None  # we don't have a handler
+
+        handler_key = topic_key if topic_key in self._topic_map else no_validation_key
+        cb = self._topic_map[handler_key] # callback
+
+        statuses = []
+        for entry in request.entries:
+            entry_id = entry.entry_id
+            try:
+                # Build event from entry & send req with many entries
+                event = v1.Event()
+                extensions = dict()
+                if entry.HasField('cloud_event') and entry.cloud_event:
+                    ce = entry.cloud_event
+                    event.SetEventType(ce.type)
+                    event.SetEventID(ce.id)
+                    event.SetSource(ce.source)
+                    event.SetData(ce.data)
+                    event.SetContentType(ce.data_content_type)
+                    if ce.extensions:
+                        for k, v in ce.extensions.items():
+                            extensions[k] = v
+                else:
+                    event.SetEventID(entry_id)
+                    event.SetData(entry.bytes if entry.HasField('bytes') else b'')
+                    event.SetContentType(entry.content_type or '')
+                event.SetSubject(request.topic)
+                if entry.metadata:
+                    for k, v in entry.metadata.items():
+                        extensions[k] = v
+                for k, v in context.invocation_metadata():
+                    extensions['_metadata_' + k] = v
+                if extensions:
+                    event.SetExtensions(extensions)
+
+                response = cb(event) # invoke app registered handler and send event
+                if isinstance(response, TopicEventResponse):
+                    status = response.status.value
+                else:
+                    status = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
+            except Exception:
+                status = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.RETRY
+            statuses.append(
+                appcallback_v1.TopicEventBulkResponseEntry(entry_id=entry_id, status=status)
+            )
+        return appcallback_v1.TopicEventBulkResponse(statuses=statuses)
+
+    def OnBulkTopicEvent(self, request: TopicEventBulkRequest, context):
+        """Subscribes bulk events from Pubsub"""
+        response = self._handle_bulk_topic_event(request, context)
+        if response is None:
+            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
+            raise NotImplementedError(f'bulk topic {request.topic} is not implemented!')
+        return response
+
+    def OnBulkTopicEventAlpha1(self, request: TopicEventBulkRequest, context):
+        """Subscribes bulk events from Pubsub.
+        Deprecated: Use OnBulkTopicEvent instead.
+        """
+        warnings.warn(
+            'OnBulkTopicEventAlpha1 is deprecated. Use OnBulkTopicEvent instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        response = self._handle_bulk_topic_event(request, context)
+        if response is None:
+            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
+            raise NotImplementedError(f'bulk topic {request.topic} is not implemented!')
+        return response

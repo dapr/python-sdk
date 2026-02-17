@@ -183,6 +183,70 @@ class TopicSubscriptionTests(unittest.TestCase):
             )
 
 
+class BulkTopicEventTests(unittest.TestCase):
+    def setUp(self):
+        self._servicer = _CallbackServicer()
+        self._topic_method = Mock()
+        self._topic_method.return_value = TopicEventResponse('success')
+        self._servicer.register_topic('pubsub1', 'topic1', self._topic_method, {'session': 'key'})
+
+        self.fake_context = MagicMock()
+        self.fake_context.invocation_metadata.return_value = (
+            ('key1', 'value1'),
+            ('key2', 'value1'),
+        )
+
+    def test_on_bulk_topic_event(self):
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+        )
+
+        entry1 = TopicEventBulkRequestEntry(
+            entry_id='entry1',
+            bytes=b'hello',
+            content_type='text/plain',
+        )
+        entry2 = TopicEventBulkRequestEntry(
+            entry_id='entry2',
+            bytes=b'{"a": 1}',
+            content_type='application/json',
+        )
+        request = TopicEventBulkRequest(
+            id='bulk1',
+            pubsub_name='pubsub1',
+            topic='topic1',
+            path='',
+            entries=[entry1, entry2],
+        )
+        resp = self._servicer.OnBulkTopicEvent(request, self.fake_context)
+        self.assertEqual(2, len(resp.statuses))
+        self.assertEqual('entry1', resp.statuses[0].entry_id)
+        self.assertEqual('entry2', resp.statuses[1].entry_id)
+        self.assertEqual(
+            appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS,
+            resp.statuses[0].status,
+        )
+        self.assertEqual(2, self._topic_method.call_count)
+
+    def test_on_bulk_topic_event_non_registered(self):
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+        )
+
+        entry = TopicEventBulkRequestEntry(entry_id='entry1', bytes=b'hello')
+        request = TopicEventBulkRequest(
+            id='bulk1',
+            pubsub_name='pubsub1',
+            topic='unknown_topic',
+            path='',
+            entries=[entry],
+        )
+        with self.assertRaises(NotImplementedError):
+            self._servicer.OnBulkTopicEvent(request, self.fake_context)
+
+
 class BindingTests(unittest.TestCase):
     def setUp(self):
         self._servicer = _CallbackServicer()
