@@ -282,7 +282,7 @@ class _CallbackServicer(
 
     def _handle_bulk_topic_event(
         self, request: TopicEventBulkRequest, context
-    ) -> TopicEventBulkResponse:
+    ) -> Optional[TopicEventBulkResponse]:
         """Process bulk topic event request - routes each entry to the appropriate topic handler."""
         topic_key = request.pubsub_name + DELIMITER + request.topic + DELIMITER + request.path
         no_validation_key = request.pubsub_name + DELIMITER + request.path
