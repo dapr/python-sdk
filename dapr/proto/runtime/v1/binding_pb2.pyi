@@ -14,56 +14,56 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
+from collections import abc as _abc
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class InvokeBindingRequest(google.protobuf.message.Message):
+@_typing.final
+class InvokeBindingRequest(_message.Message):
     """InvokeBindingRequest is the message to send data to output bindings"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    NAME_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    OPERATION_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    OPERATION_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     """The name of the output binding to invoke."""
-    data: builtins.bytes
+    data: _builtins.bytes
     """The data which will be sent to output binding."""
-    operation: builtins.str
+    operation: _builtins.str
     """The name of the operation type for the binding to invoke"""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata passing to output binding components
 
         Common metadata property:
@@ -77,54 +77,54 @@ class InvokeBindingRequest(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
-        data: builtins.bytes = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        operation: builtins.str = ...,
+        name: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+        operation: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "metadata", b"metadata", "name", b"name", "operation", b"operation"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "metadata", b"metadata", "name", b"name", "operation", b"operation"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___InvokeBindingRequest: typing_extensions.TypeAlias = InvokeBindingRequest
+Global___InvokeBindingRequest: _TypeAlias = InvokeBindingRequest  # noqa: Y015
 
-@typing.final
-class InvokeBindingResponse(google.protobuf.message.Message):
+@_typing.final
+class InvokeBindingResponse(_message.Message):
     """InvokeBindingResponse is the message returned from an output binding invocation"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    DATA_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes
+    DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    data: _builtins.bytes
     """The data which will be sent to output binding."""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata returned from an external system"""
 
     def __init__(
         self,
         *,
-        data: builtins.bytes = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        data: _builtins.bytes = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "metadata", b"metadata"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "metadata", b"metadata"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___InvokeBindingResponse: typing_extensions.TypeAlias = InvokeBindingResponse
+Global___InvokeBindingResponse: _TypeAlias = InvokeBindingResponse  # noqa: Y015

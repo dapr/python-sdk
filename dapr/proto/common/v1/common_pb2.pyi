@@ -14,26 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import google.protobuf.any_pb2
-import google.protobuf.descriptor
-import google.protobuf.duration_pb2
-import google.protobuf.internal.containers
-import google.protobuf.internal.enum_type_wrapper
-import google.protobuf.message
+from collections import abc as _abc
+from google.protobuf import any_pb2 as _any_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import duration_pb2 as _duration_pb2
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class HTTPExtension(google.protobuf.message.Message):
+@_typing.final
+class HTTPExtension(_message.Message):
     """HTTPExtension includes HTTP verb and querystring
     when Dapr runtime delivers HTTP content.
 
@@ -43,14 +43,14 @@ class HTTPExtension(google.protobuf.message.Message):
     Dapr runtime will parse POST as a verb and extract querystring to quersytring map.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     class _Verb:
-        ValueType = typing.NewType("ValueType", builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
+        ValueType = _typing.NewType("ValueType", _builtins.int)
+        V: _TypeAlias = ValueType  # noqa: Y015
 
-    class _VerbEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[HTTPExtension._Verb.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+    class _VerbEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[HTTPExtension._Verb.ValueType], _builtins.type):
+        DESCRIPTOR: _descriptor.EnumDescriptor
         NONE: HTTPExtension._Verb.ValueType  # 0
         GET: HTTPExtension._Verb.ValueType  # 1
         HEAD: HTTPExtension._Verb.ValueType  # 2
@@ -79,51 +79,51 @@ class HTTPExtension(google.protobuf.message.Message):
     TRACE: HTTPExtension.Verb.ValueType  # 8
     PATCH: HTTPExtension.Verb.ValueType  # 9
 
-    VERB_FIELD_NUMBER: builtins.int
-    QUERYSTRING_FIELD_NUMBER: builtins.int
+    VERB_FIELD_NUMBER: _builtins.int
+    QUERYSTRING_FIELD_NUMBER: _builtins.int
     verb: Global___HTTPExtension.Verb.ValueType
     """Required. HTTP verb."""
-    querystring: builtins.str
+    querystring: _builtins.str
     """Optional. querystring represents an encoded HTTP url query string in the following format: name=value&name2=value2"""
     def __init__(
         self,
         *,
         verb: Global___HTTPExtension.Verb.ValueType = ...,
-        querystring: builtins.str = ...,
+        querystring: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["querystring", b"querystring", "verb", b"verb"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["querystring", b"querystring", "verb", b"verb"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___HTTPExtension: typing_extensions.TypeAlias = HTTPExtension
+Global___HTTPExtension: _TypeAlias = HTTPExtension  # noqa: Y015
 
-@typing.final
-class InvokeRequest(google.protobuf.message.Message):
+@_typing.final
+class InvokeRequest(_message.Message):
     """InvokeRequest is the message to invoke a method with the data.
     This message is used in InvokeService of Dapr gRPC Service and OnInvoke
     of AppCallback gRPC service.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    METHOD_FIELD_NUMBER: builtins.int
-    DATA_FIELD_NUMBER: builtins.int
-    CONTENT_TYPE_FIELD_NUMBER: builtins.int
-    HTTP_EXTENSION_FIELD_NUMBER: builtins.int
-    method: builtins.str
+    METHOD_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    CONTENT_TYPE_FIELD_NUMBER: _builtins.int
+    HTTP_EXTENSION_FIELD_NUMBER: _builtins.int
+    method: _builtins.str
     """Required. method is a method name which will be invoked by caller."""
-    content_type: builtins.str
+    content_type: _builtins.str
     """The type of data content.
 
     This field is required if data delivers http request body
     Otherwise, this is optional.
     """
-    @property
-    def data(self) -> google.protobuf.any_pb2.Any:
+    @_builtins.property
+    def data(self) -> _any_pb2.Any:
         """Required in unary RPCs. Bytes value or Protobuf message which caller sent.
         Dapr treats Any.value as bytes type if Any.type_url is unset.
         """
 
-    @property
+    @_builtins.property
     def http_extension(self) -> Global___HTTPExtension:
         """HTTP specific fields if request conveys http-compatible request.
 
@@ -134,171 +134,171 @@ class InvokeRequest(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        method: builtins.str = ...,
-        data: google.protobuf.any_pb2.Any | None = ...,
-        content_type: builtins.str = ...,
+        method: _builtins.str = ...,
+        data: _any_pb2.Any | None = ...,
+        content_type: _builtins.str = ...,
         http_extension: Global___HTTPExtension | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "http_extension", b"http_extension"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["content_type", b"content_type", "data", b"data", "http_extension", b"http_extension", "method", b"method"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "http_extension", b"http_extension"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["content_type", b"content_type", "data", b"data", "http_extension", b"http_extension", "method", b"method"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___InvokeRequest: typing_extensions.TypeAlias = InvokeRequest
+Global___InvokeRequest: _TypeAlias = InvokeRequest  # noqa: Y015
 
-@typing.final
-class InvokeResponse(google.protobuf.message.Message):
+@_typing.final
+class InvokeResponse(_message.Message):
     """InvokeResponse is the response message including data and its content type
     from app callback.
     This message is used in InvokeService of Dapr gRPC Service and OnInvoke
     of AppCallback gRPC service.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    DATA_FIELD_NUMBER: builtins.int
-    CONTENT_TYPE_FIELD_NUMBER: builtins.int
-    content_type: builtins.str
+    DATA_FIELD_NUMBER: _builtins.int
+    CONTENT_TYPE_FIELD_NUMBER: _builtins.int
+    content_type: _builtins.str
     """Required. The type of data content."""
-    @property
-    def data(self) -> google.protobuf.any_pb2.Any:
+    @_builtins.property
+    def data(self) -> _any_pb2.Any:
         """Required in unary RPCs. The content body of InvokeService response."""
 
     def __init__(
         self,
         *,
-        data: google.protobuf.any_pb2.Any | None = ...,
-        content_type: builtins.str = ...,
+        data: _any_pb2.Any | None = ...,
+        content_type: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["content_type", b"content_type", "data", b"data"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["content_type", b"content_type", "data", b"data"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___InvokeResponse: typing_extensions.TypeAlias = InvokeResponse
+Global___InvokeResponse: _TypeAlias = InvokeResponse  # noqa: Y015
 
-@typing.final
-class StreamPayload(google.protobuf.message.Message):
+@_typing.final
+class StreamPayload(_message.Message):
     """Chunk of data sent in a streaming request or response.
     This is used in requests including InternalInvokeRequestStream.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    DATA_FIELD_NUMBER: builtins.int
-    SEQ_FIELD_NUMBER: builtins.int
-    data: builtins.bytes
+    DATA_FIELD_NUMBER: _builtins.int
+    SEQ_FIELD_NUMBER: _builtins.int
+    data: _builtins.bytes
     """Data sent in the chunk.
     The amount of data included in each chunk is up to the discretion of the sender, and can be empty.
     Additionally, the amount of data doesn't need to be fixed and subsequent messages can send more, or less, data.
     Receivers must not make assumptions about the number of bytes they'll receive in each chunk.
     """
-    seq: builtins.int
+    seq: _builtins.int
     """Sequence number. This is a counter that starts from 0 and increments by 1 on each chunk sent."""
     def __init__(
         self,
         *,
-        data: builtins.bytes = ...,
-        seq: builtins.int = ...,
+        data: _builtins.bytes = ...,
+        seq: _builtins.int = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["data", b"data", "seq", b"seq"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "seq", b"seq"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___StreamPayload: typing_extensions.TypeAlias = StreamPayload
+Global___StreamPayload: _TypeAlias = StreamPayload  # noqa: Y015
 
-@typing.final
-class StateItem(google.protobuf.message.Message):
+@_typing.final
+class StateItem(_message.Message):
     """StateItem represents state key, value, and additional options to save state."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    KEY_FIELD_NUMBER: builtins.int
-    VALUE_FIELD_NUMBER: builtins.int
-    ETAG_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    OPTIONS_FIELD_NUMBER: builtins.int
-    key: builtins.str
+    KEY_FIELD_NUMBER: _builtins.int
+    VALUE_FIELD_NUMBER: _builtins.int
+    ETAG_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    OPTIONS_FIELD_NUMBER: _builtins.int
+    key: _builtins.str
     """Required. The state key"""
-    value: builtins.bytes
+    value: _builtins.bytes
     """Required. The state data for key"""
-    @property
+    @_builtins.property
     def etag(self) -> Global___Etag:
         """The entity tag which represents the specific version of data.
         The exact ETag format is defined by the corresponding data store.
         """
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be passed to state store component."""
 
-    @property
+    @_builtins.property
     def options(self) -> Global___StateOptions:
         """Options for concurrency and consistency to save the state."""
 
     def __init__(
         self,
         *,
-        key: builtins.str = ...,
-        value: builtins.bytes = ...,
+        key: _builtins.str = ...,
+        value: _builtins.bytes = ...,
         etag: Global___Etag | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
         options: Global___StateOptions | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["etag", b"etag", "options", b"options"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["etag", b"etag", "key", b"key", "metadata", b"metadata", "options", b"options", "value", b"value"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["etag", b"etag", "options", b"options"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["etag", b"etag", "key", b"key", "metadata", b"metadata", "options", b"options", "value", b"value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___StateItem: typing_extensions.TypeAlias = StateItem
+Global___StateItem: _TypeAlias = StateItem  # noqa: Y015
 
-@typing.final
-class Etag(google.protobuf.message.Message):
+@_typing.final
+class Etag(_message.Message):
     """Etag represents a state item version"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    VALUE_FIELD_NUMBER: builtins.int
-    value: builtins.str
+    VALUE_FIELD_NUMBER: _builtins.int
+    value: _builtins.str
     """value sets the etag value"""
     def __init__(
         self,
         *,
-        value: builtins.str = ...,
+        value: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___Etag: typing_extensions.TypeAlias = Etag
+Global___Etag: _TypeAlias = Etag  # noqa: Y015
 
-@typing.final
-class StateOptions(google.protobuf.message.Message):
+@_typing.final
+class StateOptions(_message.Message):
     """StateOptions configures concurrency and consistency for state operations"""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     class _StateConcurrency:
-        ValueType = typing.NewType("ValueType", builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
+        ValueType = _typing.NewType("ValueType", _builtins.int)
+        V: _TypeAlias = ValueType  # noqa: Y015
 
-    class _StateConcurrencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[StateOptions._StateConcurrency.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+    class _StateConcurrencyEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[StateOptions._StateConcurrency.ValueType], _builtins.type):
+        DESCRIPTOR: _descriptor.EnumDescriptor
         CONCURRENCY_UNSPECIFIED: StateOptions._StateConcurrency.ValueType  # 0
         CONCURRENCY_FIRST_WRITE: StateOptions._StateConcurrency.ValueType  # 1
         CONCURRENCY_LAST_WRITE: StateOptions._StateConcurrency.ValueType  # 2
@@ -311,11 +311,11 @@ class StateOptions(google.protobuf.message.Message):
     CONCURRENCY_LAST_WRITE: StateOptions.StateConcurrency.ValueType  # 2
 
     class _StateConsistency:
-        ValueType = typing.NewType("ValueType", builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
+        ValueType = _typing.NewType("ValueType", _builtins.int)
+        V: _TypeAlias = ValueType  # noqa: Y015
 
-    class _StateConsistencyEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[StateOptions._StateConsistency.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+    class _StateConsistencyEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[StateOptions._StateConsistency.ValueType], _builtins.type):
+        DESCRIPTOR: _descriptor.EnumDescriptor
         CONSISTENCY_UNSPECIFIED: StateOptions._StateConsistency.ValueType  # 0
         CONSISTENCY_EVENTUAL: StateOptions._StateConsistency.ValueType  # 1
         CONSISTENCY_STRONG: StateOptions._StateConsistency.ValueType  # 2
@@ -327,8 +327,8 @@ class StateOptions(google.protobuf.message.Message):
     CONSISTENCY_EVENTUAL: StateOptions.StateConsistency.ValueType  # 1
     CONSISTENCY_STRONG: StateOptions.StateConsistency.ValueType  # 2
 
-    CONCURRENCY_FIELD_NUMBER: builtins.int
-    CONSISTENCY_FIELD_NUMBER: builtins.int
+    CONCURRENCY_FIELD_NUMBER: _builtins.int
+    CONSISTENCY_FIELD_NUMBER: _builtins.int
     concurrency: Global___StateOptions.StateConcurrency.ValueType
     consistency: Global___StateOptions.StateConsistency.ValueType
     def __init__(
@@ -337,68 +337,68 @@ class StateOptions(google.protobuf.message.Message):
         concurrency: Global___StateOptions.StateConcurrency.ValueType = ...,
         consistency: Global___StateOptions.StateConsistency.ValueType = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["concurrency", b"concurrency", "consistency", b"consistency"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["concurrency", b"concurrency", "consistency", b"consistency"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___StateOptions: typing_extensions.TypeAlias = StateOptions
+Global___StateOptions: _TypeAlias = StateOptions  # noqa: Y015
 
-@typing.final
-class ConfigurationItem(google.protobuf.message.Message):
+@_typing.final
+class ConfigurationItem(_message.Message):
     """ConfigurationItem represents all the configuration with its name(key)."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    VALUE_FIELD_NUMBER: builtins.int
-    VERSION_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    value: builtins.str
+    VALUE_FIELD_NUMBER: _builtins.int
+    VERSION_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    value: _builtins.str
     """Required. The value of configuration item."""
-    version: builtins.str
+    version: _builtins.str
     """Version is response only and cannot be fetched. Store is not expected to keep all versions available"""
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """the metadata which will be passed to/from configuration store component."""
 
     def __init__(
         self,
         *,
-        value: builtins.str = ...,
-        version: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        value: _builtins.str = ...,
+        version: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["metadata", b"metadata", "value", b"value", "version", b"version"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["metadata", b"metadata", "value", b"value", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ConfigurationItem: typing_extensions.TypeAlias = ConfigurationItem
+Global___ConfigurationItem: _TypeAlias = ConfigurationItem  # noqa: Y015
 
-@typing.final
-class JobFailurePolicy(google.protobuf.message.Message):
+@_typing.final
+class JobFailurePolicy(_message.Message):
     """JobFailurePolicy defines the policy to apply when a job fails to trigger."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    DROP_FIELD_NUMBER: builtins.int
-    CONSTANT_FIELD_NUMBER: builtins.int
-    @property
+    DROP_FIELD_NUMBER: _builtins.int
+    CONSTANT_FIELD_NUMBER: _builtins.int
+    @_builtins.property
     def drop(self) -> Global___JobFailurePolicyDrop: ...
-    @property
+    @_builtins.property
     def constant(self) -> Global___JobFailurePolicyConstant: ...
     def __init__(
         self,
@@ -406,56 +406,56 @@ class JobFailurePolicy(google.protobuf.message.Message):
         drop: Global___JobFailurePolicyDrop | None = ...,
         constant: Global___JobFailurePolicyConstant | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["constant", b"constant", "drop", b"drop", "policy", b"policy"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType_policy: typing_extensions.TypeAlias = typing.Literal["drop", "constant"]
-    _WhichOneofArgType_policy: typing_extensions.TypeAlias = typing.Literal["policy", b"policy"]
+    _WhichOneofReturnType_policy: _TypeAlias = _typing.Literal["drop", "constant"]  # noqa: Y015
+    _WhichOneofArgType_policy: _TypeAlias = _typing.Literal["policy", b"policy"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType_policy) -> _WhichOneofReturnType_policy | None: ...
 
-Global___JobFailurePolicy: typing_extensions.TypeAlias = JobFailurePolicy
+Global___JobFailurePolicy: _TypeAlias = JobFailurePolicy  # noqa: Y015
 
-@typing.final
-class JobFailurePolicyDrop(google.protobuf.message.Message):
+@_typing.final
+class JobFailurePolicyDrop(_message.Message):
     """JobFailurePolicyDrop is a policy which drops the job tick when the job fails to trigger."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___JobFailurePolicyDrop: typing_extensions.TypeAlias = JobFailurePolicyDrop
+Global___JobFailurePolicyDrop: _TypeAlias = JobFailurePolicyDrop  # noqa: Y015
 
-@typing.final
-class JobFailurePolicyConstant(google.protobuf.message.Message):
+@_typing.final
+class JobFailurePolicyConstant(_message.Message):
     """JobFailurePolicyConstant is a policy which retries the job at a consistent interval when the job fails to trigger."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    INTERVAL_FIELD_NUMBER: builtins.int
-    MAX_RETRIES_FIELD_NUMBER: builtins.int
-    max_retries: builtins.int
+    INTERVAL_FIELD_NUMBER: _builtins.int
+    MAX_RETRIES_FIELD_NUMBER: _builtins.int
+    max_retries: _builtins.int
     """max_retries is the optional maximum number of retries to attempt before giving up.
     If unset, the Job will be retried indefinitely.
     """
-    @property
-    def interval(self) -> google.protobuf.duration_pb2.Duration:
+    @_builtins.property
+    def interval(self) -> _duration_pb2.Duration:
         """interval is the constant delay to wait before retrying the job."""
 
     def __init__(
         self,
         *,
-        interval: google.protobuf.duration_pb2.Duration | None = ...,
-        max_retries: builtins.int | None = ...,
+        interval: _duration_pb2.Duration | None = ...,
+        max_retries: _builtins.int | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_max_retries", b"_max_retries", "interval", b"interval", "max_retries", b"max_retries"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__max_retries: typing_extensions.TypeAlias = typing.Literal["max_retries"]
-    _WhichOneofArgType__max_retries: typing_extensions.TypeAlias = typing.Literal["_max_retries", b"_max_retries"]
+    _WhichOneofReturnType__max_retries: _TypeAlias = _typing.Literal["max_retries"]  # noqa: Y015
+    _WhichOneofArgType__max_retries: _TypeAlias = _typing.Literal["_max_retries", b"_max_retries"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__max_retries) -> _WhichOneofReturnType__max_retries | None: ...
 
-Global___JobFailurePolicyConstant: typing_extensions.TypeAlias = JobFailurePolicyConstant
+Global___JobFailurePolicyConstant: _TypeAlias = JobFailurePolicyConstant  # noqa: Y015
