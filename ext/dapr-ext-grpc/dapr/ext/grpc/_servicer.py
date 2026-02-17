@@ -291,7 +291,7 @@ class _CallbackServicer(
             return None  # we don't have a handler
 
         handler_key = topic_key if topic_key in self._topic_map else no_validation_key
-        cb = self._topic_map[handler_key] # callback
+        cb = self._topic_map[handler_key]  # callback
 
         statuses = []
         for entry in request.entries:
@@ -323,7 +323,7 @@ class _CallbackServicer(
                 if extensions:
                     event.SetExtensions(extensions)
 
-                response = cb(event) # invoke app registered handler and send event
+                response = cb(event)  # invoke app registered handler and send event
                 if isinstance(response, TopicEventResponse):
                     status = response.status.value
                 else:
