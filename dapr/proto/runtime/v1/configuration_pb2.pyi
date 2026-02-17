@@ -14,246 +14,246 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import dapr.proto.common.v1.common_pb2
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
+from collections import abc as _abc
+from dapr.proto.common.v1 import common_pb2 as _common_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing.final
-class GetConfigurationRequest(google.protobuf.message.Message):
+@_typing.final
+class GetConfigurationRequest(_message.Message):
     """GetConfigurationRequest is the message to get a list of key-value configuration from specified configuration store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    KEYS_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    KEYS_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """Required. The name of configuration store."""
-    @property
-    def keys(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    @_builtins.property
+    def keys(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """Optional. The key of the configuration item to fetch.
         If set, only query for the specified configuration items.
         Empty list means fetch all.
         """
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """Optional. The metadata which will be sent to configuration store components."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        keys: collections.abc.Iterable[builtins.str] | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        store_name: _builtins.str = ...,
+        keys: _abc.Iterable[_builtins.str] | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["keys", b"keys", "metadata", b"metadata", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["keys", b"keys", "metadata", b"metadata", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetConfigurationRequest: typing_extensions.TypeAlias = GetConfigurationRequest
+Global___GetConfigurationRequest: _TypeAlias = GetConfigurationRequest  # noqa: Y015
 
-@typing.final
-class GetConfigurationResponse(google.protobuf.message.Message):
+@_typing.final
+class GetConfigurationResponse(_message.Message):
     """GetConfigurationResponse is the response conveying the list of configuration values.
     It should be the FULL configuration of specified application which contains all of its configuration items.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class ItemsEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class ItemsEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        @property
-        def value(self) -> dapr.proto.common.v1.common_pb2.ConfigurationItem: ...
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        @_builtins.property
+        def value(self) -> _common_pb2.ConfigurationItem: ...
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: dapr.proto.common.v1.common_pb2.ConfigurationItem | None = ...,
+            key: _builtins.str = ...,
+            value: _common_pb2.ConfigurationItem | None = ...,
         ) -> None: ...
-        _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
-        def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _HasFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    ITEMS_FIELD_NUMBER: builtins.int
-    @property
-    def items(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, dapr.proto.common.v1.common_pb2.ConfigurationItem]: ...
+    ITEMS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def items(self) -> _containers.MessageMap[_builtins.str, _common_pb2.ConfigurationItem]: ...
     def __init__(
         self,
         *,
-        items: collections.abc.Mapping[builtins.str, dapr.proto.common.v1.common_pb2.ConfigurationItem] | None = ...,
+        items: _abc.Mapping[_builtins.str, _common_pb2.ConfigurationItem] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["items", b"items"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["items", b"items"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___GetConfigurationResponse: typing_extensions.TypeAlias = GetConfigurationResponse
+Global___GetConfigurationResponse: _TypeAlias = GetConfigurationResponse  # noqa: Y015
 
-@typing.final
-class SubscribeConfigurationRequest(google.protobuf.message.Message):
+@_typing.final
+class SubscribeConfigurationRequest(_message.Message):
     """SubscribeConfigurationRequest is the message to get a list of key-value configuration from specified configuration store."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    KEYS_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    KEYS_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of configuration store."""
-    @property
-    def keys(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    @_builtins.property
+    def keys(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """Optional. The key of the configuration item to fetch.
         If set, only query for the specified configuration items.
         Empty list means fetch all.
         """
 
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """The metadata which will be sent to configuration store components."""
 
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        keys: collections.abc.Iterable[builtins.str] | None = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        store_name: _builtins.str = ...,
+        keys: _abc.Iterable[_builtins.str] | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["keys", b"keys", "metadata", b"metadata", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["keys", b"keys", "metadata", b"metadata", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubscribeConfigurationRequest: typing_extensions.TypeAlias = SubscribeConfigurationRequest
+Global___SubscribeConfigurationRequest: _TypeAlias = SubscribeConfigurationRequest  # noqa: Y015
 
-@typing.final
-class UnsubscribeConfigurationRequest(google.protobuf.message.Message):
+@_typing.final
+class UnsubscribeConfigurationRequest(_message.Message):
     """UnSubscribeConfigurationRequest is the message to stop watching the key-value configuration."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    STORE_NAME_FIELD_NUMBER: builtins.int
-    ID_FIELD_NUMBER: builtins.int
-    store_name: builtins.str
+    STORE_NAME_FIELD_NUMBER: _builtins.int
+    ID_FIELD_NUMBER: _builtins.int
+    store_name: _builtins.str
     """The name of configuration store."""
-    id: builtins.str
+    id: _builtins.str
     """The id to unsubscribe."""
     def __init__(
         self,
         *,
-        store_name: builtins.str = ...,
-        id: builtins.str = ...,
+        store_name: _builtins.str = ...,
+        id: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["id", b"id", "store_name", b"store_name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id", "store_name", b"store_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___UnsubscribeConfigurationRequest: typing_extensions.TypeAlias = UnsubscribeConfigurationRequest
+Global___UnsubscribeConfigurationRequest: _TypeAlias = UnsubscribeConfigurationRequest  # noqa: Y015
 
-@typing.final
-class SubscribeConfigurationResponse(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class SubscribeConfigurationResponse(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class ItemsEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class ItemsEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        @property
-        def value(self) -> dapr.proto.common.v1.common_pb2.ConfigurationItem: ...
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        @_builtins.property
+        def value(self) -> _common_pb2.ConfigurationItem: ...
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: dapr.proto.common.v1.common_pb2.ConfigurationItem | None = ...,
+            key: _builtins.str = ...,
+            value: _common_pb2.ConfigurationItem | None = ...,
         ) -> None: ...
-        _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["value", b"value"]
-        def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _HasFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    ID_FIELD_NUMBER: builtins.int
-    ITEMS_FIELD_NUMBER: builtins.int
-    id: builtins.str
+    ID_FIELD_NUMBER: _builtins.int
+    ITEMS_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
     """Subscribe id, used to stop subscription."""
-    @property
-    def items(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, dapr.proto.common.v1.common_pb2.ConfigurationItem]:
+    @_builtins.property
+    def items(self) -> _containers.MessageMap[_builtins.str, _common_pb2.ConfigurationItem]:
         """The list of items containing configuration values"""
 
     def __init__(
         self,
         *,
-        id: builtins.str = ...,
-        items: collections.abc.Mapping[builtins.str, dapr.proto.common.v1.common_pb2.ConfigurationItem] | None = ...,
+        id: _builtins.str = ...,
+        items: _abc.Mapping[_builtins.str, _common_pb2.ConfigurationItem] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["id", b"id", "items", b"items"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id", "items", b"items"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SubscribeConfigurationResponse: typing_extensions.TypeAlias = SubscribeConfigurationResponse
+Global___SubscribeConfigurationResponse: _TypeAlias = SubscribeConfigurationResponse  # noqa: Y015
 
-@typing.final
-class UnsubscribeConfigurationResponse(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class UnsubscribeConfigurationResponse(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    OK_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
-    ok: builtins.bool
-    message: builtins.str
+    OK_FIELD_NUMBER: _builtins.int
+    MESSAGE_FIELD_NUMBER: _builtins.int
+    ok: _builtins.bool
+    message: _builtins.str
     def __init__(
         self,
         *,
-        ok: builtins.bool = ...,
-        message: builtins.str = ...,
+        ok: _builtins.bool = ...,
+        message: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["message", b"message", "ok", b"ok"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["message", b"message", "ok", b"ok"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___UnsubscribeConfigurationResponse: typing_extensions.TypeAlias = UnsubscribeConfigurationResponse
+Global___UnsubscribeConfigurationResponse: _TypeAlias = UnsubscribeConfigurationResponse  # noqa: Y015

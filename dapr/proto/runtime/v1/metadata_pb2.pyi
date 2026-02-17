@@ -14,28 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import builtins
-import collections.abc
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.internal.enum_type_wrapper
-import google.protobuf.message
+from collections import abc as _abc
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+import builtins as _builtins
 import sys
-import typing
+import typing as _typing
 
 if sys.version_info >= (3, 10):
-    import typing as typing_extensions
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+if sys.version_info >= (3, 13):
+    from warnings import deprecated as _deprecated
+else:
+    from typing_extensions import deprecated as _deprecated
+
+DESCRIPTOR: _descriptor.FileDescriptor
 
 class _PubsubSubscriptionType:
-    ValueType = typing.NewType("ValueType", builtins.int)
-    V: typing_extensions.TypeAlias = ValueType
+    ValueType = _typing.NewType("ValueType", _builtins.int)
+    V: _TypeAlias = ValueType  # noqa: Y015
 
-class _PubsubSubscriptionTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_PubsubSubscriptionType.ValueType], builtins.type):
-    DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+class _PubsubSubscriptionTypeEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_PubsubSubscriptionType.ValueType], _builtins.type):
+    DESCRIPTOR: _descriptor.EnumDescriptor
     UNKNOWN: _PubsubSubscriptionType.ValueType  # 0
     """UNKNOWN is the default value for the subscription type."""
     DECLARATIVE: _PubsubSubscriptionType.ValueType  # 1
@@ -56,161 +61,162 @@ PROGRAMMATIC: PubsubSubscriptionType.ValueType  # 2
 """Programmatically created subscription"""
 STREAMING: PubsubSubscriptionType.ValueType  # 3
 """Bidirectional Streaming subscription"""
-Global___PubsubSubscriptionType: typing_extensions.TypeAlias = PubsubSubscriptionType
+Global___PubsubSubscriptionType: _TypeAlias = PubsubSubscriptionType  # noqa: Y015
 
-@typing.final
-class GetMetadataRequest(google.protobuf.message.Message):
+@_typing.final
+class GetMetadataRequest(_message.Message):
     """GetMetadataRequest is the message for the GetMetadata request.
     Empty
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-Global___GetMetadataRequest: typing_extensions.TypeAlias = GetMetadataRequest
+Global___GetMetadataRequest: _TypeAlias = GetMetadataRequest  # noqa: Y015
 
-@typing.final
-class GetMetadataResponse(google.protobuf.message.Message):
+@_typing.final
+class GetMetadataResponse(_message.Message):
     """GetMetadataResponse is a message that is returned on GetMetadata rpc call."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class ExtendedMetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class ExtendedMetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    ID_FIELD_NUMBER: builtins.int
-    ACTIVE_ACTORS_COUNT_FIELD_NUMBER: builtins.int
-    REGISTERED_COMPONENTS_FIELD_NUMBER: builtins.int
-    EXTENDED_METADATA_FIELD_NUMBER: builtins.int
-    SUBSCRIPTIONS_FIELD_NUMBER: builtins.int
-    HTTP_ENDPOINTS_FIELD_NUMBER: builtins.int
-    APP_CONNECTION_PROPERTIES_FIELD_NUMBER: builtins.int
-    RUNTIME_VERSION_FIELD_NUMBER: builtins.int
-    ENABLED_FEATURES_FIELD_NUMBER: builtins.int
-    ACTOR_RUNTIME_FIELD_NUMBER: builtins.int
-    SCHEDULER_FIELD_NUMBER: builtins.int
-    WORKFLOWS_FIELD_NUMBER: builtins.int
-    id: builtins.str
-    runtime_version: builtins.str
-    @property
-    def active_actors_count(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ActiveActorsCount]:
+    ID_FIELD_NUMBER: _builtins.int
+    ACTIVE_ACTORS_COUNT_FIELD_NUMBER: _builtins.int
+    REGISTERED_COMPONENTS_FIELD_NUMBER: _builtins.int
+    EXTENDED_METADATA_FIELD_NUMBER: _builtins.int
+    SUBSCRIPTIONS_FIELD_NUMBER: _builtins.int
+    HTTP_ENDPOINTS_FIELD_NUMBER: _builtins.int
+    APP_CONNECTION_PROPERTIES_FIELD_NUMBER: _builtins.int
+    RUNTIME_VERSION_FIELD_NUMBER: _builtins.int
+    ENABLED_FEATURES_FIELD_NUMBER: _builtins.int
+    ACTOR_RUNTIME_FIELD_NUMBER: _builtins.int
+    SCHEDULER_FIELD_NUMBER: _builtins.int
+    WORKFLOWS_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    runtime_version: _builtins.str
+    @_builtins.property
+    @_deprecated("""This field has been marked as deprecated using proto field options.""")
+    def active_actors_count(self) -> _containers.RepeatedCompositeFieldContainer[Global___ActiveActorsCount]:
         """Deprecated alias for actor_runtime.active_actors."""
 
-    @property
-    def registered_components(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___RegisteredComponents]: ...
-    @property
-    def extended_metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
-    @property
-    def subscriptions(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___PubsubSubscription]: ...
-    @property
-    def http_endpoints(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___MetadataHTTPEndpoint]: ...
-    @property
+    @_builtins.property
+    def registered_components(self) -> _containers.RepeatedCompositeFieldContainer[Global___RegisteredComponents]: ...
+    @_builtins.property
+    def extended_metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]: ...
+    @_builtins.property
+    def subscriptions(self) -> _containers.RepeatedCompositeFieldContainer[Global___PubsubSubscription]: ...
+    @_builtins.property
+    def http_endpoints(self) -> _containers.RepeatedCompositeFieldContainer[Global___MetadataHTTPEndpoint]: ...
+    @_builtins.property
     def app_connection_properties(self) -> Global___AppConnectionProperties: ...
-    @property
-    def enabled_features(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]: ...
-    @property
+    @_builtins.property
+    def enabled_features(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    @_builtins.property
     def actor_runtime(self) -> Global___ActorRuntime: ...
-    @property
+    @_builtins.property
     def scheduler(self) -> Global___MetadataScheduler: ...
-    @property
+    @_builtins.property
     def workflows(self) -> Global___MetadataWorkflows: ...
     def __init__(
         self,
         *,
-        id: builtins.str = ...,
-        active_actors_count: collections.abc.Iterable[Global___ActiveActorsCount] | None = ...,
-        registered_components: collections.abc.Iterable[Global___RegisteredComponents] | None = ...,
-        extended_metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        subscriptions: collections.abc.Iterable[Global___PubsubSubscription] | None = ...,
-        http_endpoints: collections.abc.Iterable[Global___MetadataHTTPEndpoint] | None = ...,
+        id: _builtins.str = ...,
+        active_actors_count: _abc.Iterable[Global___ActiveActorsCount] | None = ...,
+        registered_components: _abc.Iterable[Global___RegisteredComponents] | None = ...,
+        extended_metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+        subscriptions: _abc.Iterable[Global___PubsubSubscription] | None = ...,
+        http_endpoints: _abc.Iterable[Global___MetadataHTTPEndpoint] | None = ...,
         app_connection_properties: Global___AppConnectionProperties | None = ...,
-        runtime_version: builtins.str = ...,
-        enabled_features: collections.abc.Iterable[builtins.str] | None = ...,
+        runtime_version: _builtins.str = ...,
+        enabled_features: _abc.Iterable[_builtins.str] | None = ...,
         actor_runtime: Global___ActorRuntime | None = ...,
         scheduler: Global___MetadataScheduler | None = ...,
         workflows: Global___MetadataWorkflows | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "scheduler", b"scheduler", "workflows", b"workflows"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "scheduler", b"scheduler", "subscriptions", b"subscriptions", "workflows", b"workflows"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "scheduler", b"scheduler", "workflows", b"workflows"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "scheduler", b"scheduler", "subscriptions", b"subscriptions", "workflows", b"workflows"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__scheduler: typing_extensions.TypeAlias = typing.Literal["scheduler"]
-    _WhichOneofArgType__scheduler: typing_extensions.TypeAlias = typing.Literal["_scheduler", b"_scheduler"]
-    _WhichOneofReturnType__workflows: typing_extensions.TypeAlias = typing.Literal["workflows"]
-    _WhichOneofArgType__workflows: typing_extensions.TypeAlias = typing.Literal["_workflows", b"_workflows"]
-    @typing.overload
+    _WhichOneofReturnType__scheduler: _TypeAlias = _typing.Literal["scheduler"]  # noqa: Y015
+    _WhichOneofArgType__scheduler: _TypeAlias = _typing.Literal["_scheduler", b"_scheduler"]  # noqa: Y015
+    _WhichOneofReturnType__workflows: _TypeAlias = _typing.Literal["workflows"]  # noqa: Y015
+    _WhichOneofArgType__workflows: _TypeAlias = _typing.Literal["_workflows", b"_workflows"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__scheduler) -> _WhichOneofReturnType__scheduler | None: ...
-    @typing.overload
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__workflows) -> _WhichOneofReturnType__workflows | None: ...
 
-Global___GetMetadataResponse: typing_extensions.TypeAlias = GetMetadataResponse
+Global___GetMetadataResponse: _TypeAlias = GetMetadataResponse  # noqa: Y015
 
-@typing.final
-class MetadataWorkflows(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class MetadataWorkflows(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    CONNECTED_WORKERS_FIELD_NUMBER: builtins.int
-    connected_workers: builtins.int
+    CONNECTED_WORKERS_FIELD_NUMBER: _builtins.int
+    connected_workers: _builtins.int
     def __init__(
         self,
         *,
-        connected_workers: builtins.int = ...,
+        connected_workers: _builtins.int = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["connected_workers", b"connected_workers"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["connected_workers", b"connected_workers"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___MetadataWorkflows: typing_extensions.TypeAlias = MetadataWorkflows
+Global___MetadataWorkflows: _TypeAlias = MetadataWorkflows  # noqa: Y015
 
-@typing.final
-class MetadataScheduler(google.protobuf.message.Message):
+@_typing.final
+class MetadataScheduler(_message.Message):
     """MetadataScheduler is a message that contains the list of addresses of the
     scheduler connections.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    CONNECTED_ADDRESSES_FIELD_NUMBER: builtins.int
-    @property
-    def connected_addresses(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    CONNECTED_ADDRESSES_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def connected_addresses(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """connected_addresses the list of addresses of the scheduler connections."""
 
     def __init__(
         self,
         *,
-        connected_addresses: collections.abc.Iterable[builtins.str] | None = ...,
+        connected_addresses: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["connected_addresses", b"connected_addresses"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["connected_addresses", b"connected_addresses"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___MetadataScheduler: typing_extensions.TypeAlias = MetadataScheduler
+Global___MetadataScheduler: _TypeAlias = MetadataScheduler  # noqa: Y015
 
-@typing.final
-class ActorRuntime(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class ActorRuntime(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
     class _ActorRuntimeStatus:
-        ValueType = typing.NewType("ValueType", builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
+        ValueType = _typing.NewType("ValueType", _builtins.int)
+        V: _TypeAlias = ValueType  # noqa: Y015
 
-    class _ActorRuntimeStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ActorRuntime._ActorRuntimeStatus.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+    class _ActorRuntimeStatusEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[ActorRuntime._ActorRuntimeStatus.ValueType], _builtins.type):
+        DESCRIPTOR: _descriptor.EnumDescriptor
         INITIALIZING: ActorRuntime._ActorRuntimeStatus.ValueType  # 0
         """Indicates that the actor runtime is still being initialized."""
         DISABLED: ActorRuntime._ActorRuntimeStatus.ValueType  # 1
@@ -230,253 +236,253 @@ class ActorRuntime(google.protobuf.message.Message):
     RUNNING: ActorRuntime.ActorRuntimeStatus.ValueType  # 2
     """Indicates the actor runtime is running, either as an actor host or client."""
 
-    RUNTIME_STATUS_FIELD_NUMBER: builtins.int
-    ACTIVE_ACTORS_FIELD_NUMBER: builtins.int
-    HOST_READY_FIELD_NUMBER: builtins.int
-    PLACEMENT_FIELD_NUMBER: builtins.int
+    RUNTIME_STATUS_FIELD_NUMBER: _builtins.int
+    ACTIVE_ACTORS_FIELD_NUMBER: _builtins.int
+    HOST_READY_FIELD_NUMBER: _builtins.int
+    PLACEMENT_FIELD_NUMBER: _builtins.int
     runtime_status: Global___ActorRuntime.ActorRuntimeStatus.ValueType
     """Contains an enum indicating whether the actor runtime has been initialized."""
-    host_ready: builtins.bool
+    host_ready: _builtins.bool
     """Indicates whether the actor runtime is ready to host actors."""
-    placement: builtins.str
+    placement: _builtins.str
     """Custom message from the placement provider."""
-    @property
-    def active_actors(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ActiveActorsCount]:
+    @_builtins.property
+    def active_actors(self) -> _containers.RepeatedCompositeFieldContainer[Global___ActiveActorsCount]:
         """Count of active actors per type."""
 
     def __init__(
         self,
         *,
         runtime_status: Global___ActorRuntime.ActorRuntimeStatus.ValueType = ...,
-        active_actors: collections.abc.Iterable[Global___ActiveActorsCount] | None = ...,
-        host_ready: builtins.bool = ...,
-        placement: builtins.str = ...,
+        active_actors: _abc.Iterable[Global___ActiveActorsCount] | None = ...,
+        host_ready: _builtins.bool = ...,
+        placement: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["active_actors", b"active_actors", "host_ready", b"host_ready", "placement", b"placement", "runtime_status", b"runtime_status"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["active_actors", b"active_actors", "host_ready", b"host_ready", "placement", b"placement", "runtime_status", b"runtime_status"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ActorRuntime: typing_extensions.TypeAlias = ActorRuntime
+Global___ActorRuntime: _TypeAlias = ActorRuntime  # noqa: Y015
 
-@typing.final
-class ActiveActorsCount(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class ActiveActorsCount(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    TYPE_FIELD_NUMBER: builtins.int
-    COUNT_FIELD_NUMBER: builtins.int
-    type: builtins.str
-    count: builtins.int
+    TYPE_FIELD_NUMBER: _builtins.int
+    COUNT_FIELD_NUMBER: _builtins.int
+    type: _builtins.str
+    count: _builtins.int
     def __init__(
         self,
         *,
-        type: builtins.str = ...,
-        count: builtins.int = ...,
+        type: _builtins.str = ...,
+        count: _builtins.int = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["count", b"count", "type", b"type"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["count", b"count", "type", b"type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___ActiveActorsCount: typing_extensions.TypeAlias = ActiveActorsCount
+Global___ActiveActorsCount: _TypeAlias = ActiveActorsCount  # noqa: Y015
 
-@typing.final
-class RegisteredComponents(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class RegisteredComponents(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    TYPE_FIELD_NUMBER: builtins.int
-    VERSION_FIELD_NUMBER: builtins.int
-    CAPABILITIES_FIELD_NUMBER: builtins.int
-    name: builtins.str
-    type: builtins.str
-    version: builtins.str
-    @property
-    def capabilities(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]: ...
+    NAME_FIELD_NUMBER: _builtins.int
+    TYPE_FIELD_NUMBER: _builtins.int
+    VERSION_FIELD_NUMBER: _builtins.int
+    CAPABILITIES_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    type: _builtins.str
+    version: _builtins.str
+    @_builtins.property
+    def capabilities(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
-        type: builtins.str = ...,
-        version: builtins.str = ...,
-        capabilities: collections.abc.Iterable[builtins.str] | None = ...,
+        name: _builtins.str = ...,
+        type: _builtins.str = ...,
+        version: _builtins.str = ...,
+        capabilities: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["capabilities", b"capabilities", "name", b"name", "type", b"type", "version", b"version"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["capabilities", b"capabilities", "name", b"name", "type", b"type", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___RegisteredComponents: typing_extensions.TypeAlias = RegisteredComponents
+Global___RegisteredComponents: _TypeAlias = RegisteredComponents  # noqa: Y015
 
-@typing.final
-class MetadataHTTPEndpoint(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class MetadataHTTPEndpoint(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: builtins.int
-    name: builtins.str
+    NAME_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
     def __init__(
         self,
         *,
-        name: builtins.str = ...,
+        name: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["name", b"name"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___MetadataHTTPEndpoint: typing_extensions.TypeAlias = MetadataHTTPEndpoint
+Global___MetadataHTTPEndpoint: _TypeAlias = MetadataHTTPEndpoint  # noqa: Y015
 
-@typing.final
-class AppConnectionProperties(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class AppConnectionProperties(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    PORT_FIELD_NUMBER: builtins.int
-    PROTOCOL_FIELD_NUMBER: builtins.int
-    CHANNEL_ADDRESS_FIELD_NUMBER: builtins.int
-    MAX_CONCURRENCY_FIELD_NUMBER: builtins.int
-    HEALTH_FIELD_NUMBER: builtins.int
-    port: builtins.int
-    protocol: builtins.str
-    channel_address: builtins.str
-    max_concurrency: builtins.int
-    @property
+    PORT_FIELD_NUMBER: _builtins.int
+    PROTOCOL_FIELD_NUMBER: _builtins.int
+    CHANNEL_ADDRESS_FIELD_NUMBER: _builtins.int
+    MAX_CONCURRENCY_FIELD_NUMBER: _builtins.int
+    HEALTH_FIELD_NUMBER: _builtins.int
+    port: _builtins.int
+    protocol: _builtins.str
+    channel_address: _builtins.str
+    max_concurrency: _builtins.int
+    @_builtins.property
     def health(self) -> Global___AppConnectionHealthProperties: ...
     def __init__(
         self,
         *,
-        port: builtins.int = ...,
-        protocol: builtins.str = ...,
-        channel_address: builtins.str = ...,
-        max_concurrency: builtins.int = ...,
+        port: _builtins.int = ...,
+        protocol: _builtins.str = ...,
+        channel_address: _builtins.str = ...,
+        max_concurrency: _builtins.int = ...,
         health: Global___AppConnectionHealthProperties | None = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["health", b"health"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["channel_address", b"channel_address", "health", b"health", "max_concurrency", b"max_concurrency", "port", b"port", "protocol", b"protocol"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["health", b"health"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["channel_address", b"channel_address", "health", b"health", "max_concurrency", b"max_concurrency", "port", b"port", "protocol", b"protocol"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___AppConnectionProperties: typing_extensions.TypeAlias = AppConnectionProperties
+Global___AppConnectionProperties: _TypeAlias = AppConnectionProperties  # noqa: Y015
 
-@typing.final
-class AppConnectionHealthProperties(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class AppConnectionHealthProperties(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    HEALTH_CHECK_PATH_FIELD_NUMBER: builtins.int
-    HEALTH_PROBE_INTERVAL_FIELD_NUMBER: builtins.int
-    HEALTH_PROBE_TIMEOUT_FIELD_NUMBER: builtins.int
-    HEALTH_THRESHOLD_FIELD_NUMBER: builtins.int
-    health_check_path: builtins.str
-    health_probe_interval: builtins.str
-    health_probe_timeout: builtins.str
-    health_threshold: builtins.int
+    HEALTH_CHECK_PATH_FIELD_NUMBER: _builtins.int
+    HEALTH_PROBE_INTERVAL_FIELD_NUMBER: _builtins.int
+    HEALTH_PROBE_TIMEOUT_FIELD_NUMBER: _builtins.int
+    HEALTH_THRESHOLD_FIELD_NUMBER: _builtins.int
+    health_check_path: _builtins.str
+    health_probe_interval: _builtins.str
+    health_probe_timeout: _builtins.str
+    health_threshold: _builtins.int
     def __init__(
         self,
         *,
-        health_check_path: builtins.str = ...,
-        health_probe_interval: builtins.str = ...,
-        health_probe_timeout: builtins.str = ...,
-        health_threshold: builtins.int = ...,
+        health_check_path: _builtins.str = ...,
+        health_probe_interval: _builtins.str = ...,
+        health_probe_timeout: _builtins.str = ...,
+        health_threshold: _builtins.int = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["health_check_path", b"health_check_path", "health_probe_interval", b"health_probe_interval", "health_probe_timeout", b"health_probe_timeout", "health_threshold", b"health_threshold"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["health_check_path", b"health_check_path", "health_probe_interval", b"health_probe_interval", "health_probe_timeout", b"health_probe_timeout", "health_threshold", b"health_threshold"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___AppConnectionHealthProperties: typing_extensions.TypeAlias = AppConnectionHealthProperties
+Global___AppConnectionHealthProperties: _TypeAlias = AppConnectionHealthProperties  # noqa: Y015
 
-@typing.final
-class PubsubSubscription(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class PubsubSubscription(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing.final
-    class MetadataEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.str
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.str = ...,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
         ) -> None: ...
-        _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    PUBSUB_NAME_FIELD_NUMBER: builtins.int
-    TOPIC_FIELD_NUMBER: builtins.int
-    METADATA_FIELD_NUMBER: builtins.int
-    RULES_FIELD_NUMBER: builtins.int
-    DEAD_LETTER_TOPIC_FIELD_NUMBER: builtins.int
-    TYPE_FIELD_NUMBER: builtins.int
-    pubsub_name: builtins.str
-    topic: builtins.str
-    dead_letter_topic: builtins.str
+    PUBSUB_NAME_FIELD_NUMBER: _builtins.int
+    TOPIC_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    RULES_FIELD_NUMBER: _builtins.int
+    DEAD_LETTER_TOPIC_FIELD_NUMBER: _builtins.int
+    TYPE_FIELD_NUMBER: _builtins.int
+    pubsub_name: _builtins.str
+    topic: _builtins.str
+    dead_letter_topic: _builtins.str
     type: Global___PubsubSubscriptionType.ValueType
-    @property
-    def metadata(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
-    @property
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]: ...
+    @_builtins.property
     def rules(self) -> Global___PubsubSubscriptionRules: ...
     def __init__(
         self,
         *,
-        pubsub_name: builtins.str = ...,
-        topic: builtins.str = ...,
-        metadata: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        pubsub_name: _builtins.str = ...,
+        topic: _builtins.str = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
         rules: Global___PubsubSubscriptionRules | None = ...,
-        dead_letter_topic: builtins.str = ...,
+        dead_letter_topic: _builtins.str = ...,
         type: Global___PubsubSubscriptionType.ValueType = ...,
     ) -> None: ...
-    _HasFieldArgType: typing_extensions.TypeAlias = typing.Literal["rules", b"rules"]
-    def HasField(self, field_name: _HasFieldArgType) -> builtins.bool: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "rules", b"rules", "topic", b"topic", "type", b"type"]
+    _HasFieldArgType: _TypeAlias = _typing.Literal["rules", b"rules"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "rules", b"rules", "topic", b"topic", "type", b"type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___PubsubSubscription: typing_extensions.TypeAlias = PubsubSubscription
+Global___PubsubSubscription: _TypeAlias = PubsubSubscription  # noqa: Y015
 
-@typing.final
-class PubsubSubscriptionRules(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class PubsubSubscriptionRules(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    RULES_FIELD_NUMBER: builtins.int
-    @property
-    def rules(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___PubsubSubscriptionRule]: ...
+    RULES_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def rules(self) -> _containers.RepeatedCompositeFieldContainer[Global___PubsubSubscriptionRule]: ...
     def __init__(
         self,
         *,
-        rules: collections.abc.Iterable[Global___PubsubSubscriptionRule] | None = ...,
+        rules: _abc.Iterable[Global___PubsubSubscriptionRule] | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["rules", b"rules"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["rules", b"rules"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___PubsubSubscriptionRules: typing_extensions.TypeAlias = PubsubSubscriptionRules
+Global___PubsubSubscriptionRules: _TypeAlias = PubsubSubscriptionRules  # noqa: Y015
 
-@typing.final
-class PubsubSubscriptionRule(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class PubsubSubscriptionRule(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    MATCH_FIELD_NUMBER: builtins.int
-    PATH_FIELD_NUMBER: builtins.int
-    match: builtins.str
-    path: builtins.str
+    MATCH_FIELD_NUMBER: _builtins.int
+    PATH_FIELD_NUMBER: _builtins.int
+    match: _builtins.str
+    path: _builtins.str
     def __init__(
         self,
         *,
-        match: builtins.str = ...,
-        path: builtins.str = ...,
+        match: _builtins.str = ...,
+        path: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["match", b"match", "path", b"path"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["match", b"match", "path", b"path"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___PubsubSubscriptionRule: typing_extensions.TypeAlias = PubsubSubscriptionRule
+Global___PubsubSubscriptionRule: _TypeAlias = PubsubSubscriptionRule  # noqa: Y015
 
-@typing.final
-class SetMetadataRequest(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class SetMetadataRequest(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    KEY_FIELD_NUMBER: builtins.int
-    VALUE_FIELD_NUMBER: builtins.int
-    key: builtins.str
-    value: builtins.str
+    KEY_FIELD_NUMBER: _builtins.int
+    VALUE_FIELD_NUMBER: _builtins.int
+    key: _builtins.str
+    value: _builtins.str
     def __init__(
         self,
         *,
-        key: builtins.str = ...,
-        value: builtins.str = ...,
+        key: _builtins.str = ...,
+        value: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: typing_extensions.TypeAlias = typing.Literal["key", b"key", "value", b"value"]
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-Global___SetMetadataRequest: typing_extensions.TypeAlias = SetMetadataRequest
+Global___SetMetadataRequest: _TypeAlias = SetMetadataRequest  # noqa: Y015
