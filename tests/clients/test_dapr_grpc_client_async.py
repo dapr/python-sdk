@@ -266,7 +266,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 data=111,
             )
 
-    async def test_publish_events(self):
+    async def test_publish_events_bytes(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
         resp = await dapr.publish_events(
             pubsub_name='pubsub',
@@ -274,6 +274,18 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             data=[
                 b'{"key": "value1"}',
                 b'{"key": "value2"}',
+            ],
+        )
+        self.assertEqual(0, len(resp.failed_entries))
+
+    async def test_publish_events_strings(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        resp = await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[
+                'content1',
+                'content2',
             ],
         )
         self.assertEqual(0, len(resp.failed_entries))
@@ -303,6 +315,30 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(1, len(resp.failed_entries))
         self.assertEqual('simulated failure', resp.failed_entries[0].error)
         self.assertIsNotNone(resp.failed_entries[0].entry_id)
+
+    async def test_publish_events_fallback_to_alpha1_when_stable_unimplemented(self):
+        """Covers UNIMPLEMENTED -> BulkPublishEventAlpha1 fallback in publish_events."""
+        self._fake_dapr_server.set_bulk_publish_unimplemented_on_stable_next()
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        resp = await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[b'msg1', b'msg2'],
+        )
+        self.assertEqual(0, len(resp.failed_entries))
+
+    async def test_publish_events_raises_on_non_unimplemented_error(self):
+        """Covers non-UNIMPLEMENTED AioRpcError path in publish_events (raises DaprGrpcError)."""
+        self._fake_dapr_server.raise_exception_on_next_call(
+            status_pb2.Status(code=code_pb2.INTERNAL, message='bulk publish failed')
+        )
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        with self.assertRaises(DaprGrpcError):
+            await dapr.publish_events(
+                pubsub_name='pubsub',
+                topic_name='example',
+                data=[b'msg'],
+            )
 
     async def test_subscribe_topic(self):
         # The fake server we're using sends two messages and then closes the stream

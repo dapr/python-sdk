@@ -34,6 +34,16 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._next_exception = None
         # When set, the next BulkPublishEvent call returns this many entries as failed.
         self._bulk_publish_fail_next: Optional[Tuple[int, str]] = None
+        # When True, the next BulkPublishEvent (stable) call returns UNIMPLEMENTED; Alpha1 is unchanged.
+        self._bulk_publish_stable_unimplemented_next: bool = False
+
+    def set_bulk_publish_unimplemented_on_stable_next(self) -> None:
+        """Make the next BulkPublishEvent (stable) call return UNIMPLEMENTED.
+
+        BulkPublishEventAlpha1 is unchanged, so clients can fall back to Alpha1 and succeed.
+        Useful for testing the UNIMPLEMENTED fallback path in publish_events.
+        """
+        self._bulk_publish_stable_unimplemented_next = True
 
     def set_bulk_publish_failed_entries_on_next_call(
         self, failed_entry_count: int = 1, error_message: str = 'simulated failure'
@@ -182,6 +192,16 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.BulkPublishResponse(failedEntries=failed)
 
     def BulkPublishEvent(self, request, context):
+        if self._bulk_publish_stable_unimplemented_next:
+            self._bulk_publish_stable_unimplemented_next = False
+            context.abort_with_status(
+                rpc_status.to_status(
+                    status_pb2.Status(
+                        code=code_pb2.UNIMPLEMENTED,
+                        message='BulkPublishEvent not implemented',
+                    )
+                )
+            )
         self.check_for_exception(context)
         return self._bulk_publish_response(request)
 
