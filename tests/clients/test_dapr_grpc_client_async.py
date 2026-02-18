@@ -289,6 +289,21 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 ],
             )
 
+    async def test_publish_events_with_failed_entries(self):
+        """Covers BulkPublishResponse with non-empty failed_entries."""
+        self._fake_dapr_server.set_bulk_publish_failed_entries_on_next_call(
+            failed_entry_count=1, error_message='simulated failure'
+        )
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        resp = await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[b'first', b'second'],
+        )
+        self.assertEqual(1, len(resp.failed_entries))
+        self.assertEqual('simulated failure', resp.failed_entries[0].error)
+        self.assertIsNotNone(resp.failed_entries[0].entry_id)
+
     async def test_subscribe_topic(self):
         # The fake server we're using sends two messages and then closes the stream
         # The client should be able to read both messages, handle the stream closure and reconnect
