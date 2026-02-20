@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import configparser
 import os
 
 from setuptools import setup
@@ -47,6 +48,14 @@ or all of them in your application.
 # Get build number from GITHUB_RUN_NUMBER environment variable
 build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 
+cfg = configparser.ConfigParser()
+cfg.read('setup.cfg')
+install_requires = [
+    r.strip()
+    for r in cfg.get('options', 'install_requires', fallback='').strip().splitlines()
+    if r.strip()
+]
+
 if not is_release():
     name += '-dev'
     version = f'{__version__}{build_number}'
@@ -54,6 +63,9 @@ if not is_release():
         'The developmental release for the Dapr Session Manager extension for Strands Agents'
     )
     long_description = 'This is the developmental release for the Dapr Session Manager extension for Strands Agents'
+    install_requires = [
+        'dapr-dev' + r[4:] if r.startswith('dapr ') else r for r in install_requires
+    ]
 
 print(f'package name: {name}, version: {version}', flush=True)
 
@@ -63,4 +75,5 @@ setup(
     version=version,
     description=description,
     long_description=long_description,
+    install_requires=install_requires,
 )
