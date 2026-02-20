@@ -1,6 +1,6 @@
 import json
 from concurrent import futures
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 import grpc
 from google.protobuf import empty_pb2, struct_pb2
@@ -32,6 +32,28 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.jobs: Dict[str, api_v1.Job] = {}
         self.job_overwrites: Dict[str, bool] = {}
         self._next_exception = None
+        # When set, the next BulkPublishEvent call returns this many entries as failed.
+        self._bulk_publish_fail_next: Optional[Tuple[int, str]] = None
+        # When True, the next BulkPublishEvent (stable) call returns UNIMPLEMENTED; Alpha1 is unchanged.
+        self._bulk_publish_stable_unimplemented_next: bool = False
+
+    def set_bulk_publish_unimplemented_on_stable_next(self) -> None:
+        """Make the next BulkPublishEvent (stable) call return UNIMPLEMENTED.
+
+        BulkPublishEventAlpha1 is unchanged, so clients can fall back to Alpha1 and succeed.
+        Useful for testing the UNIMPLEMENTED fallback path in publish_events.
+        """
+        self._bulk_publish_stable_unimplemented_next = True
+
+    def set_bulk_publish_failed_entries_on_next_call(
+        self, failed_entry_count: int = 1, error_message: str = 'simulated failure'
+    ) -> None:
+        """Configure the next BulkPublishEvent/BulkPublishEventAlpha1 call to return failed entries.
+
+        The first failed_entry_count entries from the request will be reported as failed.
+        Useful for testing BulkPublishResponse with non-empty failed_entries.
+        """
+        self._bulk_publish_fail_next = (failed_entry_count, error_message)
 
     def start(self):
         self._grpc_server.add_insecure_port(f'[::]:{self.grpc_port}')
@@ -154,6 +176,38 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.send_initial_metadata(headers)
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
+
+    def _bulk_publish_response(self, request) -> api_v1.BulkPublishResponse:
+        if not self._bulk_publish_fail_next or not request.entries:
+            return api_v1.BulkPublishResponse()
+        count, error_message = self._bulk_publish_fail_next
+        self._bulk_publish_fail_next = None
+        failed = [
+            api_v1.BulkPublishResponseFailedEntry(
+                entry_id=entry.entry_id,
+                error=error_message,
+            )
+            for entry in request.entries[:count]
+        ]
+        return api_v1.BulkPublishResponse(failedEntries=failed)
+
+    def BulkPublishEvent(self, request, context):
+        if self._bulk_publish_stable_unimplemented_next:
+            self._bulk_publish_stable_unimplemented_next = False
+            context.abort_with_status(
+                rpc_status.to_status(
+                    status_pb2.Status(
+                        code=code_pb2.UNIMPLEMENTED,
+                        message='BulkPublishEvent not implemented',
+                    )
+                )
+            )
+        self.check_for_exception(context)
+        return self._bulk_publish_response(request)
+
+    def BulkPublishEventAlpha1(self, request, context):
+        self.check_for_exception(context)
+        return self._bulk_publish_response(request)
 
     def SubscribeTopicEventsAlpha1(self, request_iterator, context):
         for request in request_iterator:
