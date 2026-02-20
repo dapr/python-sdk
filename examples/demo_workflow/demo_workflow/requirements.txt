@@ -1,1 +1,1 @@
-dapr-ext-workflow>=1.17.0rc4
+dapr-ext-workflow>=1.17.0rc5
