@@ -12,13 +12,17 @@ This example utilizes a receiver and a caller for the `invoke_method` functional
 ### Install requirements
 
 You can install dapr SDK package using pip command:
+```sh
+pip3 install dapr
+```
 
-<!-- STEP 
+<!-- STEP
 name: Install requirements
 -->
 
+Also install Flask package:
 ```sh
-pip3 install dapr Flask
+pip3 install Flask
 ```
 
 <!-- END_STEP -->
@@ -55,7 +59,7 @@ expected_stdout_lines:
   - '== APP == 503'
   - '== APP == Internal Server Error'
 background: true
-sleep: 5 
+sleep: 5
 -->
 
 ```bash
@@ -66,7 +70,7 @@ dapr run --app-id=invoke-caller -- python3 invoke-caller.py
 ## Cleanup
 
 <!-- STEP
-expected_stdout_lines: 
+expected_stdout_lines:
   - '✅  app stopped successfully: invoke-receiver'
 name: Shutdown dapr
 -->
