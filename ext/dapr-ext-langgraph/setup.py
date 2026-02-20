@@ -63,7 +63,9 @@ if not is_release():
     long_description = (
         'This is the developmental release for the Dapr Checkpointer extension for LangGraph'
     )
-    install_requires = ['dapr-dev' + r[4:] if r.startswith('dapr ') else r for r in install_requires]
+    install_requires = [
+        'dapr-dev' + r[4:] if r.startswith('dapr ') else r for r in install_requires
+    ]
 
 print(f'package name: {name}, version: {version}', flush=True)
 

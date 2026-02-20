@@ -63,7 +63,9 @@ if not is_release():
         'The developmental release for the Dapr Session Manager extension for Strands Agents'
     )
     long_description = 'This is the developmental release for the Dapr Session Manager extension for Strands Agents'
-    install_requires = ['dapr-dev' + r[4:] if r.startswith('dapr ') else r for r in install_requires]
+    install_requires = [
+        'dapr-dev' + r[4:] if r.startswith('dapr ') else r for r in install_requires
+    ]
 
 print(f'package name: {name}, version: {version}', flush=True)
 
