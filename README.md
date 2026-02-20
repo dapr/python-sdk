@@ -79,7 +79,14 @@ git clone https://github.com/dapr/python-sdk.git
 cd python-sdk
 ```
 
-2. Install a project in a editable mode
+2. Create and activate a virtual environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+3. Install a project in editable mode
 
 ```bash
 pip3 install -e .
@@ -90,31 +97,31 @@ pip3 install -e ./ext/dapr-ext-langgraph/
 pip3 install -e ./ext/dapr-ext-strands/
 ```
 
-3. Install required packages
+4. Install required packages
 
 ```bash
 pip3 install -r dev-requirements.txt
 ```
 
-4. Run linter and autofix
+5. Run linter and autofix
 
 ```bash
 tox -e ruff
 ```
 
-5. Run unit-test
+6. Run unit-test
 
 ```bash
 tox -e py311
 ```
 
-6. Run type check
+7. Run type check
 
 ```bash
 tox -e type
 ```
 
-7. Run examples
+8. Run examples
 
 ```bash
 tox -e examples
