@@ -16,9 +16,9 @@ limitations under the License.
 import inspect
 import random
 import string
-import types
 from dataclasses import fields, is_dataclass
 from enum import Enum
+from types import UnionType
 from typing import (
     Any,
     Callable,
@@ -36,10 +36,6 @@ from typing import (
 )
 
 from dapr.conf import settings
-
-# Make mypy happy. Runtime handle: real class on 3.10+, else None.
-# TODO: Python 3.9 is about to be end-of-life, so we can drop this at some point next year (2026)
-UnionType: Any = getattr(types, 'UnionType', None)
 
 # duplicated from conversation to avoid circular import
 Params = Union[Mapping[str, Any], Sequence[Any], None]
@@ -857,9 +853,7 @@ def _coerce_literal(value: Any, lit_args: List[Any]) -> Any:
 
 def _is_union(t) -> bool:
     origin = get_origin(t)
-    if origin is Union:
-        return True
-    return UnionType is not None and origin is UnionType
+    return origin is Union or origin is UnionType
 
 
 def _coerce_and_validate(value: Any, expected_type: Any) -> Any:

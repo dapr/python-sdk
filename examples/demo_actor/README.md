@@ -11,7 +11,7 @@ This document describes how to create an Actor(DemoActor) and invoke its methods
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ### Install requirements
 
@@ -138,7 +138,7 @@ expected_stdout_lines:
 
 2. Follow [these steps](https://docs.dapr.io/getting-started/tutorials/configure-state-pubsub/#step-1-create-a-redis-store) to create a Redis store.
 
-3. Once your store is created,  confirm validate `redis.yml` file in the `deploy` directory. 
+3. Once your store is created,  confirm validate `redis.yml` file in the `deploy` directory.
     > **Note:** the `redis.yml` uses the secret created by `bitmany/redis` Helm chat to securely inject the password.
 
 4. Apply the `redis.yml` file: `kubectl apply -f ./deploy/redis.yml` and observe that your state store was successfully configured!
@@ -162,17 +162,17 @@ expected_stdout_lines:
    ```
    dapr  logs -a demoactor -k
    ```
-   
+
    Logs for actor service app:
    ```
    kubectl logs -l app="demoactor" -c demoactor
    ```
-   
+
    Logs for actor client sidecar:
    ```
    dapr  logs -a demoactor-client -k
    ```
-   
+
    Logs for actor service app:
    ```
    kubectl logs -l app="demoactor-client" -c demoactor-client
@@ -209,9 +209,9 @@ timeout_seconds: 60
     cd demo_actor
     python -m unittest test_demo_actor.py
     ```
-   
+
    Expected output (note that the unit test print outputs might not necessarily be in this order - what really matters is that all tests pass anyway):
-   
+
    ```
    set_my_data: {'state': 5}
    has_value: True
@@ -226,7 +226,7 @@ timeout_seconds: 60
    has_value: True
    ----------------------------------------------------------------------
    Ran 5 tests in 0.052s
-    
+
    OK
    ```
 
