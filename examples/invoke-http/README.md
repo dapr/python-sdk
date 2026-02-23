@@ -12,13 +12,17 @@ This example utilizes a receiver and a caller for the `invoke_method` functional
 ### Install requirements
 
 You can install dapr SDK package using pip command:
+```sh
+pip3 install dapr
+```
 
 <!-- STEP
 name: Install requirements
 -->
 
+Also install Flask package:
 ```sh
-pip3 install dapr Flask
+pip3 install Flask
 ```
 
 <!-- END_STEP -->
