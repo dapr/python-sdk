@@ -9,7 +9,7 @@ This example also illustrates the use of access control for secrets.
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -70,10 +70,10 @@ spec:
           allowedSecrets: ["secretKey",]
 ```
 
-The above configuration defines that the default access permission for the `localsecretstore` is `deny` and that only the 
+The above configuration defines that the default access permission for the `localsecretstore` is `deny` and that only the
 key `secretKey` is allowed to be accessed from the store.
 
-To see this run the same `example.py` app with the following command: 
+To see this run the same `example.py` app with the following command:
 
 <!-- STEP
 name: Run secret store example with access config
@@ -103,7 +103,7 @@ The output should be as follows:
 == APP == Got expected error for accessing random key
 ```
 
-It can be seen that when it tried to get the random key again, it fails as by default the access is denied for any key 
+It can be seen that when it tried to get the random key again, it fails as by default the access is denied for any key
 unless defined in the `allowedSecrets` list.
 
 ## Cleanup
