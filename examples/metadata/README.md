@@ -7,7 +7,7 @@ two methods in that API:
 2. **set_metadata**: Adds a custom label to the Dapr sidecar information stored
    by the Metadata endpoint.
 
-It creates a client using `DaprClient`, uses a set of components defined in the 
+It creates a client using `DaprClient`, uses a set of components defined in the
 [`./components/`](./components/) folder and invokes the two APIs from
 [Metadata API].
 
@@ -15,7 +15,7 @@ It creates a client using `DaprClient`, uses a set of components defined in the
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 

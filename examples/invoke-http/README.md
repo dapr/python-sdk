@@ -7,7 +7,7 @@ This example utilizes a receiver and a caller for the `invoke_method` functional
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.8+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ### Install requirements
 
