@@ -41,7 +41,7 @@ sleep: 3
 
 ```bash
 # 1. Start Subscriber
-dapr run --app-id python-subscriber --app-protocol grpc -- python3 subscriber.py --topic=TOPIC_B1
+dapr run --app-id pubsub-streaming-async-subscriber --app-protocol grpc -- python3 subscriber.py --topic=TOPIC_B1
 ```
 
 <!-- END_STEP -->
@@ -63,7 +63,7 @@ sleep: 15
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check -- python3 publisher.py --topic=TOPIC_B1
+dapr run --app-id pubsub-streaming-async-publisher --app-protocol grpc --dapr-grpc-port=56012 --enable-app-health-check -- python3 publisher.py --topic=TOPIC_B1
 ```
 
 <!-- END_STEP -->
@@ -89,7 +89,7 @@ sleep: 3
 
 ```bash
 # 1. Start Subscriber
-dapr run --app-id python-subscriber --app-protocol grpc -- python3 subscriber-handler.py --topic=TOPIC_B2
+dapr run --app-id pubsub-streaming-async-subscriber --app-protocol grpc -- python3 subscriber-handler.py --topic=TOPIC_B2
 ```
 
 <!-- END_STEP -->
@@ -111,7 +111,7 @@ sleep: 15
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check -- python3 publisher.py --topic=TOPIC_B2
+dapr run --app-id pubsub-streaming-async-publisher --app-protocol grpc --dapr-grpc-port=56012 --enable-app-health-check -- python3 publisher.py --topic=TOPIC_B2
 ```
 
 <!-- END_STEP -->

@@ -20,4 +20,4 @@ if __name__ == '__main__':
     app.add_external_service(
         helloworld_service_pb2_grpc.add_HelloWorldServiceServicer_to_server, HelloWorldService()
     )
-    app.run(50051)
+    app.run(51056)

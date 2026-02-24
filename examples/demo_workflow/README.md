@@ -53,7 +53,7 @@ sleep: 15
 -->
 
 ```sh
-dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 50001 --resources-path components --placement-host-address localhost:50005 -- python3 app.py
+dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 56013 --resources-path components --placement-host-address localhost:50005 -- python3 app.py
 ```
 
 <!-- END_STEP -->

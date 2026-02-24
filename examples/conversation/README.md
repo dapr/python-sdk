@@ -102,7 +102,7 @@ The Conversation API supports real LLM providers including:
    Here we have a temporary directory with the component configurations with the API keys setup in the .env file.
 
    ```bash
-   dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path <some temporary directory>
+   dapr run --app-id test-app --dapr-http-port 36001 --dapr-grpc-port 56001 --resources-path <some temporary directory>
    ```
 
    For example if we have openai, anthropic, mistral, deepseek and google ai, we will have a temporary directory with the component configurations for each provider:
@@ -126,7 +126,7 @@ The Conversation API supports real LLM providers including:
     /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3
 
     To start the sidecar with these components:
-    dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3
+    dapr run --app-id test-app --dapr-http-port 36001 --dapr-grpc-port 56001 --resources-path /var/folders/3t/b6jkjnv970l6dd1sp81b19hw0000gn/T/dapr-llm-components-9mcpb1a3
 
     Press Enter when Dapr sidecar is running with the component configurations...
     ```
@@ -504,7 +504,7 @@ spec:
 ### Running with Dapr Sidecar
 ```bash
 # The example creates temporary component configs and shows you the command:
-dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path /tmp/dapr-llm-components-xyz/
+dapr run --app-id test-app --dapr-http-port 36001 --dapr-grpc-port 56001 --resources-path /tmp/dapr-llm-components-xyz/
 ```
 
 
