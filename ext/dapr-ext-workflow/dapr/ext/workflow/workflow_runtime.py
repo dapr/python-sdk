@@ -246,7 +246,10 @@ class WorkflowRuntime:
                 try:
                     is_ready = self.wait_for_worker_ready(timeout=self._worker_ready_timeout)
                     if not is_ready:
-                        raise RuntimeError('WorkflowRuntime worker and its stream are not ready')
+                        self._logger.warning(
+                            'WorkflowRuntime worker and its stream are not ready. '
+                            'Continuing; workflows scheduled immediately may not be received.'
+                        )
                     else:
                         self._logger.debug(
                             'WorkflowRuntime worker is ready and its stream can receive work items'
