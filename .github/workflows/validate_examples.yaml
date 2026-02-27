@@ -120,7 +120,11 @@ jobs:
       - name: Initialize Dapr runtime ${{ env.DAPR_RUNTIME_VER }}
         run: |
           dapr uninstall --all
-          dapr init --runtime-version ${{ env.DAPR_RUNTIME_VER }}
+          for i in 1 2 3; do
+            dapr init --runtime-version ${{ env.DAPR_RUNTIME_VER }} && break
+            echo "Attempt $i failed, retrying in 10 seconds..."
+            sleep 10
+          done
       - name: Build and override daprd with referenced commit.
         if: env.DAPR_REF != ''
         run: |
