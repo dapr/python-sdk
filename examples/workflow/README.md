@@ -361,9 +361,9 @@ sleep: 20
 -->
 
 ```sh
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 --dapr-http-port 3503 --dapr-grpc-port 50103 -- python3 cross-app3.py &
+dapr run --app-id wfexample2 --dapr-http-port 3502 --dapr-grpc-port 50102 -- python3 cross-app2.py &
+dapr run --app-id wfexample1 --dapr-http-port 3501 --dapr-grpc-port 50101 -- python3 cross-app1.py
 ```
 <!-- END_STEP -->
 
@@ -404,9 +404,9 @@ sleep: 20
 
 ```sh
 export ERROR_ACTIVITY_MODE=true
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 --dapr-http-port 3503 --dapr-grpc-port 50103 -- python3 cross-app3.py &
+dapr run --app-id wfexample2 --dapr-http-port 3502 --dapr-grpc-port 50102 -- python3 cross-app2.py &
+dapr run --app-id wfexample1 --dapr-http-port 3501 --dapr-grpc-port 50101 -- python3 cross-app1.py
 ```
 <!-- END_STEP -->
 
@@ -445,9 +445,9 @@ sleep: 20
 
 ```sh
 export ERROR_WORKFLOW_MODE=true
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 --dapr-http-port 3503 --dapr-grpc-port 50103 -- python3 cross-app3.py &
+dapr run --app-id wfexample2 --dapr-http-port 3502 --dapr-grpc-port 50102 -- python3 cross-app2.py &
+dapr run --app-id wfexample1 --dapr-http-port 3501 --dapr-grpc-port 50101 -- python3 cross-app1.py
 ```
 <!-- END_STEP -->
 
