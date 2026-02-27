@@ -53,7 +53,7 @@ sleep: 3
 
 ```bash
 # 1. Start Subscriber (expose gRPC server receiver on port 50051)
-dapr run --app-id python-subscriber --app-protocol grpc --app-port 50051 -- python3 subscriber.py
+dapr run --app-id pubsub-simple-subscriber --app-protocol grpc --app-port 51055 -- python3 subscriber.py
 ```
 
 <!-- END_STEP -->
@@ -79,7 +79,7 @@ sleep: 15
 
 ```bash
 # 2. Start Publisher
-dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check python3 publisher.py
+dapr run --app-id pubsub-simple-publisher --app-protocol grpc --dapr-grpc-port=56010 --enable-app-health-check python3 publisher.py
 ```
 
 <!-- END_STEP -->
@@ -88,12 +88,12 @@ dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --e
 
 <!-- STEP
 expected_stdout_lines:
-  - '✅  app stopped successfully: python-subscriber'
+  - '✅  app stopped successfully: pubsub-simple-subscriber'
 name: Shutdown dapr
 -->
 
 ```bash
-dapr stop --app-id python-subscriber
+dapr stop --app-id pubsub-simple-subscriber
 ```
 
 <!-- END_STEP -->

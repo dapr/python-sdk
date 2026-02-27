@@ -1224,7 +1224,7 @@ def main():
         print(f'   {components_dir}')
         print('\nTo start the sidecar with these components:')
         print(
-            f'   dapr run --app-id test-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path {components_dir}'
+            f'   dapr run --app-id test-app --dapr-http-port 36001 --dapr-grpc-port 56001 --resources-path {components_dir}'
         )
 
         # Wait for user to confirm

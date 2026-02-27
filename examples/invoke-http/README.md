@@ -42,7 +42,7 @@ sleep: 5
 -->
 
 ```bash
-dapr run --app-id=invoke-receiver --app-port=8088 --app-protocol http -- python3 invoke-receiver.py
+dapr run --app-id=invoke-http-receiver --app-port=8088 --app-protocol http -- python3 invoke-receiver.py
 ```
 <!-- END_STEP -->
 
@@ -63,7 +63,7 @@ sleep: 5
 -->
 
 ```bash
-dapr run --app-id=invoke-caller -- python3 invoke-caller.py
+dapr run --app-id=invoke-http-caller -- python3 invoke-caller.py
 ```
 <!-- END_STEP -->
 
@@ -71,12 +71,12 @@ dapr run --app-id=invoke-caller -- python3 invoke-caller.py
 
 <!-- STEP
 expected_stdout_lines:
-  - '✅  app stopped successfully: invoke-receiver'
+  - '✅  app stopped successfully: invoke-http-receiver'
 name: Shutdown dapr
 -->
 
 ```bash
-dapr stop --app-id invoke-receiver
+dapr stop --app-id invoke-http-receiver
 ```
 
 <!-- END_STEP -->

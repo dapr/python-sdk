@@ -39,7 +39,7 @@ sleep: 5
 -->
 
    ```bash
-   dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
+   dapr run --app-id invoke-custom-data-receiver --app-protocol grpc --app-port 51052 python3 invoke-receiver.py
    ```
 
 <!-- END_STEP -->
@@ -58,7 +58,7 @@ sleep: 5
 -->
 
    ```bash
-   dapr run --app-id invoke-caller --app-protocol grpc python3 invoke-caller.py
+   dapr run --app-id invoke-custom-data-caller --app-protocol grpc python3 invoke-caller.py
    ```
 
 <!-- END_STEP -->
@@ -83,12 +83,12 @@ Expected output from receiver:
 
 <!-- STEP
 expected_stdout_lines:
-  - '✅  app stopped successfully: invoke-receiver'
+  - '✅  app stopped successfully: invoke-custom-data-receiver'
 name: Shutdown dapr
 -->
 
 ```bash
-dapr stop --app-id invoke-receiver
+dapr stop --app-id invoke-custom-data-receiver
 ```
 
 <!-- END_STEP -->

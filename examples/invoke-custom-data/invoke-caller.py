@@ -5,7 +5,7 @@ from dapr.clients import DaprClient
 with DaprClient() as d:
     # Create a typed message with content type and body
     resp = d.invoke_method(
-        app_id='invoke-receiver',
+        app_id='invoke-custom-data-receiver',
         method_name='my_method',
         data=b'SOME_DATA',
         content_type='text/plain; charset=UTF-8',

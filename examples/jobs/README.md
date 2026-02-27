@@ -93,7 +93,7 @@ sleep: 15
 
 ```bash
 # Start the complete workflow example (schedules jobs and handles job events)
-dapr run --app-id jobs-workflow --app-protocol grpc --app-port 50051 python3 job_processing.py
+dapr run --app-id jobs-workflow --app-protocol grpc --app-port 51054 python3 job_processing.py
 ```
 
 <!-- END_STEP -->
@@ -238,7 +238,7 @@ def handle_my_job(job_event: JobEvent) -> None:
     print(f"Job data: {data_str}")
     # Process the job...
 
-app.run(50051)
+app.run(51054)
 ```
 
 The callback service must:

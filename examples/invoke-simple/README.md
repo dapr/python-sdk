@@ -32,7 +32,7 @@ sleep: 5
 
 ```bash
 # 1. Start Receiver (expose gRPC server receiver on port 50051)
-dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
+dapr run --app-id invoke-simple-receiver --app-protocol grpc --app-port 51051 python3 invoke-receiver.py
 ```
 
 <!-- END_STEP -->
@@ -52,7 +52,7 @@ sleep: 5
 
 ```bash
 # 2. Start Caller
-dapr run --app-id invoke-caller --app-protocol grpc --dapr-http-port 3500 python3 invoke-caller.py
+dapr run --app-id invoke-simple-caller --app-protocol grpc --dapr-http-port 36003 python3 invoke-caller.py
 ```
 
 <!-- END_STEP -->
@@ -61,14 +61,14 @@ dapr run --app-id invoke-caller --app-protocol grpc --dapr-http-port 3500 python
 
 <!-- STEP
 expected_stdout_lines:
-  - '✅  app stopped successfully: invoke-caller'
-  - '✅  app stopped successfully: invoke-receiver'
+  - '✅  app stopped successfully: invoke-simple-caller'
+  - '✅  app stopped successfully: invoke-simple-receiver'
 name: Shutdown dapr
 -->
 
 ```bash
-dapr stop --app-id invoke-caller
-dapr stop --app-id invoke-receiver
+dapr stop --app-id invoke-simple-caller
+dapr stop --app-id invoke-simple-receiver
 ```
 
 <!-- END_STEP -->
@@ -99,7 +99,7 @@ dapr stop --app-id invoke-receiver
 
    Logs for caller sidecar:
    ```
-   dapr  logs -a invoke-caller -k
+   dapr  logs -a invoke-simple-caller -k
    ```
 
    Logs for caller app:
@@ -109,7 +109,7 @@ dapr stop --app-id invoke-receiver
 
    Logs for receiver sidecar:
    ```
-   dapr  logs -a invoke-receiver -k
+   dapr  logs -a invoke-simple-receiver -k
    ```
 
    Logs for receiver app:

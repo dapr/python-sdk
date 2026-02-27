@@ -25,7 +25,7 @@ timeout_seconds: 120
 -->
 
 ```bash
-docker run -d --rm -p 27017:27017 --name mongodb mongo:5
+docker run -d --rm -p 27017:27017 --name state-store-query-mongodb mongo:5
 ```
 
 <!-- END_STEP -->
@@ -46,7 +46,7 @@ timeout_seconds: 10
 
 ```bash
 # Import the example dataset
-dapr run --app-id demo --dapr-http-port 3500 --resources-path components -- curl -X POST -H "Content-Type: application/json" -d @dataset.json http://localhost:3500/v1.0/state/statestore
+dapr run --app-id demo --dapr-http-port 36002 --resources-path components -- curl -X POST -H "Content-Type: application/json" -d @dataset.json http://localhost:36002/v1.0/state/statestore
 ```
 <!-- END_STEP -->
 
@@ -94,7 +94,7 @@ timeout_seconds: 5
 -->
 
 ```bash
-docker kill mongodb
+docker kill state-store-query-mongodb
 ```
 
 <!-- END_STEP -->

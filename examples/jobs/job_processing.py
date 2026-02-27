@@ -136,4 +136,4 @@ if __name__ == '__main__':
     threading.Thread(target=schedule_jobs, daemon=True).start()
 
     print('Starting gRPC server on port 50051...', flush=True)
-    app.run(50051)
+    app.run(51054)

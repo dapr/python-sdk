@@ -31,7 +31,7 @@ sleep: 5
 
 ```bash
 # 1. Start Receiver (expose gRPC server receiver on port 50051)
-dapr run --app-id  invoke-receiver --app-protocol grpc --app-port 50051 --config config.yaml -- python  invoke-receiver.py
+dapr run --app-id grpc-proxying-receiver --app-protocol grpc --app-port 51056 --config config.yaml -- python  invoke-receiver.py
 ```
 
 <!-- END_STEP -->
@@ -50,7 +50,7 @@ sleep: 5
 
 ```bash
 # 2. Start Caller
-dapr run --app-id  invoke-caller --dapr-grpc-port 50007 --config config.yaml -- python  invoke-caller.py
+dapr run --app-id grpc-proxying-caller --dapr-grpc-port 50007 --config config.yaml -- python  invoke-caller.py
 ```
 
 <!-- END_STEP -->
@@ -59,12 +59,12 @@ dapr run --app-id  invoke-caller --dapr-grpc-port 50007 --config config.yaml -- 
 
 <!-- STEP
 expected_stdout_lines:
-  - '✅  app stopped successfully: invoke-receiver'
+  - '✅  app stopped successfully: grpc-proxying-receiver'
 name: Shutdown dapr
 -->
 
 ```bash
-dapr stop --app-id  invoke-receiver
+dapr stop --app-id grpc-proxying-receiver
 ```
 
 <!-- END_STEP -->
@@ -95,7 +95,7 @@ dapr stop --app-id  invoke-receiver
 
    Logs for caller sidecar:
    ```
-   dapr  logs -a invoke-caller -k
+   dapr  logs -a grpc-proxying-caller -k
    ```
 
    Logs for caller app:
@@ -105,7 +105,7 @@ dapr stop --app-id  invoke-receiver
 
    Logs for receiver sidecar:
    ```
-   dapr  logs -a invoke-receiver -k
+   dapr  logs -a grpc-proxying-receiver -k
    ```
 
    Logs for receiver app:

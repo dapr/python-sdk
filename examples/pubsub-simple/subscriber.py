@@ -127,4 +127,4 @@ def mytopic_wildcard(event: v1.Event) -> TopicEventResponse:
 
 app.register_health_check(lambda: print('Healthy'))
 
-app.run(50051)
+app.run(51055)
