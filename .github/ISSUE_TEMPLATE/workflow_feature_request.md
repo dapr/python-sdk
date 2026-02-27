@@ -1,13 +1,12 @@
 ---
 name: WORKFLOW SDK Feature Request
 about: Create a Feature Request for dapr-ext-workflow
-title: '[WORKFLOW SDK FEATURE REQUEST] <title>'
-labels: ["kind/enhancement","dapr-ext-workflow"]
-assignees:
- - cgillum
- - DeepanshuA
+title: "[WORKFLOW SDK FEATURE REQUEST] <title>"
+labels: dapr-ext-workflow, kind/enhancement
+assignees: ''
 
 ---
+
 ## Describe the WORKFLOW SDK feature
 
 ## Release Note
