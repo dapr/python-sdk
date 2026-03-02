@@ -33,7 +33,7 @@ Each example follows this pattern:
 examples/<example-name>/
 ├── README.md              # Documentation + mechanical-markdown STEP blocks (REQUIRED)
 ├── *.py                   # Python application files
-├── requirements.txt       # Dependencies (e.g., dapr>=1.17.0rc6)
+├── requirements.txt       # Dependencies (optional — many examples rely on the installed SDK)
 ├── components/            # Dapr component YAML configs (if needed)
 │   ├── statestore.yaml
 │   └── pubsub.yaml

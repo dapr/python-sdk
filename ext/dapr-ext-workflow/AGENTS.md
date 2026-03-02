@@ -79,7 +79,7 @@ from dapr.ext.workflow import (
     DaprWorkflowContext,      # Passed to workflow functions as first arg
     WorkflowActivityContext,  # Passed to activity functions as first arg
     WorkflowState,            # Snapshot of a workflow instance's state
-    WorkflowStatus,           # Enum: RUNNING, COMPLETED, FAILED, TERMINATED, PENDING, SUSPENDED
+    WorkflowStatus,           # Enum: UNKNOWN, RUNNING, COMPLETED, FAILED, TERMINATED, PENDING, SUSPENDED, STALLED
     when_all,                 # Parallel combinator — wait for all tasks
     when_any,                 # Race combinator — wait for first task
     alternate_name,           # Decorator to set a custom registration name

@@ -88,6 +88,6 @@ python -m unittest discover -v ./ext/dapr-ext-fastapi/tests
 
 ## Key details
 
-- **Async actors**: `register_actor` is an async method (must be awaited). Actor method/timer/reminder handlers are dispatched through `ActorRuntime` which uses `asyncio.run()`.
+- **Async actors**: `register_actor` is an async method (must be awaited). FastAPI actor routes are async handlers that directly `await` the corresponding `ActorRuntime` operations on the existing event loop (no `asyncio.run()` or per-request event loop creation).
 - **Router tags**: Both classes support `router_tags` parameter to customize OpenAPI/Swagger documentation grouping.
 - **No gRPC**: This extension is HTTP-only. It works with Dapr's HTTP callback protocol, not gRPC.
