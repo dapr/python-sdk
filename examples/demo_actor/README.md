@@ -28,17 +28,17 @@ name: Actor Service
 background: true
 sleep: 5
 expected_stdout_lines:
-  - '== APP == Activate DemoActor actor!'
-  - '== APP == has_value: False'
-  - '== APP == has_value: False'
-  - "== APP == set_my_data: {'data': 'new_data'}"
-  - '== APP == has_value: True'
-  - '== APP == set reminder to True'
-  - '== APP == set reminder is done'
-  - '== APP == set_timer to True'
-  - '== APP == set_timer is done'
-  - "== APP == receive_reminder is called - demo_reminder reminder - b'reminder_state'"
-  - "== APP == clear_my_data"
+  - 'Activate DemoActor actor!'
+  - 'has_value: False'
+  - 'has_value: False'
+  - "set_my_data: {'data': 'new_data'}"
+  - 'has_value: True'
+  - 'set reminder to True'
+  - 'set reminder is done'
+  - 'set_timer to True'
+  - 'set_timer is done'
+  - "receive_reminder is called - demo_reminder reminder - b'reminder_state'"
+  - "clear_my_data"
 timeout_seconds: 60
 -->
 
@@ -53,23 +53,23 @@ timeout_seconds: 60
    Expected output:
    ```
    ...
-   == APP == Activate DemoActor actor!
-   == APP == has_value: False
-   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
-   == APP == has_value: False
-   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
-   == APP == set_my_data: {'data': 'new_data'}
-   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetMyData HTTP/1.1" 200 OK
-   == APP == has_value: True
-   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
-   == APP == set reminder to True
-   == APP == set reminder is done
-   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetReminder HTTP/1.1" 200 OK
-   == APP == set_timer to True
-   == APP == set_timer is done
-   == APP == INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetTimer HTTP/1.1" 200 OK
-   == APP == receive_reminder is called - demo_reminder reminder - b'reminder_state'
-   == APP == clear_my_data
+   Activate DemoActor actor!
+   has_value: False
+   INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
+   has_value: False
+   INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
+   set_my_data: {'data': 'new_data'}
+   INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetMyData HTTP/1.1" 200 OK
+   has_value: True
+   INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/GetMyData HTTP/1.1" 200 OK
+   set reminder to True
+   set reminder is done
+   INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetReminder HTTP/1.1" 200 OK
+   set_timer to True
+   set_timer is done
+   INFO:     127.0.0.1:50739 - "PUT /actors/DemoActor/1/method/SetTimer HTTP/1.1" 200 OK
+   receive_reminder is called - demo_reminder reminder - b'reminder_state'
+   clear_my_data
    ...
    ```
 
@@ -78,19 +78,19 @@ timeout_seconds: 60
 <!-- STEP
 name: Actor Client
 expected_stdout_lines:
-  - '== APP == call actor method via proxy.invoke_method()'
-  - "== APP == b'null'"
-  - '== APP == call actor method using rpc style'
-  - '== APP == None'
-  - "== APP == Actor reentrancy enabled: b'true'"
-  - '== APP == call SetMyData actor method to save the state'
-  - '== APP == call GetMyData actor method to get the state'
-  - '== APP == Register reminder'
-  - '== APP == Register timer'
-  - '== APP == waiting for 30 seconds'
-  - '== APP == stop reminder'
-  - '== APP == stop timer'
-  - '== APP == clear actor state'
+  - 'call actor method via proxy.invoke_method()'
+  - "b'null'"
+  - 'call actor method using rpc style'
+  - 'None'
+  - "Actor reentrancy enabled: b'true'"
+  - 'call SetMyData actor method to save the state'
+  - 'call GetMyData actor method to get the state'
+  - 'Register reminder'
+  - 'Register timer'
+  - 'waiting for 30 seconds'
+  - 'stop reminder'
+  - 'stop timer'
+  - 'clear actor state'
 -->
 
 2. Run Demo client in new terminal window
@@ -105,20 +105,20 @@ expected_stdout_lines:
    Expected output:
    ```
    ...
-   == APP == call actor method via proxy.invoke_method()
-   == APP == b'null'
-   == APP == call actor method using rpc style
-   == APP == None
-   == APP == Actor reentrancy enabled: True
-   == APP == call SetMyData actor method to save the state
-   == APP == call GetMyData actor method to get the state
-   == APP == {'data': 'new_data', 'ts': datetime.datetime(2020, 11, 13, 0, 38, 36, 163000, tzinfo=tzutc())}
-   == APP == Register reminder
-   == APP == Register timer
-   == APP == waiting for 30 seconds
-   == APP == stop reminder
-   == APP == stop timer
-   == APP == clear actor state
+   call actor method via proxy.invoke_method()
+   b'null'
+   call actor method using rpc style
+   None
+   Actor reentrancy enabled: True
+   call SetMyData actor method to save the state
+   call GetMyData actor method to get the state
+   {'data': 'new_data', 'ts': datetime.datetime(2020, 11, 13, 0, 38, 36, 163000, tzinfo=tzutc())}
+   Register reminder
+   Register timer
+   waiting for 30 seconds
+   stop reminder
+   stop timer
+   clear actor state
    ```
 
 <!-- END_STEP -->

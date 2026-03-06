@@ -10,8 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import time
 from datetime import timedelta
 
 import dapr.ext.workflow as wf
@@ -21,30 +19,37 @@ wfr = wf.WorkflowRuntime()
 
 
 @wfr.workflow
-def app2_workflow(ctx: wf.DaprWorkflowContext):
-    print('app2 - received workflow call', flush=True)
-    if os.getenv('ERROR_WORKFLOW_MODE', 'false') == 'true':
-        print('app2 - raising error in workflow due to error mode being enabled', flush=True)
-        raise ValueError('Error in workflow due to error mode being enabled')
-    print('app2 - triggering app3 activity', flush=True)
+def app1_workflow(ctx: wf.DaprWorkflowContext):
+    print('app1 - received workflow call', flush=True)
+    print('app1 - triggering app2 workflow', flush=True)
+
     try:
         retry_policy = wf.RetryPolicy(
             max_number_of_attempts=2,
             first_retry_interval=timedelta(milliseconds=100),
             max_retry_interval=timedelta(seconds=3),
         )
-        yield ctx.call_activity(
-            'app3_activity', input=None, app_id='wfexample3', retry_policy=retry_policy
+        yield ctx.call_child_workflow(
+            workflow='app2_workflow',
+            input=None,
+            app_id='wfexample2',
+            retry_policy=retry_policy,
         )
-        print('app2 - received activity result', flush=True)
+        print('app1 - received workflow result', flush=True)
     except TaskFailedError:
-        print('app2 - received activity error from app3', flush=True)
+        print('app1 - received workflow error from app2', flush=True)
 
-    print('app2 - returning workflow result', flush=True)
-    return 2
+    print('app1 - returning workflow result', flush=True)
+    return 1
 
 
 if __name__ == '__main__':
     wfr.start()
-    time.sleep(15)  # wait for workflow runtime to start
+
+    wf_client = wf.DaprWorkflowClient()
+    print('app1 - triggering app1 workflow', flush=True)
+    instance_id = wf_client.schedule_new_workflow(workflow=app1_workflow)
+
+    wf_client.wait_for_workflow_completion(instance_id)
+
     wfr.shutdown()

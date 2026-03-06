@@ -118,7 +118,7 @@ class WorkflowContext(ABC):
         Parameters
         ----------
         activity: Activity[TInput, TOutput] | str
-            A reference to the activity function to call, or a string name for cross-app activities.
+            A reference to the activity function to call, or a string name for multi-app workflow activities.
         input: TInput | None
             The JSON-serializable input (or None) to pass to the activity.
         app_id: str | None
@@ -145,7 +145,7 @@ class WorkflowContext(ABC):
         Parameters
         ----------
         orchestrator: Orchestrator[TInput, TOutput] | str
-            A reference to the orchestrator function to call, or a string name for cross-app workflows.
+            A reference to the orchestrator function to call, or a string name for multi-app workflows.
         input: TInput
             The optional JSON-serializable input to pass to the orchestrator function.
         instance_id: str
