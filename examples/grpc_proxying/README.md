@@ -23,8 +23,9 @@ Run the following command in a terminal/command-prompt:
 
 <!-- STEP
 name: Run receiver
-expected_stdout_lines:
+expected_stderr_lines:
   - 'INFO:root:name: "you"'
+output_match_mode: substring
 background: true
 sleep: 5
 -->
