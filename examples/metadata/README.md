@@ -33,18 +33,18 @@ To run this example, the following code can be utilized:
 name: Run metadata example
 output_match_mode: substring
 expected_stdout_lines:
-  - "== APP == First, we will assign a new custom label to Dapr sidecar"
-  - "== APP == Now, we will fetch the sidecar's metadata"
-  - "== APP == And this is what we got:"
-  - "== APP ==   application_id: my-metadata-app"
-  - "== APP ==   active_actors_count: {}"
-  - "== APP ==   registered_components:"
-  - "== APP ==     name=lockstore type=lock.redis version= capabilities=[]"
-  - "== APP ==     name=pubsub type=pubsub.redis version=v1 capabilities=[]"
-  - "== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'KEYS_LIKE', 'TRANSACTIONAL', 'TTL'"
-  - "== APP == We will update our custom label value and check it was persisted"
-  - "== APP == We added a custom label named [is-this-our-metadata-example]"
-  - "== APP == Its old value was [yes] but now it is [You bet it is!]"
+  - "First, we will assign a new custom label to Dapr sidecar"
+  - "Now, we will fetch the sidecar's metadata"
+  - "And this is what we got:"
+  - "  application_id: my-metadata-app"
+  - "  active_actors_count: {}"
+  - "  registered_components:"
+  - "    name=lockstore type=lock.redis version= capabilities=[]"
+  - "    name=pubsub type=pubsub.redis version=v1 capabilities=[]"
+  - "    name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'KEYS_LIKE', 'TRANSACTIONAL', 'TTL'"
+  - "We will update our custom label value and check it was persisted"
+  - "We added a custom label named [is-this-our-metadata-example]"
+  - "Its old value was [yes] but now it is [You bet it is!]"
 timeout_seconds: 10
 -->
 
@@ -56,18 +56,18 @@ dapr run --app-id=my-metadata-app --app-protocol grpc --resources-path component
 The output should be as follows:
 
 ```
-== APP == First, we will assign a new custom label to Dapr sidecar
-== APP == Now, we will fetch the sidecar's metadata
-== APP == And this is what we got:
-== APP ==   application_id: my-metadata-app
-== APP ==   active_actors_count: {}
-== APP ==   registered_components:
-== APP ==     name=lockstore type=lock.redis version= capabilities=[]
-== APP ==     name=pubsub type=pubsub.redis version=v1 capabilities=[]
-== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'KEYS_LIKE', 'TRANSACTIONAL', 'TTL']
-== APP == We will update our custom label value and check it was persisted
-== APP == We added a custom label named [is-this-our-metadata-example]
-== APP == Its old value was [yes] but now it is [You bet it is!]
+First, we will assign a new custom label to Dapr sidecar
+Now, we will fetch the sidecar's metadata
+And this is what we got:
+  application_id: my-metadata-app
+  active_actors_count: {}
+  registered_components:
+    name=lockstore type=lock.redis version= capabilities=[]
+    name=pubsub type=pubsub.redis version=v1 capabilities=[]
+    name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'KEYS_LIKE', 'TRANSACTIONAL', 'TTL']
+We will update our custom label value and check it was persisted
+We added a custom label named [is-this-our-metadata-example]
+Its old value was [yes] but now it is [You bet it is!]
 ```
 
 ## Error Handling

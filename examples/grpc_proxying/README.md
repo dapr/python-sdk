@@ -24,7 +24,7 @@ Run the following command in a terminal/command-prompt:
 <!-- STEP
 name: Run receiver
 expected_stdout_lines:
-  - '== APP == INFO:root:name: "you"'
+  - 'INFO:root:name: "you"'
 background: true
 sleep: 5
 -->
@@ -42,7 +42,7 @@ In another terminal/command prompt run:
 <!-- STEP
 name: Run caller
 expected_stdout_lines:
-  - '== APP == Greeter client received: Hello, you!'
+  - 'Greeter client received: Hello, you!'
 background: true
 sleep: 5
 -->

@@ -25,28 +25,28 @@ pip3 install -r demo_workflow/requirements.txt
 <!-- STEP
 name: Running this example
 expected_stdout_lines:
-  - "== APP == Hi Counter!"
-  - "== APP == New counter value is: 1!"
-  - "== APP == New counter value is: 11!"
-  - "== APP == Retry count value is: 0!"
-  - "== APP == Retry count value is: 1! This print statement verifies retry"
-  - "== APP == Appending 1 to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending 2 to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending 3 to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Get response from hello_world_wf after pause call: Suspended"
-  - "== APP == Get response from hello_world_wf after resume call: Running"
-  - "== APP == New counter value is: 111!"
-  - "== APP == New counter value is: 1111!"
-  - "== APP == Instance Successfully Purged"
-  - "== APP == Get response from hello_world_wf after terminate call: Terminated"
-  - "== APP == Get response from child_wf after terminate call: Terminated"
-  - "== APP == Instance Successfully Purged"
+  - "Hi Counter!"
+  - "New counter value is: 1!"
+  - "New counter value is: 11!"
+  - "Retry count value is: 0!"
+  - "Retry count value is: 1! This print statement verifies retry"
+  - "Appending 1 to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending 2 to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending 3 to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Get response from hello_world_wf after pause call: Suspended"
+  - "Get response from hello_world_wf after resume call: Running"
+  - "New counter value is: 111!"
+  - "New counter value is: 1111!"
+  - "Instance Successfully Purged"
+  - "Get response from hello_world_wf after terminate call: Terminated"
+  - "Get response from child_wf after terminate call: Terminated"
+  - "Instance Successfully Purged"
 background: true
 timeout_seconds: 50
 sleep: 15
@@ -60,25 +60,25 @@ dapr run --app-id orderapp --app-protocol grpc --dapr-grpc-port 50001 --resource
 
 You should be able to see the following output:
 ```
-== APP == Hi Counter!
-== APP == New counter value is: 1!
-== APP == New counter value is: 11!
-== APP == Retry count value is: 0!
-== APP == Retry count value is: 1! This print statement verifies retry
-== APP == Appending 1 to child_orchestrator_string!
-== APP == Appending a to child_orchestrator_string!
-== APP == Appending a to child_orchestrator_string!
-== APP == Appending 2 to child_orchestrator_string!
-== APP == Appending b to child_orchestrator_string!
-== APP == Appending b to child_orchestrator_string!
-== APP == Appending 3 to child_orchestrator_string!
-== APP == Appending c to child_orchestrator_string!
-== APP == Appending c to child_orchestrator_string!
-== APP == Get response from hello_world_wf after pause call: Suspended
-== APP == Get response from hello_world_wf after resume call: Running
-== APP == New counter value is: 111!
-== APP == New counter value is: 1111!
-== APP == Get response from hello_world_wf after terminate call: Terminated
-== APP == Get response from child_wf after terminate call: Terminated
-== APP == Instance Successfully Purged
+Hi Counter!
+New counter value is: 1!
+New counter value is: 11!
+Retry count value is: 0!
+Retry count value is: 1! This print statement verifies retry
+Appending 1 to child_orchestrator_string!
+Appending a to child_orchestrator_string!
+Appending a to child_orchestrator_string!
+Appending 2 to child_orchestrator_string!
+Appending b to child_orchestrator_string!
+Appending b to child_orchestrator_string!
+Appending 3 to child_orchestrator_string!
+Appending c to child_orchestrator_string!
+Appending c to child_orchestrator_string!
+Get response from hello_world_wf after pause call: Suspended
+Get response from hello_world_wf after resume call: Running
+New counter value is: 111!
+New counter value is: 1111!
+Get response from hello_world_wf after terminate call: Terminated
+Get response from child_wf after terminate call: Terminated
+Instance Successfully Purged
 ```
