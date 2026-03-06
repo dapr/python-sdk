@@ -85,7 +85,7 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def set_custom_status(self, custom_status: str) -> None:
+    def set_custom_status(self, custom_status: Any) -> None:
         """Set the custom status."""
         pass
 

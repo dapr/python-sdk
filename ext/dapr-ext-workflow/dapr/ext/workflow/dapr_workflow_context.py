@@ -52,7 +52,7 @@ class DaprWorkflowContext(WorkflowContext):
     def is_replaying(self) -> bool:
         return self.__obj.is_replaying
 
-    def set_custom_status(self, custom_status: str) -> None:
+    def set_custom_status(self, custom_status: Any) -> None:
         self._logger.debug(f'{self.instance_id}: Setting custom status to {custom_status}')
         self.__obj.set_custom_status(custom_status)
 
