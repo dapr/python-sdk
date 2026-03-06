@@ -338,7 +338,7 @@ When you run the example, you will see output like this:
 ```
 
 
-### Cross-app Workflow
+### Multi-app Workflows
 
 This example demonstrates how to call child workflows and activities in different apps. The multiple Dapr CLI instances can be started using the following commands:
 
@@ -361,9 +361,9 @@ sleep: 20
 -->
 
 ```sh
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 multi-app3.py &
+dapr run --app-id wfexample2 python3 multi-app2.py &
+dapr run --app-id wfexample1 python3 multi-app1.py
 ```
 <!-- END_STEP -->
 
@@ -379,9 +379,9 @@ among others. This shows that the workflow calls are working as expected.
 
 #### Error handling on activity calls
 
-This example demonstrates how the error handling works on activity calls across apps.
+This example demonstrates how the error handling works on activity calls in multi-app workflows.
 
-Error handling on activity calls across apps works as normal workflow activity calls.
+Error handling on activity calls in multi-app workflows works as normal workflow activity calls.
 
 In this example we run `app3` in failing mode, which makes the activity call return error constantly. The activity call from `app2` will fail after the retry policy is exhausted.
 
@@ -404,9 +404,9 @@ sleep: 20
 
 ```sh
 export ERROR_ACTIVITY_MODE=true
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 multi-app3.py &
+dapr run --app-id wfexample2 python3 multi-app2.py &
+dapr run --app-id wfexample1 python3 multi-app1.py
 ```
 <!-- END_STEP -->
 
@@ -424,9 +424,9 @@ among others. This shows that the activity calls are failing as expected, and th
 
 #### Error handling on workflow calls
 
-This example demonstrates how the error handling works on workflow calls across apps.
+This example demonstrates how the error handling works on workflow calls in multi-app workflows.
 
-Error handling on workflow calls across apps works as normal workflow calls.
+Error handling on workflow calls in multi-app workflows works as normal workflow calls.
 
 In this example we run `app2` in failing mode, which makes the workflow call return error constantly. The workflow call from `app1` will fail after the retry policy is exhausted.
 
@@ -445,9 +445,9 @@ sleep: 20
 
 ```sh
 export ERROR_WORKFLOW_MODE=true
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 multi-app3.py &
+dapr run --app-id wfexample2 python3 multi-app2.py &
+dapr run --app-id wfexample1 python3 multi-app1.py
 ```
 <!-- END_STEP -->
 
