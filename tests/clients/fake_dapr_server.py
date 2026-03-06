@@ -9,7 +9,6 @@ from google.rpc import code_pb2, status_pb2
 from grpc_status import rpc_status
 
 from dapr.clients.grpc._helpers import to_bytes
-from dapr.clients.grpc._response import WorkflowRuntimeStatus
 from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
 from dapr.proto.common.v1.common_pb2 import ConfigurationItem
 from tests.clients.certs import GrpcCerts
@@ -26,8 +25,6 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.store = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
-        self.workflow_status = {}
-        self.workflow_options: Dict[str, str] = {}
         self.metadata: Dict[str, str] = {}
         self.jobs: Dict[str, api_v1.Job] = {}
         self.job_overwrites: Dict[str, bool] = {}
@@ -443,82 +440,6 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             # mock decrypt operation by lowercasing the data
             req.payload.data = req.payload.data.lower()
             yield api_v1.DecryptResponse(payload=req.payload)
-
-    def StartWorkflowBeta1(self, request: api_v1.StartWorkflowRequest, context):
-        instance_id = request.instance_id
-
-        if instance_id not in self.workflow_status:
-            self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
-            return api_v1.StartWorkflowResponse(instance_id=instance_id)
-        else:
-            # workflow already running
-            raise Exception('Unable to start insance of the workflow')
-
-    def GetWorkflowBeta1(self, request: api_v1.GetWorkflowRequest, context):
-        instance_id = request.instance_id
-
-        if instance_id in self.workflow_status:
-            status = str(self.workflow_status[instance_id])[len('WorkflowRuntimeStatus.') :]
-            return api_v1.GetWorkflowResponse(
-                instance_id=instance_id,
-                workflow_name='example',
-                created_at=None,
-                last_updated_at=None,
-                runtime_status=status,
-                properties=self.workflow_options,
-            )
-        else:
-            # workflow non-existent
-            raise Exception('Workflow instance does not exist')
-
-    def PauseWorkflowBeta1(self, request: api_v1.PauseWorkflowRequest, context):
-        instance_id = request.instance_id
-
-        if instance_id in self.workflow_status:
-            self.workflow_status[instance_id] = WorkflowRuntimeStatus.SUSPENDED
-            return empty_pb2.Empty()
-        else:
-            # workflow non-existent
-            raise Exception('Workflow instance could not be paused')
-
-    def ResumeWorkflowBeta1(self, request: api_v1.ResumeWorkflowRequest, context):
-        instance_id = request.instance_id
-
-        if instance_id in self.workflow_status:
-            self.workflow_status[instance_id] = WorkflowRuntimeStatus.RUNNING
-            return empty_pb2.Empty()
-        else:
-            # workflow non-existent
-            raise Exception('Workflow instance could not be resumed')
-
-    def TerminateWorkflowBeta1(self, request: api_v1.TerminateWorkflowRequest, context):
-        instance_id = request.instance_id
-
-        if instance_id in self.workflow_status:
-            self.workflow_status[instance_id] = WorkflowRuntimeStatus.TERMINATED
-            return empty_pb2.Empty()
-        else:
-            # workflow non-existent
-            raise Exception('Workflow instance could not be terminated')
-
-    def PurgeWorkflowBeta1(self, request: api_v1.PurgeWorkflowRequest, context):
-        instance_id = request.instance_id
-
-        if instance_id in self.workflow_status:
-            del self.workflow_status[instance_id]
-            return empty_pb2.Empty()
-        else:
-            # workflow non-existent
-            raise Exception('Workflow instance could not be purged')
-
-    def RaiseEventWorkflowBeta1(self, request: api_v1.RaiseEventWorkflowRequest, context):
-        instance_id = request.instance_id
-
-        if instance_id in self.workflow_status:
-            self.workflow_options[instance_id] = request.event_data
-            return empty_pb2.Empty()
-        else:
-            raise Exception('Unable to raise event on workflow instance')
 
     def GetMetadata(self, request, context):
         self.check_for_exception(context)
