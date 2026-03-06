@@ -27,23 +27,23 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-  - '== APP == Subscriber received: id=1, message="hello world", content_type="application/json"'
+  - 'Subscriber received: id=1, message="hello world", content_type="application/json"'
   - 'RETRY status returned from app while processing pub/sub event'
-  - '== APP == Subscriber received: id=2, message="hello world", content_type="application/json"'
-  - '== APP == Subscriber received: id=3, message="hello world", content_type="application/json"'
-  - '== APP == Wildcard-Subscriber received: id=4, message="hello world", content_type="application/json"'
-  - '== APP == Wildcard-Subscriber received: id=5, message="hello world", content_type="application/json"'
-  - '== APP == Wildcard-Subscriber received: id=6, message="hello world", content_type="application/json"'
-  - '== APP == Dead-Letter Subscriber received: id=7, message="hello world", content_type="application/json"'
-  - '== APP == Dead-Letter Subscriber. Received via deadletter topic: TOPIC_D_DEAD'
-  - '== APP == Dead-Letter Subscriber. Originally intended topic: TOPIC_D'
-  - '== APP == Subscriber received: TOPIC_CE'
-  - '== APP == Subscriber received a json cloud event: id=8, message="hello world", content_type="application/json"'
-  - '== APP == Subscriber received: id=20, message="bulk event 1", content_type="application/json"'
-  - '== APP == Subscriber received: id=21, message="bulk event 2", content_type="application/json"'
-  - '== APP == Subscriber received: id=22, message="bulk event 3", content_type="application/json"'
-  - '== APP == Subscriber received: TOPIC_CE'
-  - '== APP == Subscriber received plain text cloud event: hello world, content_type="text/plain"'
+  - 'Subscriber received: id=2, message="hello world", content_type="application/json"'
+  - 'Subscriber received: id=3, message="hello world", content_type="application/json"'
+  - 'Wildcard-Subscriber received: id=4, message="hello world", content_type="application/json"'
+  - 'Wildcard-Subscriber received: id=5, message="hello world", content_type="application/json"'
+  - 'Wildcard-Subscriber received: id=6, message="hello world", content_type="application/json"'
+  - 'Dead-Letter Subscriber received: id=7, message="hello world", content_type="application/json"'
+  - 'Dead-Letter Subscriber. Received via deadletter topic: TOPIC_D_DEAD'
+  - 'Dead-Letter Subscriber. Originally intended topic: TOPIC_D'
+  - 'Subscriber received: TOPIC_CE'
+  - 'Subscriber received a json cloud event: id=8, message="hello world", content_type="application/json"'
+  - 'Subscriber received: id=20, message="bulk event 1", content_type="application/json"'
+  - 'Subscriber received: id=21, message="bulk event 2", content_type="application/json"'
+  - 'Subscriber received: id=22, message="bulk event 3", content_type="application/json"'
+  - 'Subscriber received: TOPIC_CE'
+  - 'Subscriber received plain text cloud event: hello world, content_type="text/plain"'
 
 output_match_mode: substring
 background: true
@@ -63,16 +63,16 @@ In another terminal/command prompt run:
 <!-- STEP
 name: Run publisher
 expected_stdout_lines:
-  - "== APP == {'id': 1, 'message': 'hello world'}"
-  - "== APP == {'id': 2, 'message': 'hello world'}"
-  - "== APP == {'id': 3, 'message': 'hello world'}"
-  - "== APP == {'id': 4, 'message': 'hello world'}"
-  - "== APP == {'id': 5, 'message': 'hello world'}"
-  - "== APP == {'id': 6, 'message': 'hello world'}"
-  - "== APP == {'id': 7, 'message': 'hello world'}"
-  - "== APP == {'specversion': '1.0', 'type': 'com.example.event', 'source': 'my-service', 'id': 'abc-8', 'data': {'id': 8, 'message': 'hello world'}, 'datacontenttype': 'application/json'}"
-  - "== APP == Bulk published 3 events. Failed entries: 0"
-  - "== APP == {'specversion': '1.0', 'type': 'com.example.event', 'source': 'my-service', 'id': 'abc-10', 'data': 'hello world', 'datacontenttype': 'text/plain'}"
+  - "{'id': 1, 'message': 'hello world'}"
+  - "{'id': 2, 'message': 'hello world'}"
+  - "{'id': 3, 'message': 'hello world'}"
+  - "{'id': 4, 'message': 'hello world'}"
+  - "{'id': 5, 'message': 'hello world'}"
+  - "{'id': 6, 'message': 'hello world'}"
+  - "{'id': 7, 'message': 'hello world'}"
+  - "{'specversion': '1.0', 'type': 'com.example.event', 'source': 'my-service', 'id': 'abc-8', 'data': {'id': 8, 'message': 'hello world'}, 'datacontenttype': 'application/json'}"
+  - "Bulk published 3 events. Failed entries: 0"
+  - "{'specversion': '1.0', 'type': 'com.example.event', 'source': 'my-service', 'id': 'abc-10', 'data': 'hello world', 'datacontenttype': 'text/plain'}"
 background: true
 sleep: 15
 -->
