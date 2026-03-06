@@ -227,16 +227,16 @@ name: Run caller app with tracing
 match_order: none
 expected_stdout_lines:
   - "✅  You're up and running! Both Dapr and your app logs will appear here."
-  - '== APP == application/json'
-  - '== APP == SAY'
-  - '== APP == text/plain'
-  - '== APP == SLEEP'
-  - '== APP == Trace ID matches after forwarding'
-  - '== APP == application/json'
-  - '== APP == SAY'
-  - '== APP == text/plain'
-  - '== APP == SLEEP'
-  - '== APP == Trace ID matches after forwarding'
+  - 'application/json'
+  - 'SAY'
+  - 'text/plain'
+  - 'SLEEP'
+  - 'Trace ID matches after forwarding'
+  - 'application/json'
+  - 'SAY'
+  - 'text/plain'
+  - 'SLEEP'
+  - 'Trace ID matches after forwarding'
   - "✅  Exited App successfully"
 background: true
 sleep: 10

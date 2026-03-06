@@ -34,23 +34,23 @@ To run this example, the following code can be utilized:
 <!-- STEP
 name: Run jobs example
 expected_stdout_lines:
-  - "== APP == 0. Scheduling a simple job without data..."
-  - "== APP == ✓ Simple job scheduled successfully"
-  - "== APP == 1. Scheduling a recurring job with cron schedule..."
-  - "== APP == ✓ Recurring job scheduled successfully"
-  - "== APP == 2. Scheduling a one-time job with due_time..."
-  - "== APP == ✓ One-time job scheduled successfully"
-  - "== APP == 3. Scheduling jobs with failure policies..."
-  - "== APP == ✓ Job with drop failure policy scheduled successfully"
-  - "== APP == ✓ Job with constant retry policy scheduled successfully"
-  - "== APP == 4. Getting job details..."
-  - "== APP == ✓ Retrieved job details:"
-  - "== APP == 5. Cleaning up - deleting jobs..."
-  - "== APP == ✓ Deleted job: simple-job"
-  - "== APP == ✓ Deleted job: recurring-hello-job"
-  - "== APP == ✓ Deleted job: one-time-hello-job"
-  - "== APP == ✓ Deleted job: drop-policy-job"
-  - "== APP == ✓ Deleted job: retry-policy-job"
+  - "0. Scheduling a simple job without data..."
+  - "✓ Simple job scheduled successfully"
+  - "1. Scheduling a recurring job with cron schedule..."
+  - "✓ Recurring job scheduled successfully"
+  - "2. Scheduling a one-time job with due_time..."
+  - "✓ One-time job scheduled successfully"
+  - "3. Scheduling jobs with failure policies..."
+  - "✓ Job with drop failure policy scheduled successfully"
+  - "✓ Job with constant retry policy scheduled successfully"
+  - "4. Getting job details..."
+  - "✓ Retrieved job details:"
+  - "5. Cleaning up - deleting jobs..."
+  - "✓ Deleted job: simple-job"
+  - "✓ Deleted job: recurring-hello-job"
+  - "✓ Deleted job: one-time-hello-job"
+  - "✓ Deleted job: drop-policy-job"
+  - "✓ Deleted job: retry-policy-job"
 timeout_seconds: 10
 -->
 
@@ -74,19 +74,19 @@ Run the following command in a terminal/command-prompt:
 <!-- STEP
 name: Run complete workflow example
 expected_stdout_lines:
-  - "== APP == Dapr Jobs Example"
-  - "== APP == Starting gRPC server on port 50051..."
-  - "== APP == Scheduling jobs..."
-  - "== APP == ✓ hello-job scheduled"
-  - "== APP == ✓ data-job scheduled"
-  - "== APP == Jobs scheduled! Waiting for execution..."
-  - "== APP == Job event received: hello-job"
-  - "== APP == Job data: None"
-  - "== APP == Hello job processing completed!"
-  - "== APP == Data job event received: data-job"
-  - "== APP == Processing data_processing task with priority high"
-  - "== APP == Processing 42 items..."
-  - "== APP == Data job processing completed!"
+  - "Dapr Jobs Example"
+  - "Starting gRPC server on port 50051..."
+  - "Scheduling jobs..."
+  - "✓ hello-job scheduled"
+  - "✓ data-job scheduled"
+  - "Jobs scheduled! Waiting for execution..."
+  - "Job event received: hello-job"
+  - "Job data: None"
+  - "Hello job processing completed!"
+  - "Data job event received: data-job"
+  - "Processing data_processing task with priority high"
+  - "Processing 42 items..."
+  - "Data job processing completed!"
 background: true
 sleep: 15
 -->
