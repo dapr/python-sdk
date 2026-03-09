@@ -256,4 +256,3 @@ The callback service must:
 
 For more information about the Jobs API, see:
 - [Dapr Jobs Building Block](https://docs.dapr.io/developing-applications/building-blocks/jobs/)
-- [Dapr Jobs API Proposal](https://github.com/dapr/proposals/blob/main/0012-BIRS-distributed-scheduler.md)
