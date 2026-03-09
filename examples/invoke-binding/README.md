@@ -37,9 +37,9 @@ docker compose -f ./docker-compose-single-kafka.yml up -d
 <!-- STEP
 name: Start Receiver
 expected_stdout_lines:
-  - '== APP == {"id": 1, "message": "hello world"}'
-  - '== APP == {"id": 2, "message": "hello world"}'
-  - '== APP == {"id": 3, "message": "hello world"}'
+  - '{"id": 1, "message": "hello world"}'
+  - '{"id": 2, "message": "hello world"}'
+  - '{"id": 3, "message": "hello world"}'
 background: true
 sleep: 5
 -->
@@ -59,9 +59,9 @@ In another terminal/command-prompt run:
 <!-- STEP
 name: Start Publisher
 expected_stdout_lines:
-  - '== APP == Sending message id: 1, message "hello world"'
-  - '== APP == Sending message id: 2, message "hello world"'
-  - '== APP == Sending message id: 3, message "hello world"'
+  - 'Sending message id: 1, message "hello world"'
+  - 'Sending message id: 2, message "hello world"'
+  - 'Sending message id: 3, message "hello world"'
 background: true
 sleep: 5
 -->
