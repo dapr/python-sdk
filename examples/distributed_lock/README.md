@@ -29,13 +29,13 @@ To run this example, the following code can be utilized:
 <!-- STEP
 name: Run state store example
 expected_stdout_lines:
-  - "== APP == Will try to acquire a lock from lock store named [lockstore]"
-  - "== APP == The lock is for a resource named [example-lock-resource]"
-  - "== APP == The client identifier is [example-client-id]"
-  - "== APP == The lock will will expire in 60 seconds."
-  - "== APP == Lock acquired successfully!!!"
-  - "== APP == We already released the lock so unlocking will not work."
-  - "== APP == We tried to unlock it anyway and got back [UnlockResponseStatus.lock_does_not_exist]"
+  - "Will try to acquire a lock from lock store named [lockstore]"
+  - "The lock is for a resource named [example-lock-resource]"
+  - "The client identifier is [example-client-id]"
+  - "The lock will will expire in 60 seconds."
+  - "Lock acquired successfully!!!"
+  - "We already released the lock so unlocking will not work."
+  - "We tried to unlock it anyway and got back [UnlockResponseStatus.lock_does_not_exist]"
 timeout_seconds: 5
 -->
 
@@ -47,13 +47,13 @@ dapr run --app-id=locksapp --app-protocol grpc --resources-path components/ pyth
 The output should be as follows:
 
 ```
-== APP == Will try to acquire a lock from lock store named [lockstore]
-== APP == The lock is for a resource named [example-lock-resource]
-== APP == The client identifier is [example-client-id]
-== APP == The lock will will expire in 60 seconds.
-== APP == Lock acquired successfully!!!
-== APP == We already released the lock so unlocking will not work.
-== APP == We tried to unlock it anyway and got back [UnlockResponseStatus.lock_does_not_exist]
+Will try to acquire a lock from lock store named [lockstore]
+The lock is for a resource named [example-lock-resource]
+The client identifier is [example-client-id]
+The lock will will expire in 60 seconds.
+Lock acquired successfully!!!
+We already released the lock so unlocking will not work.
+We tried to unlock it anyway and got back [UnlockResponseStatus.lock_does_not_exist]
 ```
 
 ## Error Handling

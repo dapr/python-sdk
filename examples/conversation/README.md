@@ -28,8 +28,8 @@ The Conversation API supports real LLM providers including:
     <!-- STEP
     name: Run Conversation Alpha V1
     expected_stdout_lines:
-      - "== APP == Result: What's Dapr?"
-      - "== APP == Give a brief overview."
+      - "Result: What's Dapr?"
+      - "Give a brief overview."
     background: true
     timeout_seconds: 60
     -->
@@ -47,8 +47,8 @@ The Conversation API supports real LLM providers including:
     <!-- STEP
     name: Run Conversation Alpha V2
     expected_stdout_lines:
-      - "== APP == Result: What's Dapr?"
-      - "== APP == Give a brief overview."
+      - "Result: What's Dapr?"
+      - "Give a brief overview."
     background: true
     timeout_seconds: 60
     -->

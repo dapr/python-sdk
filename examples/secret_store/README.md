@@ -30,12 +30,12 @@ To run this example, use the following command:
 <!-- STEP
 name: Run secret store example
 expected_stdout_lines:
-  - "== APP == Got!"
-  - "== APP == {'secretKey': 'secretValue'}"
-  - "== APP == Got!"
-  - "== APP == [('random', {'random': 'randomValue'}), ('secretKey', {'secretKey': 'secretValue'})]"
-  - "== APP == Got!"
-  - "== APP == {'random': 'randomValue'}"
+  - "Got!"
+  - "{'secretKey': 'secretValue'}"
+  - "Got!"
+  - "[('random', {'random': 'randomValue'}), ('secretKey', {'secretKey': 'secretValue'})]"
+  - "Got!"
+  - "{'random': 'randomValue'}"
 timeout_seconds: 2
 -->
 
@@ -47,12 +47,12 @@ dapr run --app-id=secretsapp --app-protocol grpc --resources-path components/ py
 
 You should be able to see the following output:
 ```
-== APP == Got!
-== APP == {'secretKey': 'secretValue'}
-== APP == Got!
-== APP == [('random', {'random': 'randomValue'}), ('secretKey', {'secretKey': 'secretValue'})]
-== APP == Got!
-== APP == {'random': 'randomValue'}
+Got!
+{'secretKey': 'secretValue'}
+Got!
+[('random', {'random': 'randomValue'}), ('secretKey', {'secretKey': 'secretValue'})]
+Got!
+{'random': 'randomValue'}
 ```
 
 In `config.yaml` you can see that the `localsecretstore` secret store has been defined with some restricted permissions.
@@ -78,11 +78,11 @@ To see this run the same `example.py` app with the following command:
 <!-- STEP
 name: Run secret store example with access config
 expected_stdout_lines:
-  - "== APP == Got!"
-  - "== APP == {'secretKey': 'secretValue'}"
-  - "== APP == Got!"
-  - "== APP == [('secretKey', {'secretKey': 'secretValue'})]"
-  - "== APP == Got expected error for accessing random key"
+  - "Got!"
+  - "{'secretKey': 'secretValue'}"
+  - "Got!"
+  - "[('secretKey', {'secretKey': 'secretValue'})]"
+  - "Got expected error for accessing random key"
 timeout_seconds: 2
 -->
 
@@ -96,11 +96,11 @@ The above command overrides the default configuration file with the `--config` f
 
 The output should be as follows:
 ```
-== APP == Got!
-== APP == {'secretKey': 'secretValue'}
-== APP == Got!
-== APP == [('secretKey', {'secretKey': 'secretValue'})]
-== APP == Got expected error for accessing random key
+Got!
+{'secretKey': 'secretValue'}
+Got!
+[('secretKey', {'secretKey': 'secretValue'})]
+Got expected error for accessing random key
 ```
 
 It can be seen that when it tried to get the random key again, it fails as by default the access is denied for any key
