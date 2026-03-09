@@ -162,5 +162,5 @@ Need help or have feedback on the SDK? Please open a GitHub issue or come chat w
 
 ## Code of Conduct
 
-This project follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+This project follows the [CNCF Code of Conduct](https://www.cncf.io/conduct/).
 
