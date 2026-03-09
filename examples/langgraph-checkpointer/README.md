@@ -34,14 +34,14 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-  - '== APP == Add 3 and 4.'
-  - '== APP ==     a: 3'
-  - '== APP ==     b: 4'
-  - '== APP == 7'
-  - '== APP ==   Args:'
-  - '== APP ==     a: 7'
-  - '== APP ==     b: 2'
-  - '== APP == 14'
+  - 'Add 3 and 4.'
+  - '    a: 3'
+  - '    b: 4'
+  - '7'
+  - '  Args:'
+  - '    a: 7'
+  - '    b: 2'
+  - '14'
     
 output_match_mode: substring
 background: true
