@@ -17,7 +17,7 @@ import asyncio
 import socket
 import time
 import uuid
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -149,7 +149,7 @@ class DaprGrpcClientAsync:
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
-            options = [
+            options: List[Tuple[str, Any]] = [
                 ('grpc.primary_user_agent', useragent),
             ]
         else:
@@ -200,7 +200,7 @@ class DaprGrpcClientAsync:
 
     @staticmethod
     def get_credentials():
-        return grpc.ssl_channel_credentials()
+        return grpc.ssl_channel_credentials()  # type: ignore[attr-defined]
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
@@ -599,7 +599,7 @@ class DaprGrpcClientAsync:
         self,
         pubsub_name: str,
         topic: str,
-        handler_fn: Callable[..., TopicEventResponse],
+        handler_fn: Callable[..., Awaitable[TopicEventResponse]],
         metadata: Optional[dict] = None,
         dead_letter_topic: Optional[str] = None,
     ) -> Callable[[], Awaitable[None]]:
@@ -1015,7 +1015,7 @@ class DaprGrpcClientAsync:
                 operationType=o.operation_type.value,
                 request=common_v1.StateItem(
                     key=o.key,
-                    value=to_bytes(o.data),
+                    value=to_bytes(o.data) if o.data is not None else to_bytes(''),
                     etag=common_v1.Etag(value=o.etag) if o.etag is not None else None,
                 ),
             )
@@ -1355,7 +1355,7 @@ class DaprGrpcClientAsync:
         response = await call
         return TryLockResponse(
             success=response.success,
-            client=self,
+            client=self,  # type: ignore[arg-type]
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
