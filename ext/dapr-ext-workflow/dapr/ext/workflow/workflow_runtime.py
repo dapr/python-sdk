@@ -180,9 +180,7 @@ class WorkflowRuntime:
                 return result
             except Exception as e:
                 self._logger.warning(
-                    'Activity execution failed - task_id: %s, error: %s',
-                    activity_id,
-                    e,
+                    f'Activity execution failed - task_id: {activity_id}, error: {e}'
                 )
                 raise
 

@@ -121,7 +121,7 @@ class Subscription:
                 raise StreamInactiveError('Stream is not active')
             self._send_queue.put(msg)
         except Exception as e:
-            logger.warning("Can't send message on inactive stream: %s", e)
+            logger.warning(f"Can't send message on inactive stream: {e}")
 
     def respond_success(self, message):
         self.respond(message, TopicEventResponse('success').status)
