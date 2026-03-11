@@ -10,7 +10,7 @@ In the s`subscriber.py` file it creates a subscriber object that can call the `n
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -27,16 +27,16 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_B1..."
-    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_B1..."
-    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_B1..."
-    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_B1..."
-    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_B1..."
-    - "== APP == Closing subscription..."
+    - "Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_B1..."
+    - "Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_B1..."
+    - "Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_B1..."
+    - "Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_B1..."
+    - "Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_B1..."
+    - "Closing subscription..."
 output_match_mode: substring
 background: true
 match_order: none
-sleep: 3 
+sleep: 3
 -->
 
 ```bash
@@ -51,11 +51,11 @@ In another terminal/command prompt run:
 <!-- STEP
 name: Run publisher
 expected_stdout_lines:
-  - "== APP == {'id': 1, 'message': 'hello world'}"
-  - "== APP == {'id': 2, 'message': 'hello world'}"
-  - "== APP == {'id': 3, 'message': 'hello world'}"
-  - "== APP == {'id': 4, 'message': 'hello world'}"
-  - "== APP == {'id': 5, 'message': 'hello world'}"
+  - "{'id': 1, 'message': 'hello world'}"
+  - "{'id': 2, 'message': 'hello world'}"
+  - "{'id': 3, 'message': 'hello world'}"
+  - "{'id': 4, 'message': 'hello world'}"
+  - "{'id': 5, 'message': 'hello world'}"
 background: true
 output_match_mode: substring
 sleep: 15
@@ -75,16 +75,16 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_B2..."
-    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_B2..."
-    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_B2..."
-    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_B2..."
-    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_B2..."
-    - "== APP == Closing subscription..."
+    - "Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_B2..."
+    - "Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_B2..."
+    - "Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_B2..."
+    - "Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_B2..."
+    - "Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_B2..."
+    - "Closing subscription..."
 output_match_mode: substring
 background: true
 match_order: none
-sleep: 3 
+sleep: 3
 -->
 
 ```bash
@@ -99,11 +99,11 @@ In another terminal/command prompt run:
 <!-- STEP
 name: Run publisher
 expected_stdout_lines:
-  - "== APP == {'id': 1, 'message': 'hello world'}"
-  - "== APP == {'id': 2, 'message': 'hello world'}"
-  - "== APP == {'id': 3, 'message': 'hello world'}"
-  - "== APP == {'id': 4, 'message': 'hello world'}"
-  - "== APP == {'id': 5, 'message': 'hello world'}"
+  - "{'id': 1, 'message': 'hello world'}"
+  - "{'id': 2, 'message': 'hello world'}"
+  - "{'id': 3, 'message': 'hello world'}"
+  - "{'id': 4, 'message': 'hello world'}"
+  - "{'id': 5, 'message': 'hello world'}"
 background: true
 output_match_mode: substring
 sleep: 15
@@ -114,7 +114,7 @@ sleep: 15
 dapr run --app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 --enable-app-health-check -- python3 publisher.py --topic=TOPIC_B2
 ```
 
-<!-- END_STEP --> 
+<!-- END_STEP -->
 
 
 ## Cleanup

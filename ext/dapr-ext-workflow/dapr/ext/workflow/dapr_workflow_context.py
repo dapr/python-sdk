@@ -68,12 +68,12 @@ class DaprWorkflowContext(WorkflowContext):
         retry_policy: Optional[RetryPolicy] = None,
         app_id: Optional[str] = None,
     ) -> task.Task[TOutput]:
-        # Handle string activity names for cross-app scenarios
+        # Handle string activity names for multi-app workflow scenarios
         if isinstance(activity, str):
             activity_name = activity
             if app_id is not None:
                 self._logger.debug(
-                    f'{self.instance_id}: Creating cross-app activity {activity_name} for app {app_id}'
+                    f'{self.instance_id}: Creating multi-app workflow activity {activity_name} for app {app_id}'
                 )
             else:
                 self._logger.debug(f'{self.instance_id}: Creating activity {activity_name}')
@@ -106,7 +106,7 @@ class DaprWorkflowContext(WorkflowContext):
         retry_policy: Optional[RetryPolicy] = None,
         app_id: Optional[str] = None,
     ) -> task.Task[TOutput]:
-        # Handle string workflow names for cross-app scenarios
+        # Handle string workflow names for multi-app workflow scenarios
         if isinstance(workflow, str):
             workflow_name = workflow
             self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow_name}')
@@ -152,6 +152,10 @@ class DaprWorkflowContext(WorkflowContext):
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
         self._logger.debug(f'{self.instance_id}: Continuing as new')
         self.__obj.continue_as_new(new_input, save_events=save_events)
+
+    def is_patched(self, patch_name: str) -> bool:
+        self._logger.debug(f'{self.instance_id}: Checking if {patch_name} is patched')
+        return self.__obj.is_patched(patch_name)
 
 
 def when_all(tasks: List[task.Task[T]]) -> task.WhenAllTask[T]:

@@ -7,18 +7,22 @@ This example utilizes a receiver and a caller for the `invoke_method` functional
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.8+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ### Install requirements
 
 You can install dapr SDK package using pip command:
+```sh
+pip3 install dapr
+```
 
-<!-- STEP 
+<!-- STEP
 name: Install requirements
 -->
 
+Also install Flask package:
 ```sh
-pip3 install dapr Flask
+pip3 install Flask
 ```
 
 <!-- END_STEP -->
@@ -31,8 +35,8 @@ Start the receiver:
 <!-- STEP
 name: Run invoke http example
 expected_stdout_lines:
-  - '== APP == Order received : {"id": 1, "message": "hello world"}'
-  - '== APP == Order error : {"id": 2, "message": "hello world"}'
+  - 'Order received : {"id": 1, "message": "hello world"}'
+  - 'Order error : {"id": 2, "message": "hello world"}'
 background: true
 sleep: 5
 -->
@@ -46,16 +50,16 @@ Start the caller:
 <!-- STEP
 name: Run invoke http example
 expected_stdout_lines:
-  - '== APP == text/html'
-  - '== APP == {"success": true}'
-  - '== APP == 200'
-  - '== APP == error occurred'
-  - '== APP == MY_CODE'
-  - '== APP == {"message": "error occurred", "errorCode": "MY_CODE"}'
-  - '== APP == 503'
-  - '== APP == Internal Server Error'
+  - 'text/html'
+  - '{"success": true}'
+  - '200'
+  - 'error occurred'
+  - 'MY_CODE'
+  - '{"message": "error occurred", "errorCode": "MY_CODE"}'
+  - '503'
+  - 'Internal Server Error'
 background: true
-sleep: 5 
+sleep: 5
 -->
 
 ```bash
@@ -66,7 +70,7 @@ dapr run --app-id=invoke-caller -- python3 invoke-caller.py
 ## Cleanup
 
 <!-- STEP
-expected_stdout_lines: 
+expected_stdout_lines:
   - '✅  app stopped successfully: invoke-receiver'
 name: Shutdown dapr
 -->

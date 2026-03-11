@@ -277,3 +277,7 @@ class DaprWorkflowClient:
             recursive: The optional flag to also purge data from all child workflows.
         """
         return self.__obj.purge_orchestration(instance_id, recursive)
+
+    def close(self):
+        """Closes the gRPC connection used by the client."""
+        return self.__obj.close()

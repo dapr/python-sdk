@@ -25,10 +25,13 @@ from warnings import warn
 
 import grpc  # type: ignore
 from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.duration_pb2 import Duration as GrpcDuration
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.struct_pb2 import Struct as GrpcStruct
 from grpc import (  # type: ignore
     RpcError,
+    StatusCode,
     StreamStreamClientInterceptor,
     StreamUnaryClientInterceptor,
     UnaryStreamClientInterceptor,
@@ -58,6 +61,8 @@ from dapr.clients.grpc._request import (
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
+    BulkPublishResponse,
+    BulkPublishResponseFailedEntry,
     BulkStateItem,
     BulkStatesResponse,
     ConfigurationResponse,
@@ -89,7 +94,6 @@ from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
-from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 
@@ -486,6 +490,96 @@ class DaprGrpcClient:
 
         return DaprResponse(call.initial_metadata())
 
+    def publish_events(
+        self,
+        pubsub_name: str,
+        topic_name: str,
+        data: Sequence[Union[bytes, str]],
+        publish_metadata: Dict[str, str] = {},
+        data_content_type: Optional[str] = None,
+    ) -> BulkPublishResponse:
+        """Bulk publish multiple events to a given topic.
+        This publishes multiple events to a specified topic and pubsub component.
+        Each event can be bytes or str. The str data is encoded into bytes with
+        default charset of utf-8.
+
+        The example publishes multiple string events to a topic:
+
+            from dapr.clients import DaprClient
+            with DaprClient() as d:
+                resp = d.publish_events(
+                    pubsub_name='pubsub_1',
+                    topic_name='TOPIC_A',
+                    data=['message1', 'message2', 'message3'],
+                    data_content_type='text/plain',
+                )
+                # resp.failed_entries includes any entries that failed to publish.
+
+        Args:
+            pubsub_name (str): the name of the pubsub component
+            topic_name (str): the topic name to publish to
+            data (Sequence[Union[bytes, str]]): sequence of events to publish;
+                each event must be bytes or str
+            publish_metadata (Dict[str, str], optional): Dapr metadata for the
+                bulk publish request
+            data_content_type (str, optional): content type of the event data
+
+        Returns:
+            :class:`BulkPublishResponse` with any failed entries
+        """
+        entries = []
+        for event in data:
+            entry_id = str(uuid.uuid4())
+            if isinstance(event, bytes):
+                event_data = event
+                content_type = data_content_type or 'application/octet-stream'
+            elif isinstance(event, str):
+                event_data = event.encode('utf-8')
+                content_type = data_content_type or 'text/plain'
+            else:
+                raise ValueError(f'invalid type for event {type(event)}')
+
+            entries.append(
+                api_v1.BulkPublishRequestEntry(
+                    entry_id=entry_id,
+                    event=event_data,
+                    content_type=content_type,
+                )
+            )
+
+        req = api_v1.BulkPublishRequest(
+            pubsub_name=pubsub_name,
+            topic=topic_name,
+            entries=entries,
+            metadata=publish_metadata,
+        )
+
+        try:
+            response, call = self.retry_policy.run_rpc(self._stub.BulkPublishEvent.with_call, req)
+        except RpcError as err:
+            if err.code() == StatusCode.UNIMPLEMENTED:
+                try:
+                    response, call = self.retry_policy.run_rpc(
+                        self._stub.BulkPublishEventAlpha1.with_call, req
+                    )
+                except RpcError as err2:
+                    raise DaprGrpcError(err2) from err2
+            else:
+                raise DaprGrpcError(err) from err
+
+        failed_entries = [
+            BulkPublishResponseFailedEntry(
+                entry_id=entry.entry_id,
+                error=entry.error,
+            )
+            for entry in response.failedEntries
+        ]
+
+        return BulkPublishResponse(
+            failed_entries=failed_entries,
+            headers=call.initial_metadata(),
+        )
+
     def subscribe(
         self,
         pubsub_name: str,
@@ -501,9 +595,6 @@ class DaprGrpcClient:
             topic (str): The name of the topic.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
-            timeout (Optional[int]): The time in seconds to wait for a message before returning None
-                                     If not set, the `next_message` method will block indefinitely
-                                     until a message is received.
 
         Returns:
             Subscription: The Subscription object managing the stream.
@@ -529,9 +620,6 @@ class DaprGrpcClient:
             handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
-            timeout (Optional[int]): The time in seconds to wait for a message before returning None
-                                     If not set, the `next_message` method will block indefinitely
-                                     until a message is received.
         """
         subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
 
@@ -1215,7 +1303,7 @@ class DaprGrpcClient:
             bool: True if unsubscribed successfully, False otherwise
         """
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
-        response: UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfiguration(req)
+        response: api_v1.UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfiguration(req)
         return response.ok
 
     def try_lock(
@@ -1794,6 +1882,8 @@ class DaprGrpcClient:
         temperature: Optional[float] = None,
         tools: Optional[List[conversation.ConversationTools]] = None,
         tool_choice: Optional[str] = None,
+        response_format: Optional[GrpcStruct] = None,
+        prompt_cache_retention: Optional[GrpcDuration] = None,
     ) -> conversation.ConversationResponseAlpha2:
         """Invoke an LLM using the conversation API (Alpha2) with tool calling support.
 
@@ -1807,6 +1897,8 @@ class DaprGrpcClient:
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
             tools: Optional list of tools available for the LLM to call
             tool_choice: Optional control over which tools can be called ('none', 'auto', 'required', or specific tool name)
+            response_format: Optional response format (google.protobuf.struct_pb2.Struct, ex: json_schema for structured output)
+            prompt_cache_retention: Optional retention for prompt cache (google.protobuf.duration_pb2.Duration)
 
         Returns:
             ConversationResponseAlpha2 containing the conversation results with choices and tool calls
@@ -1863,6 +1955,10 @@ class DaprGrpcClient:
             request.temperature = temperature
         if tool_choice is not None:
             request.tool_choice = tool_choice
+        if response_format is not None and hasattr(request, 'response_format'):
+            request.response_format.CopyFrom(response_format)
+        if prompt_cache_retention is not None and hasattr(request, 'prompt_cache_retention'):
+            request.prompt_cache_retention.CopyFrom(prompt_cache_retention)
 
         try:
             response, call = self.retry_policy.run_rpc(self._stub.ConverseAlpha2.with_call, request)

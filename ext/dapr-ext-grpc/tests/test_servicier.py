@@ -183,6 +183,143 @@ class TopicSubscriptionTests(unittest.TestCase):
             )
 
 
+class BulkTopicEventTests(unittest.TestCase):
+    def setUp(self):
+        self._servicer = _CallbackServicer()
+        self._topic_method = Mock()
+        self._topic_method.return_value = TopicEventResponse('success')
+        self._servicer.register_topic('pubsub1', 'topic1', self._topic_method, {'session': 'key'})
+
+        self.fake_context = MagicMock()
+        self.fake_context.invocation_metadata.return_value = (
+            ('key1', 'value1'),
+            ('key2', 'value1'),
+        )
+
+    def test_on_bulk_topic_event(self):
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+        )
+
+        entry1 = TopicEventBulkRequestEntry(
+            entry_id='entry1',
+            bytes=b'hello',
+            content_type='text/plain',
+        )
+        entry2 = TopicEventBulkRequestEntry(
+            entry_id='entry2',
+            bytes=b'{"a": 1}',
+            content_type='application/json',
+        )
+        request = TopicEventBulkRequest(
+            id='bulk1',
+            pubsub_name='pubsub1',
+            topic='topic1',
+            path='',
+            entries=[entry1, entry2],
+        )
+        resp = self._servicer.OnBulkTopicEvent(request, self.fake_context)
+        self.assertEqual(2, len(resp.statuses))
+        self.assertEqual('entry1', resp.statuses[0].entry_id)
+        self.assertEqual('entry2', resp.statuses[1].entry_id)
+        self.assertEqual(
+            appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS,
+            resp.statuses[0].status,
+        )
+        self.assertEqual(2, self._topic_method.call_count)
+
+    def test_on_bulk_topic_event_non_registered(self):
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+        )
+
+        entry = TopicEventBulkRequestEntry(entry_id='entry1', bytes=b'hello')
+        request = TopicEventBulkRequest(
+            id='bulk1',
+            pubsub_name='pubsub1',
+            topic='unknown_topic',
+            path='',
+            entries=[entry],
+        )
+        with self.assertRaises(NotImplementedError):
+            self._servicer.OnBulkTopicEvent(request, self.fake_context)
+
+    def test_on_bulk_topic_event_cloud_event_entry(self):
+        """Covers the cloud_event branch in _handle_bulk_topic_event."""
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+            TopicEventCERequest,
+        )
+
+        ce = TopicEventCERequest(
+            id='ce-1',
+            source='test',
+            type='test.type',
+            spec_version='1.0',
+            data_content_type='text/plain',
+            data=b'cloud event payload',
+        )
+        entry = TopicEventBulkRequestEntry(entry_id='entry1', cloud_event=ce)
+        request = TopicEventBulkRequest(
+            id='bulk1',
+            pubsub_name='pubsub1',
+            topic='topic1',
+            path='',
+            entries=[entry],
+        )
+        resp = self._servicer.OnBulkTopicEvent(request, self.fake_context)
+        self.assertEqual(1, len(resp.statuses))
+        self.assertEqual('entry1', resp.statuses[0].entry_id)
+        self._topic_method.assert_called_once()
+
+    def test_on_bulk_topic_event_handler_raises_retry(self):
+        """Covers the exception -> RETRY path in _handle_bulk_topic_event."""
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+        )
+
+        self._topic_method.side_effect = RuntimeError('handler failed')
+        entry = TopicEventBulkRequestEntry(entry_id='entry1', bytes=b'hello')
+        request = TopicEventBulkRequest(
+            id='bulk1',
+            pubsub_name='pubsub1',
+            topic='topic1',
+            path='',
+            entries=[entry],
+        )
+        resp = self._servicer.OnBulkTopicEvent(request, self.fake_context)
+        self.assertEqual(1, len(resp.statuses))
+        self.assertEqual(
+            appcallback_v1.TopicEventResponse.TopicEventResponseStatus.RETRY,
+            resp.statuses[0].status,
+        )
+
+    def test_on_bulk_topic_event_alpha1(self):
+        """Covers OnBulkTopicEventAlpha1 (deprecated) delegates like OnBulkTopicEvent."""
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+        )
+
+        entry = TopicEventBulkRequestEntry(entry_id='alpha1', bytes=b'data')
+        request = TopicEventBulkRequest(
+            id='bulk1',
+            pubsub_name='pubsub1',
+            topic='topic1',
+            path='',
+            entries=[entry],
+        )
+        with self.assertWarns(DeprecationWarning):
+            resp = self._servicer.OnBulkTopicEventAlpha1(request, self.fake_context)
+        self.assertEqual(1, len(resp.statuses))
+        self.assertEqual('alpha1', resp.statuses[0].entry_id)
+        self._topic_method.assert_called_once()
+
+
 class BindingTests(unittest.TestCase):
     def setUp(self):
         self._servicer = _CallbackServicer()

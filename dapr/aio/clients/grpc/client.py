@@ -19,7 +19,7 @@ import socket
 import time
 import uuid
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -27,6 +27,7 @@ import grpc.aio  # type: ignore
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 from google.protobuf.message import Message as GrpcMessage
+from grpc import StatusCode  # type: ignore
 from grpc.aio import (  # type: ignore
     AioRpcError,
     StreamStreamClientInterceptor,
@@ -69,6 +70,8 @@ from dapr.clients.grpc._request import (
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
+    BulkPublishResponse,
+    BulkPublishResponseFailedEntry,
     BulkStateItem,
     BulkStatesResponse,
     ConfigurationResponse,
@@ -96,7 +99,6 @@ from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
-from dapr.proto.runtime.v1.dapr_pb2 import UnsubscribeConfigurationResponse
 from dapr.version import __version__
 
 
@@ -152,7 +154,7 @@ class DaprGrpcClientAsync:
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
-            options = [
+            options: List[Tuple[str, Any]] = [
                 ('grpc.primary_user_agent', useragent),
             ]
         else:
@@ -203,7 +205,7 @@ class DaprGrpcClientAsync:
 
     @staticmethod
     def get_credentials():
-        return grpc.ssl_channel_credentials()
+        return grpc.ssl_channel_credentials()  # type: ignore[attr-defined]
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
@@ -485,6 +487,96 @@ class DaprGrpcClientAsync:
 
         return DaprResponse(await call.initial_metadata())
 
+    async def publish_events(
+        self,
+        pubsub_name: str,
+        topic_name: str,
+        data: Sequence[Union[bytes, str]],
+        publish_metadata: Dict[str, str] = {},
+        data_content_type: Optional[str] = None,
+    ) -> BulkPublishResponse:
+        """Bulk publish multiple events to a given topic.
+        This publishes multiple events to a specified topic and pubsub component.
+        Each event can be bytes or str. The str data is encoded into bytes with
+        default charset of utf-8.
+
+        The example publishes multiple string events to a topic:
+
+            from dapr.aio.clients import DaprClient
+            async with DaprClient() as d:
+                resp = await d.publish_events(
+                    pubsub_name='pubsub_1',
+                    topic_name='TOPIC_A',
+                    data=['message1', 'message2', 'message3'],
+                    data_content_type='text/plain',
+                )
+                # resp.failed_entries includes any entries that failed to publish.
+
+        Args:
+            pubsub_name (str): the name of the pubsub component
+            topic_name (str): the topic name to publish to
+            data (Sequence[Union[bytes, str]]): sequence of events to publish;
+                each event must be bytes or str
+            publish_metadata (Dict[str, str], optional): Dapr metadata for the
+                bulk publish request
+            data_content_type (str, optional): content type of the event data
+
+        Returns:
+            :class:`BulkPublishResponse` with any failed entries
+        """
+        entries = []
+        for event in data:
+            entry_id = str(uuid.uuid4())
+            if isinstance(event, bytes):
+                event_data = event
+                content_type = data_content_type or 'application/octet-stream'
+            elif isinstance(event, str):
+                event_data = event.encode('utf-8')
+                content_type = data_content_type or 'text/plain'
+            else:
+                raise ValueError(f'invalid type for event {type(event)}')
+
+            entries.append(
+                api_v1.BulkPublishRequestEntry(
+                    entry_id=entry_id,
+                    event=event_data,
+                    content_type=content_type,
+                )
+            )
+
+        req = api_v1.BulkPublishRequest(
+            pubsub_name=pubsub_name,
+            topic=topic_name,
+            entries=entries,
+            metadata=publish_metadata,
+        )
+
+        try:
+            call = self._stub.BulkPublishEvent(req)
+            response = await call
+        except AioRpcError as err:
+            if err.code() == StatusCode.UNIMPLEMENTED:
+                try:
+                    call = self._stub.BulkPublishEventAlpha1(req)
+                    response = await call
+                except AioRpcError as err2:
+                    raise DaprGrpcError(err2) from err2
+            else:
+                raise DaprGrpcError(err) from err
+
+        failed_entries = [
+            BulkPublishResponseFailedEntry(
+                entry_id=entry.entry_id,
+                error=entry.error,
+            )
+            for entry in response.failedEntries
+        ]
+
+        return BulkPublishResponse(
+            failed_entries=failed_entries,
+            headers=await call.initial_metadata(),
+        )
+
     async def subscribe(
         self,
         pubsub_name: str,
@@ -512,7 +604,7 @@ class DaprGrpcClientAsync:
         self,
         pubsub_name: str,
         topic: str,
-        handler_fn: Callable[..., TopicEventResponse],
+        handler_fn: Callable[..., Awaitable[TopicEventResponse]],
         metadata: Optional[dict] = None,
         dead_letter_topic: Optional[str] = None,
     ) -> Callable[[], Awaitable[None]]:
@@ -928,7 +1020,7 @@ class DaprGrpcClientAsync:
                 operationType=o.operation_type.value,
                 request=common_v1.StateItem(
                     key=o.key,
-                    value=to_bytes(o.data),
+                    value=to_bytes(o.data) if o.data is not None else to_bytes(''),
                     etag=common_v1.Etag(value=o.etag) if o.etag is not None else None,
                 ),
             )
@@ -1206,7 +1298,9 @@ class DaprGrpcClientAsync:
             bool: True if unsubscribed successfully, False otherwise
         """
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
-        response: UnsubscribeConfigurationResponse = await self._stub.UnsubscribeConfiguration(req)
+        response: api_v1.UnsubscribeConfigurationResponse = (
+            await self._stub.UnsubscribeConfiguration(req)
+        )
         return response.ok
 
     async def try_lock(
@@ -1266,7 +1360,7 @@ class DaprGrpcClientAsync:
         response = await call
         return TryLockResponse(
             success=response.success,
-            client=self,
+            client=self,  # type: ignore[arg-type]
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
@@ -1603,7 +1697,7 @@ class DaprGrpcClientAsync:
             else:
                 encoded_data = bytes([])
         # Actual workflow raise event invocation
-        req = api_v1.raise_workflow_event(
+        req = api_v1.RaiseEventWorkflowRequest(
             instance_id=instance_id,
             workflow_component=workflow_component,
             event_name=event_name,

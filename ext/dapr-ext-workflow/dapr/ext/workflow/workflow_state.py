@@ -27,6 +27,7 @@ class WorkflowStatus(Enum):
     TERMINATED = 4
     PENDING = 5
     SUSPENDED = 6
+    STALLED = 7
 
 
 class WorkflowState:
@@ -53,6 +54,8 @@ class WorkflowState:
             return WorkflowStatus.PENDING
         elif self.__obj.runtime_status == client.OrchestrationStatus.SUSPENDED:
             return WorkflowStatus.SUSPENDED
+        elif self.__obj.runtime_status == client.OrchestrationStatus.STALLED:
+            return WorkflowStatus.STALLED
         else:
             return WorkflowStatus.UNKNOWN
 

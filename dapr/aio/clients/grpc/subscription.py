@@ -1,6 +1,6 @@
 import asyncio
 
-from grpc import StatusCode
+from grpc import StatusCode  # type: ignore[attr-defined]
 from grpc.aio import AioRpcError
 
 from dapr.aio.clients.health import DaprHealth
@@ -21,7 +21,7 @@ class Subscription:
         self._metadata = metadata or {}
         self._dead_letter_topic = dead_letter_topic or ''
         self._stream = None
-        self._send_queue = asyncio.Queue()
+        self._send_queue: asyncio.Queue[api_v1.SubscribeTopicEventsRequestAlpha1] = asyncio.Queue()
         self._stream_active = asyncio.Event()
 
     async def start(self):

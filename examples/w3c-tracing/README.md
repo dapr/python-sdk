@@ -7,15 +7,15 @@ This sample includes:
 - invoke-caller: Invokes the exposed methods
 
 Also consider [getting started with observability in Dapr](https://github.com/dapr/quickstarts/tree/master/tutorials/observability).
- 
+
 ## Example overview
 
-This sample uses the Client provided in Dapr's Python SDK invoking a remote method and Zipkin to collect and display tracing data. 
+This sample uses the Client provided in Dapr's Python SDK invoking a remote method and Zipkin to collect and display tracing data.
 
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ### Install dependencies
 
@@ -46,7 +46,7 @@ pip3 install -r requirements.txt
 
 ### Verify Zipkin is running
 
-Run `docker ps` to see if the container `dapr_zipkin` is running locally: 
+Run `docker ps` to see if the container `dapr_zipkin` is running locally:
 
 ```bash
 CONTAINER ID        IMAGE                  COMMAND                  CREATED             STATUS              PORTS                              NAMES
@@ -219,7 +219,7 @@ with tracer.start_as_current_span(name='main') as span:
 ```
 
 The class knows the `app-id` for the remote application. It uses `invoke_method` to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.
- 
+
 Execute the following command in order to run the caller example, it will call each method twice:
 
 <!-- STEP
@@ -227,16 +227,16 @@ name: Run caller app with tracing
 match_order: none
 expected_stdout_lines:
   - "✅  You're up and running! Both Dapr and your app logs will appear here."
-  - '== APP == application/json'
-  - '== APP == SAY'
-  - '== APP == text/plain'
-  - '== APP == SLEEP'
-  - '== APP == Trace ID matches after forwarding'
-  - '== APP == application/json'
-  - '== APP == SAY'
-  - '== APP == text/plain'
-  - '== APP == SLEEP'
-  - '== APP == Trace ID matches after forwarding'
+  - 'application/json'
+  - 'SAY'
+  - 'text/plain'
+  - 'SLEEP'
+  - 'Trace ID matches after forwarding'
+  - 'application/json'
+  - 'SAY'
+  - 'text/plain'
+  - 'SLEEP'
+  - 'Trace ID matches after forwarding'
   - "✅  Exited App successfully"
 background: true
 sleep: 10
@@ -323,7 +323,7 @@ The `jq` command line utility is used in the above to give you a nice human read
 Shutdown running dapr apps with Ctl-C or simply run the following:
 
 <!-- STEP
-expected_stdout_lines: 
+expected_stdout_lines:
   - '✅  app stopped successfully: invoke-receiver'
 name: Shutdown dapr
 -->

@@ -7,7 +7,7 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -33,7 +33,7 @@ To run this example, the following steps should be followed:
 <!-- STEP
 name: Run receiver
 expected_stdout_lines:
-  - '== APP == SOME_DATA'
+  - 'SOME_DATA'
 background: true
 sleep: 5
 -->
@@ -49,9 +49,9 @@ sleep: 5
 <!-- STEP
 name: Run caller
 expected_stdout_lines:
-  - '== APP == isSuccess: true'
-  - '== APP == code: 200'
-  - '== APP == message: "Hello World - Success!"'
+  - 'isSuccess: true'
+  - 'code: 200'
+  - 'message: "Hello World - Success!"'
   - '✅  Exited App successfully'
 background: true
 sleep: 5
@@ -66,23 +66,23 @@ sleep: 5
 Expected output from caller:
 
    ```
-   == APP == isSuccess: true
-   == APP == code: 200
-   == APP == message: "Hello World - Success!"
-   == APP == 
+   isSuccess: true
+   code: 200
+   message: "Hello World - Success!"
+   == APP ==
    ```
 
-Expected output from receiver: 
+Expected output from receiver:
 
    ```
-   == APP == {'user-agent': ['grpc-go/1.33.1'], 'x-forwarded-host':    ['MyPC'], 'x-forwarded-for': ['192.   168.1.3'], 'forwarded': ['for=192.168.1.3;by=192.168.1.3;   host=MyPC'], 'grpc-trace-bin':    [b'\x00\x00\x90Zc\x17\xaav?5)L\xcd]>.   \x88>\x01\x81\xe9\x9c\xbd\x01x\xfc\xc5\x02\x01']}
-   == APP == SOME_DATA
+   {'user-agent': ['grpc-go/1.33.1'], 'x-forwarded-host':    ['MyPC'], 'x-forwarded-for': ['192.   168.1.3'], 'forwarded': ['for=192.168.1.3;by=192.168.1.3;   host=MyPC'], 'grpc-trace-bin':    [b'\x00\x00\x90Zc\x17\xaav?5)L\xcd]>.   \x88>\x01\x81\xe9\x9c\xbd\x01x\xfc\xc5\x02\x01']}
+   SOME_DATA
    ```
 
 4. Cleanup
 
 <!-- STEP
-expected_stdout_lines: 
+expected_stdout_lines:
   - '✅  app stopped successfully: invoke-receiver'
 name: Shutdown dapr
 -->

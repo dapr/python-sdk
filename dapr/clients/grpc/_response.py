@@ -723,6 +723,64 @@ class ConfigurationWatcher:
             pass
 
 
+class BulkPublishResponseFailedEntry:
+    """A failed entry from the bulk publish response.
+
+    Attributes:
+        entry_id (str): the entry ID that failed.
+        error (str): the error message for the failure.
+    """
+
+    def __init__(self, entry_id: str, error: str):
+        """Initializes BulkPublishResponseFailedEntry.
+
+        Args:
+            entry_id (str): the entry ID that failed.
+            error (str): the error message for the failure.
+        """
+        self._entry_id = entry_id
+        self._error = error
+
+    @property
+    def entry_id(self) -> str:
+        """Gets the entry ID."""
+        return self._entry_id
+
+    @property
+    def error(self) -> str:
+        """Gets the error message."""
+        return self._error
+
+
+class BulkPublishResponse(DaprResponse):
+    """The response of publish_events (bulk publish) API.
+
+    This inherits from DaprResponse
+
+    Attributes:
+        failed_entries (List[BulkPublishResponseFailedEntry]): the entries that failed to publish.
+    """
+
+    def __init__(
+        self,
+        failed_entries: List[BulkPublishResponseFailedEntry] = [],
+        headers: MetadataTuple = (),
+    ):
+        """Initializes BulkPublishResponse from :obj:`runtime_v1.BulkPublishResponse`.
+
+        Args:
+            failed_entries (List[BulkPublishResponseFailedEntry]): the entries that failed.
+            headers (Tuple, optional): the headers from Dapr gRPC response.
+        """
+        super(BulkPublishResponse, self).__init__(headers)
+        self._failed_entries = failed_entries
+
+    @property
+    def failed_entries(self) -> List[BulkPublishResponseFailedEntry]:
+        """Gets the failed entries."""
+        return self._failed_entries
+
+
 class TopicEventResponseStatus(Enum):
     # success is the default behavior: message is acknowledged and not retried
     success = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS

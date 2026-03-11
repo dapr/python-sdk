@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import inspect
+import time
 from functools import wraps
 from typing import Optional, Sequence, TypeVar, Union
 
@@ -54,8 +55,11 @@ class WorkflowRuntime:
         maximum_concurrent_activity_work_items: Optional[int] = None,
         maximum_concurrent_orchestration_work_items: Optional[int] = None,
         maximum_thread_pool_workers: Optional[int] = None,
+        worker_ready_timeout: Optional[float] = None,
     ):
         self._logger = Logger('WorkflowRuntime', logger_options)
+        self._worker_ready_timeout = 30.0 if worker_ready_timeout is None else worker_ready_timeout
+
         metadata = tuple()
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
@@ -86,10 +90,20 @@ class WorkflowRuntime:
 
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
-            daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
-            if inp is None:
-                return fn(daprWfContext)
-            return fn(daprWfContext, inp)
+            instance_id = getattr(ctx, 'instance_id', 'unknown')
+
+            try:
+                daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
+                if inp is None:
+                    result = fn(daprWfContext)
+                else:
+                    result = fn(daprWfContext, inp)
+                return result
+            except Exception as e:
+                self._logger.exception(
+                    f'Workflow execution failed - instance_id: {instance_id}, error: {e}'
+                )
+                raise
 
         if hasattr(fn, '_workflow_registered'):
             # whenever a workflow is registered, it has a _dapr_alternate_name attribute
@@ -108,6 +122,42 @@ class WorkflowRuntime:
         )
         fn.__dict__['_workflow_registered'] = True
 
+    def register_versioned_workflow(
+        self, fn: Workflow, *, name: str, version_name: Optional[str] = None, is_latest: bool
+    ):
+        self._logger.info(
+            f"Registering version {version_name} of workflow '{fn.__name__}' with runtime"
+        )
+
+        def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
+            """Responsible to call Workflow function in orchestrationWrapper"""
+            daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
+            if inp is None:
+                return fn(daprWfContext)
+            return fn(daprWfContext, inp)
+
+        if hasattr(fn, '_workflow_registered'):
+            # whenever a workflow is registered, it has a _dapr_alternate_name attribute
+            alt_name = fn.__dict__['_dapr_alternate_name']
+            raise ValueError(f'Workflow {fn.__name__} already registered as {alt_name}')
+        if hasattr(fn, '_dapr_alternate_name'):
+            alt_name = fn._dapr_alternate_name
+            if name is not None:
+                m = f'Workflow {fn.__name__} already has an alternate name {alt_name}'
+                raise ValueError(m)
+        else:
+            fn.__dict__['_dapr_alternate_name'] = name
+
+        actual_version_name = version_name if version_name is not None else fn.__name__
+
+        self.__worker._registry.add_named_orchestrator(
+            name,
+            orchestrationWrapper,
+            version_name=actual_version_name,
+            is_latest=is_latest,
+        )
+        fn.__dict__['_workflow_registered'] = True
+
     def register_activity(self, fn: Activity, *, name: Optional[str] = None):
         """Registers a workflow activity as a function that takes
         a specified input type and returns a specified output type.
@@ -116,10 +166,20 @@ class WorkflowRuntime:
 
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
-            wfActivityContext = WorkflowActivityContext(ctx)
-            if inp is None:
-                return fn(wfActivityContext)
-            return fn(wfActivityContext, inp)
+            activity_id = getattr(ctx, 'task_id', 'unknown')
+
+            try:
+                wfActivityContext = WorkflowActivityContext(ctx)
+                if inp is None:
+                    result = fn(wfActivityContext)
+                else:
+                    result = fn(wfActivityContext, inp)
+                return result
+            except Exception as e:
+                self._logger.exception(
+                    f'Activity execution failed - task_id: {activity_id}, error: {e}'
+                )
+                raise
 
         if hasattr(fn, '_activity_registered'):
             # whenever an activity is registered, it has a _dapr_alternate_name attribute
@@ -138,13 +198,109 @@ class WorkflowRuntime:
         )
         fn.__dict__['_activity_registered'] = True
 
+    def wait_for_worker_ready(self, timeout: float = 30.0) -> bool:
+        """
+        Wait for the worker's gRPC stream to become ready to receive work items.
+        This method polls the worker's is_worker_ready() method until it returns True
+        or the timeout is reached.
+
+        Args:
+            timeout: Maximum time in seconds to wait for the worker to be ready.
+                    Defaults to 30 seconds.
+
+        Returns:
+            True if the worker's gRPC stream is ready to receive work items, False if timeout.
+        """
+        if not hasattr(self.__worker, 'is_worker_ready'):
+            return False
+
+        elapsed = 0.0
+        poll_interval = 0.1  # 100ms
+
+        while elapsed < timeout:
+            if self.__worker.is_worker_ready():
+                return True
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+
+        self._logger.warning(
+            f'WorkflowRuntime worker readiness check timed out after {timeout} seconds'
+        )
+        return False
+
     def start(self):
-        """Starts the listening for work items on a background thread."""
-        self.__worker.start()
+        """Starts the listening for work items on a background thread.
+        This method waits for the worker's gRPC stream to be fully initialized
+        before returning, ensuring that workflows can be scheduled immediately
+        after start() completes.
+        """
+        try:
+            try:
+                self.__worker.start()
+            except Exception as start_error:
+                self._logger.exception(f'WorkflowRuntime worker did not start: {start_error}')
+                raise
+
+            # Verify the worker and its stream reader are ready
+            if hasattr(self.__worker, 'is_worker_ready'):
+                try:
+                    is_ready = self.wait_for_worker_ready(timeout=self._worker_ready_timeout)
+                    if not is_ready:
+                        raise RuntimeError('WorkflowRuntime worker and its stream are not ready')
+                    else:
+                        self._logger.debug(
+                            'WorkflowRuntime worker is ready and its stream can receive work items'
+                        )
+                except Exception as ready_error:
+                    self._logger.exception(
+                        f'WorkflowRuntime wait_for_worker_ready() raised exception: {ready_error}'
+                    )
+                    raise ready_error
+            else:
+                self._logger.warning(
+                    'Unable to verify stream readiness. Workflows scheduled immediately may not be received.'
+                )
+        except Exception:
+            raise
 
     def shutdown(self):
         """Stops the listening for work items on a background thread."""
-        self.__worker.stop()
+        try:
+            self.__worker.stop()
+        except Exception:
+            raise
+
+    def versioned_workflow(
+        self,
+        __fn: Workflow = None,
+        *,
+        name: str,
+        version_name: Optional[str] = None,
+        is_latest: bool,
+    ):
+        def wrapper(fn: Workflow):
+            self.register_versioned_workflow(
+                fn, name=name, version_name=version_name, is_latest=is_latest
+            )
+
+            @wraps(fn)
+            def innerfn():
+                return fn
+
+            if hasattr(fn, '_dapr_alternate_name'):
+                innerfn.__dict__['_dapr_alternate_name'] = fn.__dict__['_dapr_alternate_name']
+            else:
+                innerfn.__dict__['_dapr_alternate_name'] = name
+
+            innerfn.__signature__ = inspect.signature(fn)
+            return innerfn
+
+        if __fn:
+            # This case is true when the decorator is used without arguments
+            # and the function to be decorated is passed as the first argument.
+            return wrapper(__fn)
+
+        return wrapper
 
     def workflow(self, __fn: Workflow = None, *, name: Optional[str] = None):
         """Decorator to register a workflow function.

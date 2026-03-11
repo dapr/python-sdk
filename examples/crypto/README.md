@@ -11,7 +11,7 @@ It creates a client using `DaprClient`, uses a local store defined in
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 > In order to run this sample, make sure that OpenSSL is available on your system.
 
@@ -39,14 +39,14 @@ openssl rand -out keys/symmetric-key-256 32
 <!-- STEP
 name: Run crypto example
 expected_stdout_lines:
-  - '== APP == Running gRPC client synchronous API'
-  - '== APP == Running encrypt/decrypt operation on string'
-  - '== APP == Encrypted the message, got 856 bytes'
-  - '== APP == Decrypted the message, got 24 bytes'
-  - '== APP == The secret is "passw0rd"'
-  - '== APP == Running encrypt/decrypt operation on file'
-  - '== APP == Wrote encrypted data to encrypted.out'
-  - '== APP == Wrote decrypted data to decrypted.out.jpg'
+  - 'Running gRPC client synchronous API'
+  - 'Running encrypt/decrypt operation on string'
+  - 'Encrypted the message, got 856 bytes'
+  - 'Decrypted the message, got 24 bytes'
+  - 'The secret is "passw0rd"'
+  - 'Running encrypt/decrypt operation on file'
+  - 'Wrote encrypted data to encrypted.out'
+  - 'Wrote decrypted data to decrypted.out.jpg'
   - "Exited App successfully"
 output_match_mode: substring
 timeout_seconds: 10
@@ -63,14 +63,14 @@ dapr run --app-id crypto --resources-path ./components/ -- python3 crypto.py
 <!-- STEP
 name: Run async crypto example
 expected_stdout_lines:
-  - '== APP == Running gRPC client asynchronous API'
-  - '== APP == Running encrypt/decrypt operation on string'
-  - '== APP == Encrypted the message, got 856 bytes'
-  - '== APP == Decrypted the message, got 24 bytes'
-  - '== APP == The secret is "passw0rd"'
-  - '== APP == Running encrypt/decrypt operation on file'
-  - '== APP == Wrote encrypted data to encrypted.out'
-  - '== APP == Wrote decrypted data to decrypted.out.jpg'
+  - 'Running gRPC client asynchronous API'
+  - 'Running encrypt/decrypt operation on string'
+  - 'Encrypted the message, got 856 bytes'
+  - 'Decrypted the message, got 24 bytes'
+  - 'The secret is "passw0rd"'
+  - 'Running encrypt/decrypt operation on file'
+  - 'Wrote encrypted data to encrypted.out'
+  - 'Wrote decrypted data to decrypted.out.jpg'
   - "Exited App successfully"
 output_match_mode: substring
 timeout_seconds: 10
@@ -102,20 +102,20 @@ rm decrypted.out.jpg
 The output should be as follows:
 
 ```shell
-== APP == Running gRPC client synchronous API
-== APP == Running encrypt/decrypt operation on string
-== APP == Encrypted the message, got 856 bytes
-== APP == Decrypted the message, got 24 bytes
-== APP == b'The secret is "passw0rd"'
-== APP == Running encrypt/decrypt operation on file
-== APP == Wrote encrypted data to encrypted.out
-== APP == Wrote decrypted data to decrypted.out.jpg
-== APP == Running gRPC client asynchronous API
-== APP == Running encrypt/decrypt operation on string
-== APP == Encrypted the message, got 856 bytes
-== APP == Decrypted the message, got 24 bytes
-== APP == b'The secret is "passw0rd"'
-== APP == Running encrypt/decrypt operation on file
-== APP == Wrote encrypted data to encrypted.out
-== APP == Wrote decrypted data to decrypted.out.jpg
+Running gRPC client synchronous API
+Running encrypt/decrypt operation on string
+Encrypted the message, got 856 bytes
+Decrypted the message, got 24 bytes
+b'The secret is "passw0rd"'
+Running encrypt/decrypt operation on file
+Wrote encrypted data to encrypted.out
+Wrote decrypted data to decrypted.out.jpg
+Running gRPC client asynchronous API
+Running encrypt/decrypt operation on string
+Encrypted the message, got 856 bytes
+Decrypted the message, got 24 bytes
+b'The secret is "passw0rd"'
+Running encrypt/decrypt operation on file
+Wrote encrypted data to encrypted.out
+Wrote decrypted data to decrypted.out.jpg
 ```

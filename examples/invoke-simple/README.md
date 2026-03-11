@@ -7,7 +7,7 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -24,8 +24,8 @@ Run the following command in a terminal/command-prompt:
 <!-- STEP
 name: Run receiver
 expected_stdout_lines:
-  - '== APP == {"id": 1, "message": "hello world"}'
-  - '== APP == {"id": 1, "message": "hello world"}'
+  - '{"id": 1, "message": "hello world"}'
+  - '{"id": 1, "message": "hello world"}'
 background: true
 sleep: 5
 -->
@@ -42,12 +42,12 @@ In another terminal/command prompt run:
 <!-- STEP
 name: Run caller
 expected_stdout_lines:
-  - '== APP == text/plain'
-  - '== APP == INVOKE_RECEIVED'
-  - '== APP == text/plain'
-  - '== APP == INVOKE_RECEIVED'
+  - 'text/plain'
+  - 'INVOKE_RECEIVED'
+  - 'text/plain'
+  - 'INVOKE_RECEIVED'
 background: true
-sleep: 5 
+sleep: 5
 -->
 
 ```bash
@@ -60,7 +60,7 @@ dapr run --app-id invoke-caller --app-protocol grpc --dapr-http-port 3500 python
 ## Cleanup
 
 <!-- STEP
-expected_stdout_lines: 
+expected_stdout_lines:
   - '✅  app stopped successfully: invoke-caller'
   - '✅  app stopped successfully: invoke-receiver'
 name: Shutdown dapr
@@ -101,17 +101,17 @@ dapr stop --app-id invoke-receiver
    ```
    dapr  logs -a invoke-caller -k
    ```
-   
+
    Logs for caller app:
    ```
    kubectl logs -l app="invokecaller" -c invokecaller
    ```
-   
+
    Logs for receiver sidecar:
    ```
    dapr  logs -a invoke-receiver -k
    ```
-   
+
    Logs for receiver app:
    ```
    kubectl logs -l app="invokereceiver" -c invokereceiver

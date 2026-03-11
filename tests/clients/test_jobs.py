@@ -9,7 +9,7 @@ import unittest
 from google.protobuf.any_pb2 import Any as GrpcAny
 
 from dapr.clients.grpc._jobs import ConstantFailurePolicy, DropFailurePolicy, Job
-from dapr.proto.runtime.v1 import dapr_pb2 as api_v1
+from dapr.proto import api_v1
 
 
 class TestJobClass(unittest.TestCase):

@@ -9,7 +9,7 @@ It demonstrates the following APIs:
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -18,7 +18,7 @@ It demonstrates the following APIs:
 pip3 install dapr dapr-ext-grpc
 ```
 
-## Store the configuration in configurationstore 
+## Store the configuration in configurationstore
 <!-- STEP
 name: Set configuration value
 expected_stdout_lines:
@@ -38,7 +38,7 @@ docker exec dapr_redis redis-cli SET orderId2 "200||1"
 
 Change directory to this folder:
 ```bash
-cd examples/configuration 
+cd examples/configuration
 ```
 
 To run this example, use the following command:
@@ -47,10 +47,10 @@ To run this example, use the following command:
 name: Run get configuration example
 match_order: none
 expected_stdout_lines:
-  - "== APP == Got key=orderId1 value=100 version=1 metadata={}"
-  - "== APP == Got key=orderId2 value=200 version=1 metadata={}"
-  - "== APP == Subscribe key=orderId2 value=210 version=2 metadata={}"
-  - "== APP == Unsubscribed successfully? True"
+  - "Got key=orderId1 value=100 version=1 metadata={}"
+  - "Got key=orderId2 value=200 version=1 metadata={}"
+  - "Subscribe key=orderId2 value=210 version=2 metadata={}"
+  - "Unsubscribed successfully? True"
 background: true
 timeout_seconds: 30
 sleep: 3
@@ -75,7 +75,7 @@ docker exec dapr_redis redis-cli SET orderId2 "210||2"
 
 You should be able to see the following output:
 ```
-== APP == Got key=orderId1 value=100 version=1
-== APP == Got key=orderId2 value=200 version=1
-== APP == Subscribe key=orderId2 value=210 version=2
+Got key=orderId1 value=100 version=1
+Got key=orderId2 value=200 version=1
+Subscribe key=orderId2 value=210 version=2
 ```

@@ -9,7 +9,7 @@ It demonstrates the following APIs:
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- [Install Python 3.9+](https://www.python.org/downloads/)
+- [Install Python 3.10+](https://www.python.org/downloads/)
 
 ## Install Dapr python-SDK
 
@@ -18,7 +18,7 @@ It demonstrates the following APIs:
 pip3 install dapr dapr-ext-grpc
 ```
 
-## Store the configuration in configurationstore 
+## Store the configuration in configurationstore
 <!-- STEP
 name: Set configuration value
 timeout_seconds: 120
@@ -56,14 +56,14 @@ Now run the app
 <!-- STEP
 name: Run get query example
 expected_stdout_lines:
-- '== APP == 1 {"city": "Seattle", "person": {"id": 1036.0, "org": "Dev Ops"}, "state": "WA"}'
-- '== APP == 4 {"city": "Spokane", "person": {"id": 1042.0, "org": "Dev Ops"}, "state": "WA"}'
-- '== APP == 10 {"city": "New York", "person": {"id": 1054.0, "org": "Dev Ops"}, "state": "NY"}'
-- '== APP == Token: 3'
-- '== APP == 9 {"city": "San Diego", "person": {"id": 1002.0, "org": "Finance"}, "state": "CA"}'
-- '== APP == 7 {"city": "San Francisco", "person": {"id": 1015.0, "org": "Dev Ops"}, "state": "CA"}'
-- '== APP == 3 {"city": "Sacramento", "person": {"id": 1071.0, "org": "Finance"}, "state": "CA"}'
-- '== APP == Token: 6'
+- '1 {"city": "Seattle", "person": {"id": 1036.0, "org": "Dev Ops"}, "state": "WA"}'
+- '4 {"city": "Spokane", "person": {"id": 1042.0, "org": "Dev Ops"}, "state": "WA"}'
+- '10 {"city": "New York", "person": {"id": 1054.0, "org": "Dev Ops"}, "state": "NY"}'
+- 'Token: 3'
+- '9 {"city": "San Diego", "person": {"id": 1002.0, "org": "Finance"}, "state": "CA"}'
+- '7 {"city": "San Francisco", "person": {"id": 1015.0, "org": "Dev Ops"}, "state": "CA"}'
+- '3 {"city": "Sacramento", "person": {"id": 1071.0, "org": "Finance"}, "state": "CA"}'
+- 'Token: 6'
 timeout_seconds: 5
 -->
 
@@ -74,14 +74,14 @@ dapr run --app-id queryexample --resources-path components/ -- python3 state_sto
 
 You should be able to see the following output:
 ```
-== APP == 1 {"city": "Seattle", "person": {"id": 1036.0, "org": "Dev Ops"}, "state": "WA"}
-== APP == 4 {"city": "Spokane", "person": {"id": 1042.0, "org": "Dev Ops"}, "state": "WA"}
-== APP == 10 {"city": "New York", "person": {"id": 1054.0, "org": "Dev Ops"}, "state": "NY"}
-== APP == Token: 3
-== APP == 9 {"city": "San Diego", "person": {"id": 1002.0, "org": "Finance"}, "state": "CA"}
-== APP == 7 {"city": "San Francisco", "person": {"id": 1015.0, "org": "Dev Ops"}, "state": "CA"}
-== APP == 3 {"city": "Sacramento", "person": {"id": 1071.0, "org": "Finance"}, "state": "CA"}
-== APP == Token: 6
+1 {"city": "Seattle", "person": {"id": 1036.0, "org": "Dev Ops"}, "state": "WA"}
+4 {"city": "Spokane", "person": {"id": 1042.0, "org": "Dev Ops"}, "state": "WA"}
+10 {"city": "New York", "person": {"id": 1054.0, "org": "Dev Ops"}, "state": "NY"}
+Token: 3
+9 {"city": "San Diego", "person": {"id": 1002.0, "org": "Finance"}, "state": "CA"}
+7 {"city": "San Francisco", "person": {"id": 1015.0, "org": "Dev Ops"}, "state": "CA"}
+3 {"city": "Sacramento", "person": {"id": 1071.0, "org": "Finance"}, "state": "CA"}
+Token: 6
 ```
 
 Cleanup
