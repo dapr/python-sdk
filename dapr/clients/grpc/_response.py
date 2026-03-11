@@ -18,7 +18,6 @@ from __future__ import annotations
 import contextlib
 import json
 import threading
-from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -43,7 +42,6 @@ from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._helpers import (
     MetadataDict,
     MetadataTuple,
-    WorkflowRuntimeStatus,
     to_bytes,
     to_str,
     tuple_to_dict,
@@ -996,51 +994,6 @@ class GetMetadataResponse(DaprResponse):
     def extended_metadata(self) -> Dict[str, str]:
         """Mapping of custom (extended) attributes to their respective values."""
         return self._extended_metadata
-
-
-class GetWorkflowResponse:
-    """The response of get_workflow operation."""
-
-    def __init__(
-        self,
-        instance_id: str,
-        workflow_name: str,
-        created_at: datetime,
-        last_updated_at: str,
-        runtime_status: WorkflowRuntimeStatus,
-        properties: Dict[str, str] = {},
-    ):
-        """Initializes a GetWorkflowResponse.
-
-        Args:
-            instance_id (str): the instance ID assocated with this response.
-            workflow_name (str): the name of the workflow that was started.
-            created_at (datetime): the time at which the workflow started executing.
-            last_updated_at (datetime): the time at which the workflow was last updated.
-            runtime_status (WorkflowRuntimeStatus): the current runtime status of the workflow.
-            properties (Dict[str, str]): properties sent as a reponse by the workflow.
-        """
-        self.instance_id = instance_id
-        self.workflow_name = workflow_name
-        self.created_at = created_at
-        self.last_updated_at = last_updated_at
-        self.runtime_status = runtime_status
-        self.properties = properties
-
-
-class StartWorkflowResponse:
-    """The response of start_workflow operation."""
-
-    def __init__(
-        self,
-        instance_id: str,
-    ):
-        """Initializes a StartWorkflowResponse.
-
-        Args:
-            instance_id (str): the instance ID assocated with this response.
-        """
-        self.instance_id = instance_id
 
 
 class RegisteredComponents(NamedTuple):
