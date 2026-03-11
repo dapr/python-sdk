@@ -642,6 +642,7 @@ class DaprGrpcClient:
                         sub.reconnect_stream()
                     except Exception:
                         # Sidecar still unavailable — back off before retrying
+                        # TODO: Make this configurable
                         time.sleep(5)
                     continue
 
