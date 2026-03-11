@@ -528,9 +528,7 @@ class VersionedWorkflowTest(unittest.TestCase):
         def my_wf(ctx):
             return 'ok'
 
-        decorated = self.runtime.versioned_workflow(
-            my_wf, name='direct_vwf', is_latest=False
-        )
+        decorated = self.runtime.versioned_workflow(my_wf, name='direct_vwf', is_latest=False)
         self.assertIn('direct_vwf', listOrchestrators)
         self.assertEqual(decorated._dapr_alternate_name, 'direct_vwf')
 
