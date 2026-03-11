@@ -640,6 +640,15 @@ class DaprGrpcClient:
                     break
                 except StreamCancelledError:
                     break
+                except Exception:
+                    # Stream died — reconnect via the subscription's own
+                    # reconnect logic (which waits for the sidecar to be healthy).
+                    try:
+                        sub.reconnect_stream()
+                    except Exception:
+                        # Sidecar still unavailable — back off before retrying
+                        time.sleep(5)
+                    continue
 
         def close_subscription():
             subscription.close()
