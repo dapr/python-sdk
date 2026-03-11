@@ -14,8 +14,7 @@ These examples demonstrate how to use the Dapr Python SDK:
 | [Secrets](./secret_store)                             | Get secrets from a defined secret store
 | [Distributed tracing](./w3c-tracing)                  | Leverage Dapr's built-in tracing support
 | [Distributed lock](./distributed_lock)                | Keep your application safe from race conditions by using distributed locks
-| [Workflow](./demo_workflow)                           | Run a workflow to simulate an order processor
-| [Cryptography](./crypto)                              | Perform cryptographic operations without exposing keys to your application 
+| [Cryptography](./crypto)                              | Perform cryptographic operations without exposing keys to your application
 
 ## More information
 
