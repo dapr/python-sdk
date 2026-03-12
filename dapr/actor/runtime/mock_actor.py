@@ -17,6 +17,7 @@ from datetime import timedelta
 from typing import Any, Optional, TypeVar
 
 from dapr.actor.id import ActorId
+from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime._reminder_data import ActorReminderData
 from dapr.actor.runtime._timer_data import TIMER_CALLBACK, ActorTimerData
 from dapr.actor.runtime.actor import Actor
@@ -88,6 +89,7 @@ class MockActor(Actor):
         due_time: timedelta,
         period: Optional[timedelta] = None,
         ttl: Optional[timedelta] = None,
+        failure_policy: Optional[ActorReminderFailurePolicy] = None,
     ) -> None:
         """Adds actor reminder to self._state_manager._mock_reminders.
 
@@ -98,9 +100,11 @@ class MockActor(Actor):
                 for the first time.
             period (datetime.timedelta): the time interval between reminder invocations after
                 the first invocation.
-            ttl (datetime.timedelta): the time interval before the reminder stops firing
+            ttl (datetime.timedelta): the time interval before the reminder stops firing.
+            failure_policy (ActorReminderFailurePolicy): the optional policy for handling reminder
+                failures. If not set, the Dapr runtime default applies (3 retries per tick).
         """
-        reminder = ActorReminderData(name, state, due_time, period, ttl)
+        reminder = ActorReminderData(name, state, due_time, period, ttl, failure_policy)
         self._state_manager._mock_reminders[name] = reminder  # type: ignore
 
     async def unregister_reminder(self, name: str) -> None:

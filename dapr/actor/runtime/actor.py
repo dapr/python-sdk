@@ -18,6 +18,7 @@ from datetime import timedelta
 from typing import Any, Optional
 
 from dapr.actor.id import ActorId
+from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime._method_context import ActorMethodContext
 from dapr.actor.runtime._reminder_data import ActorReminderData
 from dapr.actor.runtime._timer_data import TIMER_CALLBACK, ActorTimerData
@@ -113,6 +114,7 @@ class Actor:
         due_time: timedelta,
         period: Optional[timedelta] = None,
         ttl: Optional[timedelta] = None,
+        failure_policy: Optional[ActorReminderFailurePolicy] = None,
     ) -> None:
         """Registers actor reminder.
 
@@ -131,9 +133,11 @@ class Actor:
                 for the first time.
             period (datetime.timedelta): the time interval between reminder invocations after
                 the first invocation.
-            ttl (datetime.timedelta): the time interval before the reminder stops firing
+            ttl (datetime.timedelta): the time interval before the reminder stops firing.
+            failure_policy (ActorReminderFailurePolicy): the optional policy for handling reminder
+                failures. If not set, the Dapr runtime default applies (3 retries per tick).
         """
-        reminder = ActorReminderData(name, state, due_time, period, ttl)
+        reminder = ActorReminderData(name, state, due_time, period, ttl, failure_policy)
         req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())
         await self._runtime_ctx.dapr_client.register_reminder(
             self._runtime_ctx.actor_type_info.type_name, self.id.id, name, req_body

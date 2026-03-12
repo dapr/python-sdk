@@ -16,6 +16,7 @@ limitations under the License.
 import unittest
 from datetime import timedelta
 
+from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime._reminder_data import ActorReminderData
 
 
@@ -80,3 +81,60 @@ class ActorReminderTests(unittest.TestCase):
         self.assertEqual(timedelta(seconds=2), reminder.period)
         self.assertEqual(timedelta(seconds=3), reminder.ttl)
         self.assertEqual(b'reminder_state', reminder.state)
+
+    def test_no_failure_policy(self):
+        reminder = ActorReminderData(
+            'test_reminder',
+            b'reminder_state',
+            timedelta(seconds=1),
+            timedelta(seconds=2),
+        )
+        result = reminder.as_dict()
+        self.assertNotIn('failurePolicy', result)
+        self.assertIsNone(reminder.failure_policy)
+
+    def test_drop_failure_policy_as_dict(self):
+        policy = ActorReminderFailurePolicy.drop_policy()
+        reminder = ActorReminderData(
+            'test_reminder',
+            b'reminder_state',
+            timedelta(seconds=1),
+            timedelta(seconds=2),
+            failure_policy=policy,
+        )
+        result = reminder.as_dict()
+        self.assertIn('failurePolicy', result)
+        self.assertEqual({'drop': {}}, result['failurePolicy'])
+
+    def test_constant_failure_policy_as_dict(self):
+        policy = ActorReminderFailurePolicy.constant_policy(
+            interval=timedelta(seconds=5), max_retries=3
+        )
+        reminder = ActorReminderData(
+            'test_reminder',
+            b'reminder_state',
+            timedelta(seconds=1),
+            timedelta(seconds=2),
+            failure_policy=policy,
+        )
+        result = reminder.as_dict()
+        self.assertIn('failurePolicy', result)
+        self.assertEqual(
+            {'constant': {'interval': timedelta(seconds=5), 'maxRetries': 3}},
+            result['failurePolicy'],
+        )
+
+    def test_failure_policy_alongside_ttl(self):
+        policy = ActorReminderFailurePolicy.drop_policy()
+        reminder = ActorReminderData(
+            'test_reminder',
+            b'reminder_state',
+            timedelta(seconds=1),
+            timedelta(seconds=2),
+            ttl=timedelta(seconds=60),
+            failure_policy=policy,
+        )
+        result = reminder.as_dict()
+        self.assertIn('ttl', result)
+        self.assertIn('failurePolicy', result)
+        self.assertEqual({'drop': {}}, result['failurePolicy'])
