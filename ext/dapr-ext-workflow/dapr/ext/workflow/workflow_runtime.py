@@ -86,7 +86,8 @@ class WorkflowRuntime:
         )
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):
-        self._logger.info(f"Registering workflow '{fn.__name__}' with runtime")
+        effective_name = name or fn.__name__
+        self._logger.info(f"Registering workflow '{effective_name}' with runtime")
 
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
@@ -125,8 +126,9 @@ class WorkflowRuntime:
     def register_versioned_workflow(
         self, fn: Workflow, *, name: str, version_name: Optional[str] = None, is_latest: bool
     ):
+        effective_name = name or fn.__name__
         self._logger.info(
-            f"Registering version {version_name} of workflow '{fn.__name__}' with runtime"
+            f"Registering version {version_name} of workflow '{effective_name}' with runtime"
         )
 
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
@@ -162,7 +164,8 @@ class WorkflowRuntime:
         """Registers a workflow activity as a function that takes
         a specified input type and returns a specified output type.
         """
-        self._logger.info(f"Registering activity '{fn.__name__}' with runtime")
+        effective_name = name or fn.__name__
+        self._logger.info(f"Registering activity '{effective_name}' with runtime")
 
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
@@ -176,7 +179,7 @@ class WorkflowRuntime:
                     result = fn(wfActivityContext, inp)
                 return result
             except Exception as e:
-                self._logger.exception(
+                self._logger.warning(
                     f'Activity execution failed - task_id: {activity_id}, error: {e}'
                 )
                 raise
