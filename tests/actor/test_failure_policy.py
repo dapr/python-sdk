@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright 2024 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -35,18 +35,16 @@ class ActorReminderFailurePolicyTests(unittest.TestCase):
     # --- constant_policy ---
 
     def test_constant_policy_interval_and_max_retries(self):
-        p = ActorReminderFailurePolicy.constant_policy(
-            interval=timedelta(seconds=5), max_retries=3
-        )
+        p = ActorReminderFailurePolicy.constant_policy(interval=timedelta(seconds=5), max_retries=3)
         self.assertFalse(p.drop)
         self.assertEqual(timedelta(seconds=5), p.interval)
         self.assertEqual(3, p.max_retries)
 
     def test_constant_policy_as_dict_full(self):
-        p = ActorReminderFailurePolicy.constant_policy(
-            interval=timedelta(seconds=5), max_retries=3
+        p = ActorReminderFailurePolicy.constant_policy(interval=timedelta(seconds=5), max_retries=3)
+        self.assertEqual(
+            {'constant': {'interval': timedelta(seconds=5), 'maxRetries': 3}}, p.as_dict()
         )
-        self.assertEqual({'constant': {'interval': timedelta(seconds=5), 'maxRetries': 3}}, p.as_dict())
 
     def test_constant_policy_interval_only(self):
         p = ActorReminderFailurePolicy.constant_policy(interval=timedelta(seconds=10))

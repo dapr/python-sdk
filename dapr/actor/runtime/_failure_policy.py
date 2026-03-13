@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright 2024 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -53,9 +53,7 @@ class ActorReminderFailurePolicy:
         if drop and (interval is not None or max_retries is not None):
             raise ValueError('drop policy cannot be combined with interval or max_retries')
         if not drop and interval is None and max_retries is None:
-            raise ValueError(
-                'specify either drop=True or at least one of interval or max_retries'
-            )
+            raise ValueError('specify either drop=True or at least one of interval or max_retries')
         self._drop = drop
         self._interval = interval
         self._max_retries = max_retries

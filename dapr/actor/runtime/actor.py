@@ -131,11 +131,14 @@ class Actor:
             state (bytes): the user state passed to the reminder invocation.
             due_time (datetime.timedelta): the amount of time to delay before invoking the reminder
                 for the first time.
-            period (datetime.timedelta): the time interval between reminder invocations after
-                the first invocation.
-            ttl (datetime.timedelta): the time interval before the reminder stops firing.
-            failure_policy (ActorReminderFailurePolicy): the optional policy for handling reminder
-                failures. If not set, the Dapr runtime default applies (3 retries per tick).
+            period (Optional[datetime.timedelta]): the optional time interval between reminder
+                invocations after the first invocation. If not set, the reminder is triggered
+                only once at ``due_time``.
+            ttl (Optional[datetime.timedelta]): the optional time interval before the reminder
+                stops firing. If not set, the Dapr runtime default behavior applies.
+            failure_policy (Optional[ActorReminderFailurePolicy]): the optional policy for
+                handling reminder failures. If not set, the Dapr runtime default applies
+                (3 retries per tick).
         """
         reminder = ActorReminderData(name, state, due_time, period, ttl, failure_policy)
         req_body = self._runtime_ctx.message_serializer.serialize(reminder.as_dict())

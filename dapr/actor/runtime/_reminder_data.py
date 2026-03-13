@@ -99,9 +99,7 @@ class ActorReminderData:
 
     def as_dict(self) -> Dict[str, Any]:
         """Gets :class:`ActorReminderData` as a dict object."""
-        encoded_state = None
-        if self._state is not None:
-            encoded_state = base64.b64encode(self._state)
+        encoded_state = base64.b64encode(self._state)
         reminderDict: Dict[str, Any] = {
             'reminderName': self._reminder_name,
             'dueTime': self._due_time,
@@ -121,8 +119,9 @@ class ActorReminderData:
     def from_dict(cls, reminder_name: str, obj: Dict[str, Any]) -> 'ActorReminderData':
         """Creates :class:`ActorReminderData` object from dict object."""
         b64encoded_state = obj.get('data')
-        state_bytes = None
-        if b64encoded_state is not None and len(b64encoded_state) > 0:
+        if b64encoded_state is None or len(b64encoded_state) == 0:
+            state_bytes = b''
+        else:
             state_bytes = base64.b64decode(b64encoded_state)
         if 'ttl' in obj:
             return ActorReminderData(
