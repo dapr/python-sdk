@@ -17,6 +17,8 @@ import base64
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
+from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
+
 
 class ActorReminderData:
     """The class that holds actor reminder data.
@@ -28,32 +30,37 @@ class ActorReminderData:
             for the first time.
         period: the time interval between reminder invocations after
             the first invocation.
+        failure_policy: the optional policy for handling reminder failures.
     """
 
     def __init__(
         self,
         reminder_name: str,
-        state: Optional[bytes],
+        state: bytes,
         due_time: timedelta,
         period: Optional[timedelta] = None,
         ttl: Optional[timedelta] = None,
+        failure_policy: Optional[ActorReminderFailurePolicy] = None,
     ):
         """Creates new :class:`ActorReminderData` instance.
 
         Args:
             reminder_name (str): the name of Actor reminder.
-            state (bytes, str): the state data passed to
+            state (bytes): the state data passed to
                 receive_reminder callback.
             due_time (datetime.timedelta): the amount of time to delay before
                 invoking the reminder for the first time.
             period (datetime.timedelta): the time interval between reminder
                 invocations after the first invocation.
             ttl (Optional[datetime.timedelta]): the time interval before the reminder stops firing.
+            failure_policy (Optional[ActorReminderFailurePolicy]): the policy for handling
+                reminder failures. If not set, the Dapr runtime default applies (3 retries).
         """
         self._reminder_name = reminder_name
         self._due_time = due_time
         self._period = period
         self._ttl = ttl
+        self._failure_policy = failure_policy
 
         if not isinstance(state, bytes):
             raise ValueError(f'only bytes are allowed for state: {type(state)}')
@@ -85,11 +92,14 @@ class ActorReminderData:
         """Gets ttl of Actor Reminder."""
         return self._ttl
 
+    @property
+    def failure_policy(self) -> Optional[ActorReminderFailurePolicy]:
+        """Gets the failure policy of Actor Reminder."""
+        return self._failure_policy
+
     def as_dict(self) -> Dict[str, Any]:
         """Gets :class:`ActorReminderData` as a dict object."""
-        encoded_state = None
-        if self._state is not None:
-            encoded_state = base64.b64encode(self._state)
+        encoded_state = base64.b64encode(self._state)
         reminderDict: Dict[str, Any] = {
             'reminderName': self._reminder_name,
             'dueTime': self._due_time,
@@ -100,14 +110,18 @@ class ActorReminderData:
         if self._ttl is not None:
             reminderDict.update({'ttl': self._ttl})
 
+        if self._failure_policy is not None:
+            reminderDict.update({'failurePolicy': self._failure_policy.as_dict()})
+
         return reminderDict
 
     @classmethod
     def from_dict(cls, reminder_name: str, obj: Dict[str, Any]) -> 'ActorReminderData':
         """Creates :class:`ActorReminderData` object from dict object."""
         b64encoded_state = obj.get('data')
-        state_bytes = None
-        if b64encoded_state is not None and len(b64encoded_state) > 0:
+        if b64encoded_state is None or len(b64encoded_state) == 0:
+            state_bytes = b''
+        else:
             state_bytes = base64.b64decode(b64encoded_state)
         if 'ttl' in obj:
             return ActorReminderData(
