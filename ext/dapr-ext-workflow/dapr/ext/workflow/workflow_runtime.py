@@ -72,9 +72,10 @@ class WorkflowRuntime:
             raise DaprInternalError(f'{error}') from error
 
         options = self._logger.get_options()
-        all_interceptors = [DaprClientTimeoutInterceptor()]
+        all_interceptors = []
         if interceptors:
             all_interceptors.extend(interceptors)
+        all_interceptors.append(DaprClientTimeoutInterceptor())
         self.__worker = worker.TaskHubGrpcWorker(
             host_address=uri.endpoint,
             metadata=metadata,
