@@ -99,7 +99,7 @@ jobs:
           pip install setuptools wheel twine tox
       - name: Set up Dapr CLI
         run: |
-          wget -q "https://github.com/dapr/cli/releases/download/v${{ env.DAPR_CLI_VER }}/dapr_${{ env.GOARCH }}.tar.gz" -O /tmp/dapr.tar.gz
+          wget -q "https://github.com/dapr/cli/releases/download/v${{ env.DAPR_CLI_VER }}/dapr_${{ env.GOOS }}_${{ env.GOARCH }}.tar.gz" -O /tmp/dapr.tar.gz
           sudo tar xzf /tmp/dapr.tar.gz -C /usr/local/bin dapr
           dapr --version
       - name: Set up Go ${{ env.GOVER }}
