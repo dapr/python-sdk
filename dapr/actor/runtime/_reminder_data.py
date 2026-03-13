@@ -36,7 +36,7 @@ class ActorReminderData:
     def __init__(
         self,
         reminder_name: str,
-        state: Optional[bytes],
+        state: bytes,
         due_time: timedelta,
         period: Optional[timedelta] = None,
         ttl: Optional[timedelta] = None,
@@ -46,7 +46,7 @@ class ActorReminderData:
 
         Args:
             reminder_name (str): the name of Actor reminder.
-            state (bytes, str): the state data passed to
+            state (bytes): the state data passed to
                 receive_reminder callback.
             due_time (datetime.timedelta): the amount of time to delay before
                 invoking the reminder for the first time.
