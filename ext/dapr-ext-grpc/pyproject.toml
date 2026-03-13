@@ -1,0 +1,46 @@
+[project]
+name = "dapr-ext-grpc"
+dynamic = ["version"]
+description = "Dapr gRPC AppCallback Extension for the Dapr Python SDK."
+readme = "README.rst"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "Dapr Authors", email = "dapr@dapr.io"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "dapr>=1.17.0.dev0",
+    "cloudevents>=1.0.0",
+]
+
+[project.urls]
+Documentation = "https://github.com/dapr/docs"
+Source = "https://github.com/dapr/python-sdk"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+namespaces = true
+include = ["dapr.*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"dapr.ext.grpc" = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dapr.ext.grpc.version.__version__"}
+
+[tool.uv.sources]
+dapr = { workspace = true }
