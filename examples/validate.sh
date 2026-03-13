@@ -1,4 +1,4 @@
 #!/bin/sh
 echo "Home: $HOME"
 
-cd $1 && mm.py -l README.md
+cd "$1" && uv run --group examples mm.py -l README.md
