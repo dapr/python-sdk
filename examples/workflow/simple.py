@@ -31,6 +31,7 @@ retry_count = 0
 child_orchestrator_count = 0
 child_orchestrator_string = ''
 child_act_retry_count = 0
+infinite_retry_count = 0
 instance_id = 'exampleInstanceID'
 child_instance_id = 'childInstanceID'
 workflow_name = 'hello_world_wf'
@@ -48,6 +49,11 @@ retry_policy = RetryPolicy(
     retry_timeout=timedelta(seconds=100),
 )
 
+infinite_retry_policy = RetryPolicy(
+    first_retry_interval=timedelta(seconds=1),
+    max_number_of_attempts=-1,
+)
+
 wfr = WorkflowRuntime()
 
 
@@ -57,6 +63,7 @@ def hello_world_wf(ctx: DaprWorkflowContext, wf_input):
     yield ctx.call_activity(hello_act, input=1)
     yield ctx.call_activity(hello_act, input=10)
     yield ctx.call_activity(hello_retryable_act, retry_policy=retry_policy)
+    yield ctx.call_activity(hello_infinite_retryable_act, retry_policy=infinite_retry_policy)
     yield ctx.call_child_workflow(child_retryable_wf, retry_policy=retry_policy)
 
     # Change in event handling: Use when_any to handle both event and timeout
@@ -89,6 +96,15 @@ def hello_retryable_act(ctx: WorkflowActivityContext):
         raise ValueError('Retryable Error')
     print(f'Retry count value is: {retry_count}! This print statement verifies retry', flush=True)
     retry_count += 1
+
+
+@wfr.activity(name='hello_infinite_retryable_act')
+def hello_infinite_retryable_act(ctx: WorkflowActivityContext):
+    global infinite_retry_count
+    infinite_retry_count += 1
+    print(f'Infinite retry attempt: {infinite_retry_count}', flush=True)
+    if infinite_retry_count <= 10:
+        raise ValueError('Retryable Error')
 
 
 @wfr.workflow(name='child_retryable_wf')
@@ -128,11 +144,12 @@ def main():
 
     wf_client.wait_for_workflow_start(instance_id)
 
-    # Sleep to let the workflow run initial activities
-    sleep(12)
+    # Sleep to let the workflow run initial activities and infinite retries
+    sleep(24)
 
     assert counter == 11
     assert retry_count == 2
+    assert infinite_retry_count == 11
     assert child_orchestrator_string == '1aa2bb3cc'
 
     # Pause Test
@@ -153,10 +170,13 @@ def main():
         state = wf_client.wait_for_workflow_completion(instance_id, timeout_in_seconds=30)
         if state.runtime_status.name == 'COMPLETED':
             print('Workflow completed! Result: {}'.format(state.serialized_output.strip('"')))
+            assert state.serialized_output.strip('"') == 'Completed'
         else:
             print(f'Workflow failed! Status: {state.runtime_status.name}')
+            raise AssertionError(f'Unexpected workflow status: {state.runtime_status.name}')
     except TimeoutError:
         print('*** Workflow timed out!')
+        raise
 
     wf_client.purge_workflow(instance_id=instance_id)
     try:
