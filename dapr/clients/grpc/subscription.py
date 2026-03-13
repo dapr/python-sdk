@@ -1,3 +1,4 @@
+import logging
 import queue
 import threading
 from typing import Optional
@@ -12,6 +13,8 @@ from dapr.common.pubsub.subscription import (
     SubscriptionMessage,
 )
 from dapr.proto import api_v1, appcallback_v1
+
+logger = logging.getLogger(__name__)
 
 
 class Subscription:
@@ -67,7 +70,7 @@ class Subscription:
     def reconnect_stream(self):
         self.close()
         DaprHealth.wait_for_sidecar()
-        print('Attempting to reconnect...')
+        logger.info('Subscription stream reconnecting...')
         self.start()
 
     def next_message(self):
@@ -84,10 +87,17 @@ class Subscription:
             message = next(self._stream)
             return SubscriptionMessage(message.event_message)
         except RpcError as e:
-            # If Dapr can't be reached, wait until it's ready and reconnect the stream
-            if e.code() == StatusCode.UNAVAILABLE or e.code() == StatusCode.UNKNOWN:
-                print(
-                    f'gRPC error while reading from stream: {e.details()}, Status Code: {e.code()}'
+            # If Dapr can't be reached, wait until it's ready and reconnect the stream.
+            # INTERNAL covers RST_STREAM from cloud proxies (e.g. Diagrid Cloud).
+            if e.code() in (
+                StatusCode.UNAVAILABLE,
+                StatusCode.UNKNOWN,
+                StatusCode.INTERNAL,
+            ):
+                logger.warning(
+                    'Subscription stream error (%s): %s — reconnecting',
+                    e.code(),
+                    e.details(),
                 )
                 self.reconnect_stream()
             elif e.code() == StatusCode.CANCELLED:
@@ -111,7 +121,7 @@ class Subscription:
                 raise StreamInactiveError('Stream is not active')
             self._send_queue.put(msg)
         except Exception as e:
-            print(f"Can't send message on inactive stream: {e}")
+            logger.warning(f"Can't send message on inactive stream: {e}")
 
     def respond_success(self, message):
         self.respond(message, TopicEventResponse('success').status)
@@ -135,15 +145,12 @@ class Subscription:
             return self._stream_active
 
     def close(self):
+        self._set_stream_inactive()
         if self._stream:
             try:
                 self._stream.cancel()
-                self._set_stream_inactive()
-            except RpcError as e:
-                if e.code() != StatusCode.CANCELLED:
-                    raise Exception(f'Error while closing stream: {e}')
-            except Exception as e:
-                raise Exception(f'Error while closing stream: {e}')
+            except Exception:
+                pass  # Stream already dead — safe to ignore
 
     def __iter__(self):
         return self

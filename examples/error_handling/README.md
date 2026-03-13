@@ -25,15 +25,15 @@ To run this example, the following code can be used:
 <!-- STEP
 name: Run error handling example
 expected_stdout_lines:
-- "== APP == Status code: StatusCode.INVALID_ARGUMENT"
-- "== APP == Message: input key/keyPrefix 'key||' can't contain '||'"
-- "== APP == Error code: DAPR_STATE_ILLEGAL_KEY"
-- "== APP == Error info(reason): DAPR_STATE_ILLEGAL_KEY"
-- "== APP == Resource info (resource type): state"
-- "== APP == Resource info (resource name): statestore"
-- "== APP == Bad request (field): key||"
-- "== APP == Bad request (description): input key/keyPrefix 'key||' can't contain '||'"
-- "== APP == JSON: {\"status_code\": \"INVALID_ARGUMENT\", \"message\": \"input key/keyPrefix 'key||' can't contain '||'\", \"error_code\": \"DAPR_STATE_ILLEGAL_KEY\", \"details\": {\"error_info\": {\"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\", \"reason\": \"DAPR_STATE_ILLEGAL_KEY\", \"domain\": \"dapr.io\"}, \"retry_info\": null, \"debug_info\": null, \"quota_failure\": null, \"precondition_failure\": null, \"bad_request\": {\"@type\": \"type.googleapis.com/google.rpc.BadRequest\", \"field_violations\": [{\"field\": \"key||\", \"description\": \"input key/keyPrefix 'key||' can't contain '||'\"}]}, \"request_info\": null, \"resource_info\": {\"@type\": \"type.googleapis.com/google.rpc.ResourceInfo\", \"resource_type\": \"state\", \"resource_name\": \"statestore\"}, \"help\": null, \"localized_message\": null}}"
+- "Status code: StatusCode.INVALID_ARGUMENT"
+- "Message: input key/keyPrefix 'key||' can't contain '||'"
+- "Error code: DAPR_STATE_ILLEGAL_KEY"
+- "Error info(reason): DAPR_STATE_ILLEGAL_KEY"
+- "Resource info (resource type): state"
+- "Resource info (resource name): statestore"
+- "Bad request (field): key||"
+- "Bad request (description): input key/keyPrefix 'key||' can't contain '||'"
+- "JSON: {\"status_code\": \"INVALID_ARGUMENT\", \"message\": \"input key/keyPrefix 'key||' can't contain '||'\", \"error_code\": \"DAPR_STATE_ILLEGAL_KEY\", \"details\": {\"error_info\": {\"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\", \"reason\": \"DAPR_STATE_ILLEGAL_KEY\", \"domain\": \"dapr.io\"}, \"retry_info\": null, \"debug_info\": null, \"quota_failure\": null, \"precondition_failure\": null, \"bad_request\": {\"@type\": \"type.googleapis.com/google.rpc.BadRequest\", \"field_violations\": [{\"field\": \"key||\", \"description\": \"input key/keyPrefix 'key||' can't contain '||'\"}]}, \"request_info\": null, \"resource_info\": {\"@type\": \"type.googleapis.com/google.rpc.ResourceInfo\", \"resource_type\": \"state\", \"resource_name\": \"statestore\"}, \"help\": null, \"localized_message\": null}}"
 timeout_seconds: 5
 -->
 
@@ -45,13 +45,13 @@ dapr run --resources-path components  -- python3 error_handling.py
 The output should be as follows:
 
 ```
-== APP == Status code: INVALID_ARGUMENT
-== APP == Message: input key/keyPrefix 'key||' can't contain '||'
-== APP == Error code: DAPR_STATE_ILLEGAL_KEY
-== APP == Error info(reason): DAPR_STATE_ILLEGAL_KEY
-== APP == Resource info (resource type): state
-== APP == Resource info (resource name): statestore
-== APP == Bad request (field): key||
-== APP == Bad request (description): input key/keyPrefix 'key||' can't contain '||'
-== APP == JSON: {"status_code": "INVALID_ARGUMENT", "message": "input key/keyPrefix 'key||' can't contain '||'", "error_code": "DAPR_STATE_ILLEGAL_KEY", "details": {"error_info": {"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "DAPR_STATE_ILLEGAL_KEY", "domain": "dapr.io"}, "retry_info": null, "debug_info": null, "quota_failure": null, "precondition_failure": null, "bad_request": {"@type": "type.googleapis.com/google.rpc.BadRequest", "field_violations": [{"field": "key||", "description": "input key/keyPrefix 'key||' can't contain '||'"}]}, "request_info": null, "resource_info": {"@type": "type.googleapis.com/google.rpc.ResourceInfo", "resource_type": "state", "resource_name": "statestore"}, "help": null, "localized_message": null}}
+Status code: INVALID_ARGUMENT
+Message: input key/keyPrefix 'key||' can't contain '||'
+Error code: DAPR_STATE_ILLEGAL_KEY
+Error info(reason): DAPR_STATE_ILLEGAL_KEY
+Resource info (resource type): state
+Resource info (resource name): statestore
+Bad request (field): key||
+Bad request (description): input key/keyPrefix 'key||' can't contain '||'
+JSON: {"status_code": "INVALID_ARGUMENT", "message": "input key/keyPrefix 'key||' can't contain '||'", "error_code": "DAPR_STATE_ILLEGAL_KEY", "details": {"error_info": {"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "DAPR_STATE_ILLEGAL_KEY", "domain": "dapr.io"}, "retry_info": null, "debug_info": null, "quota_failure": null, "precondition_failure": null, "bad_request": {"@type": "type.googleapis.com/google.rpc.BadRequest", "field_violations": [{"field": "key||", "description": "input key/keyPrefix 'key||' can't contain '||'"}]}, "request_info": null, "resource_info": {"@type": "type.googleapis.com/google.rpc.ResourceInfo", "resource_type": "state", "resource_name": "statestore"}, "help": null, "localized_message": null}}
 ```

@@ -30,7 +30,7 @@ class FakeTaskHubGrpcWorker:
         self._orchestrator_fns = {}
         self._activity_fns = {}
 
-    def add_named_orchestrator(self, name: str, fn):
+    def add_named_orchestrator(self, name: str, fn, **kwargs):
         listOrchestrators.append(name)
         self._orchestrator_fns[name] = fn
 
@@ -298,3 +298,323 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as ctx:
             self.runtime.shutdown()
         self.assertIn('stop failed', str(ctx.exception))
+
+
+class WorkflowRuntimeInitTest(unittest.TestCase):
+    """Tests for __init__ branches: DAPR_API_TOKEN and GrpcEndpoint error."""
+
+    def setUp(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+
+    def tearDown(self):
+        mock.patch.stopall()
+
+    def test_init_with_dapr_api_token(self):
+        with mock.patch('dapr.ext.workflow.workflow_runtime.settings') as mock_settings:
+            mock_settings.DAPR_API_TOKEN = 'test-token'
+            mock_settings.DAPR_RUNTIME_HOST = '127.0.0.1'
+            mock_settings.DAPR_GRPC_PORT = 50001
+            runtime = WorkflowRuntime()
+            self.assertIsNotNone(runtime)
+
+    def test_init_raises_on_invalid_address(self):
+        from dapr.clients import DaprInternalError
+
+        with mock.patch(
+            'dapr.ext.workflow.workflow_runtime.GrpcEndpoint',
+            side_effect=ValueError('bad endpoint'),
+        ):
+            with self.assertRaises(DaprInternalError):
+                WorkflowRuntime()
+
+
+class OrchestratorWrapperTest(unittest.TestCase):
+    """Tests for the orchestrationWrapper and activityWrapper inner functions."""
+
+    def setUp(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        self._registry_patch = mock.patch(
+            'durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        )
+        self._registry_patch.start()
+        self.runtime = WorkflowRuntime()
+        self.fake_registry = self.runtime._WorkflowRuntime__worker._registry
+
+    def tearDown(self):
+        mock.patch.stopall()
+
+    def test_orchestration_wrapper_calls_workflow_without_input(self):
+        called_with = {}
+
+        def my_wf(ctx):
+            called_with['ctx'] = ctx
+            return 'wf_result'
+
+        self.runtime.register_workflow(my_wf)
+        wrapper_fn = self.fake_registry._orchestrator_fns['my_wf']
+
+        mock_ctx = mock.MagicMock()
+        result = wrapper_fn(mock_ctx, None)
+        self.assertEqual(result, 'wf_result')
+        self.assertIsNotNone(called_with.get('ctx'))
+
+    def test_orchestration_wrapper_calls_workflow_with_input(self):
+        called_with = {}
+
+        def my_wf(ctx, inp):
+            called_with['inp'] = inp
+            return inp * 2
+
+        self.runtime.register_workflow(my_wf)
+        wrapper_fn = self.fake_registry._orchestrator_fns['my_wf']
+
+        mock_ctx = mock.MagicMock()
+        result = wrapper_fn(mock_ctx, 21)
+        self.assertEqual(result, 42)
+        self.assertEqual(called_with['inp'], 21)
+
+    def test_orchestration_wrapper_logs_and_reraises_on_exception(self):
+        def failing_wf(ctx):
+            raise RuntimeError('wf boom')
+
+        self.runtime.register_workflow(failing_wf)
+        wrapper_fn = self.fake_registry._orchestrator_fns['failing_wf']
+
+        mock_ctx = mock.MagicMock()
+        mock_ctx.instance_id = 'test-instance'
+        with mock.patch.object(self.runtime._logger, 'exception') as mock_exc:
+            with self.assertRaises(RuntimeError):
+                wrapper_fn(mock_ctx, None)
+            mock_exc.assert_called_once()
+            self.assertIn('test-instance', mock_exc.call_args[0][0])
+
+    def test_activity_wrapper_calls_activity_without_input(self):
+        called_with = {}
+
+        def my_act(ctx):
+            called_with['ctx'] = ctx
+            return 'act_result'
+
+        self.runtime.register_activity(my_act)
+        wrapper_fn = self.fake_registry._activity_fns['my_act']
+
+        mock_ctx = mock.MagicMock()
+        result = wrapper_fn(mock_ctx, None)
+        self.assertEqual(result, 'act_result')
+
+    def test_activity_wrapper_calls_activity_with_input(self):
+        def my_act(ctx, inp):
+            return inp + '_done'
+
+        self.runtime.register_activity(my_act)
+        wrapper_fn = self.fake_registry._activity_fns['my_act']
+
+        mock_ctx = mock.MagicMock()
+        result = wrapper_fn(mock_ctx, 'task')
+        self.assertEqual(result, 'task_done')
+
+    def test_activity_wrapper_logs_and_reraises_on_exception(self):
+        def failing_act(ctx):
+            raise ValueError('act boom')
+
+        self.runtime.register_activity(failing_act)
+        wrapper_fn = self.fake_registry._activity_fns['failing_act']
+
+        mock_ctx = mock.MagicMock()
+        mock_ctx.task_id = 'task-42'
+        with mock.patch.object(self.runtime._logger, 'warning') as mock_warn:
+            with self.assertRaises(ValueError):
+                wrapper_fn(mock_ctx, None)
+            mock_warn.assert_called_once()
+            self.assertIn('task-42', str(mock_warn.call_args))
+
+
+class VersionedWorkflowTest(unittest.TestCase):
+    """Tests for register_versioned_workflow and @versioned_workflow decorator."""
+
+    def setUp(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        self._registry_patch = mock.patch(
+            'durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        )
+        self._registry_patch.start()
+        self.runtime = WorkflowRuntime()
+        self.fake_registry = self.runtime._WorkflowRuntime__worker._registry
+
+    def tearDown(self):
+        mock.patch.stopall()
+
+    def test_register_versioned_workflow_basic(self):
+        def my_wf(ctx):
+            return 'ok'
+
+        self.runtime.register_versioned_workflow(
+            my_wf, name='my_workflow', version_name='v1', is_latest=True
+        )
+        self.assertIn('my_workflow', listOrchestrators)
+        self.assertTrue(my_wf._workflow_registered)
+        self.assertEqual(my_wf._dapr_alternate_name, 'my_workflow')
+
+    def test_register_versioned_workflow_without_version_name(self):
+        def another_wf(ctx):
+            return 'ok'
+
+        self.runtime.register_versioned_workflow(
+            another_wf, name='named_wf', version_name=None, is_latest=False
+        )
+        self.assertIn('named_wf', listOrchestrators)
+
+    def test_register_versioned_workflow_duplicate_raises(self):
+        def my_wf(ctx):
+            return 'ok'
+
+        self.runtime.register_versioned_workflow(
+            my_wf, name='wf_name', version_name='v1', is_latest=True
+        )
+        with self.assertRaises(ValueError) as ctx:
+            self.runtime.register_versioned_workflow(
+                my_wf, name='wf_name', version_name='v2', is_latest=False
+            )
+        self.assertIn('already registered', str(ctx.exception))
+
+    def test_register_versioned_workflow_conflicts_with_alternate_name(self):
+        def my_wf(ctx):
+            return 'ok'
+
+        my_wf.__dict__['_dapr_alternate_name'] = 'existing_name'
+        with self.assertRaises(ValueError) as ctx:
+            self.runtime.register_versioned_workflow(
+                my_wf, name='different_name', version_name='v1', is_latest=True
+            )
+        self.assertIn('already has an alternate name', str(ctx.exception))
+
+    def test_versioned_workflow_orchestration_wrapper_without_input(self):
+        def my_wf(ctx):
+            return 'versioned_result'
+
+        self.runtime.register_versioned_workflow(
+            my_wf, name='vwf', version_name='v1', is_latest=True
+        )
+        wrapper_fn = self.fake_registry._orchestrator_fns['vwf']
+        mock_ctx = mock.MagicMock()
+        result = wrapper_fn(mock_ctx, None)
+        self.assertEqual(result, 'versioned_result')
+
+    def test_versioned_workflow_orchestration_wrapper_with_input(self):
+        def my_wf(ctx, inp):
+            return inp + 10
+
+        self.runtime.register_versioned_workflow(
+            my_wf, name='vwf2', version_name='v1', is_latest=True
+        )
+        wrapper_fn = self.fake_registry._orchestrator_fns['vwf2']
+        mock_ctx = mock.MagicMock()
+        result = wrapper_fn(mock_ctx, 5)
+        self.assertEqual(result, 15)
+
+    def test_versioned_workflow_decorator_with_args(self):
+        @self.runtime.versioned_workflow(name='dec_vwf', version_name='v1', is_latest=True)
+        def my_wf(ctx):
+            return 'ok'
+
+        self.assertIn('dec_vwf', listOrchestrators)
+        self.assertEqual(my_wf._dapr_alternate_name, 'dec_vwf')
+
+    def test_versioned_workflow_decorator_without_args(self):
+        def my_wf(ctx):
+            return 'ok'
+
+        decorated = self.runtime.versioned_workflow(my_wf, name='direct_vwf', is_latest=False)
+        self.assertIn('direct_vwf', listOrchestrators)
+        self.assertEqual(decorated._dapr_alternate_name, 'direct_vwf')
+
+    def test_versioned_workflow_decorator_sets_alternate_name_from_register(self):
+        @self.runtime.versioned_workflow(name='vwf_name', version_name='v1', is_latest=True)
+        def my_wf(ctx):
+            return 'ok'
+
+        # The decorator picks up _dapr_alternate_name set by register_versioned_workflow
+        self.assertEqual(my_wf._dapr_alternate_name, 'vwf_name')
+
+
+class DecoratorNoArgsTest(unittest.TestCase):
+    """Tests for @workflow and @activity decorators used without parentheses."""
+
+    def setUp(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        self.runtime = WorkflowRuntime()
+
+    def tearDown(self):
+        mock.patch.stopall()
+
+    def test_workflow_decorator_no_args(self):
+        @self.runtime.workflow
+        def my_workflow(ctx):
+            return 'result'
+
+        self.assertIn('my_workflow', listOrchestrators)
+        self.assertEqual(my_workflow._dapr_alternate_name, 'my_workflow')
+
+    def test_activity_decorator_no_args(self):
+        @self.runtime.activity
+        def my_activity(ctx):
+            return 'result'
+
+        self.assertIn('my_activity', listActivities)
+        self.assertEqual(my_activity._dapr_alternate_name, 'my_activity')
+
+    def test_workflow_decorator_innerfn_returns_fn(self):
+        @self.runtime.workflow
+        def my_workflow(ctx):
+            return 'hello'
+
+        result = my_workflow()
+        self.assertIsNotNone(result)
+
+    def test_activity_decorator_innerfn_returns_fn(self):
+        @self.runtime.activity
+        def my_activity(ctx):
+            return 'hello'
+
+        result = my_activity()
+        self.assertIsNotNone(result)
+
+
+class AlternateNameTest(unittest.TestCase):
+    """Tests for the standalone alternate_name decorator."""
+
+    def test_alternate_name_with_name(self):
+        @alternate_name(name='custom')
+        def my_fn(ctx):
+            return 'ok'
+
+        self.assertEqual(my_fn._dapr_alternate_name, 'custom')
+
+    def test_alternate_name_without_name_uses_fn_name(self):
+        @alternate_name()
+        def my_fn(ctx):
+            return 'ok'
+
+        self.assertEqual(my_fn._dapr_alternate_name, 'my_fn')
+
+    def test_alternate_name_innerfn_calls_through(self):
+        @alternate_name(name='custom')
+        def my_fn(x, y):
+            return x + y
+
+        self.assertEqual(my_fn(3, 4), 7)
+
+    def test_alternate_name_duplicate_raises(self):
+        @alternate_name(name='first')
+        def my_fn(ctx):
+            return 'ok'
+
+        with self.assertRaises(ValueError) as ctx:
+            alternate_name(name='second')(my_fn)
+        self.assertIn('already has an alternate name', str(ctx.exception))

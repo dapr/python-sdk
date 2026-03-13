@@ -14,19 +14,19 @@ limitations under the License.
 """
 
 import asyncio
-import json
 import socket
 import time
 import uuid
-from datetime import datetime
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
 from urllib.parse import urlencode
 from warnings import warn
 
 import grpc.aio  # type: ignore
 from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.duration_pb2 import Duration as GrpcDuration
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.struct_pb2 import Struct as GrpcStruct
 from grpc import StatusCode  # type: ignore
 from grpc.aio import (  # type: ignore
     AioRpcError,
@@ -57,7 +57,6 @@ from dapr.clients.grpc._helpers import (
     MetadataTuple,
     convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
-    getWorkflowRuntimeStatus,
     to_bytes,
     validateNotBlankString,
     validateNotNone,
@@ -80,12 +79,10 @@ from dapr.clients.grpc._response import (
     GetBulkSecretResponse,
     GetMetadataResponse,
     GetSecretResponse,
-    GetWorkflowResponse,
     InvokeMethodResponse,
     QueryResponse,
     QueryResponseItem,
     RegisteredComponents,
-    StartWorkflowResponse,
     StateResponse,
     TopicEventResponse,
     TryLockResponse,
@@ -154,7 +151,7 @@ class DaprGrpcClientAsync:
 
         useragent = f'dapr-sdk-python/{__version__}'
         if not max_grpc_message_length:
-            options = [
+            options: List[Tuple[str, Any]] = [
                 ('grpc.primary_user_agent', useragent),
             ]
         else:
@@ -205,7 +202,7 @@ class DaprGrpcClientAsync:
 
     @staticmethod
     def get_credentials():
-        return grpc.ssl_channel_credentials()
+        return grpc.ssl_channel_credentials()  # type: ignore[attr-defined]
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
@@ -604,7 +601,7 @@ class DaprGrpcClientAsync:
         self,
         pubsub_name: str,
         topic: str,
-        handler_fn: Callable[..., TopicEventResponse],
+        handler_fn: Callable[..., Awaitable[TopicEventResponse]],
         metadata: Optional[dict] = None,
         dead_letter_topic: Optional[str] = None,
     ) -> Callable[[], Awaitable[None]]:
@@ -1020,7 +1017,7 @@ class DaprGrpcClientAsync:
                 operationType=o.operation_type.value,
                 request=common_v1.StateItem(
                     key=o.key,
-                    value=to_bytes(o.data),
+                    value=to_bytes(o.data) if o.data is not None else to_bytes(''),
                     etag=common_v1.Etag(value=o.etag) if o.etag is not None else None,
                 ),
             )
@@ -1360,7 +1357,7 @@ class DaprGrpcClientAsync:
         response = await call
         return TryLockResponse(
             success=response.success,
-            client=self,
+            client=self,  # type: ignore[arg-type]
             store_name=store_name,
             resource_id=resource_id,
             lock_owner=lock_owner,
@@ -1493,321 +1490,6 @@ class DaprGrpcClientAsync:
         resp_stream = self._stub.DecryptAlpha1(req_iterator)
         return DecryptResponse(resp_stream)
 
-    async def start_workflow(
-        self,
-        workflow_component: str,
-        workflow_name: str,
-        input: Optional[Union[Any, bytes]] = None,
-        instance_id: Optional[str] = None,
-        workflow_options: Optional[Dict[str, str]] = dict(),
-        send_raw_bytes: bool = False,
-    ) -> StartWorkflowResponse:
-        """Starts a workflow.
-        Deprecated: use dapr-ext-workflow instead
-
-        Args:
-            workflow_component (str): the name of the workflow component
-                                that will run the workflow. e.g. `dapr`.
-            workflow_name (str): the name of the workflow that will be executed.
-            input (Optional[Union[Any, bytes]]): the input that the workflow will receive.
-                                             The input value will be serialized to JSON
-                                             by default. Use the send_raw_bytes param
-                                             to send unencoded binary input.
-            instance_id (Optional[str]): the name of the workflow instance,
-                                e.g. `order_processing_workflow-103784`.
-            workflow_options (Optional[Dict[str, str]]): the key-value options
-                                that the workflow will receive.
-            send_raw_bytes (bool) if true, no serialization will be performed on the input
-                                bytes
-
-        Returns:
-            :class:`StartWorkflowResponse`: Instance ID associated with the started workflow
-        """
-        # Warnings and input validation
-        warn(
-            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.',
-            UserWarning,
-            stacklevel=2,
-        )
-        validateNotBlankString(
-            instance_id=instance_id,
-            workflow_component=workflow_component,
-            workflow_name=workflow_name,
-        )
-
-        if instance_id is None:
-            instance_id = str(uuid.uuid4())
-
-        if isinstance(input, bytes) and send_raw_bytes:
-            encoded_data = input
-        else:
-            try:
-                encoded_data = json.dumps(input).encode('utf-8') if input is not None else bytes([])
-            except TypeError:
-                raise DaprInternalError('start_workflow: input data must be JSON serializable')
-            except ValueError as e:
-                raise DaprInternalError(f'start_workflow JSON serialization error: {e}')
-
-        # Actual start workflow invocation
-        req = api_v1.StartWorkflowRequest(
-            instance_id=instance_id,
-            workflow_component=workflow_component,
-            workflow_name=workflow_name,
-            options=workflow_options,
-            input=encoded_data,
-        )
-
-        try:
-            response = self._stub.StartWorkflowBeta1(req)
-            return StartWorkflowResponse(instance_id=response.instance_id)
-        except grpc.aio.AioRpcError as err:
-            raise DaprInternalError(err.details())
-
-    async def get_workflow(self, instance_id: str, workflow_component: str) -> GetWorkflowResponse:
-        """Gets information on a workflow.
-        Deprecated: use dapr-ext-workflow instead
-
-        Args:
-            instance_id (str): the ID of the workflow instance,
-                                e.g. `order_processing_workflow-103784`.
-            workflow_component (str): the name of the workflow component
-                                that will run the workflow. e.g. `dapr`.
-
-        Returns:
-            :class:`GetWorkflowResponse`: Instance ID associated with the started workflow
-        """
-        # Warnings and input validation
-        warn(
-            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.',
-            UserWarning,
-            stacklevel=2,
-        )
-        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
-        # Actual get workflow invocation
-        req = api_v1.GetWorkflowRequest(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
-
-        try:
-            resp = self._stub.GetWorkflowBeta1(req)
-            # not found workflows return no error, but empty status
-            if resp.runtime_status == '':
-                raise DaprInternalError('no such instance exists')
-            if resp.created_at is None:
-                resp.created_at = datetime.now
-            if resp.last_updated_at is None:
-                resp.last_updated_at = datetime.now
-            return GetWorkflowResponse(
-                instance_id=instance_id,
-                workflow_name=resp.workflow_name,
-                created_at=resp.created_at,
-                last_updated_at=resp.last_updated_at,
-                runtime_status=getWorkflowRuntimeStatus(resp.runtime_status),
-                properties=resp.properties,
-            )
-        except grpc.aio.AioRpcError as err:
-            raise DaprInternalError(err.details())
-
-    async def terminate_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
-        """Terminates a workflow.
-        Deprecated: use dapr-ext-workflow instead
-
-        Args:
-            instance_id (str): the ID of the workflow instance, e.g.
-                                `order_processing_workflow-103784`.
-            workflow_component (str): the name of the workflow component
-                                that will run the workflow. e.g. `dapr`.
-        Returns:
-            :class:`DaprResponse` gRPC metadata returned from callee
-
-        """
-        # Warnings and input validation
-        warn(
-            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.',
-            UserWarning,
-            stacklevel=2,
-        )
-        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
-        # Actual terminate workflow invocation
-        req = api_v1.TerminateWorkflowRequest(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
-
-        try:
-            _, call = self._stub.TerminateWorkflowBeta1.with_call(req)
-            return DaprResponse(headers=call.initial_metadata())
-        except grpc.aio.AioRpcError as err:
-            raise DaprInternalError(err.details())
-
-    async def raise_workflow_event(
-        self,
-        instance_id: str,
-        workflow_component: str,
-        event_name: str,
-        event_data: Optional[Union[Any, bytes]] = None,
-        send_raw_bytes: bool = False,
-    ) -> DaprResponse:
-        """Raises an event on a workflow.
-        Deprecated: use dapr-ext-workflow instead
-
-        Args:
-            instance_id (str): the ID of the workflow instance,
-                                e.g. `order_processing_workflow-103784`.
-            workflow_component (str): the name of the workflow component
-                                that will run the workflow. e.g. `dapr`.
-            event_name (str): the name of the event to be raised on
-                                the workflow.
-            event_data (Optional[Union[Any, bytes]]): the input that the workflow will receive.
-                                             The input value will be serialized to JSON
-                                             by default. Use the send_raw_bytes param
-                                             to send unencoded binary input.
-            send_raw_bytes (bool) if true, no serialization will be performed on the input
-                                bytes
-
-        Returns:
-            :class:`DaprResponse` gRPC metadata returned from callee
-        """
-        # Warnings and input validation
-        warn(
-            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.',
-            UserWarning,
-            stacklevel=2,
-        )
-        validateNotBlankString(
-            instance_id=instance_id, workflow_component=workflow_component, event_name=event_name
-        )
-        if isinstance(event_data, bytes) and send_raw_bytes:
-            encoded_data = event_data
-        else:
-            if event_data is not None:
-                try:
-                    encoded_data = (
-                        json.dumps(event_data).encode('utf-8')
-                        if event_data is not None
-                        else bytes([])
-                    )
-                except TypeError:
-                    raise DaprInternalError(
-                        'raise_workflow_event:\
-                                             event_data must be JSON serializable'
-                    )
-                except ValueError as e:
-                    raise DaprInternalError(f'raise_workflow_event JSON serialization error: {e}')
-                encoded_data = json.dumps(event_data).encode('utf-8')
-            else:
-                encoded_data = bytes([])
-        # Actual workflow raise event invocation
-        req = api_v1.raise_workflow_event(
-            instance_id=instance_id,
-            workflow_component=workflow_component,
-            event_name=event_name,
-            event_data=encoded_data,
-        )
-
-        try:
-            _, call = self._stub.RaiseEventWorkflowBeta1.with_call(req)
-            return DaprResponse(headers=call.initial_metadata())
-        except grpc.aio.AioRpcError as err:
-            raise DaprInternalError(err.details())
-
-    async def pause_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
-        """Pause a workflow.
-        Deprecated: use dapr-ext-workflow instead
-
-            Args:
-                instance_id (str): the ID of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-
-        Returns:
-            :class:`DaprResponse` gRPC metadata returned from callee
-
-        """
-        # Warnings and input validation
-        warn(
-            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.',
-            UserWarning,
-            stacklevel=2,
-        )
-        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
-        # Actual pause workflow invocation
-        req = api_v1.PauseWorkflowRequest(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
-
-        try:
-            _, call = self._stub.PauseWorkflowBeta1.with_call(req)
-
-            return DaprResponse(headers=call.initial_metadata())
-        except grpc.aio.AioRpcError as err:
-            raise DaprInternalError(err.details())
-
-    async def resume_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
-        """Resumes a workflow.
-        Deprecated: use dapr-ext-workflow instead
-
-        Args:
-            instance_id (str): the ID of the workflow instance,
-                                e.g. `order_processing_workflow-103784`.
-            workflow_component (str): the name of the workflow component
-                                that will run the workflow. e.g. `dapr`.
-
-        Returns:
-            :class:`DaprResponse` gRPC metadata returned from callee
-        """
-        # Warnings and input validation
-        warn(
-            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.',
-            UserWarning,
-            stacklevel=2,
-        )
-        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
-        # Actual resume workflow invocation
-        req = api_v1.ResumeWorkflowRequest(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
-
-        try:
-            _, call = self._stub.ResumeWorkflowBeta1.with_call(req)
-
-            return DaprResponse(headers=call.initial_metadata())
-        except grpc.aio.AioRpcError as err:
-            raise DaprInternalError(err.details())
-
-    async def purge_workflow(self, instance_id: str, workflow_component: str) -> DaprResponse:
-        """Purges a workflow.
-        Deprecated: use dapr-ext-workflow instead
-
-            Args:
-                instance_id (str): the ID of the workflow instance,
-                                    e.g. `order_processing_workflow-103784`.
-                workflow_component (str): the name of the workflow component
-                                    that will run the workflow. e.g. `dapr`.
-
-        Returns:
-            :class:`DaprResponse` gRPC metadata returned from callee
-        """
-        # Warnings and input validation
-        warn(
-            'This Workflow API (Beta) method is deprecated and will be removed in a future version. Use the dapr-ext-workflow package instead.',
-            UserWarning,
-            stacklevel=2,
-        )
-        validateNotBlankString(instance_id=instance_id, workflow_component=workflow_component)
-        # Actual purge workflow invocation
-        req = api_v1.PurgeWorkflowRequest(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
-
-        try:
-            _, call = self._stub.PurgeWorkflowBeta1.with_call(req)
-
-            return DaprResponse(headers=call.initial_metadata())
-
-        except grpc.aio.AioRpcError as err:
-            raise DaprInternalError(err.details())
-
     async def converse_alpha1(
         self,
         name: str,
@@ -1883,6 +1565,8 @@ class DaprGrpcClientAsync:
         temperature: Optional[float] = None,
         tools: Optional[List[conversation.ConversationTools]] = None,
         tool_choice: Optional[str] = None,
+        response_format: Optional[GrpcStruct] = None,
+        prompt_cache_retention: Optional[GrpcDuration] = None,
     ) -> conversation.ConversationResponseAlpha2:
         """Invoke an LLM using the conversation API (Alpha2) with tool calling support.
 
@@ -1896,6 +1580,8 @@ class DaprGrpcClientAsync:
             temperature: Optional temperature setting for the LLM to optimize for creativity or predictability
             tools: Optional list of tools available for the LLM to call
             tool_choice: Optional control over which tools can be called ('none', 'auto', 'required', or specific tool name)
+            response_format: Optional response format (google.protobuf.struct_pb2.Struct, ex: json_schema for structured output)
+            prompt_cache_retention: Optional retention for prompt cache (google.protobuf.duration_pb2.Duration)
 
         Returns:
             ConversationResponseAlpha2 containing the conversation results with choices and tool calls
@@ -1951,6 +1637,10 @@ class DaprGrpcClientAsync:
             request.temperature = temperature
         if tool_choice is not None:
             request.tool_choice = tool_choice
+        if response_format is not None and hasattr(request, 'response_format'):
+            request.response_format.CopyFrom(response_format)
+        if prompt_cache_retention is not None and hasattr(request, 'prompt_cache_retention'):
+            request.prompt_cache_retention.CopyFrom(prompt_cache_retention)
 
         try:
             response, call = await self.retry_policy.run_rpc_async(

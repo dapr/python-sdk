@@ -34,25 +34,25 @@ It shows several Dapr Workflow features including:
 <!--STEP
 name: Run the simple workflow example
 expected_stdout_lines:
-  - "== APP == Hi Counter!"
-  - "== APP == New counter value is: 1!"
-  - "== APP == New counter value is: 11!"
-  - "== APP == Retry count value is: 0!"
-  - "== APP == Retry count value is: 1! This print statement verifies retry"
-  - "== APP == Appending 1 to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending 2 to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending 3 to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Get response from hello_world_wf after pause call: SUSPENDED"
-  - "== APP == Get response from hello_world_wf after resume call: RUNNING"
-  - "== APP == New counter value is: 111!"
-  - "== APP == New counter value is: 1111!"
-  - "== APP == Workflow completed! Result: Completed"
+  - "Hi Counter!"
+  - "New counter value is: 1!"
+  - "New counter value is: 11!"
+  - "Retry count value is: 0!"
+  - "Retry count value is: 1! This print statement verifies retry"
+  - "Appending 1 to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending 2 to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending 3 to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Get response from hello_world_wf after pause call: SUSPENDED"
+  - "Get response from hello_world_wf after resume call: RUNNING"
+  - "New counter value is: 111!"
+  - "New counter value is: 1111!"
+  - "Workflow completed! Result: Completed"
 timeout_seconds: 30
 -->
 
@@ -64,25 +64,25 @@ dapr run --app-id wf-simple-example -- python3 simple.py
 The output of this example should look like this:
 
 ```
- - "== APP == Hi Counter!"
-  - "== APP == New counter value is: 1!"
-  - "== APP == New counter value is: 11!"
-  - "== APP == Retry count value is: 0!"
-  - "== APP == Retry count value is: 1! This print statement verifies retry"
-  - "== APP == Appending 1 to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending 2 to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending 3 to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Get response from hello_world_wf after pause call: SUSPENDED"
-  - "== APP == Get response from hello_world_wf after resume call: RUNNING"
-  - "== APP == New counter value is: 111!"
-  - "== APP == New counter value is: 1111!"
-  - "== APP == Workflow completed! Result: Completed"
+ - "Hi Counter!"
+  - "New counter value is: 1!"
+  - "New counter value is: 11!"
+  - "Retry count value is: 0!"
+  - "Retry count value is: 1! This print statement verifies retry"
+  - "Appending 1 to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending 2 to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending 3 to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Get response from hello_world_wf after pause call: SUSPENDED"
+  - "Get response from hello_world_wf after resume call: RUNNING"
+  - "New counter value is: 111!"
+  - "New counter value is: 1111!"
+  - "Workflow completed! Result: Completed"
 ```
 
 ### Simple Workflow with async workflow client
@@ -100,25 +100,25 @@ It shows several Dapr Workflow features including:
 <!--STEP
 name: Run the simple workflow example
 expected_stdout_lines:
-  - "== APP == Hi Counter!"
-  - "== APP == New counter value is: 1!"
-  - "== APP == New counter value is: 11!"
-  - "== APP == Retry count value is: 0!"
-  - "== APP == Retry count value is: 1! This print statement verifies retry"
-  - "== APP == Appending 1 to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending 2 to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending 3 to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Get response from hello_world_wf after pause call: SUSPENDED"
-  - "== APP == Get response from hello_world_wf after resume call: RUNNING"
-  - "== APP == New counter value is: 111!"
-  - "== APP == New counter value is: 1111!"
-  - "== APP == Workflow completed! Result: Completed"
+  - "Hi Counter!"
+  - "New counter value is: 1!"
+  - "New counter value is: 11!"
+  - "Retry count value is: 0!"
+  - "Retry count value is: 1! This print statement verifies retry"
+  - "Appending 1 to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending 2 to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending 3 to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Get response from hello_world_wf after pause call: SUSPENDED"
+  - "Get response from hello_world_wf after resume call: RUNNING"
+  - "New counter value is: 111!"
+  - "New counter value is: 1111!"
+  - "Workflow completed! Result: Completed"
 timeout_seconds: 30
 -->
 
@@ -130,25 +130,25 @@ dapr run --app-id wf-simple-aio-example -- python3 simple_aio_client.py
 The output of this example should look like this:
 
 ```
- - "== APP == Hi Counter!"
-  - "== APP == New counter value is: 1!"
-  - "== APP == New counter value is: 11!"
-  - "== APP == Retry count value is: 0!"
-  - "== APP == Retry count value is: 1! This print statement verifies retry"
-  - "== APP == Appending 1 to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending a to child_orchestrator_string!"
-  - "== APP == Appending 2 to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending b to child_orchestrator_string!"
-  - "== APP == Appending 3 to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Appending c to child_orchestrator_string!"
-  - "== APP == Get response from hello_world_wf after pause call: SUSPENDED"
-  - "== APP == Get response from hello_world_wf after resume call: RUNNING"
-  - "== APP == New counter value is: 111!"
-  - "== APP == New counter value is: 1111!"
-  - "== APP == Workflow completed! Result: Completed"
+ - "Hi Counter!"
+  - "New counter value is: 1!"
+  - "New counter value is: 11!"
+  - "Retry count value is: 0!"
+  - "Retry count value is: 1! This print statement verifies retry"
+  - "Appending 1 to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending a to child_orchestrator_string!"
+  - "Appending 2 to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending b to child_orchestrator_string!"
+  - "Appending 3 to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Appending c to child_orchestrator_string!"
+  - "Get response from hello_world_wf after pause call: SUSPENDED"
+  - "Get response from hello_world_wf after resume call: RUNNING"
+  - "New counter value is: 111!"
+  - "New counter value is: 1111!"
+  - "Workflow completed! Result: Completed"
 ```
 
 ### Task Chaining
@@ -157,10 +157,10 @@ This example demonstrates how to chain "activity" tasks together in a workflow. 
 <!--STEP
 name: Run the task chaining example
 expected_stdout_lines:
-  - "== APP == Step 1: Received input: 42."
-  - "== APP == Step 2: Received input: 43."
-  - "== APP == Step 3: Received input: 86."
-  - "== APP == Workflow completed! Status: WorkflowStatus.COMPLETED"
+  - "Step 1: Received input: 42."
+  - "Step 2: Received input: 43."
+  - "Step 3: Received input: 86."
+  - "Workflow completed! Status: WorkflowStatus.COMPLETED"
 timeout_seconds: 30
 -->
 
@@ -172,11 +172,11 @@ dapr run --app-id wfexample -- python3 task_chaining.py
 The output of this example should look like this:
 
 ```
-== APP == Workflow started. Instance ID: b716208586c24829806b44b62816b598
-== APP == Step 1: Received input: 42.
-== APP == Step 2: Received input: 43.
-== APP == Step 3: Received input: 86.
-== APP == Workflow completed! Status: WorkflowStatus.COMPLETED
+Workflow started. Instance ID: b716208586c24829806b44b62816b598
+Step 1: Received input: 42.
+Step 2: Received input: 43.
+Step 3: Received input: 86.
+Workflow completed! Status: WorkflowStatus.COMPLETED
 ```
 
 ### Fan-out/Fan-in
@@ -187,27 +187,27 @@ This example demonstrates how to fan-out a workflow into multiple parallel tasks
 name: Run the fan-out/fan-in example
 match_order: none
 expected_stdout_lines:
-  - "== APP == Processing work item: 1."
-  - "== APP == Processing work item: 2."
-  - "== APP == Processing work item: 3."
-  - "== APP == Processing work item: 4."
-  - "== APP == Processing work item: 5."
-  - "== APP == Processing work item: 6."
-  - "== APP == Processing work item: 7."
-  - "== APP == Processing work item: 8."
-  - "== APP == Processing work item: 9."
-  - "== APP == Processing work item: 10."
-  - "== APP == Work item 1 processed. Result: 2."
-  - "== APP == Work item 2 processed. Result: 4."
-  - "== APP == Work item 3 processed. Result: 6."
-  - "== APP == Work item 4 processed. Result: 8."
-  - "== APP == Work item 5 processed. Result: 10."
-  - "== APP == Work item 6 processed. Result: 12."
-  - "== APP == Work item 7 processed. Result: 14."
-  - "== APP == Work item 8 processed. Result: 16."
-  - "== APP == Work item 9 processed. Result: 18."
-  - "== APP == Work item 10 processed. Result: 20."
-  - "== APP == Final result: 110."
+  - "Processing work item: 1."
+  - "Processing work item: 2."
+  - "Processing work item: 3."
+  - "Processing work item: 4."
+  - "Processing work item: 5."
+  - "Processing work item: 6."
+  - "Processing work item: 7."
+  - "Processing work item: 8."
+  - "Processing work item: 9."
+  - "Processing work item: 10."
+  - "Work item 1 processed. Result: 2."
+  - "Work item 2 processed. Result: 4."
+  - "Work item 3 processed. Result: 6."
+  - "Work item 4 processed. Result: 8."
+  - "Work item 5 processed. Result: 10."
+  - "Work item 6 processed. Result: 12."
+  - "Work item 7 processed. Result: 14."
+  - "Work item 8 processed. Result: 16."
+  - "Work item 9 processed. Result: 18."
+  - "Work item 10 processed. Result: 20."
+  - "Final result: 110."
 timeout_seconds: 30
 -->
 
@@ -219,28 +219,28 @@ dapr run --app-id wfexample -- python3 fan_out_fan_in.py
 The output of this sample should look like this:
 
 ```
-== APP == Workflow started. Instance ID: 2e656befbb304e758776e30642b75944
-== APP == Processing work item: 1.
-== APP == Processing work item: 2.
-== APP == Processing work item: 3.
-== APP == Processing work item: 4.
-== APP == Processing work item: 5.
-== APP == Processing work item: 6.
-== APP == Processing work item: 7.
-== APP == Processing work item: 8.
-== APP == Processing work item: 9.
-== APP == Processing work item: 10.
-== APP == Work item 1 processed. Result: 2.
-== APP == Work item 2 processed. Result: 4.
-== APP == Work item 3 processed. Result: 6.
-== APP == Work item 4 processed. Result: 8.
-== APP == Work item 5 processed. Result: 10.
-== APP == Work item 6 processed. Result: 12.
-== APP == Work item 7 processed. Result: 14.
-== APP == Work item 8 processed. Result: 16.
-== APP == Work item 9 processed. Result: 18.
-== APP == Work item 10 processed. Result: 20.
-== APP == Final result: 110.
+Workflow started. Instance ID: 2e656befbb304e758776e30642b75944
+Processing work item: 1.
+Processing work item: 2.
+Processing work item: 3.
+Processing work item: 4.
+Processing work item: 5.
+Processing work item: 6.
+Processing work item: 7.
+Processing work item: 8.
+Processing work item: 9.
+Processing work item: 10.
+Work item 1 processed. Result: 2.
+Work item 2 processed. Result: 4.
+Work item 3 processed. Result: 6.
+Work item 4 processed. Result: 8.
+Work item 5 processed. Result: 10.
+Work item 6 processed. Result: 12.
+Work item 7 processed. Result: 14.
+Work item 8 processed. Result: 16.
+Work item 9 processed. Result: 18.
+Work item 10 processed. Result: 20.
+Final result: 110.
 ```
 
 Note that the ordering of the work-items is non-deterministic since they are all running in parallel.
@@ -338,32 +338,32 @@ When you run the example, you will see output like this:
 ```
 
 
-### Cross-app Workflow
+### Multi-app Workflows
 
 This example demonstrates how to call child workflows and activities in different apps. The multiple Dapr CLI instances can be started using the following commands:
 
 <!-- STEP
 name: Run apps
 expected_stdout_lines:
-  - '== APP == app1 - triggering app1 workflow'
-  - '== APP == app1 - received workflow call'
-  - '== APP == app1 - triggering app2 workflow'
-  - '== APP == app2 - received workflow call'
-  - '== APP == app2 - triggering app3 activity'
-  - '== APP == app3 - received activity call'
-  - '== APP == app3 - returning activity result'
-  - '== APP == app2 - received activity result'
-  - '== APP == app2 - returning workflow result'
-  - '== APP == app1 - received workflow result'
-  - '== APP == app1 - returning workflow result'
+  - 'app1 - triggering app1 workflow'
+  - 'app1 - received workflow call'
+  - 'app1 - triggering app2 workflow'
+  - 'app2 - received workflow call'
+  - 'app2 - triggering app3 activity'
+  - 'app3 - received activity call'
+  - 'app3 - returning activity result'
+  - 'app2 - received activity result'
+  - 'app2 - returning workflow result'
+  - 'app1 - received workflow result'
+  - 'app1 - returning workflow result'
 background: true
 sleep: 20
 -->
 
 ```sh
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 multi-app3.py &
+dapr run --app-id wfexample2 python3 multi-app2.py &
+dapr run --app-id wfexample1 python3 multi-app1.py
 ```
 <!-- END_STEP -->
 
@@ -379,34 +379,34 @@ among others. This shows that the workflow calls are working as expected.
 
 #### Error handling on activity calls
 
-This example demonstrates how the error handling works on activity calls across apps.
+This example demonstrates how the error handling works on activity calls in multi-app workflows.
 
-Error handling on activity calls across apps works as normal workflow activity calls.
+Error handling on activity calls in multi-app workflows works as normal workflow activity calls.
 
 In this example we run `app3` in failing mode, which makes the activity call return error constantly. The activity call from `app2` will fail after the retry policy is exhausted.
 
 <!-- STEP
 name: Run apps
 expected_stdout_lines:
-  - '== APP == app1 - triggering app1 workflow'
-  - '== APP == app1 - received workflow call'
-  - '== APP == app1 - triggering app2 workflow'
-  - '== APP == app2 - received workflow call'
-  - '== APP == app2 - triggering app3 activity'
-  - '== APP == app3 - received activity call'
-  - '== APP == app3 - raising error in activity due to error mode being enabled'
-  - '== APP == app2 - received activity error from app3'
-  - '== APP == app2 - returning workflow result'
-  - '== APP == app1 - received workflow result'
-  - '== APP == app1 - returning workflow result'
+  - 'app1 - triggering app1 workflow'
+  - 'app1 - received workflow call'
+  - 'app1 - triggering app2 workflow'
+  - 'app2 - received workflow call'
+  - 'app2 - triggering app3 activity'
+  - 'app3 - received activity call'
+  - 'app3 - raising error in activity due to error mode being enabled'
+  - 'app2 - received activity error from app3'
+  - 'app2 - returning workflow result'
+  - 'app1 - received workflow result'
+  - 'app1 - returning workflow result'
 sleep: 20
 -->
 
 ```sh
 export ERROR_ACTIVITY_MODE=true
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 multi-app3.py &
+dapr run --app-id wfexample2 python3 multi-app2.py &
+dapr run --app-id wfexample1 python3 multi-app1.py
 ```
 <!-- END_STEP -->
 
@@ -424,30 +424,30 @@ among others. This shows that the activity calls are failing as expected, and th
 
 #### Error handling on workflow calls
 
-This example demonstrates how the error handling works on workflow calls across apps.
+This example demonstrates how the error handling works on workflow calls in multi-app workflows.
 
-Error handling on workflow calls across apps works as normal workflow calls.
+Error handling on workflow calls in multi-app workflows works as normal workflow calls.
 
 In this example we run `app2` in failing mode, which makes the workflow call return error constantly. The workflow call from `app1` will fail after the retry policy is exhausted.
 
 <!-- STEP
 name: Run apps
 expected_stdout_lines:
-  - '== APP == app1 - triggering app1 workflow'
-  - '== APP == app1 - received workflow call'
-  - '== APP == app1 - triggering app2 workflow'
-  - '== APP == app2 - received workflow call'
-  - '== APP == app2 - raising error in workflow due to error mode being enabled'
-  - '== APP == app1 - received workflow error from app2'
-  - '== APP == app1 - returning workflow result'
+  - 'app1 - triggering app1 workflow'
+  - 'app1 - received workflow call'
+  - 'app1 - triggering app2 workflow'
+  - 'app2 - received workflow call'
+  - 'app2 - raising error in workflow due to error mode being enabled'
+  - 'app1 - received workflow error from app2'
+  - 'app1 - returning workflow result'
 sleep: 20
 -->
 
 ```sh
 export ERROR_WORKFLOW_MODE=true
-dapr run --app-id wfexample3 python3 cross-app3.py &
-dapr run --app-id wfexample2 python3 cross-app2.py &
-dapr run --app-id wfexample1 python3 cross-app1.py
+dapr run --app-id wfexample3 python3 multi-app3.py &
+dapr run --app-id wfexample2 python3 multi-app2.py &
+dapr run --app-id wfexample1 python3 multi-app1.py
 ```
 <!-- END_STEP -->
 
@@ -477,29 +477,29 @@ It had to be done in two parts because the runtime needs to be restarted in orde
 name: Run the versioning example
 match_order: none
 expected_stdout_lines:
-  - "== APP == test1: triggering workflow"
-  - "== APP == test1: Received workflow call for version1"
-  - "== APP == test1: Finished workflow for version1"
-  - "== APP == test2: triggering workflow"
-  - "== APP == test2: Received workflow call for version1"
-  - "== APP == test2: Finished workflow for version1"
-  - "== APP == test3: triggering workflow"
-  - "== APP == test3: Received workflow call for version2"
-  - "== APP == test3: Finished workflow for version2"
-  - "== APP == test4: start"
-  - "== APP == test4: patch1 is patched"
-  - "== APP == test5: start"
-  - "== APP == test5: patch1 is not patched"
-  - "== APP == test5: patch2 is patched"
-  - "== APP == test6: start"
-  - "== APP == test6: patch1 is patched"
-  - "== APP == test6: patch2 is patched"
-  - "== APP == test7: Received workflow call for version1"
-  - "== APP == test7: Workflow is stalled"
-  - "== APP == test8: Workflow is stalled"
-  - "== APP == test100: part2"
-  - "== APP == test100: Finished stalled version1 workflow"
-  - "== APP == test100: Finished stalled patching workflow"
+  - "test1: triggering workflow"
+  - "test1: Received workflow call for version1"
+  - "test1: Finished workflow for version1"
+  - "test2: triggering workflow"
+  - "test2: Received workflow call for version1"
+  - "test2: Finished workflow for version1"
+  - "test3: triggering workflow"
+  - "test3: Received workflow call for version2"
+  - "test3: Finished workflow for version2"
+  - "test4: start"
+  - "test4: patch1 is patched"
+  - "test5: start"
+  - "test5: patch1 is not patched"
+  - "test5: patch2 is patched"
+  - "test6: start"
+  - "test6: patch1 is patched"
+  - "test6: patch2 is patched"
+  - "test7: Received workflow call for version1"
+  - "test7: Workflow is stalled"
+  - "test8: Workflow is stalled"
+  - "test100: part2"
+  - "test100: Finished stalled version1 workflow"
+  - "test100: Finished stalled patching workflow"
 timeout_seconds: 60
 -->
 

@@ -41,7 +41,6 @@ from dapr.clients.grpc._response import (
     DaprResponse,
     TopicEventResponse,
     UnlockResponseStatus,
-    WorkflowRuntimeStatus,
 )
 from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
 from dapr.clients.grpc.client import DaprGrpcClient
@@ -953,71 +952,6 @@ class DaprGrpcClientTests(unittest.TestCase):
             # client_id
             with self.assertRaises(ValueError):
                 dapr.unlock(store_name, resource_id, invalid_input)
-
-    #
-    # Tests for workflow
-    #
-
-    def test_workflow_deprecated(self):
-        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
-        # Sane parameters
-        workflow_name = 'test_workflow'
-        event_name = 'eventName'
-        instance_id = str(uuid.uuid4())
-        workflow_component = 'dapr'
-        input = 'paperclips'
-        event_data = 'cars'
-
-        # Start the workflow
-        start_response = dapr.start_workflow(
-            instance_id=instance_id,
-            workflow_name=workflow_name,
-            workflow_component=workflow_component,
-            input=input,
-            workflow_options=None,
-        )
-        self.assertEqual(instance_id, start_response.instance_id)
-
-        # Get info on the workflow to check that it is running
-        get_response = dapr.get_workflow(
-            instance_id=instance_id, workflow_component=workflow_component
-        )
-        self.assertEqual(WorkflowRuntimeStatus.RUNNING.value, get_response.runtime_status)
-
-        # Pause the workflow
-        dapr.pause_workflow(instance_id, workflow_component)
-
-        # Get info on the workflow to check that it is paused
-        get_response = dapr.get_workflow(instance_id, workflow_component)
-        self.assertEqual(WorkflowRuntimeStatus.SUSPENDED.value, get_response.runtime_status)
-
-        # Resume the workflow
-        dapr.resume_workflow(instance_id, workflow_component)
-
-        # Get info on the workflow to check that it is resumed
-        get_response = dapr.get_workflow(instance_id, workflow_component)
-        self.assertEqual(WorkflowRuntimeStatus.RUNNING.value, get_response.runtime_status)
-
-        # Raise an event on the workflow.
-        dapr.raise_workflow_event(instance_id, workflow_component, event_name, event_data)
-        get_response = dapr.get_workflow(instance_id, workflow_component)
-        self.assertEqual(event_data, get_response.properties[instance_id].strip('""'))
-
-        # Terminate the workflow
-        dapr.terminate_workflow(instance_id, workflow_component)
-
-        # Get info on the workflow to check that it is terminated
-        get_response = dapr.get_workflow(instance_id, workflow_component)
-        self.assertEqual(WorkflowRuntimeStatus.TERMINATED.value, get_response.runtime_status)
-
-        # Purge the workflow
-        dapr.purge_workflow(instance_id, workflow_component)
-
-        # Get information on the workflow to ensure that it has been purged
-        try:
-            get_response = dapr.get_workflow(instance_id, workflow_component)
-        except Exception as err:
-            self.assertIn('Workflow instance does not exist', str(err))
 
     #
     # Tests for Metadata API

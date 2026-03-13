@@ -35,8 +35,8 @@ Start the receiver:
 <!-- STEP
 name: Run invoke http example
 expected_stdout_lines:
-  - '== APP == Order received : {"id": 1, "message": "hello world"}'
-  - '== APP == Order error : {"id": 2, "message": "hello world"}'
+  - 'Order received : {"id": 1, "message": "hello world"}'
+  - 'Order error : {"id": 2, "message": "hello world"}'
 background: true
 sleep: 5
 -->
@@ -50,14 +50,14 @@ Start the caller:
 <!-- STEP
 name: Run invoke http example
 expected_stdout_lines:
-  - '== APP == text/html'
-  - '== APP == {"success": true}'
-  - '== APP == 200'
-  - '== APP == error occurred'
-  - '== APP == MY_CODE'
-  - '== APP == {"message": "error occurred", "errorCode": "MY_CODE"}'
-  - '== APP == 503'
-  - '== APP == Internal Server Error'
+  - 'text/html'
+  - '{"success": true}'
+  - '200'
+  - 'error occurred'
+  - 'MY_CODE'
+  - '{"message": "error occurred", "errorCode": "MY_CODE"}'
+  - '503'
+  - 'Internal Server Error'
 background: true
 sleep: 5
 -->

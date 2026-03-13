@@ -27,12 +27,12 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_A1..."
-    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_A1..."
-    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_A1..."
-    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_A1..."
-    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_A1..."
-    - "== APP == Closing subscription..."
+    - "Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_A1..."
+    - "Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_A1..."
+    - "Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_A1..."
+    - "Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_A1..."
+    - "Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_A1..."
+    - "Closing subscription..."
 output_match_mode: substring
 background: true
 match_order: none
@@ -51,11 +51,11 @@ In another terminal/command prompt run:
 <!-- STEP
 name: Run publisher
 expected_stdout_lines:
-  - "== APP == {'id': 1, 'message': 'hello world'}"
-  - "== APP == {'id': 2, 'message': 'hello world'}"
-  - "== APP == {'id': 3, 'message': 'hello world'}"
-  - "== APP == {'id': 4, 'message': 'hello world'}"
-  - "== APP == {'id': 5, 'message': 'hello world'}"
+  - "{'id': 1, 'message': 'hello world'}"
+  - "{'id': 2, 'message': 'hello world'}"
+  - "{'id': 3, 'message': 'hello world'}"
+  - "{'id': 4, 'message': 'hello world'}"
+  - "{'id': 5, 'message': 'hello world'}"
 background: true
 output_match_mode: substring
 sleep: 15
@@ -75,12 +75,12 @@ Run the following command in a terminal/command prompt:
 <!-- STEP
 name: Run subscriber
 expected_stdout_lines:
-    - "== APP == Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_A2..."
-    - "== APP == Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_A2..."
-    - "== APP == Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_A2..."
-    - "== APP == Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_A2..."
-    - "== APP == Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_A2..."
-    - "== APP == Closing subscription..."
+    - "Processing message: {'id': 1, 'message': 'hello world'} from TOPIC_A2..."
+    - "Processing message: {'id': 2, 'message': 'hello world'} from TOPIC_A2..."
+    - "Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_A2..."
+    - "Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_A2..."
+    - "Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_A2..."
+    - "Closing subscription..."
 output_match_mode: substring
 background: true
 match_order: none
@@ -99,11 +99,11 @@ In another terminal/command prompt run:
 <!-- STEP
 name: Run publisher
 expected_stdout_lines:
-  - "== APP == {'id': 1, 'message': 'hello world'}"
-  - "== APP == {'id': 2, 'message': 'hello world'}"
-  - "== APP == {'id': 3, 'message': 'hello world'}"
-  - "== APP == {'id': 4, 'message': 'hello world'}"
-  - "== APP == {'id': 5, 'message': 'hello world'}"
+  - "{'id': 1, 'message': 'hello world'}"
+  - "{'id': 2, 'message': 'hello world'}"
+  - "{'id': 3, 'message': 'hello world'}"
+  - "{'id': 4, 'message': 'hello world'}"
+  - "{'id': 5, 'message': 'hello world'}"
 background: true
 output_match_mode: substring
 sleep: 15

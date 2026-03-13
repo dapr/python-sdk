@@ -95,9 +95,9 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClient
             :class: `ClientCallDetails` modified call details
         """
 
-        metadata = []
+        metadata: List[Tuple[str, str]] = []
         if client_call_details.metadata is not None:
-            metadata = list(client_call_details.metadata)
+            metadata = list(client_call_details.metadata)  # type: ignore[arg-type]
         metadata.extend(self._metadata)
 
         new_call_details = _ClientCallDetailsAsync(
