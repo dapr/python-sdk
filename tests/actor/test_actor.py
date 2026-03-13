@@ -18,10 +18,10 @@ from datetime import timedelta
 from unittest import mock
 
 from dapr.actor.id import ActorId
-from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer
@@ -178,6 +178,37 @@ class ActorTests(unittest.TestCase):
             'test_id',
             'test_reminder',
             b'{"reminderName":"test_reminder","dueTime":"0h0m1s0ms0\\u03bcs","period":"0h0m1s0ms0\\u03bcs","data":"cmVtaW5kZXJfbWVzc2FnZQ==","failurePolicy":{"drop":{}}}',  # noqa E501
+        )
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.register_reminder',
+        new=_async_mock(return_value=b'"ok"'),
+    )
+    def test_register_reminder_with_constant_failure_policy(self):
+        test_actor_id = ActorId('test_id')
+        test_type_info = ActorTypeInformation.create(FakeSimpleReminderActor)
+        test_client = FakeDaprActorClient
+        ctx = ActorRuntimeContext(test_type_info, self._serializer, self._serializer, test_client)
+        test_actor = FakeSimpleReminderActor(ctx, test_actor_id)
+
+        _run(
+            test_actor.register_reminder(
+                'test_reminder',
+                b'reminder_message',
+                timedelta(seconds=1),
+                timedelta(seconds=1),
+                failure_policy=ActorReminderFailurePolicy.constant_policy(
+                    interval=timedelta(seconds=2),
+                    max_retries=5,
+                ),
+            )
+        )
+        test_client.register_reminder.mock.assert_called_once()
+        test_client.register_reminder.mock.assert_called_with(
+            'FakeSimpleReminderActor',
+            'test_id',
+            'test_reminder',
+            b'{"reminderName":"test_reminder","dueTime":"0h0m1s0ms0\\u03bcs","period":"0h0m1s0ms0\\u03bcs","data":"cmVtaW5kZXJfbWVzc2FnZQ==","failurePolicy":{"constant":{"interval":"0h0m2s0ms0\\u03bcs","maxRetries":5}}}',  # noqa E501
         )
 
     @mock.patch(

@@ -17,10 +17,10 @@ from datetime import timedelta
 from typing import Any, Optional, TypeVar
 
 from dapr.actor.id import ActorId
-from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime._reminder_data import ActorReminderData
 from dapr.actor.runtime._timer_data import TIMER_CALLBACK, ActorTimerData
 from dapr.actor.runtime.actor import Actor
+from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime.mock_state_manager import MockStateManager
 
 

@@ -16,7 +16,7 @@ limitations under the License.
 import unittest
 from datetime import timedelta
 
-from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
+from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
 
 
 class ActorReminderFailurePolicyTests(unittest.TestCase):

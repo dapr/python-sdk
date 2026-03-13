@@ -18,11 +18,11 @@ from datetime import timedelta
 from typing import Any, Optional
 
 from dapr.actor.id import ActorId
-from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime._method_context import ActorMethodContext
 from dapr.actor.runtime._reminder_data import ActorReminderData
 from dapr.actor.runtime._timer_data import TIMER_CALLBACK, ActorTimerData
 from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime.state_manager import ActorStateManager
 
 
@@ -132,8 +132,8 @@ class Actor:
             due_time (datetime.timedelta): the amount of time to delay before invoking the reminder
                 for the first time.
             period (Optional[datetime.timedelta]): the optional time interval between reminder
-                invocations after the first invocation. If not set, the reminder is triggered
-                only once at ``due_time``.
+                invocations after the first invocation. If not set, the Dapr runtime behavior
+                for one-off or non-periodic reminders applies.
             ttl (Optional[datetime.timedelta]): the optional time interval before the reminder
                 stops firing. If not set, the Dapr runtime default behavior applies.
             failure_policy (Optional[ActorReminderFailurePolicy]): the optional policy for

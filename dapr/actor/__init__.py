@@ -16,8 +16,8 @@ limitations under the License.
 from dapr.actor.actor_interface import ActorInterface, actormethod
 from dapr.actor.client.proxy import ActorProxy, ActorProxyFactory
 from dapr.actor.id import ActorId
-from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime.actor import Actor
+from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.runtime.runtime import ActorRuntime
 

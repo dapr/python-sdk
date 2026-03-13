@@ -17,7 +17,7 @@ import base64
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
-from dapr.actor.runtime._failure_policy import ActorReminderFailurePolicy
+from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
 
 
 class ActorReminderData:
