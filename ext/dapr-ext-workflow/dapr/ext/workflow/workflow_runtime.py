@@ -27,6 +27,7 @@ from dapr.ext.workflow.workflow_context import Workflow
 from durabletask import task, worker
 
 from dapr.clients import DaprInternalError
+from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
@@ -71,13 +72,17 @@ class WorkflowRuntime:
             raise DaprInternalError(f'{error}') from error
 
         options = self._logger.get_options()
+        all_interceptors = []
+        if interceptors:
+            all_interceptors.extend(interceptors)
+        all_interceptors.append(DaprClientTimeoutInterceptor())
         self.__worker = worker.TaskHubGrpcWorker(
             host_address=uri.endpoint,
             metadata=metadata,
             secure_channel=uri.tls,
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
-            interceptors=interceptors,
+            interceptors=all_interceptors,
             concurrency_options=worker.ConcurrencyOptions(
                 maximum_concurrent_activity_work_items=maximum_concurrent_activity_work_items,
                 maximum_concurrent_orchestration_work_items=maximum_concurrent_orchestration_work_items,
