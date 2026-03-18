@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright 2023 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,22 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from dapr.actor.actor_interface import ActorInterface, actormethod
-from dapr.actor.client.proxy import ActorProxy, ActorProxyFactory
-from dapr.actor.id import ActorId
-from dapr.actor.runtime.actor import Actor
+# Backward-compatible shim — import from the public module instead.
 from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
-from dapr.actor.runtime.remindable import Remindable
-from dapr.actor.runtime.runtime import ActorRuntime
 
-__all__ = [
-    'ActorInterface',
-    'ActorProxy',
-    'ActorProxyFactory',
-    'ActorId',
-    'Actor',
-    'ActorReminderFailurePolicy',
-    'ActorRuntime',
-    'Remindable',
-    'actormethod',
-]
+__all__ = ['ActorReminderFailurePolicy']
