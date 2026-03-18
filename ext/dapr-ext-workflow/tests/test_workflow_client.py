@@ -19,10 +19,11 @@ from typing import Any, Union
 from unittest import mock
 
 import durabletask.internal.orchestrator_service_pb2 as pb
-from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
-from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from durabletask import client
 from grpc import RpcError
+
+from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
@@ -112,6 +113,20 @@ class FakeTaskHubGrpcClient:
         )
 
 
+class WorkflowClientTimeoutInterceptorTest(unittest.TestCase):
+    def test_timeout_interceptor_is_passed_to_client(self):
+        with mock.patch('durabletask.client.TaskHubGrpcClient') as mock_client_cls:
+            DaprWorkflowClient()
+            mock_client_cls.assert_called_once()
+            call_kwargs = mock_client_cls.call_args[1]
+            interceptors = call_kwargs['interceptors']
+            self.assertEqual(len(interceptors), 1)
+            from dapr.clients.grpc.interceptors import \
+                DaprClientTimeoutInterceptor
+
+            self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptor)
+
+
 class WorkflowClientTest(unittest.TestCase):
     def mock_client_wf(ctx: DaprWorkflowContext, input):
         print(f'{input}')
@@ -182,5 +197,7 @@ class WorkflowClientTest(unittest.TestCase):
             actual_resume_result = wfClient.resume_workflow(instance_id=mock_instance_id)
             assert actual_resume_result == mock_resume_result
 
+            actual_purge_result = wfClient.purge_workflow(instance_id=mock_instance_id)
+            assert actual_purge_result == mock_purge_result
             actual_purge_result = wfClient.purge_workflow(instance_id=mock_instance_id)
             assert actual_purge_result == mock_purge_result
