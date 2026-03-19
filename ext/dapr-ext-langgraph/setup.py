@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import configparser
 import os
 
+from packaging.requirements import Requirement
 from setuptools import setup
 
 # Load version in dapr package.
@@ -48,32 +48,37 @@ or all of them in your application.
 # Get build number from GITHUB_RUN_NUMBER environment variable
 build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 
-cfg = configparser.ConfigParser()
-cfg.read('setup.cfg')
-install_requires = [
-    r.strip()
-    for r in cfg.get('options', 'install_requires', fallback='').strip().splitlines()
-    if r.strip()
+# Stable deps — mirror pyproject.toml [project].dependencies
+stable_requires = [
+    'dapr>=1.17.0.dev0',
+    'langgraph>=0.3.6',
+    'langchain>=0.1.17',
+    'python-ulid>=3.0.0',
+    'msgpack-python>=0.4.5',
 ]
 
-if not is_release():
-    name += '-dev'
-    version = f'{__version__}{build_number}'
-    description = 'The developmental release for the Dapr Checkpointer extension for LangGraph'
-    long_description = (
-        'This is the developmental release for the Dapr Checkpointer extension for LangGraph'
-    )
-    install_requires = [
-        'dapr-dev' + r[4:] if r.startswith('dapr ') else r for r in install_requires
-    ]
-
-print(f'package name: {name}, version: {version}', flush=True)
-
-
-setup(
+setup_kwargs = dict(
     name=name,
     version=version,
     description=description,
     long_description=long_description,
-    install_requires=install_requires,
+    install_requires=stable_requires,
 )
+
+if not is_release():
+    setup_kwargs['name'] += '-dev'
+    setup_kwargs['version'] = f'{__version__}{build_number}'
+    setup_kwargs['description'] = (
+        'The developmental release for the Dapr Checkpointer extension for LangGraph'
+    )
+    setup_kwargs['long_description'] = (
+        'This is the developmental release for the Dapr Checkpointer extension for LangGraph'
+    )
+    setup_kwargs['install_requires'] = [
+        'dapr-dev' + r[len('dapr') :] if Requirement(r).name == 'dapr' else r
+        for r in stable_requires
+    ]
+
+print(f'package name: {setup_kwargs["name"]}, version: {setup_kwargs["version"]}', flush=True)
+
+setup(**setup_kwargs)

@@ -6,7 +6,7 @@ The Flask extension provides two integration classes for building Dapr applicati
 
 ```
 ext/flask_dapr/
-├── setup.cfg                      # Deps: dapr, Flask
+├── pyproject.toml                      # Deps: dapr, Flask
 ├── setup.py
 ├── tests/
 │   └── test_app.py                # DaprApp pub/sub tests

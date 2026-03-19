@@ -6,7 +6,7 @@ The workflow extension is a **major area of active development**. It provides du
 
 ```
 ext/dapr-ext-workflow/
-├── setup.cfg                              # Deps: dapr, durabletask-dapr
+├── pyproject.toml                         # Deps: dapr, durabletask-dapr
 ├── setup.py
 ├── tests/
 │   ├── test_dapr_workflow_context.py      # Context method proxying
@@ -177,10 +177,6 @@ Retry configuration for activities and child workflows:
   result = yield ctx.call_activity('remote_activity', input=data, app_id='other-app')
   ```
 
-## Relationship to core SDK's DaprClient
-
-The core `DaprClient` in `dapr/clients/` has workflow methods (`start_workflow`, `get_workflow`, `pause_workflow`, etc.) but **these are deprecated**. The `examples/demo_workflow/` example demonstrates this old pattern with a deprecation notice. All new workflow code should use `DaprWorkflowClient` from this extension instead.
-
 ## Examples
 
 Two example directories exercise workflows:
@@ -195,8 +191,6 @@ Two example directories exercise workflows:
   - `cross-app1.py`, `cross-app2.py`, `cross-app3.py` — cross-app calls
   - `versioning.py` — workflow versioning with `is_patched()`
   - `simple_aio_client.py` — async client variant
-
-- **`examples/demo_workflow/`** — legacy example using deprecated `DaprClient` workflow methods
 
 ## Testing
 
@@ -227,6 +221,6 @@ The extension resolves the Dapr sidecar address from (in order of precedence):
 - **Determinism**: Workflow functions are replayed from history. Non-deterministic code (random, datetime.now, I/O) inside a workflow function will break replay. Only activities can have side effects.
 - **Generator pattern**: Workflow functions are generators that `yield` tasks. The return value is the workflow output. Do not use `await` — use `yield`.
 - **Naming matters**: The name used to register a workflow/activity must match the name used to schedule it. Custom names via `@alternate_name` or `name=` parameter are stored as function attributes.
-- **durabletask-dapr is external**: The underlying engine is not in this repo. The minimum version is pinned in `setup.cfg`.
+- **durabletask-dapr is external**: The underlying engine is not in this repo. The minimum version is pinned in `pyproject.toml`.
 - **Deprecated core methods**: Do not add new workflow functionality to `DaprClient` in the core SDK. Use the extension's `DaprWorkflowClient` instead.
 - **Double registration guard**: Functions decorated with `@wfr.workflow` or `@wfr.activity` get `_workflow_registered` / `_activity_registered` attributes set to `True`. Attempting to re-register raises an error.
