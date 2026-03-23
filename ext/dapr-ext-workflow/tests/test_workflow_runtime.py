@@ -18,7 +18,6 @@ from typing import List
 from unittest import mock
 
 import grpc
-
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
@@ -60,8 +59,7 @@ class WorkflowRuntimeTimeoutInterceptorTest(unittest.TestCase):
             call_kwargs = mock_worker_cls.call_args[1]
             interceptors = call_kwargs['interceptors']
             self.assertEqual(len(interceptors), 1)
-            from dapr.clients.grpc.interceptors import \
-                DaprClientTimeoutInterceptor
+            from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 
             self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptor)
 
@@ -72,8 +70,7 @@ class WorkflowRuntimeTimeoutInterceptorTest(unittest.TestCase):
             call_kwargs = mock_worker_cls.call_args[1]
             interceptors = call_kwargs['interceptors']
             self.assertEqual(len(interceptors), 2)
-            from dapr.clients.grpc.interceptors import \
-                DaprClientTimeoutInterceptor
+            from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 
             self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptor)
             self.assertIs(interceptors[1], custom_interceptor)
@@ -86,8 +83,7 @@ class WorkflowRuntimeTimeoutInterceptorTest(unittest.TestCase):
             call_kwargs = mock_worker_cls.call_args[1]
             interceptors = call_kwargs['interceptors']
             self.assertEqual(len(interceptors), 3)
-            from dapr.clients.grpc.interceptors import \
-                DaprClientTimeoutInterceptor
+            from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 
             self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptor)
             self.assertIs(interceptors[1], custom1)

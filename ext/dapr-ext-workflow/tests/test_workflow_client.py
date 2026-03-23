@@ -19,11 +19,10 @@ from typing import Any, Union
 from unittest import mock
 
 import durabletask.internal.orchestrator_service_pb2 as pb
-from durabletask import client
-from grpc import RpcError
-
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from durabletask import client
+from grpc import RpcError
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
@@ -121,8 +120,7 @@ class WorkflowClientTimeoutInterceptorTest(unittest.TestCase):
             call_kwargs = mock_client_cls.call_args[1]
             interceptors = call_kwargs['interceptors']
             self.assertEqual(len(interceptors), 1)
-            from dapr.clients.grpc.interceptors import \
-                DaprClientTimeoutInterceptor
+            from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 
             self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptor)
 
