@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Any, Union
 from unittest import mock
 
+from durabletask import client
 from grpc.aio import AioRpcError
 
 from dapr.ext.workflow._durabletask import client

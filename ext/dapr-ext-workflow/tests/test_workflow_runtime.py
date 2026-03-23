@@ -820,3 +820,9 @@ class PydanticInputCoercionTest(unittest.TestCase):
         wrapper = self.fake_registry._activity_fns['optional_no_default_act']
 
         self.assertIsNone(wrapper(mock.MagicMock(), None))
+        wrapper = self.fake_registry._activity_fns['optional_no_default_act']
+
+        self.assertIsNone(wrapper(mock.MagicMock(), None))
+        wrapper = self.fake_registry._activity_fns['optional_no_default_act']
+
+        self.assertIsNone(wrapper(mock.MagicMock(), None))
