@@ -47,6 +47,9 @@ class SimulatedRpcError(RpcError):
 
 
 class FakeTaskHubGrpcClient:
+    def __init__(self):
+        self.last_scheduled_workflow_name = None
+
     def schedule_new_orchestration(
         self,
         workflow,
@@ -55,6 +58,7 @@ class FakeTaskHubGrpcClient:
         start_at,
         reuse_id_policy: Union[pb.OrchestrationIdReusePolicy, None] = None,
     ):
+        self.last_scheduled_workflow_name = workflow
         return mock_schedule_result
 
     def get_orchestration_state(self, instance_id, fetch_payloads):
@@ -111,6 +115,14 @@ class FakeTaskHubGrpcClient:
 class WorkflowClientTest(unittest.TestCase):
     def mock_client_wf(ctx: DaprWorkflowContext, input):
         print(f'{input}')
+
+    def test_schedule_workflow_by_name_string(self):
+        fake_client = FakeTaskHubGrpcClient()
+        with mock.patch('durabletask.client.TaskHubGrpcClient', return_value=fake_client):
+            wfClient = DaprWorkflowClient()
+            result = wfClient.schedule_new_workflow(workflow='my_registered_workflow', input='data')
+            assert result == mock_schedule_result
+            assert fake_client.last_scheduled_workflow_name == 'my_registered_workflow'
 
     def test_client_functions(self):
         with mock.patch(
