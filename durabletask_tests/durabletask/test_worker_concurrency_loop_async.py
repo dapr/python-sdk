@@ -63,8 +63,10 @@ def test_worker_concurrency_loop_async():
     activity_requests = [DummyRequest("activity", f"act{i}") for i in range(4)]
 
     async def run_test():
-        # Clear stub state before each run
+        # Clear stub state and reset shutdown flag before each run so the manager
+        # is in a clean state when reused across multiple asyncio.run() calls.
         stub.completed.clear()
+        grpc_worker._async_worker_manager._shutdown = False
         worker_task = asyncio.create_task(grpc_worker._async_worker_manager.run())
         for req in orchestrator_requests:
             grpc_worker._async_worker_manager.submit_orchestration(
