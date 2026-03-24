@@ -65,7 +65,7 @@ def sequence(ctx: task.OrchestrationContext, _):
     return [result1, result2, result3]
 ```
 
-You can find the full sample [here](./examples/activity_sequence.py).
+You can find the full sample [here](../durabletask_examples/activity_sequence.py).
 
 ### Fan-out/fan-in
 
@@ -93,11 +93,11 @@ def orchestrator(ctx: task.OrchestrationContext, _):
     return {'work_items': work_items, 'results': results, 'total': sum(results)}
 ```
 
-You can find the full sample [here](./examples/fanout_fanin.py).
+You can find the full sample [here](../durabletask_examples/fanout_fanin.py).
 
 ### Human interaction and durable timers
 
-An orchestration can wait for a user-defined event, such as a human approval event, before proceding to the next step. In addition, the orchestration can create a timer with an arbitrary duration that triggers some alternate action if the external event hasn't been received:
+An orchestration can wait for a user-defined event, such as a human approval event, before proceeding to the next step. In addition, the orchestration can create a timer with an arbitrary duration that triggers some alternate action if the external event hasn't been received:
 
 ```python
 def purchase_order_workflow(ctx: task.OrchestrationContext, order: Order):
@@ -124,7 +124,7 @@ def purchase_order_workflow(ctx: task.OrchestrationContext, order: Order):
 
 As an aside, you'll also notice that the example orchestration above works with custom business objects. Support for custom business objects includes support for custom classes, custom data classes, and named tuples. Serialization and deserialization of these objects is handled automatically by the SDK.
 
-You can find the full sample [here](./examples/human_interaction.py).
+You can find the full sample [here](../durabletask_examples/human_interaction.py).
 
 ## Feature overview
 

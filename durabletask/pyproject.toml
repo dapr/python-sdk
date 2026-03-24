@@ -27,7 +27,6 @@ readme = "README.md"
 dependencies = [
     "grpcio",
     "protobuf>=6.31.1,<7.0.0", # follows grpcio generation version https://github.com/grpc/grpc/blob/v1.75.1/tools/distrib/python/grpcio_tools/setup.py
-    "asyncio"
 ]
 
 [project.urls]

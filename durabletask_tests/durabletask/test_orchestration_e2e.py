@@ -351,7 +351,7 @@ def test_terminate_recursive():
 
                 time.sleep(1)  # Brief delay to let orchestrations start
 
-                output = "Recursive termination = {recurse}"
+                output = f"Recursive termination = {recurse}"
                 task_hub_client.terminate_orchestration(
                     instance_id, output=output, recursive=recurse
                 )

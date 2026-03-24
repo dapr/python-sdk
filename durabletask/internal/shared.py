@@ -113,10 +113,16 @@ def get_logger(
 ) -> logging.Logger:
     logger = logging.getLogger(f"durabletask-{name_suffix}")
 
-    # Add a default log handler if none is provided
+    # Add a log handler only if one is not already present, to avoid duplicate log lines
+    # when get_logger is called multiple times for the same logger name.
     if log_handler is None:
-        log_handler = logging.StreamHandler()
-    logger.handlers.append(log_handler)
+        if not logger.handlers:
+            log_handler = logging.StreamHandler()
+            logger.addHandler(log_handler)
+        else:
+            log_handler = logger.handlers[0]
+    elif log_handler not in logger.handlers:
+        logger.addHandler(log_handler)
 
     # Set a default log formatter to our handler if none is provided
     if log_formatter is None:

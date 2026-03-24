@@ -70,10 +70,11 @@ jobs:
     # Install and run the durabletask-go sidecar for running e2e tests
     - name: Pytest e2e tests for DurableTask Python
       run: |
-        # TODO: use dapr run instead of durabletask-go as it provides a more reliable sidecar behaviorfor e2e tests  
-        go install github.com/dapr/durabletask-go@main        
-        durabletask-go --port 4001 & cd durabletask && \
-        tox -e py${{ matrix.python-version }}-e2e
+        # TODO: use dapr run instead of durabletask-go as it provides a more reliable sidecar behavior for e2e tests
+        go install github.com/dapr/durabletask-go@main
+        durabletask-go --port 4001 &
+        pip install -e durabletask[dev]
+        pytest -m e2e durabletask_tests/
     - name: Run examples
       run: |
         pip install mechanical-markdown

@@ -1,5 +1,5 @@
 """End-to-end sample that demonstrates how to configure an orchestrator
-that waits for an "approval" event before proceding to the next step. If
+that waits for an "approval" event before proceeding to the next step. If
 the approval isn't received within a specified timeout, the order that is
 represented by the orchestration is automatically cancelled."""
 

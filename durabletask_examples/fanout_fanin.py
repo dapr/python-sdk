@@ -1,5 +1,5 @@
 """End-to-end sample that demonstrates how to configure an orchestrator
-that a dynamic number activity functions in parallel, waits for them all
+that runs a dynamic number of activity functions in parallel, waits for them all
 to complete, and prints an aggregate summary of the outputs."""
 
 import random

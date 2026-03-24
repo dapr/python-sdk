@@ -185,24 +185,24 @@ def test_registry_add_named_versioned_orchestrators():
     )
     registry.add_named_orchestrator(name="orchestrator", fn=orchestrator3, version_name="v3")
 
-    orquestrator, version = registry.get_orchestrator(name="orchestrator")
-    assert orquestrator is orchestrator2
+    orchestrator, version = registry.get_orchestrator(name="orchestrator")
+    assert orchestrator is orchestrator2
     assert version == "v2"
 
-    orquestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v1")
-    assert orquestrator is orchestrator1
+    orchestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v1")
+    assert orchestrator is orchestrator1
     assert version == "v1"
 
-    orquestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v2")
-    assert orquestrator is orchestrator2
+    orchestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v2")
+    assert orchestrator is orchestrator2
     assert version == "v2"
 
-    orquestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v3")
-    assert orquestrator is orchestrator3
+    orchestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v3")
+    assert orchestrator is orchestrator3
     assert version == "v3"
 
     with pytest.raises(worker.VersionNotRegisteredException):
         registry.get_orchestrator(name="orchestrator", version_name="v4")
 
-    orquestrator, _ = registry.get_orchestrator(name="non-existent")
-    assert orquestrator is None
+    orchestrator, _ = registry.get_orchestrator(name="non-existent")
+    assert orchestrator is None
