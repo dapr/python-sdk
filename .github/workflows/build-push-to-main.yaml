@@ -120,3 +120,10 @@ jobs:
         cd ext/dapr-ext-strands
         python setup.py sdist bdist_wheel
         twine upload dist/*
+    - name: Build and publish DurableTask Python
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
+      run: |
+        cd durabletask
+        python -m build
+        twine upload dist/*

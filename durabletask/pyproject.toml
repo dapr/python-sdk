@@ -1,0 +1,84 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+# For more information on pyproject.toml, see https://peps.python.org/pep-0621/
+
+[build-system]
+requires = ["setuptools", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "durabletask-dapr"
+dynamic = ["version"]
+description = "A Durable Task Client SDK for Python"
+keywords = [
+    "durable",
+    "task",
+    "workflow"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+readme = "README.md"
+dependencies = [
+    "grpcio",
+    "protobuf>=6.31.1,<7.0.0", # follows grpcio generation version https://github.com/grpc/grpc/blob/v1.75.1/tools/distrib/python/grpcio_tools/setup.py
+    "asyncio"
+]
+
+[project.urls]
+repository = "https://github.com/dapr/durabletask-python"
+changelog = "https://github.com/dapr/durabletask-python/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+include = ["durabletask", "durabletask.*"]
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "e2e: mark a test as an end-to-end test that requires a running sidecar"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio>=0.23",
+    "tox>=4.0.0",
+    "pytest-cov",
+    "ruff",
+
+    # grpc gen
+    "grpcio-tools==1.75.1",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = [".github", "durabletask/internal/orchestrator_service_*.*"]
+
+[tool.ruff.lint]
+select = [
+    "I",  # isort
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+
+    # TODO: Add those back progressively as we fix the issues
+    # "E",  # pycodestyle errors
+    # "C",  # flake8-comprehensions
+    # "B",  # flake8-bugbear
+    # "UP",  # pyupgrade
+]
+
+[tool.ruff.format]
+# follow upstream quote-style instead of dapr/python-sdk to reduce diff
+quote-style = "double"
