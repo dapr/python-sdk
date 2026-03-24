@@ -13,13 +13,6 @@ The `examples/` directory serves as both **user-facing documentation** and the p
 Run examples locally (requires a running Dapr runtime via `dapr init`):
 
 ```bash
-# All examples
-tox -e examples
-
-# Single example
-tox -e example-component -- state_store
-
-# Or directly
 cd examples && ./validate.sh state_store
 ```
 
@@ -147,7 +140,6 @@ Common component types used in examples: `state.redis`, `pubsub.redis`, `lock.re
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
 | `workflow` | Multiple standalone scripts | `dapr-ext-workflow`, `dapr` | No |
-| `demo_workflow` | Legacy (deprecated DaprClient methods) | `dapr-ext-workflow` | Yes |
 
 The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_in.py`, `human_approval.py`, `monitor.py`, `child_workflow.py`, `cross-app1/2/3.py`, `versioning.py`, `simple_aio_client.py`.
 
@@ -189,7 +181,7 @@ The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_i
    - Running instructions with `<!-- STEP -->` blocks wrapping `dapr run` commands
    - Expected output section
    - Cleanup step to stop background processes
-5. Register the example in `tox.ini` under `[testenv:examples]` commands:
+5. Register the example in `.github/workflows/validate_examples.yaml` under the `Check Examples` step:
    ```
    ./validate.sh your-example-name
    ```
