@@ -7,7 +7,7 @@ two methods in that API:
 2. **set_metadata**: Adds a custom label to the Dapr sidecar information stored
    by the Metadata endpoint.
 
-It creates a client using `DaprClient`, uses a set of components defined in the 
+It creates a client using `DaprClient`, uses a set of components defined in the
 [`./components/`](./components/) folder and invokes the two APIs from
 [Metadata API].
 
@@ -41,7 +41,7 @@ expected_stdout_lines:
   - "== APP ==   registered_components:"
   - "== APP ==     name=lockstore type=lock.redis version= capabilities=[]"
   - "== APP ==     name=pubsub type=pubsub.redis version=v1 capabilities=[]"
-  - "== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'KEYS_LIKE', 'TRANSACTIONAL', 'TTL'"
+  - "== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'TRANSACTIONAL', 'TTL'"
   - "== APP == We will update our custom label value and check it was persisted"
   - "== APP == We added a custom label named [is-this-our-metadata-example]"
   - "== APP == Its old value was [yes] but now it is [You bet it is!]"
@@ -64,7 +64,7 @@ The output should be as follows:
 == APP ==   registered_components:
 == APP ==     name=lockstore type=lock.redis version= capabilities=[]
 == APP ==     name=pubsub type=pubsub.redis version=v1 capabilities=[]
-== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'KEYS_LIKE', 'TRANSACTIONAL', 'TTL']
+== APP ==     name=statestore type=state.redis version=v1 capabilities=['ACTOR', 'ETAG', 'TRANSACTIONAL', 'TTL']
 == APP == We will update our custom label value and check it was persisted
 == APP == We added a custom label named [is-this-our-metadata-example]
 == APP == Its old value was [yes] but now it is [You bet it is!]
