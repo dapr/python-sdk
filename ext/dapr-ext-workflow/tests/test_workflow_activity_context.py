@@ -17,6 +17,7 @@ import unittest
 from unittest import mock
 
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+
 from durabletask import task
 
 mock_orchestration_id = 'orchestration001'

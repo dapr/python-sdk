@@ -19,6 +19,7 @@ from unittest import mock
 
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+
 from durabletask import worker
 
 mock_date_time = datetime(2023, 4, 27)

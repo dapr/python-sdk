@@ -2,7 +2,7 @@
 target-version = "py310"
 line-length = 100
 fix = true
-extend-exclude = [".github", "dapr/proto"]
+extend-exclude = [".github", "dapr/proto", "durabletask/internal"]
 
 [tool.ruff.lint]
 select = [
