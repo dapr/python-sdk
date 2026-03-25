@@ -24,7 +24,14 @@ class ScheduleTaskAction(_message.Message):
     input: _wrappers_pb2.StringValue
     router: _orchestration_pb2.TaskRouter
     taskExecutionId: str
-    def __init__(self, name: _Optional[str] = ..., version: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ..., input: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ..., router: _Optional[_Union[_orchestration_pb2.TaskRouter, _Mapping]] = ..., taskExecutionId: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        name: _Optional[str] = ...,
+        version: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+        input: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+        router: _Optional[_Union[_orchestration_pb2.TaskRouter, _Mapping]] = ...,
+        taskExecutionId: _Optional[str] = ...,
+    ) -> None: ...
 
 class CreateSubOrchestrationAction(_message.Message):
     __slots__ = ("instanceId", "name", "version", "input", "router")
@@ -38,7 +45,14 @@ class CreateSubOrchestrationAction(_message.Message):
     version: _wrappers_pb2.StringValue
     input: _wrappers_pb2.StringValue
     router: _orchestration_pb2.TaskRouter
-    def __init__(self, instanceId: _Optional[str] = ..., name: _Optional[str] = ..., version: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ..., input: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ..., router: _Optional[_Union[_orchestration_pb2.TaskRouter, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        instanceId: _Optional[str] = ...,
+        name: _Optional[str] = ...,
+        version: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+        input: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+        router: _Optional[_Union[_orchestration_pb2.TaskRouter, _Mapping]] = ...,
+    ) -> None: ...
 
 class CreateTimerAction(_message.Message):
     __slots__ = ("fireAt", "name")
@@ -46,7 +60,11 @@ class CreateTimerAction(_message.Message):
     NAME_FIELD_NUMBER: _ClassVar[int]
     fireAt: _timestamp_pb2.Timestamp
     name: str
-    def __init__(self, fireAt: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., name: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        fireAt: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...,
+        name: _Optional[str] = ...,
+    ) -> None: ...
 
 class SendEventAction(_message.Message):
     __slots__ = ("instance", "name", "data")
@@ -56,10 +74,22 @@ class SendEventAction(_message.Message):
     instance: _orchestration_pb2.OrchestrationInstance
     name: str
     data: _wrappers_pb2.StringValue
-    def __init__(self, instance: _Optional[_Union[_orchestration_pb2.OrchestrationInstance, _Mapping]] = ..., name: _Optional[str] = ..., data: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        instance: _Optional[_Union[_orchestration_pb2.OrchestrationInstance, _Mapping]] = ...,
+        name: _Optional[str] = ...,
+        data: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+    ) -> None: ...
 
 class CompleteOrchestrationAction(_message.Message):
-    __slots__ = ("orchestrationStatus", "result", "details", "newVersion", "carryoverEvents", "failureDetails")
+    __slots__ = (
+        "orchestrationStatus",
+        "result",
+        "details",
+        "newVersion",
+        "carryoverEvents",
+        "failureDetails",
+    )
     ORCHESTRATIONSTATUS_FIELD_NUMBER: _ClassVar[int]
     RESULT_FIELD_NUMBER: _ClassVar[int]
     DETAILS_FIELD_NUMBER: _ClassVar[int]
@@ -72,7 +102,17 @@ class CompleteOrchestrationAction(_message.Message):
     newVersion: _wrappers_pb2.StringValue
     carryoverEvents: _containers.RepeatedCompositeFieldContainer[_history_events_pb2.HistoryEvent]
     failureDetails: _orchestration_pb2.TaskFailureDetails
-    def __init__(self, orchestrationStatus: _Optional[_Union[_orchestration_pb2.OrchestrationStatus, str]] = ..., result: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ..., details: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ..., newVersion: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ..., carryoverEvents: _Optional[_Iterable[_Union[_history_events_pb2.HistoryEvent, _Mapping]]] = ..., failureDetails: _Optional[_Union[_orchestration_pb2.TaskFailureDetails, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        orchestrationStatus: _Optional[_Union[_orchestration_pb2.OrchestrationStatus, str]] = ...,
+        result: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+        details: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+        newVersion: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+        carryoverEvents: _Optional[
+            _Iterable[_Union[_history_events_pb2.HistoryEvent, _Mapping]]
+        ] = ...,
+        failureDetails: _Optional[_Union[_orchestration_pb2.TaskFailureDetails, _Mapping]] = ...,
+    ) -> None: ...
 
 class TerminateOrchestrationAction(_message.Message):
     __slots__ = ("instanceId", "reason", "recurse")
@@ -82,14 +122,29 @@ class TerminateOrchestrationAction(_message.Message):
     instanceId: str
     reason: _wrappers_pb2.StringValue
     recurse: bool
-    def __init__(self, instanceId: _Optional[str] = ..., reason: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ..., recurse: bool = ...) -> None: ...
+    def __init__(
+        self,
+        instanceId: _Optional[str] = ...,
+        reason: _Optional[_Union[_wrappers_pb2.StringValue, _Mapping]] = ...,
+        recurse: bool = ...,
+    ) -> None: ...
 
 class OrchestratorVersionNotAvailableAction(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
 class OrchestratorAction(_message.Message):
-    __slots__ = ("id", "scheduleTask", "createSubOrchestration", "createTimer", "sendEvent", "completeOrchestration", "terminateOrchestration", "orchestratorVersionNotAvailable", "router")
+    __slots__ = (
+        "id",
+        "scheduleTask",
+        "createSubOrchestration",
+        "createTimer",
+        "sendEvent",
+        "completeOrchestration",
+        "terminateOrchestration",
+        "orchestratorVersionNotAvailable",
+        "router",
+    )
     ID_FIELD_NUMBER: _ClassVar[int]
     SCHEDULETASK_FIELD_NUMBER: _ClassVar[int]
     CREATESUBORCHESTRATION_FIELD_NUMBER: _ClassVar[int]
@@ -108,4 +163,17 @@ class OrchestratorAction(_message.Message):
     terminateOrchestration: TerminateOrchestrationAction
     orchestratorVersionNotAvailable: OrchestratorVersionNotAvailableAction
     router: _orchestration_pb2.TaskRouter
-    def __init__(self, id: _Optional[int] = ..., scheduleTask: _Optional[_Union[ScheduleTaskAction, _Mapping]] = ..., createSubOrchestration: _Optional[_Union[CreateSubOrchestrationAction, _Mapping]] = ..., createTimer: _Optional[_Union[CreateTimerAction, _Mapping]] = ..., sendEvent: _Optional[_Union[SendEventAction, _Mapping]] = ..., completeOrchestration: _Optional[_Union[CompleteOrchestrationAction, _Mapping]] = ..., terminateOrchestration: _Optional[_Union[TerminateOrchestrationAction, _Mapping]] = ..., orchestratorVersionNotAvailable: _Optional[_Union[OrchestratorVersionNotAvailableAction, _Mapping]] = ..., router: _Optional[_Union[_orchestration_pb2.TaskRouter, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        scheduleTask: _Optional[_Union[ScheduleTaskAction, _Mapping]] = ...,
+        createSubOrchestration: _Optional[_Union[CreateSubOrchestrationAction, _Mapping]] = ...,
+        createTimer: _Optional[_Union[CreateTimerAction, _Mapping]] = ...,
+        sendEvent: _Optional[_Union[SendEventAction, _Mapping]] = ...,
+        completeOrchestration: _Optional[_Union[CompleteOrchestrationAction, _Mapping]] = ...,
+        terminateOrchestration: _Optional[_Union[TerminateOrchestrationAction, _Mapping]] = ...,
+        orchestratorVersionNotAvailable: _Optional[
+            _Union[OrchestratorVersionNotAvailableAction, _Mapping]
+        ] = ...,
+        router: _Optional[_Union[_orchestration_pb2.TaskRouter, _Mapping]] = ...,
+    ) -> None: ...

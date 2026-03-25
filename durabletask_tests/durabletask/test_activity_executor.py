@@ -8,12 +8,12 @@ from typing import Any, Optional, Tuple
 from durabletask import task, worker
 
 logging.basicConfig(
-    format="%(asctime)s.%(msecs)03d %(name)s %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    format='%(asctime)s.%(msecs)03d %(name)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
     level=logging.DEBUG,
 )
-TEST_LOGGER = logging.getLogger("tests")
-TEST_INSTANCE_ID = "abc123"
+TEST_LOGGER = logging.getLogger('tests')
+TEST_INSTANCE_ID = 'abc123'
 TEST_TASK_ID = 42
 
 
@@ -24,7 +24,7 @@ def test_activity_inputs():
         # return all activity inputs back as the output
         return test_input, ctx.orchestration_id, ctx.task_id
 
-    activity_input = "Hello, 世界!"
+    activity_input = 'Hello, 世界!'
     executor, name = _get_activity_executor(test_activity)
     result = executor.execute(TEST_INSTANCE_ID, name, TEST_TASK_ID, json.dumps(activity_input))
     assert result is not None
@@ -43,12 +43,12 @@ def test_activity_not_registered():
 
     caught_exception: Optional[Exception] = None
     try:
-        executor.execute(TEST_INSTANCE_ID, "Bogus", TEST_TASK_ID, None)
+        executor.execute(TEST_INSTANCE_ID, 'Bogus', TEST_TASK_ID, None)
     except Exception as ex:
         caught_exception = ex
 
     assert type(caught_exception) is worker.ActivityNotRegisteredError
-    assert "Bogus" in str(caught_exception)
+    assert 'Bogus' in str(caught_exception)
 
 
 def _get_activity_executor(fn: task.Activity) -> Tuple[worker._ActivityExecutor, str]:

@@ -22,7 +22,7 @@ def test_registry_add_orchestrator_none():
     """Test that adding a None orchestrator raises ValueError."""
     registry = worker._Registry()
 
-    with pytest.raises(ValueError, match="An orchestrator function argument is required"):
+    with pytest.raises(ValueError, match='An orchestrator function argument is required'):
         registry.add_orchestrator(None)
 
 
@@ -31,10 +31,10 @@ def test_registry_add_named_orchestrator_empty_name():
     registry = worker._Registry()
 
     def dummy_orchestrator(ctx, input):
-        return "done"
+        return 'done'
 
-    with pytest.raises(ValueError, match="A non-empty orchestrator name is required"):
-        registry.add_named_orchestrator("", dummy_orchestrator)
+    with pytest.raises(ValueError, match='A non-empty orchestrator name is required'):
+        registry.add_named_orchestrator('', dummy_orchestrator)
 
 
 def test_registry_add_orchestrator_duplicate():
@@ -42,9 +42,9 @@ def test_registry_add_orchestrator_duplicate():
     registry = worker._Registry()
 
     def dummy_orchestrator(ctx, input):
-        return "done"
+        return 'done'
 
-    name = "test_orchestrator"
+    name = 'test_orchestrator'
     registry.add_named_orchestrator(name, dummy_orchestrator)
 
     with pytest.raises(ValueError, match=f"A '{name}' orchestrator already exists"):
@@ -55,7 +55,7 @@ def test_registry_add_activity_none():
     """Test that adding a None activity raises ValueError."""
     registry = worker._Registry()
 
-    with pytest.raises(ValueError, match="An activity function argument is required"):
+    with pytest.raises(ValueError, match='An activity function argument is required'):
         registry.add_activity(None)
 
 
@@ -64,10 +64,10 @@ def test_registry_add_named_activity_empty_name():
     registry = worker._Registry()
 
     def dummy_activity(ctx, input):
-        return "done"
+        return 'done'
 
-    with pytest.raises(ValueError, match="A non-empty activity name is required"):
-        registry.add_named_activity("", dummy_activity)
+    with pytest.raises(ValueError, match='A non-empty activity name is required'):
+        registry.add_named_activity('', dummy_activity)
 
 
 def test_registry_add_activity_duplicate():
@@ -75,9 +75,9 @@ def test_registry_add_activity_duplicate():
     registry = worker._Registry()
 
     def dummy_activity(ctx, input):
-        return "done"
+        return 'done'
 
-    name = "test_activity"
+    name = 'test_activity'
     registry.add_named_activity(name, dummy_activity)
 
     with pytest.raises(ValueError, match=f"A '{name}' activity already exists"):
@@ -89,7 +89,7 @@ def test_registry_get_orchestrator_exists():
     registry = worker._Registry()
 
     def dummy_orchestrator(ctx, input):
-        return "done"
+        return 'done'
 
     name = registry.add_orchestrator(dummy_orchestrator)
     retrieved, _ = registry.get_orchestrator(name)
@@ -101,7 +101,7 @@ def test_registry_get_orchestrator_not_exists():
     """Test retrieving a non-existent orchestrator returns None."""
     registry = worker._Registry()
 
-    retrieved, _ = registry.get_orchestrator("non_existent")
+    retrieved, _ = registry.get_orchestrator('non_existent')
 
     assert retrieved is None
 
@@ -111,7 +111,7 @@ def test_registry_get_activity_exists():
     registry = worker._Registry()
 
     def dummy_activity(ctx, input):
-        return "done"
+        return 'done'
 
     name = registry.add_activity(dummy_activity)
     retrieved = registry.get_activity(name)
@@ -123,7 +123,7 @@ def test_registry_get_activity_not_exists():
     """Test retrieving a non-existent activity returns None."""
     registry = worker._Registry()
 
-    retrieved = registry.get_activity("non_existent")
+    retrieved = registry.get_activity('non_existent')
 
     assert retrieved is None
 
@@ -133,10 +133,10 @@ def test_registry_add_multiple_orchestrators():
     registry = worker._Registry()
 
     def orchestrator1(ctx, input):
-        return "one"
+        return 'one'
 
     def orchestrator2(ctx, input):
-        return "two"
+        return 'two'
 
     name1 = registry.add_orchestrator(orchestrator1)
     name2 = registry.add_orchestrator(orchestrator2)
@@ -153,10 +153,10 @@ def test_registry_add_multiple_activities():
     registry = worker._Registry()
 
     def activity1(ctx, input):
-        return "one"
+        return 'one'
 
     def activity2(ctx, input):
-        return "two"
+        return 'two'
 
     name1 = registry.add_activity(activity1)
     name2 = registry.add_activity(activity2)
@@ -171,38 +171,38 @@ def test_registry_add_named_versioned_orchestrators():
     registry = worker._Registry()
 
     def orchestrator1(ctx, input):
-        return "one"
+        return 'one'
 
     def orchestrator2(ctx, input):
-        return "two"
+        return 'two'
 
     def orchestrator3(ctx, input):
-        return "two"
+        return 'two'
 
-    registry.add_named_orchestrator(name="orchestrator", fn=orchestrator1, version_name="v1")
+    registry.add_named_orchestrator(name='orchestrator', fn=orchestrator1, version_name='v1')
     registry.add_named_orchestrator(
-        name="orchestrator", fn=orchestrator2, version_name="v2", is_latest=True
+        name='orchestrator', fn=orchestrator2, version_name='v2', is_latest=True
     )
-    registry.add_named_orchestrator(name="orchestrator", fn=orchestrator3, version_name="v3")
+    registry.add_named_orchestrator(name='orchestrator', fn=orchestrator3, version_name='v3')
 
-    orchestrator, version = registry.get_orchestrator(name="orchestrator")
+    orchestrator, version = registry.get_orchestrator(name='orchestrator')
     assert orchestrator is orchestrator2
-    assert version == "v2"
+    assert version == 'v2'
 
-    orchestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v1")
+    orchestrator, version = registry.get_orchestrator(name='orchestrator', version_name='v1')
     assert orchestrator is orchestrator1
-    assert version == "v1"
+    assert version == 'v1'
 
-    orchestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v2")
+    orchestrator, version = registry.get_orchestrator(name='orchestrator', version_name='v2')
     assert orchestrator is orchestrator2
-    assert version == "v2"
+    assert version == 'v2'
 
-    orchestrator, version = registry.get_orchestrator(name="orchestrator", version_name="v3")
+    orchestrator, version = registry.get_orchestrator(name='orchestrator', version_name='v3')
     assert orchestrator is orchestrator3
-    assert version == "v3"
+    assert version == 'v3'
 
     with pytest.raises(worker.VersionNotRegisteredException):
-        registry.get_orchestrator(name="orchestrator", version_name="v4")
+        registry.get_orchestrator(name='orchestrator', version_name='v4')
 
-    orchestrator, _ = registry.get_orchestrator(name="non-existent")
+    orchestrator, _ = registry.get_orchestrator(name='non-existent')
     assert orchestrator is None

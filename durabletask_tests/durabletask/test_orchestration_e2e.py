@@ -52,7 +52,7 @@ def test_empty_orchestration():
         invoked = True
 
     channel_options = [
-        ("grpc.max_send_message_length", 1024 * 1024),  # 1MB
+        ('grpc.max_send_message_length', 1024 * 1024),  # 1MB
     ]
 
     # Start a worker, which will connect to the sidecar in a background thread
@@ -115,7 +115,7 @@ def test_activity_sequence():
 
 def test_activity_error_handling():
     def throw(_: task.ActivityContext, input: int) -> int:
-        raise RuntimeError("Kah-BOOOOM!!!")
+        raise RuntimeError('Kah-BOOOOM!!!')
 
     compensation_counter = 0
 
@@ -124,7 +124,7 @@ def test_activity_error_handling():
         compensation_counter += 1
 
     def orchestrator(ctx: task.OrchestrationContext, input: int):
-        error_msg = ""
+        error_msg = ''
         try:
             yield ctx.call_activity(throw, input=input)
         except task.TaskFailedError as e:
@@ -151,7 +151,7 @@ def test_activity_error_handling():
     assert state.name == task.get_name(orchestrator)
     assert state.instance_id == id
     assert state.runtime_status == client.OrchestrationStatus.COMPLETED
-    assert state.serialized_output == json.dumps("Kah-BOOOOM!!!")
+    assert state.serialized_output == json.dumps('Kah-BOOOOM!!!')
     assert state.failure_details is None
     assert state.serialized_custom_status is None
     assert compensation_counter == 2
@@ -197,9 +197,9 @@ def test_sub_orchestration_fan_out():
 
 def test_wait_for_multiple_external_events():
     def orchestrator(ctx: task.OrchestrationContext, _):
-        a = yield ctx.wait_for_external_event("A")
-        b = yield ctx.wait_for_external_event("B")
-        c = yield ctx.wait_for_external_event("C")
+        a = yield ctx.wait_for_external_event('A')
+        b = yield ctx.wait_for_external_event('B')
+        c = yield ctx.wait_for_external_event('C')
         return [a, b, c]
 
     # Start a worker, which will connect to the sidecar in a background thread
@@ -210,26 +210,26 @@ def test_wait_for_multiple_external_events():
         # Start the orchestration and immediately raise events to it.
         task_hub_client = client.TaskHubGrpcClient()
         id = task_hub_client.schedule_new_orchestration(orchestrator)
-        task_hub_client.raise_orchestration_event(id, "A", data="a")
-        task_hub_client.raise_orchestration_event(id, "B", data="b")
-        task_hub_client.raise_orchestration_event(id, "C", data="c")
+        task_hub_client.raise_orchestration_event(id, 'A', data='a')
+        task_hub_client.raise_orchestration_event(id, 'B', data='b')
+        task_hub_client.raise_orchestration_event(id, 'C', data='c')
         state = task_hub_client.wait_for_orchestration_completion(id, timeout=30)
 
     assert state is not None
     assert state.runtime_status == client.OrchestrationStatus.COMPLETED
-    assert state.serialized_output == json.dumps(["a", "b", "c"])
+    assert state.serialized_output == json.dumps(['a', 'b', 'c'])
 
 
-@pytest.mark.parametrize("raise_event", [True, False])
+@pytest.mark.parametrize('raise_event', [True, False])
 def test_wait_for_external_event_timeout(raise_event: bool):
     def orchestrator(ctx: task.OrchestrationContext, _):
-        approval: task.Task[bool] = ctx.wait_for_external_event("Approval")
+        approval: task.Task[bool] = ctx.wait_for_external_event('Approval')
         timeout = ctx.create_timer(timedelta(seconds=3))
         winner = yield task.when_any([approval, timeout])
         if winner == approval:
-            return "approved"
+            return 'approved'
         else:
-            return "timed out"
+            return 'timed out'
 
     # Start a worker, which will connect to the sidecar in a background thread
     with worker.TaskHubGrpcWorker(stop_timeout=2.0) as w:
@@ -240,20 +240,20 @@ def test_wait_for_external_event_timeout(raise_event: bool):
         with client.TaskHubGrpcClient() as task_hub_client:
             id = task_hub_client.schedule_new_orchestration(orchestrator)
             if raise_event:
-                task_hub_client.raise_orchestration_event(id, "Approval")
+                task_hub_client.raise_orchestration_event(id, 'Approval')
             state = task_hub_client.wait_for_orchestration_completion(id, timeout=30)
 
     assert state is not None
     assert state.runtime_status == client.OrchestrationStatus.COMPLETED
     if raise_event:
-        assert state.serialized_output == json.dumps("approved")
+        assert state.serialized_output == json.dumps('approved')
     else:
-        assert state.serialized_output == json.dumps("timed out")
+        assert state.serialized_output == json.dumps('timed out')
 
 
 def test_suspend_and_resume():
     def orchestrator(ctx: task.OrchestrationContext, _):
-        result = yield ctx.wait_for_external_event("my_event")
+        result = yield ctx.wait_for_external_event('my_event')
         return result
 
     # Start a worker, which will connect to the sidecar in a background thread
@@ -275,10 +275,10 @@ def test_suspend_and_resume():
             assert state.runtime_status == client.OrchestrationStatus.SUSPENDED
 
             # Raise an event to the orchestration and confirm that it does NOT complete
-            task_hub_client.raise_orchestration_event(id, "my_event", data=42)
+            task_hub_client.raise_orchestration_event(id, 'my_event', data=42)
             try:
                 state = task_hub_client.wait_for_orchestration_completion(id, timeout=3)
-                assert False, "Orchestration should not have completed"
+                assert False, 'Orchestration should not have completed'
             except TimeoutError:
                 pass
 
@@ -292,7 +292,7 @@ def test_suspend_and_resume():
 
 def test_terminate():
     def orchestrator(ctx: task.OrchestrationContext, _):
-        result = yield ctx.wait_for_external_event("my_event")
+        result = yield ctx.wait_for_external_event('my_event')
         return result
 
     # Start a worker, which will connect to the sidecar in a background thread
@@ -306,11 +306,11 @@ def test_terminate():
             assert state is not None
             assert state.runtime_status == client.OrchestrationStatus.RUNNING
 
-            task_hub_client.terminate_orchestration(id, output="some reason for termination")
+            task_hub_client.terminate_orchestration(id, output='some reason for termination')
             state = task_hub_client.wait_for_orchestration_completion(id, timeout=30)
             assert state is not None
             assert state.runtime_status == client.OrchestrationStatus.TERMINATED
-            assert state.serialized_output == json.dumps("some reason for termination")
+            assert state.serialized_output == json.dumps('some reason for termination')
 
 
 def test_terminate_recursive():
@@ -324,7 +324,7 @@ def test_terminate_recursive():
         with thread_lock:
             nonlocal activity_counter
             activity_counter += 1
-        raise Exception("Failed: Should not have executed the activity")
+        raise Exception('Failed: Should not have executed the activity')
 
     def orchestrator_child(ctx: task.OrchestrationContext, activity_count: int):
         due_time = ctx.current_utc_datetime + timedelta(seconds=delay_time)
@@ -351,7 +351,7 @@ def test_terminate_recursive():
 
                 time.sleep(1)  # Brief delay to let orchestrations start
 
-                output = "Recursive termination = {recurse}"
+                output = 'Recursive termination = {recurse}'
                 task_hub_client.terminate_orchestration(
                     instance_id, output=output, recursive=recurse
                 )
@@ -365,11 +365,11 @@ def test_terminate_recursive():
                 time.sleep(delay_time)  # Wait for timer to check activity execution
                 if recurse:
                     assert activity_counter == 0, (
-                        "Activity should not have executed with recursive termination"
+                        'Activity should not have executed with recursive termination'
                     )
                 else:
                     assert activity_counter == 5, (
-                        "Activity should have executed without recursive termination"
+                        'Activity should have executed without recursive termination'
                     )
 
 
@@ -377,7 +377,7 @@ def test_continue_as_new():
     all_results = []
 
     def orchestrator(ctx: task.OrchestrationContext, input: int):
-        result = yield ctx.wait_for_external_event("my_event")
+        result = yield ctx.wait_for_external_event('my_event')
         if not ctx.is_replaying:
             # NOTE: Real orchestrations should never interact with nonlocal variables like this.
             nonlocal all_results  # noqa: F824
@@ -395,11 +395,11 @@ def test_continue_as_new():
 
         task_hub_client = client.TaskHubGrpcClient()
         id = task_hub_client.schedule_new_orchestration(orchestrator, input=0)
-        task_hub_client.raise_orchestration_event(id, "my_event", data=1)
-        task_hub_client.raise_orchestration_event(id, "my_event", data=2)
-        task_hub_client.raise_orchestration_event(id, "my_event", data=3)
-        task_hub_client.raise_orchestration_event(id, "my_event", data=4)
-        task_hub_client.raise_orchestration_event(id, "my_event", data=5)
+        task_hub_client.raise_orchestration_event(id, 'my_event', data=1)
+        task_hub_client.raise_orchestration_event(id, 'my_event', data=2)
+        task_hub_client.raise_orchestration_event(id, 'my_event', data=3)
+        task_hub_client.raise_orchestration_event(id, 'my_event', data=4)
+        task_hub_client.raise_orchestration_event(id, 'my_event', data=5)
 
         state = task_hub_client.wait_for_orchestration_completion(id, timeout=30)
         assert state is not None
@@ -427,7 +427,7 @@ def test_continue_as_new_with_activity_e2e():
         if counter < 3:
             ctx.continue_as_new(counter + 1, save_events=False)
         else:
-            return {"counter": counter, "processed": processed, "all_results": activity_results}
+            return {'counter': counter, 'processed': processed, 'all_results': activity_results}
 
     with worker.TaskHubGrpcWorker(stop_timeout=2.0) as w:
         w.add_activity(double_activity)
@@ -444,8 +444,8 @@ def test_continue_as_new_with_activity_e2e():
         output = json.loads(state.serialized_output)
         # Should have called activity 3 times with input values 1, 2, 3
         assert activity_results == [2, 4, 6]
-        assert output["counter"] == 3
-        assert output["processed"] == 6
+        assert output['counter'] == 3
+        assert output['processed'] == 6
 
 
 # NOTE: This test fails when running against durabletask-go with sqlite because the sqlite backend does not yet
@@ -485,7 +485,7 @@ def test_retry_policies():
     def throw_activity_with_retry(ctx: task.ActivityContext, _):
         nonlocal throw_activity_counter
         throw_activity_counter += 1
-        raise RuntimeError("Kah-BOOOOM!!!")
+        raise RuntimeError('Kah-BOOOOM!!!')
 
     with worker.TaskHubGrpcWorker(stop_timeout=2.0) as w:
         w.add_orchestrator(parent_orchestrator_with_retry)
@@ -499,10 +499,10 @@ def test_retry_policies():
         assert state is not None
         assert state.runtime_status == client.OrchestrationStatus.FAILED
         assert state.failure_details is not None
-        assert state.failure_details.error_type == "TaskFailedError"
-        assert "Sub-orchestration task #" in state.failure_details.message
-        assert "failed:" in state.failure_details.message
-        assert state.failure_details.message.endswith("failed: Kah-BOOOOM!!!")
+        assert state.failure_details.error_type == 'TaskFailedError'
+        assert 'Sub-orchestration task #' in state.failure_details.message
+        assert 'failed:' in state.failure_details.message
+        assert state.failure_details.message.endswith('failed: Kah-BOOOOM!!!')
         assert state.failure_details.stack_trace is not None
         assert throw_activity_counter == 9
         assert child_orch_counter == 3
@@ -513,7 +513,7 @@ def test_retry_policies():
     def throw_non_retryable(ctx: task.ActivityContext, _):
         nonlocal non_retryable_counter
         non_retryable_counter += 1
-        raise task.NonRetryableError("Cannot retry this!")
+        raise task.NonRetryableError('Cannot retry this!')
 
     def orchestrator_with_non_retryable(ctx: task.OrchestrationContext, _):
         # Even with retry policy, NonRetryableError should fail immediately
@@ -530,7 +530,7 @@ def test_retry_policies():
         assert state is not None
         assert state.runtime_status == client.OrchestrationStatus.FAILED
         assert state.failure_details is not None
-        assert "Cannot retry this!" in state.failure_details.message
+        assert 'Cannot retry this!' in state.failure_details.message
         # Key assertion: activity was called exactly once (no retries)
         assert non_retryable_counter == 1
 
@@ -555,7 +555,7 @@ def test_retry_timeout():
     def throw_activity(ctx: task.ActivityContext, _):
         nonlocal throw_activity_counter
         throw_activity_counter += 1
-        raise RuntimeError("Kah-BOOOOM!!!")
+        raise RuntimeError('Kah-BOOOOM!!!')
 
     with worker.TaskHubGrpcWorker(stop_timeout=2.0) as w:
         w.add_orchestrator(mock_orchestrator)
@@ -568,15 +568,15 @@ def test_retry_timeout():
         assert state is not None
         assert state.runtime_status == client.OrchestrationStatus.FAILED
         assert state.failure_details is not None
-        assert state.failure_details.error_type == "TaskFailedError"
-        assert state.failure_details.message.endswith("failed: Kah-BOOOOM!!!")
+        assert state.failure_details.error_type == 'TaskFailedError'
+        assert state.failure_details.message.endswith('failed: Kah-BOOOOM!!!')
         assert state.failure_details.stack_trace is not None
         assert throw_activity_counter == 4
 
 
 def test_custom_status():
     def empty_orchestrator(ctx: task.OrchestrationContext, _):
-        ctx.set_custom_status("foobaz")
+        ctx.set_custom_status('foobaz')
 
     # Start a worker, which will connect to the sidecar in a background thread
     with worker.TaskHubGrpcWorker(stop_timeout=2.0) as w:
@@ -594,7 +594,7 @@ def test_custom_status():
     assert state.runtime_status == client.OrchestrationStatus.COMPLETED
     assert state.serialized_input is None
     assert state.serialized_output is None
-    assert state.serialized_custom_status == "foobaz"
+    assert state.serialized_custom_status == 'foobaz'
 
 
 def test_now_with_sequence_ordering():
@@ -608,46 +608,46 @@ def test_now_with_sequence_ordering():
     """
 
     def simple_activity(ctx, input_val: str):
-        return f"activity_{input_val}_done"
+        return f'activity_{input_val}_done'
 
     def timestamp_ordering_workflow(ctx: task.OrchestrationContext, _):
         timestamps = []
 
         # First timestamp before any activities
         t1 = ctx.now_with_sequence()
-        timestamps.append(("t1_before_activities", t1.isoformat()))
+        timestamps.append(('t1_before_activities', t1.isoformat()))
 
         # Call first activity
-        result1 = yield ctx.call_activity(simple_activity, input="first")
-        timestamps.append(("activity_1_result", result1))
+        result1 = yield ctx.call_activity(simple_activity, input='first')
+        timestamps.append(('activity_1_result', result1))
 
         # Timestamp after first activity
         t2 = ctx.now_with_sequence()
-        timestamps.append(("t2_after_activity_1", t2.isoformat()))
+        timestamps.append(('t2_after_activity_1', t2.isoformat()))
 
         # Call second activity
-        result2 = yield ctx.call_activity(simple_activity, input="second")
-        timestamps.append(("activity_2_result", result2))
+        result2 = yield ctx.call_activity(simple_activity, input='second')
+        timestamps.append(('activity_2_result', result2))
 
         # Timestamp after second activity
         t3 = ctx.now_with_sequence()
-        timestamps.append(("t3_after_activity_2", t3.isoformat()))
+        timestamps.append(('t3_after_activity_2', t3.isoformat()))
 
         # A few more rapid timestamps to test counter incrementing
         t4 = ctx.now_with_sequence()
-        timestamps.append(("t4_rapid", t4.isoformat()))
+        timestamps.append(('t4_rapid', t4.isoformat()))
 
         t5 = ctx.now_with_sequence()
-        timestamps.append(("t5_rapid", t5.isoformat()))
+        timestamps.append(('t5_rapid', t5.isoformat()))
 
         # Return all timestamps for verification
         return {
-            "timestamps": timestamps,
-            "t1": t1.isoformat(),
-            "t2": t2.isoformat(),
-            "t3": t3.isoformat(),
-            "t4": t4.isoformat(),
-            "t5": t5.isoformat(),
+            'timestamps': timestamps,
+            't1': t1.isoformat(),
+            't2': t2.isoformat(),
+            't3': t3.isoformat(),
+            't4': t4.isoformat(),
+            't5': t5.isoformat(),
         }
 
     with worker.TaskHubGrpcWorker(stop_timeout=2.0) as w:
@@ -670,35 +670,35 @@ def test_now_with_sequence_ordering():
     assert result is not None
 
     # Verify all timestamps are present
-    assert "t1" in result
-    assert "t2" in result
-    assert "t3" in result
-    assert "t4" in result
-    assert "t5" in result
+    assert 't1' in result
+    assert 't2' in result
+    assert 't3' in result
+    assert 't4' in result
+    assert 't5' in result
 
     # Parse timestamps back to datetime objects for comparison
     from datetime import datetime
 
-    t1 = datetime.fromisoformat(result["t1"])
-    t2 = datetime.fromisoformat(result["t2"])
-    t3 = datetime.fromisoformat(result["t3"])
-    t4 = datetime.fromisoformat(result["t4"])
-    t5 = datetime.fromisoformat(result["t5"])
+    t1 = datetime.fromisoformat(result['t1'])
+    t2 = datetime.fromisoformat(result['t2'])
+    t3 = datetime.fromisoformat(result['t3'])
+    t4 = datetime.fromisoformat(result['t4'])
+    t5 = datetime.fromisoformat(result['t5'])
 
     # Verify strict ordering: t1 < t2 < t3 < t4 < t5
     # This is the key guarantee - timestamps must maintain order for tracing
-    assert t1 < t2, f"t1 ({t1}) should be < t2 ({t2})"
-    assert t2 < t3, f"t2 ({t2}) should be < t3 ({t3})"
-    assert t3 < t4, f"t3 ({t3}) should be < t4 ({t4})"
-    assert t4 < t5, f"t4 ({t4}) should be < t5 ({t5})"
+    assert t1 < t2, f't1 ({t1}) should be < t2 ({t2})'
+    assert t2 < t3, f't2 ({t2}) should be < t3 ({t3})'
+    assert t3 < t4, f't3 ({t3}) should be < t4 ({t4})'
+    assert t4 < t5, f't4 ({t4}) should be < t5 ({t5})'
 
     # Verify that timestamps called in rapid succession (t3, t4, t5 with no activities between)
     # have exactly 1 microsecond deltas. These happen within the same replay execution.
     delta_t3_t4 = (t4 - t3).total_seconds() * 1_000_000
     delta_t4_t5 = (t5 - t4).total_seconds() * 1_000_000
 
-    assert delta_t3_t4 == 1.0, f"t3 to t4 should be 1 microsecond, got {delta_t3_t4}"
-    assert delta_t4_t5 == 1.0, f"t4 to t5 should be 1 microsecond, got {delta_t4_t5}"
+    assert delta_t3_t4 == 1.0, f't3 to t4 should be 1 microsecond, got {delta_t3_t4}'
+    assert delta_t4_t5 == 1.0, f't4 to t5 should be 1 microsecond, got {delta_t4_t5}'
 
     # Note: We don't check exact deltas for t1->t2 or t2->t3 because they span
     # activity calls. During replay, current_utc_datetime changes based on event
@@ -709,10 +709,10 @@ def test_cannot_add_orchestrator_while_running():
     """Test that orchestrators cannot be added while the worker is running."""
 
     def orchestrator(ctx: task.OrchestrationContext, _):
-        return "done"
+        return 'done'
 
     def another_orchestrator(ctx: task.OrchestrationContext, _):
-        return "another"
+        return 'another'
 
     with worker.TaskHubGrpcWorker(stop_timeout=2.0) as w:
         w.add_orchestrator(orchestrator)
@@ -720,7 +720,7 @@ def test_cannot_add_orchestrator_while_running():
 
         # Try to add another orchestrator while running
         with pytest.raises(
-            RuntimeError, match="Orchestrators cannot be added while the worker is running"
+            RuntimeError, match='Orchestrators cannot be added while the worker is running'
         ):
             w.add_orchestrator(another_orchestrator)
 
@@ -735,7 +735,7 @@ def test_cannot_add_activity_while_running():
         return input * 2
 
     def orchestrator(ctx: task.OrchestrationContext, _):
-        return "done"
+        return 'done'
 
     with worker.TaskHubGrpcWorker(stop_timeout=2.0) as w:
         w.add_orchestrator(orchestrator)
@@ -744,7 +744,7 @@ def test_cannot_add_activity_while_running():
 
         # Try to add another activity while running
         with pytest.raises(
-            RuntimeError, match="Activities cannot be added while the worker is running"
+            RuntimeError, match='Activities cannot be added while the worker is running'
         ):
             w.add_activity(another_activity)
 
@@ -753,10 +753,10 @@ def test_can_add_functions_after_stop():
     """Test that orchestrators/activities can be added after stopping the worker."""
 
     def orchestrator1(ctx: task.OrchestrationContext, _):
-        return "done"
+        return 'done'
 
     def orchestrator2(ctx: task.OrchestrationContext, _):
-        return "done2"
+        return 'done2'
 
     def activity(ctx: task.ActivityContext, input):
         return input

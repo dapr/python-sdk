@@ -58,7 +58,7 @@ def test_stop_when_not_running():
     worker = TaskHubGrpcWorker()
     worker._is_running = False
     # Should return immediately, not set _shutdown
-    with patch.object(worker._shutdown, "set") as shutdown_set:
+    with patch.object(worker._shutdown, 'set') as shutdown_set:
         worker.stop()
         shutdown_set.assert_not_called()
 
@@ -67,7 +67,7 @@ def test_stop_channel_close_handles_exception(caplog):
     """stop() handles exceptions from channel.close() gracefully."""
     worker = _make_running_worker()
     mock_channel = MagicMock()
-    mock_channel.close.side_effect = Exception("close failed")
+    mock_channel.close.side_effect = Exception('close failed')
     worker._current_channel = mock_channel
     # Should not raise
     worker.stop()
@@ -105,7 +105,7 @@ def test_deferred_channel_close_handles_close_exception():
     worker = TaskHubGrpcWorker()
     worker._shutdown.set()
     old_channel = MagicMock()
-    old_channel.close.side_effect = Exception("already closed")
+    old_channel.close.side_effect = Exception('already closed')
 
     # Should not raise
     worker._schedule_deferred_channel_close(old_channel, grace_timeout=0)

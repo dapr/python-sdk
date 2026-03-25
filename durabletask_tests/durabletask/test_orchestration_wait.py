@@ -5,9 +5,9 @@ import pytest
 from durabletask.client import TaskHubGrpcClient
 
 
-@pytest.mark.parametrize("timeout", [None, 0, 5])
+@pytest.mark.parametrize('timeout', [None, 0, 5])
 def test_wait_for_orchestration_start_timeout(timeout):
-    instance_id = "test-instance"
+    instance_id = 'test-instance'
 
     from durabletask.internal.protos import (
         ORCHESTRATION_STATUS_RUNNING,
@@ -32,14 +32,14 @@ def test_wait_for_orchestration_start_timeout(timeout):
     c._stub.WaitForInstanceStart.assert_called_once()
     _, kwargs = c._stub.WaitForInstanceStart.call_args
     if timeout is None or timeout == 0:
-        assert kwargs.get("timeout") is None
+        assert kwargs.get('timeout') is None
     else:
-        assert kwargs.get("timeout") == timeout
+        assert kwargs.get('timeout') == timeout
 
 
-@pytest.mark.parametrize("timeout", [None, 0, 5])
+@pytest.mark.parametrize('timeout', [None, 0, 5])
 def test_wait_for_orchestration_completion_timeout(timeout):
-    instance_id = "test-instance"
+    instance_id = 'test-instance'
 
     from durabletask.internal.protos import (
         ORCHESTRATION_STATUS_COMPLETED,
@@ -64,6 +64,6 @@ def test_wait_for_orchestration_completion_timeout(timeout):
     c._stub.WaitForInstanceCompletion.assert_called_once()
     _, kwargs = c._stub.WaitForInstanceCompletion.call_args
     if timeout is None or timeout == 0:
-        assert kwargs.get("timeout") is None
+        assert kwargs.get('timeout') is None
     else:
-        assert kwargs.get("timeout") == timeout
+        assert kwargs.get('timeout') == timeout

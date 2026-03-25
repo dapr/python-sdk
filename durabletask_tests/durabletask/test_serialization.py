@@ -25,7 +25,7 @@ class SamplePayload:
 
 
 def test_to_json_roundtrip_dataclass():
-    payload = SamplePayload(count=5, name="widgets")
+    payload = SamplePayload(count=5, name='widgets')
     encoded = to_json(payload)
 
     assert AUTO_SERIALIZED in encoded
@@ -33,34 +33,34 @@ def test_to_json_roundtrip_dataclass():
     decoded = from_json(encoded)
     assert isinstance(decoded, SimpleNamespace)
     assert decoded.count == 5
-    assert decoded.name == "widgets"
+    assert decoded.name == 'widgets'
 
 
 def test_to_json_roundtrip_simplenamespace():
-    payload = SimpleNamespace(foo="bar", baz=42)
+    payload = SimpleNamespace(foo='bar', baz=42)
     encoded = to_json(payload)
 
     assert AUTO_SERIALIZED in encoded
 
     decoded = from_json(encoded)
     assert isinstance(decoded, SimpleNamespace)
-    assert decoded.foo == "bar"
+    assert decoded.foo == 'bar'
     assert decoded.baz == 42
 
 
 def test_to_json_plain_dict_passthrough():
-    payload = {"foo": "bar", "baz": 1}
+    payload = {'foo': 'bar', 'baz': 1}
     encoded = to_json(payload)
 
     assert AUTO_SERIALIZED not in encoded
 
     decoded = from_json(encoded)
     assert isinstance(decoded, dict)
-    assert decoded == {"foo": "bar", "baz": 1}
+    assert decoded == {'foo': 'bar', 'baz': 1}
 
 
 def test_to_json_namedtuple_roundtrip():
-    Point = namedtuple("Point", ["x", "y"])
+    Point = namedtuple('Point', ['x', 'y'])
     payload = Point(3, 4)
     encoded = to_json(payload)
 
@@ -74,8 +74,8 @@ def test_to_json_namedtuple_roundtrip():
 
 def test_to_json_nested_dataclass_collection():
     payload = [
-        SamplePayload(count=1, name="first"),
-        SamplePayload(count=2, name="second"),
+        SamplePayload(count=1, name='first'),
+        SamplePayload(count=2, name='second'),
     ]
     encoded = to_json(payload)
 
@@ -84,4 +84,4 @@ def test_to_json_nested_dataclass_collection():
     decoded = from_json(encoded)
     assert isinstance(decoded, list)
     assert [item.count for item in decoded] == [1, 2]
-    assert [item.name for item in decoded] == ["first", "second"]
+    assert [item.name for item in decoded] == ['first', 'second']

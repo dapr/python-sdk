@@ -31,19 +31,19 @@ def test_when_all_happy_path_returns_ordered_results_and_completes_last():
 
     assert not all_task.is_complete
 
-    c2.complete("two")
+    c2.complete('two')
 
     assert not all_task.is_complete
 
-    c1.complete("one")
+    c1.complete('one')
 
     assert not all_task.is_complete
 
-    c3.complete("three")
+    c3.complete('three')
 
     assert all_task.is_complete
 
-    assert all_task.get_result() == ["one", "two", "three"]
+    assert all_task.get_result() == ['one', 'two', 'three']
 
 
 def test_when_all_is_composable_with_when_any():
@@ -56,7 +56,7 @@ def test_when_all_is_composable_with_when_any():
     assert not any_task.is_complete
     assert not all_task.is_complete
 
-    c2.complete("two")
+    c2.complete('two')
 
     assert any_task.is_complete
     assert all_task.is_complete
@@ -76,13 +76,13 @@ def test_when_any_is_composable_with_when_all():
     assert not all_task1.is_complete
     assert not all_task2.is_complete
 
-    c1.complete("one")
+    c1.complete('one')
 
     assert not any_task.is_complete
     assert not all_task1.is_complete
     assert not all_task2.is_complete
 
-    c2.complete("two")
+    c2.complete('two')
 
     assert any_task.is_complete
     assert all_task1.is_complete
@@ -99,7 +99,7 @@ def test_when_any_happy_path_returns_winner_task_and_completes_on_first():
 
     assert not any_task.is_complete
 
-    b.complete("B")
+    b.complete('B')
 
     assert any_task.is_complete
 
@@ -107,9 +107,9 @@ def test_when_any_happy_path_returns_winner_task_and_completes_on_first():
 
     assert winner is b
 
-    assert winner.get_result() == "B"
+    assert winner.get_result() == 'B'
 
     # Completing the other child should not change the winner
-    a.complete("A")
+    a.complete('A')
 
     assert any_task.get_result() is b
