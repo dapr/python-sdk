@@ -158,7 +158,7 @@ class OrchestrationContext(ABC):
         """
         pass
 
-    # TOOD: Add a timeout parameter, which allows the task to be canceled if the event is
+    # TODO: Add a timeout parameter, which allows the task to be canceled if the event is
     # not received within the specified timeout. This requires support for task cancellation.
     @abstractmethod
     def wait_for_external_event(self, name: str) -> Task:
@@ -434,7 +434,22 @@ class RetryableTask(CompletableTask[T]):
         else:
             backoff_coefficient = self._retry_policy.backoff_coefficient
 
-        if datetime.utcnow() < retry_expiration:
+        # Compute a deterministic "logical now" based on start time and accumulated delays,
+        # rather than wall-clock time, to avoid non-determinism during replay.
+        total_elapsed_seconds = 0.0
+        for i in range(1, self._attempt_count):
+            attempt_delay = (
+                math.pow(backoff_coefficient, i - 1)
+                * self._retry_policy.first_retry_interval.total_seconds()
+            )
+            if self._retry_policy.max_retry_interval is not None:
+                attempt_delay = min(
+                    attempt_delay,
+                    self._retry_policy.max_retry_interval.total_seconds(),
+                )
+            total_elapsed_seconds += attempt_delay
+        logical_now = self._start_time + timedelta(seconds=total_elapsed_seconds)
+        if logical_now < retry_expiration:
             next_delay_f = (
                 math.pow(backoff_coefficient, self._attempt_count - 1)
                 * self._retry_policy.first_retry_interval.total_seconds()
