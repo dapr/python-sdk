@@ -56,7 +56,7 @@ class StateMetadata(Generic[T]):
         return self._ttl_in_seconds
 
     @ttl_in_seconds.setter
-    def ttl_in_seconds(self, new_ttl_in_seconds: int) -> None:
+    def ttl_in_seconds(self, new_ttl_in_seconds: Optional[int]) -> None:
         self._ttl_in_seconds = new_ttl_in_seconds
 
 
