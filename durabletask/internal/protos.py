@@ -5,10 +5,12 @@
 # a single namespace, preserving backwards compatibility for code that imports
 # this module as `pb` and accesses types like `pb.HistoryEvent`.
 
+# isort: skip_file
+# The import order below is intentional and must not be changed.
 # Well-known protobuf types must be registered in the descriptor pool before
-# the generated pb2 files that depend on them are loaded.
+# the generated pb2 files that depend on them are loaded. Additionally,
+# orchestration_pb2 must be loaded before history_events_pb2, which depends on it.
 from google.protobuf import duration_pb2, empty_pb2, timestamp_pb2, wrappers_pb2  # noqa: F401
-
 from durabletask.internal.orchestration_pb2 import *  # noqa: F401, F403
 from durabletask.internal.history_events_pb2 import *  # noqa: F401, F403
 from durabletask.internal.orchestrator_actions_pb2 import *  # noqa: F401, F403
