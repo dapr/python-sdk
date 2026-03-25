@@ -34,6 +34,7 @@ repository = "https://github.com/dapr/durabletask-python"
 changelog = "https://github.com/dapr/durabletask-python/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
+where = [".."]
 include = ["durabletask", "durabletask.*"]
 
 
