@@ -50,11 +50,6 @@ class TaskHubSidecarServiceStub(object):
                 request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetInstanceRequest.SerializeToString,
                 response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetInstanceResponse.FromString,
                 _registered_method=True)
-        self.RewindInstance = channel.unary_unary(
-                '/TaskHubSidecarService/RewindInstance',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.RewindInstanceRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.RewindInstanceResponse.FromString,
-                _registered_method=True)
         self.WaitForInstanceStart = channel.unary_unary(
                 '/TaskHubSidecarService/WaitForInstanceStart',
                 request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetInstanceRequest.SerializeToString,
@@ -85,11 +80,6 @@ class TaskHubSidecarServiceStub(object):
                 request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.ResumeRequest.SerializeToString,
                 response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.ResumeResponse.FromString,
                 _registered_method=True)
-        self.QueryInstances = channel.unary_unary(
-                '/TaskHubSidecarService/QueryInstances',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.QueryInstancesRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.QueryInstancesResponse.FromString,
-                _registered_method=True)
         self.PurgeInstances = channel.unary_unary(
                 '/TaskHubSidecarService/PurgeInstances',
                 request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.PurgeInstancesRequest.SerializeToString,
@@ -109,61 +99,6 @@ class TaskHubSidecarServiceStub(object):
                 '/TaskHubSidecarService/CompleteOrchestratorTask',
                 request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.OrchestratorResponse.SerializeToString,
                 response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CompleteTaskResponse.FromString,
-                _registered_method=True)
-        self.CompleteEntityTask = channel.unary_unary(
-                '/TaskHubSidecarService/CompleteEntityTask',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.EntityBatchResult.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CompleteTaskResponse.FromString,
-                _registered_method=True)
-        self.StreamInstanceHistory = channel.unary_stream(
-                '/TaskHubSidecarService/StreamInstanceHistory',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.StreamInstanceHistoryRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.HistoryChunk.FromString,
-                _registered_method=True)
-        self.CreateTaskHub = channel.unary_unary(
-                '/TaskHubSidecarService/CreateTaskHub',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CreateTaskHubRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CreateTaskHubResponse.FromString,
-                _registered_method=True)
-        self.DeleteTaskHub = channel.unary_unary(
-                '/TaskHubSidecarService/DeleteTaskHub',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.DeleteTaskHubRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.DeleteTaskHubResponse.FromString,
-                _registered_method=True)
-        self.SignalEntity = channel.unary_unary(
-                '/TaskHubSidecarService/SignalEntity',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.SignalEntityRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.SignalEntityResponse.FromString,
-                _registered_method=True)
-        self.GetEntity = channel.unary_unary(
-                '/TaskHubSidecarService/GetEntity',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetEntityRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetEntityResponse.FromString,
-                _registered_method=True)
-        self.QueryEntities = channel.unary_unary(
-                '/TaskHubSidecarService/QueryEntities',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.QueryEntitiesRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.QueryEntitiesResponse.FromString,
-                _registered_method=True)
-        self.CleanEntityStorage = channel.unary_unary(
-                '/TaskHubSidecarService/CleanEntityStorage',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CleanEntityStorageRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CleanEntityStorageResponse.FromString,
-                _registered_method=True)
-        self.AbandonTaskActivityWorkItem = channel.unary_unary(
-                '/TaskHubSidecarService/AbandonTaskActivityWorkItem',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonActivityTaskRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonActivityTaskResponse.FromString,
-                _registered_method=True)
-        self.AbandonTaskOrchestratorWorkItem = channel.unary_unary(
-                '/TaskHubSidecarService/AbandonTaskOrchestratorWorkItem',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonOrchestrationTaskRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonOrchestrationTaskResponse.FromString,
-                _registered_method=True)
-        self.AbandonTaskEntityWorkItem = channel.unary_unary(
-                '/TaskHubSidecarService/AbandonTaskEntityWorkItem',
-                request_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonEntityTaskRequest.SerializeToString,
-                response_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonEntityTaskResponse.FromString,
                 _registered_method=True)
         self.RerunWorkflowFromEvent = channel.unary_unary(
                 '/TaskHubSidecarService/RerunWorkflowFromEvent',
@@ -201,13 +136,6 @@ class TaskHubSidecarServiceServicer(object):
 
     def GetInstance(self, request, context):
         """Gets the status of an existing orchestration instance.
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def RewindInstance(self, request, context):
-        """Rewinds an orchestration instance to last known good state and replays from there.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -255,14 +183,6 @@ class TaskHubSidecarServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def QueryInstances(self, request, context):
-        """rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse);
-
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def PurgeInstances(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -283,82 +203,6 @@ class TaskHubSidecarServiceServicer(object):
 
     def CompleteOrchestratorTask(self, request, context):
         """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def CompleteEntityTask(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def StreamInstanceHistory(self, request, context):
-        """Gets the history of an orchestration instance as a stream of events.
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def CreateTaskHub(self, request, context):
-        """Deletes and Creates the necessary resources for the orchestration service and the instance store
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def DeleteTaskHub(self, request, context):
-        """Deletes the resources for the orchestration service and optionally the instance store
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SignalEntity(self, request, context):
-        """sends a signal to an entity
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def GetEntity(self, request, context):
-        """get information about a specific entity
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def QueryEntities(self, request, context):
-        """query entities
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def CleanEntityStorage(self, request, context):
-        """clean entity storage
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def AbandonTaskActivityWorkItem(self, request, context):
-        """Abandons a single work item
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def AbandonTaskOrchestratorWorkItem(self, request, context):
-        """Abandon an orchestration work item
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def AbandonTaskEntityWorkItem(self, request, context):
-        """Abandon an entity work item
-        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -400,11 +244,6 @@ def add_TaskHubSidecarServiceServicer_to_server(servicer, server):
                     request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetInstanceRequest.FromString,
                     response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetInstanceResponse.SerializeToString,
             ),
-            'RewindInstance': grpc.unary_unary_rpc_method_handler(
-                    servicer.RewindInstance,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.RewindInstanceRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.RewindInstanceResponse.SerializeToString,
-            ),
             'WaitForInstanceStart': grpc.unary_unary_rpc_method_handler(
                     servicer.WaitForInstanceStart,
                     request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetInstanceRequest.FromString,
@@ -435,11 +274,6 @@ def add_TaskHubSidecarServiceServicer_to_server(servicer, server):
                     request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.ResumeRequest.FromString,
                     response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.ResumeResponse.SerializeToString,
             ),
-            'QueryInstances': grpc.unary_unary_rpc_method_handler(
-                    servicer.QueryInstances,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.QueryInstancesRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.QueryInstancesResponse.SerializeToString,
-            ),
             'PurgeInstances': grpc.unary_unary_rpc_method_handler(
                     servicer.PurgeInstances,
                     request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.PurgeInstancesRequest.FromString,
@@ -459,61 +293,6 @@ def add_TaskHubSidecarServiceServicer_to_server(servicer, server):
                     servicer.CompleteOrchestratorTask,
                     request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.OrchestratorResponse.FromString,
                     response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CompleteTaskResponse.SerializeToString,
-            ),
-            'CompleteEntityTask': grpc.unary_unary_rpc_method_handler(
-                    servicer.CompleteEntityTask,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.EntityBatchResult.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CompleteTaskResponse.SerializeToString,
-            ),
-            'StreamInstanceHistory': grpc.unary_stream_rpc_method_handler(
-                    servicer.StreamInstanceHistory,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.StreamInstanceHistoryRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.HistoryChunk.SerializeToString,
-            ),
-            'CreateTaskHub': grpc.unary_unary_rpc_method_handler(
-                    servicer.CreateTaskHub,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CreateTaskHubRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CreateTaskHubResponse.SerializeToString,
-            ),
-            'DeleteTaskHub': grpc.unary_unary_rpc_method_handler(
-                    servicer.DeleteTaskHub,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.DeleteTaskHubRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.DeleteTaskHubResponse.SerializeToString,
-            ),
-            'SignalEntity': grpc.unary_unary_rpc_method_handler(
-                    servicer.SignalEntity,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.SignalEntityRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.SignalEntityResponse.SerializeToString,
-            ),
-            'GetEntity': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetEntity,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetEntityRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.GetEntityResponse.SerializeToString,
-            ),
-            'QueryEntities': grpc.unary_unary_rpc_method_handler(
-                    servicer.QueryEntities,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.QueryEntitiesRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.QueryEntitiesResponse.SerializeToString,
-            ),
-            'CleanEntityStorage': grpc.unary_unary_rpc_method_handler(
-                    servicer.CleanEntityStorage,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CleanEntityStorageRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.CleanEntityStorageResponse.SerializeToString,
-            ),
-            'AbandonTaskActivityWorkItem': grpc.unary_unary_rpc_method_handler(
-                    servicer.AbandonTaskActivityWorkItem,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonActivityTaskRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonActivityTaskResponse.SerializeToString,
-            ),
-            'AbandonTaskOrchestratorWorkItem': grpc.unary_unary_rpc_method_handler(
-                    servicer.AbandonTaskOrchestratorWorkItem,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonOrchestrationTaskRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonOrchestrationTaskResponse.SerializeToString,
-            ),
-            'AbandonTaskEntityWorkItem': grpc.unary_unary_rpc_method_handler(
-                    servicer.AbandonTaskEntityWorkItem,
-                    request_deserializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonEntityTaskRequest.FromString,
-                    response_serializer=durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonEntityTaskResponse.SerializeToString,
             ),
             'RerunWorkflowFromEvent': grpc.unary_unary_rpc_method_handler(
                     servicer.RerunWorkflowFromEvent,
@@ -612,33 +391,6 @@ class TaskHubSidecarService(object):
             '/TaskHubSidecarService/GetInstance',
             durabletask_dot_internal_dot_orchestrator__service__pb2.GetInstanceRequest.SerializeToString,
             durabletask_dot_internal_dot_orchestrator__service__pb2.GetInstanceResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def RewindInstance(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/RewindInstance',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.RewindInstanceRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.RewindInstanceResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -812,33 +564,6 @@ class TaskHubSidecarService(object):
             _registered_method=True)
 
     @staticmethod
-    def QueryInstances(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/QueryInstances',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.QueryInstancesRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.QueryInstancesResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
     def PurgeInstances(request,
             target,
             options=(),
@@ -936,303 +661,6 @@ class TaskHubSidecarService(object):
             '/TaskHubSidecarService/CompleteOrchestratorTask',
             durabletask_dot_internal_dot_orchestrator__service__pb2.OrchestratorResponse.SerializeToString,
             durabletask_dot_internal_dot_orchestrator__service__pb2.CompleteTaskResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def CompleteEntityTask(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/CompleteEntityTask',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.EntityBatchResult.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.CompleteTaskResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def StreamInstanceHistory(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
-            target,
-            '/TaskHubSidecarService/StreamInstanceHistory',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.StreamInstanceHistoryRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.HistoryChunk.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def CreateTaskHub(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/CreateTaskHub',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.CreateTaskHubRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.CreateTaskHubResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def DeleteTaskHub(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/DeleteTaskHub',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.DeleteTaskHubRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.DeleteTaskHubResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SignalEntity(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/SignalEntity',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.SignalEntityRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.SignalEntityResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def GetEntity(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/GetEntity',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.GetEntityRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.GetEntityResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def QueryEntities(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/QueryEntities',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.QueryEntitiesRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.QueryEntitiesResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def CleanEntityStorage(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/CleanEntityStorage',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.CleanEntityStorageRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.CleanEntityStorageResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def AbandonTaskActivityWorkItem(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/AbandonTaskActivityWorkItem',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonActivityTaskRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonActivityTaskResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def AbandonTaskOrchestratorWorkItem(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/AbandonTaskOrchestratorWorkItem',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonOrchestrationTaskRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonOrchestrationTaskResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def AbandonTaskEntityWorkItem(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/TaskHubSidecarService/AbandonTaskEntityWorkItem',
-            durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonEntityTaskRequest.SerializeToString,
-            durabletask_dot_internal_dot_orchestrator__service__pb2.AbandonEntityTaskResponse.FromString,
             options,
             channel_credentials,
             insecure,

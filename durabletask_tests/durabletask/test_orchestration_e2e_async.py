@@ -293,10 +293,8 @@ async def test_terminate():
 
 
 async def test_terminate_recursive():
-    child_instance_id = "child-instance-for-terminate-recursive-test"
-
     def root(ctx: task.OrchestrationContext, _):
-        result = yield ctx.call_sub_orchestrator(child, instance_id=child_instance_id)
+        result = yield ctx.call_sub_orchestrator(child)
         return result
 
     def child(ctx: task.OrchestrationContext, _):
@@ -315,18 +313,16 @@ async def test_terminate_recursive():
             assert state is not None
             assert state.runtime_status == OrchestrationStatus.RUNNING
 
-            # Terminate root orchestration (recursive=True by default)
+            # Terminate root orchestration(recursive set to True by default)
             await client.terminate_orchestration(id, output="some reason for termination")
             state = await client.wait_for_orchestration_completion(id, timeout=30)
             assert state is not None
             assert state.runtime_status == OrchestrationStatus.TERMINATED
 
-            # Verify that the child orchestration is also terminated
-            child_state = await client.wait_for_orchestration_completion(
-                child_instance_id, timeout=30
-            )
-            assert child_state is not None
-            assert child_state.runtime_status == OrchestrationStatus.TERMINATED
+            # Verify that child orchestration is also terminated
+            await client.wait_for_orchestration_completion(id, timeout=30)
+            assert state is not None
+            assert state.runtime_status == OrchestrationStatus.TERMINATED
 
             await client.purge_orchestration(id)
             state = await client.get_orchestration_state(id)
@@ -485,4 +481,4 @@ async def test_custom_status():
     assert state.runtime_status == OrchestrationStatus.COMPLETED
     assert state.serialized_input is None
     assert state.serialized_output is None
-    assert state.serialized_custom_status == 'foobaz'
+    assert state.serialized_custom_status == "foobaz"

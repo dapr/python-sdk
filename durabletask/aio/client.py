@@ -10,13 +10,14 @@ import grpc
 from google.protobuf import wrappers_pb2
 
 import durabletask.internal.helpers as helpers
-import durabletask.internal.orchestrator_service_pb2 as pb
 import durabletask.internal.orchestrator_service_pb2_grpc as stubs
+import durabletask.internal.protos as pb
 import durabletask.internal.shared as shared
 from durabletask import task
 from durabletask.aio.internal.grpc_interceptor import DefaultClientInterceptorImpl
 from durabletask.aio.internal.shared import ClientInterceptor, get_grpc_aio_channel
 from durabletask.client import (
+    OrchestrationIdReusePolicy,
     OrchestrationState,
     OrchestrationStatus,
     TInput,
@@ -81,7 +82,7 @@ class AsyncTaskHubGrpcClient:
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
-        reuse_id_policy: Optional[pb.OrchestrationIdReusePolicy] = None,
+        reuse_id_policy: Optional[OrchestrationIdReusePolicy] = None,
     ) -> str:
         name = orchestrator if isinstance(orchestrator, str) else task.get_name(orchestrator)
 
@@ -93,7 +94,7 @@ class AsyncTaskHubGrpcClient:
             else None,
             scheduledStartTimestamp=helpers.new_timestamp(start_at) if start_at else None,
             version=helpers.get_string_value(None),
-            orchestrationIdReusePolicy=reuse_id_policy,
+            orchestrationIdReusePolicy=reuse_id_policy._to_pb() if reuse_id_policy else None,
         )
 
         self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")

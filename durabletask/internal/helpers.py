@@ -7,7 +7,7 @@ from typing import Optional
 
 from google.protobuf import timestamp_pb2, wrappers_pb2
 
-import durabletask.internal.orchestrator_service_pb2 as pb
+import durabletask.internal.protos as pb
 
 # TODO: The new_xxx_event methods are only used by test code and should be moved elsewhere
 

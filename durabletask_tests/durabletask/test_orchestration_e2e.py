@@ -351,7 +351,7 @@ def test_terminate_recursive():
 
                 time.sleep(1)  # Brief delay to let orchestrations start
 
-                output = f"Recursive termination = {recurse}"
+                output = "Recursive termination = {recurse}"
                 task_hub_client.terminate_orchestration(
                     instance_id, output=output, recursive=recurse
                 )
@@ -594,7 +594,7 @@ def test_custom_status():
     assert state.runtime_status == client.OrchestrationStatus.COMPLETED
     assert state.serialized_input is None
     assert state.serialized_output is None
-    assert state.serialized_custom_status == 'foobaz'
+    assert state.serialized_custom_status == "foobaz"
 
 
 def test_now_with_sequence_ordering():

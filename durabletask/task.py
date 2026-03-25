@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, Generic, Optional, TypeVar, Union
 
 import durabletask.internal.helpers as pbh
-import durabletask.internal.orchestrator_service_pb2 as pb
+import durabletask.internal.protos as pb
 
 T = TypeVar("T")
 TInput = TypeVar("TInput")
@@ -158,7 +158,7 @@ class OrchestrationContext(ABC):
         """
         pass
 
-    # TODO: Add a timeout parameter, which allows the task to be canceled if the event is
+    # TOOD: Add a timeout parameter, which allows the task to be canceled if the event is
     # not received within the specified timeout. This requires support for task cancellation.
     @abstractmethod
     def wait_for_external_event(self, name: str) -> Task:
@@ -352,9 +352,7 @@ class WhenAllTask(CompositeTask[list[T]]):
 
     def on_child_completed(self, task: Task[T]):
         if self.is_complete:
-            # A prior child failure may have already completed this composite task.
-            # Ignore late child completions rather than crashing the orchestration runner.
-            return
+            raise ValueError("The task has already completed.")
         self._completed_tasks += 1
         if task.is_failed and self._exception is None:
             self._exception = task.get_exception()

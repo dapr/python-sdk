@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 import durabletask.internal.helpers as helpers
-import durabletask.internal.orchestrator_service_pb2 as pb
+import durabletask.internal.protos as pb
 from durabletask import task, worker
 
 logging.basicConfig(

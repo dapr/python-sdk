@@ -9,7 +9,7 @@ from durabletask.client import TaskHubGrpcClient
 def test_wait_for_orchestration_start_timeout(timeout):
     instance_id = "test-instance"
 
-    from durabletask.internal.orchestrator_service_pb2 import (
+    from durabletask.internal.protos import (
         ORCHESTRATION_STATUS_RUNNING,
         GetInstanceResponse,
         OrchestrationState,
@@ -41,7 +41,7 @@ def test_wait_for_orchestration_start_timeout(timeout):
 def test_wait_for_orchestration_completion_timeout(timeout):
     instance_id = "test-instance"
 
-    from durabletask.internal.orchestrator_service_pb2 import (
+    from durabletask.internal.protos import (
         ORCHESTRATION_STATUS_COMPLETED,
         GetInstanceResponse,
         OrchestrationState,
