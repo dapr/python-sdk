@@ -64,7 +64,6 @@ jobs:
         with:
           repository: ${{ env.CHECKOUT_REPO }}
           ref: ${{ env.CHECKOUT_REF }}
-      - uses: azure/setup-helm@v4
       - name: Determine latest Dapr Runtime version (including prerelease)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
