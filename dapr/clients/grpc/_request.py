@@ -109,7 +109,7 @@ class InvokeMethodRequest(DaprRequest):
         super(InvokeMethodRequest, self).__init__(())
 
         self._content_type = content_type
-        self._http_verb = None
+        self._http_verb: Optional[str] = None
         self._http_querystring: Dict[str, str] = {}
 
         self.set_data(data)
