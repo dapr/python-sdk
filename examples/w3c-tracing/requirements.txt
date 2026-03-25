@@ -1,5 +1,5 @@
-dapr-ext-grpc >= 1.15.0
-dapr >= 1.15.0
+dapr-ext-grpc >= 1.15.1
+dapr >= 1.15.1
 opentelemetry-sdk
 opentelemetry-instrumentation-grpc
 opentelemetry-exporter-zipkin
