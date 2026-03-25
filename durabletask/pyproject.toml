@@ -4,7 +4,7 @@
 # For more information on pyproject.toml, see https://peps.python.org/pep-0621/
 
 [build-system]
-requires = ["setuptools", "wheel", "setuptools_scm"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -36,9 +36,6 @@ changelog = "https://github.com/dapr/durabletask-python/blob/main/CHANGELOG.md"
 [tool.setuptools.packages.find]
 include = ["durabletask", "durabletask.*"]
 
-[tool.setuptools_scm]
-version_scheme = "guess-next-dev"
-local_scheme = "no-local-version"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

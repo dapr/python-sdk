@@ -5,9 +5,8 @@ import traceback
 from datetime import datetime
 from typing import Optional
 
-from google.protobuf import timestamp_pb2, wrappers_pb2
-
 import durabletask.internal.protos as pb
+from google.protobuf import timestamp_pb2, wrappers_pb2
 
 # TODO: The new_xxx_event methods are only used by test code and should be moved elsewhere
 

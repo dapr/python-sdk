@@ -18,11 +18,12 @@ from datetime import datetime
 from typing import Any, Union
 from unittest import mock
 
-import durabletask.internal.orchestrator_service_pb2 as pb
 from dapr.ext.workflow.aio import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from durabletask import client
 from grpc.aio import AioRpcError
+
+import durabletask.internal.orchestrator_service_pb2 as pb
+from durabletask import client
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'

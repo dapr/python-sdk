@@ -2,8 +2,6 @@
 """Client and server classes corresponding to protobuf-defined services."""
 
 import grpc
-import warnings
-
 from durabletask.internal import (
     orchestrator_service_pb2 as durabletask_dot_internal_dot_orchestrator__service__pb2,
 )
@@ -23,7 +21,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f"The grpc package installed is at version {GRPC_VERSION},"
-        + f" but the generated code in durabletask/internal/orchestrator_service_pb2_grpc.py depends on"
+        + " but the generated code in durabletask/internal/orchestrator_service_pb2_grpc.py depends on"
         + f" grpcio>={GRPC_GENERATED_VERSION}."
         + f" Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}"
         + f" or downgrade your generated code using grpcio-tools<={GRPC_VERSION}."

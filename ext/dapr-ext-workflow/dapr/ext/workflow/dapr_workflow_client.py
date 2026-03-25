@@ -18,18 +18,18 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional, TypeVar, Union
 
-import durabletask.internal.orchestrator_service_pb2 as pb
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.workflow_state import WorkflowState
-from durabletask import client
 from grpc import RpcError
 
+import durabletask.internal.orchestrator_service_pb2 as pb
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
+from durabletask import client
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

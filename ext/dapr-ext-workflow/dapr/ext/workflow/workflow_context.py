@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, Optional, TypeVar, Union
 
 from dapr.ext.workflow.workflow_activity_context import Activity
+
 from durabletask import task
 
 T = TypeVar('T')
