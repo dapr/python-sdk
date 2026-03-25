@@ -322,7 +322,9 @@ async def test_terminate_recursive():
             assert state.runtime_status == OrchestrationStatus.TERMINATED
 
             # Verify that child orchestration is also terminated
-            child_state = await client.wait_for_orchestration_completion(child_instance_id, timeout=30)
+            child_state = await client.wait_for_orchestration_completion(
+                child_instance_id, timeout=30
+            )
             assert child_state is not None
             assert child_state.runtime_status == OrchestrationStatus.TERMINATED
 

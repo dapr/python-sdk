@@ -24,7 +24,10 @@ from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.workflow_state import WorkflowState
 from grpc.aio import AioRpcError
 
-import durabletask.internal.protos as pb
+try:
+    import durabletask.internal.protos as pb
+except ImportError:
+    import durabletask.internal.orchestrator_service_pb2 as pb  # type: ignore[no-redef]
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings

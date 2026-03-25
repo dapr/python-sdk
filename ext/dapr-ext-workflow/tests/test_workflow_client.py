@@ -22,7 +22,10 @@ from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from grpc import RpcError
 
-import durabletask.internal.protos as pb
+try:
+    import durabletask.internal.protos as pb
+except ImportError:
+    import durabletask.internal.orchestrator_service_pb2 as pb  # type: ignore[no-redef]
 from durabletask import client
 
 mock_schedule_result = 'workflow001'

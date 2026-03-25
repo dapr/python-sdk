@@ -434,31 +434,26 @@ class RetryableTask(CompletableTask[T]):
         else:
             backoff_coefficient = self._retry_policy.backoff_coefficient
 
-        # Compute a deterministic "logical now" based on start time and accumulated delays,
-        # rather than wall-clock time, to avoid non-determinism during replay.
+        # Compute the next delay and the logical start time of the next attempt
+        # deterministically from accumulated delays, avoiding non-determinism during replay.
+        # range(1, attempt_count + 1) sums all delays up to and including the one about to
+        # be taken, so we're checking whether attempt N+1 would start within the timeout.
         total_elapsed_seconds = 0.0
-        for i in range(1, self._attempt_count):
-            attempt_delay = (
+        next_delay_f = 0.0
+        for i in range(1, self._attempt_count + 1):
+            next_delay_f = (
                 math.pow(backoff_coefficient, i - 1)
                 * self._retry_policy.first_retry_interval.total_seconds()
             )
             if self._retry_policy.max_retry_interval is not None:
-                attempt_delay = min(
-                    attempt_delay,
+                next_delay_f = min(
+                    next_delay_f,
                     self._retry_policy.max_retry_interval.total_seconds(),
                 )
-            total_elapsed_seconds += attempt_delay
-        logical_now = self._start_time + timedelta(seconds=total_elapsed_seconds)
-        if logical_now < retry_expiration:
-            next_delay_f = (
-                math.pow(backoff_coefficient, self._attempt_count - 1)
-                * self._retry_policy.first_retry_interval.total_seconds()
-            )
+            total_elapsed_seconds += next_delay_f
 
-            if self._retry_policy.max_retry_interval is not None:
-                next_delay_f = min(
-                    next_delay_f, self._retry_policy.max_retry_interval.total_seconds()
-                )
+        logical_next_attempt_start = self._start_time + timedelta(seconds=total_elapsed_seconds)
+        if logical_next_attempt_start < retry_expiration:
             return timedelta(seconds=next_delay_f)
 
         return None
