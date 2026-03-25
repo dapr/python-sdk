@@ -15,7 +15,7 @@ from setuptools import setup
 
 # Load version from version.py
 version_info = {}
-with open("durabletask/version.py") as fp:
+with open("version.py") as fp:
     exec(fp.read(), version_info)
 __version__ = version_info["__version__"]
 
