@@ -7,12 +7,6 @@ on:
       - feature/*
     tags:
       - v*
-      - workflow-v*
-      - grpc-v*
-      - fastapi-v*
-      - flask-v*
-      - langgraph-v*
-      - strands-v*
   pull_request:
     branches:
       - main
@@ -64,7 +58,6 @@ jobs:
         with:
           repository: ${{ env.CHECKOUT_REPO }}
           ref: ${{ env.CHECKOUT_REF }}
-      - uses: azure/setup-helm@v4
       - name: Determine latest Dapr Runtime version (including prerelease)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
