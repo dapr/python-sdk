@@ -7,12 +7,6 @@ on:
       - feature/*
     tags:
       - v*
-      - workflow-v*
-      - grpc-v*
-      - fastapi-v*
-      - flask-v*
-      - langgraph-v*
-      - strands-v*
   pull_request:
     branches:
       - main

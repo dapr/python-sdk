@@ -157,7 +157,7 @@ MyPy is configured to check: `dapr/actor/`, `dapr/clients/`, `dapr/conf/`, `dapr
 - **DCO required**: Every commit must include a `Signed-off-by` line. Use `git commit -s` to add it automatically.
 - **CI checks**: Linting (ruff), unit tests (Python 3.10-3.14), type checking (mypy), and DCO verification run on all PRs.
 - **Branch targets**: PRs go to `main` or `release-*` branches.
-- **Tag-based releases**: Tags like `v*`, `workflow-v*`, `grpc-v*`, `fastapi-v*`, `flask-v*`, `langgraph-v*`, `strands-v*` trigger PyPI publishing for the corresponding package.
+- **Tag-based releases**: A single `v*` tag triggers PyPI publishing for all packages (core SDK and all extensions).
 
 ## Agent task checklist
 

@@ -4,12 +4,6 @@ on:
   push:
     tags:
       - v*
-      - workflow-v*
-      - grpc-v*
-      - flask-v*
-      - fastapi-v*
-      - langgraph-v*
-      - strands-v*
   workflow_dispatch:
 
 jobs:
@@ -79,14 +73,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine tox
     - name: Build and publish Dapr Python SDK
-      if: startsWith(github.ref_name, 'v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-workflow
-      if: startsWith(github.ref_name, 'workflow-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -94,7 +86,6 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish Dapr Flask Extension
-      if: startsWith(github.ref_name, 'flask-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -102,7 +93,6 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-grpc
-      if: startsWith(github.ref_name, 'grpc-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -110,7 +100,6 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-fastapi
-      if: startsWith(github.ref_name, 'fastapi-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -118,7 +107,6 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-langgraph
-      if: startsWith(github.ref_name, 'langgraph-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
@@ -126,7 +114,6 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Build and publish dapr-ext-strands
-      if: startsWith(github.ref_name, 'strands-v')
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
