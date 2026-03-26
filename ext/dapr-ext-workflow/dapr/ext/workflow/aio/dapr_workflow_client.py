@@ -16,7 +16,7 @@ limitations under the License.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
 
 import durabletask.internal.orchestrator_service_pb2 as pb
 from dapr.ext.workflow.logger import Logger, LoggerOptions
@@ -72,7 +72,7 @@ class DaprWorkflowClient:
 
     async def schedule_new_workflow(
         self,
-        workflow: Workflow,
+        workflow: Union[Workflow, str],
         *,
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
@@ -82,7 +82,7 @@ class DaprWorkflowClient:
         """Schedules a new workflow instance for execution.
 
         Args:
-            workflow: The workflow to schedule.
+            workflow: The workflow to schedule. Can be a workflow callable or a workflow name string.
             input: The optional input to pass to the scheduled workflow instance. This must be a
             serializable value.
             instance_id: The unique ID of the workflow instance to schedule. If not specified, a
@@ -96,11 +96,12 @@ class DaprWorkflowClient:
         Returns:
             The ID of the scheduled workflow instance.
         """
-        workflow_name = (
-            workflow.__dict__['_dapr_alternate_name']
-            if hasattr(workflow, '_dapr_alternate_name')
-            else workflow.__name__
-        )
+        if isinstance(workflow, str):
+            workflow_name = workflow
+        elif hasattr(workflow, '_dapr_alternate_name'):
+            workflow_name = workflow.__dict__['_dapr_alternate_name']
+        else:
+            workflow_name = workflow.__name__
         return await self.__obj.schedule_new_orchestration(
             workflow_name,
             input=input,

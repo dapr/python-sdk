@@ -47,6 +47,9 @@ class SimulatedAioRpcError(AioRpcError):
 
 
 class FakeAsyncTaskHubGrpcClient:
+    def __init__(self):
+        self.last_scheduled_workflow_name = None
+
     async def schedule_new_orchestration(
         self,
         workflow,
@@ -56,6 +59,7 @@ class FakeAsyncTaskHubGrpcClient:
         start_at,
         reuse_id_policy: Union[pb.OrchestrationIdReusePolicy, None] = None,
     ):
+        self.last_scheduled_workflow_name = workflow
         return mock_schedule_result
 
     async def get_orchestration_state(self, instance_id, *, fetch_payloads):
@@ -112,6 +116,16 @@ class FakeAsyncTaskHubGrpcClient:
 class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
     def mock_client_wf(ctx: DaprWorkflowContext, input):
         print(f'{input}')
+
+    async def test_schedule_workflow_by_name_string(self):
+        fake_client = FakeAsyncTaskHubGrpcClient()
+        with mock.patch('durabletask.aio.client.AsyncTaskHubGrpcClient', return_value=fake_client):
+            wfClient = DaprWorkflowClient()
+            result = await wfClient.schedule_new_workflow(
+                workflow='my_registered_workflow', input='data'
+            )
+            assert result == mock_schedule_result
+            assert fake_client.last_scheduled_workflow_name == 'my_registered_workflow'
 
     async def test_client_functions(self):
         with mock.patch(

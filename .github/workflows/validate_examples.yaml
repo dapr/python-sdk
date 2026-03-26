@@ -7,12 +7,6 @@ on:
       - feature/*
     tags:
       - v*
-      - workflow-v*
-      - grpc-v*
-      - fastapi-v*
-      - flask-v*
-      - langgraph-v*
-      - strands-v*
   pull_request:
     branches:
       - main
@@ -64,15 +58,28 @@ jobs:
         with:
           repository: ${{ env.CHECKOUT_REPO }}
           ref: ${{ env.CHECKOUT_REF }}
-      - uses: azure/setup-helm@v4
       - name: Determine latest Dapr Runtime version (including prerelease)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RUNTIME_VERSION=$(curl -s "https://api.github.com/repos/dapr/dapr/releases" | sort -r | grep '"tag_name"' | head -n 1 | cut -d ':' -f2 | tr -d '",v ')
+          RUNTIME_VERSION=$(curl -fsS -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/dapr/dapr/releases?per_page=10" | \
+            jq -r 'sort_by(.created_at) | reverse | .[0].tag_name | ltrimstr("v")')
+          if [ -z "$RUNTIME_VERSION" ] || [ "$RUNTIME_VERSION" = "null" ]; then
+            echo "Failed to resolve Dapr Runtime version" && exit 1
+          fi
           echo "DAPR_RUNTIME_VER=$RUNTIME_VERSION" >> $GITHUB_ENV
           echo "Found $RUNTIME_VERSION"
-      - name: Determine latest Dapr Cli version (including prerelease)
+      - name: Determine latest Dapr CLI version (including prerelease)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          CLI_VERSION=$(curl -s "https://api.github.com/repos/dapr/cli/releases" | sort -r | grep '"tag_name"' | head -n 1 | cut -d ':' -f2 | tr -d '",v ')
+          CLI_VERSION=$(curl -fsS -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/dapr/cli/releases?per_page=10" | \
+            jq -r 'sort_by(.created_at) | reverse | .[0].tag_name | ltrimstr("v")')
+          if [ -z "$CLI_VERSION" ] || [ "$CLI_VERSION" = "null" ]; then
+            echo "Failed to resolve Dapr CLI version" && exit 1
+          fi
           echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
           echo "Found $CLI_VERSION"
       - name: Set up Python ${{ matrix.python_ver }}
@@ -84,7 +91,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools wheel twine tox
       - name: Set up Dapr CLI
-        run: wget -q ${{ env.DAPR_INSTALL_URL }} -O - | /bin/bash -s ${{ env.DAPR_CLI_VER }}
+        run: |
+          wget -q "https://github.com/dapr/cli/releases/download/v${{ env.DAPR_CLI_VER }}/dapr_${{ env.GOOS }}_${{ env.GOARCH }}.tar.gz" -O /tmp/dapr.tar.gz
+          sudo tar xzf /tmp/dapr.tar.gz -C /usr/local/bin dapr
+          dapr --version
       - name: Set up Go ${{ env.GOVER }}
         if: env.DAPR_REF != '' || env.DAPR_CLI_REF != ''
         uses: actions/setup-go@v6
