@@ -97,7 +97,7 @@ jobs:
           dapr --version
       - name: Set up Go ${{ env.GOVER }}
         if: env.DAPR_REF != '' || env.DAPR_CLI_REF != ''
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GOVER }}
       - name: Set up Llama
