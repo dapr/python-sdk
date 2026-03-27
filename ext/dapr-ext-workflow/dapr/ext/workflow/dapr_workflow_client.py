@@ -27,6 +27,7 @@ from durabletask import client
 from grpc import RpcError
 
 from dapr.clients import DaprInternalError
+from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
@@ -71,6 +72,7 @@ class DaprWorkflowClient:
             secure_channel=uri.tls,
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
+            interceptors=[DaprClientTimeoutInterceptor()],
         )
 
     def schedule_new_workflow(
