@@ -16,8 +16,8 @@ import grpc
 
 class _ClientCallDetails(
     namedtuple(
-        "_ClientCallDetails",
-        ["method", "timeout", "metadata", "credentials", "wait_for_ready", "compression"],
+        '_ClientCallDetails',
+        ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression'],
     ),
     grpc.ClientCallDetails,
 ):

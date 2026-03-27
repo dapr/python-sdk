@@ -16,8 +16,8 @@ from grpc import aio as grpc_aio
 
 class _ClientCallDetails(
     namedtuple(
-        "_ClientCallDetails",
-        ["method", "timeout", "metadata", "credentials", "wait_for_ready", "compression"],
+        '_ClientCallDetails',
+        ['method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression'],
     ),
     grpc_aio.ClientCallDetails,
 ):
@@ -48,7 +48,7 @@ class DefaultClientInterceptorImpl(
             metadata = []
 
         metadata.extend(self._metadata)
-        compression = getattr(client_call_details, "compression", None)
+        compression = getattr(client_call_details, 'compression', None)
         return _ClientCallDetails(
             client_call_details.method,
             client_call_details.timeout,

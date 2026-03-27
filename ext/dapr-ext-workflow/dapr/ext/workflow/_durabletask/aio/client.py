@@ -75,7 +75,7 @@ class AsyncTaskHubGrpcClient:
         )
         self._channel = channel
         self._stub = stubs.TaskHubSidecarServiceStub(channel)
-        self._logger = shared.get_logger("client", log_handler, log_formatter)
+        self._logger = shared.get_logger('client', log_handler, log_formatter)
 
     async def aclose(self):
         await self._channel.close()
@@ -136,7 +136,7 @@ class AsyncTaskHubGrpcClient:
         except grpc.RpcError as rpc_error:
             if rpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore
                 # Replace gRPC error with the built-in TimeoutError
-                raise TimeoutError("Timed-out waiting for the orchestration to start")
+                raise TimeoutError('Timed-out waiting for the orchestration to start')
             else:
                 raise
 
@@ -173,7 +173,7 @@ class AsyncTaskHubGrpcClient:
         except grpc.RpcError as rpc_error:
             if rpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore
                 # Replace gRPC error with the built-in TimeoutError
-                raise TimeoutError("Timed-out waiting for the orchestration to complete")
+                raise TimeoutError('Timed-out waiting for the orchestration to complete')
             else:
                 raise
 

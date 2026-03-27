@@ -119,7 +119,10 @@ class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_schedule_workflow_by_name_string(self):
         fake_client = FakeAsyncTaskHubGrpcClient()
-        with mock.patch('dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient', return_value=fake_client):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
+            return_value=fake_client,
+        ):
             wfClient = DaprWorkflowClient()
             result = await wfClient.schedule_new_workflow(
                 workflow='my_registered_workflow', input='data'

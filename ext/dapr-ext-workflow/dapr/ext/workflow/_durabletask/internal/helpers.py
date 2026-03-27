@@ -132,7 +132,7 @@ def new_failure_details(ex: Exception) -> pb.TaskFailureDetails:
     return pb.TaskFailureDetails(
         errorType=type(ex).__name__,
         errorMessage=str(ex),
-        stackTrace=wrappers_pb2.StringValue(value="".join(traceback.format_tb(ex.__traceback__))),
+        stackTrace=wrappers_pb2.StringValue(value=''.join(traceback.format_tb(ex.__traceback__))),
     )
 
 
@@ -215,7 +215,7 @@ def new_schedule_task_action(
     name: str,
     encoded_input: Optional[str],
     router: Optional[pb.TaskRouter] = None,
-    task_execution_id: str = "",
+    task_execution_id: str = '',
 ) -> pb.OrchestratorAction:
     return pb.OrchestratorAction(
         id=id,
@@ -255,13 +255,13 @@ def new_create_sub_orchestration_action(
 
 
 def is_empty(v: wrappers_pb2.StringValue):
-    return v is None or v.value == ""
+    return v is None or v.value == ''
 
 
 def get_orchestration_status_str(status: pb.OrchestrationStatus):
     try:
         const_name = pb.OrchestrationStatus.Name(status)
-        if const_name.startswith("ORCHESTRATION_STATUS_"):
-            return const_name[len("ORCHESTRATION_STATUS_") :]
+        if const_name.startswith('ORCHESTRATION_STATUS_'):
+            return const_name[len('ORCHESTRATION_STATUS_') :]
     except Exception:
-        return "UNKNOWN"
+        return 'UNKNOWN'

@@ -35,7 +35,10 @@ class FakeActivityContext:
 
 class WorkflowActivityContextTest(unittest.TestCase):
     def test_workflow_activity_context(self):
-        with mock.patch('dapr.ext.workflow._durabletask.task.ActivityContext', return_value=FakeActivityContext()):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.task.ActivityContext',
+            return_value=FakeActivityContext(),
+        ):
             fake_act_ctx = task.ActivityContext(
                 orchestration_id=mock_orchestration_id, task_id=mock_task
             )

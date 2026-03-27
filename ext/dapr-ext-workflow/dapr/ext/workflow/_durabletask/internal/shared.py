@@ -27,10 +27,10 @@ ClientInterceptor = Union[
 
 # Field name used to indicate that an object was automatically serialized
 # and should be deserialized as a SimpleNamespace
-AUTO_SERIALIZED = "__durabletask_autoobject__"
+AUTO_SERIALIZED = '__durabletask_autoobject__'
 
-SECURE_PROTOCOLS = ["https://", "grpcs://"]
-INSECURE_PROTOCOLS = ["http://", "grpc://"]
+SECURE_PROTOCOLS = ['https://', 'grpcs://']
+INSECURE_PROTOCOLS = ['http://', 'grpc://']
 
 
 def get_default_host_address() -> str:
@@ -44,25 +44,25 @@ def get_default_host_address() -> str:
     """
 
     # Full endpoint overrides
-    endpoint = os.environ.get("DAPR_GRPC_ENDPOINT")
+    endpoint = os.environ.get('DAPR_GRPC_ENDPOINT')
     if endpoint:
         return endpoint
 
     # Host/port split overrides
-    host = os.environ.get("DAPR_GRPC_HOST") or os.environ.get("DAPR_RUNTIME_HOST")
+    host = os.environ.get('DAPR_GRPC_HOST') or os.environ.get('DAPR_RUNTIME_HOST')
     if host:
-        port = os.environ.get("DAPR_GRPC_PORT", "4001")
-        return f"{host}:{port}"
+        port = os.environ.get('DAPR_GRPC_PORT', '4001')
+        return f'{host}:{port}'
 
     # Default to durabletask-go default port
-    return "localhost:4001"
+    return 'localhost:4001'
 
 
 DEFAULT_GRPC_KEEPALIVE_OPTIONS: tuple[tuple[str, int], ...] = (
-    ("grpc.keepalive_time_ms", 30_000),
-    ("grpc.keepalive_timeout_ms", 10_000),
-    ("grpc.http2.max_pings_without_data", 0),
-    ("grpc.keepalive_permit_without_calls", 1),
+    ('grpc.keepalive_time_ms', 30_000),
+    ('grpc.keepalive_timeout_ms', 10_000),
+    ('grpc.http2.max_pings_without_data', 0),
+    ('grpc.keepalive_permit_without_calls', 1),
 )
 
 
@@ -119,7 +119,7 @@ def get_logger(
     log_handler: Optional[logging.Handler] = None,
     log_formatter: Optional[logging.Formatter] = None,
 ) -> logging.Logger:
-    logger = logging.getLogger(f"durabletask-{name_suffix}")
+    logger = logging.getLogger(f'durabletask-{name_suffix}')
 
     # Add a default log handler if none is provided
     if log_handler is None:
@@ -129,8 +129,8 @@ def get_logger(
     # Set a default log formatter to our handler if none is provided
     if log_formatter is None:
         log_formatter = logging.Formatter(
-            fmt="%(asctime)s.%(msecs)03d %(name)s %(levelname)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+            fmt='%(asctime)s.%(msecs)03d %(name)s %(levelname)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
         )
     log_handler.setFormatter(log_formatter)
     return logger
@@ -149,7 +149,7 @@ class InternalJSONEncoder(json.JSONEncoder):
 
     def encode(self, obj: Any) -> str:
         # if the object is a namedtuple, convert it to a dict with the AUTO_SERIALIZED key added
-        if isinstance(obj, tuple) and hasattr(obj, "_fields") and hasattr(obj, "_asdict"):
+        if isinstance(obj, tuple) and hasattr(obj, '_fields') and hasattr(obj, '_asdict'):
             d = obj._asdict()  # type: ignore
             d[AUTO_SERIALIZED] = True
             obj = d

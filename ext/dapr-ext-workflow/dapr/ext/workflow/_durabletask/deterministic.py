@@ -35,9 +35,9 @@ class DeterminismSeed:
 
     def to_int(self) -> int:
         """Convert seed to integer for PRNG initialization."""
-        combined = f"{self.instance_id}:{self.orchestration_unix_ts}"
-        hash_bytes = hashlib.sha256(combined.encode("utf-8")).digest()
-        return int.from_bytes(hash_bytes[:8], byteorder="big")
+        combined = f'{self.instance_id}:{self.orchestration_unix_ts}'
+        hash_bytes = hashlib.sha256(combined.encode('utf-8')).digest()
+        return int.from_bytes(hash_bytes[:8], byteorder='big')
 
 
 def derive_seed(instance_id: str, orchestration_time: datetime) -> int:
@@ -86,11 +86,11 @@ def deterministic_uuid_v5(instance_id: str, current_datetime: datetime, counter:
         A deterministic UUID v5 that will be the same across replays.
     """
     # DNS namespace UUID - same as .NET DnsNamespaceValue
-    namespace = uuid.UUID("9e952958-5e33-4daf-827f-2fa12937b875")
+    namespace = uuid.UUID('9e952958-5e33-4daf-827f-2fa12937b875')
 
     # Build name matching .NET format: instanceId_datetime_counter
     # Using isoformat() which produces ISO 8601 format similar to .NET's ToString("o")
-    name = f"{instance_id}_{current_datetime.isoformat()}_{counter}"
+    name = f'{instance_id}_{current_datetime.isoformat()}_{counter}'
 
     # Generate UUID v5 (SHA-1 based, matching .NET)
     return uuid.uuid5(namespace, name)
@@ -146,7 +146,7 @@ class DeterministicContextMixin:
         determinism across replays.
         """
         # Lazily initialize counter if not set by __init__ (for compatibility)
-        if not hasattr(self, "_uuid_counter"):
+        if not hasattr(self, '_uuid_counter'):
             self._uuid_counter = 0
 
         result = deterministic_uuid_v5(
@@ -164,27 +164,27 @@ class DeterministicContextMixin:
     def random_string(self, length: int, *, alphabet: Optional[str] = None) -> str:
         """Return a deterministically generated random string of the given length."""
         if length < 0:
-            raise ValueError("length must be non-negative")
+            raise ValueError('length must be non-negative')
         chars = alphabet if alphabet is not None else (_string.ascii_letters + _string.digits)
         if not chars:
-            raise ValueError("alphabet must not be empty")
+            raise ValueError('alphabet must not be empty')
         rnd = self.random()
         size = len(chars)
-        return "".join(chars[rnd.randrange(0, size)] for _ in range(length))
+        return ''.join(chars[rnd.randrange(0, size)] for _ in range(length))
 
     def random_int(self, min_value: int = 0, max_value: int = 2**31 - 1) -> int:
         """Return a deterministic random integer in the specified range."""
         if min_value > max_value:
-            raise ValueError("min_value must be <= max_value")
+            raise ValueError('min_value must be <= max_value')
         rnd = self.random()
         return rnd.randint(min_value, max_value)
 
-    T = TypeVar("T")
+    T = TypeVar('T')
 
     def random_choice(self, sequence: Sequence[T]) -> T:
         """Return a deterministic random element from a non-empty sequence."""
         if not sequence:
-            raise IndexError("Cannot choose from empty sequence")
+            raise IndexError('Cannot choose from empty sequence')
         rnd = self.random()
         return rnd.choice(sequence)
 

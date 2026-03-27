@@ -25,8 +25,8 @@ from dapr.ext.workflow._durabletask import task
 from dapr.ext.workflow._durabletask.internal.grpc_interceptor import DefaultClientInterceptorImpl
 from google.protobuf import wrappers_pb2
 
-TInput = TypeVar("TInput")
-TOutput = TypeVar("TOutput")
+TInput = TypeVar('TInput')
+TOutput = TypeVar('TOutput')
 
 # If `opentelemetry-instrumentation-grpc` is available, enable the gRPC client interceptor
 try:
@@ -115,7 +115,7 @@ def new_orchestration_state(
     state = res.orchestrationState
 
     failure_details = None
-    if state.failureDetails.errorMessage != "" or state.failureDetails.errorType != "":
+    if state.failureDetails.errorMessage != '' or state.failureDetails.errorType != '':
         failure_details = task.FailureDetails(
             state.failureDetails.errorMessage,
             state.failureDetails.errorType,
@@ -168,7 +168,7 @@ class TaskHubGrpcClient:
         )
         self._channel = channel
         self._stub = stubs.TaskHubSidecarServiceStub(channel)
-        self._logger = shared.get_logger("client", log_handler, log_formatter)
+        self._logger = shared.get_logger('client', log_handler, log_formatter)
 
     def __enter__(self):
         return self
@@ -208,7 +208,7 @@ class TaskHubGrpcClient:
             instanceId=instance_id if instance_id else uuid.uuid4().hex,
             input=input_pb,
             scheduledStartTimestamp=helpers.new_timestamp(start_at) if start_at else None,
-            version=wrappers_pb2.StringValue(value=""),
+            version=wrappers_pb2.StringValue(value=''),
             orchestrationIdReusePolicy=reuse_id_policy._to_pb() if reuse_id_policy else None,
         )
 
@@ -237,7 +237,7 @@ class TaskHubGrpcClient:
         except grpc.RpcError as rpc_error:
             if rpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore
                 # Replace gRPC error with the built-in TimeoutError
-                raise TimeoutError("Timed-out waiting for the orchestration to start")
+                raise TimeoutError('Timed-out waiting for the orchestration to start')
             else:
                 raise
 
@@ -274,7 +274,7 @@ class TaskHubGrpcClient:
         except grpc.RpcError as rpc_error:
             if rpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore
                 # Replace gRPC error with the built-in TimeoutError
-                raise TimeoutError("Timed-out waiting for the orchestration to complete")
+                raise TimeoutError('Timed-out waiting for the orchestration to complete')
             else:
                 raise
 

@@ -151,7 +151,9 @@ def test_sync_channel_passes_base_options_and_max_lengths():
 
 def test_taskhub_client_close_handles_exceptions():
     """Test that close() handles exceptions gracefully (edge case not easily testable in E2E)."""
-    with patch('dapr.ext.workflow._durabletask.internal.shared.get_grpc_channel') as mock_get_channel:
+    with patch(
+        'dapr.ext.workflow._durabletask.internal.shared.get_grpc_channel'
+    ) as mock_get_channel:
         mock_channel = MagicMock()
         mock_channel.close.side_effect = Exception('close failed')
         mock_get_channel.return_value = mock_channel
@@ -163,7 +165,9 @@ def test_taskhub_client_close_handles_exceptions():
 
 def test_taskhub_client_close_closes_channel_handles_exceptions():
     """Test that close() closes the channel and handles exceptions gracefully."""
-    with patch('dapr.ext.workflow._durabletask.internal.shared.get_grpc_channel') as mock_get_channel:
+    with patch(
+        'dapr.ext.workflow._durabletask.internal.shared.get_grpc_channel'
+    ) as mock_get_channel:
         mock_channel = MagicMock()
         mock_channel.close.side_effect = Exception('close failed')
         mock_get_channel.return_value = mock_channel

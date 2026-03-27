@@ -118,7 +118,9 @@ class WorkflowClientTest(unittest.TestCase):
 
     def test_schedule_workflow_by_name_string(self):
         fake_client = FakeTaskHubGrpcClient()
-        with mock.patch('dapr.ext.workflow._durabletask.client.TaskHubGrpcClient', return_value=fake_client):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient', return_value=fake_client
+        ):
             wfClient = DaprWorkflowClient()
             result = wfClient.schedule_new_workflow(workflow='my_registered_workflow', input='data')
             assert result == mock_schedule_result
@@ -126,7 +128,8 @@ class WorkflowClientTest(unittest.TestCase):
 
     def test_client_functions(self):
         with mock.patch(
-            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient', return_value=FakeTaskHubGrpcClient()
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient',
+            return_value=FakeTaskHubGrpcClient(),
         ):
             wfClient = DaprWorkflowClient()
             actual_schedule_result = wfClient.schedule_new_workflow(

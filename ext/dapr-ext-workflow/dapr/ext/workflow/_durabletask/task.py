@@ -20,9 +20,9 @@ from typing import Any, Callable, Generator, Generic, Optional, TypeVar, Union
 import dapr.ext.workflow._durabletask.internal.helpers as pbh
 import dapr.ext.workflow._durabletask.internal.protos as pb
 
-T = TypeVar("T")
-TInput = TypeVar("TInput")
-TOutput = TypeVar("TOutput")
+T = TypeVar('T')
+TInput = TypeVar('TInput')
+TOutput = TypeVar('TOutput')
 
 
 class OrchestrationContext(ABC):
@@ -270,7 +270,7 @@ class NonRetryableError(Exception):
 def is_error_non_retryable(error_type: str, policy: RetryPolicy) -> bool:
     """Checks whether an error type is non-retryable."""
     is_non_retryable = False
-    if error_type == "NonRetryableError":
+    if error_type == 'NonRetryableError':
         is_non_retryable = True
     elif (
         policy.non_retryable_error_types is not None
@@ -306,7 +306,7 @@ class Task(ABC, Generic[T]):
     def get_result(self) -> T:
         """Returns the result of the task."""
         if not self._is_complete:
-            raise ValueError("The task has not completed.")
+            raise ValueError('The task has not completed.')
         elif self._exception is not None:
             raise self._exception
         return self._result
@@ -314,7 +314,7 @@ class Task(ABC, Generic[T]):
     def get_exception(self) -> TaskFailedError:
         """Returns the exception that caused the task to fail."""
         if self._exception is None:
-            raise ValueError("The task has not failed.")
+            raise ValueError('The task has not failed.')
         return self._exception
 
 
@@ -360,7 +360,7 @@ class WhenAllTask(CompositeTask[list[T]]):
 
     def on_child_completed(self, task: Task[T]):
         if self.is_complete:
-            raise ValueError("The task has already completed.")
+            raise ValueError('The task has already completed.')
         self._completed_tasks += 1
         if task.is_failed and self._exception is None:
             self._exception = task.get_exception()
@@ -383,7 +383,7 @@ class CompletableTask(Task[T]):
 
     def complete(self, result: T):
         if self._is_complete:
-            raise ValueError("The task has already completed.")
+            raise ValueError('The task has already completed.')
         self._result = result
         self._is_complete = True
         if self._parent is not None:
@@ -391,7 +391,7 @@ class CompletableTask(Task[T]):
 
     def fail(self, message: str, details: pb.TaskFailureDetails):
         if self._is_complete:
-            raise ValueError("The task has already completed.")
+            raise ValueError('The task has already completed.')
         self._exception = TaskFailedError(message, details)
         self._is_complete = True
         if self._parent is not None:
@@ -408,7 +408,7 @@ class RetryableTask(CompletableTask[T]):
         is_sub_orch: bool,
         task_name: str,
         encoded_input: Optional[str] = None,
-        task_execution_id: str = "",
+        task_execution_id: str = '',
         instance_id: Optional[str] = None,
         app_id: Optional[str] = None,
     ) -> None:
@@ -505,7 +505,7 @@ def when_any(tasks: list[Task]) -> WhenAnyTask:
 
 
 class ActivityContext:
-    def __init__(self, orchestration_id: str, task_id: int, task_execution_id: str = ""):
+    def __init__(self, orchestration_id: str, task_id: int, task_execution_id: str = ''):
         self._orchestration_id = orchestration_id
         self._task_id = task_id
         self._task_execution_id = task_execution_id
@@ -595,15 +595,15 @@ class RetryPolicy:
         """
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
-            raise ValueError("first_retry_interval must be >= 0")
+            raise ValueError('first_retry_interval must be >= 0')
         if max_number_of_attempts < 1:
-            raise ValueError("max_number_of_attempts must be >= 1")
+            raise ValueError('max_number_of_attempts must be >= 1')
         if backoff_coefficient is not None and backoff_coefficient < 1:
-            raise ValueError("backoff_coefficient must be >= 1")
+            raise ValueError('backoff_coefficient must be >= 1')
         if max_retry_interval is not None and max_retry_interval < timedelta(seconds=0):
-            raise ValueError("max_retry_interval must be >= 0")
+            raise ValueError('max_retry_interval must be >= 0')
         if retry_timeout is not None and retry_timeout < timedelta(seconds=0):
-            raise ValueError("retry_timeout must be >= 0")
+            raise ValueError('retry_timeout must be >= 0')
 
         self._first_retry_interval = first_retry_interval
         self._max_number_of_attempts = max_number_of_attempts
@@ -659,9 +659,9 @@ class RetryPolicy:
 def get_name(fn: Callable) -> str:
     """Returns the name of the provided function"""
     name = fn.__name__
-    if name == "<lambda>":
+    if name == '<lambda>':
         raise ValueError(
-            "Cannot infer a name from a lambda function. Please provide a name explicitly."
+            'Cannot infer a name from a lambda function. Please provide a name explicitly.'
         )
 
     return name

@@ -24,7 +24,9 @@ INTERCEPTORS_AIO = [DefaultClientInterceptorImpl(METADATA)]
 
 
 def test_get_grpc_aio_channel_insecure():
-    with patch('dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel') as mock_channel:
+    with patch(
+        'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel'
+    ) as mock_channel:
         get_grpc_aio_channel(HOST_ADDRESS, False, interceptors=INTERCEPTORS_AIO)
         args, kwargs = mock_channel.call_args
         assert args[0] == HOST_ADDRESS
@@ -34,7 +36,9 @@ def test_get_grpc_aio_channel_insecure():
 
 def test_get_grpc_aio_channel_secure():
     with (
-        patch('dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.secure_channel') as mock_channel,
+        patch(
+            'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.secure_channel'
+        ) as mock_channel,
         patch('grpc.ssl_channel_credentials') as mock_credentials,
     ):
         get_grpc_aio_channel(HOST_ADDRESS, True, interceptors=INTERCEPTORS_AIO)
@@ -46,7 +50,9 @@ def test_get_grpc_aio_channel_secure():
 
 
 def test_get_grpc_aio_channel_default_host_address():
-    with patch('dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel') as mock_channel:
+    with patch(
+        'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel'
+    ) as mock_channel:
         get_grpc_aio_channel(None, False, interceptors=INTERCEPTORS_AIO)
         args, kwargs = mock_channel.call_args
         assert args[0] == get_default_host_address()
@@ -55,7 +61,9 @@ def test_get_grpc_aio_channel_default_host_address():
 
 
 def test_get_grpc_aio_channel_with_interceptors():
-    with patch('dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel') as mock_channel:
+    with patch(
+        'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel'
+    ) as mock_channel:
         get_grpc_aio_channel(HOST_ADDRESS, False, interceptors=INTERCEPTORS_AIO)
         args, kwargs = mock_channel.call_args
         assert args[0] == HOST_ADDRESS
@@ -73,8 +81,12 @@ def test_get_grpc_aio_channel_with_interceptors():
 
 def test_grpc_aio_channel_with_host_name_protocol_stripping():
     with (
-        patch('dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel') as mock_insecure_channel,
-        patch('dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.secure_channel') as mock_secure_channel,
+        patch(
+            'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel'
+        ) as mock_insecure_channel,
+        patch(
+            'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.secure_channel'
+        ) as mock_secure_channel,
     ):
         host_name = 'myserver.com:1234'
 
@@ -150,7 +162,9 @@ def test_grpc_aio_channel_with_host_name_protocol_stripping():
 
 
 def test_async_client_construct_with_metadata():
-    with patch('dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel') as mock_channel:
+    with patch(
+        'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel'
+    ) as mock_channel:
         AsyncTaskHubGrpcClient(host_address=HOST_ADDRESS, metadata=METADATA)
         # Ensure channel created with an interceptor that has the expected metadata
         args, kwargs = mock_channel.call_args
@@ -167,7 +181,9 @@ def test_aio_channel_passes_base_options_and_max_lengths():
         ('grpc.max_receive_message_length', 8765),
         ('grpc.primary_user_agent', 'durabletask-aio-tests'),
     ]
-    with patch('dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel') as mock_channel:
+    with patch(
+        'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel'
+    ) as mock_channel:
         get_grpc_aio_channel(HOST_ADDRESS, False, options=base_options)
         # Ensure called with options kwarg
         assert mock_channel.call_count == 1
