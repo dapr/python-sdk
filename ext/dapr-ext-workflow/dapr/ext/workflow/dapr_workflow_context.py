@@ -16,12 +16,11 @@ limitations under the License.
 from datetime import datetime, timedelta
 from typing import Any, Callable, List, Optional, TypeVar, Union
 
+from dapr.ext.workflow._durabletask import task
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_context import Workflow, WorkflowContext
-
-from durabletask import task
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

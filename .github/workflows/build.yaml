@@ -62,22 +62,3 @@ jobs:
         tox -e py`echo "${{ matrix.python_ver }}" | sed 's/\.//g'`
     - name: Upload test coverage
       uses: codecov/codecov-action@v5
-    # Sidecar for running e2e tests requires Go SDK
-    - name: Install Go SDK for DurableTask Python checks
-      uses: actions/setup-go@v5
-      with:
-        go-version: 'stable'
-    # Install and run the durabletask-go sidecar for running e2e tests
-    - name: Pytest e2e tests for DurableTask Python
-      run: |
-        # TODO: use dapr run instead of durabletask-go as it provides a more reliable sidecar behavior for e2e tests
-        go install github.com/dapr/durabletask-go@main
-        durabletask-go --port 4001 &
-        pip install -e durabletask[dev]
-        pytest -m e2e durabletask_tests/
-    - name: Run examples
-      run: |
-        pip install mechanical-markdown
-        cd durabletask_examples
-        durabletask-go --port 4001 &
-        mm.py README.md

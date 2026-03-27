@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 # Import your main classes here
+from dapr.ext.workflow._durabletask.task import TaskFailedError
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
 from dapr.ext.workflow.retry_policy import RetryPolicy
@@ -32,4 +33,5 @@ __all__ = [
     'when_any',
     'alternate_name',
     'RetryPolicy',
+    'TaskFailedError',
 ]

@@ -19,6 +19,7 @@ from functools import wraps
 from typing import Optional, Sequence, TypeVar, Union
 
 import grpc
+from dapr.ext.workflow._durabletask import task, worker
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
@@ -29,7 +30,6 @@ from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
-from durabletask import task, worker
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
