@@ -18,10 +18,10 @@ from datetime import datetime
 from typing import Any, Union
 from unittest import mock
 
-import durabletask.internal.orchestrator_service_pb2 as pb
+import dapr.ext.workflow._durabletask.internal.protos as pb
+from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from durabletask import client
 from grpc import RpcError
 
 mock_schedule_result = 'workflow001'
@@ -118,7 +118,9 @@ class WorkflowClientTest(unittest.TestCase):
 
     def test_schedule_workflow_by_name_string(self):
         fake_client = FakeTaskHubGrpcClient()
-        with mock.patch('durabletask.client.TaskHubGrpcClient', return_value=fake_client):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient', return_value=fake_client
+        ):
             wfClient = DaprWorkflowClient()
             result = wfClient.schedule_new_workflow(workflow='my_registered_workflow', input='data')
             assert result == mock_schedule_result
@@ -126,7 +128,8 @@ class WorkflowClientTest(unittest.TestCase):
 
     def test_client_functions(self):
         with mock.patch(
-            'durabletask.client.TaskHubGrpcClient', return_value=FakeTaskHubGrpcClient()
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient',
+            return_value=FakeTaskHubGrpcClient(),
         ):
             wfClient = DaprWorkflowClient()
             actual_schedule_result = wfClient.schedule_new_workflow(

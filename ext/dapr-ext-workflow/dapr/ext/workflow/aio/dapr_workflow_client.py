@@ -18,12 +18,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional, TypeVar, Union
 
-import durabletask.internal.orchestrator_service_pb2 as pb
+import dapr.ext.workflow._durabletask.internal.protos as pb
+from dapr.ext.workflow._durabletask.aio import client as aioclient
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.workflow_state import WorkflowState
-from durabletask.aio import client as aioclient
 from grpc.aio import AioRpcError
 
 from dapr.clients import DaprInternalError

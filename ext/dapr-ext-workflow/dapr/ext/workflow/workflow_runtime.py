@@ -19,12 +19,12 @@ from functools import wraps
 from typing import Optional, Sequence, TypeVar, Union
 
 import grpc
+from dapr.ext.workflow._durabletask import task, worker
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
 from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
 from dapr.ext.workflow.workflow_context import Workflow
-from durabletask import task, worker
 
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER

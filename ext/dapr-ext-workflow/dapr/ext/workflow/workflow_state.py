@@ -16,7 +16,7 @@ limitations under the License.
 import json
 from enum import Enum
 
-from durabletask import client
+from dapr.ext.workflow._durabletask import client
 
 
 class WorkflowStatus(Enum):

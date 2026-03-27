@@ -15,7 +15,7 @@ import time
 from datetime import timedelta
 
 import dapr.ext.workflow as wf
-from durabletask.task import TaskFailedError
+from dapr.ext.workflow import TaskFailedError
 
 wfr = wf.WorkflowRuntime()
 
