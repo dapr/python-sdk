@@ -18,7 +18,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional, TypeVar, Union
 
-import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
@@ -80,7 +79,7 @@ class DaprWorkflowClient:
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
-        reuse_id_policy: Optional[pb.OrchestrationIdReusePolicy] = None,
+        reuse_id_policy: Optional[client.WorkflowIdReusePolicy] = None,
     ) -> str:
         """Schedules a new workflow instance for execution.
 

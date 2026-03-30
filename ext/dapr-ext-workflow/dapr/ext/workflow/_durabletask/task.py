@@ -253,7 +253,7 @@ class NonDeterminismError(Exception):
     pass
 
 
-class OrchestrationStateError(Exception):
+class WorkflowStateError(Exception):
     pass
 
 

@@ -11,14 +11,14 @@ def test_wait_for_orchestration_start_timeout(timeout):
     from dapr.ext.workflow._durabletask.internal.protos import (
         ORCHESTRATION_STATUS_RUNNING,
         GetInstanceResponse,
-        OrchestrationState,
+        WorkflowState,
     )
 
     response = GetInstanceResponse()
-    state = OrchestrationState()
+    state = WorkflowState()
     state.instanceId = instance_id
-    state.orchestrationStatus = ORCHESTRATION_STATUS_RUNNING
-    response.orchestrationState.CopyFrom(state)
+    state.workflowStatus = ORCHESTRATION_STATUS_RUNNING
+    response.workflowState.CopyFrom(state)
 
     c = TaskHubGrpcClient()
     c._stub = Mock()
@@ -43,14 +43,14 @@ def test_wait_for_orchestration_completion_timeout(timeout):
     from dapr.ext.workflow._durabletask.internal.protos import (
         ORCHESTRATION_STATUS_COMPLETED,
         GetInstanceResponse,
-        OrchestrationState,
+        WorkflowState,
     )
 
     response = GetInstanceResponse()
-    state = OrchestrationState()
+    state = WorkflowState()
     state.instanceId = instance_id
-    state.orchestrationStatus = ORCHESTRATION_STATUS_COMPLETED
-    response.orchestrationState.CopyFrom(state)
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
 
     c = TaskHubGrpcClient()
     c._stub = Mock()

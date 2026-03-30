@@ -30,7 +30,7 @@ def _wait_until_terminal(
     *,
     timeout_s: int = 30,
     fetch_payloads: bool = True,
-) -> Optional[client.OrchestrationState]:
+) -> Optional[client.WorkflowState]:
     """Polling-based completion wait that does not rely on the completion stream.
 
     Returns the terminal state or None if timeout.

@@ -19,13 +19,11 @@ from google.protobuf import timestamp_pb2, wrappers_pb2
 # TODO: The new_xxx_event methods are only used by test code and should be moved elsewhere
 
 
-def new_orchestrator_started_event(timestamp: Optional[datetime] = None) -> pb.HistoryEvent:
+def new_workflow_started_event(timestamp: Optional[datetime] = None) -> pb.HistoryEvent:
     ts = timestamp_pb2.Timestamp()
     if timestamp is not None:
         ts.FromDatetime(timestamp)
-    return pb.HistoryEvent(
-        eventId=-1, timestamp=ts, orchestratorStarted=pb.OrchestratorStartedEvent()
-    )
+    return pb.HistoryEvent(eventId=-1, timestamp=ts, workflowStarted=pb.WorkflowStartedEvent())
 
 
 def new_execution_started_event(
@@ -37,7 +35,7 @@ def new_execution_started_event(
         executionStarted=pb.ExecutionStartedEvent(
             name=name,
             input=get_string_value(encoded_input),
-            orchestrationInstance=pb.OrchestrationInstance(instanceId=instance_id),
+            workflowInstance=pb.WorkflowInstance(instanceId=instance_id),
         ),
     )
 
@@ -94,35 +92,35 @@ def new_task_failed_event(event_id: int, ex: Exception) -> pb.HistoryEvent:
     )
 
 
-def new_sub_orchestration_created_event(
+def new_child_workflow_created_event(
     event_id: int, name: str, instance_id: str, encoded_input: Optional[str] = None
 ) -> pb.HistoryEvent:
     return pb.HistoryEvent(
         eventId=event_id,
         timestamp=timestamp_pb2.Timestamp(),
-        subOrchestrationInstanceCreated=pb.SubOrchestrationInstanceCreatedEvent(
+        childWorkflowInstanceCreated=pb.ChildWorkflowInstanceCreatedEvent(
             name=name, input=get_string_value(encoded_input), instanceId=instance_id
         ),
     )
 
 
-def new_sub_orchestration_completed_event(
+def new_child_workflow_completed_event(
     event_id: int, encoded_output: Optional[str] = None
 ) -> pb.HistoryEvent:
     return pb.HistoryEvent(
         eventId=-1,
         timestamp=timestamp_pb2.Timestamp(),
-        subOrchestrationInstanceCompleted=pb.SubOrchestrationInstanceCompletedEvent(
+        childWorkflowInstanceCompleted=pb.ChildWorkflowInstanceCompletedEvent(
             result=get_string_value(encoded_output), taskScheduledId=event_id
         ),
     )
 
 
-def new_sub_orchestration_failed_event(event_id: int, ex: Exception) -> pb.HistoryEvent:
+def new_child_workflow_failed_event(event_id: int, ex: Exception) -> pb.HistoryEvent:
     return pb.HistoryEvent(
         eventId=-1,
         timestamp=timestamp_pb2.Timestamp(),
-        subOrchestrationInstanceFailed=pb.SubOrchestrationInstanceFailedEvent(
+        childWorkflowInstanceFailed=pb.ChildWorkflowInstanceFailedEvent(
             failureDetails=new_failure_details(ex), taskScheduledId=event_id
         ),
     )
@@ -173,41 +171,41 @@ def get_string_value(val: Optional[str]) -> Optional[wrappers_pb2.StringValue]:
         return wrappers_pb2.StringValue(value=val)
 
 
-def new_complete_orchestration_action(
+def new_complete_workflow_action(
     id: int,
     status: pb.OrchestrationStatus,
     result: Optional[str] = None,
     failure_details: Optional[pb.TaskFailureDetails] = None,
     carryover_events: Optional[list[pb.HistoryEvent]] = None,
     router: Optional[pb.TaskRouter] = None,
-) -> pb.OrchestratorAction:
-    completeOrchestrationAction = pb.CompleteOrchestrationAction(
-        orchestrationStatus=status,
+) -> pb.WorkflowAction:
+    completeWorkflowAction = pb.CompleteWorkflowAction(
+        workflowStatus=status,
         result=get_string_value(result),
         failureDetails=failure_details,
         carryoverEvents=carryover_events,
     )
 
-    return pb.OrchestratorAction(
+    return pb.WorkflowAction(
         id=id,
-        completeOrchestration=completeOrchestrationAction,
+        completeWorkflow=completeWorkflowAction,
         router=router,
     )
 
 
-def new_orchestrator_version_not_available_action(
+def new_workflow_version_not_available_action(
     id: int,
-) -> pb.OrchestratorAction:
-    return pb.OrchestratorAction(
+) -> pb.WorkflowAction:
+    return pb.WorkflowAction(
         id=id,
-        orchestratorVersionNotAvailable=pb.OrchestratorVersionNotAvailableAction(),
+        workflowVersionNotAvailable=pb.WorkflowVersionNotAvailableAction(),
     )
 
 
-def new_create_timer_action(id: int, fire_at: datetime) -> pb.OrchestratorAction:
+def new_create_timer_action(id: int, fire_at: datetime) -> pb.WorkflowAction:
     timestamp = timestamp_pb2.Timestamp()
     timestamp.FromDatetime(fire_at)
-    return pb.OrchestratorAction(id=id, createTimer=pb.CreateTimerAction(fireAt=timestamp))
+    return pb.WorkflowAction(id=id, createTimer=pb.CreateTimerAction(fireAt=timestamp))
 
 
 def new_schedule_task_action(
@@ -216,8 +214,8 @@ def new_schedule_task_action(
     encoded_input: Optional[str],
     router: Optional[pb.TaskRouter] = None,
     task_execution_id: str = '',
-) -> pb.OrchestratorAction:
-    return pb.OrchestratorAction(
+) -> pb.WorkflowAction:
+    return pb.WorkflowAction(
         id=id,
         scheduleTask=pb.ScheduleTaskAction(
             name=name,
@@ -235,16 +233,16 @@ def new_timestamp(dt: datetime) -> timestamp_pb2.Timestamp:
     return ts
 
 
-def new_create_sub_orchestration_action(
+def new_create_child_workflow_action(
     id: int,
     name: str,
     instance_id: Optional[str],
     encoded_input: Optional[str],
     router: Optional[pb.TaskRouter] = None,
-) -> pb.OrchestratorAction:
-    return pb.OrchestratorAction(
+) -> pb.WorkflowAction:
+    return pb.WorkflowAction(
         id=id,
-        createSubOrchestration=pb.CreateSubOrchestrationAction(
+        createChildWorkflow=pb.CreateChildWorkflowAction(
             name=name,
             instanceId=instance_id,
             input=get_string_value(encoded_input),

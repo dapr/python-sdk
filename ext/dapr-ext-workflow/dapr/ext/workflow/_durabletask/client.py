@@ -57,27 +57,21 @@ class OrchestrationStatus(Enum):
 class OrchestrationIdReuseAction(Enum):
     """Action to take when scheduling an orchestration whose ID already exists."""
 
-    ERROR = pb.ERROR
-    IGNORE = pb.IGNORE
-    TERMINATE = pb.TERMINATE
+    ERROR = 0
+    IGNORE = 1
+    TERMINATE = 2
 
 
 @dataclass
-class OrchestrationIdReusePolicy:
+class WorkflowIdReusePolicy:
     """Policy controlling what happens when a new orchestration is scheduled with an ID that already exists."""
 
     action: OrchestrationIdReuseAction
     operation_status: list[OrchestrationStatus]
 
-    def _to_pb(self) -> pb.OrchestrationIdReusePolicy:
-        return pb.OrchestrationIdReusePolicy(
-            operationStatus=[s.value for s in self.operation_status],
-            action=self.action.value,
-        )
-
 
 @dataclass
-class OrchestrationState:
+class WorkflowState:
     instance_id: str
     name: str
     runtime_status: OrchestrationStatus
@@ -108,11 +102,11 @@ class OrchestrationFailedError(Exception):
 
 def new_orchestration_state(
     instance_id: str, res: pb.GetInstanceResponse
-) -> Optional[OrchestrationState]:
+) -> Optional[WorkflowState]:
     if not res.exists:
         return None
 
-    state = res.orchestrationState
+    state = res.workflowState
 
     failure_details = None
     if state.failureDetails.errorMessage != '' or state.failureDetails.errorType != '':
@@ -124,10 +118,10 @@ def new_orchestration_state(
             else None,
         )
 
-    return OrchestrationState(
+    return WorkflowState(
         instance_id,
         state.name,
-        OrchestrationStatus(state.orchestrationStatus),
+        OrchestrationStatus(state.workflowStatus),
         state.createdTimestamp.ToDatetime(),
         state.lastUpdatedTimestamp.ToDatetime(),
         state.input.value if not helpers.is_empty(state.input) else None,
@@ -195,7 +189,7 @@ class TaskHubGrpcClient:
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
-        reuse_id_policy: Optional[OrchestrationIdReusePolicy] = None,
+        reuse_id_policy: Optional[WorkflowIdReusePolicy] = None,
     ) -> str:
         name = orchestrator if isinstance(orchestrator, str) else task.get_name(orchestrator)
 
@@ -209,7 +203,6 @@ class TaskHubGrpcClient:
             input=input_pb,
             scheduledStartTimestamp=helpers.new_timestamp(start_at) if start_at else None,
             version=wrappers_pb2.StringValue(value=''),
-            orchestrationIdReusePolicy=reuse_id_policy._to_pb() if reuse_id_policy else None,
         )
 
         self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")
@@ -218,14 +211,14 @@ class TaskHubGrpcClient:
 
     def get_orchestration_state(
         self, instance_id: str, *, fetch_payloads: bool = True
-    ) -> Optional[OrchestrationState]:
+    ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
         res: pb.GetInstanceResponse = self._stub.GetInstance(req)
         return new_orchestration_state(req.instanceId, res)
 
     def wait_for_orchestration_start(
         self, instance_id: str, *, fetch_payloads: bool = False, timeout: int = 0
-    ) -> Optional[OrchestrationState]:
+    ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
         try:
             grpc_timeout = None if timeout == 0 else timeout
@@ -243,7 +236,7 @@ class TaskHubGrpcClient:
 
     def wait_for_orchestration_completion(
         self, instance_id: str, *, fetch_payloads: bool = True, timeout: int = 0
-    ) -> Optional[OrchestrationState]:
+    ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
         try:
             grpc_timeout = None if timeout == 0 else timeout

@@ -28,11 +28,11 @@ from dapr.ext.workflow._durabletask.aio.internal.shared import (
     get_grpc_aio_channel,
 )
 from dapr.ext.workflow._durabletask.client import (
-    OrchestrationIdReusePolicy,
-    OrchestrationState,
     OrchestrationStatus,
     TInput,
     TOutput,
+    WorkflowIdReusePolicy,
+    WorkflowState,
     new_orchestration_state,
 )
 from google.protobuf import wrappers_pb2
@@ -94,7 +94,7 @@ class AsyncTaskHubGrpcClient:
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
-        reuse_id_policy: Optional[OrchestrationIdReusePolicy] = None,
+        reuse_id_policy: Optional[WorkflowIdReusePolicy] = None,
     ) -> str:
         name = orchestrator if isinstance(orchestrator, str) else task.get_name(orchestrator)
 
@@ -106,7 +106,6 @@ class AsyncTaskHubGrpcClient:
             else None,
             scheduledStartTimestamp=helpers.new_timestamp(start_at) if start_at else None,
             version=helpers.get_string_value(None),
-            orchestrationIdReusePolicy=reuse_id_policy._to_pb() if reuse_id_policy else None,
         )
 
         self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")
@@ -115,14 +114,14 @@ class AsyncTaskHubGrpcClient:
 
     async def get_orchestration_state(
         self, instance_id: str, *, fetch_payloads: bool = True
-    ) -> Optional[OrchestrationState]:
+    ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
         res: pb.GetInstanceResponse = await self._stub.GetInstance(req)
         return new_orchestration_state(req.instanceId, res)
 
     async def wait_for_orchestration_start(
         self, instance_id: str, *, fetch_payloads: bool = False, timeout: int = 0
-    ) -> Optional[OrchestrationState]:
+    ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
         try:
             grpc_timeout = None if timeout == 0 else timeout
@@ -142,7 +141,7 @@ class AsyncTaskHubGrpcClient:
 
     async def wait_for_orchestration_completion(
         self, instance_id: str, *, fetch_payloads: bool = True, timeout: int = 0
-    ) -> Optional[OrchestrationState]:
+    ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
         try:
             grpc_timeout = None if timeout == 0 else timeout

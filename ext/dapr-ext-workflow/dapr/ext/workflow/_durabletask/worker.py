@@ -643,10 +643,10 @@ class TaskHubGrpcWorker:
                             raise work_item
                         request_type = work_item.WhichOneof('request')
                         self._logger.debug(f'Received "{request_type}" work item')
-                        if work_item.HasField('orchestratorRequest'):
+                        if work_item.HasField('workflowRequest'):
                             self._async_worker_manager.submit_orchestration(
                                 self._execute_orchestrator,
-                                work_item.orchestratorRequest,
+                                work_item.workflowRequest,
                                 stub,
                                 work_item.completionToken,
                             )
@@ -861,7 +861,7 @@ class TaskHubGrpcWorker:
 
     def _execute_orchestrator(
         self,
-        req: pb.OrchestratorRequest,
+        req: pb.WorkflowRequest,
         stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
     ):
@@ -871,13 +871,13 @@ class TaskHubGrpcWorker:
 
             version = None
             if result.version_name:
-                version = version or pb.OrchestrationVersion()
+                version = version or pb.WorkflowVersion()
                 version.name = result.version_name
             if result.patches:
-                version = version or pb.OrchestrationVersion()
+                version = version or pb.WorkflowVersion()
                 version.patches.extend(result.patches)
 
-            res = pb.OrchestratorResponse(
+            res = pb.WorkflowResponse(
                 instanceId=req.instanceId,
                 actions=result.actions,
                 customStatus=ph.get_string_value(result.encoded_custom_status),
@@ -890,11 +890,11 @@ class TaskHubGrpcWorker:
             )
             failure_details = ph.new_failure_details(ex)
             actions = [
-                ph.new_complete_orchestration_action(
+                ph.new_complete_workflow_action(
                     -1, pb.ORCHESTRATION_STATUS_FAILED, '', failure_details
                 )
             ]
-            res = pb.OrchestratorResponse(
+            res = pb.WorkflowResponse(
                 instanceId=req.instanceId,
                 actions=actions,
                 completionToken=completionToken,
@@ -911,7 +911,7 @@ class TaskHubGrpcWorker:
                     f'(RESOURCE_EXHAUSTED). Failing the orchestration task: {rpc_error.details()}'
                 )
                 failure_actions = [
-                    ph.new_complete_orchestration_action(
+                    ph.new_complete_workflow_action(
                         -1,
                         pb.ORCHESTRATION_STATUS_FAILED,
                         '',
@@ -922,7 +922,7 @@ class TaskHubGrpcWorker:
                         ),
                     )
                 ]
-                failure_res = pb.OrchestratorResponse(
+                failure_res = pb.WorkflowResponse(
                     instanceId=req.instanceId,
                     actions=failure_actions,
                     completionToken=completionToken,
@@ -1044,7 +1044,7 @@ class _RuntimeOrchestrationContext(
         self._is_replaying = True
         self._is_complete = False
         self._result = None
-        self._pending_actions: dict[int, pb.OrchestratorAction] = {}
+        self._pending_actions: dict[int, pb.WorkflowAction] = {}
         self._pending_tasks: dict[int, task.CompletableTask] = {}
         self._sequence_number = 0
         self._current_utc_datetime = datetime(1000, 1, 1)
@@ -1112,7 +1112,7 @@ class _RuntimeOrchestrationContext(
         result_json: Optional[str] = None
         if result is not None:
             result_json = result if is_result_encoded else shared.to_json(result)
-        action = ph.new_complete_orchestration_action(
+        action = ph.new_complete_workflow_action(
             self.next_sequence_number(),
             status,
             result_json,
@@ -1128,7 +1128,7 @@ class _RuntimeOrchestrationContext(
         self._pending_actions.clear()  # Cancel any pending actions
         self._completion_status = pb.ORCHESTRATION_STATUS_FAILED
 
-        action = ph.new_complete_orchestration_action(
+        action = ph.new_complete_workflow_action(
             self.next_sequence_number(),
             pb.ORCHESTRATION_STATUS_FAILED,
             None,
@@ -1140,7 +1140,7 @@ class _RuntimeOrchestrationContext(
     def set_version_not_registered(self):
         self._pending_actions.clear()
         self._completion_status = pb.ORCHESTRATION_STATUS_STALLED
-        action = ph.new_orchestrator_version_not_available_action(self.next_sequence_number())
+        action = ph.new_workflow_version_not_available_action(self.next_sequence_number())
         self._pending_actions[action.id] = action
 
     def set_continued_as_new(self, new_input: Any, save_events: bool):
@@ -1153,7 +1153,7 @@ class _RuntimeOrchestrationContext(
         self._new_input = new_input
         self._save_events = save_events
 
-    def get_actions(self) -> list[pb.OrchestratorAction]:
+    def get_actions(self) -> list[pb.WorkflowAction]:
         if self._completion_status == pb.ORCHESTRATION_STATUS_CONTINUED_AS_NEW:
             # When continuing-as-new, we only return a single completion action.
             carryover_events: Optional[list[pb.HistoryEvent]] = None
@@ -1167,7 +1167,7 @@ class _RuntimeOrchestrationContext(
                         carryover_events.append(
                             ph.new_event_raised_event(event_name, encoded_value)
                         )
-            action = ph.new_complete_orchestration_action(
+            action = ph.new_complete_workflow_action(
                 self.next_sequence_number(),
                 pb.ORCHESTRATION_STATUS_CONTINUED_AS_NEW,
                 result=shared.to_json(self._new_input) if self._new_input is not None else None,
@@ -1324,7 +1324,7 @@ class _RuntimeOrchestrationContext(
                 instance_id = f'{self.instance_id}:{id:04x}'
             if not isinstance(activity_function, str):
                 raise ValueError('Orchestrator function name must be a string')
-            action = ph.new_create_sub_orchestration_action(
+            action = ph.new_create_child_workflow_action(
                 id, activity_function, instance_id, encoded_input, router
             )
         self._pending_actions[id] = action
@@ -1395,14 +1395,14 @@ class _RuntimeOrchestrationContext(
 
 
 class ExecutionResults:
-    actions: list[pb.OrchestratorAction]
+    actions: list[pb.WorkflowAction]
     encoded_custom_status: Optional[str]
     version_name: Optional[str]
     patches: Optional[list[str]]
 
     def __init__(
         self,
-        actions: list[pb.OrchestratorAction],
+        actions: list[pb.WorkflowAction],
         encoded_custom_status: Optional[str],
         version_name: Optional[str] = None,
         patches: Optional[list[str]] = None,
@@ -1429,7 +1429,7 @@ class _OrchestrationExecutor:
         new_events: Sequence[pb.HistoryEvent],
     ) -> ExecutionResults:
         if not new_events:
-            raise task.OrchestrationStateError(
+            raise task.WorkflowStateError(
                 'The new history event list must have at least one event in it.'
             )
 
@@ -1494,12 +1494,12 @@ class _OrchestrationExecutor:
 
         # CONSIDER: change to a switch statement with event.WhichOneof("eventType")
         try:
-            if event.HasField('orchestratorStarted'):
+            if event.HasField('workflowStarted'):
                 ctx.current_utc_datetime = event.timestamp.ToDatetime()
-                if event.orchestratorStarted.version:
-                    if event.orchestratorStarted.version.name:
-                        ctx._orchestrator_version_name = event.orchestratorStarted.version.name
-                    for patch in event.orchestratorStarted.version.patches:
+                if event.workflowStarted.version:
+                    if event.workflowStarted.version.name:
+                        ctx._orchestrator_version_name = event.workflowStarted.version.name
+                    for patch in event.workflowStarted.version.patches:
                         ctx._history_patches[patch] = True
             elif event.HasField('executionStarted'):
                 if event.router.targetAppID:
@@ -1651,51 +1651,49 @@ class _OrchestrationExecutor:
                     ctx.resume()
                 else:
                     raise TypeError('Unexpected task type')
-            elif event.HasField('subOrchestrationInstanceCreated'):
+            elif event.HasField('childWorkflowInstanceCreated'):
                 # This history event confirms that the sub-orchestration execution was successfully scheduled.
-                # Remove the subOrchestrationInstanceCreated event from the pending action list so we don't schedule it again.
+                # Remove the childWorkflowInstanceCreated event from the pending action list so we don't schedule it again.
                 task_id = event.eventId
                 action = ctx._pending_actions.pop(task_id, None)
                 if not action:
                     raise _get_non_determinism_error(
                         task_id, task.get_name(ctx.call_sub_orchestrator)
                     )
-                elif not action.HasField('createSubOrchestration'):
+                elif not action.HasField('createChildWorkflow'):
                     expected_method_name = task.get_name(ctx.call_sub_orchestrator)
                     raise _get_wrong_action_type_error(task_id, expected_method_name, action)
-                elif (
-                    action.createSubOrchestration.name != event.subOrchestrationInstanceCreated.name
-                ):
+                elif action.createChildWorkflow.name != event.childWorkflowInstanceCreated.name:
                     raise _get_wrong_action_name_error(
                         task_id,
                         method_name=task.get_name(ctx.call_sub_orchestrator),
-                        expected_task_name=event.subOrchestrationInstanceCreated.name,
-                        actual_task_name=action.createSubOrchestration.name,
+                        expected_task_name=event.childWorkflowInstanceCreated.name,
+                        actual_task_name=action.createChildWorkflow.name,
                     )
-            elif event.HasField('subOrchestrationInstanceCompleted'):
-                task_id = event.subOrchestrationInstanceCompleted.taskScheduledId
+            elif event.HasField('childWorkflowInstanceCompleted'):
+                task_id = event.childWorkflowInstanceCompleted.taskScheduledId
                 sub_orch_task = ctx._pending_tasks.pop(task_id, None)
                 if not sub_orch_task:
                     # TODO: Should this be an error? When would it ever happen?
                     if not ctx.is_replaying:
                         self._logger.warning(
-                            f'{ctx.instance_id}: Ignoring unexpected subOrchestrationInstanceCompleted event with ID = {task_id}.'
+                            f'{ctx.instance_id}: Ignoring unexpected childWorkflowInstanceCompleted event with ID = {task_id}.'
                         )
                     return
                 result = None
-                if not ph.is_empty(event.subOrchestrationInstanceCompleted.result):
-                    result = shared.from_json(event.subOrchestrationInstanceCompleted.result.value)
+                if not ph.is_empty(event.childWorkflowInstanceCompleted.result):
+                    result = shared.from_json(event.childWorkflowInstanceCompleted.result.value)
                 sub_orch_task.complete(result)
                 ctx.resume()
-            elif event.HasField('subOrchestrationInstanceFailed'):
-                failedEvent = event.subOrchestrationInstanceFailed
+            elif event.HasField('childWorkflowInstanceFailed'):
+                failedEvent = event.childWorkflowInstanceFailed
                 task_id = failedEvent.taskScheduledId
                 sub_orch_task = ctx._pending_tasks.pop(task_id, None)
                 if not sub_orch_task:
                     # TODO: Should this be an error? When would it ever happen?
                     if not ctx.is_replaying:
                         self._logger.warning(
-                            f'{ctx.instance_id}: Ignoring unexpected subOrchestrationInstanceFailed event with ID = {task_id}.'
+                            f'{ctx.instance_id}: Ignoring unexpected childWorkflowInstanceFailed event with ID = {task_id}.'
                         )
                     return
                 if isinstance(sub_orch_task, task.RetryableTask):
@@ -1785,7 +1783,7 @@ class _OrchestrationExecutor:
                 pass
             else:
                 eventType = event.WhichOneof('eventType')
-                raise task.OrchestrationStateError(
+                raise task.WorkflowStateError(
                     f"Don't know how to handle event of type '{eventType}'"
                 )
         except StopIteration as generatorStopped:
@@ -1838,7 +1836,7 @@ def _get_non_determinism_error(task_id: int, action_name: str) -> task.NonDeterm
 
 
 def _get_wrong_action_type_error(
-    task_id: int, expected_method_name: str, action: pb.OrchestratorAction
+    task_id: int, expected_method_name: str, action: pb.WorkflowAction
 ) -> task.NonDeterminismError:
     unexpected_method_name = _get_method_name_for_action(action)
     return task.NonDeterminismError(
@@ -1862,13 +1860,13 @@ def _get_wrong_action_name_error(
     )
 
 
-def _get_method_name_for_action(action: pb.OrchestratorAction) -> str:
-    action_type = action.WhichOneof('orchestratorActionType')
+def _get_method_name_for_action(action: pb.WorkflowAction) -> str:
+    action_type = action.WhichOneof('workflowActionType')
     if action_type == 'scheduleTask':
         return task.get_name(task.OrchestrationContext.call_activity)
     elif action_type == 'createTimer':
         return task.get_name(task.OrchestrationContext.create_timer)
-    elif action_type == 'createSubOrchestration':
+    elif action_type == 'createChildWorkflow':
         return task.get_name(task.OrchestrationContext.call_sub_orchestrator)
     # elif action_type == "sendEvent":
     #    return task.get_name(task.OrchestrationContext.send_event)
@@ -1890,16 +1888,16 @@ def _get_new_event_summary(new_events: Sequence[pb.HistoryEvent]) -> str:
         return f'[{", ".join(f"{name}={count}" for name, count in counts.items())}]'
 
 
-def _get_action_summary(new_actions: Sequence[pb.OrchestratorAction]) -> str:
+def _get_action_summary(new_actions: Sequence[pb.WorkflowAction]) -> str:
     """Returns a summary of the new actions that can be used for logging."""
     if not new_actions:
         return '[]'
     elif len(new_actions) == 1:
-        return f'[{new_actions[0].WhichOneof("orchestratorActionType")}]'
+        return f'[{new_actions[0].WhichOneof("workflowActionType")}]'
     else:
         counts: dict[str, int] = {}
         for action in new_actions:
-            action_type = action.WhichOneof('orchestratorActionType')
+            action_type = action.WhichOneof('workflowActionType')
             counts[action_type] = counts.get(action_type, 0) + 1
         return f'[{", ".join(f"{name}={count}" for name, count in counts.items())}]'
 
