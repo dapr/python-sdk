@@ -953,7 +953,7 @@ class TaskHubGrpcWorker:
         stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
     ):
-        instance_id = req.orchestrationInstance.instanceId
+        instance_id = req.workflowInstance.instanceId
 
         if otel_tracer is not None:
             span_context = otel_tracer.start_as_current_span(
