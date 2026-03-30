@@ -710,7 +710,7 @@ def test_sub_orchestration_task_completion():
 
 
 def test_create_sub_orchestration_actions_router_without_app_id():
-    """Tests that createSubOrchestration action contains correct router fields when app_id is specified"""
+    """Tests that createChildWorkflow action contains correct router fields when app_id is specified"""
 
     def suborchestrator(ctx: task.OrchestrationContext, _):
         pass
@@ -740,12 +740,12 @@ def test_create_sub_orchestration_actions_router_without_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == ''
-    assert action.createSubOrchestration.router.sourceAppID == 'source-app'
-    assert action.createSubOrchestration.router.targetAppID == ''
+    assert action.createChildWorkflow.router.sourceAppID == 'source-app'
+    assert action.createChildWorkflow.router.targetAppID == ''
 
 
 def test_create_sub_orchestration_actions_router_with_app_id():
-    """Tests that createSubOrchestration action contains correct router fields when app_id is specified"""
+    """Tests that createChildWorkflow action contains correct router fields when app_id is specified"""
 
     def suborchestrator(ctx: task.OrchestrationContext, _):
         pass
@@ -775,8 +775,8 @@ def test_create_sub_orchestration_actions_router_with_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == 'target-app'
-    assert action.createSubOrchestration.router.sourceAppID == 'source-app'
-    assert action.createSubOrchestration.router.targetAppID == 'target-app'
+    assert action.createChildWorkflow.router.sourceAppID == 'source-app'
+    assert action.createChildWorkflow.router.targetAppID == 'target-app'
 
 
 def test_sub_orchestration_task_failed():
