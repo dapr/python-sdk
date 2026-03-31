@@ -52,7 +52,7 @@ Each extension is a **separate PyPI package** with its own `setup.cfg`, `setup.p
 
 | Extension | Package | Purpose | Active development |
 |-----------|---------|---------|-------------------|
-| `dapr-ext-workflow` | `dapr.ext.workflow` | Durable workflow orchestration via durabletask-dapr | **High** — major focus area |
+| `dapr-ext-workflow` | `dapr.ext.workflow` | Durable workflow orchestration (durabletask vendored internally) | **High** — major focus area |
 | `dapr-ext-grpc` | `dapr.ext.grpc` | gRPC server for Dapr callbacks (methods, pub/sub, bindings, jobs) | Moderate |
 | `dapr-ext-fastapi` | `dapr.ext.fastapi` | FastAPI integration for pub/sub and actors | Moderate |
 | `flask_dapr` | `flask_dapr` | Flask integration for pub/sub and actors | Low |
