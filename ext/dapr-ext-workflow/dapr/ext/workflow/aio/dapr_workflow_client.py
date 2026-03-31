@@ -26,6 +26,7 @@ from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.workflow_state import WorkflowState
 from grpc.aio import AioRpcError
 
+from dapr.aio.clients.grpc.interceptors import DaprClientTimeoutInterceptorAsync
 from dapr.clients import DaprInternalError
 from dapr.clients.http.client import DAPR_API_TOKEN_HEADER
 from dapr.conf import settings
@@ -68,6 +69,7 @@ class DaprWorkflowClient:
             secure_channel=uri.tls,
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
+            interceptors=[DaprClientTimeoutInterceptorAsync()],
         )
 
     async def schedule_new_workflow(
