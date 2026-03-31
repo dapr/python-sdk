@@ -1,13 +1,12 @@
 ---
 name: WORKFLOW SDK Bug report
 about: Report a bug in dapr-ext-workflow
-title: '[WORKFLOW SDK BUG] <title>'
-labels: ["kind/enhancement","dapr-ext-workflow"]
-assignees:
- - cgillum
- - DeepanshuA
+title: "[WORKFLOW SDK BUG] <title>"
+labels: dapr-ext-workflow, kind/enhancement
+assignees: ''
 
 ---
+
 ## Expected Behavior
 
 <!-- Briefly describe what you expect to happen -->
