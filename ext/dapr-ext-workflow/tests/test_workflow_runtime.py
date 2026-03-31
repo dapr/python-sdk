@@ -250,7 +250,7 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
         mock_exception.assert_called_once()
         self.assertIn('did not start', mock_exception.call_args[0][0])
 
-    def test_start_raises_when_worker_not_ready(self):
+    def test_start_logs_warning_when_worker_not_ready(self):
         listActivities.clear()
         listOrchestrators.clear()
         mock.patch(
@@ -260,9 +260,10 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
         mock_worker = mock.MagicMock()
         mock_worker.is_worker_ready.return_value = False
         runtime._WorkflowRuntime__worker = mock_worker
-        with self.assertRaises(RuntimeError) as ctx:
+        with mock.patch.object(runtime._logger, 'warning') as mock_warning:
             runtime.start()
-        self.assertIn('not ready', str(ctx.exception))
+        mock_worker.start.assert_called_once()
+        self.assertGreaterEqual(mock_warning.call_count, 1)
 
     def test_start_logs_warning_when_no_is_worker_ready(self):
         mock_worker = mock.MagicMock(spec=['start', 'stop', '_registry'])
