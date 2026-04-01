@@ -91,10 +91,10 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_ver }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine tox
+        run: uv sync --frozen --all-packages --group examples
       - name: Set up Dapr CLI
         run: |
           wget -q "https://github.com/dapr/cli/releases/download/v${{ env.DAPR_CLI_VER }}/dapr_${{ env.GOOS }}_${{ env.GOARCH }}.tar.gz" -O /tmp/dapr.tar.gz
@@ -153,4 +153,26 @@ jobs:
           cd ..
       - name: Check Examples
         run: |
-          tox -e examples
+          cd examples
+          ./validate.sh conversation
+          ./validate.sh crypto
+          ./validate.sh metadata
+          ./validate.sh error_handling
+          ./validate.sh pubsub-simple
+          ./validate.sh pubsub-streaming
+          ./validate.sh pubsub-streaming-async
+          ./validate.sh state_store
+          ./validate.sh state_store_query
+          ./validate.sh secret_store
+          ./validate.sh invoke-simple
+          ./validate.sh invoke-custom-data
+          ./validate.sh demo_actor
+          ./validate.sh invoke-binding
+          ./validate.sh grpc_proxying
+          ./validate.sh w3c-tracing
+          ./validate.sh distributed_lock
+          ./validate.sh configuration
+          ./validate.sh workflow
+          ./validate.sh jobs
+          ./validate.sh langgraph-checkpointer
+          ./validate.sh ../

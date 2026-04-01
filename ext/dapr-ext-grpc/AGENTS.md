@@ -6,7 +6,7 @@ The gRPC extension provides a **server-side callback framework** for Dapr applic
 
 ```
 ext/dapr-ext-grpc/
-├── setup.cfg                          # Deps: dapr, cloudevents
+├── pyproject.toml                          # Deps: dapr, cloudevents
 ├── setup.py
 ├── tests/
 │   ├── test_app.py                    # Decorator registration tests

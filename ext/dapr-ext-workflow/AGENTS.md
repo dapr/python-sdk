@@ -6,7 +6,7 @@ The workflow extension is a **major area of active development**. It provides du
 
 ```
 ext/dapr-ext-workflow/
-├── setup.cfg                              # Deps: dapr
+├── pyproject.toml                         # Deps: dapr (durabletask is vendored)
 ├── setup.py
 ├── tests/
 │   ├── test_dapr_workflow_context.py      # Context method proxying
@@ -177,10 +177,6 @@ Retry configuration for activities and child workflows:
   result = yield ctx.call_activity('remote_activity', input=data, app_id='other-app')
   ```
 
-## Relationship to core SDK's DaprClient
-
-The core `DaprClient` in `dapr/clients/` has workflow methods (`start_workflow`, `get_workflow`, `pause_workflow`, etc.) but **these are deprecated**. The `examples/demo_workflow/` example demonstrates this old pattern with a deprecation notice. All new workflow code should use `DaprWorkflowClient` from this extension instead.
-
 ## Examples
 
 Two example directories exercise workflows:
@@ -195,8 +191,6 @@ Two example directories exercise workflows:
   - `cross-app1.py`, `cross-app2.py`, `cross-app3.py` — cross-app calls
   - `versioning.py` — workflow versioning with `is_patched()`
   - `simple_aio_client.py` — async client variant
-
-- **`examples/demo_workflow/`** — legacy example using deprecated `DaprClient` workflow methods
 
 ## Testing
 
