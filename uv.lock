@@ -789,7 +789,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cloudevents", specifier = ">=1.0.0" },
+    { name = "cloudevents", specifier = ">=1.0.0,<2.0.0" },
     { name = "dapr", editable = "." },
 ]
 
