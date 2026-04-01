@@ -87,7 +87,7 @@ uv sync --all-packages --group dev
 
 ## Running tests
 
-Tests use Python's built-in `unittest` framework with `coverage`.
+Tests use Python's built-in `unittest` framework with `coverage`. The vendored durabletask tests use `pytest`.
 
 ```bash
 # Run all unit tests
@@ -95,6 +95,7 @@ uv run python -m unittest discover -v ./tests
 
 # Extension tests (run each separately)
 uv run python -m unittest discover -v ./ext/dapr-ext-workflow/tests
+uv run pytest -m "not e2e" ./ext/dapr-ext-workflow/tests/durabletask/
 uv run python -m unittest discover -v ./ext/dapr-ext-grpc/tests
 uv run python -m unittest discover -v ./ext/dapr-ext-fastapi/tests
 uv run python -m unittest discover -v ./ext/dapr-ext-langgraph/tests
