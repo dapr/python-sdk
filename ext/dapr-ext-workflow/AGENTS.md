@@ -1,12 +1,12 @@
 # AGENTS.md — dapr-ext-workflow
 
-The workflow extension is a **major area of active development**. It provides durable workflow orchestration for Python, built on the [durabletask-dapr](https://pypi.org/project/durabletask-dapr/) engine (>= 0.2.0a19).
+The workflow extension is a **major area of active development**. It provides durable workflow orchestration for Python, built on a vendored durabletask engine (in `_durabletask/`).
 
 ## Source layout
 
 ```
 ext/dapr-ext-workflow/
-├── pyproject.toml                         # Deps: dapr, durabletask-dapr
+├── pyproject.toml                         # Deps: dapr (durabletask is vendored)
 ├── setup.py
 ├── tests/
 │   ├── test_dapr_workflow_context.py      # Context method proxying
@@ -57,7 +57,7 @@ ext/dapr-ext-workflow/
 └──────────────────┬───────────────────────────────┘
                    │
 ┌──────────────────▼───────────────────────────────┐
-│  durabletask-dapr (external package)              │
+│  _durabletask (vendored internal package)          │
 │  - TaskHubGrpcWorker: receives work items         │
 │  - TaskHubGrpcClient: manages orchestrations      │
 │  - OrchestrationContext / ActivityContext          │
@@ -221,6 +221,6 @@ The extension resolves the Dapr sidecar address from (in order of precedence):
 - **Determinism**: Workflow functions are replayed from history. Non-deterministic code (random, datetime.now, I/O) inside a workflow function will break replay. Only activities can have side effects.
 - **Generator pattern**: Workflow functions are generators that `yield` tasks. The return value is the workflow output. Do not use `await` — use `yield`.
 - **Naming matters**: The name used to register a workflow/activity must match the name used to schedule it. Custom names via `@alternate_name` or `name=` parameter are stored as function attributes.
-- **durabletask-dapr is external**: The underlying engine is not in this repo. The minimum version is pinned in `pyproject.toml`.
+- **durabletask is vendored**: The underlying engine lives in `_durabletask/` inside this extension. Do not import it from outside `dapr.ext.workflow`.
 - **Deprecated core methods**: Do not add new workflow functionality to `DaprClient` in the core SDK. Use the extension's `DaprWorkflowClient` instead.
 - **Double registration guard**: Functions decorated with `@wfr.workflow` or `@wfr.activity` get `_workflow_registered` / `_activity_registered` attributes set to `True`. Attempting to re-register raises an error.

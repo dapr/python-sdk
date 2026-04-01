@@ -1,17 +1,21 @@
 # Release process
 
 This document describes the release process for the Dapr Python SDK.
-It covers all packages published from this repository:
 
-| Tag prefix | PyPI package |
-|---|---|
-| `v*` | `dapr` (core SDK) |
-| `workflow-v*` | `dapr-ext-workflow` |
-| `grpc-v*` | `dapr-ext-grpc` |
-| `fastapi-v*` | `dapr-ext-fastapi` |
-| `flask-v*` | `flask_dapr` |
-| `langgraph-v*` | `dapr-ext-langgraph` |
-| `strands-v*` | `dapr-ext-strands` |
+A single tag (`v*`) triggers the release of **all packages** published from this repository:
+
+| PyPI package |
+|---|
+| `dapr` (core SDK) |
+| `dapr-ext-workflow` |
+| `dapr-ext-grpc` |
+| `dapr-ext-fastapi` |
+| `flask_dapr` |
+| `dapr-ext-langgraph` |
+| `dapr-ext-strands` |
+
+You can also create the tag via a **GitHub Release**, which auto-creates the tag and provides
+a changelog UI.
 
 ## Overview
 
@@ -102,26 +106,20 @@ Open a PR targeting `main` to align it with the new release version:
 - In all seven version files: change the previous dev version to `X.Y.0.dev`
 - In all six extension `setup.cfg` files: change the previous `dapr >= ...dev` to `dapr >= X.Y.0.dev`
 
-### 4. Push the tags
+### 4. Push the tag
 
-Once the version bump PR on `release-X.Y` is merged, create and push the tags from the
+Once the version bump PR on `release-X.Y` is merged, create and push the tag from the
 **tip of `release-X.Y`**:
 
 ```bash
 git checkout release-X.Y
 git pull upstream release-X.Y
 
-git tag vX.Y.0rc0            && git push upstream vX.Y.0rc0
-git tag workflow-vX.Y.0rc0   && git push upstream workflow-vX.Y.0rc0
-git tag grpc-vX.Y.0rc0       && git push upstream grpc-vX.Y.0rc0
-git tag flask-vX.Y.0rc0      && git push upstream flask-vX.Y.0rc0
-git tag fastapi-vX.Y.0rc0    && git push upstream fastapi-vX.Y.0rc0
-git tag langgraph-vX.Y.0rc0  && git push upstream langgraph-vX.Y.0rc0
-git tag strands-vX.Y.0rc0    && git push upstream strands-vX.Y.0rc0
+git tag vX.Y.0rc0 && git push upstream vX.Y.0rc0
 ```
 
-Each tag push triggers the `dapr-python-release` workflow which builds and uploads the
-corresponding package to PyPI.
+The tag push triggers the `dapr-python-release` workflow which builds and uploads
+all packages to PyPI.
 
 ## Scenario B — Ship a new release candidate
 
@@ -134,7 +132,7 @@ Open a PR **targeting `release-X.Y`** that does:
 - In all seven version files: change `X.Y.0rc(N-1)` → `X.Y.0rcN`
 - In all six extension `setup.cfg` files: change `dapr >= X.Y.0rc(N-1)` → `dapr >= X.Y.0rcN`
 
-### 2. Push the tags
+### 2. Push the tag
 
 Once the PR is merged:
 
@@ -142,13 +140,7 @@ Once the PR is merged:
 git checkout release-X.Y
 git pull upstream release-X.Y
 
-git tag vX.Y.0rcN            && git push upstream vX.Y.0rcN
-git tag workflow-vX.Y.0rcN   && git push upstream workflow-vX.Y.0rcN
-git tag grpc-vX.Y.0rcN       && git push upstream grpc-vX.Y.0rcN
-git tag flask-vX.Y.0rcN      && git push upstream flask-vX.Y.0rcN
-git tag fastapi-vX.Y.0rcN    && git push upstream fastapi-vX.Y.0rcN
-git tag langgraph-vX.Y.0rcN  && git push upstream langgraph-vX.Y.0rcN
-git tag strands-vX.Y.0rcN    && git push upstream strands-vX.Y.0rcN
+git tag vX.Y.0rcN && git push upstream vX.Y.0rcN
 ```
 
 ## Scenario C — Ship the stable release (and patch releases)
@@ -163,7 +155,7 @@ Open a PR **targeting `release-X.Y`** that does:
 - In all seven version files: change `X.Y.ZrcN` → `X.Y.Z` (drop the `rcN` suffix)
 - In all six extension `setup.cfg` files: change `dapr >= X.Y.ZrcN` → `dapr >= X.Y.Z`
 
-### 2. Push the tags
+### 2. Push the tag
 
 Once the PR is merged:
 
@@ -171,14 +163,11 @@ Once the PR is merged:
 git checkout release-X.Y
 git pull upstream release-X.Y
 
-git tag vX.Y.Z            && git push upstream vX.Y.Z
-git tag workflow-vX.Y.Z   && git push upstream workflow-vX.Y.Z
-git tag grpc-vX.Y.Z       && git push upstream grpc-vX.Y.Z
-git tag flask-vX.Y.Z      && git push upstream flask-vX.Y.Z
-git tag fastapi-vX.Y.Z    && git push upstream fastapi-vX.Y.Z
-git tag langgraph-vX.Y.Z  && git push upstream langgraph-vX.Y.Z
-git tag strands-vX.Y.Z    && git push upstream strands-vX.Y.Z
+git tag vX.Y.Z && git push upstream vX.Y.Z
 ```
+
+Alternatively, create a **GitHub Release** targeting `release-X.Y` with tag `vX.Y.Z` — this
+creates the tag and triggers the publish workflow automatically.
 
 ## Backporting changes
 

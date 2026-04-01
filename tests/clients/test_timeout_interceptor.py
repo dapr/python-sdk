@@ -21,7 +21,8 @@ from dapr.conf import settings
 
 
 class DaprClientTimeoutInterceptorTests(unittest.TestCase):
-    def test_intercept_unary_unary_with_timeout(self):
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_intercept_unary_unary_global_timeout_with_per_call_timeout(self):
         continuation = Mock()
         request = Mock()
         client_call_details = Mock()
@@ -36,6 +37,8 @@ class DaprClientTimeoutInterceptorTests(unittest.TestCase):
             continuation, client_call_details, request
         )
         continuation.assert_called_once_with(client_call_details, request)
+        called_client_call_details = continuation.call_args[0][0]
+        self.assertEqual(10, called_client_call_details.timeout)
 
     @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
     def test_intercept_unary_unary_without_timeout(self):
@@ -54,3 +57,37 @@ class DaprClientTimeoutInterceptorTests(unittest.TestCase):
         )
         called_client_call_details = continuation.call_args[0][0]
         self.assertEqual(7, called_client_call_details.timeout)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', None)
+    def test_intercept_unary_unary_no_global_timeout_with_per_call_timeout(self):
+        continuation = Mock()
+        request = Mock()
+        client_call_details = Mock()
+        client_call_details.method = 'method'
+        client_call_details.timeout = 10
+        client_call_details.metadata = 'metadata'
+        client_call_details.credentials = 'credentials'
+        client_call_details.wait_for_ready = 'wait_for_ready'
+        client_call_details.compression = 'compression'
+
+        DaprClientTimeoutInterceptor().intercept_unary_unary(
+            continuation, client_call_details, request
+        )
+        continuation.assert_called_once_with(client_call_details, request)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', None)
+    def test_intercept_unary_unary_no_global_timeout_no_per_call_timeout(self):
+        continuation = Mock()
+        request = Mock()
+        client_call_details = Mock()
+        client_call_details.method = 'method'
+        client_call_details.timeout = None
+        client_call_details.metadata = 'metadata'
+        client_call_details.credentials = 'credentials'
+        client_call_details.wait_for_ready = 'wait_for_ready'
+        client_call_details.compression = 'compression'
+
+        DaprClientTimeoutInterceptor().intercept_unary_unary(
+            continuation, client_call_details, request
+        )
+        continuation.assert_called_once_with(client_call_details, request)

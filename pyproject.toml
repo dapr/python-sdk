@@ -71,6 +71,7 @@ dev = [
     "httpx>=0.24",
     "pyOpenSSL>=23.2.0",
     "Flask>=1.1",
+    "pytest>=7.0",
     "ruff==0.14.1",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
@@ -86,7 +87,7 @@ examples = [
 target-version = "py310"
 line-length = 100
 fix = true
-extend-exclude = [".github", "dapr/proto"]
+extend-exclude = [".github", "dapr/proto", "ext/dapr-ext-workflow/dapr/ext/workflow/_durabletask/internal/*_pb2*"]
 
 [tool.ruff.lint]
 select = [

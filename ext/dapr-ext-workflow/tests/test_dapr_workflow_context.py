@@ -17,9 +17,9 @@ import unittest
 from datetime import datetime
 from unittest import mock
 
+from dapr.ext.workflow._durabletask import worker
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
-from durabletask import worker
 
 mock_date_time = datetime(2023, 4, 27)
 mock_instance_id = 'instance001'
@@ -56,7 +56,7 @@ class DaprWorkflowContextTest(unittest.TestCase):
 
     def test_workflow_context_functions(self):
         with mock.patch(
-            'durabletask.worker._RuntimeOrchestrationContext',
+            'dapr.ext.workflow._durabletask.worker._RuntimeOrchestrationContext',
             return_value=FakeOrchestrationContext(),
         ):
             fakeContext = worker._RuntimeOrchestrationContext(mock_instance_id)

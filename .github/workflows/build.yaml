@@ -67,4 +67,4 @@ jobs:
         uv run coverage run -a -m unittest discover -v ./ext/flask_dapr/tests
         uv run coverage xml
     - name: Upload test coverage
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6

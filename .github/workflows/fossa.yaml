@@ -22,12 +22,6 @@ on:
       - feature/*
     tags:
       - v*
-      - workflow-v*
-      - grpc-v*
-      - flask-v*
-      - fastapi-v*
-      - langgraph-v*
-      - strands-v*
   pull_request:
     branches:
       - main
