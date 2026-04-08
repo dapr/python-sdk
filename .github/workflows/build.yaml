@@ -59,13 +59,10 @@ jobs:
     - name: Run unit-tests
       run: |
         uv run coverage run -m unittest discover -v ./tests
-        uv run coverage run -a -m unittest discover -v ./ext/dapr-ext-workflow/tests
+        for dir in ext/*/tests; do
+            uv run coverage run -a -m unittest discover -v "./$dir"
+        done
         uv run coverage run -a -m pytest -m "not e2e" ./ext/dapr-ext-workflow/tests/durabletask/
-        uv run coverage run -a -m unittest discover -v ./ext/dapr-ext-grpc/tests
-        uv run coverage run -a -m unittest discover -v ./ext/dapr-ext-fastapi/tests
-        uv run coverage run -a -m unittest discover -v ./ext/dapr-ext-langgraph/tests
-        uv run coverage run -a -m unittest discover -v ./ext/dapr-ext-strands/tests
-        uv run coverage run -a -m unittest discover -v ./ext/flask_dapr/tests
         uv run coverage xml
     - name: Upload test coverage
       uses: codecov/codecov-action@v6

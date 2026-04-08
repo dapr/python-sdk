@@ -154,25 +154,10 @@ jobs:
       - name: Check Examples
         run: |
           cd examples
-          ./validate.sh conversation
-          ./validate.sh crypto
-          ./validate.sh metadata
-          ./validate.sh error_handling
-          ./validate.sh pubsub-simple
-          ./validate.sh pubsub-streaming
-          ./validate.sh pubsub-streaming-async
-          ./validate.sh state_store
-          ./validate.sh state_store_query
-          ./validate.sh secret_store
-          ./validate.sh invoke-simple
-          ./validate.sh invoke-custom-data
-          ./validate.sh demo_actor
-          ./validate.sh invoke-binding
-          ./validate.sh grpc_proxying
-          ./validate.sh w3c-tracing
-          ./validate.sh distributed_lock
-          ./validate.sh configuration
-          ./validate.sh workflow
-          ./validate.sh jobs
-          ./validate.sh langgraph-checkpointer
+          for dir in */; do
+              dir="${dir%/}"
+              if [ -f "$dir/README.md" ]; then
+                  ./validate.sh "$dir"
+              fi
+          done
           ./validate.sh ../
