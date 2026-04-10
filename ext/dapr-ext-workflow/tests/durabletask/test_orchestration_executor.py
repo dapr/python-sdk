@@ -2060,9 +2060,7 @@ def test_child_workflow_retry_timer_sets_child_workflow_retry_origin():
     old_events = [
         helpers.new_workflow_started_event(timestamp=current_timestamp),
         helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
-        helpers.new_child_workflow_created_event(
-            1, 'child_orchestrator', expected_first_child_id
-        ),
+        helpers.new_child_workflow_created_event(1, 'child_orchestrator', expected_first_child_id),
     ]
     new_events = [
         helpers.new_workflow_started_event(timestamp=current_timestamp),
@@ -2107,9 +2105,7 @@ def test_child_workflow_retry_instance_id_always_points_to_first_child():
     old_events = [
         helpers.new_workflow_started_event(timestamp=current_timestamp),
         helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
-        helpers.new_child_workflow_created_event(
-            1, 'child_orchestrator', expected_first_child_id
-        ),
+        helpers.new_child_workflow_created_event(1, 'child_orchestrator', expected_first_child_id),
     ]
     new_events = [
         helpers.new_workflow_started_event(timestamp=current_timestamp),
@@ -2141,9 +2137,7 @@ def test_child_workflow_retry_instance_id_always_points_to_first_child():
     old_events = old_events + new_events
     new_events = [
         helpers.new_workflow_started_event(current_timestamp),
-        helpers.new_child_workflow_created_event(
-            3, 'child_orchestrator', expected_first_child_id
-        ),
+        helpers.new_child_workflow_created_event(3, 'child_orchestrator', expected_first_child_id),
         helpers.new_child_workflow_failed_event(3, ValueError('child failed')),
     ]
     executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
