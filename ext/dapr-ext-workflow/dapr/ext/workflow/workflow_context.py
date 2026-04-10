@@ -162,18 +162,27 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def wait_for_external_event(self, name: str) -> task.Task:
+    def wait_for_external_event(
+        self,
+        name: str,
+        *,
+        timeout: Optional[Union[datetime, timedelta]] = None,
+    ) -> task.Task:
         """Wait asynchronously for an event to be raised with the name `name`.
 
         Parameters
         ----------
         name : str
             The event name of the event that the task is waiting for.
+        timeout : datetime | timedelta | None
+            Optional deadline or duration after which a ``TimeoutError`` is raised
+            if the event has not been received.
 
         Returns
         -------
         Task[TOutput]
-            A Durable Task that completes when the event is received.
+            A Durable Task that completes when the event is received or fails
+            with ``TimeoutError`` if the timeout fires first.
         """
         pass
 

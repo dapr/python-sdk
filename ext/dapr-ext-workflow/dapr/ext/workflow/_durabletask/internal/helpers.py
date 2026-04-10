@@ -11,10 +11,24 @@
 
 import traceback
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from google.protobuf import timestamp_pb2, wrappers_pb2
+
+TimerOrigin = Union[
+    pb.TimerOriginCreateTimer,
+    pb.TimerOriginExternalEvent,
+    pb.TimerOriginActivityRetry,
+    pb.TimerOriginChildWorkflowRetry,
+]
+
+_ORIGIN_FIELD: dict[type, str] = {
+    pb.TimerOriginCreateTimer: 'createTimer',
+    pb.TimerOriginExternalEvent: 'externalEvent',
+    pb.TimerOriginActivityRetry: 'activityRetry',
+    pb.TimerOriginChildWorkflowRetry: 'childWorkflowRetry',
+}
 
 # TODO: The new_xxx_event methods are only used by test code and should be moved elsewhere
 
@@ -202,10 +216,15 @@ def new_workflow_version_not_available_action(
     )
 
 
-def new_create_timer_action(id: int, fire_at: datetime) -> pb.WorkflowAction:
+def new_create_timer_action(
+    id: int, fire_at: datetime, origin: Optional[TimerOrigin] = None
+) -> pb.WorkflowAction:
     timestamp = timestamp_pb2.Timestamp()
     timestamp.FromDatetime(fire_at)
-    return pb.WorkflowAction(id=id, createTimer=pb.CreateTimerAction(fireAt=timestamp))
+    origin_kwargs = {_ORIGIN_FIELD[type(origin)]: origin} if origin is not None else {}
+    return pb.WorkflowAction(
+        id=id, createTimer=pb.CreateTimerAction(fireAt=timestamp, **origin_kwargs)
+    )
 
 
 def new_schedule_task_action(

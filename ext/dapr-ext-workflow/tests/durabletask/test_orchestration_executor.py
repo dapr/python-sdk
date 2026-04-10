@@ -912,16 +912,18 @@ def test_raise_event():
         helpers.new_execution_started_event(orchestrator_name, TEST_INSTANCE_ID),
     ]
 
-    # Execute the orchestration until it is waiting for an external event. The result
-    # should be an empty list of actions because the orchestration didn't schedule any work.
+    # Execute the orchestration until it is waiting for an external event. A timer
+    # action is created for the external event wait (far-future deadline).
     executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
     result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
     actions = result.actions
-    assert len(actions) == 0
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
 
     # Now send an external event to the orchestration and execute it again. This time
     # the orchestration should complete.
-    old_events = new_events
+    far_future = datetime(9999, 12, 31, 23, 59, 59)
+    old_events = new_events + [helpers.new_timer_created_event(1, far_future)]
     new_events = [helpers.new_event_raised_event('my_event', encoded_input='42')]
     executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
     result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
@@ -979,9 +981,12 @@ def test_suspend_resume():
     registry = worker._Registry()
     orchestrator_name = registry.add_orchestrator(orchestrator)
 
+    far_future = datetime(9999, 12, 31, 23, 59, 59)
     old_events = [
         helpers.new_workflow_started_event(),
         helpers.new_execution_started_event(orchestrator_name, TEST_INSTANCE_ID),
+        # The external event wait creates a timer even when no timeout is specified
+        helpers.new_timer_created_event(1, far_future),
     ]
     new_events = [
         helpers.new_suspend_event(),
@@ -1752,6 +1757,404 @@ def test_sub_orchestration_non_retryable_policy_type():
     assert complete_action.failureDetails.errorMessage.__contains__(
         'Sub-orchestration task #1 failed: boom'
     )
+
+
+def test_create_timer_sets_create_timer_origin():
+    """Tests that create_timer sets TimerOriginCreateTimer on the CreateTimerAction."""
+
+    def delay_orchestrator(ctx: task.OrchestrationContext, _):
+        due_time = ctx.current_utc_datetime + timedelta(seconds=5)
+        yield ctx.create_timer(due_time)
+        return 'done'
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(delay_orchestrator)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+    new_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, [], new_events)
+    actions = result.actions
+
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    timer_action = actions[0].createTimer
+    assert timer_action.WhichOneof('origin') == 'createTimer'
+
+
+def test_wait_for_external_event_timeout_sets_external_event_origin():
+    """Tests that wait_for_external_event with timeout creates a timer with
+    TimerOriginExternalEvent origin containing the event name."""
+
+    def timeout_orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.wait_for_external_event('myEvent', timeout=timedelta(seconds=30))
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(timeout_orchestrator)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+    new_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, [], new_events)
+    actions = result.actions
+
+    # The only action should be the timer (the external event wait doesn't produce an action)
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    timer_action = actions[0].createTimer
+    assert timer_action.WhichOneof('origin') == 'externalEvent'
+    assert timer_action.externalEvent.name == 'myEvent'
+
+
+def test_wait_for_external_event_timeout_fires_raises_timeout_error():
+    """Tests that when the timeout fires before the event arrives, the task
+    raises a TimeoutError."""
+
+    def timeout_orchestrator(ctx: task.OrchestrationContext, _):
+        try:
+            result = yield ctx.wait_for_external_event('myEvent', timeout=timedelta(seconds=5))
+            return f'got: {result}'
+        except TimeoutError:
+            return 'timed out'
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(timeout_orchestrator)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+    fire_at = start_time + timedelta(seconds=5)
+
+    # First execution: creates the timer
+    old_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_timer_created_event(1, fire_at),
+    ]
+    # Timer fires before event arrives
+    new_events = [
+        helpers.new_timer_fired_event(1, fire_at),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    complete_action = get_and_validate_single_complete_workflow_action(actions)
+    assert complete_action.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert complete_action.result.value == json.dumps('timed out')
+
+
+def test_wait_for_external_event_with_timeout_event_arrives_first():
+    """Tests that when the event arrives before the timeout, the task completes
+    with the event data."""
+
+    def timeout_orchestrator(ctx: task.OrchestrationContext, _):
+        try:
+            result = yield ctx.wait_for_external_event('myEvent', timeout=timedelta(seconds=30))
+            return f'got: {result}'
+        except TimeoutError:
+            return 'timed out'
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(timeout_orchestrator)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+
+    # First execution: creates the timer (id=1)
+    old_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_timer_created_event(1, start_time + timedelta(seconds=30)),
+    ]
+    # Event arrives before the timer fires
+    new_events = [
+        helpers.new_event_raised_event('myEvent', json.dumps('hello')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    complete_action = get_and_validate_single_complete_workflow_action(actions)
+    assert complete_action.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert complete_action.result.value == json.dumps('got: hello')
+
+
+def test_wait_for_external_event_no_timeout_creates_far_future_timer():
+    """Tests that wait_for_external_event without timeout still creates a timer
+    with a far-future deadline (year 9999) and TimerOriginExternalEvent origin."""
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.wait_for_external_event('myEvent')
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(orchestrator)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+    new_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, [], new_events)
+    actions = result.actions
+
+    # A timer is always created for external event waits
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    timer_action = actions[0].createTimer
+    assert timer_action.WhichOneof('origin') == 'externalEvent'
+    assert timer_action.externalEvent.name == 'myEvent'
+    # The timer should fire far in the future (year 9999)
+    assert timer_action.fireAt.ToDatetime().year == 9999
+
+
+def test_activity_retry_timer_sets_activity_retry_origin():
+    """Tests that retry timers for failed activities set TimerOriginActivityRetry
+    with the correct taskExecutionId."""
+
+    def dummy_activity(ctx, _):
+        raise ValueError('boom')
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.call_activity(
+            dummy_activity,
+            retry_policy=task.RetryPolicy(
+                first_retry_interval=timedelta(seconds=1),
+                max_number_of_attempts=3,
+            ),
+        )
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(orchestrator)
+
+    current_timestamp = datetime(2020, 1, 1, 12, 0, 0)
+
+    # Attempt 1: scheduleTask(id=1) fails
+    old_events = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_task_scheduled_event(1, task.get_name(dummy_activity)),
+    ]
+    new_events = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_task_failed_event(1, ValueError('boom')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    # The retry timer should have activityRetry origin
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    timer_action = actions[0].createTimer
+    assert timer_action.WhichOneof('origin') == 'activityRetry'
+    assert timer_action.activityRetry.taskExecutionId != ''
+
+
+def test_activity_retry_task_execution_id_stable_across_retries():
+    """Tests that the taskExecutionId in TimerOriginActivityRetry is stable
+    across multiple retry attempts of the same logical activity call."""
+
+    def dummy_activity(ctx, _):
+        raise ValueError('boom')
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.call_activity(
+            dummy_activity,
+            retry_policy=task.RetryPolicy(
+                first_retry_interval=timedelta(seconds=1),
+                max_number_of_attempts=4,
+            ),
+        )
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(orchestrator)
+
+    current_timestamp = datetime(2020, 1, 1, 12, 0, 0)
+
+    # Attempt 1: scheduleTask(id=1) fails -> retry timer(id=2)
+    old_events = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_task_scheduled_event(1, task.get_name(dummy_activity)),
+    ]
+    new_events = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_task_failed_event(1, ValueError('boom')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    retry_timer_1 = actions[0].createTimer
+    first_task_execution_id = retry_timer_1.activityRetry.taskExecutionId
+    assert first_task_execution_id != ''
+
+    # Timer fires -> scheduleTask(id=3), then fails -> retry timer(id=4)
+    old_events = old_events + new_events
+    current_timestamp = current_timestamp + timedelta(seconds=1)
+    new_events = [
+        helpers.new_workflow_started_event(current_timestamp),
+        helpers.new_timer_created_event(2, current_timestamp),
+        helpers.new_timer_fired_event(2, current_timestamp),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+    assert len(actions) == 1
+    assert actions[0].HasField('scheduleTask')
+
+    # Attempt 2 fails
+    old_events = old_events + new_events
+    new_events = [
+        helpers.new_workflow_started_event(current_timestamp),
+        helpers.new_task_scheduled_event(3, task.get_name(dummy_activity)),
+        helpers.new_task_failed_event(3, ValueError('boom')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    retry_timer_2 = actions[0].createTimer
+    second_task_execution_id = retry_timer_2.activityRetry.taskExecutionId
+
+    # Both retry timers must carry the SAME taskExecutionId
+    assert second_task_execution_id == first_task_execution_id
+
+
+def test_child_workflow_retry_timer_sets_child_workflow_retry_origin():
+    """Tests that retry timers for failed child workflows set
+    TimerOriginChildWorkflowRetry with the correct instanceId."""
+
+    def child_orchestrator(ctx: task.OrchestrationContext, _):
+        raise ValueError('child failed')
+
+    def parent_orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.call_sub_orchestrator(
+            'child_orchestrator',
+            retry_policy=task.RetryPolicy(
+                first_retry_interval=timedelta(seconds=1),
+                max_number_of_attempts=3,
+            ),
+        )
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(parent_orchestrator)
+    registry.add_orchestrator(child_orchestrator)
+
+    current_timestamp = datetime(2020, 1, 1, 12, 0, 0)
+
+    # First child created with id=1 -> instance_id = "abc123:0001"
+    expected_first_child_id = f'{TEST_INSTANCE_ID}:0001'
+    old_events = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_child_workflow_created_event(
+            1, 'child_orchestrator', expected_first_child_id
+        ),
+    ]
+    new_events = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_child_workflow_failed_event(1, ValueError('child failed')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    timer_action = actions[0].createTimer
+    assert timer_action.WhichOneof('origin') == 'childWorkflowRetry'
+    assert timer_action.childWorkflowRetry.instanceId == expected_first_child_id
+
+
+def test_child_workflow_retry_instance_id_always_points_to_first_child():
+    """Tests that the instanceId in TimerOriginChildWorkflowRetry always
+    references the first child workflow's instance ID, even across multiple retries."""
+
+    def child_orchestrator(ctx: task.OrchestrationContext, _):
+        raise ValueError('child failed')
+
+    def parent_orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.call_sub_orchestrator(
+            'child_orchestrator',
+            retry_policy=task.RetryPolicy(
+                first_retry_interval=timedelta(seconds=1),
+                max_number_of_attempts=4,
+            ),
+        )
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(parent_orchestrator)
+    registry.add_orchestrator(child_orchestrator)
+
+    current_timestamp = datetime(2020, 1, 1, 12, 0, 0)
+
+    # First child: sub-orch(id=1) -> instance_id = "abc123:0001"
+    expected_first_child_id = f'{TEST_INSTANCE_ID}:0001'
+    old_events = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_child_workflow_created_event(
+            1, 'child_orchestrator', expected_first_child_id
+        ),
+    ]
+    new_events = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_child_workflow_failed_event(1, ValueError('child failed')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    retry_timer_1 = actions[0].createTimer
+    assert retry_timer_1.childWorkflowRetry.instanceId == expected_first_child_id
+
+    # Timer fires -> new child sub-orch(id=3) with a DIFFERENT instance_id
+    old_events = old_events + new_events
+    current_timestamp = current_timestamp + timedelta(seconds=1)
+    new_events = [
+        helpers.new_workflow_started_event(current_timestamp),
+        helpers.new_timer_created_event(2, current_timestamp),
+        helpers.new_timer_fired_event(2, current_timestamp),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+    assert len(actions) == 1
+    assert actions[0].HasField('createChildWorkflow')
+
+    # Second child fails
+    old_events = old_events + new_events
+    new_events = [
+        helpers.new_workflow_started_event(current_timestamp),
+        helpers.new_child_workflow_created_event(
+            3, 'child_orchestrator', expected_first_child_id
+        ),
+        helpers.new_child_workflow_failed_event(3, ValueError('child failed')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    retry_timer_2 = actions[0].createTimer
+
+    # Retry timer 2 must ALSO point to the first child's instance ID
+    assert retry_timer_2.childWorkflowRetry.instanceId == expected_first_child_id
 
 
 def get_and_validate_single_complete_workflow_action(

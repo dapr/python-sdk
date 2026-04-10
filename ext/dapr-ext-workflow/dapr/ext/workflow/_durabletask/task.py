@@ -166,21 +166,25 @@ class OrchestrationContext(ABC):
         """
         pass
 
-    # TODO: Add a timeout parameter, which allows the task to be canceled if the event is
-    # not received within the specified timeout. This requires support for task cancellation.
     @abstractmethod
-    def wait_for_external_event(self, name: str) -> Task:
+    def wait_for_external_event(
+        self, name: str, *, timeout: Optional[Union[datetime, timedelta]] = None
+    ) -> Task:
         """Wait asynchronously for an event to be raised with the name `name`.
 
         Parameters
         ----------
         name : str
             The event name of the event that the task is waiting for.
+        timeout : datetime | timedelta | None
+            Optional deadline or duration after which a ``TimeoutError`` is raised
+            if the event has not been received.
 
         Returns
         -------
         Task[TOutput]
-            A Durable Task that completes when the event is received.
+            A Durable Task that completes when the event is received or fails
+            with ``TimeoutError`` if the timeout fires first.
         """
         pass
 
@@ -492,6 +496,34 @@ class WhenAnyTask(CompositeTask[Task]):
             self._result = task
             if self._parent is not None:
                 self._parent.on_child_completed(self)
+
+
+class ExternalEventWithTimeoutTask(CompositeTask[T]):
+    """A task that waits for an external event with a timeout.
+
+    Completes with the event data if the event arrives first, or raises
+    ``TimeoutError`` if the timer fires first.
+    """
+
+    def __init__(self, event_task: CompletableTask, timer_task: TimerTask):
+        self._event_task = event_task
+        self._timer_task = timer_task
+        super().__init__([event_task, timer_task])
+
+    def on_child_completed(self, completed_task: Task):
+        if self.is_complete:
+            return
+        if completed_task is self._event_task:
+            if completed_task.is_failed:
+                self._exception = completed_task.get_exception()
+            else:
+                self._result = completed_task.get_result()
+            self._is_complete = True
+        elif completed_task is self._timer_task:
+            self._exception = TimeoutError('The operation timed out waiting for an external event')
+            self._is_complete = True
+        if self._is_complete and self._parent is not None:
+            self._parent.on_child_completed(self)
 
 
 def when_all(tasks: list[Task[T]]) -> WhenAllTask[T]:

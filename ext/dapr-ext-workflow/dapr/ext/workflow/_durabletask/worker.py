@@ -1216,17 +1216,21 @@ class _RuntimeOrchestrationContext(
             self._encoded_custom_status = custom_status
 
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
-        return self.create_timer_internal(fire_at)
+        return self.create_timer_internal(
+            fire_at,
+            origin=pb.TimerOriginCreateTimer(),
+        )
 
     def create_timer_internal(
         self,
         fire_at: Union[datetime, timedelta],
         retryable_task: Optional[task.RetryableTask] = None,
+        origin: Optional[ph.TimerOrigin] = None,
     ) -> task.Task:
         id = self.next_sequence_number()
         if isinstance(fire_at, timedelta):
             fire_at = self.current_utc_datetime + fire_at
-        action = ph.new_create_timer_action(id, fire_at)
+        action = ph.new_create_timer_action(id, fire_at, origin=origin)
         self._pending_actions[id] = action
 
         timer_task: task.TimerTask = task.TimerTask()
@@ -1345,7 +1349,12 @@ class _RuntimeOrchestrationContext(
                 )
         self._pending_tasks[id] = fn_task
 
-    def wait_for_external_event(self, name: str) -> task.Task:
+    def wait_for_external_event(
+        self,
+        name: str,
+        *,
+        timeout: Optional[Union[datetime, timedelta]] = None,
+    ) -> task.Task:
         # Check to see if this event has already been received, in which case we
         # can return it immediately. Otherwise, record out intent to receive an
         # event with the given name so that we can resume the generator when it
@@ -1365,7 +1374,16 @@ class _RuntimeOrchestrationContext(
                 task_list = []
                 self._pending_events[event_name] = task_list
             task_list.append(external_event_task)
-        return external_event_task
+
+        if external_event_task.is_complete:
+            return external_event_task
+
+        fire_at = timeout if timeout is not None else datetime(9999, 12, 31, 23, 59, 59)
+        timer_task = self.create_timer_internal(
+            fire_at,
+            origin=pb.TimerOriginExternalEvent(name=name),
+        )
+        return task.ExternalEventWithTimeoutTask(external_event_task, timer_task)
 
     def continue_as_new(self, new_input, *, save_events: bool = False) -> None:
         if self._is_complete:
@@ -1642,7 +1660,13 @@ class _OrchestrationExecutor:
                                 ctx.resume()
                             else:
                                 activity_task.increment_attempt_count()
-                                ctx.create_timer_internal(next_delay, activity_task)
+                                ctx.create_timer_internal(
+                                    next_delay,
+                                    activity_task,
+                                    origin=pb.TimerOriginActivityRetry(
+                                        taskExecutionId=activity_task._task_execution_id,
+                                    ),
+                                )
                 elif isinstance(activity_task, task.CompletableTask):
                     activity_task.fail(
                         f'{ctx.instance_id}: Activity task #{task_id} failed: {event.taskFailed.failureDetails.errorMessage}',
@@ -1717,7 +1741,13 @@ class _OrchestrationExecutor:
                                 ctx.resume()
                             else:
                                 sub_orch_task.increment_attempt_count()
-                                ctx.create_timer_internal(next_delay, sub_orch_task)
+                                ctx.create_timer_internal(
+                                    next_delay,
+                                    sub_orch_task,
+                                    origin=pb.TimerOriginChildWorkflowRetry(
+                                        instanceId=sub_orch_task._instance_id,
+                                    ),
+                                )
                 elif isinstance(sub_orch_task, task.CompletableTask):
                     sub_orch_task.fail(
                         f'Sub-orchestration task #{task_id} failed: {failedEvent.failureDetails.errorMessage}',
