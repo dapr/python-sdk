@@ -22,3 +22,8 @@ ignore = ["E501","E203", "E712", "E722", "E713"]
 
 [tool.ruff.format]
 quote-style = 'single'
+
+[tool.pytest.ini_options]
+markers = [
+    'example_dir(name): set the example directory for the dapr fixture',
+]
