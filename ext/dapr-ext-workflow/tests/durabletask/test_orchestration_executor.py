@@ -2046,9 +2046,7 @@ def test_pre_patch_replay_indefinite_wait_then_child_workflow():
         helpers.new_event_raised_event('myEvent', encoded_input=json.dumps('go')),
         helpers.new_child_workflow_created_event(1, 'child_orchestrator', child_instance_id),
     ]
-    new_events = [
-        helpers.new_child_workflow_completed_event(1, json.dumps('child result'))
-    ]
+    new_events = [helpers.new_child_workflow_completed_event(1, json.dumps('child result'))]
     executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
     result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
     actions = result.actions

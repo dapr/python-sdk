@@ -71,6 +71,7 @@ def is_optional_timer_event(event: pb.HistoryEvent) -> bool:
         and timer.fireAt.nanos == OPTIONAL_TIMER_FIRE_AT.nanos
     )
 
+
 # TODO: The new_xxx_event methods are only used by test code and should be moved elsewhere
 
 

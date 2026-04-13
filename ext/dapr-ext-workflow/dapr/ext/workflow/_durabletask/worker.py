@@ -1681,9 +1681,8 @@ class _OrchestrationExecutor:
                 # If the pending action at this id is an optional timer from an
                 # indefinite wait_for_external_event that wasn't present in the
                 # pre-patch history, drop it and shift so this schedule matches.
-                if (
-                    task_id in ctx._pending_actions
-                    and ph.is_optional_timer_action(ctx._pending_actions[task_id])
+                if task_id in ctx._pending_actions and ph.is_optional_timer_action(
+                    ctx._pending_actions[task_id]
                 ):
                     ctx._drop_optional_pending_at(task_id)
                 action = ctx._pending_actions.pop(task_id, None)
@@ -1768,9 +1767,8 @@ class _OrchestrationExecutor:
                 # Remove the childWorkflowInstanceCreated event from the pending action list so we don't schedule it again.
                 task_id = event.eventId
                 # If the pending action at this id is an optional timer, drop+shift.
-                if (
-                    task_id in ctx._pending_actions
-                    and ph.is_optional_timer_action(ctx._pending_actions[task_id])
+                if task_id in ctx._pending_actions and ph.is_optional_timer_action(
+                    ctx._pending_actions[task_id]
                 ):
                     ctx._drop_optional_pending_at(task_id)
                 action = ctx._pending_actions.pop(task_id, None)
