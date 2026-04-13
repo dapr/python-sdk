@@ -288,7 +288,7 @@ class Task(ABC, Generic[T]):
     """Abstract base class for asynchronous tasks in a durable orchestration."""
 
     _result: T
-    _exception: Optional[TaskFailedError]
+    _exception: Optional[Exception]
     _parent: Optional[CompositeTask[T]]
 
     def __init__(self) -> None:
@@ -315,7 +315,7 @@ class Task(ABC, Generic[T]):
             raise self._exception
         return self._result
 
-    def get_exception(self) -> TaskFailedError:
+    def get_exception(self) -> Exception:
         """Returns the exception that caused the task to fail."""
         if self._exception is None:
             raise ValueError('The task has not failed.')
