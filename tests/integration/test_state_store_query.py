@@ -1,10 +1,6 @@
 import subprocess
-from pathlib import Path
 
 import pytest
-
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-EXAMPLE_DIR = REPO_ROOT / 'examples' / 'state_store_query'
 
 EXPECTED_LINES = [
     '1 {"city": "Seattle", "person": {"id": 1036.0, "org": "Dev Ops"}, "state": "WA"}',

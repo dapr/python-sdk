@@ -30,6 +30,7 @@ def kafka():
         'docker compose -f ./docker-compose-single-kafka.yml down',
         shell=True,
         cwd=BINDING_DIR,
+        check=True,
         capture_output=True,
     )
 

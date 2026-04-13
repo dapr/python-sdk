@@ -1,7 +1,5 @@
 import pytest
 
-langchain_ollama = pytest.importorskip('langchain_ollama', reason='langchain-ollama not installed')
-
 EXPECTED_LINES = [
     'Add 3 and 4.',
     '7',
