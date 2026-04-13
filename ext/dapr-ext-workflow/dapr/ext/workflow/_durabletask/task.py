@@ -401,6 +401,19 @@ class CompletableTask(Task[T]):
         if self._parent is not None:
             self._parent.on_child_completed(self)
 
+    def cancel(self, exc: Exception) -> None:
+        """Mark this task as completed with the given exception.
+
+        Used for non-runtime failures such as a zero-timeout
+        wait_for_external_event being canceled before any history event arrives.
+        """
+        if self._is_complete:
+            raise ValueError('The task has already completed.')
+        self._exception = exc
+        self._is_complete = True
+        if self._parent is not None:
+            self._parent.on_child_completed(self)
+
 
 class RetryableTask(CompletableTask[T]):
     """A task that can be retried according to a retry policy."""
@@ -505,9 +518,17 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
     ``TimeoutError`` if the timer fires first.
     """
 
-    def __init__(self, event_task: CompletableTask, timer_task: TimerTask):
+    def __init__(
+        self,
+        event_task: CompletableTask,
+        timer_task: TimerTask,
+        event_name: str,
+        timeout: Optional[Union[datetime, timedelta]] = None,
+    ):
         self._event_task = event_task
         self._timer_task = timer_task
+        self._event_name = event_name
+        self._timeout = timeout
         super().__init__([event_task, timer_task])
 
     def on_child_completed(self, completed_task: Task):
@@ -520,7 +541,14 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
                 self._result = completed_task.get_result()
             self._is_complete = True
         elif completed_task is self._timer_task:
-            self._exception = TimeoutError('The operation timed out waiting for an external event')
+            if self._timeout is not None:
+                msg = (
+                    f'Timed out after {self._timeout!r} waiting for '
+                    f'external event {self._event_name!r}'
+                )
+            else:
+                msg = f'Timed out waiting for external event {self._event_name!r}'
+            self._exception = TimeoutError(msg)
             self._is_complete = True
         if self._is_complete and self._parent is not None:
             self._parent.on_child_completed(self)

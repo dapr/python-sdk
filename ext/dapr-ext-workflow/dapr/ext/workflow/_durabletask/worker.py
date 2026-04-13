@@ -1432,9 +1432,10 @@ class _RuntimeOrchestrationContext(
                 pending.remove(external_event_task)
                 if not pending:
                     del self._pending_events[event_name]
-            external_event_task._is_complete = True
-            external_event_task._exception = TimeoutError(
-                'The operation timed out waiting for an external event'
+            external_event_task.cancel(
+                TimeoutError(
+                    f'Wait for external event {name!r} canceled immediately due to zero timeout'
+                )
             )
             return external_event_task
 
@@ -1451,7 +1452,12 @@ class _RuntimeOrchestrationContext(
             fire_at,
             origin=pb.TimerOriginExternalEvent(name=name),
         )
-        return task.ExternalEventWithTimeoutTask(external_event_task, timer_task)
+        return task.ExternalEventWithTimeoutTask(
+            external_event_task,
+            timer_task,
+            event_name=name,
+            timeout=None if is_indefinite else timeout,
+        )
 
     def continue_as_new(self, new_input, *, save_events: bool = False) -> None:
         if self._is_complete:
