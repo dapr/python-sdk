@@ -1649,6 +1649,17 @@ class _OrchestrationExecutor:
                     and not ph.is_optional_timer_event(event)
                 ):
                     ctx._drop_optional_pending_at(timer_id)
+                    pending = ctx._pending_actions.get(timer_id)
+                # Reverse asymmetric: the incoming TimerCreated is an optional timer
+                # from an older code version, but the current code has a different
+                # action at this id (or none at all). This happens when a patch adds
+                # new actions before the wait_for_external_event that originally
+                # produced the timer. Silently drop the stale optional event; the
+                # pending action stays in place to match its own future event.
+                if ph.is_optional_timer_event(event) and (
+                    pending is None or not pending.HasField('createTimer')
+                ):
+                    return
                 action = ctx._pending_actions.pop(timer_id, None)
                 if not action:
                     raise _get_non_determinism_error(timer_id, task.get_name(ctx.create_timer))

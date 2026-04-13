@@ -2013,6 +2013,62 @@ def test_post_patch_replay_optional_timer_with_unset_origin():
     assert complete_action.result.value == json.dumps('ok')
 
 
+def test_patch_adds_activity_before_existing_wait():
+    """Reproduces the versioning.py test5/test6 scenario.
+
+    An in-flight orchestration had a wait_for_external_event that emitted an
+    optional TimerCreated event into history. Later, the code was patched to add
+    an ``is_patched`` check + activity call *before* the wait. On replay, the
+    new orchestration code emits a ScheduleTask at the id that the optional
+    TimerCreated occupies in history. The runtime must silently skip the stale
+    optional TimerCreated event rather than raising a non-determinism error."""
+
+    def dummy_activity(ctx, input):
+        return f'did: {input}'
+
+    def patched_orchestrator(ctx: task.OrchestrationContext, _):
+        yield ctx.call_activity(dummy_activity, input='start')
+        # NEW: is_patched branch added before the existing wait. Schedules an
+        # activity at the id previously occupied by the optional timer.
+        if ctx.is_patched('patch1'):
+            yield ctx.call_activity(dummy_activity, input='patch1 is patched')
+        else:
+            yield ctx.call_activity(dummy_activity, input='patch1 is not patched')
+        result = yield ctx.wait_for_external_event('evt')
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(patched_orchestrator)
+    registry.add_activity(dummy_activity)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+    # Pre-patch history: start activity at id=1, optional timer at id=2.
+    old_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_task_scheduled_event(1, task.get_name(dummy_activity)),
+        helpers.new_task_completed_event(1, json.dumps('did: start')),
+        helpers.new_timer_created_event(
+            2,
+            helpers.OPTIONAL_TIMER_FIRE_AT,
+            origin=pb.TimerOriginExternalEvent(name='evt'),
+        ),
+    ]
+    # Event arrives (triggers replay with the new code path).
+    new_events = [helpers.new_event_raised_event('evt', encoded_input=json.dumps('ok'))]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    # Replay must NOT fail. It must emit the new patch1-not-patched activity as
+    # a pending action (id=2 — the slot the stale optional timer is skipped from).
+    # is_patched returns False during replay because the patch is not recorded in
+    # the original history's workflowStarted patches.
+    assert len(actions) == 1
+    assert actions[0].HasField('scheduleTask')
+    assert actions[0].scheduleTask.input.value == json.dumps('patch1 is not patched')
+
+
 def test_pre_patch_replay_indefinite_wait_then_activity():
     """A pre-patch history has the activity scheduled at id=1 (no reserved id for
     the indefinite wait). The replay must drop the optional timer, shift the
