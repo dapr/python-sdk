@@ -177,8 +177,16 @@ class OrchestrationContext(ABC):
         name : str
             The event name of the event that the task is waiting for.
         timeout : datetime | timedelta | None
-            Optional deadline or duration after which a ``TimeoutError`` is raised
-            if the event has not been received.
+            Controls how long to wait for the event. Three shapes:
+
+            * ``None`` (default) or a *negative* ``timedelta`` — wait indefinitely.
+              An optional sentinel timer is scheduled internally for runtime
+              tracking, but ``TimeoutError`` is never raised on its own.
+            * ``timedelta(0)`` — do not wait at all. The returned task fails
+              immediately with ``TimeoutError``.
+            * A future ``datetime`` or a positive ``timedelta`` — wait until
+              that deadline / for that duration; ``TimeoutError`` is raised if
+              the event has not been received in time.
 
         Returns
         -------

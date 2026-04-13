@@ -1984,6 +1984,35 @@ def test_post_patch_replay_optional_timer_matches_history():
     assert complete_action.result.value == json.dumps('ok')
 
 
+def test_post_patch_replay_optional_timer_with_unset_origin():
+    """An older sidecar may emit TimerCreatedEvent without populating the proto3
+    ``origin`` oneof. The sentinel fireAt alone must still classify the event as
+    optional so the replay matches our pending optional timer cleanly."""
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.wait_for_external_event('myEvent')
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(orchestrator)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+    old_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        # Sentinel fireAt but no origin set.
+        helpers.new_timer_created_event(1, helpers.OPTIONAL_TIMER_FIRE_AT),
+    ]
+    new_events = [helpers.new_event_raised_event('myEvent', encoded_input=json.dumps('ok'))]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    complete_action = get_and_validate_single_complete_workflow_action(actions)
+    assert complete_action.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert complete_action.result.value == json.dumps('ok')
+
+
 def test_pre_patch_replay_indefinite_wait_then_activity():
     """A pre-patch history has the activity scheduled at id=1 (no reserved id for
     the indefinite wait). The replay must drop the optional timer, shift the

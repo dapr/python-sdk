@@ -59,17 +59,23 @@ def is_optional_timer_action(action: pb.WorkflowAction) -> bool:
 
 
 def is_optional_timer_event(event: pb.HistoryEvent) -> bool:
-    """Returns True if a TimerCreatedEvent is the optional TimerOriginExternalEvent
-    sentinel timer."""
+    """Returns True if a TimerCreatedEvent is the optional sentinel timer.
+
+    For replay compatibility, treat a timerCreated event with the sentinel
+    fireAt as optional even if the proto3 ``origin`` oneof is unset (e.g. when
+    reading histories emitted by older sidecars that didn't populate it). When
+    ``origin`` *is* populated, it must match TimerOriginExternalEvent.
+    """
     if not event.HasField('timerCreated'):
         return False
     timer = event.timerCreated
-    if timer.WhichOneof('origin') != 'externalEvent':
+    if (
+        timer.fireAt.seconds != OPTIONAL_TIMER_FIRE_AT.seconds
+        or timer.fireAt.nanos != OPTIONAL_TIMER_FIRE_AT.nanos
+    ):
         return False
-    return (
-        timer.fireAt.seconds == OPTIONAL_TIMER_FIRE_AT.seconds
-        and timer.fireAt.nanos == OPTIONAL_TIMER_FIRE_AT.nanos
-    )
+    origin = timer.WhichOneof('origin')
+    return origin in (None, 'externalEvent')
 
 
 # TODO: The new_xxx_event methods are only used by test code and should be moved elsewhere
