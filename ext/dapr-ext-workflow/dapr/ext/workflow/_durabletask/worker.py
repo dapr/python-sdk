@@ -1442,11 +1442,13 @@ class _RuntimeOrchestrationContext(
         is_indefinite = timeout is None or (
             isinstance(timeout, timedelta) and timeout < timedelta(0)
         )
-        fire_at: Union[datetime, timestamp_pb2.Timestamp]
+        fire_at: Union[datetime, timedelta, timestamp_pb2.Timestamp]
         if is_indefinite:
             fire_at = ph.OPTIONAL_TIMER_FIRE_AT
         else:
-            fire_at = timeout  # type: ignore[assignment]
+            # Narrowed by ``is_indefinite``: timeout is a positive timedelta or a datetime here.
+            assert timeout is not None
+            fire_at = timeout
 
         timer_task = self.create_timer_internal(
             fire_at,
