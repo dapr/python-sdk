@@ -1,10 +1,9 @@
-import json
 import subprocess
 import time
-import urllib.request
 from pathlib import Path
 
 import pytest
+import httpx
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 BINDING_DIR = REPO_ROOT / 'examples' / 'invoke-binding'
@@ -46,18 +45,11 @@ def test_invoke_binding(dapr, kafka):
     # Publish through the receiver's sidecar (both scripts are infinite,
     # so we reimplement the publisher here with a bounded loop).
     for n in range(1, 4):
-        body = json.dumps(
-            {
-                'operation': 'create',
-                'data': {'id': n, 'message': 'hello world'},
-            }
-        ).encode()
-        req = urllib.request.Request(
-            'http://localhost:3500/v1.0/bindings/kafkaBinding',
-            data=body,
-            headers={'Content-Type': 'application/json'},
-        )
-        urllib.request.urlopen(req)
+        payload = {
+            'operation': 'create',
+            'data': {'id': n, 'message': 'hello world'},
+        }
+        httpx.post('http://localhost:3500/v1.0/bindings/kafkaBinding', json=payload)
         time.sleep(1)
 
     time.sleep(5)

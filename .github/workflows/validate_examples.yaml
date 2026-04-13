@@ -151,6 +151,6 @@ jobs:
           cd dapr_runtime
           ./dist/linux_amd64/release/placement --healthz-port 9091 &
           cd ..
-      - name: Check Examples
+      - name: Check examples
         run: |
-          tox -e examples
+          tox -e integration

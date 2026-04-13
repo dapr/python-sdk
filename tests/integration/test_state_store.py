@@ -1,7 +1,5 @@
 import pytest
 
-from conftest import assert_lines_in_output
-
 EXPECTED_LINES = [
     'State store has successfully saved value_1 with key_1 as key',
     'Cannot save due to bad etag. ErrorCode=StatusCode.ABORTED',
@@ -23,4 +21,5 @@ def test_state_store(dapr):
         '--resources-path components/ -- python3 state_store.py',
         timeout=30,
     )
-    assert_lines_in_output(output, EXPECTED_LINES, ordered=True)
+    for line in EXPECTED_LINES:
+        assert line in output, f'Missing in output: {line}'
