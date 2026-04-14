@@ -1668,7 +1668,7 @@ class _OrchestrationExecutor:
                 # produced the timer. Silently drop the stale optional event; the
                 # pending action stays in place to match its own future event.
                 if ph.is_optional_timer_event(event) and (
-                    pending is None or not pending.HasField('createTimer')
+                    pending is None or not ph.is_optional_timer_action(pending)
                 ):
                     return
                 action = ctx._pending_actions.pop(timer_id, None)

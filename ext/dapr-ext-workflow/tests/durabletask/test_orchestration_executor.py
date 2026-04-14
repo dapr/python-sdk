@@ -2221,6 +2221,55 @@ def test_pre_patch_replay_indefinite_wait_then_user_create_timer():
     assert complete_action.result.value == json.dumps('done')
 
 
+def test_stale_optional_timer_event_does_not_match_user_timer():
+    """A stale optional TimerCreated event in history must not be treated as
+    confirmation of a non-optional user CreateTimer that now occupies the same id.
+
+    Scenario: older code had an indefinite wait_for_external_event (optional timer
+    at id=1). A patch replaced the wait with a user CreateTimer at the same id.
+    The stale optional TimerCreated must be dropped; the user timer must remain
+    pending and match its own (non-optional) TimerCreated on a future replay."""
+
+    def patched_orchestrator(ctx: task.OrchestrationContext, _):
+        # New code: user timer at id=1 (replaces the old indefinite wait).
+        yield ctx.create_timer(timedelta(seconds=10))
+        return 'done'
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(patched_orchestrator)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+    user_fire_at = start_time + timedelta(seconds=10)
+    # History from the old code: optional timer at id=1 (stale).
+    old_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_timer_created_event(
+            1,
+            helpers.OPTIONAL_TIMER_FIRE_AT,
+            origin=pb.TimerOriginExternalEvent(name='evt'),
+        ),
+    ]
+    # New events: the runtime confirms and fires the real user timer at id=1.
+    new_events = [
+        helpers.new_timer_created_event(
+            1,
+            user_fire_at,
+            origin=pb.TimerOriginCreateTimer(),
+        ),
+        helpers.new_timer_fired_event(1, user_fire_at),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    # The stale optional event must have been dropped. The real user timer must
+    # have been confirmed and fired, completing the orchestration.
+    complete_action = get_and_validate_single_complete_workflow_action(actions)
+    assert complete_action.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert complete_action.result.value == json.dumps('done')
+
+
 def test_pre_patch_replay_two_indefinite_waits():
     """Two indefinite waits in sequence. Shifts must compose across multiple
     optional timers."""
