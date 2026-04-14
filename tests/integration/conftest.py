@@ -1,4 +1,4 @@
-import signal
+import shlex
 import subprocess
 import tempfile
 import threading
@@ -22,8 +22,7 @@ class DaprRunner:
 
     def _spawn(self, args: str) -> subprocess.Popen[str]:
         return subprocess.Popen(
-            f'dapr run {args}',
-            shell=True,
+            args=('dapr', 'run', *shlex.split(args)),
             cwd=self._cwd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -34,7 +33,7 @@ class DaprRunner:
     def _terminate(proc: subprocess.Popen[str]) -> None:
         if proc.poll() is not None:
             return
-        proc.send_signal(signal.SIGTERM)
+        proc.terminate()
         try:
             proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
@@ -88,8 +87,7 @@ class DaprRunner:
         """
         output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log', delete=False)
         proc = subprocess.Popen(
-            f'dapr run {args}',
-            shell=True,
+            args=('dapr', 'run', *shlex.split(args)),
             cwd=self._cwd,
             stdout=output_file,
             stderr=subprocess.STDOUT,

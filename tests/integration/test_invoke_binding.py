@@ -50,7 +50,9 @@ def test_invoke_binding(dapr, kafka):
             'operation': 'create',
             'data': {'id': n, 'message': 'hello world'},
         }
-        httpx.post('http://localhost:3500/v1.0/bindings/kafkaBinding', json=payload)
+        response = httpx.post('http://localhost:3500/v1.0/bindings/kafkaBinding', json=payload, timeout=5)
+        response.raise_for_status()
+
         time.sleep(1)
 
     time.sleep(5)
