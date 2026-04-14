@@ -1212,6 +1212,107 @@ def test_fan_in_with_single_failure():
     assert str(ex) in complete_action.failureDetails.errorMessage
 
 
+def test_when_all_failure_after_success_bubbles_to_orchestrator():
+    """Tests that when_all correctly surfaces a failure to the orchestrator
+    even when succeeding tasks complete before the failing one.
+
+    This is a regression test: previously the exception from the failed task
+    was swallowed when another task had already completed successfully.
+    """
+
+    def dummy_activity(ctx, _):
+        pass
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        t1 = ctx.call_activity(dummy_activity, input='will-succeed')
+        t2 = ctx.call_activity(dummy_activity, input='will-fail')
+        try:
+            yield task.when_all([t1, t2])
+        except task.TaskFailedError:
+            return 'caught'
+        return 'not caught'
+
+    registry = worker._Registry()
+    orchestrator_name = registry.add_orchestrator(orchestrator)
+    activity_name = registry.add_activity(dummy_activity)
+
+    old_events = [
+        helpers.new_workflow_started_event(),
+        helpers.new_execution_started_event(
+            orchestrator_name, TEST_INSTANCE_ID, encoded_input=None
+        ),
+        helpers.new_task_scheduled_event(1, activity_name),
+        helpers.new_task_scheduled_event(2, activity_name),
+    ]
+
+    # t1 succeeds FIRST, then t2 fails — this is the order that triggered the bug
+    ex = Exception('activity error')
+    new_events = [
+        helpers.new_task_completed_event(1, encoded_output=json.dumps('ok')),
+        helpers.new_task_failed_event(2, ex),
+    ]
+
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    complete_action = get_and_validate_single_complete_workflow_action(actions)
+    # The orchestrator should have caught the exception and returned 'caught'
+    assert complete_action.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert complete_action.result.value == json.dumps('caught')
+
+
+def test_when_all_success_after_failure_does_not_crash():
+    """Tests that task completions arriving after when_all already failed
+    do not crash the orchestration.
+
+    This is a regression test: previously a ValueError was raised when
+    a successful task completed after the WhenAllTask was already marked
+    complete due to a prior child failure.
+    """
+
+    def dummy_activity(ctx, _):
+        pass
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        t1 = ctx.call_activity(dummy_activity, input='will-fail')
+        t2 = ctx.call_activity(dummy_activity, input='will-succeed')
+        try:
+            yield task.when_all([t1, t2])
+        except task.TaskFailedError:
+            return 'caught'
+        return 'not caught'
+
+    registry = worker._Registry()
+    orchestrator_name = registry.add_orchestrator(orchestrator)
+    activity_name = registry.add_activity(dummy_activity)
+
+    old_events = [
+        helpers.new_workflow_started_event(),
+        helpers.new_execution_started_event(
+            orchestrator_name, TEST_INSTANCE_ID, encoded_input=None
+        ),
+        helpers.new_task_scheduled_event(1, activity_name),
+        helpers.new_task_scheduled_event(2, activity_name),
+    ]
+
+    # t1 fails FIRST, then t2 succeeds — this would previously raise ValueError
+    ex = Exception('activity error')
+    new_events = [
+        helpers.new_task_failed_event(1, ex),
+        helpers.new_task_completed_event(2, encoded_output=json.dumps('ok')),
+    ]
+
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    complete_action = get_and_validate_single_complete_workflow_action(actions)
+    # The orchestrator should have caught the exception and returned 'caught'
+    assert complete_action.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert complete_action.result.value == json.dumps('caught')
+
+
 def test_when_any():
     """Tests that a when_any pattern works correctly"""
 
