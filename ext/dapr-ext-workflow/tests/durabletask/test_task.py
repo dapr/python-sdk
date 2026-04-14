@@ -11,7 +11,14 @@
 
 """Unit tests for durabletask.task primitives."""
 
+import dapr.ext.workflow._durabletask.internal.helpers as pbh
+import pytest
 from dapr.ext.workflow._durabletask import task
+
+
+def _make_failure_details(message: str = 'test error', error_type: str = 'TestError'):
+    """Create a TaskFailureDetails proto for testing."""
+    return pbh.new_failure_details(Exception(message))
 
 
 def test_when_all_empty_returns_successfully():
@@ -121,3 +128,70 @@ def test_when_any_happy_path_returns_winner_task_and_completes_on_first():
     a.complete('A')
 
     assert any_task.get_result() is b
+
+
+def test_when_all_failure_after_success_still_reports_failure():
+    """When a child fails after another child has already succeeded,
+    the WhenAllTask must still complete with the failure — not swallow it."""
+    c1 = task.CompletableTask()
+    c2 = task.CompletableTask()
+
+    all_task = task.when_all([c1, c2])
+
+    # c1 succeeds first
+    c1.complete('one')
+    assert not all_task.is_complete
+
+    # c2 fails second — this is the order that used to swallow the exception
+    c2.fail('activity failed', _make_failure_details('activity failed'))
+
+    assert all_task.is_complete
+    assert all_task.is_failed
+    with pytest.raises(task.TaskFailedError):
+        all_task.get_result()
+
+
+def test_when_all_failure_before_success_still_reports_failure():
+    """When a child fails before the other children succeed,
+    the WhenAllTask must complete with the failure immediately."""
+    c1 = task.CompletableTask()
+    c2 = task.CompletableTask()
+
+    all_task = task.when_all([c1, c2])
+
+    # c1 fails first
+    c1.fail('activity failed', _make_failure_details('activity failed'))
+
+    assert all_task.is_complete
+    assert all_task.is_failed
+    with pytest.raises(task.TaskFailedError):
+        all_task.get_result()
+
+    # c2 succeeds after — must not raise ValueError
+    c2.complete('two')
+
+    # WhenAllTask should still be in the same failed state
+    assert all_task.is_complete
+    assert all_task.is_failed
+    with pytest.raises(task.TaskFailedError):
+        all_task.get_result()
+
+
+def test_when_all_failure_propagates_to_parent():
+    """When a WhenAllTask fails due to a child failure,
+    it should notify its parent composite task."""
+    c1 = task.CompletableTask()
+    c2 = task.CompletableTask()
+
+    all_task = task.when_all([c1, c2])
+    any_task = task.when_any([all_task])
+
+    assert not any_task.is_complete
+
+    c1.fail('activity failed', _make_failure_details('activity failed'))
+
+    assert all_task.is_complete
+    assert all_task.is_failed
+    # The parent WhenAnyTask should also have completed
+    assert any_task.is_complete
+    assert any_task.get_result() is all_task

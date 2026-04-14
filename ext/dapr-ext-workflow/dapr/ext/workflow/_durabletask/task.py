@@ -360,12 +360,15 @@ class WhenAllTask(CompositeTask[list[T]]):
 
     def on_child_completed(self, task: Task[T]):
         if self.is_complete:
-            raise ValueError('The task has already completed.')
+            # Already completed (e.g. a previous child failed), ignore late arrivals
+            return
         self._completed_tasks += 1
         if task.is_failed and self._exception is None:
             self._exception = task.get_exception()
             self._is_complete = True
-        if self._completed_tasks == len(self._tasks):
+            if self._parent is not None:
+                self._parent.on_child_completed(self)
+        elif self._completed_tasks == len(self._tasks):
             # The order of the result MUST match the order of the tasks provided to the constructor.
             self._result = [task.get_result() for task in self._tasks]
             self._is_complete = True
