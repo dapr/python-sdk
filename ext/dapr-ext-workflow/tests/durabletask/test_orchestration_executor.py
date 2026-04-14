@@ -1893,6 +1893,48 @@ def test_wait_for_external_event_with_timeout_event_arrives_first():
     assert complete_action.result.value == json.dumps('got: hello')
 
 
+def test_wait_for_external_event_timeout_cleans_up_pending_event():
+    """When the timeout timer fires first, the stale event task is unregistered
+    from _pending_events so that a subsequent wait_for_external_event for the
+    same name can observe a later event rather than having it consumed by the
+    timed-out waiter."""
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        try:
+            yield ctx.wait_for_external_event('myEvent', timeout=timedelta(seconds=5))
+        except TimeoutError:
+            pass
+        # Second wait for the same event name — must pick up the late event.
+        result = yield ctx.wait_for_external_event('myEvent', timeout=timedelta(seconds=60))
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(orchestrator)
+
+    start_time = datetime(2020, 1, 1, 12, 0, 0)
+    fire_at = start_time + timedelta(seconds=5)
+
+    # First wait creates timer at id=1, fires. Second wait creates timer at id=2.
+    old_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_timer_created_event(1, fire_at),
+        helpers.new_timer_fired_event(1, fire_at),
+        helpers.new_timer_created_event(2, start_time + timedelta(seconds=60)),
+    ]
+    # The late event arrives during the second wait.
+    new_events = [
+        helpers.new_event_raised_event('myEvent', json.dumps('late hello')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    complete_action = get_and_validate_single_complete_workflow_action(actions)
+    assert complete_action.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert complete_action.result.value == json.dumps('late hello')
+
+
 def test_wait_for_external_event_indefinite_emits_optional_timer():
     """WaitForExternalEvent with no timeout (or a negative timeout) emits an
     optional timer whose fireAt is the exact sentinel 9999-12-31T23:59:59.999999999Z."""

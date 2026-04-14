@@ -524,6 +524,11 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
 
     Completes with the event data if the event arrives first, or raises
     ``TimeoutError`` if the timer fires first.
+
+    When the timer wins, the optional ``on_timeout`` callback is invoked so the
+    caller can unregister the stale event task from ``_pending_events``, ensuring
+    that a late ``eventRaised`` for the same name is buffered rather than consumed
+    by the now-obsolete waiter.
     """
 
     def __init__(
@@ -532,11 +537,13 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
         timer_task: TimerTask,
         event_name: str,
         timeout: Optional[Union[datetime, timedelta]] = None,
+        on_timeout: Optional[Callable[[], None]] = None,
     ):
         self._event_task = event_task
         self._timer_task = timer_task
         self._event_name = event_name
         self._timeout = timeout
+        self._on_timeout = on_timeout
         super().__init__([event_task, timer_task])
 
     def on_child_completed(self, completed_task: Task):
@@ -549,6 +556,8 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
                 self._result = completed_task.get_result()
             self._is_complete = True
         elif completed_task is self._timer_task:
+            if self._on_timeout is not None:
+                self._on_timeout()
             if self._timeout is not None:
                 msg = (
                     f'Timed out after {self._timeout!r} waiting for '

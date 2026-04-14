@@ -1454,11 +1454,22 @@ class _RuntimeOrchestrationContext(
             fire_at,
             origin=pb.TimerOriginExternalEvent(name=name),
         )
+
+        def _unregister_stale_event_task() -> None:
+            """Remove the event task from _pending_events so late eventRaised
+            messages are buffered instead of consumed by this timed-out waiter."""
+            pending = self._pending_events.get(event_name)
+            if pending and external_event_task in pending:
+                pending.remove(external_event_task)
+                if not pending:
+                    del self._pending_events[event_name]
+
         return task.ExternalEventWithTimeoutTask(
             external_event_task,
             timer_task,
             event_name=name,
             timeout=None if is_indefinite else timeout,
+            on_timeout=_unregister_stale_event_task,
         )
 
     def continue_as_new(self, new_input, *, save_events: bool = False) -> None:
