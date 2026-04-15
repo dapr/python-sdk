@@ -177,7 +177,9 @@ class OrchestrationContext(ABC):
         name : str
             The event name of the event that the task is waiting for.
         timeout : datetime | timedelta | None
-            Controls how long to wait for the event. Three shapes:
+            Controls how long to wait for the event. Accepts only ``datetime``
+            or ``timedelta`` — a plain numeric ``0`` is **not** a valid value
+            (use ``timedelta(0)`` explicitly). Three shapes:
 
             * ``None`` (default) or a *negative* ``timedelta`` — wait indefinitely.
               An optional sentinel timer is scheduled internally for runtime
@@ -414,9 +416,13 @@ class CompletableTask(Task[T]):
 
         Used for non-runtime failures such as a zero-timeout
         wait_for_external_event being canceled before any history event arrives.
+
+        Idempotent: a noop if the task has already completed (success or
+        failure), which matches the common semantics of ``cancel()`` in
+        asyncio / threading APIs.
         """
         if self._is_complete:
-            raise ValueError('The task has already completed.')
+            return
         self._exception = exc
         self._is_complete = True
         if self._parent is not None:
@@ -558,14 +564,10 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
         elif completed_task is self._timer_task:
             if self._on_timeout is not None:
                 self._on_timeout()
-            if self._timeout is not None:
-                msg = (
-                    f'Timed out after {self._timeout!r} waiting for '
-                    f'external event {self._event_name!r}'
-                )
-            else:
-                msg = f'Timed out waiting for external event {self._event_name!r}'
-            self._exception = TimeoutError(msg)
+            after = f' after {self._timeout!r}' if self._timeout is not None else ''
+            self._exception = TimeoutError(
+                f'Timed out{after} waiting for external event {self._event_name!r}'
+            )
             self._is_complete = True
         if self._is_complete and self._parent is not None:
             self._parent.on_child_completed(self)

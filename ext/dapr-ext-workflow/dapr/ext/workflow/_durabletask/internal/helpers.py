@@ -11,72 +11,19 @@
 
 import traceback
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
-from google.protobuf import timestamp_pb2, wrappers_pb2
-
-TimerOrigin = Union[
-    pb.TimerOriginCreateTimer,
-    pb.TimerOriginExternalEvent,
-    pb.TimerOriginActivityRetry,
-    pb.TimerOriginChildWorkflowRetry,
-]
-
-_ORIGIN_FIELD: dict[type, str] = {
-    pb.TimerOriginCreateTimer: 'createTimer',
-    pb.TimerOriginExternalEvent: 'externalEvent',
-    pb.TimerOriginActivityRetry: 'activityRetry',
-    pb.TimerOriginChildWorkflowRetry: 'childWorkflowRetry',
-}
-
-# Sentinel fireAt used for "optional" TimerOriginExternalEvent timers that back an
-# indefinite wait_for_external_event. The sentinel is 9999-12-31T23:59:59.999999999Z
-# (nanosecond precision — cannot be represented with Python's datetime, which only
-# supports microseconds, so we build the Timestamp directly).
-OPTIONAL_TIMER_FIRE_AT: timestamp_pb2.Timestamp = timestamp_pb2.Timestamp(
-    seconds=253402300799, nanos=999999999
+from dapr.ext.workflow._durabletask.internal.timer import (  # noqa: F401
+    OPTIONAL_TIMER_FIRE_AT,
+    TimerOrigin,
+    is_optional_timer_action,
+    is_optional_timer_event,
+    new_create_timer_action,
+    new_timer_created_event,
+    new_timer_fired_event,
 )
-
-
-def is_optional_timer_action(action: pb.WorkflowAction) -> bool:
-    """Returns True if the action is an optional TimerOriginExternalEvent timer
-    with the sentinel fireAt — i.e. created by an indefinite wait_for_external_event.
-
-    Pre-patch histories (from prior SDK versions that didn't schedule a timer for
-    indefinite waits) won't carry a matching TimerCreatedEvent; the replay logic
-    uses this check to drop the optional action and shift sequence ids.
-    """
-    if not action.HasField('createTimer'):
-        return False
-    timer = action.createTimer
-    if timer.WhichOneof('origin') != 'externalEvent':
-        return False
-    return (
-        timer.fireAt.seconds == OPTIONAL_TIMER_FIRE_AT.seconds
-        and timer.fireAt.nanos == OPTIONAL_TIMER_FIRE_AT.nanos
-    )
-
-
-def is_optional_timer_event(event: pb.HistoryEvent) -> bool:
-    """Returns True if a TimerCreatedEvent is the optional sentinel timer.
-
-    For replay compatibility, treat a timerCreated event with the sentinel
-    fireAt as optional even if the proto3 ``origin`` oneof is unset (e.g. when
-    reading histories emitted by older sidecars that didn't populate it). When
-    ``origin`` *is* populated, it must match TimerOriginExternalEvent.
-    """
-    if not event.HasField('timerCreated'):
-        return False
-    timer = event.timerCreated
-    if (
-        timer.fireAt.seconds != OPTIONAL_TIMER_FIRE_AT.seconds
-        or timer.fireAt.nanos != OPTIONAL_TIMER_FIRE_AT.nanos
-    ):
-        return False
-    origin = timer.WhichOneof('origin')
-    return origin in (None, 'externalEvent')
-
+from google.protobuf import timestamp_pb2, wrappers_pb2
 
 # TODO: The new_xxx_event methods are only used by test code and should be moved elsewhere
 
@@ -99,34 +46,6 @@ def new_execution_started_event(
             input=get_string_value(encoded_input),
             workflowInstance=pb.WorkflowInstance(instanceId=instance_id),
         ),
-    )
-
-
-def new_timer_created_event(
-    timer_id: int,
-    fire_at: Union[datetime, timestamp_pb2.Timestamp],
-    origin: Optional[TimerOrigin] = None,
-) -> pb.HistoryEvent:
-    if isinstance(fire_at, timestamp_pb2.Timestamp):
-        ts = fire_at
-    else:
-        ts = timestamp_pb2.Timestamp()
-        ts.FromDatetime(fire_at)
-    origin_kwargs = {_ORIGIN_FIELD[type(origin)]: origin} if origin is not None else {}
-    return pb.HistoryEvent(
-        eventId=timer_id,
-        timestamp=timestamp_pb2.Timestamp(),
-        timerCreated=pb.TimerCreatedEvent(fireAt=ts, **origin_kwargs),
-    )
-
-
-def new_timer_fired_event(timer_id: int, fire_at: datetime) -> pb.HistoryEvent:
-    ts = timestamp_pb2.Timestamp()
-    ts.FromDatetime(fire_at)
-    return pb.HistoryEvent(
-        eventId=-1,
-        timestamp=timestamp_pb2.Timestamp(),
-        timerFired=pb.TimerFiredEvent(fireAt=ts, timerId=timer_id),
     )
 
 
@@ -269,22 +188,6 @@ def new_workflow_version_not_available_action(
     return pb.WorkflowAction(
         id=id,
         workflowVersionNotAvailable=pb.WorkflowVersionNotAvailableAction(),
-    )
-
-
-def new_create_timer_action(
-    id: int,
-    fire_at: Union[datetime, timestamp_pb2.Timestamp],
-    origin: Optional[TimerOrigin] = None,
-) -> pb.WorkflowAction:
-    if isinstance(fire_at, timestamp_pb2.Timestamp):
-        timestamp = fire_at
-    else:
-        timestamp = timestamp_pb2.Timestamp()
-        timestamp.FromDatetime(fire_at)
-    origin_kwargs = {_ORIGIN_FIELD[type(origin)]: origin} if origin is not None else {}
-    return pb.WorkflowAction(
-        id=id, createTimer=pb.CreateTimerAction(fireAt=timestamp, **origin_kwargs)
     )
 
 

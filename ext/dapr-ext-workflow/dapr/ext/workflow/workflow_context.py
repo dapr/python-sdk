@@ -175,7 +175,9 @@ class WorkflowContext(ABC):
         name : str
             The event name of the event that the task is waiting for.
         timeout : datetime | timedelta | None
-            Controls how long to wait for the event. Three shapes:
+            Controls how long to wait for the event. Accepts only ``datetime``
+            or ``timedelta`` — a plain numeric ``0`` is **not** a valid value
+            (use ``timedelta(0)`` explicitly). Three shapes:
 
             * ``None`` (default) or a *negative* ``timedelta`` — wait indefinitely.
               An optional sentinel timer is scheduled internally for runtime
