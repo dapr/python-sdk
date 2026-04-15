@@ -105,4 +105,7 @@ jobs:
           ollama pull llama3.2:latest
       - name: Check examples
         run: |
+          tox -e examples
+      - name: Run integration tests
+        run: |
           tox -e integration
