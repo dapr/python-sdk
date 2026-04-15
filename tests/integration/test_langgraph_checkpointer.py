@@ -17,7 +17,7 @@ EXPECTED_LINES = [
 def _ollama_ready() -> bool:
     try:
         return httpx.get(f'{OLLAMA_URL}/api/tags', timeout=2).is_success
-    except httpx.ConnectError:
+    except httpx.RequestError:
         return False
 
 
@@ -52,7 +52,7 @@ def ollama():
 
     if started:
         started.terminate()
-        started.wait()
+        started.wait(timeout=10)
 
 
 @pytest.fixture()
@@ -61,6 +61,7 @@ def flush_redis():
     subprocess.run(
         ['docker', 'exec', 'dapr_redis', 'redis-cli', 'FLUSHDB'],
         capture_output=True,
+        check=True,
     )
 
 
