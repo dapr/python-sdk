@@ -57,8 +57,11 @@ def ollama():
 
 @pytest.fixture()
 def flush_redis():
-    """This test is not replayable if the checkpointer state store is not clean"""
-    subprocess.run(['redis-cli', 'FLUSHDB'], capture_output=True)
+    """This test is not replayable if the checkpointer state store is not clean."""
+    subprocess.run(
+        ['docker', 'exec', 'dapr_redis', 'redis-cli', 'FLUSHDB'],
+        capture_output=True,
+    )
 
 
 @pytest.mark.example_dir('langgraph-checkpointer')
