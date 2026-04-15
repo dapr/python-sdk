@@ -69,10 +69,7 @@ def _fire_at_matches_sentinel(ts: timestamp_pb2.Timestamp) -> bool:
     Both ``seconds`` and ``nanos`` are proto3 scalars that are always present
     (default 0 when unset), so unconditional field access is safe.
     """
-    return (
-        ts.seconds == OPTIONAL_TIMER_FIRE_AT.seconds
-        and ts.nanos == OPTIONAL_TIMER_FIRE_AT.nanos
-    )
+    return ts.seconds == OPTIONAL_TIMER_FIRE_AT.seconds and ts.nanos == OPTIONAL_TIMER_FIRE_AT.nanos
 
 
 def is_optional_timer_action(action: pb.WorkflowAction) -> bool:
