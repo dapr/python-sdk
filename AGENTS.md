@@ -67,8 +67,8 @@ The `examples/` directory serves as both user-facing documentation and the proje
 
 Quick reference:
 ```bash
-tox -e integration                                   # Run all examples (needs Dapr runtime)
-tox -e integration -- test_state_store.py            # Run a single example
+tox -e examples                                   # Run all examples (needs Dapr runtime)
+tox -e examples -- test_state_store.py            # Run a single example
 ```
 
 ## Python version support
@@ -106,8 +106,8 @@ tox -e ruff
 # Run type checking
 tox -e type
 
-# Run integration tests / validate examples (requires Dapr runtime)
-tox -e integration
+# Run examples tests / validate examples (requires Dapr runtime)
+tox -e examples
 ```
 
 To run tests directly without tox:
