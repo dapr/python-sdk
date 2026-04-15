@@ -1237,7 +1237,7 @@ def main():
 
         print(f'\n{"=" * 60}')
         print('🎉 All Alpha2 tests completed!')
-        print('✅ Real LLM provider integration with Alpha2 API is working correctly')
+        print('✅ Real LLM provider examples with Alpha2 API is working correctly')
         print('🔧 Features demonstrated:')
         print('   • Alpha2 conversation API with sophisticated message types')
         print('   • Automatic parameter conversion (raw Python values)')

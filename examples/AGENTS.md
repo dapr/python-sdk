@@ -13,10 +13,10 @@ Run examples locally (requires a running Dapr runtime via `dapr init`):
 
 ```bash
 # All examples
-tox -e integration
+tox -e examples
 
 # Single example
-tox -e integration -- test_state_store.py
+tox -e examples -- test_state_store.py
 ```
 
 In CI (`validate_examples.yaml`), examples run on all supported Python versions (3.10-3.14) on Ubuntu with a full Dapr runtime including Docker, Redis, and (for LLM examples) Ollama.

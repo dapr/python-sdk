@@ -124,7 +124,7 @@ tox -e type
 8. Run integration tests (validates the examples)
 
 ```bash
-tox -e integration
+tox -e examples
 ```
 
 If you need to run the examples against a pre-released version of the runtime, you can use the following command:

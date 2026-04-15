@@ -1511,7 +1511,7 @@ class TestConversationToolsFunctionFromFunction(unittest.TestCase):
 
 
 class TestIntegrationScenarios(unittest.TestCase):
-    """Test real-world integration scenarios."""
+    """Test real-world examples scenarios."""
 
     def test_restaurant_finder_scenario(self):
         """Test the restaurant finder example from the documentation."""
