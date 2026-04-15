@@ -2,8 +2,8 @@ import subprocess
 import time
 from pathlib import Path
 
-import pytest
 import httpx
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 BINDING_DIR = REPO_ROOT / 'examples' / 'invoke-binding'
@@ -50,7 +50,9 @@ def test_invoke_binding(dapr, kafka):
             'operation': 'create',
             'data': {'id': n, 'message': 'hello world'},
         }
-        response = httpx.post('http://localhost:3500/v1.0/bindings/kafkaBinding', json=payload, timeout=5)
+        response = httpx.post(
+            'http://localhost:3500/v1.0/bindings/kafkaBinding', json=payload, timeout=5
+        )
         response.raise_for_status()
 
         time.sleep(1)

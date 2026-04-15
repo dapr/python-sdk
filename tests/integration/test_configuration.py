@@ -3,7 +3,6 @@ import time
 
 import pytest
 
-
 EXPECTED_LINES = [
     'Got key=orderId1 value=100 version=1 metadata={}',
     'Got key=orderId2 value=200 version=1 metadata={}',
