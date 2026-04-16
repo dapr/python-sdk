@@ -75,8 +75,7 @@ if not is_release():
         'This is the developmental release for Dapr Python SDK Flask.'
     )
     setup_kwargs['install_requires'] = [
-        f'dapr-dev=={dev_version}' if Requirement(r).name == 'dapr' else r
-        for r in stable_requires
+        f'dapr-dev=={dev_version}' if Requirement(r).name == 'dapr' else r for r in stable_requires
     ]
 
 print(f'package name: {setup_kwargs["name"]}, version: {setup_kwargs["version"]}', flush=True)
