@@ -29,7 +29,7 @@ jobs:
       run: |
         tox -e ruff
         statusResult=$(git status -u --porcelain)
-        if [ -z $statusResult ]
+        if [ -z "$statusResult" ]
         then
             exit 0
         else
@@ -61,4 +61,4 @@ jobs:
       run: |
         tox -e py`echo "${{ matrix.python_ver }}" | sed 's/\.//g'`
     - name: Upload test coverage
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6

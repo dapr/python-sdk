@@ -52,7 +52,7 @@ Each extension is a **separate PyPI package** with its own `setup.cfg`, `setup.p
 
 | Extension | Package | Purpose | Active development |
 |-----------|---------|---------|-------------------|
-| `dapr-ext-workflow` | `dapr.ext.workflow` | Durable workflow orchestration via durabletask-dapr | **High** — major focus area |
+| `dapr-ext-workflow` | `dapr.ext.workflow` | Durable workflow orchestration (durabletask vendored internally) | **High** — major focus area |
 | `dapr-ext-grpc` | `dapr.ext.grpc` | gRPC server for Dapr callbacks (methods, pub/sub, bindings, jobs) | Moderate |
 | `dapr-ext-fastapi` | `dapr.ext.fastapi` | FastAPI integration for pub/sub and actors | Moderate |
 | `flask_dapr` | `flask_dapr` | Flask integration for pub/sub and actors | Low |
@@ -157,7 +157,7 @@ MyPy is configured to check: `dapr/actor/`, `dapr/clients/`, `dapr/conf/`, `dapr
 - **DCO required**: Every commit must include a `Signed-off-by` line. Use `git commit -s` to add it automatically.
 - **CI checks**: Linting (ruff), unit tests (Python 3.10-3.14), type checking (mypy), and DCO verification run on all PRs.
 - **Branch targets**: PRs go to `main` or `release-*` branches.
-- **Tag-based releases**: Tags like `v*`, `workflow-v*`, `grpc-v*`, `fastapi-v*`, `flask-v*`, `langgraph-v*`, `strands-v*` trigger PyPI publishing for the corresponding package.
+- **Tag-based releases**: A single `v*` tag triggers PyPI publishing for all packages (core SDK and all extensions).
 
 ## Agent task checklist
 

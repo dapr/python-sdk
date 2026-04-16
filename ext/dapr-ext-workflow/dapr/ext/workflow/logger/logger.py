@@ -13,7 +13,8 @@ class Logger:
         log_handler.setLevel(options.log_level)
         log_handler.setFormatter(options.log_formatter)
         logger = logging.getLogger(name)
-        logger.handlers.append(log_handler)
+        if not logger.handlers:
+            logger.addHandler(log_handler)
         self._logger_options = options
         self._logger = logger
 

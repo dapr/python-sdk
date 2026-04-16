@@ -16,7 +16,7 @@ limitations under the License.
 import json
 from enum import Enum
 
-from durabletask import client
+from dapr.ext.workflow._durabletask import client
 
 
 class WorkflowStatus(Enum):
@@ -33,7 +33,7 @@ class WorkflowStatus(Enum):
 class WorkflowState:
     """Represents a snapshot of a workflow instance's current state, including runtime status."""
 
-    def __init__(self, state: client.OrchestrationState):
+    def __init__(self, state: client.WorkflowState):
         self.__obj = state
 
     # provide proxy access to regular attributes of wrapped object
