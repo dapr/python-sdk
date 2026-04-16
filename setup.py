@@ -46,8 +46,8 @@ or all of them in your application.
 build_number = os.environ.get('GITHUB_RUN_NUMBER', '0')
 
 if not is_release():
-    name += '-dev'
     version = f'{__version__}{build_number}'
+    name += '-dev'
     description = 'The developmental release for Dapr Python SDK.'
     long_description = 'This is the developmental release for Dapr Python SDK.'
 

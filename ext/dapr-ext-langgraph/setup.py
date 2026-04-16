@@ -67,8 +67,9 @@ setup_kwargs = dict(
 )
 
 if not is_release():
+    dev_version = f'{__version__}{build_number}'
     setup_kwargs['name'] += '-dev'
-    setup_kwargs['version'] = f'{__version__}{build_number}'
+    setup_kwargs['version'] = dev_version
     setup_kwargs['description'] = (
         'The developmental release for the Dapr Checkpointer extension for LangGraph'
     )
@@ -76,7 +77,7 @@ if not is_release():
         'This is the developmental release for the Dapr Checkpointer extension for LangGraph'
     )
     setup_kwargs['install_requires'] = [
-        'dapr-dev' + r[len('dapr') :] if Requirement(r).name == 'dapr' else r
+        f'dapr-dev=={dev_version}' if Requirement(r).name == 'dapr' else r
         for r in stable_requires
     ]
 
