@@ -20,8 +20,8 @@ classifiers = [
 ]
 dependencies = [
     "dapr @ git+https://github.com/dapr/python-sdk@main",
-    "uvicorn~=0.41.0",
-    "fastapi~=0.135.1",
+    "uvicorn>=0.11.6,<1.0.0",
+    "fastapi>=0.60.1,<1.0.0",
 ]
 
 [project.urls]

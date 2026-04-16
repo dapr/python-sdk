@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "dapr @ git+https://github.com/dapr/python-sdk@main",
-    "cloudevents~=1.12.1",
+    "cloudevents>=1.0.0,<2.0.0",
 ]
 
 [project.urls]

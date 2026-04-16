@@ -20,10 +20,10 @@ classifiers = [
 ]
 dependencies = [
     "dapr @ git+https://github.com/dapr/python-sdk@main",
-    "langgraph~=1.1.2",
-    "langchain~=1.2.12",
-    "python-ulid~=3.1.0",
-    "msgpack-python~=0.5.6",
+    "langgraph>=0.3.6,<2.0.0",
+    "langchain>=0.1.17,<2.0.0",
+    "python-ulid>=3.0.0,<4.0.0",
+    "msgpack-python>=0.4.5,<1.0.0",
 ]
 
 [project.urls]
