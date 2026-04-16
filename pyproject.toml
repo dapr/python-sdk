@@ -19,12 +19,12 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "protobuf>=4.22",
-    "grpcio>=1.37.0",
-    "grpcio-status>=1.37.0",
-    "aiohttp>=3.9.0b0",
-    "python-dateutil>=2.8.1",
-    "typing-extensions>=4.4.0",
+    "protobuf~=6.33.5",
+    "grpcio~=1.78.0",
+    "grpcio-status~=1.78.0",
+    "aiohttp~=3.13.3",
+    "python-dateutil~=2.9.0",
+    "typing-extensions~=4.15.0",
 ]
 
 [project.urls]
@@ -58,29 +58,30 @@ members = [
 
 [dependency-groups]
 dev = [
-    "mypy>=1.2.0",
-    "mypy-extensions>=0.4.3",
-    "mypy-protobuf>=2.9",
-    "types-python-dateutil",
-    "types-grpcio-status",
-    "coverage>=5.3",
-    "wheel",
-    "opentelemetry-sdk",
-    "opentelemetry-instrumentation-grpc",
-    "opentelemetry-exporter-zipkin",
-    "httpx>=0.24",
-    "pyOpenSSL>=23.2.0",
-    "Flask>=1.1",
-    "pytest>=7.0",
+    "mypy==1.19.1",
+    "mypy-extensions~=1.1.0",
+    "mypy-protobuf==5.0.0",
+    "grpcio-tools==1.76.0",
+    "types-python-dateutil~=2.9.0",
+    "types-grpcio-status~=1.0.0",
+    "coverage~=7.13.4",
+    "wheel~=0.46.3",
+    "opentelemetry-sdk~=1.40.0",
+    "opentelemetry-instrumentation-grpc~=0.61b0",
+    "opentelemetry-exporter-zipkin~=1.11.1",
+    "httpx~=0.28.1",
+    "pyOpenSSL~=25.3.0",
+    "Flask~=3.1.3",
+    "pytest~=9.0.2",
     "ruff==0.14.1",
-    "python-dotenv>=1.0.0",
-    "pydantic>=2.0.0",
-    "PyYAML>=6.0.2",
+    "python-dotenv~=1.2.2",
+    "pydantic~=2.12.5",
+    "PyYAML~=6.0.3",
 ]
 examples = [
     {include-group = "dev"},
-    "mechanical-markdown",
-    "langchain-ollama>=1.0.0",
+    "mechanical-markdown~=0.8.0",
+    "langchain-ollama~=1.0.1",
 ]
 
 [tool.ruff]

@@ -138,9 +138,9 @@ The generated files will be found in `docs/_build`.
 ## Generate gRPC Protobuf client
 
 ```sh
-pip3 install -r tools/requirements.txt
+uv sync --all-packages --group dev
 export DAPR_BRANCH=release-1.17 # Optional, defaults to master
-./tools/regen_grpcclient.sh
+uv run ./tools/regen_grpcclient.sh
 ```
 
 ## Help & Feedback

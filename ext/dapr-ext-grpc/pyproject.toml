@@ -19,8 +19,8 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "dapr>=1.17.0",
-    "cloudevents>=1.0.0,<2.0.0",
+    "dapr @ git+https://github.com/dapr/python-sdk@main",
+    "cloudevents~=1.12.1",
 ]
 
 [project.urls]
