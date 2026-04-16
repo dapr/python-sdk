@@ -104,6 +104,8 @@ class CreateTimerAction(_message.Message):
     NAME_FIELD_NUMBER: _builtins.int
     CREATETIMER_FIELD_NUMBER: _builtins.int
     EXTERNALEVENT_FIELD_NUMBER: _builtins.int
+    ACTIVITYRETRY_FIELD_NUMBER: _builtins.int
+    CHILDWORKFLOWRETRY_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     @_builtins.property
     def fireAt(self) -> _timestamp_pb2.Timestamp: ...
@@ -111,6 +113,10 @@ class CreateTimerAction(_message.Message):
     def createTimer(self) -> _history_events_pb2.TimerOriginCreateTimer: ...
     @_builtins.property
     def externalEvent(self) -> _history_events_pb2.TimerOriginExternalEvent: ...
+    @_builtins.property
+    def activityRetry(self) -> _history_events_pb2.TimerOriginActivityRetry: ...
+    @_builtins.property
+    def childWorkflowRetry(self) -> _history_events_pb2.TimerOriginChildWorkflowRetry: ...
     def __init__(
         self,
         *,
@@ -118,14 +124,16 @@ class CreateTimerAction(_message.Message):
         name: _builtins.str | None = ...,
         createTimer: _history_events_pb2.TimerOriginCreateTimer | None = ...,
         externalEvent: _history_events_pb2.TimerOriginExternalEvent | None = ...,
+        activityRetry: _history_events_pb2.TimerOriginActivityRetry | None = ...,
+        childWorkflowRetry: _history_events_pb2.TimerOriginChildWorkflowRetry | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "createTimer", b"createTimer", "externalEvent", b"externalEvent", "fireAt", b"fireAt", "name", b"name", "origin", b"origin"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "activityRetry", b"activityRetry", "childWorkflowRetry", b"childWorkflowRetry", "createTimer", b"createTimer", "externalEvent", b"externalEvent", "fireAt", b"fireAt", "name", b"name", "origin", b"origin"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "createTimer", b"createTimer", "externalEvent", b"externalEvent", "fireAt", b"fireAt", "name", b"name", "origin", b"origin"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "activityRetry", b"activityRetry", "childWorkflowRetry", b"childWorkflowRetry", "createTimer", b"createTimer", "externalEvent", b"externalEvent", "fireAt", b"fireAt", "name", b"name", "origin", b"origin"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__name: _TypeAlias = _typing.Literal["name"]  # noqa: Y015
     _WhichOneofArgType__name: _TypeAlias = _typing.Literal["_name", b"_name"]  # noqa: Y015
-    _WhichOneofReturnType_origin: _TypeAlias = _typing.Literal["createTimer", "externalEvent"]  # noqa: Y015
+    _WhichOneofReturnType_origin: _TypeAlias = _typing.Literal["createTimer", "externalEvent", "activityRetry", "childWorkflowRetry"]  # noqa: Y015
     _WhichOneofArgType_origin: _TypeAlias = _typing.Literal["origin", b"origin"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__name) -> _WhichOneofReturnType__name | None: ...

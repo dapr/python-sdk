@@ -64,6 +64,9 @@ def unpack(data: GrpcAny, message: GrpcMessage) -> None:
     """
     if not isinstance(message, GrpcMessage):
         raise ValueError('output message is not protocol buffer message object')
+    # cast: newer types-grpcio stubs declare ``message.DESCRIPTOR`` as a union of
+    # ``Descriptor`` and the C-extension ``_upb._message.Descriptor``. Both are
+    # accepted at runtime by ``Any.Is``; the cast narrows the type for mypy.
     if not data.Is(cast(Descriptor, message.DESCRIPTOR)):
         raise ValueError(f'invalid type. serialized message type: {data.type_url}')
     data.Unpack(message)
