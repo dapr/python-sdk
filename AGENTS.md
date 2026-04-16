@@ -176,7 +176,6 @@ When completing any task on this project, work through this checklist. Not every
 
 - [ ] If you added a new user-facing feature or building block, add or update an example in `examples/`
 - [ ] Ensure the example README has `<!-- STEP -->` blocks with `expected_stdout_lines` so it is validated in CI
-- [ ] If you added a new example, add it to the `validate_examples.yaml` CI workflow
 - [ ] If you changed output format of existing functionality, update `expected_stdout_lines` in affected example READMEs
 - [ ] See `examples/AGENTS.md` for full details on writing examples
 
