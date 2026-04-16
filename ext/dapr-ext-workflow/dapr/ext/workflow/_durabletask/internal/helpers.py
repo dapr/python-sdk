@@ -14,6 +14,15 @@ from datetime import datetime
 from typing import Optional
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
+from dapr.ext.workflow._durabletask.internal.timer import (  # noqa: F401
+    OPTIONAL_TIMER_FIRE_AT,
+    TimerOrigin,
+    is_optional_timer_action,
+    is_optional_timer_event,
+    new_create_timer_action,
+    new_timer_created_event,
+    new_timer_fired_event,
+)
 from google.protobuf import timestamp_pb2, wrappers_pb2
 
 # TODO: The new_xxx_event methods are only used by test code and should be moved elsewhere
@@ -37,26 +46,6 @@ def new_execution_started_event(
             input=get_string_value(encoded_input),
             workflowInstance=pb.WorkflowInstance(instanceId=instance_id),
         ),
-    )
-
-
-def new_timer_created_event(timer_id: int, fire_at: datetime) -> pb.HistoryEvent:
-    ts = timestamp_pb2.Timestamp()
-    ts.FromDatetime(fire_at)
-    return pb.HistoryEvent(
-        eventId=timer_id,
-        timestamp=timestamp_pb2.Timestamp(),
-        timerCreated=pb.TimerCreatedEvent(fireAt=ts),
-    )
-
-
-def new_timer_fired_event(timer_id: int, fire_at: datetime) -> pb.HistoryEvent:
-    ts = timestamp_pb2.Timestamp()
-    ts.FromDatetime(fire_at)
-    return pb.HistoryEvent(
-        eventId=-1,
-        timestamp=timestamp_pb2.Timestamp(),
-        timerFired=pb.TimerFiredEvent(fireAt=ts, timerId=timer_id),
     )
 
 
@@ -200,12 +189,6 @@ def new_workflow_version_not_available_action(
         id=id,
         workflowVersionNotAvailable=pb.WorkflowVersionNotAvailableAction(),
     )
-
-
-def new_create_timer_action(id: int, fire_at: datetime) -> pb.WorkflowAction:
-    timestamp = timestamp_pb2.Timestamp()
-    timestamp.FromDatetime(fire_at)
-    return pb.WorkflowAction(id=id, createTimer=pb.CreateTimerAction(fireAt=timestamp))
 
 
 def new_schedule_task_action(

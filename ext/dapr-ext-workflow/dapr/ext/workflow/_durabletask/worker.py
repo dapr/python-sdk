@@ -30,7 +30,7 @@ import dapr.ext.workflow._durabletask.internal.shared as shared
 import grpc
 from dapr.ext.workflow._durabletask import deterministic, task
 from dapr.ext.workflow._durabletask.internal.grpc_interceptor import DefaultClientInterceptorImpl
-from google.protobuf import empty_pb2
+from google.protobuf import empty_pb2, timestamp_pb2
 
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
@@ -1068,6 +1068,11 @@ class _RuntimeOrchestrationContext(
         task = next(generator)  # this starts the generator
         # TODO: Check if the task is null?
         self._previous_task = task
+        # If the first yielded task is already complete (e.g. wait_for_external_event
+        # with timeout=0 returns an immediately-canceled task), drive the generator
+        # forward now so the orchestrator doesn't get stuck waiting for an event.
+        if self._previous_task is not None and self._previous_task.is_complete:
+            self.resume()
 
     def resume(self):
         if self._generator is None:
@@ -1183,6 +1188,40 @@ class _RuntimeOrchestrationContext(
         self._sequence_number += 1
         return self._sequence_number
 
+    def _drop_optional_pending_at(self, action_id: int) -> bool:
+        """Drop the pending optional timer action at ``action_id`` and shift every
+        pending action and pending task with id greater than ``action_id`` down by
+        one, also decrementing the sequence counter.
+
+        Returns True if the action at ``action_id`` was an optional timer and was
+        dropped; False otherwise (caller should fall through to the normal
+        non-determinism error path).
+
+        This preserves sequence-id determinism when replaying a pre-patch history
+        where an indefinite wait_for_external_event did not reserve a sequence
+        number for its optional timer.
+        """
+        action = self._pending_actions.get(action_id)
+        if action is None or not ph.is_optional_timer_action(action):
+            return False
+
+        del self._pending_actions[action_id]
+        self._pending_tasks.pop(action_id, None)
+
+        # Shift every id > action_id down by one.
+        higher_action_ids = sorted(k for k in self._pending_actions if k > action_id)
+        for old_id in higher_action_ids:
+            a = self._pending_actions.pop(old_id)
+            a.id = old_id - 1
+            self._pending_actions[old_id - 1] = a
+        higher_task_ids = sorted(k for k in self._pending_tasks if k > action_id)
+        for old_id in higher_task_ids:
+            t = self._pending_tasks.pop(old_id)
+            self._pending_tasks[old_id - 1] = t
+
+        self._sequence_number -= 1
+        return True
+
     @property
     def app_id(self) -> str:
         return self._app_id
@@ -1216,17 +1255,21 @@ class _RuntimeOrchestrationContext(
             self._encoded_custom_status = custom_status
 
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
-        return self.create_timer_internal(fire_at)
+        return self.create_timer_internal(
+            fire_at,
+            origin=pb.TimerOriginCreateTimer(),
+        )
 
     def create_timer_internal(
         self,
-        fire_at: Union[datetime, timedelta],
+        fire_at: Union[datetime, timedelta, timestamp_pb2.Timestamp],
         retryable_task: Optional[task.RetryableTask] = None,
-    ) -> task.Task:
+        origin: Optional[ph.TimerOrigin] = None,
+    ) -> task.TimerTask:
         id = self.next_sequence_number()
         if isinstance(fire_at, timedelta):
             fire_at = self.current_utc_datetime + fire_at
-        action = ph.new_create_timer_action(id, fire_at)
+        action = ph.new_create_timer_action(id, fire_at, origin=origin)
         self._pending_actions[id] = action
 
         timer_task: task.TimerTask = task.TimerTask()
@@ -1345,7 +1388,12 @@ class _RuntimeOrchestrationContext(
                 )
         self._pending_tasks[id] = fn_task
 
-    def wait_for_external_event(self, name: str) -> task.Task:
+    def wait_for_external_event(
+        self,
+        name: str,
+        *,
+        timeout: Optional[Union[datetime, timedelta]] = None,
+    ) -> task.Task:
         # Check to see if this event has already been received, in which case we
         # can return it immediately. Otherwise, record out intent to receive an
         # event with the given name so that we can resume the generator when it
@@ -1365,7 +1413,64 @@ class _RuntimeOrchestrationContext(
                 task_list = []
                 self._pending_events[event_name] = task_list
             task_list.append(external_event_task)
-        return external_event_task
+
+        if external_event_task.is_complete:
+            return external_event_task
+
+        # Three timeout shapes:
+        #   - timedelta(0):     immediately-canceled task (no timer)
+        #   - positive:         normal TimerOriginExternalEvent timer
+        #   - None or negative: indefinite wait — an OPTIONAL timer is scheduled
+        #                       with a sentinel fireAt. See ph.OPTIONAL_TIMER_FIRE_AT
+        #                       and the replay-shift logic for how older histories
+        #                       (which didn't schedule the timer) are tolerated.
+        if isinstance(timeout, timedelta) and timeout == timedelta(0):
+            # Remove the task we just registered in _pending_events so the event
+            # doesn't try to complete it later.
+            pending = self._pending_events.get(event_name)
+            if pending and external_event_task in pending:
+                pending.remove(external_event_task)
+                if not pending:
+                    del self._pending_events[event_name]
+            external_event_task.cancel(
+                TimeoutError(
+                    f'Wait for external event {name!r} canceled immediately due to zero timeout'
+                )
+            )
+            return external_event_task
+
+        is_indefinite = timeout is None or (
+            isinstance(timeout, timedelta) and timeout < timedelta(0)
+        )
+        fire_at: Union[datetime, timedelta, timestamp_pb2.Timestamp]
+        if is_indefinite:
+            fire_at = ph.OPTIONAL_TIMER_FIRE_AT
+        else:
+            # Narrowed by ``is_indefinite``: timeout is a positive timedelta or a datetime here.
+            assert timeout is not None
+            fire_at = timeout
+
+        timer_task = self.create_timer_internal(
+            fire_at,
+            origin=pb.TimerOriginExternalEvent(name=name),
+        )
+
+        def _unregister_stale_event_task() -> None:
+            """Remove the event task from _pending_events so late eventRaised
+            messages are buffered instead of consumed by this timed-out waiter."""
+            pending = self._pending_events.get(event_name)
+            if pending and external_event_task in pending:
+                pending.remove(external_event_task)
+                if not pending:
+                    del self._pending_events[event_name]
+
+        return task.ExternalEventWithTimeoutTask(
+            external_event_task,
+            timer_task,
+            event_name=name,
+            timeout=None if is_indefinite else timeout,
+            on_timeout=_unregister_stale_event_task,
+        )
 
     def continue_as_new(self, new_input, *, save_events: bool = False) -> None:
         if self._is_complete:
@@ -1543,6 +1648,29 @@ class _OrchestrationExecutor:
                 # This history event confirms that the timer was successfully scheduled.
                 # Remove the timerCreated event from the pending action list so we don't schedule it again.
                 timer_id = event.eventId
+                # Asymmetric case: pending is an optional timer but the incoming
+                # TimerCreated is a different (non-optional) timer — e.g., a user
+                # CreateTimer emitted by pre-patch code right after an indefinite
+                # wait_for_external_event. Drop the optional and shift so the
+                # real timer matches at the same id.
+                pending = ctx._pending_actions.get(timer_id)
+                if (
+                    pending is not None
+                    and ph.is_optional_timer_action(pending)
+                    and not ph.is_optional_timer_event(event)
+                ):
+                    ctx._drop_optional_pending_at(timer_id)
+                    pending = ctx._pending_actions.get(timer_id)
+                # Reverse asymmetric: the incoming TimerCreated is an optional timer
+                # from an older code version, but the current code has a different
+                # action at this id (or none at all). This happens when a patch adds
+                # new actions before the wait_for_external_event that originally
+                # produced the timer. Silently drop the stale optional event; the
+                # pending action stays in place to match its own future event.
+                if ph.is_optional_timer_event(event) and (
+                    pending is None or not ph.is_optional_timer_action(pending)
+                ):
+                    return
                 action = ctx._pending_actions.pop(timer_id, None)
                 if not action:
                     raise _get_non_determinism_error(timer_id, task.get_name(ctx.create_timer))
@@ -1580,6 +1708,13 @@ class _OrchestrationExecutor:
                 # This history event confirms that the activity execution was successfully scheduled.
                 # Remove the taskScheduled event from the pending action list so we don't schedule it again.
                 task_id = event.eventId
+                # If the pending action at this id is an optional timer from an
+                # indefinite wait_for_external_event that wasn't present in the
+                # pre-patch history, drop it and shift so this schedule matches.
+                if task_id in ctx._pending_actions and ph.is_optional_timer_action(
+                    ctx._pending_actions[task_id]
+                ):
+                    ctx._drop_optional_pending_at(task_id)
                 action = ctx._pending_actions.pop(task_id, None)
                 activity_task = ctx._pending_tasks.get(task_id, None)
                 if not action:
@@ -1642,7 +1777,13 @@ class _OrchestrationExecutor:
                                 ctx.resume()
                             else:
                                 activity_task.increment_attempt_count()
-                                ctx.create_timer_internal(next_delay, activity_task)
+                                ctx.create_timer_internal(
+                                    next_delay,
+                                    activity_task,
+                                    origin=pb.TimerOriginActivityRetry(
+                                        taskExecutionId=activity_task._task_execution_id,
+                                    ),
+                                )
                 elif isinstance(activity_task, task.CompletableTask):
                     activity_task.fail(
                         f'{ctx.instance_id}: Activity task #{task_id} failed: {event.taskFailed.failureDetails.errorMessage}',
@@ -1655,6 +1796,11 @@ class _OrchestrationExecutor:
                 # This history event confirms that the sub-orchestration execution was successfully scheduled.
                 # Remove the childWorkflowInstanceCreated event from the pending action list so we don't schedule it again.
                 task_id = event.eventId
+                # If the pending action at this id is an optional timer, drop+shift.
+                if task_id in ctx._pending_actions and ph.is_optional_timer_action(
+                    ctx._pending_actions[task_id]
+                ):
+                    ctx._drop_optional_pending_at(task_id)
                 action = ctx._pending_actions.pop(task_id, None)
                 if not action:
                     raise _get_non_determinism_error(
@@ -1717,7 +1863,13 @@ class _OrchestrationExecutor:
                                 ctx.resume()
                             else:
                                 sub_orch_task.increment_attempt_count()
-                                ctx.create_timer_internal(next_delay, sub_orch_task)
+                                ctx.create_timer_internal(
+                                    next_delay,
+                                    sub_orch_task,
+                                    origin=pb.TimerOriginChildWorkflowRetry(
+                                        instanceId=sub_orch_task._instance_id,
+                                    ),
+                                )
                 elif isinstance(sub_orch_task, task.CompletableTask):
                     sub_orch_task.fail(
                         f'Sub-orchestration task #{task_id} failed: {failedEvent.failureDetails.errorMessage}',

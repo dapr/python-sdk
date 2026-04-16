@@ -352,6 +352,44 @@ class TimerOriginExternalEvent(_message.Message):
 Global___TimerOriginExternalEvent: _TypeAlias = TimerOriginExternalEvent  # noqa: Y015
 
 @_typing.final
+class TimerOriginActivityRetry(_message.Message):
+    """Indicates the timer was created as a retry delay for an activity execution."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TASKEXECUTIONID_FIELD_NUMBER: _builtins.int
+    taskExecutionId: _builtins.str
+    """The task execution ID of the activity being retried."""
+    def __init__(
+        self,
+        *,
+        taskExecutionId: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["taskExecutionId", b"taskExecutionId"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___TimerOriginActivityRetry: _TypeAlias = TimerOriginActivityRetry  # noqa: Y015
+
+@_typing.final
+class TimerOriginChildWorkflowRetry(_message.Message):
+    """Indicates the timer was created as a retry delay for a child workflow execution."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    INSTANCEID_FIELD_NUMBER: _builtins.int
+    instanceId: _builtins.str
+    """The instance ID of the workflow being retried."""
+    def __init__(
+        self,
+        *,
+        instanceId: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___TimerOriginChildWorkflowRetry: _TypeAlias = TimerOriginChildWorkflowRetry  # noqa: Y015
+
+@_typing.final
 class TimerCreatedEvent(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -360,6 +398,8 @@ class TimerCreatedEvent(_message.Message):
     RERUNPARENTINSTANCEINFO_FIELD_NUMBER: _builtins.int
     CREATETIMER_FIELD_NUMBER: _builtins.int
     EXTERNALEVENT_FIELD_NUMBER: _builtins.int
+    ACTIVITYRETRY_FIELD_NUMBER: _builtins.int
+    CHILDWORKFLOWRETRY_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     @_builtins.property
     def fireAt(self) -> _timestamp_pb2.Timestamp: ...
@@ -373,6 +413,10 @@ class TimerCreatedEvent(_message.Message):
     def createTimer(self) -> Global___TimerOriginCreateTimer: ...
     @_builtins.property
     def externalEvent(self) -> Global___TimerOriginExternalEvent: ...
+    @_builtins.property
+    def activityRetry(self) -> Global___TimerOriginActivityRetry: ...
+    @_builtins.property
+    def childWorkflowRetry(self) -> Global___TimerOriginChildWorkflowRetry: ...
     def __init__(
         self,
         *,
@@ -381,16 +425,18 @@ class TimerCreatedEvent(_message.Message):
         rerunParentInstanceInfo: _orchestration_pb2.RerunParentInstanceInfo | None = ...,
         createTimer: Global___TimerOriginCreateTimer | None = ...,
         externalEvent: Global___TimerOriginExternalEvent | None = ...,
+        activityRetry: Global___TimerOriginActivityRetry | None = ...,
+        childWorkflowRetry: Global___TimerOriginChildWorkflowRetry | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "createTimer", b"createTimer", "externalEvent", b"externalEvent", "fireAt", b"fireAt", "name", b"name", "origin", b"origin", "rerunParentInstanceInfo", b"rerunParentInstanceInfo"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "activityRetry", b"activityRetry", "childWorkflowRetry", b"childWorkflowRetry", "createTimer", b"createTimer", "externalEvent", b"externalEvent", "fireAt", b"fireAt", "name", b"name", "origin", b"origin", "rerunParentInstanceInfo", b"rerunParentInstanceInfo"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "createTimer", b"createTimer", "externalEvent", b"externalEvent", "fireAt", b"fireAt", "name", b"name", "origin", b"origin", "rerunParentInstanceInfo", b"rerunParentInstanceInfo"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name", b"_name", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "activityRetry", b"activityRetry", "childWorkflowRetry", b"childWorkflowRetry", "createTimer", b"createTimer", "externalEvent", b"externalEvent", "fireAt", b"fireAt", "name", b"name", "origin", b"origin", "rerunParentInstanceInfo", b"rerunParentInstanceInfo"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__name: _TypeAlias = _typing.Literal["name"]  # noqa: Y015
     _WhichOneofArgType__name: _TypeAlias = _typing.Literal["_name", b"_name"]  # noqa: Y015
     _WhichOneofReturnType__rerunParentInstanceInfo: _TypeAlias = _typing.Literal["rerunParentInstanceInfo"]  # noqa: Y015
     _WhichOneofArgType__rerunParentInstanceInfo: _TypeAlias = _typing.Literal["_rerunParentInstanceInfo", b"_rerunParentInstanceInfo"]  # noqa: Y015
-    _WhichOneofReturnType_origin: _TypeAlias = _typing.Literal["createTimer", "externalEvent"]  # noqa: Y015
+    _WhichOneofReturnType_origin: _TypeAlias = _typing.Literal["createTimer", "externalEvent", "activityRetry", "childWorkflowRetry"]  # noqa: Y015
     _WhichOneofArgType_origin: _TypeAlias = _typing.Literal["origin", b"origin"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__name) -> _WhichOneofReturnType__name | None: ...
