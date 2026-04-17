@@ -97,36 +97,39 @@ def coerce_to_model(value: Any, cls: type) -> Any:
     )
 
 
-def resolve_input_model(fn: Callable[..., Any]) -> Optional[type]:
-    """Return the model class annotated on fn's input parameter, if any.
+def resolve_input(fn: Callable[..., Any]) -> tuple[bool, Optional[type]]:
+    """Inspect fn's input parameter.
 
-    Workflow and activity functions take (ctx, input) — we look at the second
-    positional parameter's annotation. Returns None when no annotation is
-    present or the annotation is not a model class. Optional[Model] and
-    Model | None are unwrapped to Model.
+    Returns (accepts_input, model_class):
+      - accepts_input is True when fn declares a second positional parameter
+        (beyond the context) — the runtime must then pass the input through
+        even when it is None, so `Optional[Model]` works without a default.
+      - model_class is the model class annotated on that parameter, or None
+        when there is no annotation or the annotation is not a model.
+        Optional[Model] and Model | None are unwrapped to Model.
     """
     try:
         sig = inspect.signature(fn)
     except (TypeError, ValueError):
-        return None
+        return False, None
 
     params = list(sig.parameters.values())
     if len(params) < 2:
-        return None
+        return False, None
 
     annotation = params[1].annotation
     if annotation is inspect.Parameter.empty:
-        return None
+        return True, None
 
     if isinstance(annotation, str):
         try:
             hints = typing.get_type_hints(fn)
             annotation = hints.get(params[1].name, annotation)
         except Exception:
-            return None
+            return True, None
 
     annotation = _unwrap_optional(annotation)
-    return annotation if is_model_class(annotation) else None
+    return True, (annotation if is_model_class(annotation) else None)
 
 
 def _unwrap_optional(annotation: Any) -> Any:

@@ -754,3 +754,14 @@ class PydanticInputCoercionTest(unittest.TestCase):
         result = wrapper(mock.MagicMock(), {'order_id': 'v1', 'amount': 2.0})
         self.assertIsInstance(received['order'], Order)
         self.assertEqual(result, 'v1')
+
+    def test_activity_wrapper_passes_none_to_fn_that_expects_input(self):
+        """Regression: Optional[Model] without a default must receive None, not be dropped."""
+
+        def my_act(ctx, order: Optional[Order]):
+            return order
+
+        self.runtime.register_activity(my_act, name='optional_no_default_act')
+        wrapper = self.fake_registry._activity_fns['optional_no_default_act']
+
+        self.assertIsNone(wrapper(mock.MagicMock(), None))

@@ -82,36 +82,36 @@ class ModelProtocolTest(unittest.TestCase):
             _model_protocol.coerce_to_model({'order_id': 'o1'}, Order)  # missing amount
 
 
-class ResolveInputModelTest(unittest.TestCase):
+class ResolveInputTest(unittest.TestCase):
     def test_resolves_pydantic_annotation(self):
         def my_activity(ctx, order: Order):
             return order
 
-        self.assertIs(_model_protocol.resolve_input_model(my_activity), Order)
+        self.assertEqual(_model_protocol.resolve_input(my_activity), (True, Order))
 
     def test_unwraps_optional(self):
         def my_activity(ctx, order: Optional[Order] = None):
             return order
 
-        self.assertIs(_model_protocol.resolve_input_model(my_activity), Order)
+        self.assertEqual(_model_protocol.resolve_input(my_activity), (True, Order))
 
-    def test_returns_none_when_no_annotation(self):
+    def test_accepts_input_without_annotation(self):
         def my_activity(ctx, order):
             return order
 
-        self.assertIsNone(_model_protocol.resolve_input_model(my_activity))
+        self.assertEqual(_model_protocol.resolve_input(my_activity), (True, None))
 
-    def test_returns_none_for_non_model_annotation(self):
+    def test_accepts_input_with_non_model_annotation(self):
         def my_activity(ctx, order: dict):
             return order
 
-        self.assertIsNone(_model_protocol.resolve_input_model(my_activity))
+        self.assertEqual(_model_protocol.resolve_input(my_activity), (True, None))
 
-    def test_returns_none_for_ctx_only(self):
+    def test_ctx_only_does_not_accept_input(self):
         def my_activity(ctx):
             return None
 
-        self.assertIsNone(_model_protocol.resolve_input_model(my_activity))
+        self.assertEqual(_model_protocol.resolve_input(my_activity), (False, None))
 
 
 class _DuckModelNoModeKwarg:
