@@ -39,6 +39,8 @@ expected_stdout_lines:
   - "New counter value is: 11!"
   - "Retry count value is: 0!"
   - "Retry count value is: 1! This print statement verifies retry"
+  - "Infinite retry attempt: 1"
+  - "Infinite retry attempt: 11"
   - "Appending 1 to child_orchestrator_string!"
   - "Appending a to child_orchestrator_string!"
   - "Appending a to child_orchestrator_string!"
@@ -53,7 +55,7 @@ expected_stdout_lines:
   - "New counter value is: 111!"
   - "New counter value is: 1111!"
   - "Workflow completed! Result: Completed"
-timeout_seconds: 30
+timeout_seconds: 60
 -->
 
 ```sh
@@ -69,6 +71,8 @@ The output of this example should look like this:
   - "New counter value is: 11!"
   - "Retry count value is: 0!"
   - "Retry count value is: 1! This print statement verifies retry"
+  - "Infinite retry attempt: 1"
+  - "Infinite retry attempt: 11"
   - "Appending 1 to child_orchestrator_string!"
   - "Appending a to child_orchestrator_string!"
   - "Appending a to child_orchestrator_string!"

@@ -461,7 +461,11 @@ class RetryableTask(CompletableTask[T]):
         self._attempt_count += 1
 
     def compute_next_delay(self) -> Optional[timedelta]:
-        if self._attempt_count >= self._retry_policy.max_number_of_attempts:
+        # max_number_of_attempts == -1 means retry indefinitely; skip the attempt cap check.
+        if (
+            self._retry_policy.max_number_of_attempts != -1
+            and self._attempt_count >= self._retry_policy.max_number_of_attempts
+        ):
             return None
 
         retry_expiration: datetime = datetime.max
@@ -662,7 +666,7 @@ class RetryPolicy:
         first_retry_interval : timedelta
             The retry interval to use for the first retry attempt.
         max_number_of_attempts : int
-            The maximum number of retry attempts.
+            The maximum number of retry attempts. Use ``-1`` for infinite retries.
         backoff_coefficient : Optional[float]
             The backoff coefficient to use for calculating the next retry interval.
         max_retry_interval : Optional[timedelta]
@@ -678,8 +682,8 @@ class RetryPolicy:
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
             raise ValueError('first_retry_interval must be >= 0')
-        if max_number_of_attempts < 1:
-            raise ValueError('max_number_of_attempts must be >= 1')
+        if max_number_of_attempts == 0 or max_number_of_attempts < -1:
+            raise ValueError('max_number_of_attempts must be >= 1 or -1 for infinite retries')
         if backoff_coefficient is not None and backoff_coefficient < 1:
             raise ValueError('backoff_coefficient must be >= 1')
         if max_retry_interval is not None and max_retry_interval < timedelta(seconds=0):

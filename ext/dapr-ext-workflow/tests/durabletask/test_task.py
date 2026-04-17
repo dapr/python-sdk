@@ -11,6 +11,8 @@
 
 """Unit tests for durabletask.task primitives."""
 
+from datetime import datetime, timedelta
+
 import dapr.ext.workflow._durabletask.internal.helpers as pbh
 import pytest
 from dapr.ext.workflow._durabletask import task
@@ -195,3 +197,74 @@ def test_when_all_failure_propagates_to_parent():
     # The parent WhenAnyTask should also have completed
     assert any_task.is_complete
     assert any_task.get_result() is all_task
+
+
+def test_retry_policy_accepts_infinite_max_attempts():
+    """RetryPolicy(max_number_of_attempts=-1) is allowed and means infinite retries."""
+    policy = task.RetryPolicy(first_retry_interval=timedelta(seconds=1), max_number_of_attempts=-1)
+    assert policy.max_number_of_attempts == -1
+
+
+@pytest.mark.parametrize('invalid', [0, -2, -5])
+def test_retry_policy_rejects_invalid_max_attempts(invalid):
+    """RetryPolicy rejects zero and values below -1."""
+    with pytest.raises(ValueError):
+        task.RetryPolicy(first_retry_interval=timedelta(seconds=1), max_number_of_attempts=invalid)
+
+
+def test_retryable_task_infinite_keeps_computing_next_delay():
+    """When max_number_of_attempts == -1, compute_next_delay never returns None
+    due to the attempt cap (subject only to retry_timeout)."""
+    policy = task.RetryPolicy(first_retry_interval=timedelta(seconds=1), max_number_of_attempts=-1)
+    retryable = task.RetryableTask(
+        retry_policy=policy,
+        start_time=datetime.utcnow(),
+        is_sub_orch=False,
+        task_name='activity',
+    )
+
+    # Simulate many failed attempts; delay should continue to be produced.
+    for _ in range(50):
+        retryable.increment_attempt_count()
+        assert retryable.compute_next_delay() is not None
+
+
+def test_retryable_task_infinite_still_respects_retry_timeout():
+    """When max_number_of_attempts == -1, retry_timeout must still cap the wall-clock
+    window so retries do not run forever."""
+    policy = task.RetryPolicy(
+        first_retry_interval=timedelta(seconds=1),
+        max_number_of_attempts=-1,
+        retry_timeout=timedelta(seconds=3),
+    )
+    retryable = task.RetryableTask(
+        retry_policy=policy,
+        start_time=datetime.utcnow(),
+        is_sub_orch=False,
+        task_name='activity',
+    )
+
+    # Each attempt adds 1s of delay. First few attempts stay inside the 3s window.
+    retryable.increment_attempt_count()  # attempt 2 -> cumulative delay 2s
+    assert retryable.compute_next_delay() is not None
+    retryable.increment_attempt_count()  # attempt 3 -> cumulative delay 3s
+    # At the boundary, the logical next start == retry_expiration, which is not "<"
+    assert retryable.compute_next_delay() is None
+
+
+def test_retryable_task_stops_after_max_attempts():
+    """With a finite cap, compute_next_delay returns None once the cap is reached."""
+    policy = task.RetryPolicy(first_retry_interval=timedelta(seconds=1), max_number_of_attempts=3)
+    retryable = task.RetryableTask(
+        retry_policy=policy,
+        start_time=datetime.utcnow(),
+        is_sub_orch=False,
+        task_name='activity',
+    )
+
+    # attempt 1 -> has more retries
+    assert retryable.compute_next_delay() is not None
+    retryable.increment_attempt_count()  # -> 2
+    assert retryable.compute_next_delay() is not None
+    retryable.increment_attempt_count()  # -> 3
+    assert retryable.compute_next_delay() is None
