@@ -8,6 +8,7 @@ from typing import Any, Generator
 import pytest
 
 from dapr.clients import DaprClient
+from dapr.conf import settings
 
 INTEGRATION_DIR = Path(__file__).resolve().parent
 COMPONENTS_DIR = INTEGRATION_DIR / 'components'
@@ -42,9 +43,8 @@ class DaprTestEnvironment:
 
         Args:
             app_id: Dapr application ID.
-            grpc_port: Sidecar gRPC port (must match DAPR_GRPC_PORT setting).
-            http_port: Sidecar HTTP port (must match DAPR_HTTP_PORT setting for
-                the SDK health check).
+            grpc_port: Sidecar gRPC port.
+            http_port: Sidecar HTTP port (also used for the SDK health check).
             app_port: Port the app listens on (implies ``--app-protocol grpc``).
             app_cmd: Shell command to start alongside the sidecar.
             components: Path to component YAML directory.  Defaults to
@@ -85,9 +85,12 @@ class DaprTestEnvironment:
         # check starts hitting the HTTP endpoint.
         time.sleep(wait)
 
-        # DaprClient constructor calls DaprHealth.wait_for_sidecar(), which
-        # polls http://localhost:{DAPR_HTTP_PORT}/v1.0/healthz/outbound until
-        # the sidecar is ready (up to DAPR_HEALTH_TIMEOUT seconds).
+        # Point the SDK health check at the actual sidecar HTTP port.
+        # DaprHealth.wait_for_sidecar() reads settings.DAPR_HTTP_PORT, which
+        # is initialized once at import time and won't reflect a non-default
+        # http_port unless we update it here.
+        settings.DAPR_HTTP_PORT = http_port
+
         client = DaprClient(address=f'127.0.0.1:{grpc_port}')
         self._clients.append(client)
         return client
