@@ -14,12 +14,19 @@ limitations under the License.
 """
 
 import unittest
-from typing import List
+from typing import List, Optional
 from unittest import mock
 
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
+from pydantic import BaseModel, ValidationError
+
+
+class Order(BaseModel):
+    order_id: str
+    amount: float
+
 
 listOrchestrators: List[str] = []
 listActivities: List[str] = []
@@ -630,3 +637,120 @@ class AlternateNameTest(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             alternate_name(name='second')(my_fn)
         self.assertIn('already has an alternate name', str(ctx.exception))
+
+
+class PydanticInputCoercionTest(unittest.TestCase):
+    """Signature-directed Pydantic input coercion in workflow/activity wrappers."""
+
+    def setUp(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        self._registry_patch = mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        )
+        self._registry_patch.start()
+        self.runtime = WorkflowRuntime()
+        self.fake_registry = self.runtime._WorkflowRuntime__worker._registry
+
+    def tearDown(self):
+        mock.patch.stopall()
+
+    def test_activity_wrapper_coerces_dict_to_pydantic_model(self):
+        received = {}
+
+        def my_act(ctx, order: Order):
+            received['order'] = order
+            return order.amount * 2
+
+        self.runtime.register_activity(my_act, name='pydantic_act')
+        wrapper = self.fake_registry._activity_fns['pydantic_act']
+
+        result = wrapper(mock.MagicMock(), {'order_id': 'o1', 'amount': 5.0})
+        self.assertIsInstance(received['order'], Order)
+        self.assertEqual(received['order'].order_id, 'o1')
+        self.assertEqual(result, 10.0)
+
+    def test_workflow_wrapper_coerces_dict_to_pydantic_model(self):
+        received = {}
+
+        def my_wf(ctx, order: Order):
+            received['order'] = order
+            return order.order_id
+
+        self.runtime.register_workflow(my_wf, name='pydantic_wf')
+        wrapper = self.fake_registry._orchestrator_fns['pydantic_wf']
+
+        result = wrapper(mock.MagicMock(), {'order_id': 'o2', 'amount': 3.0})
+        self.assertIsInstance(received['order'], Order)
+        self.assertEqual(result, 'o2')
+
+    def test_activity_wrapper_passthrough_when_not_annotated(self):
+        def my_act(ctx, inp):
+            return inp
+
+        self.runtime.register_activity(my_act, name='plain_act')
+        wrapper = self.fake_registry._activity_fns['plain_act']
+
+        payload = {'order_id': 'o3', 'amount': 1.0}
+        result = wrapper(mock.MagicMock(), payload)
+        self.assertIs(result, payload)
+
+    def test_workflow_wrapper_passthrough_for_primitive_annotation(self):
+        def my_wf(ctx, n: int):
+            return n + 1
+
+        self.runtime.register_workflow(my_wf, name='int_wf')
+        wrapper = self.fake_registry._orchestrator_fns['int_wf']
+
+        result = wrapper(mock.MagicMock(), 41)
+        self.assertEqual(result, 42)
+
+    def test_activity_wrapper_handles_optional_annotation(self):
+        def my_act(ctx, order: Optional[Order] = None):
+            return order
+
+        self.runtime.register_activity(my_act, name='optional_act')
+        wrapper = self.fake_registry._activity_fns['optional_act']
+
+        self.assertIsNone(wrapper(mock.MagicMock(), None))
+        result = wrapper(mock.MagicMock(), {'order_id': 'o4', 'amount': 7.0})
+        self.assertIsInstance(result, Order)
+        self.assertEqual(result.amount, 7.0)
+
+    def test_activity_wrapper_passes_through_existing_model_instance(self):
+        instance = Order(order_id='o5', amount=9.0)
+
+        def my_act(ctx, order: Order):
+            return order
+
+        self.runtime.register_activity(my_act, name='reuse_act')
+        wrapper = self.fake_registry._activity_fns['reuse_act']
+
+        result = wrapper(mock.MagicMock(), instance)
+        self.assertIs(result, instance)
+
+    def test_activity_wrapper_raises_validation_error_for_invalid_payload(self):
+        def my_act(ctx, order: Order):
+            return order
+
+        self.runtime.register_activity(my_act, name='invalid_act')
+        wrapper = self.fake_registry._activity_fns['invalid_act']
+
+        with self.assertRaises(ValidationError):
+            wrapper(mock.MagicMock(), {'order_id': 'o6'})  # missing amount
+
+    def test_versioned_workflow_wrapper_coerces_input(self):
+        received = {}
+
+        def my_wf(ctx, order: Order):
+            received['order'] = order
+            return order.order_id
+
+        self.runtime.register_versioned_workflow(
+            my_wf, name='versioned_pydantic', version_name='v1', is_latest=True
+        )
+        wrapper = self.fake_registry._orchestrator_fns['versioned_pydantic']
+
+        result = wrapper(mock.MagicMock(), {'order_id': 'v1', 'amount': 2.0})
+        self.assertIsInstance(received['order'], Order)
+        self.assertEqual(result, 'v1')

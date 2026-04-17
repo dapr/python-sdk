@@ -156,6 +156,18 @@ class InternalJSONEncoder(json.JSONEncoder):
         return super().encode(obj)
 
     def default(self, obj):
+        # Dapr-specific: objects implementing the duck-typed model protocol
+        # (model_dump + model_validate) are emitted as plain JSON objects with
+        # no AUTO_SERIALIZED marker, so the payload stays readable by
+        # non-Python SDKs and by workflows/activities that don't import the
+        # same class. Type-directed reconstruction happens at the
+        # activity/workflow input boundary in
+        # dapr.ext.workflow.workflow_runtime. No pydantic dependency — any
+        # class matching the protocol works (Pydantic v2, SQLModel, custom).
+        from dapr.ext.workflow import _model_protocol
+
+        if _model_protocol.is_model(obj):
+            return _model_protocol.dump_model(obj)
         if dataclasses.is_dataclass(obj):
             # Dataclasses are not serializable by default, so we convert them to a dict and mark them for
             # automatic deserialization by the receiver

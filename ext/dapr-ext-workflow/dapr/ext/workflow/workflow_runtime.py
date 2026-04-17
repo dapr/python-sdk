@@ -19,6 +19,7 @@ from functools import wraps
 from typing import Optional, Sequence, TypeVar, Union
 
 import grpc
+from dapr.ext.workflow import _model_protocol
 from dapr.ext.workflow._durabletask import task, worker
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.logger import Logger, LoggerOptions
@@ -89,6 +90,8 @@ class WorkflowRuntime:
         effective_name = name or fn.__name__
         self._logger.info(f"Registering workflow '{effective_name}' with runtime")
 
+        input_model = _model_protocol.resolve_input_model(fn)
+
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
             instance_id = getattr(ctx, 'instance_id', 'unknown')
@@ -98,6 +101,8 @@ class WorkflowRuntime:
                 if inp is None:
                     result = fn(daprWfContext)
                 else:
+                    if input_model is not None and not isinstance(inp, input_model):
+                        inp = _model_protocol.coerce_to_model(inp, input_model)
                     result = fn(daprWfContext, inp)
                 return result
             except Exception as e:
@@ -131,11 +136,15 @@ class WorkflowRuntime:
             f"Registering version {version_name} of workflow '{effective_name}' with runtime"
         )
 
+        input_model = _model_protocol.resolve_input_model(fn)
+
         def orchestrationWrapper(ctx: task.OrchestrationContext, inp: Optional[TInput] = None):
             """Responsible to call Workflow function in orchestrationWrapper"""
             daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
             if inp is None:
                 return fn(daprWfContext)
+            if input_model is not None and not isinstance(inp, input_model):
+                inp = _model_protocol.coerce_to_model(inp, input_model)
             return fn(daprWfContext, inp)
 
         if hasattr(fn, '_workflow_registered'):
@@ -167,6 +176,8 @@ class WorkflowRuntime:
         effective_name = name or fn.__name__
         self._logger.info(f"Registering activity '{effective_name}' with runtime")
 
+        input_model = _model_protocol.resolve_input_model(fn)
+
         def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
             """Responsible to call Activity function in activityWrapper"""
             activity_id = getattr(ctx, 'task_id', 'unknown')
@@ -176,6 +187,8 @@ class WorkflowRuntime:
                 if inp is None:
                     result = fn(wfActivityContext)
                 else:
+                    if input_model is not None and not isinstance(inp, input_model):
+                        inp = _model_protocol.coerce_to_model(inp, input_model)
                     result = fn(wfActivityContext, inp)
                 return result
             except Exception as e:
