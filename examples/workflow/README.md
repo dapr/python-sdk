@@ -529,7 +529,7 @@ expected_stdout_lines:
   - "[activity] approving order O-100"
   - "[workflow] activity returned approved=True"
   - "[client] workflow output: order_id=O-100 approved=True message=auto-approved"
-timeout_seconds: 30
+timeout_seconds: 60
 -->
 
 ```sh

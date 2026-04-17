@@ -152,7 +152,3 @@ class ProtocolOpennessTest(unittest.TestCase):
 
         self.assertFalse(_model_protocol.is_model_class(DumpOnly))
         self.assertFalse(_model_protocol.is_model_class(ValidateOnly))
-
-
-if __name__ == '__main__':
-    unittest.main()

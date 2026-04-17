@@ -17,6 +17,7 @@ from types import SimpleNamespace
 from typing import Any, Optional, Sequence, Union
 
 import grpc
+from dapr.ext.workflow import _model_protocol
 
 ClientInterceptor = Union[
     grpc.UnaryUnaryClientInterceptor,
@@ -164,8 +165,6 @@ class InternalJSONEncoder(json.JSONEncoder):
         # activity/workflow input boundary in
         # dapr.ext.workflow.workflow_runtime. No pydantic dependency — any
         # class matching the protocol works (Pydantic v2, SQLModel, custom).
-        from dapr.ext.workflow import _model_protocol
-
         if _model_protocol.is_model(obj):
             return _model_protocol.dump_model(obj)
         if dataclasses.is_dataclass(obj):

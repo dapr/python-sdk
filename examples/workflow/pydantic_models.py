@@ -17,8 +17,6 @@ as plain JSON so the wire format stays interop-friendly with non-Python Dapr
 apps.
 """
 
-from time import sleep
-
 from dapr.ext.workflow import (
     DaprWorkflowClient,
     DaprWorkflowContext,
@@ -77,7 +75,6 @@ def approve_order(ctx: WorkflowActivityContext, order: OrderRequest) -> OrderRes
 
 def main():
     wfr.start()
-    sleep(5)
     client = DaprWorkflowClient()
 
     order = OrderRequest(order_id='O-100', customer='Acme', amount=42.0)
