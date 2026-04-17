@@ -65,10 +65,8 @@ Each extension is a **separate PyPI package** with its own `setup.cfg`, `setup.p
 
 The `examples/` directory contains user-facing example applications. These are validated by two test suites:
 
-- **`tests/examples/`** — Output-based tests that run examples via `dapr run` and check stdout for expected strings. Uses a `DaprRunner` helper to manage process lifecycle.
-- **`tests/integration/`** — Programmatic SDK tests that call `DaprClient` methods directly and assert on return values, gRPC status codes, and SDK types. More reliable than output-based tests since they don't depend on print statement formatting.
-
-**See `examples/AGENTS.md`** for the full guide on example structure and how to add new examples.
+- **`tests/examples/`** — Output-based tests that run examples via `dapr run` and check stdout for expected strings. Uses a `DaprRunner` helper to manage process lifecycle. See `examples/AGENTS.md`.
+- **`tests/integration/`** — Programmatic SDK tests that call `DaprClient` methods directly and assert on return values, gRPC status codes, and SDK types. More reliable than output-based tests since they don't depend on print statement formatting. See `tests/integration/AGENTS.md`.
 
 Quick reference:
 ```bash

@@ -1,6 +1,6 @@
 # AGENTS.md — Dapr Python SDK Examples
 
-The `examples/` directory serves as both **user-facing documentation** and the project's **integration test suite**. Each example is a self-contained application validated by pytest-based tests in `tests/examples/`.
+The `examples/` directory serves as the **user-facing documentation**. Each example is a self-contained application validated by pytest-based tests in `tests/examples/`.
 
 ## How validation works
 
