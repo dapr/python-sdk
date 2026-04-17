@@ -33,7 +33,9 @@ ext/                         # Extension packages (each is a separate PyPI packa
 └── flask_dapr/              # Flask integration  ← see ext/flask_dapr/AGENTS.md
 
 tests/                       # Unit tests (mirrors dapr/ package structure)
-examples/                    # Integration test suite  ← see examples/AGENTS.md
+├── examples/                # Output-based tests that run examples and check stdout
+├── integration/             # Programmatic SDK tests using DaprClient directly
+examples/                    # User-facing example applications  ← see examples/AGENTS.md
 docs/                        # Sphinx documentation source
 tools/                       # Build and release scripts
 ```
@@ -59,16 +61,21 @@ Each extension is a **separate PyPI package** with its own `setup.cfg`, `setup.p
 | `dapr-ext-langgraph` | `dapr.ext.langgraph` | LangGraph checkpoint persistence to Dapr state store | Moderate |
 | `dapr-ext-strands` | `dapr.ext.strands` | Strands agent session management via Dapr state store | New |
 
-## Examples (integration test suite)
+## Examples and testing
 
-The `examples/` directory serves as both user-facing documentation and the project's integration test suite. Examples are validated by pytest-based integration tests in `tests/integration/`.
+The `examples/` directory contains user-facing example applications. These are validated by two test suites:
+
+- **`tests/examples/`** — Output-based tests that run examples via `dapr run` and check stdout for expected strings. Uses a `DaprRunner` helper to manage process lifecycle.
+- **`tests/integration/`** — Programmatic SDK tests that call `DaprClient` methods directly and assert on return values, gRPC status codes, and SDK types. More reliable than output-based tests since they don't depend on print statement formatting.
 
 **See `examples/AGENTS.md`** for the full guide on example structure and how to add new examples.
 
 Quick reference:
 ```bash
-tox -e examples                                   # Run all examples (needs Dapr runtime)
-tox -e examples -- test_state_store.py            # Run a single example
+tox -e examples                                      # Run output-based example tests
+tox -e examples -- test_state_store.py               # Run a single example test
+tox -e integration                                   # Run programmatic SDK tests
+tox -e integration -- test_state_store.py            # Run a single integration test
 ```
 
 ## Python version support
@@ -106,8 +113,11 @@ tox -e ruff
 # Run type checking
 tox -e type
 
-# Run examples tests / validate examples (requires Dapr runtime)
+# Run output-based example tests (requires Dapr runtime)
 tox -e examples
+
+# Run programmatic integration tests (requires Dapr runtime)
+tox -e integration
 ```
 
 To run tests directly without tox:
@@ -189,8 +199,8 @@ When completing any task on this project, work through this checklist. Not every
 ### Examples (integration tests)
 
 - [ ] If you added a new user-facing feature or building block, add or update an example in `examples/`
-- [ ] Add a corresponding pytest integration test in `tests/integration/`
-- [ ] If you changed output format of existing functionality, update expected output in the affected integration tests
+- [ ] Add a corresponding pytest test in `tests/examples/` (output-based) and/or `tests/integration/` (programmatic)
+- [ ] If you changed output format of existing functionality, update expected output in `tests/examples/`
 - [ ] See `examples/AGENTS.md` for full details on writing examples
 
 ### Documentation
@@ -202,7 +212,7 @@ When completing any task on this project, work through this checklist. Not every
 
 - [ ] Run `tox -e ruff` — linting must be clean
 - [ ] Run `tox -e py311` (or your Python version) — all unit tests must pass
-- [ ] If you touched examples: `tox -e integration -- test_<example-name>.py` to validate locally
+- [ ] If you touched examples: `tox -e examples -- test_<example-name>.py` to validate locally
 - [ ] Commits must be signed off for DCO: `git commit -s`
 
 ## Important files
@@ -217,7 +227,8 @@ When completing any task on this project, work through this checklist. Not every
 | `dev-requirements.txt` | Development/test dependencies |
 | `dapr/version/__init__.py` | SDK version string |
 | `ext/*/setup.cfg` | Extension package metadata and dependencies |
-| `tests/integration/` | Pytest-based integration tests that validate examples |
+| `tests/examples/` | Output-based tests that validate examples by checking stdout |
+| `tests/integration/` | Programmatic SDK tests using DaprClient directly |
 
 ## Gotchas
 
@@ -226,6 +237,6 @@ When completing any task on this project, work through this checklist. Not every
 - **Extension independence**: Each extension is a separate PyPI package. Core SDK changes should not break extensions; extension changes should not require core SDK changes unless intentional.
 - **DCO signoff**: PRs will be blocked by the DCO bot if commits lack `Signed-off-by`. Always use `git commit -s`.
 - **Ruff version pinned**: Dev requirements pin `ruff === 0.14.1`. Use this exact version to match CI.
-- **Examples are integration tests**: Changing output format (log messages, print statements) can break integration tests. Always check expected output in `tests/integration/` when modifying user-visible output.
+- **Examples are tested by output matching**: Changing output format (log messages, print statements) can break `tests/examples/`. Always check expected output there when modifying user-visible output.
 - **Background processes in examples**: Examples that start background services (servers, subscribers) must include a cleanup step to stop them, or CI will hang.
 - **Workflow is the most active area**: See `ext/dapr-ext-workflow/AGENTS.md` for workflow-specific architecture and constraints.
