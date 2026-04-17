@@ -17,8 +17,9 @@ app = App()
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
 def handle_topic_a(event: v1.Event) -> TopicEventResponse:
     data = json.loads(event.Data())
+    key = f'received-{data["run_id"]}-{data["id"]}'
     with DaprClient() as d:
-        d.save_state('statestore', f'received-topic-a-{data["id"]}', event.Data())
+        d.save_state('statestore', key, event.Data())
     return TopicEventResponse('success')
 
 
