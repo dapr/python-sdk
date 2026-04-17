@@ -1,11 +1,11 @@
 # AGENTS.md — Dapr Python SDK Examples
 
-The `examples/` directory serves as both **user-facing documentation** and the project's **integration test suite**. Each example is a self-contained application validated by pytest-based integration tests in `tests/integration/`.
+The `examples/` directory serves as both **user-facing documentation** and the project's **integration test suite**. Each example is a self-contained application validated by pytest-based tests in `tests/examples/`.
 
 ## How validation works
 
-1. Each example has a corresponding test file in `tests/integration/` (e.g., `test_state_store.py`)
-2. Tests use a `DaprRunner` helper (defined in `conftest.py`) that wraps `dapr run` commands
+1. Each example has a corresponding test file in `tests/examples/` (e.g., `test_state_store.py`)
+2. Tests use a `DaprRunner` helper (defined in `tests/examples/conftest.py`) that wraps `dapr run` commands
 3. `DaprRunner.run()` executes a command and captures stdout; `DaprRunner.start()`/`stop()` manage background services
 4. Tests assert that expected output lines appear in the captured output
 
@@ -132,17 +132,17 @@ The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_i
 2. Add Python source files and a `requirements.txt` referencing the needed SDK packages
 3. Add Dapr component YAMLs in a `components/` subdirectory if the example uses state, pubsub, etc.
 4. Write a `README.md` with introduction, pre-requisites, install instructions, and running instructions
-5. Add a corresponding test in `tests/integration/test_<example_name>.py`:
+5. Add a corresponding test in `tests/examples/test_<example_name>.py`:
    - Use the `@pytest.mark.example_dir('<example-name>')` marker to set the working directory
    - Use `dapr.run()` for scripts that exit on their own, `dapr.start()`/`dapr.stop()` for long-running services
    - Assert expected output lines appear in the captured output
-6. Test locally: `tox -e integration -- test_<example_name>.py`
+6. Test locally: `tox -e examples -- test_<example_name>.py`
 
 ## Gotchas
 
-- **Output format changes break tests**: If you modify print statements or log output in SDK code, check whether any integration test's expected lines depend on that output.
+- **Output format changes break tests**: If you modify print statements or log output in SDK code, check whether any test's expected lines in `tests/examples/` depend on that output.
 - **Background processes must be cleaned up**: The `DaprRunner` fixture handles cleanup on teardown, but tests should still call `dapr.stop()` to capture output.
 - **Dapr prefixes output**: Application stdout appears as `== APP == <line>` when run via `dapr run`.
 - **Redis is available in CI**: The CI environment has Redis running on `localhost:6379` — most component YAMLs use this.
 - **Some examples need special setup**: `crypto` generates keys, `configuration` seeds Redis, `conversation` needs LLM config — check individual READMEs.
-- **Infinite-loop example scripts**: Some example scripts (e.g., `invoke-caller.py`) have `while True` loops for demo purposes. Integration tests must either bypass these with HTTP API calls or use `dapr.run(until=...)` for early termination.
+- **Infinite-loop example scripts**: Some example scripts (e.g., `invoke-caller.py`) have `while True` loops for demo purposes. Tests must either bypass these with HTTP API calls or use `dapr.run(until=...)` for early termination.
