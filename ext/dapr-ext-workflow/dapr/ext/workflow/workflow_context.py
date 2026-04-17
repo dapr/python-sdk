@@ -19,8 +19,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, Optional, TypeVar, Union
 
+from dapr.ext.workflow._durabletask import task
 from dapr.ext.workflow.workflow_activity_context import Activity
-from durabletask import task
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -162,18 +162,37 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
-    def wait_for_external_event(self, name: str) -> task.Task:
+    def wait_for_external_event(
+        self,
+        name: str,
+        *,
+        timeout: Optional[Union[datetime, timedelta]] = None,
+    ) -> task.Task:
         """Wait asynchronously for an event to be raised with the name `name`.
 
         Parameters
         ----------
         name : str
             The event name of the event that the task is waiting for.
+        timeout : datetime | timedelta | None
+            Controls how long to wait for the event. Accepts only ``datetime``
+            or ``timedelta`` — a plain numeric ``0`` is **not** a valid value
+            (use ``timedelta(0)`` explicitly). Three shapes:
+
+            * ``None`` (default) or a *negative* ``timedelta`` — wait indefinitely.
+              An optional sentinel timer is scheduled internally for runtime
+              tracking, but ``TimeoutError`` is never raised on its own.
+            * ``timedelta(0)`` — do not wait at all. The returned task fails
+              immediately with ``TimeoutError``.
+            * A future ``datetime`` or a positive ``timedelta`` — wait until
+              that deadline / for that duration; ``TimeoutError`` is raised if
+              the event has not been received in time.
 
         Returns
         -------
         Task[TOutput]
-            A Durable Task that completes when the event is received.
+            A Durable Task that completes when the event is received or fails
+            with ``TimeoutError`` if the timeout fires first.
         """
         pass
 

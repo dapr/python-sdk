@@ -22,12 +22,6 @@ on:
       - feature/*
     tags:
       - v*
-      - workflow-v*
-      - grpc-v*
-      - flask-v*
-      - fastapi-v*
-      - langgraph-v*
-      - strands-v*
   pull_request:
     branches:
       - main
@@ -45,12 +39,12 @@ jobs:
         uses: actions/checkout@v6
 
       - name: "Run FOSSA Scan"
-        uses: fossas/fossa-action@v1.8.0 # Use a specific version if locking is preferred
+        uses: fossas/fossa-action@v1.9.0 # Use a specific version if locking is preferred
         with:
           api-key: ${{ env.FOSSA_API_KEY }}
 
       - name: "Run FOSSA Test"
-        uses: fossas/fossa-action@v1.8.0 # Use a specific version if locking is preferred
+        uses: fossas/fossa-action@v1.9.0 # Use a specific version if locking is preferred
         with:
           api-key: ${{ env.FOSSA_API_KEY }}
           run-tests: true

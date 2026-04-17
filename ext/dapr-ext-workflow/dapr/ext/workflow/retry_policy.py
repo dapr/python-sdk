@@ -16,7 +16,7 @@ limitations under the License.
 from datetime import timedelta
 from typing import Optional, TypeVar
 
-from durabletask import task
+from dapr.ext.workflow._durabletask import task
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')

@@ -43,7 +43,9 @@ class WorkflowRuntimeTest(unittest.TestCase):
     def setUp(self):
         listActivities.clear()
         listOrchestrators.clear()
-        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        ).start()
         self.runtime_options = WorkflowRuntime()
         if hasattr(self.mock_client_wf, '_dapr_alternate_name'):
             del self.mock_client_wf.__dict__['_dapr_alternate_name']
@@ -185,7 +187,9 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
     def setUp(self):
         listActivities.clear()
         listOrchestrators.clear()
-        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        ).start()
         self.runtime = WorkflowRuntime()
 
     def test_wait_for_worker_ready_returns_false_when_no_is_worker_ready(self):
@@ -249,7 +253,9 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
     def test_start_logs_warning_when_worker_not_ready(self):
         listActivities.clear()
         listOrchestrators.clear()
-        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        ).start()
         runtime = WorkflowRuntime(worker_ready_timeout=0.2)
         mock_worker = mock.MagicMock()
         mock_worker.is_worker_ready.return_value = False
@@ -269,7 +275,9 @@ class WorkflowRuntimeWorkerReadyTest(unittest.TestCase):
     def test_worker_ready_timeout_init(self):
         listActivities.clear()
         listOrchestrators.clear()
-        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        ).start()
         rt = WorkflowRuntime(worker_ready_timeout=15.0)
         self.assertEqual(rt._worker_ready_timeout, 15.0)
 
@@ -307,7 +315,9 @@ class WorkflowRuntimeInitTest(unittest.TestCase):
     def setUp(self):
         listActivities.clear()
         listOrchestrators.clear()
-        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        ).start()
 
     def tearDown(self):
         mock.patch.stopall()
@@ -338,7 +348,7 @@ class OrchestratorWrapperTest(unittest.TestCase):
         listActivities.clear()
         listOrchestrators.clear()
         self._registry_patch = mock.patch(
-            'durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
         )
         self._registry_patch.start()
         self.runtime = WorkflowRuntime()
@@ -440,7 +450,7 @@ class VersionedWorkflowTest(unittest.TestCase):
         listActivities.clear()
         listOrchestrators.clear()
         self._registry_patch = mock.patch(
-            'durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
         )
         self._registry_patch.start()
         self.runtime = WorkflowRuntime()
@@ -548,7 +558,9 @@ class DecoratorNoArgsTest(unittest.TestCase):
     def setUp(self):
         listActivities.clear()
         listOrchestrators.clear()
-        mock.patch('durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()).start()
+        mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+        ).start()
         self.runtime = WorkflowRuntime()
 
     def tearDown(self):

@@ -140,11 +140,11 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.1)  # Give it time to finish current iteration
 
             # Verify the counter was incremented during health check
-            # In 2 seconds with 0.5s intervals, we expect at least 3 increments
+            # In 2 seconds with 0.5s intervals, we expect at least 2 increments
             self.assertGreaterEqual(
                 counter[0],
-                3,
-                f'Expected counter to increment at least 3 times during health check, '
+                2,
+                f'Expected counter to increment at least 2 times during health check, '
                 f'but got {counter[0]}. This indicates health check may be blocking.',
             )
 

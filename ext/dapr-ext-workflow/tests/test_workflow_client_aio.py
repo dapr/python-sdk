@@ -18,10 +18,9 @@ from datetime import datetime
 from typing import Any, Union
 from unittest import mock
 
-import durabletask.internal.orchestrator_service_pb2 as pb
+from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.aio import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from durabletask import client
 from grpc.aio import AioRpcError
 
 mock_schedule_result = 'workflow001'
@@ -57,7 +56,7 @@ class FakeAsyncTaskHubGrpcClient:
         input,
         instance_id,
         start_at,
-        reuse_id_policy: Union[pb.OrchestrationIdReusePolicy, None] = None,
+        reuse_id_policy: Union[client.WorkflowIdReusePolicy, None] = None,
     ):
         self.last_scheduled_workflow_name = workflow
         return mock_schedule_result
@@ -100,7 +99,7 @@ class FakeAsyncTaskHubGrpcClient:
         return mock_purge_result
 
     def _inner_get_orchestration_state(self, instance_id, state: client.OrchestrationStatus):
-        return client.OrchestrationState(
+        return client.WorkflowState(
             instance_id=instance_id,
             name='',
             runtime_status=state,
@@ -119,7 +118,10 @@ class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_schedule_workflow_by_name_string(self):
         fake_client = FakeAsyncTaskHubGrpcClient()
-        with mock.patch('durabletask.aio.client.AsyncTaskHubGrpcClient', return_value=fake_client):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
+            return_value=fake_client,
+        ):
             wfClient = DaprWorkflowClient()
             result = await wfClient.schedule_new_workflow(
                 workflow='my_registered_workflow', input='data'
@@ -129,7 +131,7 @@ class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_client_functions(self):
         with mock.patch(
-            'durabletask.aio.client.AsyncTaskHubGrpcClient',
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
             return_value=FakeAsyncTaskHubGrpcClient(),
         ):
             wfClient = DaprWorkflowClient()
