@@ -23,6 +23,7 @@ def _flush_redis() -> None:
         args=('docker', 'exec', REDIS_CONTAINER, 'redis-cli', 'FLUSHDB'),
         check=True,
         capture_output=True,
+        timeout=10,
     )
 
 

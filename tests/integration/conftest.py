@@ -2,8 +2,9 @@ import shlex
 import subprocess
 import tempfile
 import time
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, Generator, Iterator
 
 import pytest
 
@@ -113,6 +114,17 @@ class DaprTestEnvironment:
         self._log_files.clear()
 
 
+@contextmanager
+def _preserve_http_port() -> Iterator[None]:
+    # start_sidecar() mutates settings.DAPR_HTTP_PORT.
+    # This restores the original value so it does not leak across test modules.
+    original = settings.DAPR_HTTP_PORT
+    try:
+        yield
+    finally:
+        settings.DAPR_HTTP_PORT = original
+
+
 @pytest.fixture(scope='module')
 def dapr_env() -> Generator[DaprTestEnvironment, Any, None]:
     """Provides a DaprTestEnvironment for programmatic SDK testing.
@@ -121,9 +133,12 @@ def dapr_env() -> Generator[DaprTestEnvironment, Any, None]:
     avoiding port conflicts from rapid start/stop cycles and cutting total
     test time significantly.
     """
-    env = DaprTestEnvironment()
-    yield env
-    env.cleanup()
+    with _preserve_http_port():
+        env = DaprTestEnvironment()
+        try:
+            yield env
+        finally:
+            env.cleanup()
 
 
 @pytest.fixture(scope='module')

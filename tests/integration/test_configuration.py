@@ -19,6 +19,7 @@ def _redis_set(key: str, value: str, version: int = 1) -> None:
         args=('docker', 'exec', REDIS_CONTAINER, 'redis-cli', 'SET', key, f'{value}||{version}'),
         check=True,
         capture_output=True,
+        timeout=10,
     )
 
 
