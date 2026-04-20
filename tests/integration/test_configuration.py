@@ -86,6 +86,5 @@ class TestSubscribeConfiguration:
             keys=['cfg-unsub-key'],
             handler=lambda _id, _resp: None,
         )
-        time.sleep(1)
         ok = client.unsubscribe_configuration(store_name=STORE, id=sub_id)
         assert ok
