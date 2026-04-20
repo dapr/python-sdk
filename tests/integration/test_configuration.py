@@ -15,14 +15,12 @@ EXPECTED_LINES = [
 def redis_config():
     """Seed configuration values in Redis before the test."""
     subprocess.run(
-        'docker exec dapr_redis redis-cli SET orderId1 "100||1"',
-        shell=True,
+        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId1', '100||1'),
         check=True,
         capture_output=True,
     )
     subprocess.run(
-        'docker exec dapr_redis redis-cli SET orderId2 "200||1"',
-        shell=True,
+        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId2', '200||1'),
         check=True,
         capture_output=True,
     )
@@ -36,8 +34,7 @@ def test_configuration(dapr, redis_config):
     )
     # Update Redis to trigger the subscription notification
     subprocess.run(
-        'docker exec dapr_redis redis-cli SET orderId2 "210||2"',
-        shell=True,
+        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId2', '210||2'),
         check=True,
         capture_output=True,
     )

@@ -22,16 +22,16 @@ def crypto_keys():
     keys_dir = CRYPTO_DIR / 'keys'
     keys_dir.mkdir(exist_ok=True)
     subprocess.run(
-        'openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 '
-        '-out keys/rsa-private-key.pem',
-        shell=True,
+        (
+            'openssl', 'genpkey', '-algorithm', 'RSA', '-pkeyopt', 'rsa_keygen_bits:4096',
+            '-out', 'keys/rsa-private-key.pem',
+        ),
         cwd=CRYPTO_DIR,
         check=True,
         capture_output=True,
     )
     subprocess.run(
-        'openssl rand -out keys/symmetric-key-256 32',
-        shell=True,
+        ('openssl', 'rand', '-out', 'keys/symmetric-key-256', '32'),
         cwd=CRYPTO_DIR,
         check=True,
         capture_output=True,

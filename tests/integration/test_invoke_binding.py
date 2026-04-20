@@ -19,8 +19,7 @@ EXPECTED_MESSAGES = [
 def kafka():
     try:
         subprocess.run(
-            'docker compose -f ./docker-compose-single-kafka.yml up -d',
-            shell=True,
+            ('docker', 'compose', '-f', './docker-compose-single-kafka.yml', 'up', '-d'),
             cwd=BINDING_DIR,
             check=True,
             stdout=subprocess.PIPE,
@@ -35,8 +34,7 @@ def kafka():
 
     try:
         subprocess.run(
-            'docker compose -f ./docker-compose-single-kafka.yml down',
-            shell=True,
+            ('docker', 'compose', '-f', './docker-compose-single-kafka.yml', 'down'),
             cwd=BINDING_DIR,
             check=True,
             stdout=subprocess.PIPE,

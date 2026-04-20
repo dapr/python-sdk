@@ -17,15 +17,14 @@ EXPECTED_LINES = [
 @pytest.fixture()
 def mongodb():
     # Remove leftover container from a previous crashed run
-    subprocess.run('docker rm -f pytest-mongodb', shell=True, capture_output=True)
+    subprocess.run(('docker', 'rm', '-f', 'pytest-mongodb'), capture_output=True)
     subprocess.run(
-        'docker run -d --rm -p 27017:27017 --name pytest-mongodb mongo:5',
-        shell=True,
+        ('docker', 'run', '-d', '--rm', '-p', '27017:27017', '--name', 'pytest-mongodb', 'mongo:5'),
         check=True,
         capture_output=True,
     )
     yield
-    subprocess.run('docker rm -f pytest-mongodb', shell=True, capture_output=True)
+    subprocess.run(('docker', 'rm', '-f', 'pytest-mongodb'), capture_output=True)
 
 
 @pytest.fixture()
