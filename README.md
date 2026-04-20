@@ -121,7 +121,13 @@ tox -e py311
 tox -e type
 ```
 
-8. Run integration tests (validates the examples)
+8. Run integration tests
+
+```bash
+tox -e integration
+```
+
+9. Validate the examples
 
 ```bash
 tox -e examples
