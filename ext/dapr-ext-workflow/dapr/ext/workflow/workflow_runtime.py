@@ -103,8 +103,8 @@ class WorkflowRuntime:
                     result = fn(daprWfContext)
                 else:
                     if (
-                        inp is not None
-                        and input_model is not None
+                        (inp is not None)
+                        and (input_model is not None)
                         and not isinstance(inp, input_model)
                     ):
                         inp = _model_protocol.coerce_to_model(inp, input_model)
@@ -148,7 +148,7 @@ class WorkflowRuntime:
             daprWfContext = DaprWorkflowContext(ctx, self._logger.get_options())
             if not accepts_input:
                 return fn(daprWfContext)
-            if inp is not None and input_model is not None and not isinstance(inp, input_model):
+            if (inp is not None) and (input_model is not None) and not isinstance(inp, input_model):
                 inp = _model_protocol.coerce_to_model(inp, input_model)
             return fn(daprWfContext, inp)
 
@@ -193,8 +193,8 @@ class WorkflowRuntime:
                     result = fn(wfActivityContext)
                 else:
                     if (
-                        inp is not None
-                        and input_model is not None
+                        (inp is not None)
+                        and (input_model is not None)
                         and not isinstance(inp, input_model)
                     ):
                         inp = _model_protocol.coerce_to_model(inp, input_model)
