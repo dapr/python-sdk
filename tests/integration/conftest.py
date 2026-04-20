@@ -105,6 +105,7 @@ class DaprTestEnvironment:
         for client in self._clients:
             client.close()
         self._clients.clear()
+
         for proc in self._processes:
             if proc.poll() is None:
                 proc.terminate()
@@ -114,6 +115,7 @@ class DaprTestEnvironment:
                     proc.kill()
                     proc.wait()
         self._processes.clear()
+
         for log_path in self._log_files:
             log_path.unlink(missing_ok=True)
         self._log_files.clear()
