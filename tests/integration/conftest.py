@@ -1,8 +1,5 @@
-import os
 import shlex
-import signal
 import subprocess
-import sys
 import tempfile
 import time
 from contextlib import contextmanager
@@ -14,37 +11,13 @@ import pytest
 
 from dapr.clients import DaprClient
 from dapr.conf import settings
+from tests._process_utils import get_kwargs_for_process_group, terminate_process_group
 
 T = TypeVar('T')
 
 INTEGRATION_DIR = Path(__file__).resolve().parent
 COMPONENTS_DIR = INTEGRATION_DIR / 'components'
 APPS_DIR = INTEGRATION_DIR / 'apps'
-
-
-def _new_process_group_kwargs() -> dict[str, Any]:
-    """Popen kwargs that place the child at the head of its own process group.
-
-    ``dapr run`` spawns ``daprd`` and the user's app as siblings; signaling
-    only the immediate process can orphan them if the signal isn't forwarded,
-    which leaves stale listeners on the test ports across runs. Putting the
-    whole subtree in its own group lets cleanup take them all down together.
-    """
-    if sys.platform == 'win32':
-        return {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
-    return {'start_new_session': True}
-
-
-def _terminate_process_group(proc: subprocess.Popen[str], *, force: bool = False) -> None:
-    """Sends the right termination signal to an entire process group."""
-    if sys.platform == 'win32':
-        if force:
-            proc.kill()
-        else:
-            proc.send_signal(signal.CTRL_BREAK_EVENT)
-    else:
-        cleanup_signal_unix = signal.SIGKILL if force else signal.SIGTERM
-        os.killpg(os.getpgid(proc.pid), cleanup_signal_unix)
 
 
 class DaprTestEnvironment:
@@ -57,7 +30,6 @@ class DaprTestEnvironment:
     def __init__(self, default_components: Path = COMPONENTS_DIR) -> None:
         self._default_components = default_components
         self._processes: list[subprocess.Popen[str]] = []
-        self._log_files: list[Path] = []
         self._clients: list[DaprClient] = []
 
     def start_sidecar(
@@ -100,15 +72,14 @@ class DaprTestEnvironment:
         if app_cmd is not None:
             cmd.extend(['--', *shlex.split(app_cmd)])
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=f'-{app_id}.log', delete=False) as log:
-            self._log_files.append(Path(log.name))
+        with tempfile.NamedTemporaryFile(mode='w', suffix=f'-{app_id}.log') as log:
             proc = subprocess.Popen(
                 cmd,
                 cwd=INTEGRATION_DIR,
                 stdout=log,
                 stderr=subprocess.STDOUT,
                 text=True,
-                **_new_process_group_kwargs(),
+                **get_kwargs_for_process_group(),
             )
         self._processes.append(proc)
 
@@ -137,17 +108,13 @@ class DaprTestEnvironment:
 
         for proc in self._processes:
             if proc.poll() is None:
-                _terminate_process_group(proc)
+                terminate_process_group(proc)
                 try:
                     proc.wait(timeout=10)
                 except subprocess.TimeoutExpired:
-                    _terminate_process_group(proc, force=True)
+                    terminate_process_group(proc, force=True)
                     proc.wait()
         self._processes.clear()
-
-        for log_path in self._log_files:
-            log_path.unlink(missing_ok=True)
-        self._log_files.clear()
 
 
 def _wait_until(
