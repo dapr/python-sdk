@@ -133,11 +133,11 @@ tox -e integration
 tox -e examples
 ```
 
-If you need to run the examples against a pre-released version of the runtime, you can use the following command:
+If you need to run the examples or integration tests against a pre-released version of the runtime, you can use the following command:
 - Get your daprd runtime binary from [here](https://github.com/dapr/dapr/releases) for your platform.
 - Copy the binary to your dapr home folder at $HOME/.dapr/bin/daprd.
 Or using dapr cli directly: `dapr init --runtime-version <release version>`
-- Now you can run the examples with `tox -e integration`.
+- Now you can run the examples with `tox -e examples` or the integration tests with `tox -e integration`.
 
 
 ## Documentation
