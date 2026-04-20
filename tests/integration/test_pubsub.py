@@ -1,6 +1,5 @@
 import json
 import subprocess
-import time
 import uuid
 
 import pytest
@@ -35,11 +34,10 @@ def client(dapr_env, apps_dir):
         grpc_port=50001,
         app_port=50051,
         app_cmd=f'python3 {apps_dir / "pubsub_subscriber.py"}',
-        wait=10,
     )
 
 
-def test_published_messages_are_received_by_subscriber(client):
+def test_published_messages_are_received_by_subscriber(client, wait_until):
     run_id = uuid.uuid4().hex
     for n in range(1, 4):
         client.publish_event(
@@ -48,14 +46,14 @@ def test_published_messages_are_received_by_subscriber(client):
             data=json.dumps({'run_id': run_id, 'id': n, 'message': 'hello world'}),
             data_content_type='application/json',
         )
-        time.sleep(1)
-
-    time.sleep(3)
 
     for n in range(1, 4):
-        state = client.get_state(store_name=STORE, key=f'received-{run_id}-{n}')
-        assert state.data != b'', f'Subscriber did not receive message {n}'
-        msg = json.loads(state.data)
+        key = f'received-{run_id}-{n}'
+        data = wait_until(
+            lambda k=key: client.get_state(store_name=STORE, key=k).data or None,
+            timeout=10,
+        )
+        msg = json.loads(data)
         assert msg['id'] == n
         assert msg['message'] == 'hello world'
 
