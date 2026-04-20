@@ -124,7 +124,8 @@ def _wait_until(
     timeout: float = 10.0,
     interval: float = 0.1,
 ) -> T:
-    """Poll `predicate` until it returns a truthy value. eaises `TimeoutError` if it never does."""
+    """Poll `predicate` until it returns a truthy value.
+    Raises `TimeoutError` if it never returns."""
     deadline = time.monotonic() + timeout
     while True:
         result = predicate()
