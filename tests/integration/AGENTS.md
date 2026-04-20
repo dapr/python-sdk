@@ -43,13 +43,14 @@ tests/integration/
 
 ## Fixtures
 
-All fixtures are **module-scoped** — one sidecar per test file.
+Sidecar and client fixtures are **module-scoped** — one sidecar per test file. Helper fixtures may use a different scope; see the table below.
 
-| Fixture | Type | Description |
-|---------|------|-------------|
-| `dapr_env` | `DaprTestEnvironment` | Manages sidecar lifecycle; call `start_sidecar()` to get a client |
-| `apps_dir` | `Path` | Path to `tests/integration/apps/` |
-| `components_dir` | `Path` | Path to `tests/integration/components/` |
+| Fixture | Scope | Type | Description |
+|---------|-------|------|-------------|
+| `dapr_env` | module | `DaprTestEnvironment` | Manages sidecar lifecycle; call `start_sidecar()` to get a client |
+| `apps_dir` | module | `Path` | Path to `tests/integration/apps/` |
+| `components_dir` | module | `Path` | Path to `tests/integration/components/` |
+| `wait_until` | function | `Callable` | Polling helper `(predicate, timeout=10, interval=0.1)` for eventual-consistency assertions |
 
 Each test file defines its own module-scoped `client` fixture that calls `dapr_env.start_sidecar(...)`.
 
