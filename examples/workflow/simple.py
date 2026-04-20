@@ -144,8 +144,17 @@ def main():
 
     wf_client.wait_for_workflow_start(instance_id)
 
-    # Sleep to let the workflow run initial activities and infinite retries
-    sleep(24)
+    # Poll for the workflow to finish the initial activities, the infinite retries, and
+    # the child workflows. Polling instead of a fixed sleep keeps the example fast.
+    for _ in range(120):  # up to ~60 seconds at 0.5s intervals
+        if (
+            counter == 11
+            and retry_count == 2
+            and infinite_retry_count == 11
+            and child_orchestrator_string == '1aa2bb3cc'
+        ):
+            break
+        sleep(0.5)
 
     assert counter == 11
     assert retry_count == 2
