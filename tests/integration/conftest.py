@@ -33,6 +33,7 @@ class DaprRunner:
     def _terminate(proc: subprocess.Popen[str]) -> None:
         if proc.poll() is not None:
             return
+
         proc.terminate()
         try:
             proc.wait(timeout=10)

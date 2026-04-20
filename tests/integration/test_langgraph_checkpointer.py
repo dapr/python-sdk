@@ -5,7 +5,7 @@ import httpx
 import pytest
 
 OLLAMA_URL = 'http://localhost:11434'
-MODEL = 'llama3.2:3b'
+MODEL = 'llama3.2:latest'
 
 EXPECTED_LINES = [
     'Add 3 and 4.',
@@ -22,8 +22,21 @@ def _ollama_ready() -> bool:
 
 
 def _model_available() -> bool:
-    resp = httpx.get(f'{OLLAMA_URL}/api/tags', timeout=5)
+    try:
+        resp = httpx.get(f'{OLLAMA_URL}/api/tags', timeout=5)
+    except httpx.RequestError:
+        return False
+
     return any(m['name'] == MODEL for m in resp.json().get('models', []))
+
+
+def _wait_for_ollama(timeout: float = 30.0, interval: float = 0.5) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if _ollama_ready():
+            return
+        time.sleep(interval)
+    raise TimeoutError(f'ollama serve did not become ready within {timeout}s')
 
 
 @pytest.fixture()
@@ -43,7 +56,7 @@ def ollama():
             )
         except FileNotFoundError:
             pytest.skip('ollama is not installed')
-        time.sleep(10)
+        _wait_for_ollama()
 
     if not _model_available():
         subprocess.run(['ollama', 'pull', MODEL], check=True, capture_output=True)

@@ -1,3 +1,4 @@
+import time
 import pytest
 
 EXPECTED_SUBSCRIBER = [
@@ -34,8 +35,6 @@ def test_pubsub_simple(dapr):
     )
     for line in EXPECTED_PUBLISHER:
         assert line in publisher_output, f'Missing in publisher output: {line}'
-
-    import time
 
     time.sleep(5)
     subscriber_output = dapr.stop(subscriber)

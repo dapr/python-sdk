@@ -4,7 +4,7 @@ EXPECTED_LINES = [
     'Will try to acquire a lock from lock store named [lockstore]',
     'The lock is for a resource named [example-lock-resource]',
     'The client identifier is [example-client-id]',
-    'The lock will will expire in 60 seconds.',
+    'The lock will expire in 60 seconds.',
     'Lock acquired successfully!!!',
     'We already released the lock so unlocking will not work.',
     'We tried to unlock it anyway and got back [UnlockResponseStatus.lock_does_not_exist]',

@@ -17,22 +17,35 @@ EXPECTED_MESSAGES = [
 
 @pytest.fixture()
 def kafka():
-    subprocess.run(
-        'docker compose -f ./docker-compose-single-kafka.yml up -d',
-        shell=True,
-        cwd=BINDING_DIR,
-        check=True,
-        capture_output=True,
-    )
-    time.sleep(30)
+    try:
+        subprocess.run(
+            'docker compose -f ./docker-compose-single-kafka.yml up -d',
+            shell=True,
+            cwd=BINDING_DIR,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired as e:
+        output = (e.stdout or b'').decode(errors='replace')
+        pytest.fail(f'Timed out starting Kafka:\n{output}')
+
     yield
-    subprocess.run(
-        'docker compose -f ./docker-compose-single-kafka.yml down',
-        shell=True,
-        cwd=BINDING_DIR,
-        check=True,
-        capture_output=True,
-    )
+
+    try:
+        subprocess.run(
+            'docker compose -f ./docker-compose-single-kafka.yml down',
+            shell=True,
+            cwd=BINDING_DIR,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired as e:
+        output = (e.stdout or b'').decode(errors='replace')
+        pytest.fail(f'Timed out stopping Kafka:\n{output}')
 
 
 @pytest.mark.example_dir('invoke-binding')
