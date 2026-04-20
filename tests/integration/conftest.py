@@ -1,5 +1,8 @@
+import os
 import shlex
+import signal
 import subprocess
+import sys
 import tempfile
 import time
 from contextlib import contextmanager
@@ -17,6 +20,31 @@ T = TypeVar('T')
 INTEGRATION_DIR = Path(__file__).resolve().parent
 COMPONENTS_DIR = INTEGRATION_DIR / 'components'
 APPS_DIR = INTEGRATION_DIR / 'apps'
+
+
+def _new_process_group_kwargs() -> dict[str, Any]:
+    """Popen kwargs that place the child at the head of its own process group.
+
+    ``dapr run`` spawns ``daprd`` and the user's app as siblings; signaling
+    only the immediate process can orphan them if the signal isn't forwarded,
+    which leaves stale listeners on the test ports across runs. Putting the
+    whole subtree in its own group lets cleanup take them all down together.
+    """
+    if sys.platform == 'win32':
+        return {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
+    return {'start_new_session': True}
+
+
+def _terminate_process_group(proc: subprocess.Popen[str], *, force: bool = False) -> None:
+    """Sends the right termination signal to an entire process group."""
+    if sys.platform == 'win32':
+        if force:
+            proc.kill()
+        else:
+            proc.send_signal(signal.CTRL_BREAK_EVENT)
+    else:
+        cleanup_signal_unix = signal.SIGKILL if force else signal.SIGTERM
+        os.killpg(os.getpgid(proc.pid), cleanup_signal_unix)
 
 
 class DaprTestEnvironment:
@@ -80,6 +108,7 @@ class DaprTestEnvironment:
                 stdout=log,
                 stderr=subprocess.STDOUT,
                 text=True,
+                **_new_process_group_kwargs(),
             )
         self._processes.append(proc)
 
@@ -108,11 +137,11 @@ class DaprTestEnvironment:
 
         for proc in self._processes:
             if proc.poll() is None:
-                proc.terminate()
+                _terminate_process_group(proc)
                 try:
                     proc.wait(timeout=10)
                 except subprocess.TimeoutExpired:
-                    proc.kill()
+                    _terminate_process_group(proc, force=True)
                     proc.wait()
         self._processes.clear()
 
