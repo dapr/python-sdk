@@ -62,6 +62,7 @@ def flush_redis():
         ['docker', 'exec', 'dapr_redis', 'redis-cli', 'FLUSHDB'],
         capture_output=True,
         check=True,
+        timeout=10,
     )
 
 
