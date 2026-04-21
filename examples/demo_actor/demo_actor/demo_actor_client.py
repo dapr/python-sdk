@@ -29,7 +29,7 @@ async def main():
     # non-remoting actor invocation
     print('call actor method via proxy.invoke_method()', flush=True)
     rtn_bytes = await proxy.invoke_method('GetMyData')
-    print(rtn_bytes, flush=True)
+    print(rtn_bytes.decode(), flush=True)
     # RPC style using python duck-typing
     print('call actor method using rpc style', flush=True)
     rtn_obj = await proxy.GetMyData()

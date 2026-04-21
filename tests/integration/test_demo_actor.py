@@ -14,7 +14,7 @@ EXPECTED_SERVICE = [
 
 EXPECTED_CLIENT = [
     'call actor method via proxy.invoke_method()',
-    "b'null'",
+    'null',
     'call actor method using rpc style',
     'None',
     'call SetMyData actor method to save the state',
