@@ -1,6 +1,10 @@
 import subprocess
+from pathlib import Path
 
+import httpx
 import pytest
+
+EXAMPLES_DIR = Path(__file__).resolve().parent.parent.parent / 'examples'
 
 EXPECTED_LINES = [
     '1 {"city": "Seattle", "person": {"id": 1036.0, "org": "Dev Ops"}, "state": "WA"}',
@@ -29,13 +33,23 @@ def mongodb():
 
 @pytest.fixture()
 def import_data(mongodb, dapr):
-    """Import the test dataset into the state store via Dapr."""
-    dapr.run(
-        '--app-id demo --dapr-http-port 3500 --resources-path components '
-        '-- curl -X POST -H "Content-Type: application/json" '
-        '-d @dataset.json http://localhost:3500/v1.0/state/statestore',
-        timeout=15,
-    )
+    """Seed the test dataset via Dapr's state API.
+
+    The seeding has to go through a Dapr sidecar, not directly to MongoDB:
+    ``state.mongodb`` wraps every value as ``{_id, value, etag, _ttl}`` (see
+    ``components-contrib/state/mongodb/mongodb.go``), and the query example
+    reads these back through the same component. Writing raw documents with
+    pymongo would skip that encoding and the query would return nothing.
+    """
+    dapr.start('--app-id demo --dapr-http-port 3500 --resources-path components', wait=5)
+    dataset = (EXAMPLES_DIR / 'state_store_query' / 'dataset.json').read_text()
+    httpx.post(
+        'http://localhost:3500/v1.0/state/statestore',
+        content=dataset,
+        headers={'Content-Type': 'application/json'},
+        timeout=10,
+    ).raise_for_status()
+    dapr.stop()
 
 
 @pytest.mark.example_dir('state_store_query')

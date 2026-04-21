@@ -29,7 +29,7 @@ EXPECTED_CLIENT = [
 
 @pytest.mark.example_dir('demo_actor/demo_actor')
 def test_demo_actor(dapr):
-    service = dapr.start(
+    dapr.start(
         '--app-id demo-actor --app-port 3000 -- uvicorn --port 3000 demo_actor_service:app',
         wait=10,
     )
@@ -40,6 +40,6 @@ def test_demo_actor(dapr):
     for line in EXPECTED_CLIENT:
         assert line in client_output, f'Missing in client output: {line}'
 
-    service_output = dapr.stop(service)
+    service_output = dapr.stop()
     for line in EXPECTED_SERVICE:
         assert line in service_output, f'Missing in service output: {line}'

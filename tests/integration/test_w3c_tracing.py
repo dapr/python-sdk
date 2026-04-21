@@ -11,7 +11,7 @@ EXPECTED_CALLER = [
 
 @pytest.mark.example_dir('w3c-tracing')
 def test_w3c_tracing(dapr):
-    receiver = dapr.start(
+    dapr.start(
         '--app-id invoke-receiver --app-protocol grpc --app-port 3001 python3 invoke-receiver.py',
         wait=5,
     )
@@ -22,4 +22,4 @@ def test_w3c_tracing(dapr):
     for line in EXPECTED_CALLER:
         assert line in caller_output, f'Missing in caller output: {line}'
 
-    dapr.stop(receiver)
+    dapr.stop()

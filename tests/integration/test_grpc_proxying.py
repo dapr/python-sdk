@@ -7,7 +7,7 @@ EXPECTED_CALLER = [
 
 @pytest.mark.example_dir('grpc_proxying')
 def test_grpc_proxying(dapr):
-    receiver = dapr.start(
+    dapr.start(
         '--app-id invoke-receiver --app-protocol grpc --app-port 50051 '
         '--config config.yaml -- python invoke-receiver.py',
         wait=5,
@@ -19,4 +19,4 @@ def test_grpc_proxying(dapr):
     for line in EXPECTED_CALLER:
         assert line in caller_output, f'Missing in caller output: {line}'
 
-    dapr.stop(receiver)
+    dapr.stop()

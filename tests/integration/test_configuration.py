@@ -3,6 +3,8 @@ import time
 
 import pytest
 
+REDIS_CONTAINER = 'dapr_redis'
+
 EXPECTED_LINES = [
     'Got key=orderId1 value=100 version=1 metadata={}',
     'Got key=orderId2 value=200 version=1 metadata={}',
@@ -28,7 +30,7 @@ def redis_config():
 
 @pytest.mark.example_dir('configuration')
 def test_configuration(dapr, redis_config):
-    proc = dapr.start(
+    dapr.start(
         '--app-id configexample --resources-path components/ -- python3 configuration.py',
         wait=5,
     )
@@ -42,6 +44,6 @@ def test_configuration(dapr, redis_config):
     # Wait long enough for the full script to finish.
     time.sleep(10)
 
-    output = dapr.stop(proc)
+    output = dapr.stop()
     for line in EXPECTED_LINES:
         assert line in output, f'Missing in output: {line}'

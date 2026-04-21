@@ -15,7 +15,8 @@ EXPECTED_LINES = [
 @pytest.mark.example_dir('metadata')
 def test_metadata(dapr):
     output = dapr.run(
-        '--app-id=my-metadata-app --app-protocol grpc --resources-path components/ python3 app.py',
+        '--app-id=my-metadata-app --app-protocol grpc --resources-path components/ '
+        '-- python3 app.py',
         timeout=10,
     )
     for line in EXPECTED_LINES:

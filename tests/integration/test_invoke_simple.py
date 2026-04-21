@@ -8,9 +8,9 @@ EXPECTED_RECEIVER = [
 
 @pytest.mark.example_dir('invoke-simple')
 def test_invoke_simple(dapr):
-    receiver = dapr.start(
+    dapr.start(
         '--app-id invoke-receiver --app-protocol grpc --app-port 50051 '
-        '--dapr-http-port 3500 python3 invoke-receiver.py',
+        '--dapr-http-port 3500 -- python3 invoke-receiver.py',
         wait=5,
     )
 
@@ -26,6 +26,6 @@ def test_invoke_simple(dapr):
     assert 'text/plain' in resp.headers.get('content-type', '')
     assert 'INVOKE_RECEIVED' in resp.text
 
-    receiver_output = dapr.stop(receiver)
+    receiver_output = dapr.stop()
     for line in EXPECTED_RECEIVER:
         assert line in receiver_output, f'Missing in receiver output: {line}'

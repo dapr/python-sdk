@@ -23,8 +23,14 @@ def crypto_keys():
     keys_dir.mkdir(exist_ok=True)
     subprocess.run(
         (
-            'openssl', 'genpkey', '-algorithm', 'RSA', '-pkeyopt', 'rsa_keygen_bits:4096',
-            '-out', 'keys/rsa-private-key.pem',
+            'openssl',
+            'genpkey',
+            '-algorithm',
+            'RSA',
+            '-pkeyopt',
+            'rsa_keygen_bits:4096',
+            '-out',
+            'keys/rsa-private-key.pem',
         ),
         cwd=CRYPTO_DIR,
         check=True,

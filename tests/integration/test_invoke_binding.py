@@ -30,6 +30,12 @@ def kafka():
         output = (e.stdout or b'').decode(errors='replace')
         pytest.fail(f'Timed out starting Kafka:\n{output}')
 
+    # ``docker compose up -d`` returns once containers are created, but the
+    # wurstmeister Kafka image takes several seconds of broker registration
+    # before it can serve metadata. Without this wait, daprd races the broker
+    # and fails component init with "client has run out of available brokers".
+    time.sleep(20)
+
     yield
 
     try:
@@ -48,7 +54,7 @@ def kafka():
 
 @pytest.mark.example_dir('invoke-binding')
 def test_invoke_binding(dapr, kafka):
-    receiver = dapr.start(
+    dapr.start(
         '--app-id receiver --app-protocol grpc --app-port 50051 '
         '--dapr-http-port 3500 --resources-path ./components python3 invoke-input-binding.py',
         wait=5,
@@ -68,7 +74,6 @@ def test_invoke_binding(dapr, kafka):
 
         time.sleep(1)
 
-    time.sleep(5)
-    receiver_output = dapr.stop(receiver)
+    receiver_output = dapr.stop()
     for line in EXPECTED_MESSAGES:
         assert line in receiver_output, f'Missing in receiver output: {line}'

@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 EXPECTED_SUBSCRIBER = [
@@ -31,7 +29,7 @@ EXPECTED_PUBLISHER = [
 
 @pytest.mark.example_dir('pubsub-streaming-async')
 def test_pubsub_streaming_async(dapr):
-    subscriber = dapr.start(
+    dapr.start(
         '--app-id python-subscriber --app-protocol grpc -- python3 subscriber.py --topic=TOPIC_B1',
         wait=5,
     )
@@ -43,15 +41,14 @@ def test_pubsub_streaming_async(dapr):
     for line in EXPECTED_PUBLISHER:
         assert line in publisher_output, f'Missing in publisher output: {line}'
 
-    time.sleep(5)
-    subscriber_output = dapr.stop(subscriber)
+    subscriber_output = dapr.stop()
     for line in EXPECTED_SUBSCRIBER:
         assert line in subscriber_output, f'Missing in subscriber output: {line}'
 
 
 @pytest.mark.example_dir('pubsub-streaming-async')
 def test_pubsub_streaming_async_handler(dapr):
-    subscriber = dapr.start(
+    dapr.start(
         '--app-id python-subscriber --app-protocol grpc -- python3 subscriber-handler.py --topic=TOPIC_B2',
         wait=5,
     )
@@ -63,7 +60,6 @@ def test_pubsub_streaming_async_handler(dapr):
     for line in EXPECTED_PUBLISHER:
         assert line in publisher_output, f'Missing in publisher output: {line}'
 
-    time.sleep(5)
-    subscriber_output = dapr.stop(subscriber)
+    subscriber_output = dapr.stop()
     for line in EXPECTED_HANDLER_SUBSCRIBER:
         assert line in subscriber_output, f'Missing in subscriber output: {line}'

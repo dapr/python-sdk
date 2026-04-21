@@ -27,3 +27,4 @@ quote-style = 'single'
 markers = [
     'example_dir(name): set the example directory for the dapr fixture',
 ]
+pythonpath = ["."]

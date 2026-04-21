@@ -24,6 +24,7 @@ def _ollama_ready() -> bool:
 def _model_available() -> bool:
     try:
         resp = httpx.get(f'{OLLAMA_URL}/api/tags', timeout=5)
+        resp.raise_for_status()
     except httpx.RequestError:
         return False
 

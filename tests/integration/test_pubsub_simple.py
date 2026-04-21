@@ -1,4 +1,3 @@
-import time
 import pytest
 
 EXPECTED_SUBSCRIBER = [
@@ -24,7 +23,7 @@ EXPECTED_PUBLISHER = [
 
 @pytest.mark.example_dir('pubsub-simple')
 def test_pubsub_simple(dapr):
-    subscriber = dapr.start(
+    dapr.start(
         '--app-id python-subscriber --app-protocol grpc --app-port 50051 -- python3 subscriber.py',
         wait=5,
     )
@@ -36,7 +35,6 @@ def test_pubsub_simple(dapr):
     for line in EXPECTED_PUBLISHER:
         assert line in publisher_output, f'Missing in publisher output: {line}'
 
-    time.sleep(5)
-    subscriber_output = dapr.stop(subscriber)
+    subscriber_output = dapr.stop()
     for line in EXPECTED_SUBSCRIBER:
         assert line in subscriber_output, f'Missing in subscriber output: {line}'

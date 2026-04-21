@@ -8,8 +8,14 @@ from typing import IO, Any, Generator
 
 import pytest
 
+from tests._process_utils import get_kwargs_for_process_group, terminate_process_group
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 EXAMPLES_DIR = REPO_ROOT / 'examples'
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line('markers', 'example_dir(name): set the example directory for a test')
 
 
 class DaprRunner:
@@ -20,25 +26,16 @@ class DaprRunner:
         self._bg_process: subprocess.Popen[str] | None = None
         self._bg_output_file: IO[str] | None = None
 
-    def _spawn(self, args: str) -> subprocess.Popen[str]:
-        return subprocess.Popen(
-            args=('dapr', 'run', *shlex.split(args)),
-            cwd=self._cwd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-
     @staticmethod
     def _terminate(proc: subprocess.Popen[str]) -> None:
         if proc.poll() is not None:
             return
 
-        proc.terminate()
+        terminate_process_group(proc)
         try:
             proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
-            proc.kill()
+            terminate_process_group(proc, force=True)
             proc.wait()
 
     def run(self, args: str, *, timeout: int = 30, until: list[str] | None = None) -> str:
@@ -53,73 +50,72 @@ class DaprRunner:
             until: If provided, the process is terminated as soon as every
                 string in this list has appeared in the accumulated output.
         """
-        proc = self._spawn(args)
+        proc = subprocess.Popen(
+            args=('dapr', 'run', *shlex.split(args)),
+            cwd=self._cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            **get_kwargs_for_process_group(),
+        )
         lines: list[str] = []
-        remaining = set(until) if until else set()
         assert proc.stdout is not None
 
         # Kill the process if it exceeds the timeout.  A background timer is
         # needed because `for line in proc.stdout` blocks indefinitely when
         # the child never exits.
-        timer = threading.Timer(interval=timeout, function=proc.kill)
+        timer = threading.Timer(
+            interval=timeout, function=lambda: terminate_process_group(proc, force=True)
+        )
         timer.start()
 
         try:
             for line in proc.stdout:
                 print(line, end='', flush=True)
                 lines.append(line)
-                if remaining:
-                    output_so_far = ''.join(lines)
-                    remaining = {exp for exp in remaining if exp not in output_so_far}
-                    if not remaining:
-                        break
+                if until and all(exp in ''.join(lines) for exp in until):
+                    break
         finally:
             timer.cancel()
             self._terminate(proc)
 
         return ''.join(lines)
 
-    def start(self, args: str, *, wait: int = 5) -> subprocess.Popen[str]:
-        """Start a long-lived background service and return the process handle.
+    def start(self, args: str, *, wait: int = 5) -> None:
+        """Start a long-lived background service.
 
         Use this for servers/subscribers that must stay alive while a second
         process runs via ``run()``. Call ``stop()`` to terminate and collect
         output. Stdout is written to a temp file to avoid pipe-buffer deadlocks.
         """
-        output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log', delete=False)
+        output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log')
         proc = subprocess.Popen(
             args=('dapr', 'run', *shlex.split(args)),
             cwd=self._cwd,
             stdout=output_file,
             stderr=subprocess.STDOUT,
             text=True,
+            **get_kwargs_for_process_group(),
         )
         self._bg_process = proc
         self._bg_output_file = output_file
         time.sleep(wait)
-        return proc
 
-    def stop(self, proc: subprocess.Popen[str]) -> str:
-        """Stop a background process and return its captured output."""
-        self._terminate(proc)
+    def stop(self) -> str:
+        """Stop the background service and return its captured output."""
+        if self._bg_process is None:
+            return ''
+        self._terminate(self._bg_process)
         self._bg_process = None
         return self._read_and_close_output()
-
-    def cleanup(self) -> None:
-        """Stop the background process if still running."""
-        if self._bg_process is not None:
-            self._terminate(self._bg_process)
-            self._bg_process = None
-            self._read_and_close_output()
 
     def _read_and_close_output(self) -> str:
         if self._bg_output_file is None:
             return ''
-        output_path = Path(self._bg_output_file.name)
+        self._bg_output_file.seek(0)
+        output = self._bg_output_file.read()
         self._bg_output_file.close()
         self._bg_output_file = None
-        output = output_path.read_text()
-        output_path.unlink(missing_ok=True)
         print(output, end='', flush=True)
         return output
 
@@ -141,4 +137,4 @@ def dapr(request: pytest.FixtureRequest) -> Generator[DaprRunner, Any, None]:
 
     runner = DaprRunner(cwd)
     yield runner
-    runner.cleanup()
+    runner.stop()
