@@ -1,5 +1,3 @@
-import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -18,38 +16,18 @@ EXPECTED_COMMON = [
 
 
 @pytest.fixture()
-def crypto_keys():
-    keys_dir = CRYPTO_DIR / 'keys'
-    keys_dir.mkdir(exist_ok=True)
-    subprocess.run(
-        (
-            'openssl',
-            'genpkey',
-            '-algorithm',
-            'RSA',
-            '-pkeyopt',
-            'rsa_keygen_bits:4096',
-            '-out',
-            'keys/rsa-private-key.pem',
-        ),
-        cwd=CRYPTO_DIR,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ('openssl', 'rand', '-out', 'keys/symmetric-key-256', '32'),
-        cwd=CRYPTO_DIR,
-        check=True,
-        capture_output=True,
-    )
+def crypto_artifacts():
+    """Clean up output files written by the crypto example on teardown.
+
+    Example RSA and AES keys are in ``examples/crypto/keys/``.
+    """
     yield
-    shutil.rmtree(keys_dir, ignore_errors=True)
     (CRYPTO_DIR / 'encrypted.out').unlink(missing_ok=True)
     (CRYPTO_DIR / 'decrypted.out.jpg').unlink(missing_ok=True)
 
 
 @pytest.mark.example_dir('crypto')
-def test_crypto(dapr, crypto_keys):
+def test_crypto(dapr, crypto_artifacts):
     output = dapr.run(
         '--app-id crypto --resources-path ./components/ -- python3 crypto.py',
         timeout=30,
@@ -60,7 +38,7 @@ def test_crypto(dapr, crypto_keys):
 
 
 @pytest.mark.example_dir('crypto')
-def test_crypto_async(dapr, crypto_keys):
+def test_crypto_async(dapr, crypto_artifacts):
     output = dapr.run(
         '--app-id crypto-async --resources-path ./components/ -- python3 crypto-async.py',
         timeout=30,
