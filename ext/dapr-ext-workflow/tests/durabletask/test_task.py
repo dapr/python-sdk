@@ -268,3 +268,7 @@ def test_retryable_task_stops_after_max_attempts():
     assert retryable.compute_next_delay() is not None
     retryable.increment_attempt_count()  # -> 3
     assert retryable.compute_next_delay() is None
+    # Attempt 4 is past the cap: the finite check must still fire, confirming it is the
+    # attempt cap stopping retries (not accidentally falling through to the infinite path).
+    retryable.increment_attempt_count()  # -> 4
+    assert retryable.compute_next_delay() is None
