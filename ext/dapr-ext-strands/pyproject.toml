@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "dapr>=1.17.0",
+    "dapr",
     "strands-agents>=1.30.0,<2.0.0",
     "strands-agents-tools>=0.2.22,<1.0.0",
     "python-ulid>=3.0.0,<4.0.0",
