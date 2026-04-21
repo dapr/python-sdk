@@ -512,3 +512,31 @@ dapr run --app-id wf-versioning-example -- python3 versioning.py part1
 dapr run --app-id wf-versioning-example --log-level debug -- python3 versioning.py part2
 ```
 <!--END_STEP-->
+
+### Pydantic models as workflow/activity inputs
+
+This example shows how to pass [Pydantic](https://docs.pydantic.dev/) `BaseModel`
+instances directly as workflow and activity inputs. When a workflow or activity
+annotates its input parameter with a `BaseModel` subclass, the runtime
+reconstructs the model from the decoded JSON payload automatically — no manual
+`model_validate` call is needed at the receiving side.
+
+The wire format remains plain JSON, so workflows and activities stay
+interop-friendly with non-Python Dapr apps. Outputs coming back from activities
+arrive as dicts; reconstructing them into a typed instance is a one-liner
+(`OrderResult.model_validate(...)`).
+
+<!--STEP
+name: Run the pydantic models example
+expected_stdout_lines:
+  - "[workflow] received order O-100 for Acme amount=42.0"
+  - "[activity] approving order O-100"
+  - "[workflow] activity returned approved=True"
+  - "[client] workflow output: order_id=O-100 approved=True message=auto-approved"
+timeout_seconds: 60
+-->
+
+```sh
+dapr run --app-id wf-pydantic-example -- python3 pydantic_models.py
+```
+<!--END_STEP-->
