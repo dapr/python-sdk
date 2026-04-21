@@ -56,7 +56,7 @@ def kafka():
 def test_invoke_binding(dapr, kafka):
     dapr.start(
         '--app-id receiver --app-protocol grpc --app-port 50051 '
-        '--dapr-http-port 3500 --resources-path ./components python3 invoke-input-binding.py',
+        '--dapr-http-port 3500 --resources-path ./components -- python3 invoke-input-binding.py',
         wait=5,
     )
 

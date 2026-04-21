@@ -12,11 +12,11 @@ EXPECTED_CALLER = [
 @pytest.mark.example_dir('w3c-tracing')
 def test_w3c_tracing(dapr):
     dapr.start(
-        '--app-id invoke-receiver --app-protocol grpc --app-port 3001 python3 invoke-receiver.py',
+        '--app-id invoke-receiver --app-protocol grpc --app-port 3001 -- python3 invoke-receiver.py',
         wait=5,
     )
     caller_output = dapr.run(
-        '--app-id invoke-caller --app-protocol grpc python3 invoke-caller.py',
+        '--app-id invoke-caller --app-protocol grpc -- python3 invoke-caller.py',
         timeout=30,
     )
     for line in EXPECTED_CALLER:

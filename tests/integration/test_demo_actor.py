@@ -34,7 +34,7 @@ def test_demo_actor(dapr):
         wait=10,
     )
     client_output = dapr.run(
-        '--app-id demo-client python3 demo_actor_client.py',
+        '--app-id demo-client -- python3 demo_actor_client.py',
         timeout=60,
     )
     for line in EXPECTED_CLIENT:

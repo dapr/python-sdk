@@ -14,7 +14,7 @@ EXPECTED_LINES = [
 @pytest.mark.example_dir('distributed_lock')
 def test_distributed_lock(dapr):
     output = dapr.run(
-        '--app-id=locksapp --app-protocol grpc --resources-path components/ python3 lock.py',
+        '--app-id=locksapp --app-protocol grpc --resources-path components/ -- python3 lock.py',
         timeout=10,
     )
     for line in EXPECTED_LINES:

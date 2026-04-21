@@ -42,7 +42,7 @@ def test_job_management(dapr):
 @pytest.mark.example_dir('jobs')
 def test_job_processing(dapr):
     dapr.start(
-        '--app-id jobs-workflow --app-protocol grpc --app-port 50051 python3 job_processing.py',
+        '--app-id jobs-workflow --app-protocol grpc --app-port 50051 -- python3 job_processing.py',
         wait=15,
     )
     output = dapr.stop()
