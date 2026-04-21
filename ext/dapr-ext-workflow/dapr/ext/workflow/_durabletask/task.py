@@ -166,21 +166,35 @@ class OrchestrationContext(ABC):
         """
         pass
 
-    # TODO: Add a timeout parameter, which allows the task to be canceled if the event is
-    # not received within the specified timeout. This requires support for task cancellation.
     @abstractmethod
-    def wait_for_external_event(self, name: str) -> Task:
+    def wait_for_external_event(
+        self, name: str, *, timeout: Optional[Union[datetime, timedelta]] = None
+    ) -> Task:
         """Wait asynchronously for an event to be raised with the name `name`.
 
         Parameters
         ----------
         name : str
             The event name of the event that the task is waiting for.
+        timeout : datetime | timedelta | None
+            Controls how long to wait for the event. Accepts only ``datetime``
+            or ``timedelta`` — a plain numeric ``0`` is **not** a valid value
+            (use ``timedelta(0)`` explicitly). Three shapes:
+
+            * ``None`` (default) or a *negative* ``timedelta`` — wait indefinitely.
+              An optional sentinel timer is scheduled internally for runtime
+              tracking, but ``TimeoutError`` is never raised on its own.
+            * ``timedelta(0)`` — do not wait at all. The returned task fails
+              immediately with ``TimeoutError``.
+            * A future ``datetime`` or a positive ``timedelta`` — wait until
+              that deadline / for that duration; ``TimeoutError`` is raised if
+              the event has not been received in time.
 
         Returns
         -------
         Task[TOutput]
-            A Durable Task that completes when the event is received.
+            A Durable Task that completes when the event is received or fails
+            with ``TimeoutError`` if the timeout fires first.
         """
         pass
 
@@ -284,7 +298,7 @@ class Task(ABC, Generic[T]):
     """Abstract base class for asynchronous tasks in a durable orchestration."""
 
     _result: T
-    _exception: Optional[TaskFailedError]
+    _exception: Optional[Exception]
     _parent: Optional[CompositeTask[T]]
 
     def __init__(self) -> None:
@@ -311,7 +325,7 @@ class Task(ABC, Generic[T]):
             raise self._exception
         return self._result
 
-    def get_exception(self) -> TaskFailedError:
+    def get_exception(self) -> Exception:
         """Returns the exception that caused the task to fail."""
         if self._exception is None:
             raise ValueError('The task has not failed.')
@@ -396,6 +410,23 @@ class CompletableTask(Task[T]):
         if self._is_complete:
             raise ValueError('The task has already completed.')
         self._exception = TaskFailedError(message, details)
+        self._is_complete = True
+        if self._parent is not None:
+            self._parent.on_child_completed(self)
+
+    def cancel(self, exc: Exception) -> None:
+        """Mark this task as completed with the given exception.
+
+        Used for non-runtime failures such as a zero-timeout
+        wait_for_external_event being canceled before any history event arrives.
+
+        Idempotent: a noop if the task has already completed (success or
+        failure), which matches the common semantics of ``cancel()`` in
+        asyncio / threading APIs.
+        """
+        if self._is_complete:
+            return
+        self._exception = exc
         self._is_complete = True
         if self._parent is not None:
             self._parent.on_child_completed(self)
@@ -495,6 +526,54 @@ class WhenAnyTask(CompositeTask[Task]):
             self._result = task
             if self._parent is not None:
                 self._parent.on_child_completed(self)
+
+
+class ExternalEventWithTimeoutTask(CompositeTask[T]):
+    """A task that waits for an external event with a timeout.
+
+    Completes with the event data if the event arrives first, or raises
+    ``TimeoutError`` if the timer fires first.
+
+    When the timer wins, the optional ``on_timeout`` callback is invoked so the
+    caller can unregister the stale event task from ``_pending_events``, ensuring
+    that a late ``eventRaised`` for the same name is buffered rather than consumed
+    by the now-obsolete waiter.
+    """
+
+    def __init__(
+        self,
+        event_task: CompletableTask,
+        timer_task: TimerTask,
+        event_name: str,
+        timeout: Optional[Union[datetime, timedelta]] = None,
+        on_timeout: Optional[Callable[[], None]] = None,
+    ):
+        self._event_task = event_task
+        self._timer_task = timer_task
+        self._event_name = event_name
+        self._timeout = timeout
+        self._on_timeout = on_timeout
+        super().__init__([event_task, timer_task])
+
+    def on_child_completed(self, completed_task: Task):
+        if self.is_complete:
+            return
+        if completed_task is self._event_task:
+            if completed_task.is_failed:
+                self._exception = completed_task.get_exception()
+            else:
+                self._result = completed_task.get_result()
+            self._is_complete = True
+        elif completed_task is self._timer_task:
+            if self._on_timeout is not None:
+                self._on_timeout()
+            after = f' after {self._timeout!r}' if self._timeout is not None else ''
+            self._exception = TimeoutError(
+                f'Timed out{after} waiting for external event {self._event_name!r}'
+            )
+            self._is_complete = True
+        if self._is_complete and self._parent is not None:
+            self._parent.on_child_completed(self)
 
 
 def when_all(tasks: list[Task[T]]) -> WhenAllTask[T]:
