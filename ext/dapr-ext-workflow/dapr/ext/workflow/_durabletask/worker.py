@@ -331,6 +331,7 @@ class TaskHubGrpcWorker:
         self._current_channel: Optional[grpc.Channel] = None  # Store channel reference for cleanup
         self._channel_cleanup_threads: list[threading.Thread] = []  # Deferred channel close threads
         self._stream_ready = threading.Event()
+        self._runLoop: Optional[Thread] = None
         # Use provided concurrency options or create default ones
         self._concurrency_options = (
             concurrency_options if concurrency_options is not None else ConcurrencyOptions()
@@ -806,9 +807,9 @@ class TaskHubGrpcWorker:
 
     def stop(self):
         """Stops the worker and waits for any pending work items to complete."""
-        # Also runs when _is_running is False but the run loop thread is alive, which
-        # happens when start() is blocked waiting for the work item stream.
-        if self._runLoop is None or not self._runLoop.is_alive():
+        # Guards on _runLoop rather than _is_running so stop() can unblock a start()
+        # that is still waiting for the work item stream to be established.
+        if self._runLoop is None:
             return
 
         self._logger.info('Stopping gRPC worker...')
