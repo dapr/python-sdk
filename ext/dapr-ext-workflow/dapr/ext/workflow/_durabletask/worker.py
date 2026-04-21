@@ -387,8 +387,9 @@ class TaskHubGrpcWorker:
         self._logger.info(f'Starting gRPC worker that connects to {self._host_address}')
         self._runLoop = Thread(target=run_loop, name='WorkerRunLoop')
         self._runLoop.start()
-        if not self._stream_ready.wait(timeout=10):
-            raise RuntimeError('Failed to establish work item stream connection within 10 seconds')
+        while not self._stream_ready.wait(timeout=1):
+            if self._shutdown.is_set():
+                raise RuntimeError("Worker was stopped before the work item stream was established")
         self._is_running = True
 
     async def _keepalive_loop(self, stub):
