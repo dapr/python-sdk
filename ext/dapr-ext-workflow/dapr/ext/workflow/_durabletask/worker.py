@@ -841,6 +841,7 @@ class TaskHubGrpcWorker:
         self._async_worker_manager.shutdown()
         self._logger.info('Worker shutdown completed')
         self._is_running = False
+        self._runLoop = None
 
     # TODO: This should be removed in the future as we do handle grpc errs
     def _handle_grpc_execution_error(self, rpc_error: grpc.RpcError, request_type: str):
