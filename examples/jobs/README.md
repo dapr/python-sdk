@@ -93,7 +93,7 @@ sleep: 15
 
 ```bash
 # Start the complete workflow example (schedules jobs and handles job events)
-dapr run --app-id jobs-workflow --app-protocol grpc --app-port 50051 python3 job_processing.py
+dapr run --app-id jobs-workflow --app-protocol grpc --app-port 50051 -- python3 job_processing.py
 ```
 
 <!-- END_STEP -->
