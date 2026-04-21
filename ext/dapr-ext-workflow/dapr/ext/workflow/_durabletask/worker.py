@@ -389,7 +389,11 @@ class TaskHubGrpcWorker:
         self._runLoop.start()
         while not self._stream_ready.wait(timeout=1):
             if self._shutdown.is_set():
-                raise RuntimeError("Worker was stopped before the work item stream was established")
+                raise RuntimeError('Worker was stopped before the work item stream was established')
+            if not self._runLoop.is_alive():
+                raise RuntimeError(
+                    'Worker run loop exited before the work item stream was established'
+                )
         self._is_running = True
 
     async def _keepalive_loop(self, stub):
@@ -802,7 +806,9 @@ class TaskHubGrpcWorker:
 
     def stop(self):
         """Stops the worker and waits for any pending work items to complete."""
-        if not self._is_running:
+        # Also runs when _is_running is False but the run loop thread is alive, which
+        # happens when start() is blocked waiting for the work item stream.
+        if self._runLoop is None or not self._runLoop.is_alive():
             return
 
         self._logger.info('Stopping gRPC worker...')
