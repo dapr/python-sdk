@@ -32,7 +32,7 @@ sleep: 5
 
 ```bash
 # 1. Start Receiver (expose gRPC server receiver on port 50051)
-dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
+dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 -- python3 invoke-receiver.py
 ```
 
 <!-- END_STEP -->
@@ -52,7 +52,7 @@ sleep: 5
 
 ```bash
 # 2. Start Caller
-dapr run --app-id invoke-caller --app-protocol grpc --dapr-http-port 3500 python3 invoke-caller.py
+dapr run --app-id invoke-caller --app-protocol grpc --dapr-http-port 3500 -- python3 invoke-caller.py
 ```
 
 <!-- END_STEP -->

@@ -103,6 +103,6 @@ jobs:
           nohup ollama serve &
           sleep 10
           ollama pull llama3.2:latest
-      - name: Check Examples
+      - name: Check examples
         run: |
-          tox -e examples
+          tox -e integration
