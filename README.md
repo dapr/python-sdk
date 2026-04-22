@@ -121,19 +121,17 @@ tox -e py311
 tox -e type
 ```
 
-8. Run examples
+8. Run integration tests (validates the examples)
 
 ```bash
-tox -e examples
+tox -e integration
 ```
-
-[Dapr Mechanical Markdown](https://github.com/dapr/mechanical-markdown) is used to test the examples.
 
 If you need to run the examples against a pre-released version of the runtime, you can use the following command:
 - Get your daprd runtime binary from [here](https://github.com/dapr/dapr/releases) for your platform.
 - Copy the binary to your dapr home folder at $HOME/.dapr/bin/daprd.
 Or using dapr cli directly: `dapr init --runtime-version <release version>`
-- Now you can run the example with `tox -e examples`.
+- Now you can run the examples with `tox -e integration`.
 
 
 ## Documentation

@@ -27,7 +27,7 @@ def main():
         print('Will try to acquire a lock from lock store named [%s]' % store_name)
         print('The lock is for a resource named [%s]' % resource_id)
         print('The client identifier is [%s]' % client_id)
-        print('The lock will will expire in %s seconds.' % expiry_in_seconds)
+        print('The lock will expire in %s seconds.' % expiry_in_seconds)
 
         with dapr.try_lock(store_name, resource_id, client_id, expiry_in_seconds) as lock_result:
             assert lock_result.success, 'Failed to acquire the lock. Aborting.'

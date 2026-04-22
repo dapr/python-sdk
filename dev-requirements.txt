@@ -9,7 +9,7 @@ wheel
 opentelemetry-sdk
 opentelemetry-instrumentation-grpc
 httpx>=0.24
-pyOpenSSL>=23.2.0
+pyOpenSSL>=26.0.0
 # needed for type checking
 Flask>=1.1
 # needed for auto fix
@@ -19,4 +19,4 @@ python-dotenv>=1.2.2
 # needed for enhanced schema generation from function features
 pydantic>=2.0.0
 # needed for yaml file generation in examples
-PyYAML>=6.0.2
+PyYAML>=6.0.3
