@@ -456,12 +456,37 @@ class RetryableTask(CompletableTask[T]):
         self._task_execution_id = task_execution_id
         self._instance_id = instance_id
         self._app_id = app_id
+        # Running sum of delays for attempts [1.._attempt_count - 1]. Maintained by
+        # increment_attempt_count so compute_next_delay stays O(1) per call, which matters
+        # when max_number_of_attempts is -1 (infinite retries).
+        self._accumulated_delay_seconds = 0.0
+
+    def _delay_for_attempt(self, attempt: int) -> float:
+        """Compute the retry delay for a given attempt number (1-indexed), deterministically."""
+        if self._retry_policy.backoff_coefficient is None:
+            backoff_coefficient = 1.0
+        else:
+            backoff_coefficient = self._retry_policy.backoff_coefficient
+        delay = (
+            math.pow(backoff_coefficient, attempt - 1)
+            * self._retry_policy.first_retry_interval.total_seconds()
+        )
+        if self._retry_policy.max_retry_interval is not None:
+            delay = min(delay, self._retry_policy.max_retry_interval.total_seconds())
+        return delay
 
     def increment_attempt_count(self) -> None:
+        # Fold the delay for the just-completed attempt into the running total, so
+        # compute_next_delay does not need to re-sum all past delays.
+        self._accumulated_delay_seconds += self._delay_for_attempt(self._attempt_count)
         self._attempt_count += 1
 
     def compute_next_delay(self) -> Optional[timedelta]:
-        if self._attempt_count >= self._retry_policy.max_number_of_attempts:
+        # max_number_of_attempts == -1 means retry indefinitely; skip the attempt cap check.
+        if (
+            self._retry_policy.max_number_of_attempts != -1
+            and self._attempt_count >= self._retry_policy.max_number_of_attempts
+        ):
             return None
 
         retry_expiration: datetime = datetime.max
@@ -471,32 +496,15 @@ class RetryableTask(CompletableTask[T]):
         ):
             retry_expiration = self._start_time + self._retry_policy.retry_timeout
 
-        if self._retry_policy.backoff_coefficient is None:
-            backoff_coefficient = 1.0
-        else:
-            backoff_coefficient = self._retry_policy.backoff_coefficient
-
-        # Compute the next delay and the logical start time of the next attempt
-        # deterministically from accumulated delays, avoiding non-determinism during replay.
-        # range(1, attempt_count + 1) sums all delays up to and including the one about to
-        # be taken, so we're checking whether attempt N+1 would start within the timeout.
-        total_elapsed_seconds = 0.0
-        next_delay_f = 0.0
-        for i in range(1, self._attempt_count + 1):
-            next_delay_f = (
-                math.pow(backoff_coefficient, i - 1)
-                * self._retry_policy.first_retry_interval.total_seconds()
-            )
-            if self._retry_policy.max_retry_interval is not None:
-                next_delay_f = min(
-                    next_delay_f,
-                    self._retry_policy.max_retry_interval.total_seconds(),
-                )
-            total_elapsed_seconds += next_delay_f
+        # Delay for the current attempt plus the cached sum of all prior attempts gives
+        # the logical start time of the next attempt — identical semantics to the old
+        # per-call loop, but O(1) instead of O(n).
+        next_delay_seconds = self._delay_for_attempt(self._attempt_count)
+        total_elapsed_seconds = self._accumulated_delay_seconds + next_delay_seconds
 
         logical_next_attempt_start = self._start_time + timedelta(seconds=total_elapsed_seconds)
         if logical_next_attempt_start < retry_expiration:
-            return timedelta(seconds=next_delay_f)
+            return timedelta(seconds=next_delay_seconds)
 
         return None
 
@@ -662,7 +670,7 @@ class RetryPolicy:
         first_retry_interval : timedelta
             The retry interval to use for the first retry attempt.
         max_number_of_attempts : int
-            The maximum number of retry attempts.
+            The maximum number of retry attempts. Use ``-1`` for infinite retries.
         backoff_coefficient : Optional[float]
             The backoff coefficient to use for calculating the next retry interval.
         max_retry_interval : Optional[timedelta]
@@ -678,8 +686,8 @@ class RetryPolicy:
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
             raise ValueError('first_retry_interval must be >= 0')
-        if max_number_of_attempts < 1:
-            raise ValueError('max_number_of_attempts must be >= 1')
+        if max_number_of_attempts == 0 or max_number_of_attempts < -1:
+            raise ValueError('max_number_of_attempts must be >= 1 or -1 for infinite retries')
         if backoff_coefficient is not None and backoff_coefficient < 1:
             raise ValueError('backoff_coefficient must be >= 1')
         if max_retry_interval is not None and max_retry_interval < timedelta(seconds=0):

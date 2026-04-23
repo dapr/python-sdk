@@ -2654,6 +2654,173 @@ def test_child_workflow_retry_instance_id_always_points_to_first_child():
     assert retry_timer_2.childWorkflowRetry.instanceId != expected_second_child_id
 
 
+def test_activity_infinite_retry_policy_succeeds_after_many_failures():
+    """With max_number_of_attempts=-1, the executor keeps scheduling retries
+    past any finite attempt cap and the workflow completes once the activity
+    eventually succeeds."""
+
+    def dummy_activity(ctx, _):
+        pass  # behavior is simulated via history events below
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.call_activity(
+            dummy_activity,
+            retry_policy=task.RetryPolicy(
+                first_retry_interval=timedelta(seconds=1),
+                max_number_of_attempts=-1,
+            ),
+        )
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(orchestrator)
+
+    current_timestamp = datetime(2020, 1, 1, 12, 0, 0)
+
+    old_events: list = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_task_scheduled_event(1, task.get_name(dummy_activity)),
+    ]
+
+    # Simulate 5 consecutive failures - far beyond any default finite cap.
+    # Each failure must produce a retry timer, not a workflow completion.
+    next_schedule_id = 1
+    for failure_num in range(5):
+        new_events = [
+            helpers.new_workflow_started_event(current_timestamp),
+            helpers.new_task_failed_event(next_schedule_id, ValueError('boom')),
+        ]
+        executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+        result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+        assert len(result.actions) == 1, f'failure #{failure_num + 1} should create a retry timer'
+        assert result.actions[0].HasField('createTimer'), (
+            f'failure #{failure_num + 1} must schedule a retry timer, not complete the workflow'
+        )
+
+        timer_id = result.actions[0].id
+        fire_at = result.actions[0].createTimer.fireAt.ToDatetime()
+
+        # Fire the timer and observe the executor schedule the next attempt.
+        old_events = old_events + new_events
+        current_timestamp = fire_at
+        new_events = [
+            helpers.new_workflow_started_event(current_timestamp),
+            helpers.new_timer_created_event(timer_id, current_timestamp),
+            helpers.new_timer_fired_event(timer_id, current_timestamp),
+        ]
+        executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+        result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+        assert len(result.actions) == 1
+        assert result.actions[0].HasField('scheduleTask'), (
+            f'retry #{failure_num + 1} must re-schedule the activity'
+        )
+        next_schedule_id = result.actions[0].id
+        old_events = (
+            old_events
+            + new_events
+            + [
+                helpers.new_task_scheduled_event(next_schedule_id, task.get_name(dummy_activity)),
+            ]
+        )
+
+    # 6th attempt succeeds -> the workflow must complete successfully.
+    new_events = [
+        helpers.new_workflow_started_event(current_timestamp),
+        helpers.new_task_completed_event(next_schedule_id, encoded_output=json.dumps('ok')),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    complete = get_and_validate_single_complete_workflow_action(result.actions)
+    assert complete.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert json.loads(complete.result.value) == 'ok'
+
+
+def test_sub_orchestration_infinite_retry_policy_succeeds_after_many_failures():
+    """Parallel to the activity test: sub-orchestrations with max_number_of_attempts=-1
+    keep retrying past any finite cap, and the parent completes when the child succeeds."""
+
+    def child_orchestrator(ctx: task.OrchestrationContext, _):
+        return 'child-ok'  # behavior is simulated via history events below
+
+    def parent_orchestrator(ctx: task.OrchestrationContext, _):
+        result = yield ctx.call_sub_orchestrator(
+            'child_orchestrator',
+            retry_policy=task.RetryPolicy(
+                first_retry_interval=timedelta(seconds=1),
+                max_number_of_attempts=-1,
+            ),
+        )
+        return result
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(parent_orchestrator)
+    registry.add_orchestrator(child_orchestrator)
+
+    current_timestamp = datetime(2020, 1, 1, 12, 0, 0)
+
+    first_child_id = f'{TEST_INSTANCE_ID}:0001'
+    old_events: list = [
+        helpers.new_workflow_started_event(timestamp=current_timestamp),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_child_workflow_created_event(1, 'child_orchestrator', first_child_id),
+    ]
+    next_child_id = 1
+
+    # Simulate 4 consecutive child-workflow failures - each must schedule a retry timer.
+    for failure_num in range(4):
+        new_events = [
+            helpers.new_workflow_started_event(current_timestamp),
+            helpers.new_child_workflow_failed_event(next_child_id, ValueError('child failed')),
+        ]
+        executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+        result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+        assert len(result.actions) == 1
+        assert result.actions[0].HasField('createTimer'), (
+            f'child failure #{failure_num + 1} must schedule a retry timer'
+        )
+        timer_id = result.actions[0].id
+        fire_at = result.actions[0].createTimer.fireAt.ToDatetime()
+
+        old_events = old_events + new_events
+        current_timestamp = fire_at
+        new_events = [
+            helpers.new_workflow_started_event(current_timestamp),
+            helpers.new_timer_created_event(timer_id, current_timestamp),
+            helpers.new_timer_fired_event(timer_id, current_timestamp),
+        ]
+        executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+        result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+        assert len(result.actions) == 1
+        assert result.actions[0].HasField('createChildWorkflow'), (
+            f'retry #{failure_num + 1} must create a new child workflow'
+        )
+        next_child_id = result.actions[0].id
+        retried_child_instance_id = f'{TEST_INSTANCE_ID}:{next_child_id:04d}'
+        old_events = (
+            old_events
+            + new_events
+            + [
+                helpers.new_child_workflow_created_event(
+                    next_child_id, 'child_orchestrator', retried_child_instance_id
+                ),
+            ]
+        )
+
+    # 5th attempt succeeds -> the parent workflow must complete with the child's result.
+    new_events = [
+        helpers.new_workflow_started_event(current_timestamp),
+        helpers.new_child_workflow_completed_event(
+            next_child_id, encoded_output=json.dumps('child-ok')
+        ),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    complete = get_and_validate_single_complete_workflow_action(result.actions)
+    assert complete.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert json.loads(complete.result.value) == 'child-ok'
+
+
 def get_and_validate_single_complete_workflow_action(
     actions: list[pb.WorkflowAction],
 ) -> pb.CompleteWorkflowAction:
