@@ -48,7 +48,7 @@ tools/                       # Build and release scripts
 
 ## Extension overview
 
-Each extension is a **separate PyPI package** with its own `setup.cfg`, `setup.py`, `tests/`, and `AGENTS.md`.
+Each extension is a **separate PyPI package** with its own `pyproject.toml`, `setup.py`, `tests/`, and `AGENTS.md`.
 
 | Extension | Package | Purpose | Active development |
 |-----------|---------|---------|-------------------|
@@ -67,8 +67,8 @@ The `examples/` directory serves as both user-facing documentation and the proje
 
 Quick reference:
 ```bash
-tox -e integration                                   # Run all examples (needs Dapr runtime)
-tox -e integration -- test_state_store.py            # Run a single example
+uv run pytest tests/integration/                       # Run all examples (needs Dapr runtime)
+uv run pytest tests/integration/test_state_store.py    # Run a single example
 ```
 
 ## Python version support
@@ -82,47 +82,34 @@ tox -e integration -- test_state_store.py            # Run a single example
 Install all packages in editable mode with dev dependencies:
 
 ```bash
-pip install -r dev-requirements.txt \
-    -e . \
-    -e ext/dapr-ext-workflow/ \
-    -e ext/dapr-ext-grpc/ \
-    -e ext/dapr-ext-fastapi/ \
-    -e ext/dapr-ext-langgraph/ \
-    -e ext/dapr-ext-strands/ \
-    -e ext/flask_dapr/
+uv sync --all-packages --group dev
 ```
 
 ## Running tests
 
-Tests use Python's built-in `unittest` framework with `coverage`. Run via tox:
+Tests use Python's built-in `unittest` framework with `coverage`. The vendored durabletask tests use `pytest`.
 
 ```bash
-# Run all unit tests (replace 311 with your Python version)
-tox -e py311
-
-# Run linting and formatting
-tox -e ruff
-
-# Run type checking
-tox -e type
-
-# Run integration tests / validate examples (requires Dapr runtime)
-tox -e integration
-```
-
-To run tests directly without tox:
-
-```bash
-# Core SDK tests
-python -m unittest discover -v ./tests
+# Run all unit tests
+uv run python -m unittest discover -v ./tests
 
 # Extension tests (run each separately)
-python -m unittest discover -v ./ext/dapr-ext-workflow/tests
-python -m unittest discover -v ./ext/dapr-ext-grpc/tests
-python -m unittest discover -v ./ext/dapr-ext-fastapi/tests
-python -m unittest discover -v ./ext/dapr-ext-langgraph/tests
-python -m unittest discover -v ./ext/dapr-ext-strands/tests
-python -m unittest discover -v ./ext/flask_dapr/tests
+uv run python -m unittest discover -v ./ext/dapr-ext-workflow/tests
+uv run pytest -m "not e2e" ./ext/dapr-ext-workflow/tests/durabletask/
+uv run python -m unittest discover -v ./ext/dapr-ext-grpc/tests
+uv run python -m unittest discover -v ./ext/dapr-ext-fastapi/tests
+uv run python -m unittest discover -v ./ext/dapr-ext-langgraph/tests
+uv run python -m unittest discover -v ./ext/dapr-ext-strands/tests
+uv run python -m unittest discover -v ./ext/flask_dapr/tests
+
+# Run linting and formatting
+uv run ruff check --fix && uv run ruff format
+
+# Run type checking
+uv run mypy
+
+# Run integration tests / validate examples (requires Dapr runtime)
+uv run pytest tests/integration/
 ```
 
 ## Code style and linting
@@ -139,17 +126,16 @@ Key rules:
 Run formatting and lint fixes:
 
 ```bash
-ruff check --fix
-ruff format
+uv run ruff check --fix && uv run ruff format
 ```
 
 **Type checking**: MyPy
 
 ```bash
-mypy --config-file mypy.ini
+uv run mypy
 ```
 
-MyPy is configured to check: `dapr/actor/`, `dapr/clients/`, `dapr/conf/`, `dapr/serializers/`, `ext/dapr-ext-grpc/`, `ext/dapr-ext-fastapi/`, `ext/flask_dapr/`, and `examples/demo_actor/`. Proto stubs (`dapr.proto.*`) have errors ignored.
+MyPy is configured to check: `dapr/actor/`, `dapr/aio/`, `dapr/clients/`, `dapr/conf/`, `dapr/serializers/`, `ext/dapr-ext-grpc/`, `ext/dapr-ext-fastapi/`, `ext/flask_dapr/`, and `examples/demo_actor/`. Proto stubs (`dapr.proto.*`) have errors ignored. Configuration lives in `pyproject.toml` under `[tool.mypy]`.
 
 ## Commit and PR conventions
 
@@ -183,8 +169,8 @@ When completing any task on this project, work through this checklist. Not every
 
 ### Linting and type checking
 
-- [ ] Run `ruff check --fix && ruff format` and fix any remaining issues
-- [ ] Run `mypy --config-file mypy.ini` if you changed files covered by mypy (actor, clients, conf, serializers, ext-grpc, ext-fastapi, flask_dapr)
+- [ ] Run `uv run ruff check --fix && uv run ruff format` and fix any remaining issues
+- [ ] Run `uv run mypy` if you changed files covered by mypy (actor, aio, clients, conf, serializers, ext-grpc, ext-fastapi, flask_dapr)
 
 ### Examples (integration tests)
 
@@ -200,23 +186,20 @@ When completing any task on this project, work through this checklist. Not every
 
 ### Final verification
 
-- [ ] Run `tox -e ruff` — linting must be clean
-- [ ] Run `tox -e py311` (or your Python version) — all unit tests must pass
-- [ ] If you touched examples: `tox -e integration -- test_<example-name>.py` to validate locally
+- [ ] Run `uv run ruff check --fix && uv run ruff format` — linting must be clean
+- [ ] Run `uv run python -m unittest discover -v ./tests` — all unit tests must pass
+- [ ] If you touched examples: `uv run pytest tests/integration/test_<example-name>.py` to validate locally
 - [ ] Commits must be signed off for DCO: `git commit -s`
 
 ## Important files
 
 | File | Purpose |
 |------|---------|
-| `setup.cfg` | Core package metadata and dependencies |
-| `setup.py` | Package build script (handles dev version suffixing) |
-| `pyproject.toml` | Ruff configuration |
-| `tox.ini` | Test environments and CI commands |
-| `mypy.ini` | Type checking configuration |
-| `dev-requirements.txt` | Development/test dependencies |
-| `dapr/version/__init__.py` | SDK version string |
-| `ext/*/setup.cfg` | Extension package metadata and dependencies |
+| `pyproject.toml` | Package metadata, dependencies, ruff, mypy, and uv workspace config |
+| `uv.lock` | Locked dependency versions (reproducible installs) |
+| `setup.py` | PyPI publish helper (handles dev version suffixing) |
+| `ext/*/pyproject.toml` | Extension package metadata and dependencies |
+| `dapr/version/version.py` | SDK version string |
 | `tests/integration/` | Pytest-based integration tests that validate examples |
 
 ## Gotchas
@@ -225,7 +208,7 @@ When completing any task on this project, work through this checklist. Not every
 - **Proto files**: Never manually edit anything under `dapr/proto/`. These are generated.
 - **Extension independence**: Each extension is a separate PyPI package. Core SDK changes should not break extensions; extension changes should not require core SDK changes unless intentional.
 - **DCO signoff**: PRs will be blocked by the DCO bot if commits lack `Signed-off-by`. Always use `git commit -s`.
-- **Ruff version pinned**: Dev requirements pin `ruff === 0.14.1`. Use this exact version to match CI.
+- **Ruff version pinned**: `pyproject.toml` pins `ruff==0.14.1` in `[dependency-groups].dev`. Use `uv sync --all-packages --group dev` to get the exact version.
 - **Examples are integration tests**: Changing output format (log messages, print statements) can break integration tests. Always check expected output in `tests/integration/` when modifying user-visible output.
 - **Background processes in examples**: Examples that start background services (servers, subscribers) must include a cleanup step to stop them, or CI will hang.
 - **Workflow is the most active area**: See `ext/dapr-ext-workflow/AGENTS.md` for workflow-specific architecture and constraints.

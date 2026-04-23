@@ -55,9 +55,9 @@ expected_stdout_lines:
   - '200'
   - 'error occurred'
   - 'MY_CODE'
-  - '{"message": "error occurred", "errorCode": "MY_CODE"}'
+  - "b'{\"message\": \"error occurred\", \"errorCode\": \"MY_CODE\"}'"
   - '503'
-  - 'Internal Server Error'
+  - 'Service Unavailable'
 background: true
 sleep: 5
 -->

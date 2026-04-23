@@ -13,10 +13,10 @@ Run examples locally (requires a running Dapr runtime via `dapr init`):
 
 ```bash
 # All examples
-tox -e integration
+uv run pytest tests/integration/
 
 # Single example
-tox -e integration -- test_state_store.py
+uv run pytest tests/integration/test_state_store.py
 ```
 
 In CI (`validate_examples.yaml`), examples run on all supported Python versions (3.10-3.14) on Ubuntu with a full Dapr runtime including Docker, Redis, and (for LLM examples) Ollama.
@@ -96,7 +96,6 @@ Common component types used in examples: `state.redis`, `pubsub.redis`, `lock.re
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
 | `workflow` | Multiple standalone scripts | `dapr-ext-workflow`, `dapr` | No |
-| `demo_workflow` | Legacy (deprecated DaprClient methods) | `dapr-ext-workflow` | Yes |
 
 The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_in.py`, `human_approval.py`, `monitor.py`, `child_workflow.py`, `cross-app1/2/3.py`, `versioning.py`, `simple_aio_client.py`.
 
@@ -136,7 +135,7 @@ The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_i
    - Use the `@pytest.mark.example_dir('<example-name>')` marker to set the working directory
    - Use `dapr.run()` for scripts that exit on their own, `dapr.start()`/`dapr.stop()` for long-running services
    - Assert expected output lines appear in the captured output
-6. Test locally: `tox -e integration -- test_<example_name>.py`
+6. Test locally: `uv run pytest tests/integration/test_<example_name>.py`
 
 ## Gotchas
 

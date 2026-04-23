@@ -1,3 +1,89 @@
+[project]
+name = "dapr"
+dynamic = ["version"]
+description = "The official release of Dapr Python SDK."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "Dapr Authors", email = "dapr@dapr.io"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "protobuf>=4.22.5,<8.0.0",
+    "grpcio>=1.37.0,<2.0.0",
+    "grpcio-status>=1.37.0,<2.0.0",
+    "aiohttp>=3.9.5,<4.0.0",
+    "python-dateutil>=2.8.1,<3.0.0",
+    "typing-extensions>=4.4.0,<5.0.0",
+]
+
+[project.urls]
+Documentation = "https://github.com/dapr/docs"
+Source = "https://github.com/dapr/python-sdk"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+namespaces = true
+include = ["dapr", "dapr.*"]
+exclude = ["tests*", "ext*", "examples*"]
+
+[tool.setuptools.package-data]
+"dapr" = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dapr.version.version.__version__"}
+
+[tool.uv.workspace]
+members = [
+    "ext/dapr-ext-workflow",
+    "ext/dapr-ext-grpc",
+    "ext/dapr-ext-fastapi",
+    "ext/dapr-ext-langgraph",
+    "ext/dapr-ext-strands",
+    "ext/flask_dapr",
+]
+
+[dependency-groups]
+dev = [
+    "mypy==1.19.1",
+    "mypy-extensions~=1.1.0",
+    "mypy-protobuf==5.0.0",
+    "grpcio-tools==1.76.0",
+    "types-python-dateutil~=2.9.0",
+    "types-grpcio-status~=1.0.0",
+    "coverage~=7.13.4",
+    "wheel~=0.46.3",
+    "opentelemetry-sdk~=1.40.0",
+    "opentelemetry-instrumentation-grpc~=0.61b0",
+    "opentelemetry-exporter-zipkin~=1.11.1",
+    "httpx~=0.28.1",
+    "pyOpenSSL~=26.0.0",
+    "Flask~=3.1.3",
+    "pytest~=9.0.2",
+    "ruff==0.14.1",
+    "python-dotenv~=1.2.2",
+    "pydantic~=2.12.5",
+    "PyYAML~=6.0.3",
+]
+examples = [
+    {include-group = "dev"},
+    "mechanical-markdown~=0.8.0",
+    "langchain-ollama~=1.0.1",
+]
+
 [tool.ruff]
 target-version = "py310"
 line-length = 100
@@ -6,22 +92,50 @@ extend-exclude = [".github", "dapr/proto", "ext/dapr-ext-workflow/dapr/ext/workf
 
 [tool.ruff.lint]
 select = [
-  "I",  # isort
-  "W",  # pycodestyle warnings
-  "F",  # pyflakes
-  "E",  # pycodestyle errors
+    "I",  # isort
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
 
-  # TODO: Add those back progressively as we fix the issues
-  # "C",  # flake8-comprehensions
-  # "B",  # flake8-bugbear
-  # "UP",  # pyupgrade
+    # TODO: Add those back progressively as we fix the issues
+    # "C",  # flake8-comprehensions
+    # "B",  # flake8-bugbear
+    # "UP",  # pyupgrade
 ]
 
 # TODO: Add those back progressively as we fix the issues
-ignore = ["E501","E203", "E712", "E722", "E713"]
+ignore = ["E501", "E203", "E712", "E722", "E713"]
 
 [tool.ruff.format]
 quote-style = 'single'
+
+[tool.mypy]
+python_version = "3.10"
+install_types = true
+non_interactive = true
+warn_unused_configs = true
+warn_redundant_casts = true
+show_error_codes = true
+check_untyped_defs = true
+files = [
+    "dapr/actor/**/*.py",
+    "dapr/aio/**/*.py",
+    "dapr/clients/**/*.py",
+    "dapr/conf/**/*.py",
+    "dapr/serializers/**/*.py",
+    "ext/dapr-ext-grpc/dapr/**/*.py",
+    "ext/dapr-ext-fastapi/dapr/**/*.py",
+    "ext/flask_dapr/flask_dapr/*.py",
+    "examples/demo_actor/**/*.py",
+]
+
+[[tool.mypy.overrides]]
+module = ["dapr.proto.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["grpc.aio"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 markers = [
