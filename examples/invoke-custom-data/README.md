@@ -39,7 +39,7 @@ sleep: 5
 -->
 
    ```bash
-   dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 python3 invoke-receiver.py
+   dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 -- python3 invoke-receiver.py
    ```
 
 <!-- END_STEP -->
@@ -58,7 +58,7 @@ sleep: 5
 -->
 
    ```bash
-   dapr run --app-id invoke-caller --app-protocol grpc python3 invoke-caller.py
+   dapr run --app-id invoke-caller --app-protocol grpc -- python3 invoke-caller.py
    ```
 
 <!-- END_STEP -->

@@ -1,19 +1,22 @@
 # AGENTS.md — Dapr Python SDK Examples
 
-The `examples/` directory serves as both **user-facing documentation** and the project's **integration test suite**. Each example is a self-contained application validated automatically in CI using [mechanical-markdown](https://pypi.org/project/mechanical-markdown/), which executes bash code blocks embedded in README files and asserts expected output.
+The `examples/` directory serves as both **user-facing documentation** and the project's **integration test suite**. Each example is a self-contained application validated by pytest-based integration tests in `tests/integration/`.
 
 ## How validation works
 
-1. `examples/validate.sh` is the entry point — it `cd`s into an example directory and runs `mm.py -l README.md`
-2. `mm.py` (mechanical-markdown) parses `<!-- STEP -->` HTML comment blocks in the README
-3. Each STEP block wraps a fenced bash code block that gets executed
-4. stdout/stderr is captured and checked against `expected_stdout_lines` / `expected_stderr_lines`
-5. Validation fails if any expected output line is missing
+1. Each example has a corresponding test file in `tests/integration/` (e.g., `test_state_store.py`)
+2. Tests use a `DaprRunner` helper (defined in `conftest.py`) that wraps `dapr run` commands
+3. `DaprRunner.run()` executes a command and captures stdout; `DaprRunner.start()`/`stop()` manage background services
+4. Tests assert that expected output lines appear in the captured output
 
 Run examples locally (requires a running Dapr runtime via `dapr init`):
 
 ```bash
-cd examples && ./validate.sh state_store
+# All examples
+uv run pytest tests/integration/
+
+# Single example
+uv run pytest tests/integration/test_state_store.py
 ```
 
 In CI (`validate_examples.yaml`), examples run on all supported Python versions (3.10-3.14) on Ubuntu with a full Dapr runtime including Docker, Redis, and (for LLM examples) Ollama.
@@ -24,7 +27,7 @@ Each example follows this pattern:
 
 ```
 examples/<example-name>/
-├── README.md              # Documentation + mechanical-markdown STEP blocks (REQUIRED)
+├── README.md              # Documentation (REQUIRED)
 ├── *.py                   # Python application files
 ├── requirements.txt       # Dependencies (optional — many examples rely on the installed SDK)
 ├── components/            # Dapr component YAML configs (if needed)
@@ -38,53 +41,6 @@ Common Python file naming conventions:
 - Server/receiver side: `*-receiver.py`, `subscriber.py`, `*_service.py`
 - Client/caller side: `*-caller.py`, `publisher.py`, `*_client.py`
 - Standalone: `state_store.py`, `crypto.py`, etc.
-
-## Mechanical-markdown STEP block format
-
-STEP blocks are HTML comments wrapping fenced bash code in the README:
-
-````markdown
-<!-- STEP
-name: Run the example
-expected_stdout_lines:
-  - '== APP == Got state: value'
-  - '== APP == State deleted'
-background: false
-sleep: 5
-timeout_seconds: 30
-output_match_mode: substring
-match_order: none
--->
-
-```bash
-dapr run --app-id myapp --resources-path ./components/ python3 example.py
-```
-
-<!-- END_STEP -->
-````
-
-### STEP block attributes
-
-| Attribute | Description |
-|-----------|-------------|
-| `name` | Descriptive name for the step |
-| `expected_stdout_lines` | List of strings that must appear in stdout |
-| `expected_stderr_lines` | List of strings that must appear in stderr |
-| `background` | `true` to run in background (for long-running services) |
-| `sleep` | Seconds to wait after starting before moving to the next step |
-| `timeout_seconds` | Max seconds before the step is killed |
-| `output_match_mode` | `substring` for partial matching (default is exact) |
-| `match_order` | `none` if output lines can appear in any order |
-
-### Tips for writing STEP blocks
-
-- Use `background: true` with `sleep:` for services that need to stay running (servers, subscribers)
-- Use `timeout_seconds:` to prevent CI hangs on broken examples
-- Use `output_match_mode: substring` when output contains timestamps or dynamic content
-- Use `match_order: none` when multiple concurrent operations produce unpredictable ordering
-- Always include a cleanup step (e.g., `dapr stop --app-id ...`) when using background processes
-- Make `expected_stdout_lines` specific enough to validate correctness, but not so brittle they break on cosmetic changes
-- Dapr prefixes app output with `== APP ==` — use this in expected lines
 
 ## Dapr component YAML format
 
@@ -174,69 +130,18 @@ The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_i
 1. Create a directory under `examples/` with a descriptive kebab-case name
 2. Add Python source files and a `requirements.txt` referencing the needed SDK packages
 3. Add Dapr component YAMLs in a `components/` subdirectory if the example uses state, pubsub, etc.
-4. Write a `README.md` with:
-   - Introduction explaining what the example demonstrates
-   - Pre-requisites section (Dapr CLI, Python 3.10+, any special tools)
-   - Install instructions (`pip3 install dapr dapr-ext-grpc` etc.)
-   - Running instructions with `<!-- STEP -->` blocks wrapping `dapr run` commands
-   - Expected output section
-   - Cleanup step to stop background processes
-5. Register the example in `.github/workflows/validate_examples.yaml` under the `Check Examples` step:
-   ```
-   ./validate.sh your-example-name
-   ```
-6. Test locally: `cd examples && ./validate.sh your-example-name`
-
-## Common README template
-
-```markdown
-# Dapr [Building Block] Example
-
-This example demonstrates how to use the Dapr [building block] API with the Python SDK.
-
-## Pre-requisites
-
-- [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
-- Python 3.10+
-
-## Install Dapr python-SDK
-
-\`\`\`bash
-pip3 install dapr dapr-ext-grpc
-\`\`\`
-
-## Run the example
-
-<!-- STEP
-name: Run example
-expected_stdout_lines:
-  - '== APP == Expected output here'
-timeout_seconds: 30
--->
-
-\`\`\`bash
-dapr run --app-id myapp --resources-path ./components/ python3 example.py
-\`\`\`
-
-<!-- END_STEP -->
-
-## Cleanup
-
-<!-- STEP
-name: Cleanup
--->
-
-\`\`\`bash
-dapr stop --app-id myapp
-\`\`\`
-
-<!-- END_STEP -->
-```
+4. Write a `README.md` with introduction, pre-requisites, install instructions, and running instructions
+5. Add a corresponding test in `tests/integration/test_<example_name>.py`:
+   - Use the `@pytest.mark.example_dir('<example-name>')` marker to set the working directory
+   - Use `dapr.run()` for scripts that exit on their own, `dapr.start()`/`dapr.stop()` for long-running services
+   - Assert expected output lines appear in the captured output
+6. Test locally: `uv run pytest tests/integration/test_<example_name>.py`
 
 ## Gotchas
 
-- **Output format changes break CI**: If you modify print statements or log output in SDK code, check whether any example's `expected_stdout_lines` depend on that output.
-- **Background processes must be cleaned up**: Missing cleanup steps cause CI to hang.
+- **Output format changes break tests**: If you modify print statements or log output in SDK code, check whether any integration test's expected lines depend on that output.
+- **Background processes must be cleaned up**: The `DaprRunner` fixture handles cleanup on teardown, but tests should still call `dapr.stop()` to capture output.
 - **Dapr prefixes output**: Application stdout appears as `== APP == <line>` when run via `dapr run`.
 - **Redis is available in CI**: The CI environment has Redis running on `localhost:6379` — most component YAMLs use this.
 - **Some examples need special setup**: `crypto` generates keys, `configuration` seeds Redis, `conversation` needs LLM config — check individual READMEs.
+- **Infinite-loop example scripts**: Some example scripts (e.g., `invoke-caller.py`) have `while True` loops for demo purposes. Integration tests must either bypass these with HTTP API calls or use `dapr.run(until=...)` for early termination.

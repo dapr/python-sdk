@@ -29,13 +29,6 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      GOVER: 1.21
-      GOOS: linux
-      GOARCH: amd64
-      GOPROXY: https://proxy.golang.org
-      DAPR_INSTALL_URL: https://raw.githubusercontent.com/dapr/cli/master/install/install.sh
-      DAPR_CLI_REF: ${{ github.event.inputs.daprcli_commit }}
-      DAPR_REF: ${{ github.event.inputs.daprdapr_commit }}
       CHECKOUT_REPO: ${{ github.repository }}
       CHECKOUT_REF: ${{ github.ref }}
 
@@ -50,7 +43,6 @@ jobs:
           if [ ${{ github.event.client_payload.command }} = "ok-to-test" ]; then
             echo "CHECKOUT_REPO=${{ github.event.client_payload.pull_head_repo }}" >> $GITHUB_ENV
             echo "CHECKOUT_REF=${{ github.event.client_payload.pull_head_ref }}" >> $GITHUB_ENV
-            echo "DAPR_REF=master" >> $GITHUB_ENV
           fi
 
       - name: Check out code onto GOPATH
@@ -96,68 +88,21 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --all-packages --group examples
       - name: Set up Dapr CLI
-        run: |
-          wget -q "https://github.com/dapr/cli/releases/download/v${{ env.DAPR_CLI_VER }}/dapr_${{ env.GOOS }}_${{ env.GOARCH }}.tar.gz" -O /tmp/dapr.tar.gz
-          sudo tar xzf /tmp/dapr.tar.gz -C /usr/local/bin dapr
-          dapr --version
-      - name: Set up Go ${{ env.GOVER }}
-        if: env.DAPR_REF != '' || env.DAPR_CLI_REF != ''
-        uses: actions/setup-go@v6
+        uses: dapr/.github/.github/actions/setup-dapr-cli@main
         with:
-          go-version: ${{ env.GOVER }}
+          commit: ${{ github.event.inputs.daprcli_commit }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Dapr runtime
+        uses: dapr/.github/.github/actions/setup-dapr-runtime@main
+        with:
+          commit: ${{ github.event.inputs.daprdapr_commit }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Llama
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           nohup ollama serve &
           sleep 10
           ollama pull llama3.2:latest
-      - name: Checkout Dapr CLI repo to override dapr command.
-        uses: actions/checkout@v6
-        if: env.DAPR_CLI_REF != ''
-        with:
-          repository: dapr/cli
-          ref: ${{ env.DAPR_CLI_REF }}
-          path: cli
-      - name: Checkout Dapr repo to override daprd.
-        uses: actions/checkout@v6
-        if: env.DAPR_REF != ''
-        with:
-          repository: dapr/dapr
-          ref: ${{ env.DAPR_REF }}
-          path: dapr_runtime
-      - name: Build and override dapr cli with referenced commit.
-        if: env.DAPR_CLI_REF != ''
+      - name: Check examples
         run: |
-          cd cli
-          make
-          sudo cp dist/linux_amd64/release/dapr /usr/local/bin/dapr
-          cd ..
-      - name: Initialize Dapr runtime ${{ env.DAPR_RUNTIME_VER }}
-        run: |
-          dapr uninstall --all
-          dapr init --runtime-version ${{ env.DAPR_RUNTIME_VER }}
-      - name: Build and override daprd with referenced commit.
-        if: env.DAPR_REF != ''
-        run: |
-          cd dapr_runtime
-          make
-          mkdir -p $HOME/.dapr/bin/
-          cp dist/linux_amd64/release/daprd $HOME/.dapr/bin/daprd
-          cd ..
-      - name: Override placement service.
-        if: env.DAPR_REF != ''
-        run: |
-          docker stop dapr_placement
-          cd dapr_runtime
-          ./dist/linux_amd64/release/placement --healthz-port 9091 &
-          cd ..
-      - name: Check Examples
-        run: |
-          cd examples
-          for dir in */; do
-              dir="${dir%/}"
-              if [ -f "$dir/README.md" ]; then
-                  ./validate.sh "$dir"
-              fi
-          done
-          ./validate.sh ../
+          uv run pytest tests/integration/

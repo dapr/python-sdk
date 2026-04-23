@@ -331,6 +331,7 @@ class TaskHubGrpcWorker:
         self._current_channel: Optional[grpc.Channel] = None  # Store channel reference for cleanup
         self._channel_cleanup_threads: list[threading.Thread] = []  # Deferred channel close threads
         self._stream_ready = threading.Event()
+        self._runLoop: Optional[Thread] = None
         # Use provided concurrency options or create default ones
         self._concurrency_options = (
             concurrency_options if concurrency_options is not None else ConcurrencyOptions()
@@ -387,8 +388,13 @@ class TaskHubGrpcWorker:
         self._logger.info(f'Starting gRPC worker that connects to {self._host_address}')
         self._runLoop = Thread(target=run_loop, name='WorkerRunLoop')
         self._runLoop.start()
-        if not self._stream_ready.wait(timeout=10):
-            raise RuntimeError('Failed to establish work item stream connection within 10 seconds')
+        while not self._stream_ready.wait(timeout=1):
+            if self._shutdown.is_set():
+                raise RuntimeError('Worker was stopped before the work item stream was established')
+            if not self._runLoop.is_alive():
+                raise RuntimeError(
+                    'Worker run loop exited before the work item stream was established'
+                )
         self._is_running = True
 
     async def _keepalive_loop(self, stub):
@@ -801,7 +807,9 @@ class TaskHubGrpcWorker:
 
     def stop(self):
         """Stops the worker and waits for any pending work items to complete."""
-        if not self._is_running:
+        # Guards on _runLoop rather than _is_running so stop() can unblock a start()
+        # that is still waiting for the work item stream to be established.
+        if self._runLoop is None:
             return
 
         self._logger.info('Stopping gRPC worker...')
@@ -833,6 +841,7 @@ class TaskHubGrpcWorker:
         self._async_worker_manager.shutdown()
         self._logger.info('Worker shutdown completed')
         self._is_running = False
+        self._runLoop = None
 
     # TODO: This should be removed in the future as we do handle grpc errs
     def _handle_grpc_execution_error(self, rpc_error: grpc.RpcError, request_type: str):

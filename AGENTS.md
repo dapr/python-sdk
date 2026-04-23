@@ -61,14 +61,14 @@ Each extension is a **separate PyPI package** with its own `pyproject.toml`, `se
 
 ## Examples (integration test suite)
 
-The `examples/` directory serves as both user-facing documentation and the project's integration test suite. Examples are validated in CI using [mechanical-markdown](https://pypi.org/project/mechanical-markdown/), which executes bash code blocks from README files and asserts expected output.
+The `examples/` directory serves as both user-facing documentation and the project's integration test suite. Examples are validated by pytest-based integration tests in `tests/integration/`.
 
-**See `examples/AGENTS.md`** for the full guide on example structure, validation, mechanical-markdown STEP blocks, and how to add new examples.
+**See `examples/AGENTS.md`** for the full guide on example structure and how to add new examples.
 
 Quick reference:
 ```bash
-cd examples && ./validate.sh state_store  # Run a single example
-cd examples && ./validate.sh conversation  # Run another example
+uv run pytest tests/integration/                       # Run all examples (needs Dapr runtime)
+uv run pytest tests/integration/test_state_store.py    # Run a single example
 ```
 
 ## Python version support
@@ -108,8 +108,8 @@ uv run ruff check --fix && uv run ruff format
 # Run type checking
 uv run mypy
 
-# Validate examples (requires Dapr runtime)
-cd examples && ./validate.sh <example-name>
+# Run integration tests / validate examples (requires Dapr runtime)
+uv run pytest tests/integration/
 ```
 
 ## Code style and linting
@@ -175,8 +175,8 @@ When completing any task on this project, work through this checklist. Not every
 ### Examples (integration tests)
 
 - [ ] If you added a new user-facing feature or building block, add or update an example in `examples/`
-- [ ] Ensure the example README has `<!-- STEP -->` blocks with `expected_stdout_lines` so it is validated in CI
-- [ ] If you changed output format of existing functionality, update `expected_stdout_lines` in affected example READMEs
+- [ ] Add a corresponding pytest integration test in `tests/integration/`
+- [ ] If you changed output format of existing functionality, update expected output in the affected integration tests
 - [ ] See `examples/AGENTS.md` for full details on writing examples
 
 ### Documentation
@@ -188,7 +188,7 @@ When completing any task on this project, work through this checklist. Not every
 
 - [ ] Run `uv run ruff check --fix && uv run ruff format` — linting must be clean
 - [ ] Run `uv run python -m unittest discover -v ./tests` — all unit tests must pass
-- [ ] If you touched examples: `cd examples && ./validate.sh <example-name>` to validate locally
+- [ ] If you touched examples: `uv run pytest tests/integration/test_<example-name>.py` to validate locally
 - [ ] Commits must be signed off for DCO: `git commit -s`
 
 ## Important files
@@ -200,7 +200,7 @@ When completing any task on this project, work through this checklist. Not every
 | `setup.py` | PyPI publish helper (handles dev version suffixing) |
 | `ext/*/pyproject.toml` | Extension package metadata and dependencies |
 | `dapr/version/version.py` | SDK version string |
-| `examples/validate.sh` | Entry point for mechanical-markdown example validation |
+| `tests/integration/` | Pytest-based integration tests that validate examples |
 
 ## Gotchas
 
@@ -209,6 +209,6 @@ When completing any task on this project, work through this checklist. Not every
 - **Extension independence**: Each extension is a separate PyPI package. Core SDK changes should not break extensions; extension changes should not require core SDK changes unless intentional.
 - **DCO signoff**: PRs will be blocked by the DCO bot if commits lack `Signed-off-by`. Always use `git commit -s`.
 - **Ruff version pinned**: `pyproject.toml` pins `ruff==0.14.1` in `[dependency-groups].dev`. Use `uv sync --all-packages --group dev` to get the exact version.
-- **Examples are integration tests**: Changing output format (log messages, print statements) can break example validation. Always check `expected_stdout_lines` in example READMEs when modifying user-visible output.
+- **Examples are integration tests**: Changing output format (log messages, print statements) can break integration tests. Always check expected output in `tests/integration/` when modifying user-visible output.
 - **Background processes in examples**: Examples that start background services (servers, subscribers) must include a cleanup step to stop them, or CI will hang.
 - **Workflow is the most active area**: See `ext/dapr-ext-workflow/AGENTS.md` for workflow-specific architecture and constraints.

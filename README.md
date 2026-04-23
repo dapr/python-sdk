@@ -105,18 +105,17 @@ uv run python -m unittest discover -v ./tests
 uv run mypy
 ```
 
-7. Run examples
+7. Run integration tests (validates the examples)
 
 ```bash
-cd examples && ./validate.sh state_store
+uv run pytest tests/integration/
 ```
-
-[Dapr Mechanical Markdown](https://github.com/dapr/mechanical-markdown) is used to test the examples.
 
 If you need to run the examples against a pre-released version of the runtime, you can use the following command:
 - Get your daprd runtime binary from [here](https://github.com/dapr/dapr/releases) for your platform.
 - Copy the binary to your dapr home folder at $HOME/.dapr/bin/daprd.
 Or using dapr cli directly: `dapr init --runtime-version <release version>`
+- Now you can run the examples with `uv run pytest tests/integration/`.
 
 
 ## Documentation
