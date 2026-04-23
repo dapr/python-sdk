@@ -361,9 +361,9 @@ sleep: 20
 -->
 
 ```sh
-dapr run --app-id wfexample3 python3 multi-app3.py &
-dapr run --app-id wfexample2 python3 multi-app2.py &
-dapr run --app-id wfexample1 python3 multi-app1.py
+dapr run --app-id wfexample3 -- python3 multi-app3.py &
+dapr run --app-id wfexample2 -- python3 multi-app2.py &
+dapr run --app-id wfexample1 -- python3 multi-app1.py
 ```
 <!-- END_STEP -->
 
@@ -404,9 +404,9 @@ sleep: 20
 
 ```sh
 export ERROR_ACTIVITY_MODE=true
-dapr run --app-id wfexample3 python3 multi-app3.py &
-dapr run --app-id wfexample2 python3 multi-app2.py &
-dapr run --app-id wfexample1 python3 multi-app1.py
+dapr run --app-id wfexample3 -- python3 multi-app3.py &
+dapr run --app-id wfexample2 -- python3 multi-app2.py &
+dapr run --app-id wfexample1 -- python3 multi-app1.py
 ```
 <!-- END_STEP -->
 
@@ -445,9 +445,9 @@ sleep: 20
 
 ```sh
 export ERROR_WORKFLOW_MODE=true
-dapr run --app-id wfexample3 python3 multi-app3.py &
-dapr run --app-id wfexample2 python3 multi-app2.py &
-dapr run --app-id wfexample1 python3 multi-app1.py
+dapr run --app-id wfexample3 -- python3 multi-app3.py &
+dapr run --app-id wfexample2 -- python3 multi-app2.py &
+dapr run --app-id wfexample1 -- python3 multi-app1.py
 ```
 <!-- END_STEP -->
 

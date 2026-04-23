@@ -49,7 +49,7 @@ timeout_seconds: 10
 -->
 
 ```bash
-dapr run --app-id=my-metadata-app --app-protocol grpc --resources-path components/ python3 app.py
+dapr run --app-id=my-metadata-app --app-protocol grpc --resources-path components/ -- python3 app.py
 ```
 <!-- END_STEP -->
 
