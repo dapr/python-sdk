@@ -14,7 +14,7 @@ def _flush_redis() -> None:
     """Flush the Dapr Redis instance to prevent state leaking between runs.
 
     Both the state store and the pubsub component point at the same
-    ``dapr_redis`` container (see ``tests/integration/components/``), so a
+    ``dapr_redis`` container (see ``tests/integration/resources/``), so a
     previous run's ``received-*`` keys could otherwise satisfy this test's
     assertions even if no new message was delivered.
     """
