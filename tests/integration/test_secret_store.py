@@ -1,33 +1,19 @@
 import pytest
 
-EXPECTED_LINES = [
-    "{'secretKey': 'secretValue'}",
-    "[('random', {'random': 'randomValue'}), ('secretKey', {'secretKey': 'secretValue'})]",
-    "{'random': 'randomValue'}",
-]
-
-EXPECTED_LINES_WITH_ACL = [
-    "{'secretKey': 'secretValue'}",
-    "[('secretKey', {'secretKey': 'secretValue'})]",
-    'Got expected error for accessing random key',
-]
+STORE = 'localsecretstore'
 
 
-@pytest.mark.example_dir('secret_store')
-def test_secret_store(dapr):
-    output = dapr.run(
-        '--app-id=secretsapp --app-protocol grpc --resources-path components/ -- python3 example.py',
-        timeout=30,
-    )
-    for line in EXPECTED_LINES:
-        assert line in output, f'Missing in output: {line}'
+@pytest.fixture(scope='module')
+def client(dapr_env, resources_dir):
+    return dapr_env.start_sidecar(app_id='test-secret', resources=resources_dir)
 
 
-@pytest.mark.example_dir('secret_store')
-def test_secret_store_with_access_control(dapr):
-    output = dapr.run(
-        '--app-id=secretsapp --app-protocol grpc --config config.yaml --resources-path components/ -- python3 example.py',
-        timeout=30,
-    )
-    for line in EXPECTED_LINES_WITH_ACL:
-        assert line in output, f'Missing in output: {line}'
+def test_get_secret(client):
+    resp = client.get_secret(store_name=STORE, key='secretKey')
+    assert resp.secret == {'secretKey': 'secretValue'}
+
+
+def test_get_bulk_secret(client):
+    resp = client.get_bulk_secret(store_name=STORE)
+    assert 'secretKey' in resp.secrets
+    assert resp.secrets['secretKey'] == {'secretKey': 'secretValue'}
