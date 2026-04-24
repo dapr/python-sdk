@@ -1,5 +1,5 @@
 mypy>=1.2.0
-mypy-extensions>=0.4.3
+mypy-extensions>=1.1.0
 mypy-protobuf>=2.9
 tox>=4.3.0
 coverage>=5.3
