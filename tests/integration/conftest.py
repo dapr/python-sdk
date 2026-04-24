@@ -16,7 +16,7 @@ from tests._process_utils import get_kwargs_for_process_group, terminate_process
 T = TypeVar('T')
 
 INTEGRATION_DIR = Path(__file__).resolve().parent
-COMPONENTS_DIR = INTEGRATION_DIR / 'components'
+RESOURCES_DIR = INTEGRATION_DIR / 'resources'
 APPS_DIR = INTEGRATION_DIR / 'apps'
 
 
@@ -27,7 +27,7 @@ class DaprTestEnvironment:
     class returns real DaprClient instances so tests can make assertions against SDK return values.
     """
 
-    def __init__(self, default_components: Path = COMPONENTS_DIR) -> None:
+    def __init__(self, default_components: Path = RESOURCES_DIR) -> None:
         self._default_components = default_components
         self._processes: list[subprocess.Popen[str]] = []
         self._clients: list[DaprClient] = []
@@ -118,7 +118,7 @@ class DaprTestEnvironment:
 
 
 def _wait_until(
-    predicate: Callable[[], T | None],
+    condition: Callable[[], T | None],
     timeout: float = 10.0,
     interval: float = 0.1,
 ) -> T:
@@ -126,7 +126,7 @@ def _wait_until(
     Raises `TimeoutError` if it never returns."""
     deadline = time.monotonic() + timeout
     while True:
-        result = predicate()
+        result = condition()
         if result:
             return result
         if time.monotonic() >= deadline:
@@ -211,4 +211,4 @@ def apps_dir() -> Path:
 
 @pytest.fixture(scope='module')
 def components_dir() -> Path:
-    return COMPONENTS_DIR
+    return RESOURCES_DIR
