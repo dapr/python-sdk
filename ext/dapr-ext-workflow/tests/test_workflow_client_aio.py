@@ -18,10 +18,12 @@ from datetime import datetime
 from typing import Any, Union
 from unittest import mock
 
+from durabletask import client
+from grpc.aio import AioRpcError
+
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.aio import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
-from grpc.aio import AioRpcError
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
@@ -112,6 +114,20 @@ class FakeAsyncTaskHubGrpcClient:
         )
 
 
+class WorkflowClientAioTimeoutInterceptorTest(unittest.IsolatedAsyncioTestCase):
+    async def test_timeout_interceptor_is_passed_to_client(self):
+        with mock.patch('durabletask.aio.client.AsyncTaskHubGrpcClient') as mock_client_cls:
+            DaprWorkflowClient()
+            mock_client_cls.assert_called_once()
+            call_kwargs = mock_client_cls.call_args[1]
+            interceptors = call_kwargs['interceptors']
+            self.assertEqual(len(interceptors), 1)
+            from dapr.aio.clients.grpc.interceptors import \
+                DaprClientTimeoutInterceptorAsync
+
+            self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptorAsync)
+
+
 class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
     def mock_client_wf(ctx: DaprWorkflowContext, input):
         print(f'{input}')
@@ -188,5 +204,7 @@ class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
             actual_resume_result = await wfClient.resume_workflow(instance_id=mock_instance_id)
             assert actual_resume_result == mock_resume_result
 
+            actual_purge_result = await wfClient.purge_workflow(instance_id=mock_instance_id)
+            assert actual_purge_result == mock_purge_result
             actual_purge_result = await wfClient.purge_workflow(instance_id=mock_instance_id)
             assert actual_purge_result == mock_purge_result
