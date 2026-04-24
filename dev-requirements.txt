@@ -8,7 +8,7 @@ wheel
 # used in unit test only
 opentelemetry-sdk
 opentelemetry-instrumentation-grpc
-httpx>=0.24
+httpx>=0.28.1
 pyOpenSSL>=26.0.0
 # needed for type checking
 Flask>=1.1
