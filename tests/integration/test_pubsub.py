@@ -58,11 +58,20 @@ def test_published_messages_are_received_by_subscriber(client, wait_until):
         assert msg['message'] == 'hello world'
 
 
-def test_publish_event_succeeds(client):
-    """Verify publish_event does not raise on a valid topic."""
+def test_publish_event_succeeds(client, wait_until):
+    run_id = uuid.uuid4().hex
     client.publish_event(
         pubsub_name=PUBSUB,
         topic_name=TOPIC,
-        data=json.dumps({'run_id': uuid.uuid4().hex, 'id': 99, 'message': 'smoke test'}),
+        data=json.dumps({'run_id': run_id, 'id': 99, 'message': 'smoke test'}),
         data_content_type='application/json',
     )
+
+    key = f'received-{run_id}-99'
+    data = wait_until(
+        lambda: client.get_state(store_name=STORE, key=key).data or None,
+        timeout=10,
+    )
+    msg = json.loads(data)
+    assert msg['id'] == 99
+    assert msg['message'] == 'smoke test'
