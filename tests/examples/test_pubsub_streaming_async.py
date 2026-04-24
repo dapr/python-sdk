@@ -6,6 +6,7 @@ EXPECTED_SUBSCRIBER = [
     "Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_B1...",
     "Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_B1...",
     "Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_B1...",
+    'Closing subscription...',
 ]
 
 EXPECTED_HANDLER_SUBSCRIBER = [
@@ -14,6 +15,7 @@ EXPECTED_HANDLER_SUBSCRIBER = [
     "Processing message: {'id': 3, 'message': 'hello world'} from TOPIC_B2...",
     "Processing message: {'id': 4, 'message': 'hello world'} from TOPIC_B2...",
     "Processing message: {'id': 5, 'message': 'hello world'} from TOPIC_B2...",
+    'Closing subscription...',
 ]
 
 EXPECTED_PUBLISHER = [
