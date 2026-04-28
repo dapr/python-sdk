@@ -16,11 +16,27 @@ def client(dapr_env, redis_set_config):
     return dapr_env.start_sidecar(app_id='test-config')
 
 
-class TestGetConfiguration:
-    def test_get_single_key(self, client):
-        resp = client.get_configuration(store_name=STORE, keys=['cfg-key-1'])
-        assert 'cfg-key-1' in resp.items
-        assert resp.items['cfg-key-1'].value == 'val-1'
+@pytest.mark.xfail(
+    reason='The sidecar returns the subscription ID before the subscription is active',
+)
+def test_subscribe_first_update_race(client):
+    r = redis.Redis(host='127.0.0.1', port=6379)
+    r.ping()
+    event = threading.Event()
+    sub_id = client.subscribe_configuration(
+        store_name=STORE,
+        keys=['cfg-race-key'],
+        handler=lambda _id, _resp: event.set(),
+    )
+    assert sub_id
+    r.set('cfg-race-key', 'val||1')
+    assert event.wait(timeout=2)
+
+
+def test_get_single_key(client):
+    resp = client.get_configuration(store_name=STORE, keys=['cfg-key-1'])
+    assert 'cfg-key-1' in resp.items
+    assert resp.items['cfg-key-1'].value == 'val-1'
 
 
 def test_get_multiple_keys(client):
