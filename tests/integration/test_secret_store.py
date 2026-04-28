@@ -4,8 +4,8 @@ STORE = 'localsecretstore'
 
 
 @pytest.fixture(scope='module')
-def client(dapr_env, components_dir):
-    return dapr_env.start_sidecar(app_id='test-secret', components=components_dir)
+def client(dapr_env, resources_dir):
+    return dapr_env.start_sidecar(app_id='test-secret', resources=resources_dir)
 
 
 def test_get_secret(client):

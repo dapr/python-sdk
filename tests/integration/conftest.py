@@ -15,7 +15,7 @@ from tests.process_utils import get_kwargs_for_process_group, terminate_process_
 from tests.wait_utils import wait_until
 
 INTEGRATION_DIR = Path(__file__).resolve().parent
-COMPONENTS_DIR = INTEGRATION_DIR / 'components'
+RESOURCES_DIR = INTEGRATION_DIR / 'resources'
 APPS_DIR = INTEGRATION_DIR / 'apps'
 
 BINDING_DATA_DIR = INTEGRATION_DIR / '.binding-data'
@@ -28,8 +28,8 @@ class DaprTestEnvironment:
     class returns real DaprClient instances so tests can make assertions against SDK return values.
     """
 
-    def __init__(self, default_components: Path = COMPONENTS_DIR) -> None:
-        self._default_components = default_components
+    def __init__(self, default_resources: Path = RESOURCES_DIR) -> None:
+        self._default_resources = default_resources
         self._processes: list[subprocess.Popen[str]] = []
         self._log_files: list[IO[str]] = []
         self._clients: list[DaprClient] = []
@@ -42,7 +42,7 @@ class DaprTestEnvironment:
         http_port: int = 3500,
         app_port: int | None = None,
         app_cmd: str | None = None,
-        components: Path | None = None,
+        resources: Path | None = None,
     ) -> DaprClient:
         """Start a Dapr sidecar and return a connected DaprClient.
 
@@ -52,10 +52,10 @@ class DaprTestEnvironment:
             http_port: Sidecar HTTP port (also used for the SDK health check).
             app_port: Port the app listens on (implies ``--app-protocol grpc``).
             app_cmd: Shell command to start alongside the sidecar.
-            components: Path to component YAML directory.  Defaults to
-                ``tests/integration/components/``.
+            resources: Path to resources YAML directory.  Defaults to
+                ``tests/integration/resources/``.
         """
-        resources = components or self._default_components
+        resources = resources or self._default_resources
 
         cmd = [
             'dapr',
@@ -207,8 +207,8 @@ def apps_dir() -> Path:
 
 
 @pytest.fixture(scope='module')
-def components_dir() -> Path:
-    return COMPONENTS_DIR
+def resources_dir() -> Path:
+    return RESOURCES_DIR
 
 
 @pytest.fixture(scope='session', autouse=True)
