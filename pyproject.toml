@@ -28,3 +28,4 @@ markers = [
     'example_dir(name): set the example directory for the dapr fixture',
 ]
 pythonpath = ["."]
+asyncio_mode = "auto"
