@@ -13,7 +13,7 @@ pytestmark = pytest.mark.filterwarnings('ignore::UserWarning')
 
 
 @pytest.fixture(scope='module')
-def sidecar(dapr_env):
+def sidecar(dapr_env, crypto_keys):
     dapr_env.start_sidecar(app_id='test-crypto-async')
 
 

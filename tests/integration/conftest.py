@@ -11,6 +11,7 @@ import pytest
 
 from dapr.clients import DaprClient
 from dapr.conf import settings
+from tests.crypto_utils import remove_test_keys, write_test_keys
 from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
 from tests.wait_utils import wait_until
 
@@ -19,6 +20,7 @@ RESOURCES_DIR = INTEGRATION_DIR / 'resources'
 APPS_DIR = INTEGRATION_DIR / 'apps'
 
 BINDING_DATA_DIR = INTEGRATION_DIR / '.binding-data'
+CRYPTO_KEYS_DIR = INTEGRATION_DIR / 'keys'
 
 
 class DaprTestEnvironment:
@@ -220,3 +222,13 @@ def _binding_data_dir() -> Generator[None, None, None]:
         yield
     finally:
         shutil.rmtree(BINDING_DATA_DIR, ignore_errors=True)
+
+
+@pytest.fixture(scope='session')
+def crypto_keys() -> Generator[Path, None, None]:
+    """Generate temporary RSA + AES keys for ``cryptostore.yaml``."""
+    write_test_keys(CRYPTO_KEYS_DIR)
+    try:
+        yield CRYPTO_KEYS_DIR
+    finally:
+        remove_test_keys(CRYPTO_KEYS_DIR)
