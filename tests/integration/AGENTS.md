@@ -27,12 +27,12 @@ tox -e integration -- test_state_store.py -k test_save_and_get
 
 ```
 tests/integration/
-├── conftest.py              # DaprTestEnvironment + fixtures (dapr_env, apps_dir, components_dir)
+├── conftest.py              # DaprTestEnvironment + fixtures (dapr_env, apps_dir, resources_dir, crypto_keys)
 ├── test_*.py                # Test files (one per building block)
 ├── apps/                    # Helper apps started alongside sidecars
 │   ├── invoke_receiver.py   # gRPC method handler for invoke tests
 │   └── pubsub_subscriber.py # Subscriber that persists messages to state store
-├── components/              # Dapr component YAMLs loaded by all sidecars
+├── resources/               # Dapr component YAMLs loaded by all sidecars
 │   ├── statestore.yaml      # state.redis (also configured as actor state store)
 │   ├── pubsub.yaml          # pubsub.redis
 │   ├── lockstore.yaml       # lock.redis
@@ -41,7 +41,7 @@ tests/integration/
 │   ├── localbinding.yaml    # bindings.localstorage (rootPath=./.binding-data)
 │   ├── cryptostore.yaml     # crypto.dapr.localstorage (path=./keys)
 │   └── conversation.yaml    # conversation.echo
-├── keys/                    # RSA + symmetric keys for cryptostore
+├── keys/                    # RSA + symmetric keys for cryptostore (generated at test time, gitignored)
 ├── secrets.json             # Secrets file for localsecretstore component
 └── .binding-data/           # Created on demand for localbinding rootPath (gitignored)
 ```
@@ -54,15 +54,22 @@ Sidecar and client fixtures are **module-scoped** — one sidecar per test file.
 |---------|-------|------|-------------|
 | `dapr_env` | module | `DaprTestEnvironment` | Manages sidecar lifecycle; call `start_sidecar()` to get a client |
 | `apps_dir` | module | `Path` | Path to `tests/integration/apps/` |
-| `components_dir` | module | `Path` | Path to `tests/integration/components/` |
-| `wait_until` | session | `Callable` | Polling helper `(predicate, timeout=10, interval=0.1)` for eventual-consistency assertions |
-| `wait_until_async` | session | `Callable` | Async counterpart of `wait_until` for awaitable predicates |
+| `resources_dir` | module | `Path` | Path to `tests/integration/resources/` |
+| `crypto_keys` | session | `Path` | Generates ephemeral RSA + AES keys under `tests/integration/keys/` for the cryptostore component (see `tests/crypto_utils.py`) |
 | `flush_redis` | session | `None` | Side-effect fixture that clears the `dapr_redis` container once per session |
-| `redis_set` | session | `Callable` | Returns `set(key, value, version=1)` that seeds a Dapr configuration value into Redis (`value||version`) |
+| `redis_set_config` | session | `Callable` | Returns `_set(key, value, version=1)` that seeds a Dapr configuration value into Redis (`value||version`) |
 
-All four are session-scoped (defined in `tests/conftest.py`) so that module-scoped fixtures can depend on them.
+`flush_redis` and `redis_set_config` are session-scoped (defined in `tests/conftest.py`) so module-scoped fixtures can depend on them.
 
-Each test file defines its own module-scoped `client` fixture that calls `dapr_env.start_sidecar(...)`.
+Polling helpers are **plain functions**, not fixtures — import them directly:
+
+```python
+from tests.wait_utils import wait_until, wait_until_async
+```
+
+Both have signature `(condition, timeout=10.0, interval=0.1)` and raise `TimeoutError` if the deadline elapses. `wait_until_async` awaits an awaitable condition.
+
+Each test file defines its own module-scoped fixture (`client` or `sidecar`) that calls `dapr_env.start_sidecar(...)`.
 
 ## Building blocks covered
 
@@ -116,7 +123,7 @@ Some building blocks (invoke, pubsub) require an app process running alongside t
 
 1. Create `test_<building_block>.py`
 2. Add a module-scoped `client` fixture that calls `dapr_env.start_sidecar(app_id='test-<name>')`
-3. If the building block needs a new Dapr component, add a YAML to `components/`
+3. If the building block needs a new Dapr component, add a YAML to `resources/`
 4. If the building block needs a running app, add it to `apps/` and pass `app_cmd` / `app_port` to `start_sidecar()`
 5. Use unique keys/resource IDs per test to avoid interference (the sidecar is shared within a module)
 6. Assert on SDK return types and gRPC status codes, not on string output

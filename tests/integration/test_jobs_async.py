@@ -5,6 +5,7 @@ import pytest
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients import Job
+from dapr.clients.exceptions import DaprGrpcError
 
 GRPC_ADDRESS = '127.0.0.1:50001'
 
@@ -37,10 +38,11 @@ async def test_schedule_then_get_returns_job(sidecar):
 
 async def test_delete_removes_job(sidecar):
     name = f'async-job-del-{uuid.uuid4().hex[:8]}'
+    due = _future(days=365)
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
-        await d.schedule_job_alpha1(Job(name=name, due_time=_future(days=365)))
+        await d.schedule_job_alpha1(Job(name=name, due_time=due))
         await d.delete_job_alpha1(name=name)
 
-        with pytest.raises(Exception):
+        with pytest.raises(DaprGrpcError):
             await d.get_job_alpha1(name=name)

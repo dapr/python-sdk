@@ -1,6 +1,7 @@
 import json
 import threading
 import uuid
+from concurrent.futures import Future
 
 import pytest
 
@@ -100,8 +101,17 @@ def test_streaming_subscribe_receives_published_message(client):
             data_content_type='application/json',
         )
 
-        message = subscription.next_message()
-        assert message is not None
+        next_message_future: Future = Future()
+
+        def read_next_message() -> None:
+            try:
+                next_message_future.set_result(subscription.next_message())
+            except Exception as exc:
+                next_message_future.set_exception(exc)
+
+        threading.Thread(target=read_next_message, daemon=True).start()
+
+        message = next_message_future.result(timeout=10)
         subscription.respond_success(message)
 
         payload = message.data()
