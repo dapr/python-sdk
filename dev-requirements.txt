@@ -4,6 +4,7 @@ mypy-protobuf>=2.9
 tox>=4.3.0
 coverage>=5.3
 pytest>=7.0
+pytest-asyncio>=0.23
 wheel
 # used in unit test only
 opentelemetry-sdk
@@ -20,3 +21,4 @@ python-dotenv>=1.0.0
 pydantic>=2.13.3
 # needed for yaml file generation in examples
 PyYAML>=6.0.3
+# needed for direct Redis access in integration tests

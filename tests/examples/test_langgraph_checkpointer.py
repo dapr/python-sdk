@@ -1,8 +1,9 @@
 import subprocess
-import time
 
 import httpx
 import pytest
+
+from tests.wait_utils import wait_until
 
 OLLAMA_URL = 'http://localhost:11434'
 MODEL = 'llama3.2:latest'
@@ -31,15 +32,6 @@ def _model_available() -> bool:
     return any(m['name'] == MODEL for m in resp.json().get('models', []))
 
 
-def _wait_for_ollama(timeout: float = 30.0, interval: float = 0.5) -> None:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if _ollama_ready():
-            return
-        time.sleep(interval)
-    raise TimeoutError(f'ollama serve did not become ready within {timeout}s')
-
-
 @pytest.fixture()
 def ollama():
     """Ensure Ollama is running and the required model is pulled.
@@ -57,7 +49,7 @@ def ollama():
             )
         except FileNotFoundError:
             pytest.skip('ollama is not installed')
-        _wait_for_ollama()
+        wait_until(_ollama_ready, timeout=30.0, interval=0.5)
 
     if not _model_available():
         subprocess.run(['ollama', 'pull', MODEL], check=True, capture_output=True)
@@ -67,17 +59,6 @@ def ollama():
     if started:
         started.terminate()
         started.wait(timeout=10)
-
-
-@pytest.fixture()
-def flush_redis():
-    """This test is not replayable if the checkpointer state store is not clean."""
-    subprocess.run(
-        ['docker', 'exec', 'dapr_redis', 'redis-cli', 'FLUSHDB'],
-        capture_output=True,
-        check=True,
-        timeout=10,
-    )
 
 
 @pytest.mark.example_dir('langgraph-checkpointer')

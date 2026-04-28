@@ -1,23 +1,24 @@
 import shlex
+import shutil
 import subprocess
 import tempfile
-import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Generator, Iterator, TypeVar
+from typing import IO, Any, Generator, Iterator
 
 import httpx
 import pytest
 
 from dapr.clients import DaprClient
 from dapr.conf import settings
-from tests._process_utils import get_kwargs_for_process_group, terminate_process_group
-
-T = TypeVar('T')
+from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
+from tests.wait_utils import wait_until
 
 INTEGRATION_DIR = Path(__file__).resolve().parent
 COMPONENTS_DIR = INTEGRATION_DIR / 'components'
 APPS_DIR = INTEGRATION_DIR / 'apps'
+
+BINDING_DATA_DIR = INTEGRATION_DIR / '.binding-data'
 
 
 class DaprTestEnvironment:
@@ -30,6 +31,7 @@ class DaprTestEnvironment:
     def __init__(self, default_components: Path = COMPONENTS_DIR) -> None:
         self._default_components = default_components
         self._processes: list[subprocess.Popen[str]] = []
+        self._log_files: list[IO[str]] = []
         self._clients: list[DaprClient] = []
 
     def start_sidecar(
@@ -72,16 +74,18 @@ class DaprTestEnvironment:
         if app_cmd is not None:
             cmd.extend(['--', *shlex.split(app_cmd)])
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=f'-{app_id}.log') as log:
-            proc = subprocess.Popen(
-                cmd,
-                cwd=INTEGRATION_DIR,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-                text=True,
-                **get_kwargs_for_process_group(),
-            )
+        # Keep the log file handle alive for the lifetime of the sidecar
+        log_file = tempfile.NamedTemporaryFile(mode='w', suffix=f'-{app_id}.log')
+        proc = subprocess.Popen(
+            cmd,
+            cwd=INTEGRATION_DIR,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            text=True,
+            **get_kwargs_for_process_group(),
+        )
         self._processes.append(proc)
+        self._log_files.append(log_file)
 
         # Point the SDK health check at the actual sidecar HTTP port.
         # DaprHealth.wait_for_sidecar() reads settings.DAPR_HTTP_PORT, which
@@ -116,22 +120,9 @@ class DaprTestEnvironment:
                     proc.wait()
         self._processes.clear()
 
-
-def _wait_until(
-    predicate: Callable[[], T | None],
-    timeout: float = 10.0,
-    interval: float = 0.1,
-) -> T:
-    """Poll `predicate` until it returns a truthy value.
-    Raises `TimeoutError` if it never returns."""
-    deadline = time.monotonic() + timeout
-    while True:
-        result = predicate()
-        if result:
-            return result
-        if time.monotonic() >= deadline:
-            raise TimeoutError(f'wait_until timed out after {timeout}s')
-        time.sleep(interval)
+        for log_file in self._log_files:
+            log_file.close()
+        self._log_files.clear()
 
 
 def _wait_for_app_health(http_port: int, timeout: float = 30.0) -> None:
@@ -144,12 +135,11 @@ def _wait_for_app_health(http_port: int, timeout: float = 30.0) -> None:
 
     def _check() -> bool:
         try:
-            response = httpx.get(url, timeout=2.0)
+            return httpx.get(url, timeout=2.0).is_success
         except httpx.HTTPError:
             return False
-        return response.is_success
 
-    _wait_until(_check, timeout=timeout, interval=0.2)
+    wait_until(_check, timeout=timeout, interval=0.2)
 
 
 @contextmanager
@@ -187,8 +177,7 @@ def dapr_env() -> Generator[DaprTestEnvironment, Any, None]:
     """Provides a DaprTestEnvironment for programmatic SDK testing.
 
     Module-scoped so that all tests in a file share a single Dapr sidecar,
-    avoiding port conflicts from rapid start/stop cycles and cutting total
-    test time significantly.
+    avoiding port conflicts from rapid start/stop cycles.
     """
     with _isolate_dapr_settings():
         env = DaprTestEnvironment()
@@ -198,10 +187,18 @@ def dapr_env() -> Generator[DaprTestEnvironment, Any, None]:
             env.cleanup()
 
 
-@pytest.fixture
-def wait_until() -> Callable[..., Any]:
-    """Returns the ``_wait_until(predicate, timeout=10, interval=0.1)`` helper."""
-    return _wait_until
+@pytest.fixture(autouse=True)
+def fail_if_dead_sidecars(dapr_env: DaprTestEnvironment) -> None:
+    """Fail the next test cleanly if a managed sidecar has died.
+
+    Without this, a crashed sidecar produces a cascade of gRPC connection
+    timeouts on every subsequent test in the module.
+    """
+    dead = [proc for proc in dapr_env._processes if proc.poll() is not None]
+    if not dead:
+        return
+    details = ', '.join(f'pid={p.pid} exit={p.returncode}' for p in dead)
+    raise RuntimeError(f'Dapr sidecar exited unexpectedly: {details}')
 
 
 @pytest.fixture(scope='module')
@@ -212,3 +209,14 @@ def apps_dir() -> Path:
 @pytest.fixture(scope='module')
 def components_dir() -> Path:
     return COMPONENTS_DIR
+
+
+@pytest.fixture(scope='session', autouse=True)
+def _binding_data_dir() -> Generator[None, None, None]:
+    """Provide a fresh ``.binding-data/`` for the localbinding component"""
+    shutil.rmtree(BINDING_DATA_DIR, ignore_errors=True)
+    BINDING_DATA_DIR.mkdir()
+    try:
+        yield
+    finally:
+        shutil.rmtree(BINDING_DATA_DIR, ignore_errors=True)
