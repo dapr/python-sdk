@@ -33,7 +33,9 @@ ext/                         # Extension packages (each is a separate PyPI packa
 └── flask_dapr/              # Flask integration  ← see ext/flask_dapr/AGENTS.md
 
 tests/                       # Unit tests (mirrors dapr/ package structure)
-examples/                    # Integration test suite  ← see examples/AGENTS.md
+├── examples/                # Output-based tests that run examples and check stdout
+├── integration/             # Programmatic SDK tests using DaprClient directly
+examples/                    # User-facing example applications  ← see examples/AGENTS.md
 docs/                        # Sphinx documentation source
 tools/                       # Build and release scripts
 ```
@@ -59,16 +61,19 @@ Each extension is a **separate PyPI package** with its own `pyproject.toml`, `se
 | `dapr-ext-langgraph` | `dapr.ext.langgraph` | LangGraph checkpoint persistence to Dapr state store | Moderate |
 | `dapr-ext-strands` | `dapr.ext.strands` | Strands agent session management via Dapr state store | New |
 
-## Examples (integration test suite)
+## Examples and testing
 
-The `examples/` directory serves as both user-facing documentation and the project's integration test suite. Examples are validated by pytest-based integration tests in `tests/integration/`.
+The `examples/` directory contains user-facing example applications. These are validated by two test suites:
 
-**See `examples/AGENTS.md`** for the full guide on example structure and how to add new examples.
+- **`tests/examples/`** — Output-based tests that run examples via `dapr run` and check stdout for expected strings. Uses a `DaprRunner` helper to manage process lifecycle. See `examples/AGENTS.md`.
+- **`tests/integration/`** — Programmatic SDK tests that call `DaprClient` methods directly and assert on return values, gRPC status codes, and SDK types. More reliable than output-based tests since they don't depend on print statement formatting. See `tests/integration/AGENTS.md`.
 
 Quick reference:
 ```bash
-uv run pytest tests/integration/                       # Run all examples (needs Dapr runtime)
-uv run pytest tests/integration/test_state_store.py    # Run a single example
+uv run pytest tests/examples/                          # Run output-based example tests
+uv run pytest tests/examples/test_state_store.py       # Run a single example test
+uv run pytest tests/integration/                       # Run programmatic SDK tests
+uv run pytest tests/integration/test_invoke.py         # Run a single integration test
 ```
 
 ## Python version support
@@ -108,7 +113,10 @@ uv run ruff check --fix && uv run ruff format
 # Run type checking
 uv run mypy
 
-# Run integration tests / validate examples (requires Dapr runtime)
+# Run output-based example tests (requires Dapr runtime)
+uv run pytest tests/examples/
+
+# Run programmatic integration tests (requires Dapr runtime)
 uv run pytest tests/integration/
 ```
 
@@ -175,8 +183,8 @@ When completing any task on this project, work through this checklist. Not every
 ### Examples (integration tests)
 
 - [ ] If you added a new user-facing feature or building block, add or update an example in `examples/`
-- [ ] Add a corresponding pytest integration test in `tests/integration/`
-- [ ] If you changed output format of existing functionality, update expected output in the affected integration tests
+- [ ] Add a corresponding pytest test in `tests/examples/` (output-based) and/or `tests/integration/` (programmatic)
+- [ ] If you changed output format of existing functionality, update expected output in `tests/examples/`
 - [ ] See `examples/AGENTS.md` for full details on writing examples
 
 ### Documentation
@@ -188,7 +196,7 @@ When completing any task on this project, work through this checklist. Not every
 
 - [ ] Run `uv run ruff check --fix && uv run ruff format` — linting must be clean
 - [ ] Run `uv run python -m unittest discover -v ./tests` — all unit tests must pass
-- [ ] If you touched examples: `uv run pytest tests/integration/test_<example-name>.py` to validate locally
+- [ ] If you touched examples: `uv run pytest tests/examples/test_<example-name>.py` to validate locally
 - [ ] Commits must be signed off for DCO: `git commit -s`
 
 ## Important files
@@ -200,7 +208,8 @@ When completing any task on this project, work through this checklist. Not every
 | `setup.py` | PyPI publish helper (handles dev version suffixing) |
 | `ext/*/pyproject.toml` | Extension package metadata and dependencies |
 | `dapr/version/version.py` | SDK version string |
-| `tests/integration/` | Pytest-based integration tests that validate examples |
+| `tests/examples/` | Output-based tests that validate examples by checking stdout |
+| `tests/integration/` | Programmatic SDK tests using DaprClient directly |
 
 ## Gotchas
 
@@ -209,6 +218,6 @@ When completing any task on this project, work through this checklist. Not every
 - **Extension independence**: Each extension is a separate PyPI package. Core SDK changes should not break extensions; extension changes should not require core SDK changes unless intentional.
 - **DCO signoff**: PRs will be blocked by the DCO bot if commits lack `Signed-off-by`. Always use `git commit -s`.
 - **Ruff version pinned**: `pyproject.toml` pins `ruff==0.14.1` in `[dependency-groups].dev`. Use `uv sync --all-packages --group dev` to get the exact version.
-- **Examples are integration tests**: Changing output format (log messages, print statements) can break integration tests. Always check expected output in `tests/integration/` when modifying user-visible output.
+- **Examples are tested by output matching**: Changing output format (log messages, print statements) can break `tests/examples/`. Always check expected output there when modifying user-visible output.
 - **Background processes in examples**: Examples that start background services (servers, subscribers) must include a cleanup step to stop them, or CI will hang.
 - **Workflow is the most active area**: See `ext/dapr-ext-workflow/AGENTS.md` for workflow-specific architecture and constraints.

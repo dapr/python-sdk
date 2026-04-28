@@ -105,17 +105,23 @@ uv run python -m unittest discover -v ./tests
 uv run mypy
 ```
 
-7. Run integration tests (validates the examples)
+7. Run integration tests
 
 ```bash
 uv run pytest tests/integration/
 ```
 
-If you need to run the examples against a pre-released version of the runtime, you can use the following command:
+8. Validate the examples
+
+```bash
+uv run pytest tests/examples/
+```
+
+If you need to run the examples or integration tests against a pre-released version of the runtime, you can use the following command:
 - Get your daprd runtime binary from [here](https://github.com/dapr/dapr/releases) for your platform.
 - Copy the binary to your dapr home folder at $HOME/.dapr/bin/daprd.
 Or using dapr cli directly: `dapr init --runtime-version <release version>`
-- Now you can run the examples with `uv run pytest tests/integration/`.
+- Now you can run the examples with `uv run pytest tests/examples/` or the integration tests with `uv run pytest tests/integration/`.
 
 
 ## Documentation

@@ -1,140 +1,214 @@
 import shlex
 import subprocess
 import tempfile
-import threading
 import time
+from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, Any, Generator
+from typing import Any, Callable, Generator, Iterator, TypeVar
 
+import httpx
 import pytest
 
+from dapr.clients import DaprClient
+from dapr.conf import settings
 from tests._process_utils import get_kwargs_for_process_group, terminate_process_group
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-EXAMPLES_DIR = REPO_ROOT / 'examples'
+T = TypeVar('T')
+
+INTEGRATION_DIR = Path(__file__).resolve().parent
+RESOURCES_DIR = INTEGRATION_DIR / 'resources'
+APPS_DIR = INTEGRATION_DIR / 'apps'
 
 
-def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line('markers', 'example_dir(name): set the example directory for a test')
+class DaprTestEnvironment:
+    """Manages Dapr sidecars and returns SDK clients for programmatic testing.
 
+    Unlike tests.examples.DaprRunner (which captures stdout for output-based assertions), this
+    class returns real DaprClient instances so tests can make assertions against SDK return values.
+    """
 
-class DaprRunner:
-    """Helper to run `dapr run` commands and capture output."""
+    def __init__(self, default_resources: Path = RESOURCES_DIR) -> None:
+        self._default_resources = default_resources
+        self._processes: list[subprocess.Popen[str]] = []
+        self._clients: list[DaprClient] = []
 
-    def __init__(self, cwd: Path) -> None:
-        self._cwd = cwd
-        self._bg_process: subprocess.Popen[str] | None = None
-        self._bg_output_file: IO[str] | None = None
-
-    @staticmethod
-    def _terminate(proc: subprocess.Popen[str]) -> None:
-        if proc.poll() is not None:
-            return
-
-        terminate_process_group(proc)
-        try:
-            proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            terminate_process_group(proc, force=True)
-            proc.wait()
-
-    def run(self, args: str, *, timeout: int = 30, until: list[str] | None = None) -> str:
-        """Run a foreground command, block until it finishes, and return output.
-
-        Use this for short-lived processes (e.g. a publisher that exits on its
-        own). For long-lived background services, use ``start()``/``stop()``.
+    def start_sidecar(
+        self,
+        app_id: str,
+        *,
+        grpc_port: int = 50001,
+        http_port: int = 3500,
+        app_port: int | None = None,
+        app_cmd: str | None = None,
+        resources: Path | None = None,
+    ) -> DaprClient:
+        """Start a Dapr sidecar and return a connected DaprClient.
 
         Args:
-            args: Arguments passed to ``dapr run``.
-            timeout: Maximum seconds to wait before killing the process.
-            until: If provided, the process is terminated as soon as every
-                string in this list has appeared in the accumulated output.
+            app_id: Dapr application ID.
+            grpc_port: Sidecar gRPC port.
+            http_port: Sidecar HTTP port (also used for the SDK health check).
+            app_port: Port the app listens on (implies ``--app-protocol grpc``).
+            app_cmd: Shell command to start alongside the sidecar.
+            resources: Path to resource YAML directory.  Defaults to
+                ``tests/integration/resources/``.
         """
-        proc = subprocess.Popen(
-            args=('dapr', 'run', *shlex.split(args)),
-            cwd=self._cwd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            **get_kwargs_for_process_group(),
-        )
-        lines: list[str] = []
-        assert proc.stdout is not None
+        resources = resources or self._default_resources
 
-        # Kill the process if it exceeds the timeout.  A background timer is
-        # needed because `for line in proc.stdout` blocks indefinitely when
-        # the child never exits.
-        timer = threading.Timer(
-            interval=timeout, function=lambda: terminate_process_group(proc, force=True)
-        )
-        timer.start()
+        cmd = [
+            'dapr',
+            'run',
+            '--app-id',
+            app_id,
+            '--resources-path',
+            str(resources),
+            '--dapr-grpc-port',
+            str(grpc_port),
+            '--dapr-http-port',
+            str(http_port),
+        ]
+        if app_port is not None:
+            cmd.extend(['--app-port', str(app_port), '--app-protocol', 'grpc'])
+        if app_cmd is not None:
+            cmd.extend(['--', *shlex.split(app_cmd)])
 
+        with tempfile.NamedTemporaryFile(mode='w', suffix=f'-{app_id}.log') as log:
+            proc = subprocess.Popen(
+                cmd,
+                cwd=INTEGRATION_DIR,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                text=True,
+                **get_kwargs_for_process_group(),
+            )
+        self._processes.append(proc)
+
+        # Point the SDK health check at the actual sidecar HTTP port.
+        # DaprHealth.wait_for_sidecar() reads settings.DAPR_HTTP_PORT, which
+        # is initialized once at import time and won't reflect a non-default
+        # http_port unless we update it here. The DaprClient constructor
+        # polls /healthz/outbound on this port, so we don't need to sleep first.
+        settings.DAPR_HTTP_PORT = http_port
+
+        client = DaprClient(address=f'127.0.0.1:{grpc_port}')
+        self._clients.append(client)
+
+        # /healthz/outbound (polled by DaprClient) only checks sidecar-side
+        # readiness. When we launched an app alongside the sidecar, also wait
+        # for /v1.0/healthz so invoke_method et al. don't race the app's server.
+        if app_cmd is not None:
+            _wait_for_app_health(http_port)
+
+        return client
+
+    def cleanup(self) -> None:
+        for client in self._clients:
+            client.close()
+        self._clients.clear()
+
+        for proc in self._processes:
+            if proc.poll() is None:
+                terminate_process_group(proc)
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    terminate_process_group(proc, force=True)
+                    proc.wait()
+        self._processes.clear()
+
+
+def _wait_until(
+    condition: Callable[[], T | None],
+    timeout: float = 10.0,
+    interval: float = 0.1,
+) -> T:
+    """Poll `predicate` until it returns a truthy value.
+    Raises `TimeoutError` if it never returns."""
+    deadline = time.monotonic() + timeout
+    while True:
+        result = condition()
+        if result:
+            return result
+        if time.monotonic() >= deadline:
+            raise TimeoutError(f'wait_until timed out after {timeout}s')
+        time.sleep(interval)
+
+
+def _wait_for_app_health(http_port: int, timeout: float = 30.0) -> None:
+    """Poll Dapr's app-facing /v1.0/healthz endpoint until it returns 2xx.
+
+    ``/v1.0/healthz`` requires the app behind the sidecar to be reachable,
+    unlike ``/v1.0/healthz/outbound`` which only checks sidecar readiness.
+    """
+    url = f'http://127.0.0.1:{http_port}/v1.0/healthz'
+
+    def _check() -> bool:
         try:
-            for line in proc.stdout:
-                print(line, end='', flush=True)
-                lines.append(line)
-                if until and all(exp in ''.join(lines) for exp in until):
-                    break
+            response = httpx.get(url, timeout=2.0)
+        except httpx.HTTPError:
+            return False
+        return response.is_success
+
+    _wait_until(_check, timeout=timeout, interval=0.2)
+
+
+@contextmanager
+def _isolate_dapr_settings() -> Iterator[None]:
+    """Pin SDK HTTP settings to the local test sidecar for the duration.
+
+    ``DaprHealth.get_api_url()`` consults three settings (see
+    ``dapr/clients/http/helpers.py``):
+
+    - ``DAPR_HTTP_ENDPOINT``, if set, wins and bypasses host/port entirely.
+    - ``DAPR_RUNTIME_HOST`` is the host resource of the fallback URL.
+    - ``DAPR_HTTP_PORT`` is the port resource of the fallback URL.
+
+    Any of these may be populated from the developer's environment (the Dapr
+    CLI sets them); without an override the SDK health check could target the
+    wrong sidecar. All three are snapshotted and restored so the test's
+    mutations don't leak across modules either.
+    """
+    originals = {
+        'DAPR_HTTP_ENDPOINT': settings.DAPR_HTTP_ENDPOINT,
+        'DAPR_RUNTIME_HOST': settings.DAPR_RUNTIME_HOST,
+        'DAPR_HTTP_PORT': settings.DAPR_HTTP_PORT,
+    }
+    settings.DAPR_HTTP_ENDPOINT = None
+    settings.DAPR_RUNTIME_HOST = '127.0.0.1'
+    try:
+        yield
+    finally:
+        for name, value in originals.items():
+            setattr(settings, name, value)
+
+
+@pytest.fixture(scope='module')
+def dapr_env() -> Generator[DaprTestEnvironment, Any, None]:
+    """Provides a DaprTestEnvironment for programmatic SDK testing.
+
+    Module-scoped so that all tests in a file share a single Dapr sidecar,
+    avoiding port conflicts from rapid start/stop cycles and cutting total
+    test time significantly.
+    """
+    with _isolate_dapr_settings():
+        env = DaprTestEnvironment()
+        try:
+            yield env
         finally:
-            timer.cancel()
-            self._terminate(proc)
-
-        return ''.join(lines)
-
-    def start(self, args: str, *, wait: int = 5) -> None:
-        """Start a long-lived background service.
-
-        Use this for servers/subscribers that must stay alive while a second
-        process runs via ``run()``. Call ``stop()`` to terminate and collect
-        output. Stdout is written to a temp file to avoid pipe-buffer deadlocks.
-        """
-        output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log')
-        proc = subprocess.Popen(
-            args=('dapr', 'run', *shlex.split(args)),
-            cwd=self._cwd,
-            stdout=output_file,
-            stderr=subprocess.STDOUT,
-            text=True,
-            **get_kwargs_for_process_group(),
-        )
-        self._bg_process = proc
-        self._bg_output_file = output_file
-        time.sleep(wait)
-
-    def stop(self) -> str:
-        """Stop the background service and return its captured output."""
-        if self._bg_process is None:
-            return ''
-        self._terminate(self._bg_process)
-        self._bg_process = None
-        return self._read_and_close_output()
-
-    def _read_and_close_output(self) -> str:
-        if self._bg_output_file is None:
-            return ''
-        self._bg_output_file.seek(0)
-        output = self._bg_output_file.read()
-        self._bg_output_file.close()
-        self._bg_output_file = None
-        print(output, end='', flush=True)
-        return output
+            env.cleanup()
 
 
 @pytest.fixture
-def dapr(request: pytest.FixtureRequest) -> Generator[DaprRunner, Any, None]:
-    """Provides a DaprRunner scoped to an example directory.
+def wait_until() -> Callable[..., Any]:
+    """Returns the ``_wait_until(condition, timeout=10, interval=0.1)`` helper."""
+    return _wait_until
 
-    Use the ``example_dir`` marker to select which example:
 
-        @pytest.mark.example_dir('state_store')
-        def test_something(dapr):
-            ...
+@pytest.fixture(scope='module')
+def apps_dir() -> Path:
+    return APPS_DIR
 
-    Defaults to the examples root if no marker is set.
-    """
-    marker = request.node.get_closest_marker('example_dir')
-    cwd = EXAMPLES_DIR / marker.args[0] if marker else EXAMPLES_DIR
 
-    runner = DaprRunner(cwd)
-    yield runner
-    runner.stop()
+@pytest.fixture(scope='module')
+def resources_dir() -> Path:
+    return RESOURCES_DIR
