@@ -122,11 +122,14 @@ def test_streaming_subscribe_receives_published_message(client):
 
 
 def test_subscribe_with_handler_invokes_callback(client):
+    run_id = uuid.uuid4().hex
     received: list[dict] = []
     handler_done = threading.Event()
 
     def handler(message) -> TopicEventResponse:
-        received.append(message.data())
+        payload = message.data()
+        if payload.get('run_id') == run_id:
+            received.append(payload)
         if len(received) >= 2:
             handler_done.set()
         return TopicEventResponse('success')
@@ -137,7 +140,6 @@ def test_subscribe_with_handler_invokes_callback(client):
         handler_fn=handler,
     )
     try:
-        run_id = uuid.uuid4().hex
         for n in range(1, 3):
             client.publish_event(
                 pubsub_name=PUBSUB,
@@ -147,7 +149,7 @@ def test_subscribe_with_handler_invokes_callback(client):
             )
 
         assert handler_done.wait(timeout=10), 'handler was not invoked'
-        ids = sorted(msg['id'] for msg in received if msg['run_id'] == run_id)
+        ids = sorted(msg['id'] for msg in received)
         assert ids == [1, 2]
     finally:
         close_fn()

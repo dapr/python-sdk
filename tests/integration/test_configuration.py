@@ -20,9 +20,14 @@ def client(dapr_env, redis_set_config):
     reason='The sidecar returns the subscription ID before the subscription is active',
 )
 def test_subscribe_first_update_race(client):
+    # https://github.com/dapr/components-contrib/issues/4361
+    # Triggers a race condition where the subscription ID arrives before the subscription is ready.
+    # A warm, bare connection to Redis is the only reliable way to trigger this race, because routing the `set()`
+    # through Dapr usually takes long enough for the subscription to become ready.
     r = redis.Redis(host='127.0.0.1', port=6379)
     r.ping()
     event = threading.Event()
+
     sub_id = client.subscribe_configuration(
         store_name=STORE,
         keys=['cfg-race-key'],
@@ -31,6 +36,8 @@ def test_subscribe_first_update_race(client):
     assert sub_id
     r.set('cfg-race-key', 'val||1')
     assert event.wait(timeout=2)
+
+    client.unsubscribe_configuration(store_name=STORE, id=sub_id)
 
 
 def test_get_single_key(client):
@@ -68,13 +75,11 @@ def test_subscribe_receives_update(client, redis_set_config):
     sub_id = client.subscribe_configuration(store_name=STORE, keys=['cfg-sub-key'], handler=handler)
     assert sub_id
 
+    redis_set_config('cfg-sub-key', 'updated-val', version=2)
+
     # This is necessary because the Dapr runtime returns the subscription ID before the Redis
     # configuration component finishes registering the subscription
-    def _set_and_check() -> bool:
-        redis_set_config('cfg-sub-key', 'updated-val', version=2)
-        return event.is_set()
-
-    wait_until(_set_and_check, timeout=10, interval=0.2)
+    wait_until(event.is_set, timeout=10, interval=0.2)
 
     assert len(received) >= 1
     last = received[-1]

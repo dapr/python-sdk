@@ -31,10 +31,10 @@ class DaprTestEnvironment:
     """
 
     def __init__(self, default_resources: Path = RESOURCES_DIR) -> None:
-        self._default_resources = default_resources
-        self._processes: list[subprocess.Popen[str]] = []
-        self._log_files: list[IO[str]] = []
-        self._clients: list[DaprClient] = []
+        self.default_resources = default_resources
+        self.processes: list[subprocess.Popen[str]] = []
+        self.log_files: list[IO[str]] = []
+        self.clients: list[DaprClient] = []
 
     def start_sidecar(
         self,
@@ -57,7 +57,7 @@ class DaprTestEnvironment:
             resources: Path to resources YAML directory.  Defaults to
                 ``tests/integration/resources/``.
         """
-        resources = resources or self._default_resources
+        resources = resources or self.default_resources
 
         cmd = [
             'dapr',
@@ -86,8 +86,8 @@ class DaprTestEnvironment:
             text=True,
             **get_kwargs_for_process_group(),
         )
-        self._processes.append(proc)
-        self._log_files.append(log_file)
+        self.processes.append(proc)
+        self.log_files.append(log_file)
 
         # Point the SDK health check at the actual sidecar HTTP port.
         # DaprHealth.wait_for_sidecar() reads settings.DAPR_HTTP_PORT, which
@@ -97,7 +97,7 @@ class DaprTestEnvironment:
         settings.DAPR_HTTP_PORT = http_port
 
         client = DaprClient(address=f'127.0.0.1:{grpc_port}')
-        self._clients.append(client)
+        self.clients.append(client)
 
         # /healthz/outbound (polled by DaprClient) only checks sidecar-side
         # readiness. When we launched an app alongside the sidecar, also wait
@@ -108,11 +108,11 @@ class DaprTestEnvironment:
         return client
 
     def cleanup(self) -> None:
-        for client in self._clients:
+        for client in self.clients:
             client.close()
-        self._clients.clear()
+        self.clients.clear()
 
-        for proc in self._processes:
+        for proc in self.processes:
             if proc.poll() is None:
                 terminate_process_group(proc)
                 try:
@@ -120,11 +120,11 @@ class DaprTestEnvironment:
                 except subprocess.TimeoutExpired:
                     terminate_process_group(proc, force=True)
                     proc.wait()
-        self._processes.clear()
+        self.processes.clear()
 
-        for log_file in self._log_files:
+        for log_file in self.log_files:
             log_file.close()
-        self._log_files.clear()
+        self.log_files.clear()
 
 
 def _wait_for_app_health(http_port: int, timeout: float = 30.0) -> None:
@@ -196,7 +196,7 @@ def fail_if_dead_sidecars(dapr_env: DaprTestEnvironment) -> None:
     Without this, a crashed sidecar produces a cascade of gRPC connection
     timeouts on every subsequent test in the module.
     """
-    dead = [proc for proc in dapr_env._processes if proc.poll() is not None]
+    dead = [proc for proc in dapr_env.processes if proc.poll() is not None]
     if not dead:
         return
     details = ', '.join(f'pid={p.pid} exit={p.returncode}' for p in dead)
@@ -217,7 +217,7 @@ def resources_dir() -> Path:
 def _binding_data_dir() -> Generator[None, None, None]:
     """Provide a fresh ``.binding-data/`` for the localbinding component"""
     shutil.rmtree(BINDING_DATA_DIR, ignore_errors=True)
-    BINDING_DATA_DIR.mkdir()
+    BINDING_DATA_DIR.mkdir(parents=True, exist_ok=True)
     try:
         yield
     finally:

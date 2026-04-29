@@ -18,7 +18,7 @@ def flush_redis() -> None:
 
 
 @pytest.fixture(scope='session')
-def redis_set_config() -> Callable[..., None]:
+def redis_set_config() -> Callable[[str, str, int], None]:
     """Dapr encodes values in the config store as ``value||version``"""
 
     def _set(key: str, value: str, version: int = 1) -> None:
