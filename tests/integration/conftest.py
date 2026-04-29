@@ -1,10 +1,9 @@
 import shlex
 import shutil
 import subprocess
-import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, Any, Generator, Iterator
+from typing import Any, Generator, Iterator
 
 import httpx
 import pytest
@@ -33,7 +32,6 @@ class DaprTestEnvironment:
     def __init__(self, default_resources: Path = RESOURCES_DIR) -> None:
         self.default_resources = default_resources
         self.processes: list[subprocess.Popen[str]] = []
-        self.log_files: list[IO[str]] = []
         self.clients: list[DaprClient] = []
 
     def start_sidecar(
@@ -76,18 +74,13 @@ class DaprTestEnvironment:
         if app_cmd is not None:
             cmd.extend(['--', *shlex.split(app_cmd)])
 
-        # Keep the log file handle alive for the lifetime of the sidecar
-        log_file = tempfile.NamedTemporaryFile(mode='w', suffix=f'-{app_id}.log')
         proc = subprocess.Popen(
             cmd,
             cwd=INTEGRATION_DIR,
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
             text=True,
             **get_kwargs_for_process_group(),
         )
         self.processes.append(proc)
-        self.log_files.append(log_file)
 
         # Point the SDK health check at the actual sidecar HTTP port.
         # DaprHealth.wait_for_sidecar() reads settings.DAPR_HTTP_PORT, which
@@ -121,10 +114,6 @@ class DaprTestEnvironment:
                     terminate_process_group(proc, force=True)
                     proc.wait()
         self.processes.clear()
-
-        for log_file in self.log_files:
-            log_file.close()
-        self.log_files.clear()
 
 
 def _wait_for_app_health(http_port: int, timeout: float = 30.0) -> None:

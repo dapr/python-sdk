@@ -1,4 +1,4 @@
-name: validate-examples
+name: run-tests
 
 on:
   push:

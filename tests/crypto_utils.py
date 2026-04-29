@@ -14,7 +14,7 @@ _SYMMETRIC_KEY_BYTES = 32
 
 
 def write_test_keys(target_dir: Path) -> None:
-    """Write a fresh 4096-bit RSA private key (PKCS8 PEM) and a 256-bit AES key.
+    """Write a fresh RSA private key (PKCS8 PEM) and a 256-bit AES key.
 
     File names match those expected by ``examples/crypto/crypto.py`` and the
     ``cryptostore.yaml`` component used by the integration tests.

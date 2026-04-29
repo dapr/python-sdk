@@ -19,7 +19,7 @@ def client(dapr_env, redis_set_config):
 @pytest.mark.xfail(
     reason='The sidecar returns the subscription ID before the subscription is active',
 )
-def test_subscribe_first_update_race(client):
+def test_subscribe_first_update_race(client, request):
     # https://github.com/dapr/components-contrib/issues/4361
     # Triggers a race condition where the subscription ID arrives before the subscription is ready.
     # A warm, bare connection to Redis is the only reliable way to trigger this race, because routing the `set()`
@@ -34,10 +34,12 @@ def test_subscribe_first_update_race(client):
         handler=lambda _id, _resp: event.set(),
     )
     assert sub_id
+
+    # Clean up when the fail inevitably ends
+    request.addfinalizer(lambda: client.unsubscribe_configuration(store_name=STORE, id=sub_id))
+
     r.set('cfg-race-key', 'val||1')
     assert event.wait(timeout=2)
-
-    client.unsubscribe_configuration(store_name=STORE, id=sub_id)
 
 
 def test_get_single_key(client):
