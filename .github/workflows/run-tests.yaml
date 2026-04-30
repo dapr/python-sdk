@@ -97,15 +97,15 @@ jobs:
         with:
           commit: ${{ github.event.inputs.daprdapr_commit }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run integration tests
+        run: |
+          tox -e integration
       - name: Set up Llama
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           nohup ollama serve &
           sleep 10
           ollama pull llama3.2:latest
-      - name: Check examples
+      - name: Validate examples
         run: |
           tox -e examples
-      - name: Run integration tests
-        run: |
-          tox -e integration
