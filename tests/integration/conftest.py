@@ -203,25 +203,16 @@ def resources_dir() -> Path:
 
 
 @pytest.fixture(scope='session', autouse=True)
-def _binding_data_dir() -> Generator[None, None, None]:
-    """Provide a fresh ``.binding-data/`` for the localbinding component"""
-    shutil.rmtree(BINDING_DATA_DIR, ignore_errors=True)
-    BINDING_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        yield
-    finally:
-        shutil.rmtree(BINDING_DATA_DIR, ignore_errors=True)
-
-
-@pytest.fixture(scope='session', autouse=True)
 def crypto_keys() -> Generator[Path, None, None]:
     """Generate temporary RSA + AES keys for ``cryptostore.yaml``.
 
     Note: autouse is necessary because all sidecars load the entire resources/ folder, regardless
     of which components they actually test.
     """
-    write_test_keys(CRYPTO_KEYS_DIR)
     try:
+        write_test_keys(CRYPTO_KEYS_DIR)
         yield CRYPTO_KEYS_DIR
+    except Exception as exc:
+        raise RuntimeError('Crypto keys failed to generate dynamically, cannot continue testing') from exc
     finally:
         remove_test_keys(CRYPTO_KEYS_DIR)
