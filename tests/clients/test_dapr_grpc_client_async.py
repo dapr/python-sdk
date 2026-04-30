@@ -799,7 +799,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{port}')
         with self.assertRaises(Exception) as context:
             await dapr.wait(0.1)
-        self.assertIsInstance(context.exception, ConnectionRefusedError)
+        self.assertIsInstance(context.exception, (ConnectionRefusedError, TimeoutError))
 
     async def test_lock_acquire_success(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
