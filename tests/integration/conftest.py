@@ -213,9 +213,13 @@ def _binding_data_dir() -> Generator[None, None, None]:
         shutil.rmtree(BINDING_DATA_DIR, ignore_errors=True)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session', autouse=True)
 def crypto_keys() -> Generator[Path, None, None]:
-    """Generate temporary RSA + AES keys for ``cryptostore.yaml``."""
+    """Generate temporary RSA + AES keys for ``cryptostore.yaml``.
+
+    Note: autouse is necessary because all sidecars load the entire resources/ folder, regardless
+    of which components they actually test.
+    """
     write_test_keys(CRYPTO_KEYS_DIR)
     try:
         yield CRYPTO_KEYS_DIR
