@@ -18,12 +18,10 @@ from datetime import datetime
 from typing import Any, Union
 from unittest import mock
 
-from durabletask import client
-from grpc.aio import AioRpcError
-
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.aio import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+from grpc.aio import AioRpcError
 
 mock_schedule_result = 'workflow001'
 mock_raise_event_result = 'event001'
@@ -122,8 +120,7 @@ class WorkflowClientAioTimeoutInterceptorTest(unittest.IsolatedAsyncioTestCase):
             call_kwargs = mock_client_cls.call_args[1]
             interceptors = call_kwargs['interceptors']
             self.assertEqual(len(interceptors), 1)
-            from dapr.aio.clients.grpc.interceptors import \
-                DaprClientTimeoutInterceptorAsync
+            from dapr.aio.clients.grpc.interceptors import DaprClientTimeoutInterceptorAsync
 
             self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptorAsync)
 
