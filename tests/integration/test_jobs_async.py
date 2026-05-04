@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from naming_utils import unique_name
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients import Job
 from dapr.clients.exceptions import DaprGrpcError
+from tests.naming_utils import unique_name
 
 GRPC_ADDRESS = '127.0.0.1:50001'
 
@@ -32,6 +32,8 @@ async def test_schedule_then_get_returns_job(sidecar):
             retrieved = await d.get_job_alpha1(name=name)
             assert retrieved.name == name
             assert retrieved.due_time == due
+        except Exception as exc:
+            raise AssertionError(f'get_job_alpha1 did not return scheduled job {name}') from exc
         finally:
             await d.delete_job_alpha1(name=name)
 

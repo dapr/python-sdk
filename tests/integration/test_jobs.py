@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from naming_utils import unique_name
 
 from dapr.clients import Job
 from dapr.clients.exceptions import DaprGrpcError
+from tests.naming_utils import unique_name
 
 # The jobs API re-emits the alpha warnings on every test run.
 pytestmark = pytest.mark.filterwarnings('ignore::UserWarning')
@@ -28,6 +28,8 @@ def test_schedule_then_get_returns_job(client):
         retrieved = client.get_job_alpha1(name=name)
         assert retrieved.name == name
         assert retrieved.due_time == due
+    except Exception as exc:
+        raise AssertionError(f'get_job_alpha1 did not return scheduled job {name}') from exc
     finally:
         client.delete_job_alpha1(name=name)
 
@@ -52,6 +54,8 @@ def test_schedule_with_recurring_schedule(client):
         retrieved = client.get_job_alpha1(name=name)
         assert retrieved.schedule == schedule
         assert retrieved.repeats == 10
+    except Exception as exc:
+        raise AssertionError(f'Recurring schedule failed for job {name}') from exc
     finally:
         client.delete_job_alpha1(name=name)
 
@@ -76,5 +80,7 @@ def test_overwrite_replaces_existing_job(client):
         client.schedule_job_alpha1(Job(name=name, due_time=updated_due), overwrite=True)
         retrieved = client.get_job_alpha1(name=name)
         assert retrieved.due_time == updated_due
+    except Exception as exc:
+        raise AssertionError(f'overwrite=True did not replace due_time for job {name}') from exc
     finally:
         client.delete_job_alpha1(name=name)

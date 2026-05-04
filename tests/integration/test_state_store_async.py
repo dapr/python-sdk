@@ -1,8 +1,8 @@
 import pytest
-from naming_utils import unique_name
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients.grpc._request import TransactionalStateOperation
+from tests.naming_utils import unique_name
 
 STORE = 'statestore'
 GRPC_ADDRESS = '127.0.0.1:50001'

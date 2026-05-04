@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import pytest
-from naming_utils import unique_name
+
+from tests.naming_utils import unique_name
 
 BINDING = 'localbinding'
 BINDING_ROOT = Path(__file__).resolve().parent / '.binding-data'

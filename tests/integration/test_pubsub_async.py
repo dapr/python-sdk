@@ -1,15 +1,20 @@
 import json
-import uuid
 
 import pytest
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
+from tests.naming_utils import unique_name
 from tests.wait_utils import wait_until_async
 
 STORE = 'statestore'
 PUBSUB = 'pubsub'
 TOPIC = 'TOPIC_A'
 GRPC_ADDRESS = '127.0.0.1:50001'
+
+
+async def _fetch_received(d: AsyncDaprClient, key: str) -> bytes | None:
+    resp = await d.get_state(store_name=STORE, key=key)
+    return resp.data or None
 
 
 @pytest.fixture(scope='module')
@@ -22,7 +27,8 @@ def sidecar(dapr_env, apps_dir, flush_redis):
 
 
 async def test_publish_event_delivers_to_subscriber(sidecar):
-    run_id = uuid.uuid4().hex
+    run_id = unique_name()
+    key = f'received-{run_id}-1'
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
         await d.publish_event(
@@ -32,18 +38,14 @@ async def test_publish_event_delivers_to_subscriber(sidecar):
             data_content_type='application/json',
         )
 
-        async def _fetch() -> bytes | None:
-            resp = await d.get_state(store_name=STORE, key=f'received-{run_id}-1')
-            return resp.data or None
-
-        data = await wait_until_async(_fetch, timeout=10)
+        data = await wait_until_async(lambda: _fetch_received(d, key), timeout=10)
 
     msg = json.loads(data)
     assert msg['message'] == 'async hello'
 
 
 async def test_publish_events_bulk_delivery(sidecar):
-    run_id = uuid.uuid4().hex
+    run_id = unique_name()
     payloads = [
         json.dumps({'run_id': run_id, 'id': n, 'message': f'bulk-async-{n}'}) for n in range(1, 3)
     ]
@@ -59,11 +61,6 @@ async def test_publish_events_bulk_delivery(sidecar):
 
         for n in range(1, 3):
             key = f'received-{run_id}-{n}'
-
-            async def _fetch(k: str = key) -> bytes | None:
-                resp = await d.get_state(store_name=STORE, key=k)
-                return resp.data or None
-
-            data = await wait_until_async(_fetch, timeout=10)
+            data = await wait_until_async(lambda: _fetch_received(d, key), timeout=10)
             msg = json.loads(data)
             assert msg['message'] == f'bulk-async-{n}'
