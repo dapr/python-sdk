@@ -1,7 +1,7 @@
-import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from naming_utils import unique_name
 
 from dapr.clients import Job
 from dapr.clients.exceptions import DaprGrpcError
@@ -14,17 +14,13 @@ def _future(days: int) -> str:
     return (datetime.now(timezone.utc) + timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
-def _unique_name(prefix: str) -> str:
-    return f'{prefix}-{uuid.uuid4().hex[:8]}'
-
-
 @pytest.fixture(scope='module')
 def client(dapr_env):
     return dapr_env.start_sidecar(app_id='test-jobs')
 
 
 def test_schedule_then_get_returns_job(client):
-    name = _unique_name('sync-job')
+    name = unique_name(prefix='sync-job-')
     due = _future(days=365)
 
     client.schedule_job_alpha1(Job(name=name, due_time=due))
@@ -37,7 +33,7 @@ def test_schedule_then_get_returns_job(client):
 
 
 def test_delete_removes_job(client):
-    name = _unique_name('sync-job-del')
+    name = unique_name(prefix='sync-job-del-')
     due = _future(days=365)
 
     client.schedule_job_alpha1(Job(name=name, due_time=due))
@@ -48,7 +44,7 @@ def test_delete_removes_job(client):
 
 
 def test_schedule_with_recurring_schedule(client):
-    name = _unique_name('sync-job-recurring')
+    name = unique_name(prefix='sync-job-recurring-')
     schedule = '@every 1h'
 
     client.schedule_job_alpha1(Job(name=name, schedule=schedule, repeats=10))
@@ -62,7 +58,7 @@ def test_schedule_with_recurring_schedule(client):
 
 def test_schedule_without_schedule_or_due_time_raises(client):
     with pytest.raises(ValueError):
-        client.schedule_job_alpha1(Job(name=_unique_name('sync-job-bad')))
+        client.schedule_job_alpha1(Job(name=unique_name(prefix='sync-job-bad-')))
 
 
 def test_schedule_with_blank_name_raises(client):
@@ -71,7 +67,7 @@ def test_schedule_with_blank_name_raises(client):
 
 
 def test_overwrite_replaces_existing_job(client):
-    name = _unique_name('sync-job-overwrite')
+    name = unique_name(prefix='sync-job-overwrite-')
     initial_due = _future(days=30)
     updated_due = _future(days=60)
 

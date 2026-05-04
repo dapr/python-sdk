@@ -1,6 +1,5 @@
-import uuid
-
 import pytest
+from naming_utils import unique_name
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients.grpc._request import TransactionalStateOperation
@@ -15,7 +14,7 @@ def sidecar(dapr_env):
 
 
 async def test_save_and_get_round_trip(sidecar):
-    key = f'async-key-{uuid.uuid4().hex[:8]}'
+    key = unique_name(prefix='async-key-')
     value = b'async-value'
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
@@ -26,7 +25,7 @@ async def test_save_and_get_round_trip(sidecar):
 
 
 async def test_delete_state_removes_key(sidecar):
-    key = f'async-del-{uuid.uuid4().hex[:8]}'
+    key = unique_name(prefix='async-del-')
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
         await d.save_state(store_name=STORE, key=key, value=b'bye')
@@ -37,7 +36,7 @@ async def test_delete_state_removes_key(sidecar):
 
 
 async def test_transaction_upsert_then_get(sidecar):
-    key = f'async-txn-{uuid.uuid4().hex[:8]}'
+    key = unique_name(prefix='async-txn-')
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
         await d.execute_state_transaction(

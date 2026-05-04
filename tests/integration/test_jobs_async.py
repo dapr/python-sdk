@@ -1,7 +1,7 @@
-import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from naming_utils import unique_name
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients import Job
@@ -23,7 +23,7 @@ def sidecar(dapr_env):
 
 
 async def test_schedule_then_get_returns_job(sidecar):
-    name = f'async-job-{uuid.uuid4().hex[:8]}'
+    name = unique_name(prefix='async-job-')
     due = _future(days=365)
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
@@ -37,7 +37,7 @@ async def test_schedule_then_get_returns_job(sidecar):
 
 
 async def test_delete_removes_job(sidecar):
-    name = f'async-job-del-{uuid.uuid4().hex[:8]}'
+    name = unique_name(prefix='async-job-del-')
     due = _future(days=365)
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:

@@ -1,7 +1,7 @@
-import uuid
 from pathlib import Path
 
 import pytest
+from naming_utils import unique_name
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 
@@ -16,7 +16,7 @@ def sidecar(dapr_env):
 
 
 async def test_create_writes_file_to_disk(sidecar):
-    file_name = f'binding-{uuid.uuid4().hex[:8]}.txt'
+    file_name = unique_name(prefix='binding-', suffix='.txt')
     payload = b'hello from async invoke_binding'
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
@@ -31,7 +31,7 @@ async def test_create_writes_file_to_disk(sidecar):
 
 
 async def test_create_then_get_round_trip(sidecar):
-    file_name = f'binding-{uuid.uuid4().hex[:8]}.txt'
+    file_name = unique_name(prefix='binding-', suffix='.txt')
     payload = b'async round-trip payload'
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
