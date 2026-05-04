@@ -92,7 +92,10 @@ def main() -> None:
     logger.info(
         "Weather MCP server listening on http://%s:%d/mcp", args.host, args.port
     )
-    mcp.run(transport="streamable-http")
+    try:
+        mcp.run(transport="streamable-http")
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Shutting down.")
 
 
 if __name__ == "__main__":

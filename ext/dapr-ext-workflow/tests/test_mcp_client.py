@@ -164,7 +164,7 @@ class TestDaprMCPClientConnect(unittest.TestCase):
         self.assertEqual(tool.server_name, "weather")
         self.assertEqual(
             tool.call_tool_workflow,
-            "dapr.internal.mcp.weather.CallTool",
+            "dapr.internal.mcp.weather.CallTool.get_weather",
         )
 
     def test_connect_preserves_description_and_schema(self):
@@ -353,8 +353,10 @@ class TestMCPWorkflowPrefix(unittest.TestCase):
         self.assertEqual(name, "dapr.internal.mcp.weather.ListTools")
 
     def test_call_tool_name(self):
-        name = f"{MCP_WORKFLOW_PREFIX}weather.CallTool"
-        self.assertEqual(name, "dapr.internal.mcp.weather.CallTool")
+        # CallTool workflows include the tool name as a suffix:
+        # dapr.internal.mcp.<server>.CallTool.<tool>
+        name = f"{MCP_WORKFLOW_PREFIX}weather.CallTool.get_forecast"
+        self.assertEqual(name, "dapr.internal.mcp.weather.CallTool.get_forecast")
 
 
 if __name__ == "__main__":
