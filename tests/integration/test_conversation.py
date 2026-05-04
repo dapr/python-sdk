@@ -68,4 +68,6 @@ def test_converse_alpha2_with_mixed_messages(client):
             )
         ],
     )
-    assert response.outputs[0].choices[0].message.content
+    choice = response.outputs[0].choices[0]
+    assert choice.message.content == 'be brief\nhi\nhello'
+    assert choice.finish_reason == 'stop'
