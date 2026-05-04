@@ -6,7 +6,7 @@ The FastAPI extension provides two integration classes for building Dapr applica
 
 ```
 ext/dapr-ext-fastapi/
-├── setup.cfg                      # Deps: dapr, uvicorn, fastapi
+├── pyproject.toml                      # Deps: dapr, uvicorn, fastapi
 ├── setup.py
 ├── tests/
 │   ├── test_app.py                # DaprApp pub/sub tests
