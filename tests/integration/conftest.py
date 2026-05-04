@@ -1,5 +1,4 @@
 import shlex
-import shutil
 import subprocess
 from contextlib import contextmanager
 from pathlib import Path
@@ -213,6 +212,8 @@ def crypto_keys() -> Generator[Path, None, None]:
         write_test_keys(CRYPTO_KEYS_DIR)
         yield CRYPTO_KEYS_DIR
     except Exception as exc:
-        raise RuntimeError('Crypto keys failed to generate dynamically, cannot continue testing') from exc
+        raise RuntimeError(
+            'Crypto keys failed to generate dynamically, cannot continue testing'
+        ) from exc
     finally:
         remove_test_keys(CRYPTO_KEYS_DIR)
