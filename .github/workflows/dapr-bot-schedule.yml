@@ -22,7 +22,7 @@ jobs:
   automerge:
     uses: dapr/.github/.github/workflows/automerge.yaml@main
     with:
-      maintainer-teams: python-sdk-maintainers
+      maintainer-teams: maintainers-python-sdk
     secrets:
       dapr_bot_token: ${{ secrets.DAPR_BOT_TOKEN }}
 
