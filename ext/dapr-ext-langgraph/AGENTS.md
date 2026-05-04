@@ -6,7 +6,7 @@ The LangGraph extension provides a Dapr-backed checkpoint saver for [LangGraph](
 
 ```
 ext/dapr-ext-langgraph/
-├── setup.cfg                          # Deps: dapr, langgraph, langchain, python-ulid, msgpack-python
+├── pyproject.toml                          # Deps: dapr, langgraph, langchain, python-ulid, msgpack-python
 ├── setup.py
 ├── tests/
 │   └── test_checkpointer.py           # Unit tests with mocked DaprClient
