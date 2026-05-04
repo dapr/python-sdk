@@ -40,7 +40,8 @@ tests/integration/
 │   ├── localsecretstore.yaml   # secretstores.local.file
 │   ├── localbinding.yaml    # bindings.localstorage (rootPath=./.binding-data)
 │   ├── cryptostore.yaml     # crypto.dapr.localstorage (path=./keys)
-│   └── conversation.yaml    # conversation.echo
+│   ├── conversation_echo.yaml   # conversation.echo
+│   └── conversation_ollama.yaml # conversation.ollama
 ├── keys/                    # RSA + symmetric keys for cryptostore (generated at test time, gitignored)
 ├── secrets.json             # Secrets file for localsecretstore component
 └── .binding-data/           # Created on demand for localbinding rootPath (gitignored)
@@ -58,6 +59,7 @@ Sidecar and client fixtures are **module-scoped** — one sidecar per test file.
 | `crypto_keys` | session | `Path` | Generates ephemeral RSA + AES keys under `tests/integration/keys/` for the cryptostore component (see `tests/crypto_utils.py`) |
 | `flush_redis` | session | `None` | Side-effect fixture that clears the `dapr_redis` container once per session |
 | `redis_set_config` | session | `Callable` | Returns `_set(key, value, version=1)` that seeds a Dapr configuration value into Redis (`value||version`) |
+| `ollama` | session | `None` | Ensures a local Ollama server with the default model is running; fails the test if the CLI is missing or the server cannot start (helpers in `tests/ollama_utils.py`) |
 
 `flush_redis` and `redis_set_config` are session-scoped (defined in `tests/conftest.py`) so module-scoped fixtures can depend on them.
 
@@ -86,6 +88,7 @@ Each test file defines its own module-scoped fixture (`client` or `sidecar`) tha
 | `test_invoke_binding.py` | Output bindings | `invoke_binding` (create/get/delete against `bindings.localstorage`) |
 | `test_crypto.py` | Cryptography | `encrypt`, `decrypt` (RSA + AES round-trips against `crypto.dapr.localstorage`) |
 | `test_conversation.py` | Conversation | `converse_alpha1`, `converse_alpha2` against `conversation.echo` |
+| `test_conversation_ollama.py` | Conversation (real LLM) | `converse_alpha1`, `converse_alpha2` against `conversation.ollama`; skips if `ollama` CLI is missing |
 | `test_workflow.py` | Workflow (`dapr-ext-workflow`) | `WorkflowRuntime`, `DaprWorkflowClient.schedule_new_workflow`, `wait_for_workflow_start`, `wait_for_workflow_completion`, `raise_workflow_event`, `pause_workflow`, `resume_workflow`, `terminate_workflow`, `purge_workflow`, `get_workflow_state` |
 
 ### Async client coverage
