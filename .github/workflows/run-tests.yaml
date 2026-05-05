@@ -86,7 +86,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
       - name: Install dependencies
-        run: uv sync --frozen --all-packages --group examples
+        run: uv sync --frozen --all-packages --group tests
       - name: Set up Dapr CLI
         uses: dapr/.github/.github/actions/setup-dapr-cli@main
         with:

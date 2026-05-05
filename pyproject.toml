@@ -81,7 +81,7 @@ dev = [
     "pydantic~=2.13.3",
     "PyYAML~=6.0.3",
 ]
-examples = [
+tests = [
     {include-group = "dev"},
     "mechanical-markdown~=0.8.0",
     "langchain-ollama~=1.0.1",
