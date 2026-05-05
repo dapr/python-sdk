@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 """
 DaprMCPClient — framework-agnostic client for discovering and cataloguing
 MCP tools exposed by Dapr MCPServer resources.
@@ -31,6 +29,8 @@ Usage::
         print(tool.name, tool.description)
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import uuid
@@ -44,11 +44,11 @@ logger = logging.getLogger(__name__)
 
 # MCP workflow name constants — mirrors the proto enums in
 # dapr/dapr/dapr/proto/workflows/v1/mcp.proto as plain strings.
-MCP_WORKFLOW_PREFIX: str = "dapr.internal.mcp."
+MCP_WORKFLOW_PREFIX: str = 'dapr.internal.mcp.'
 """Prefix for all built-in MCP workflow orchestrations."""
 
-_MCP_METHOD_LIST_TOOLS = ".ListTools"
-_MCP_METHOD_CALL_TOOL = ".CallTool"
+_MCP_METHOD_LIST_TOOLS = '.ListTools'
+_MCP_METHOD_CALL_TOOL = '.CallTool'
 
 
 # TODO(@sicoyle): see if I can use the mcp pkg class instead for this?
@@ -71,8 +71,8 @@ class MCPToolDef:
     name: str
     description: str
     input_schema: Dict[str, Any] = field(default_factory=dict)
-    server_name: str = ""
-    call_tool_workflow: str = ""
+    server_name: str = ''
+    call_tool_workflow: str = ''
 
 
 class _DaprMCPClientBase:
@@ -85,7 +85,7 @@ class _DaprMCPClientBase:
         allowed_tools: Optional[Set[str]] = None,
     ) -> None:
         if timeout_in_seconds <= 0:
-            raise ValueError("timeout_in_seconds must be a positive integer")
+            raise ValueError('timeout_in_seconds must be a positive integer')
         self._timeout = timeout_in_seconds
         self._allowed_tools = allowed_tools
         self._server_tools: Dict[str, List[MCPToolDef]] = {}
@@ -99,23 +99,23 @@ class _DaprMCPClientBase:
         except json.JSONDecodeError as exc:
             raise RuntimeError(
                 f"ListTools workflow for MCPServer '{mcpserver_name}' returned "
-                f"malformed JSON: {exc}"
+                f'malformed JSON: {exc}'
             ) from exc
 
         tools: List[MCPToolDef] = []
-        for tool_def in result.get("tools", []):
-            name = tool_def.get("name", "")
+        for tool_def in result.get('tools', []):
+            name = tool_def.get('name', '')
             if self._allowed_tools is not None and name not in self._allowed_tools:
                 logger.debug("Skipping tool '%s' (not in allowed_tools)", name)
                 continue
             # Workflow name includes the tool name for per-tool observability:
             # dapr.internal.mcp.<server>.CallTool.<tool>
-            call_tool_wf = f"{MCP_WORKFLOW_PREFIX}{mcpserver_name}{_MCP_METHOD_CALL_TOOL}.{name}"
+            call_tool_wf = f'{MCP_WORKFLOW_PREFIX}{mcpserver_name}{_MCP_METHOD_CALL_TOOL}.{name}'
             tools.append(
                 MCPToolDef(
                     name=name,
-                    description=tool_def.get("description", ""),
-                    input_schema=tool_def.get("inputSchema") or {},
+                    description=tool_def.get('description', ''),
+                    input_schema=tool_def.get('inputSchema') or {},
                     server_name=mcpserver_name,
                     call_tool_workflow=call_tool_wf,
                 )
@@ -202,19 +202,17 @@ class DaprMCPClient(_DaprMCPClientBase):
                 status.
         """
         if not mcpserver_name or not mcpserver_name.strip():
-            raise ValueError("mcpserver_name must be a non-empty string")
+            raise ValueError('mcpserver_name must be a non-empty string')
 
         instance_id = str(uuid.uuid4())
         # TODO(@sicoyle): reminder to add a func like I have in durabletask-go to use for here instead of building like this!
-        workflow_name = f"{MCP_WORKFLOW_PREFIX}{mcpserver_name}{_MCP_METHOD_LIST_TOOLS}"
+        workflow_name = f'{MCP_WORKFLOW_PREFIX}{mcpserver_name}{_MCP_METHOD_LIST_TOOLS}'
 
-        logger.debug(
-            "Scheduling %s (instance=%s)", workflow_name, instance_id
-        )
+        logger.debug('Scheduling %s (instance=%s)', workflow_name, instance_id)
 
         self._wf_client.schedule_new_workflow(
             workflow=workflow_name,
-            input={"mcpServerName": mcpserver_name},
+            input={'mcpServerName': mcpserver_name},
             instance_id=instance_id,
         )
 
@@ -227,14 +225,14 @@ class DaprMCPClient(_DaprMCPClientBase):
         if state is None:
             raise RuntimeError(
                 f"ListTools workflow for MCPServer '{mcpserver_name}' "
-                f"timed out after {self._timeout}s"
+                f'timed out after {self._timeout}s'
             )
 
         if state.runtime_status != WorkflowStatus.COMPLETED:
             raise RuntimeError(
                 f"ListTools workflow for MCPServer '{mcpserver_name}' "
-                f"ended with status {state.runtime_status.name!r}: "
-                f"{state.serialized_output or ''}"
+                f'ended with status {state.runtime_status.name!r}: '
+                f'{state.serialized_output or ""}'
             )
 
         self._process_list_tools_result(mcpserver_name, state.serialized_output)

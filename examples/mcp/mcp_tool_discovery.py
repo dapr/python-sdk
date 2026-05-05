@@ -58,18 +58,18 @@ def main():
     print("Connecting to MCPServer 'weather'...")
 
     client = DaprMCPClient(timeout_in_seconds=30)
-    client.connect("weather")
+    client.connect('weather')
 
     tools = client.get_all_tools()
-    print(f"\nDiscovered {len(tools)} tool(s):\n")
+    print(f'\nDiscovered {len(tools)} tool(s):\n')
     for tool in tools:
-        print(f"  Name:        {tool.name}")
-        print(f"  Description: {tool.description}")
-        print(f"  Server:      {tool.server_name}")
-        print(f"  Workflow:    {tool.call_tool_workflow}")
-        if tool.input_schema.get("properties"):
-            props = list(tool.input_schema["properties"].keys())
-            print(f"  Parameters:  {', '.join(props)}")
+        print(f'  Name:        {tool.name}')
+        print(f'  Description: {tool.description}')
+        print(f'  Server:      {tool.server_name}')
+        print(f'  Workflow:    {tool.call_tool_workflow}')
+        if tool.input_schema.get('properties'):
+            props = list(tool.input_schema['properties'].keys())
+            print(f'  Parameters:  {", ".join(props)}')
         print()
 
     # ------------------------------------------------------------------
@@ -78,7 +78,7 @@ def main():
     #    durable tool calls via child workflows.
     # ------------------------------------------------------------------
     if not tools:
-        print("No tools discovered — exiting.")
+        print('No tools discovered — exiting.')
         return
 
     tool = tools[0]
@@ -86,11 +86,9 @@ def main():
 
     # Build a Pydantic model from the tool's JSON Schema for validation.
     if tool.input_schema:
-        ArgsModel = create_pydantic_model_from_schema(
-            tool.input_schema, f"{tool.name}Args"
-        )
-        print(f"  Args model: {ArgsModel.__name__}")
-        print(f"  Fields:     {list(ArgsModel.model_fields.keys())}\n")
+        ArgsModel = create_pydantic_model_from_schema(tool.input_schema, f'{tool.name}Args')
+        print(f'  Args model: {ArgsModel.__name__}')
+        print(f'  Fields:     {list(ArgsModel.model_fields.keys())}\n')
 
     # Define a simple workflow that calls the MCP tool.
     def call_mcp_tool_workflow(ctx: DaprWorkflowContext, input: dict):
@@ -98,15 +96,15 @@ def main():
         result = yield ctx.call_child_workflow(
             workflow=tool.call_tool_workflow,
             input={
-                "toolName": tool.name,
-                "arguments": input.get("arguments", {}),
+                'toolName': tool.name,
+                'arguments': input.get('arguments', {}),
             },
         )
         return result
 
     def print_result(ctx: WorkflowActivityContext, input):
         """Activity that prints the tool result."""
-        print(f"  Tool result: {input}")
+        print(f'  Tool result: {input}')
 
     # Register and run the workflow.
     wfr = WorkflowRuntime()
@@ -117,9 +115,9 @@ def main():
     wf_client = DaprWorkflowClient()
     instance_id = wf_client.schedule_new_workflow(
         workflow=call_mcp_tool_workflow,
-        input={"arguments": {"location": "Seattle"}},
+        input={'arguments': {'location': 'Seattle'}},
     )
-    print(f"  Scheduled workflow: {instance_id}")
+    print(f'  Scheduled workflow: {instance_id}')
 
     state = wf_client.wait_for_workflow_completion(
         instance_id=instance_id,
@@ -128,14 +126,14 @@ def main():
     )
 
     if state:
-        print(f"  Status: {state.runtime_status.name}")
-        print(f"  Output: {state.serialized_output}")
+        print(f'  Status: {state.runtime_status.name}')
+        print(f'  Output: {state.serialized_output}')
     else:
-        print("  Workflow timed out.")
+        print('  Workflow timed out.')
 
     wfr.shutdown()
-    print("\nDone.")
+    print('\nDone.')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -14,11 +14,9 @@ limitations under the License.
 """
 
 import unittest
-from typing import Optional
-
-from pydantic import BaseModel
 
 from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
+from pydantic import BaseModel
 
 
 class TestBasicTypes(unittest.TestCase):
@@ -26,55 +24,53 @@ class TestBasicTypes(unittest.TestCase):
 
     def test_string_field(self):
         schema = {
-            "type": "object",
-            "properties": {"name": {"type": "string", "description": "A name"}},
-            "required": ["name"],
+            'type': 'object',
+            'properties': {'name': {'type': 'string', 'description': 'A name'}},
+            'required': ['name'],
         }
-        Model = create_pydantic_model_from_schema(schema, "TestModel")
-        instance = Model(name="Alice")
-        self.assertEqual(instance.name, "Alice")
+        Model = create_pydantic_model_from_schema(schema, 'TestModel')
+        instance = Model(name='Alice')
+        self.assertEqual(instance.name, 'Alice')
 
     def test_integer_field(self):
         schema = {
-            "type": "object",
-            "properties": {"count": {"type": "integer"}},
-            "required": ["count"],
+            'type': 'object',
+            'properties': {'count': {'type': 'integer'}},
+            'required': ['count'],
         }
-        Model = create_pydantic_model_from_schema(schema, "IntModel")
+        Model = create_pydantic_model_from_schema(schema, 'IntModel')
         instance = Model(count=42)
         self.assertEqual(instance.count, 42)
 
     def test_number_field(self):
         schema = {
-            "type": "object",
-            "properties": {"price": {"type": "number"}},
-            "required": ["price"],
+            'type': 'object',
+            'properties': {'price': {'type': 'number'}},
+            'required': ['price'],
         }
-        Model = create_pydantic_model_from_schema(schema, "NumModel")
+        Model = create_pydantic_model_from_schema(schema, 'NumModel')
         instance = Model(price=9.99)
         self.assertAlmostEqual(instance.price, 9.99)
 
     def test_boolean_field(self):
         schema = {
-            "type": "object",
-            "properties": {"active": {"type": "boolean"}},
-            "required": ["active"],
+            'type': 'object',
+            'properties': {'active': {'type': 'boolean'}},
+            'required': ['active'],
         }
-        Model = create_pydantic_model_from_schema(schema, "BoolModel")
+        Model = create_pydantic_model_from_schema(schema, 'BoolModel')
         instance = Model(active=True)
         self.assertTrue(instance.active)
 
     def test_array_field(self):
         schema = {
-            "type": "object",
-            "properties": {
-                "tags": {"type": "array", "items": {"type": "string"}}
-            },
-            "required": ["tags"],
+            'type': 'object',
+            'properties': {'tags': {'type': 'array', 'items': {'type': 'string'}}},
+            'required': ['tags'],
         }
-        Model = create_pydantic_model_from_schema(schema, "ArrayModel")
-        instance = Model(tags=["a", "b"])
-        self.assertEqual(instance.tags, ["a", "b"])
+        Model = create_pydantic_model_from_schema(schema, 'ArrayModel')
+        instance = Model(tags=['a', 'b'])
+        self.assertEqual(instance.tags, ['a', 'b'])
 
 
 class TestRequiredOptional(unittest.TestCase):
@@ -82,36 +78,36 @@ class TestRequiredOptional(unittest.TestCase):
 
     def test_required_field_has_no_default(self):
         schema = {
-            "type": "object",
-            "properties": {"location": {"type": "string"}},
-            "required": ["location"],
+            'type': 'object',
+            'properties': {'location': {'type': 'string'}},
+            'required': ['location'],
         }
-        Model = create_pydantic_model_from_schema(schema, "ReqModel")
+        Model = create_pydantic_model_from_schema(schema, 'ReqModel')
         with self.assertRaises(Exception):
             Model()  # Missing required field
 
     def test_optional_field_defaults_to_none(self):
         schema = {
-            "type": "object",
-            "properties": {"location": {"type": "string"}},
-            "required": [],
+            'type': 'object',
+            'properties': {'location': {'type': 'string'}},
+            'required': [],
         }
-        Model = create_pydantic_model_from_schema(schema, "OptModel")
+        Model = create_pydantic_model_from_schema(schema, 'OptModel')
         instance = Model()
         self.assertIsNone(instance.location)
 
     def test_mixed_required_optional(self):
         schema = {
-            "type": "object",
-            "properties": {
-                "location": {"type": "string"},
-                "days": {"type": "integer"},
+            'type': 'object',
+            'properties': {
+                'location': {'type': 'string'},
+                'days': {'type': 'integer'},
             },
-            "required": ["location"],
+            'required': ['location'],
         }
-        Model = create_pydantic_model_from_schema(schema, "MixedModel")
-        instance = Model(location="Tokyo")
-        self.assertEqual(instance.location, "Tokyo")
+        Model = create_pydantic_model_from_schema(schema, 'MixedModel')
+        instance = Model(location='Tokyo')
+        self.assertEqual(instance.location, 'Tokyo')
         self.assertIsNone(instance.days)
 
 
@@ -120,37 +116,37 @@ class TestAnyOfOneOf(unittest.TestCase):
 
     def test_anyof_nullable_string(self):
         schema = {
-            "type": "object",
-            "properties": {
-                "label": {
-                    "anyOf": [
-                        {"type": "string"},
-                        {"type": "null"},
+            'type': 'object',
+            'properties': {
+                'label': {
+                    'anyOf': [
+                        {'type': 'string'},
+                        {'type': 'null'},
                     ]
                 }
             },
-            "required": ["label"],
+            'required': ['label'],
         }
-        Model = create_pydantic_model_from_schema(schema, "NullableModel")
+        Model = create_pydantic_model_from_schema(schema, 'NullableModel')
         instance = Model(label=None)
         self.assertIsNone(instance.label)
-        instance2 = Model(label="hello")
-        self.assertEqual(instance2.label, "hello")
+        instance2 = Model(label='hello')
+        self.assertEqual(instance2.label, 'hello')
 
     def test_oneof_nullable_integer(self):
         schema = {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "oneOf": [
-                        {"type": "integer"},
-                        {"type": "null"},
+            'type': 'object',
+            'properties': {
+                'count': {
+                    'oneOf': [
+                        {'type': 'integer'},
+                        {'type': 'null'},
                     ]
                 }
             },
-            "required": ["count"],
+            'required': ['count'],
         }
-        Model = create_pydantic_model_from_schema(schema, "OneOfModel")
+        Model = create_pydantic_model_from_schema(schema, 'OneOfModel')
         instance = Model(count=5)
         self.assertEqual(instance.count, 5)
 
@@ -161,85 +157,85 @@ class TestKwargsUnwrapping(unittest.TestCase):
     def test_kwargs_wrapper_is_unwrapped(self):
         """Schemas wrapping args in a 'kwargs' field should be unwrapped."""
         schema = {
-            "type": "object",
-            "properties": {
-                "kwargs": {
-                    "type": "object",
-                    "properties": {
-                        "city": {"type": "string"},
-                        "units": {"type": "string"},
+            'type': 'object',
+            'properties': {
+                'kwargs': {
+                    'type': 'object',
+                    'properties': {
+                        'city': {'type': 'string'},
+                        'units': {'type': 'string'},
                     },
-                    "required": ["city"],
+                    'required': ['city'],
                 }
             },
         }
-        Model = create_pydantic_model_from_schema(schema, "KwargsModel")
-        instance = Model(city="Seattle")
-        self.assertEqual(instance.city, "Seattle")
+        Model = create_pydantic_model_from_schema(schema, 'KwargsModel')
+        instance = Model(city='Seattle')
+        self.assertEqual(instance.city, 'Seattle')
         self.assertIsNone(instance.units)
 
     def test_non_kwargs_not_unwrapped(self):
         """Schemas without the kwargs wrapper should not be affected."""
         schema = {
-            "type": "object",
-            "properties": {
-                "city": {"type": "string"},
+            'type': 'object',
+            'properties': {
+                'city': {'type': 'string'},
             },
-            "required": ["city"],
+            'required': ['city'],
         }
-        Model = create_pydantic_model_from_schema(schema, "FlatModel")
-        instance = Model(city="Tokyo")
-        self.assertEqual(instance.city, "Tokyo")
+        Model = create_pydantic_model_from_schema(schema, 'FlatModel')
+        instance = Model(city='Tokyo')
+        self.assertEqual(instance.city, 'Tokyo')
 
 
 class TestEmptyAndEdgeCases(unittest.TestCase):
     """Tests for edge cases."""
 
     def test_empty_properties(self):
-        schema = {"type": "object", "properties": {}}
-        Model = create_pydantic_model_from_schema(schema, "EmptyModel")
+        schema = {'type': 'object', 'properties': {}}
+        Model = create_pydantic_model_from_schema(schema, 'EmptyModel')
         instance = Model()
         self.assertIsInstance(instance, BaseModel)
 
     def test_no_properties_key(self):
-        schema = {"type": "object"}
-        Model = create_pydantic_model_from_schema(schema, "NoPropsModel")
+        schema = {'type': 'object'}
+        Model = create_pydantic_model_from_schema(schema, 'NoPropsModel')
         instance = Model()
         self.assertIsInstance(instance, BaseModel)
 
     def test_description_preserved(self):
         schema = {
-            "type": "object",
-            "properties": {
-                "city": {
-                    "type": "string",
-                    "description": "The city to query",
+            'type': 'object',
+            'properties': {
+                'city': {
+                    'type': 'string',
+                    'description': 'The city to query',
                 }
             },
-            "required": ["city"],
+            'required': ['city'],
         }
-        Model = create_pydantic_model_from_schema(schema, "DescModel")
-        field_info = Model.model_fields["city"]
-        self.assertEqual(field_info.description, "The city to query")
+        Model = create_pydantic_model_from_schema(schema, 'DescModel')
+        field_info = Model.model_fields['city']
+        self.assertEqual(field_info.description, 'The city to query')
 
     def test_returns_pydantic_model_subclass(self):
         schema = {
-            "type": "object",
-            "properties": {"x": {"type": "integer"}},
-            "required": ["x"],
+            'type': 'object',
+            'properties': {'x': {'type': 'integer'}},
+            'required': ['x'],
         }
-        Model = create_pydantic_model_from_schema(schema, "SubclassCheck")
+        Model = create_pydantic_model_from_schema(schema, 'SubclassCheck')
         self.assertTrue(issubclass(Model, BaseModel))
 
     def test_model_name_set(self):
         schema = {
-            "type": "object",
-            "properties": {"x": {"type": "integer"}},
-            "required": ["x"],
+            'type': 'object',
+            'properties': {'x': {'type': 'integer'}},
+            'required': ['x'],
         }
-        Model = create_pydantic_model_from_schema(schema, "MyToolArgs")
-        self.assertEqual(Model.__name__, "MyToolArgs")
+        Model = create_pydantic_model_from_schema(schema, 'MyToolArgs')
+        self.assertEqual(Model.__name__, 'MyToolArgs')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

@@ -29,14 +29,12 @@ import random
 
 from mcp.server.fastmcp import FastMCP
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("weather-mcp-server")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('weather-mcp-server')
 
 
 def build_server(host: str, port: int) -> FastMCP:
-    mcp = FastMCP("WeatherService", host=host, port=port)
+    mcp = FastMCP('WeatherService', host=host, port=port)
 
     @mcp.tool()
     async def get_weather(location: str) -> str:
@@ -50,10 +48,10 @@ def build_server(host: str, port: int) -> FastMCP:
         """
         temperature = random.randint(32, 105)
         conditions = random.choice(
-            ["sunny", "cloudy", "partly cloudy", "rainy", "windy", "snowy", "foggy"]
+            ['sunny', 'cloudy', 'partly cloudy', 'rainy', 'windy', 'snowy', 'foggy']
         )
         humidity = random.randint(20, 95)
-        return f"{location}: {temperature}F, {conditions}, {humidity}% humidity."
+        return f'{location}: {temperature}F, {conditions}, {humidity}% humidity.'
 
     @mcp.tool()
     async def get_forecast(location: str, days: int = 5) -> str:
@@ -67,36 +65,30 @@ def build_server(host: str, port: int) -> FastMCP:
             Multi-line forecast summary.
         """
         days = min(max(days, 1), 10)
-        lines = [f"{location} {days}-day forecast:"]
+        lines = [f'{location} {days}-day forecast:']
         for i in range(1, days + 1):
             high = random.randint(55, 105)
             low = high - random.randint(10, 25)
-            cond = random.choice(
-                ["sunny", "cloudy", "rainy", "stormy", "clear", "partly cloudy"]
-            )
-            lines.append(f"  Day {i}: High {high}F / Low {low}F, {cond}")
-        return "\n".join(lines)
+            cond = random.choice(['sunny', 'cloudy', 'rainy', 'stormy', 'clear', 'partly cloudy'])
+            lines.append(f'  Day {i}: High {high}F / Low {low}F, {cond}')
+        return '\n'.join(lines)
 
     return mcp
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Weather MCP server (streamable-HTTP transport)"
-    )
-    parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=8081)
+    parser = argparse.ArgumentParser(description='Weather MCP server (streamable-HTTP transport)')
+    parser.add_argument('--host', default='0.0.0.0')
+    parser.add_argument('--port', type=int, default=8081)
     args = parser.parse_args()
 
     mcp = build_server(args.host, args.port)
-    logger.info(
-        "Weather MCP server listening on http://%s:%d/mcp", args.host, args.port
-    )
+    logger.info('Weather MCP server listening on http://%s:%d/mcp', args.host, args.port)
     try:
-        mcp.run(transport="streamable-http")
+        mcp.run(transport='streamable-http')
     except (KeyboardInterrupt, SystemExit):
-        logger.info("Shutting down.")
+        logger.info('Shutting down.')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

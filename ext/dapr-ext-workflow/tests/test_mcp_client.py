@@ -16,19 +16,18 @@ limitations under the License.
 import json
 import unittest
 from datetime import datetime
-from unittest import mock
 from unittest.mock import MagicMock
 
 from dapr.ext.workflow._durabletask import client
-from dapr.ext.workflow.mcp import DaprMCPClient, MCPToolDef, MCP_WORKFLOW_PREFIX
-from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
+from dapr.ext.workflow.mcp import MCP_WORKFLOW_PREFIX, DaprMCPClient, MCPToolDef
+from dapr.ext.workflow.workflow_state import WorkflowState
 
 
 def _make_completed_state(output_json: dict) -> WorkflowState:
     """Create a WorkflowState that simulates a COMPLETED workflow."""
     inner = client.WorkflowState(
-        instance_id="test-id",
-        name="test-workflow",
+        instance_id='test-id',
+        name='test-workflow',
         runtime_status=client.OrchestrationStatus.COMPLETED,
         created_at=datetime.now(),
         last_updated_at=datetime.now(),
@@ -43,13 +42,13 @@ def _make_completed_state(output_json: dict) -> WorkflowState:
 def _make_failed_state() -> WorkflowState:
     """Create a WorkflowState that simulates a FAILED workflow."""
     inner = client.WorkflowState(
-        instance_id="test-id",
-        name="test-workflow",
+        instance_id='test-id',
+        name='test-workflow',
         runtime_status=client.OrchestrationStatus.FAILED,
         created_at=datetime.now(),
         last_updated_at=datetime.now(),
         serialized_input=None,
-        serialized_output="error details",
+        serialized_output='error details',
         serialized_custom_status=None,
         failure_details=None,
     )
@@ -57,28 +56,28 @@ def _make_failed_state() -> WorkflowState:
 
 
 SAMPLE_LIST_TOOLS_RESPONSE = {
-    "tools": [
+    'tools': [
         {
-            "name": "get_weather",
-            "description": "Get current weather for a location.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string", "description": "City name"},
+            'name': 'get_weather',
+            'description': 'Get current weather for a location.',
+            'inputSchema': {
+                'type': 'object',
+                'properties': {
+                    'location': {'type': 'string', 'description': 'City name'},
                 },
-                "required": ["location"],
+                'required': ['location'],
             },
         },
         {
-            "name": "get_forecast",
-            "description": "Get multi-day forecast.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string"},
-                    "days": {"type": "integer"},
+            'name': 'get_forecast',
+            'description': 'Get multi-day forecast.',
+            'inputSchema': {
+                'type': 'object',
+                'properties': {
+                    'location': {'type': 'string'},
+                    'days': {'type': 'integer'},
                 },
-                "required": ["location"],
+                'required': ['location'],
             },
         },
     ]
@@ -90,20 +89,20 @@ class TestMCPToolDef(unittest.TestCase):
 
     def test_frozen(self):
         tool = MCPToolDef(
-            name="test",
-            description="desc",
-            input_schema={"type": "object"},
-            server_name="srv",
-            call_tool_workflow="dapr.internal.mcp.srv.CallTool",
+            name='test',
+            description='desc',
+            input_schema={'type': 'object'},
+            server_name='srv',
+            call_tool_workflow='dapr.internal.mcp.srv.CallTool',
         )
         with self.assertRaises(AttributeError):
-            tool.name = "changed"
+            tool.name = 'changed'
 
     def test_defaults(self):
-        tool = MCPToolDef(name="test", description="desc")
+        tool = MCPToolDef(name='test', description='desc')
         self.assertEqual(tool.input_schema, {})
-        self.assertEqual(tool.server_name, "")
-        self.assertEqual(tool.call_tool_workflow, "")
+        self.assertEqual(tool.server_name, '')
+        self.assertEqual(tool.call_tool_workflow, '')
 
 
 class TestDaprMCPClientConnect(unittest.TestCase):
@@ -115,23 +114,23 @@ class TestDaprMCPClientConnect(unittest.TestCase):
     def test_connect_schedules_correct_workflow(self):
         """connect() should schedule dapr.internal.mcp.<name>.ListTools."""
         mock_wf = MagicMock()
-        mock_wf.schedule_new_workflow.return_value = "inst-1"
+        mock_wf.schedule_new_workflow.return_value = 'inst-1'
         mock_wf.wait_for_workflow_completion.return_value = _make_completed_state(
             SAMPLE_LIST_TOOLS_RESPONSE
         )
 
         mcp_client = self._make_client(mock_wf)
-        mcp_client.connect("weather")
+        mcp_client.connect('weather')
 
         mock_wf.schedule_new_workflow.assert_called_once()
         call_kwargs = mock_wf.schedule_new_workflow.call_args
         self.assertEqual(
-            call_kwargs.kwargs["workflow"],
-            "dapr.internal.mcp.weather.ListTools",
+            call_kwargs.kwargs['workflow'],
+            'dapr.internal.mcp.weather.ListTools',
         )
         self.assertEqual(
-            call_kwargs.kwargs["input"],
-            {"mcpServerName": "weather"},
+            call_kwargs.kwargs['input'],
+            {'mcpServerName': 'weather'},
         )
 
     def test_connect_caches_tools(self):
@@ -142,13 +141,13 @@ class TestDaprMCPClientConnect(unittest.TestCase):
         )
 
         mcp_client = self._make_client(mock_wf)
-        mcp_client.connect("weather")
+        mcp_client.connect('weather')
 
         tools = mcp_client.get_all_tools()
         self.assertEqual(len(tools), 2)
         self.assertIsInstance(tools[0], MCPToolDef)
-        self.assertEqual(tools[0].name, "get_weather")
-        self.assertEqual(tools[1].name, "get_forecast")
+        self.assertEqual(tools[0].name, 'get_weather')
+        self.assertEqual(tools[1].name, 'get_forecast')
 
     def test_connect_sets_server_name_and_workflow(self):
         """Each MCPToolDef should have server_name and call_tool_workflow set."""
@@ -158,13 +157,13 @@ class TestDaprMCPClientConnect(unittest.TestCase):
         )
 
         mcp_client = self._make_client(mock_wf)
-        mcp_client.connect("weather")
+        mcp_client.connect('weather')
 
         tool = mcp_client.get_all_tools()[0]
-        self.assertEqual(tool.server_name, "weather")
+        self.assertEqual(tool.server_name, 'weather')
         self.assertEqual(
             tool.call_tool_workflow,
-            "dapr.internal.mcp.weather.CallTool.get_weather",
+            'dapr.internal.mcp.weather.CallTool.get_weather',
         )
 
     def test_connect_preserves_description_and_schema(self):
@@ -175,11 +174,11 @@ class TestDaprMCPClientConnect(unittest.TestCase):
         )
 
         mcp_client = self._make_client(mock_wf)
-        mcp_client.connect("weather")
+        mcp_client.connect('weather')
 
         tool = mcp_client.get_all_tools()[0]
-        self.assertEqual(tool.description, "Get current weather for a location.")
-        self.assertIn("properties", tool.input_schema)
+        self.assertEqual(tool.description, 'Get current weather for a location.')
+        self.assertIn('properties', tool.input_schema)
 
     def test_connect_timeout_raises(self):
         """connect() should raise RuntimeError on timeout (None state)."""
@@ -188,8 +187,8 @@ class TestDaprMCPClientConnect(unittest.TestCase):
 
         mcp_client = self._make_client(mock_wf)
         with self.assertRaises(RuntimeError) as ctx:
-            mcp_client.connect("weather")
-        self.assertIn("timed out", str(ctx.exception))
+            mcp_client.connect('weather')
+        self.assertIn('timed out', str(ctx.exception))
 
     def test_connect_failed_status_raises(self):
         """connect() should raise RuntimeError on FAILED workflow status."""
@@ -198,21 +197,19 @@ class TestDaprMCPClientConnect(unittest.TestCase):
 
         mcp_client = self._make_client(mock_wf)
         with self.assertRaises(RuntimeError) as ctx:
-            mcp_client.connect("weather")
-        self.assertIn("FAILED", str(ctx.exception))
+            mcp_client.connect('weather')
+        self.assertIn('FAILED', str(ctx.exception))
 
     def test_connect_empty_tools(self):
         """connect() should handle empty tools list gracefully."""
         mock_wf = MagicMock()
-        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state(
-            {"tools": []}
-        )
+        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state({'tools': []})
 
         mcp_client = self._make_client(mock_wf)
-        mcp_client.connect("empty-server")
+        mcp_client.connect('empty-server')
 
         self.assertEqual(len(mcp_client.get_all_tools()), 0)
-        self.assertIn("empty-server", mcp_client.get_connected_servers())
+        self.assertIn('empty-server', mcp_client.get_connected_servers())
 
 
 class TestDaprMCPClientFiltering(unittest.TestCase):
@@ -226,14 +223,14 @@ class TestDaprMCPClientFiltering(unittest.TestCase):
         )
 
         mcp_client = DaprMCPClient(
-            allowed_tools={"get_weather"},
+            allowed_tools={'get_weather'},
             wf_client=mock_wf,
         )
-        mcp_client.connect("weather")
+        mcp_client.connect('weather')
 
         tools = mcp_client.get_all_tools()
         self.assertEqual(len(tools), 1)
-        self.assertEqual(tools[0].name, "get_weather")
+        self.assertEqual(tools[0].name, 'get_weather')
 
     def test_allowed_tools_none_keeps_all(self):
         """allowed_tools=None should keep all tools."""
@@ -243,7 +240,7 @@ class TestDaprMCPClientFiltering(unittest.TestCase):
         )
 
         mcp_client = DaprMCPClient(allowed_tools=None, wf_client=mock_wf)
-        mcp_client.connect("weather")
+        mcp_client.connect('weather')
 
         self.assertEqual(len(mcp_client.get_all_tools()), 2)
 
@@ -256,33 +253,35 @@ class TestDaprMCPClientMultiServer(unittest.TestCase):
         mock_wf = MagicMock()
 
         weather_response = _make_completed_state(SAMPLE_LIST_TOOLS_RESPONSE)
-        local_response = _make_completed_state({
-            "tools": [
-                {"name": "search_files", "description": "Search files."},
-            ]
-        })
+        local_response = _make_completed_state(
+            {
+                'tools': [
+                    {'name': 'search_files', 'description': 'Search files.'},
+                ]
+            }
+        )
         mock_wf.wait_for_workflow_completion.side_effect = [
             weather_response,
             local_response,
         ]
 
         mcp_client = DaprMCPClient(wf_client=mock_wf)
-        mcp_client.connect("weather")
-        mcp_client.connect("local-tools")
+        mcp_client.connect('weather')
+        mcp_client.connect('local-tools')
 
         self.assertEqual(len(mcp_client.get_all_tools()), 3)
-        self.assertEqual(len(mcp_client.get_server_tools("weather")), 2)
-        self.assertEqual(len(mcp_client.get_server_tools("local-tools")), 1)
+        self.assertEqual(len(mcp_client.get_server_tools('weather')), 2)
+        self.assertEqual(len(mcp_client.get_server_tools('local-tools')), 1)
         self.assertEqual(
             mcp_client.get_connected_servers(),
-            ["weather", "local-tools"],
+            ['weather', 'local-tools'],
         )
 
     def test_get_server_tools_unknown_returns_empty(self):
         """get_server_tools() for unknown server returns empty list."""
         mock_wf = MagicMock()
         mcp_client = DaprMCPClient(wf_client=mock_wf)
-        self.assertEqual(mcp_client.get_server_tools("nonexistent"), [])
+        self.assertEqual(mcp_client.get_server_tools('nonexistent'), [])
 
 
 class TestDaprMCPClientValidation(unittest.TestCase):
@@ -299,24 +298,24 @@ class TestDaprMCPClientValidation(unittest.TestCase):
     def test_connect_empty_server_name_raises(self):
         mcp_client = DaprMCPClient(wf_client=MagicMock())
         with self.assertRaises(ValueError):
-            mcp_client.connect("")
+            mcp_client.connect('')
 
     def test_connect_whitespace_server_name_raises(self):
         mcp_client = DaprMCPClient(wf_client=MagicMock())
         with self.assertRaises(ValueError):
-            mcp_client.connect("   ")
+            mcp_client.connect('   ')
 
     def test_connect_malformed_json_raises(self):
         """connect() should raise RuntimeError on malformed JSON output."""
         mock_wf = MagicMock()
         inner = client.WorkflowState(
-            instance_id="test",
-            name="test",
+            instance_id='test',
+            name='test',
             runtime_status=client.OrchestrationStatus.COMPLETED,
             created_at=datetime.now(),
             last_updated_at=datetime.now(),
             serialized_input=None,
-            serialized_output="not valid json{{{",
+            serialized_output='not valid json{{{',
             serialized_custom_status=None,
             failure_details=None,
         )
@@ -324,40 +323,40 @@ class TestDaprMCPClientValidation(unittest.TestCase):
 
         mcp_client = DaprMCPClient(wf_client=mock_wf)
         with self.assertRaises(RuntimeError) as ctx:
-            mcp_client.connect("weather")
-        self.assertIn("malformed JSON", str(ctx.exception))
+            mcp_client.connect('weather')
+        self.assertIn('malformed JSON', str(ctx.exception))
 
     def test_connect_missing_tool_name_uses_empty_string(self):
         """Tools without a 'name' field should use empty string."""
         mock_wf = MagicMock()
-        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state({
-            "tools": [{"description": "No name tool"}]
-        })
+        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state(
+            {'tools': [{'description': 'No name tool'}]}
+        )
 
         mcp_client = DaprMCPClient(wf_client=mock_wf)
-        mcp_client.connect("server")
+        mcp_client.connect('server')
 
         tools = mcp_client.get_all_tools()
         self.assertEqual(len(tools), 1)
-        self.assertEqual(tools[0].name, "")
+        self.assertEqual(tools[0].name, '')
 
 
 class TestMCPWorkflowPrefix(unittest.TestCase):
     """Tests for the workflow naming constant."""
 
     def test_prefix_value(self):
-        self.assertEqual(MCP_WORKFLOW_PREFIX, "dapr.internal.mcp.")
+        self.assertEqual(MCP_WORKFLOW_PREFIX, 'dapr.internal.mcp.')
 
     def test_list_tools_name(self):
-        name = f"{MCP_WORKFLOW_PREFIX}weather.ListTools"
-        self.assertEqual(name, "dapr.internal.mcp.weather.ListTools")
+        name = f'{MCP_WORKFLOW_PREFIX}weather.ListTools'
+        self.assertEqual(name, 'dapr.internal.mcp.weather.ListTools')
 
     def test_call_tool_name(self):
         # CallTool workflows include the tool name as a suffix:
         # dapr.internal.mcp.<server>.CallTool.<tool>
-        name = f"{MCP_WORKFLOW_PREFIX}weather.CallTool.get_forecast"
-        self.assertEqual(name, "dapr.internal.mcp.weather.CallTool.get_forecast")
+        name = f'{MCP_WORKFLOW_PREFIX}weather.CallTool.get_forecast'
+        self.assertEqual(name, 'dapr.internal.mcp.weather.CallTool.get_forecast')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
