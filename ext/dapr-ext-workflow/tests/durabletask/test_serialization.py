@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from types import SimpleNamespace
 
 from dapr.ext.workflow._durabletask.internal.shared import AUTO_SERIALIZED, from_json, to_json
+from pydantic import BaseModel
 
 
 @dataclass
@@ -85,3 +86,49 @@ def test_to_json_nested_dataclass_collection():
     assert isinstance(decoded, list)
     assert [item.count for item in decoded] == [1, 2]
     assert [item.name for item in decoded] == ['first', 'second']
+
+
+class Order(BaseModel):
+    order_id: str
+    amount: float
+
+
+class Item(BaseModel):
+    sku: str
+    qty: int
+
+
+def test_to_json_pydantic_model_emits_plain_dict():
+    encoded = to_json(Order(order_id='o1', amount=9.99))
+
+    # Pydantic payloads must not carry the AUTO_SERIALIZED marker so that
+    # cross-language and marker-unaware receivers can read them as plain JSON.
+    assert AUTO_SERIALIZED not in encoded
+
+    decoded = from_json(encoded)
+    assert decoded == {'order_id': 'o1', 'amount': 9.99}
+
+
+def test_to_json_pydantic_model_in_list_emits_plain_dicts():
+    encoded = to_json([Item(sku='A', qty=1), Item(sku='B', qty=2)])
+
+    assert AUTO_SERIALIZED not in encoded
+
+    decoded = from_json(encoded)
+    assert decoded == [{'sku': 'A', 'qty': 1}, {'sku': 'B', 'qty': 2}]
+
+
+def test_to_json_pydantic_and_dataclass_coexist():
+    payload = {
+        'order': Order(order_id='o1', amount=1.0),
+        'detail': SamplePayload(count=3, name='x'),
+    }
+    encoded = to_json(payload)
+
+    # Dataclass still carries AUTO_SERIALIZED; Pydantic does not.
+    assert encoded.count(AUTO_SERIALIZED) == 1
+
+    decoded = from_json(encoded)
+    assert decoded['order'] == {'order_id': 'o1', 'amount': 1.0}
+    assert isinstance(decoded['detail'], SimpleNamespace)
+    assert decoded['detail'].count == 3

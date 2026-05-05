@@ -18,7 +18,7 @@
 # Proto source files are fetched from the durabletask-protobuf repository.
 # Generated output goes to ext/dapr-ext-workflow/dapr/ext/workflow/_durabletask/internal/
 #
-# Prerequisites: pip install -r tools/requirements.txt
+# Prerequisites: uv sync --all-packages --group dev
 #
 # Usage:
 #   ./tools/regen_durabletask_protos.sh

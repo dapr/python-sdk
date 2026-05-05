@@ -145,9 +145,14 @@ class DaprWorkflowContext(WorkflowContext):
             wf, input=input, instance_id=instance_id, retry_policy=retry_policy.obj, app_id=app_id
         )
 
-    def wait_for_external_event(self, name: str) -> task.Task:
+    def wait_for_external_event(
+        self,
+        name: str,
+        *,
+        timeout: Optional[Union[datetime, timedelta]] = None,
+    ) -> task.Task:
         self._logger.debug(f'{self.instance_id}: Waiting for external event {name}')
-        return self.__obj.wait_for_external_event(name)
+        return self.__obj.wait_for_external_event(name, timeout=timeout)
 
     def continue_as_new(self, new_input: Any, *, save_events: bool = False) -> None:
         self._logger.debug(f'{self.instance_id}: Continuing as new')

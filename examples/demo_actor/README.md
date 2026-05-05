@@ -99,7 +99,7 @@ expected_stdout_lines:
    ```bash
    # Run actor client
    cd demo_actor
-   dapr run --app-id demo-client python3 demo_actor_client.py
+   dapr run --app-id demo-client -- python3 demo_actor_client.py
    ```
 
    Expected output:

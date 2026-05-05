@@ -14,10 +14,11 @@ limitations under the License.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from google.protobuf import json_format
 from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.descriptor import Descriptor
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.struct_pb2 import Struct
 from google.protobuf.wrappers_pb2 import (
@@ -63,7 +64,10 @@ def unpack(data: GrpcAny, message: GrpcMessage) -> None:
     """
     if not isinstance(message, GrpcMessage):
         raise ValueError('output message is not protocol buffer message object')
-    if not data.Is(message.DESCRIPTOR):
+    # cast: newer types-grpcio stubs declare ``message.DESCRIPTOR`` as a union of
+    # ``Descriptor`` and the C-extension ``_upb._message.Descriptor``. Both are
+    # accepted at runtime by ``Any.Is``; the cast narrows the type for mypy.
+    if not data.Is(cast(Descriptor, message.DESCRIPTOR)):
         raise ValueError(f'invalid type. serialized message type: {data.type_url}')
     data.Unpack(message)
 
