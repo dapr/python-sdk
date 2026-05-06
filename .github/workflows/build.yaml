@@ -3,6 +3,7 @@ name: dapr-python
 on:
   push:
     branches:
+      - main
       - feature/*
   pull_request:
     branches:
@@ -36,6 +37,15 @@ jobs:
             echo "Source files are not formatted correctly. Run 'uv run ruff check --fix && uv run ruff format'."
             exit 1
         fi
+    - name: Verify main is on a .dev version
+      if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
+      run: |
+        uv run python -c "
+        from dapr.version import __version__
+        assert __version__.endswith('.dev'), (
+            f'main __version__ must end in .dev (got {__version__!r}); see RELEASE.md'
+        )
+        "
 
   build:
     needs: lint

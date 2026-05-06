@@ -34,16 +34,19 @@ release-X.Y     ●──●────●───●───●───●�
                 │
            first commit on release-X.Y:
            - versions (prev).dev → X.Y.0rc0
-           - dapr deps >=(prev).dev → >=X.Y.0rc0
            simultaneously on main:
            - versions (prev).dev → X.Y.0.dev
-           - dapr deps >=(prev).dev → >=X.Y.0.dev
 ```
+
+Only tag pushes (`v*`) publish to PyPI. Pushes to `main` and release branches
+do not publish anything.
+
+Users who need the development builds can install from git
+(see the [README](./README.md#install-dapr-python-sdk)).
 
 ## Version files
 
-Every package in this repository has one version file and, for extensions, one `setup.cfg`
-dependency line that must be kept in sync during a release.
+Every package in this repository has one version file.
 
 **Version files** (set `__version__`):
 - `dapr/version/version.py`
@@ -54,24 +57,16 @@ dependency line that must be kept in sync during a release.
 - `ext/dapr-ext-strands/dapr/ext/strands/version.py`
 - `ext/flask_dapr/flask_dapr/version.py`
 
-**Dependency lower bounds** in extension `setup.cfg` files (each has `dapr >= <version>`):
-- `ext/dapr-ext-workflow/setup.cfg`
-- `ext/dapr-ext-grpc/setup.cfg`
-- `ext/dapr-ext-fastapi/setup.cfg`
-- `ext/dapr-ext-langgraph/setup.cfg`
-- `ext/dapr-ext-strands/setup.cfg`
-- `ext/flask_dapr/setup.cfg`
-
 ## Version string conventions
 
-| Stage | `__version__` example | dep lower bound example |
-|---|---|---|
-| Development (always on `main`) | `1.17.0.dev` | `dapr >= 1.17.0.dev` |
-| First RC (on `release-X.Y`) | `1.17.0rc0` | `dapr >= 1.17.0rc0` |
-| Subsequent RCs (on `release-X.Y`) | `1.17.0rc1`, `1.17.0rc2`, … | `dapr >= 1.17.0rc1` |
-| Stable release | `1.17.0` | `dapr >= 1.17.0` |
-| Patch release candidate | `1.17.1rc1` | `dapr >= 1.17.1rc1` |
-| Stable patch release | `1.17.1` | `dapr >= 1.17.1` |
+| Stage                              | `__version__` example         |
+| ---------------------------------- | ----------------------------- |
+| Development (always on `main`)     | `1.18.0.dev`                  |
+| First RC (on `release-X.Y`)        | `1.18.0rc0`                   |
+| Subsequent RCs (on `release-X.Y`)  | `1.18.0rc1`, `1.18.0rc2`, …   |
+| Stable release                     | `1.18.0`                      |
+| Patch release candidate            | `1.18.1rc1`                   |
+| Stable patch release               | `1.18.1`                      |
 
 ## Remote convention
 
@@ -94,17 +89,13 @@ git push upstream release-X.Y
 
 ### 2. Bump versions on the release branch (first commit)
 
-On the newly created `release-X.Y` branch, open a PR **targeting `release-X.Y`** that does:
-
-- In all seven version files: change `X.Y.0.dev` → `X.Y.0rc0`
-- In all six extension `setup.cfg` files: change `dapr >= X.Y.0.dev` → `dapr >= X.Y.0rc0`
+On the newly created `release-X.Y` branch, open a PR **targeting `release-X.Y`** that
+changes `X.Y.0.dev` → `X.Y.0rc0` in all the version files.
 
 ### 3. Bump versions on `main` (second commit)
 
-Open a PR targeting `main` to align it with the new release version:
-
-- In all seven version files: change the previous dev version to `X.Y.0.dev`
-- In all six extension `setup.cfg` files: change the previous `dapr >= ...dev` to `dapr >= X.Y.0.dev`
+Open a PR targeting `main` that changes the previous dev version to `X.Y.0.dev` in all
+the version files. 
 
 ### 4. Push the tag
 
@@ -127,10 +118,8 @@ Perform this when you want to publish `X.Y.0rcN` (N ≥ 1) from an existing `rel
 
 ### 1. Bump versions on the release branch
 
-Open a PR **targeting `release-X.Y`** that does:
-
-- In all seven version files: change `X.Y.0rc(N-1)` → `X.Y.0rcN`
-- In all six extension `setup.cfg` files: change `dapr >= X.Y.0rc(N-1)` → `dapr >= X.Y.0rcN`
+Open a PR **targeting `release-X.Y`** that changes `X.Y.0rc(N-1)` → `X.Y.0rcN` in all
+the version files.
 
 ### 2. Push the tag
 
@@ -150,10 +139,8 @@ initial `X.Y.0` or a patch release (`X.Y.1`, `X.Y.2`, …).
 
 ### 1. Bump versions on the release branch
 
-Open a PR **targeting `release-X.Y`** that does:
-
-- In all seven version files: change `X.Y.ZrcN` → `X.Y.Z` (drop the `rcN` suffix)
-- In all six extension `setup.cfg` files: change `dapr >= X.Y.ZrcN` → `dapr >= X.Y.Z`
+Open a PR **targeting `release-X.Y`** that drops the `rcN` suffix in all the version
+files: `X.Y.ZrcN` → `X.Y.Z`.
 
 ### 2. Push the tag
 
