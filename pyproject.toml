@@ -71,14 +71,17 @@ dev = [
     "opentelemetry-exporter-zipkin~=1.11.1",
     "httpx~=0.28.1",
     "pyOpenSSL~=26.0.0",
+    "cryptography>=42.0.0",
+    "redis>=7.4.0",
     "Flask~=3.1.3",
     "pytest~=9.0.2",
+    "pytest-asyncio>=0.23",
     "ruff==0.14.1",
     "python-dotenv~=1.2.2",
     "pydantic~=2.13.3",
     "PyYAML~=6.0.3",
 ]
-examples = [
+tests = [
     {include-group = "dev"},
     "mechanical-markdown~=0.8.0",
     "langchain-ollama~=1.0.1",
@@ -142,3 +145,4 @@ markers = [
     'example_dir(name): set the example directory for the dapr fixture',
 ]
 pythonpath = ["."]
+asyncio_mode = "auto"

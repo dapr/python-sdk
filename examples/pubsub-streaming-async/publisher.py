@@ -44,7 +44,7 @@ async def publish_events():
             )
 
             # Print the request
-            print(req_data, flush=True)
+            print(req_data)
 
             await asyncio.sleep(1)
 
