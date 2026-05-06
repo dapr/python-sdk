@@ -749,7 +749,7 @@ dev = [
     { name = "httpx", specifier = "~=0.28.1" },
     { name = "mypy", specifier = "==1.20.2" },
     { name = "mypy-extensions", specifier = "~=1.1.0" },
-    { name = "mypy-protobuf", specifier = "==5.0.0" },
+    { name = "mypy-protobuf", specifier = "==5.1.0" },
     { name = "opentelemetry-exporter-zipkin", specifier = "~=1.11.1" },
     { name = "opentelemetry-instrumentation-grpc", specifier = "~=0.61b0" },
     { name = "opentelemetry-sdk", specifier = ">=1.40,<1.42" },
@@ -775,7 +775,7 @@ tests = [
     { name = "mechanical-markdown", specifier = "~=0.8.0" },
     { name = "mypy", specifier = "==1.20.2" },
     { name = "mypy-extensions", specifier = "~=1.1.0" },
-    { name = "mypy-protobuf", specifier = "==5.0.0" },
+    { name = "mypy-protobuf", specifier = "==5.1.0" },
     { name = "opentelemetry-exporter-zipkin", specifier = "~=1.11.1" },
     { name = "opentelemetry-instrumentation-grpc", specifier = "~=0.61b0" },
     { name = "opentelemetry-sdk", specifier = ">=1.40,<1.42" },
@@ -2000,15 +2000,15 @@ wheels = [
 
 [[package]]
 name = "mypy-protobuf"
-version = "5.0.0"
+version = "5.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
     { name = "types-protobuf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d5/48/658827446368bca30a94e545598065587ece9cd09b678d7d2895c37a59d2/mypy_protobuf-5.0.0.tar.gz", hash = "sha256:6fdd1cfdbb4419c713291d800a332d4bba6510dbd1341ed95e0bcc82fcadb6b5", size = 37309, upload-time = "2026-01-13T17:10:12.616Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/87/07/7ffb897eee5c01e816e037f51a6720bf1a0a8c17cca1a2382ae554f43044/mypy_protobuf-5.1.0.tar.gz", hash = "sha256:8493758852a9cdc075a11dbe96c6e37ea2feba5fd5f33ef7442b9a275322a94c", size = 37529, upload-time = "2026-04-28T15:56:40.356Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/b1/ab1e7a49930a8c1d1f7a570bbd4ec7d552ef035acc7aa4b97906e17a34a9/mypy_protobuf-5.0.0-py3-none-any.whl", hash = "sha256:3a7dd753ef3e3b8783a824eb51f07983f62812f9ec066e4fbb1b22d6c5dc36d0", size = 26008, upload-time = "2026-01-13T17:10:11.053Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/ec/5ffcf8f5f53757e01afdece10c664e694ac60d2f17c2036811b85b842a5b/mypy_protobuf-5.1.0-py3-none-any.whl", hash = "sha256:d7031f563f806b8bcd448a3e86768bf0994c0af5b0017b344a4fbbba4191f43c", size = 26313, upload-time = "2026-04-28T15:56:39.096Z" },
 ]
 
 [[package]]
