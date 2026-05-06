@@ -1,9 +1,6 @@
-import subprocess
 import time
 
 import pytest
-
-REDIS_CONTAINER = 'dapr_redis'
 
 EXPECTED_LINES = [
     'Got key=orderId1 value=100 version=1 metadata={}',
@@ -13,33 +10,17 @@ EXPECTED_LINES = [
 ]
 
 
-@pytest.fixture()
-def redis_config():
-    """Seed configuration values in Redis before the test."""
-    subprocess.run(
-        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId1', '100||1'),
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId2', '200||1'),
-        check=True,
-        capture_output=True,
-    )
-
-
 @pytest.mark.example_dir('configuration')
-def test_configuration(dapr, redis_config):
+def test_configuration(dapr, redis_set_config):
+    redis_set_config('orderId1', '100')
+    redis_set_config('orderId2', '200')
+
     dapr.start(
         '--app-id configexample --resources-path components/ -- python3 configuration.py',
         wait=5,
     )
     # Update Redis to trigger the subscription notification
-    subprocess.run(
-        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId2', '210||2'),
-        check=True,
-        capture_output=True,
-    )
+    redis_set_config('orderId2', '210', version=2)
     # configuration.py sleeps 10s after subscribing before it unsubscribes.
     # Wait long enough for the full script to finish.
     time.sleep(10)

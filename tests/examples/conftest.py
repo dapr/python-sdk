@@ -8,7 +8,7 @@ from typing import IO, Any, Generator
 
 import pytest
 
-from tests._process_utils import get_kwargs_for_process_group, terminate_process_group
+from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 EXAMPLES_DIR = REPO_ROOT / 'examples'
