@@ -16,7 +16,7 @@ EXPECTED_COMMON = [
 
 
 @pytest.fixture()
-def crypto_artifacts():
+def cleanup_crypto_outputs():
     """Clean up output files written by the crypto example on teardown.
 
     Example RSA and AES keys are in ``examples/crypto/keys/``.
@@ -27,7 +27,7 @@ def crypto_artifacts():
 
 
 @pytest.mark.example_dir('crypto')
-def test_crypto(dapr, crypto_artifacts):
+def test_crypto(dapr, cleanup_crypto_outputs):
     output = dapr.run(
         '--app-id crypto --resources-path ./components/ -- python3 crypto.py',
         timeout=30,
@@ -38,7 +38,7 @@ def test_crypto(dapr, crypto_artifacts):
 
 
 @pytest.mark.example_dir('crypto')
-def test_crypto_async(dapr, crypto_artifacts):
+def test_crypto_async(dapr, cleanup_crypto_outputs):
     output = dapr.run(
         '--app-id crypto-async --resources-path ./components/ -- python3 crypto-async.py',
         timeout=30,
