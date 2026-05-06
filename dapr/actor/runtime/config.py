@@ -117,7 +117,7 @@ class ActorRuntimeConfig:
         self,
         actor_idle_timeout: Optional[timedelta] = timedelta(hours=1),
         actor_scan_interval: Optional[timedelta] = timedelta(seconds=30),
-        drain_ongoing_call_timeout: Optional[timedelta] = timedelta(minutes=1),
+        drain_ongoing_call_timeout: Optional[timedelta] = None,
         drain_rebalanced_actors: Optional[bool] = True,
         reentrancy: Optional[ActorReentrancyConfig] = None,
         reminders_storage_partitions: Optional[int] = None,
@@ -175,9 +175,11 @@ class ActorRuntimeConfig:
         configDict: Dict[str, Any] = {
             'actorIdleTimeout': self._actor_idle_timeout,
             'actorScanInterval': self._actor_scan_interval,
-            'drainOngoingCallTimeout': self._drain_ongoing_call_timeout,
             'drainRebalancedActors': self._drain_rebalanced_actors,
         }
+
+        if self._drain_ongoing_call_timeout is not None:
+            configDict['drainOngoingCallTimeout'] = self._drain_ongoing_call_timeout
 
         if self._reentrancy:
             configDict.update({'reentrancy': self._reentrancy.as_dict()})
