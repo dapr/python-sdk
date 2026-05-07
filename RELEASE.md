@@ -44,22 +44,14 @@ do not publish anything.
 Users who need the development builds can install from git
 (see the [README](./README.md#install-dapr-python-sdk)).
 
-## Version files
+## Version file
 
-Every package in this repository has one version file.
-
-**Version files** (set `__version__`):
-- `dapr/version/version.py`
-- `ext/dapr-ext-workflow/dapr/ext/workflow/version.py`
-- `ext/dapr-ext-grpc/dapr/ext/grpc/version.py`
-- `ext/dapr-ext-fastapi/dapr/ext/fastapi/version.py`
-- `ext/dapr-ext-langgraph/dapr/ext/langgraph/version.py`
-- `ext/dapr-ext-strands/dapr/ext/strands/version.py`
-- `ext/flask_dapr/flask_dapr/version.py`
+A single `VERSION` file at the repo root is the source of truth for all
+the packages. Each package's `pyproject.toml` reads from it.
 
 ## Version string conventions
 
-| Stage                              | `__version__` example         |
+| Stage                              | `VERSION` example             |
 | ---------------------------------- | ----------------------------- |
 | Development (always on `main`)     | `1.18.0.dev`                  |
 | First RC (on `release-X.Y`)        | `1.18.0rc0`                   |
@@ -87,15 +79,15 @@ git checkout -b release-X.Y
 git push upstream release-X.Y
 ```
 
-### 2. Bump versions on the release branch (first commit)
+### 2. Bump VERSION on the release branch (first commit)
 
 On the newly created `release-X.Y` branch, open a PR **targeting `release-X.Y`** that
-changes `X.Y.0.dev` → `X.Y.0rc0` in all the version files.
+changes the `VERSION` file from `X.Y.0.dev` → `X.Y.0rc0`.
 
-### 3. Bump versions on `main` (second commit)
+### 3. Bump VERSION on `main` (second commit)
 
-Open a PR targeting `main` that changes the previous dev version to `X.Y.0.dev` in all
-the version files. 
+Open a PR targeting `main` that changes `VERSION` from the previous dev version to
+`X.Y.0.dev`.
 
 ### 4. Push the tag
 
@@ -116,10 +108,9 @@ all packages to PyPI.
 
 Perform this when you want to publish `X.Y.0rcN` (N ≥ 1) from an existing `release-X.Y` branch.
 
-### 1. Bump versions on the release branch
+### 1. Bump VERSION on the release branch
 
-Open a PR **targeting `release-X.Y`** that changes `X.Y.0rc(N-1)` → `X.Y.0rcN` in all
-the version files.
+Open a PR **targeting `release-X.Y`** that changes `VERSION` from `X.Y.0rc(N-1)` → `X.Y.0rcN`.
 
 ### 2. Push the tag
 
@@ -137,10 +128,10 @@ git tag vX.Y.0rcN && git push upstream vX.Y.0rcN
 Perform this when `release-X.Y` is ready to ship a stable version — whether that is the
 initial `X.Y.0` or a patch release (`X.Y.1`, `X.Y.2`, …).
 
-### 1. Bump versions on the release branch
+### 1. Bump VERSION on the release branch
 
-Open a PR **targeting `release-X.Y`** that drops the `rcN` suffix in all the version
-files: `X.Y.ZrcN` → `X.Y.Z`.
+Open a PR **targeting `release-X.Y`** that drops the `rcN` suffix in `VERSION`:
+`X.Y.ZrcN` → `X.Y.Z`.
 
 ### 2. Push the tag
 
