@@ -36,11 +36,13 @@ class _StalledReasonEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_Stalled
     DESCRIPTOR: _descriptor.EnumDescriptor
     PATCH_MISMATCH: _StalledReason.ValueType  # 0
     VERSION_NOT_AVAILABLE: _StalledReason.ValueType  # 1
+    PAYLOAD_SIZE_EXCEEDED: _StalledReason.ValueType  # 2
 
 class StalledReason(_StalledReason, metaclass=_StalledReasonEnumTypeWrapper): ...
 
 PATCH_MISMATCH: StalledReason.ValueType  # 0
 VERSION_NOT_AVAILABLE: StalledReason.ValueType  # 1
+PAYLOAD_SIZE_EXCEEDED: StalledReason.ValueType  # 2
 Global___StalledReason: _TypeAlias = StalledReason  # noqa: Y015
 
 class _OrchestrationStatus:
@@ -72,22 +74,45 @@ ORCHESTRATION_STATUS_SUSPENDED: OrchestrationStatus.ValueType  # 7
 ORCHESTRATION_STATUS_STALLED: OrchestrationStatus.ValueType  # 8
 Global___OrchestrationStatus: _TypeAlias = OrchestrationStatus  # noqa: Y015
 
-class _CreateOrchestrationAction:
+class _HistoryPropagationScope:
     ValueType = _typing.NewType("ValueType", _builtins.int)
     V: _TypeAlias = ValueType  # noqa: Y015
 
-class _CreateOrchestrationActionEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_CreateOrchestrationAction.ValueType], _builtins.type):
+class _HistoryPropagationScopeEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_HistoryPropagationScope.ValueType], _builtins.type):
     DESCRIPTOR: _descriptor.EnumDescriptor
-    ERROR: _CreateOrchestrationAction.ValueType  # 0
-    IGNORE: _CreateOrchestrationAction.ValueType  # 1
-    TERMINATE: _CreateOrchestrationAction.ValueType  # 2
+    HISTORY_PROPAGATION_SCOPE_NONE: _HistoryPropagationScope.ValueType  # 0
+    """No propagation. This is the default for an unset/missing field; the
+    child receives no history from the caller.
+    """
+    HISTORY_PROPAGATION_SCOPE_OWN_HISTORY: _HistoryPropagationScope.ValueType  # 1
+    """Propagate the caller's own history events only. The child does
+    not see any ancestral history (trust boundary).
+    """
+    HISTORY_PROPAGATION_SCOPE_LINEAGE: _HistoryPropagationScope.ValueType  # 2
+    """Propagate the caller's own history events AND the full ancestral
+    chain. Any propagated history this workflow received from its
+    parent is forwarded to the child.
+    """
 
-class CreateOrchestrationAction(_CreateOrchestrationAction, metaclass=_CreateOrchestrationActionEnumTypeWrapper): ...
+class HistoryPropagationScope(_HistoryPropagationScope, metaclass=_HistoryPropagationScopeEnumTypeWrapper):
+    """HistoryPropagationScope controls how history is propagated to a child
+    workflow or activity
+    """
 
-ERROR: CreateOrchestrationAction.ValueType  # 0
-IGNORE: CreateOrchestrationAction.ValueType  # 1
-TERMINATE: CreateOrchestrationAction.ValueType  # 2
-Global___CreateOrchestrationAction: _TypeAlias = CreateOrchestrationAction  # noqa: Y015
+HISTORY_PROPAGATION_SCOPE_NONE: HistoryPropagationScope.ValueType  # 0
+"""No propagation. This is the default for an unset/missing field; the
+child receives no history from the caller.
+"""
+HISTORY_PROPAGATION_SCOPE_OWN_HISTORY: HistoryPropagationScope.ValueType  # 1
+"""Propagate the caller's own history events only. The child does
+not see any ancestral history (trust boundary).
+"""
+HISTORY_PROPAGATION_SCOPE_LINEAGE: HistoryPropagationScope.ValueType  # 2
+"""Propagate the caller's own history events AND the full ancestral
+chain. Any propagated history this workflow received from its
+parent is forwarded to the child.
+"""
+Global___HistoryPropagationScope: _TypeAlias = HistoryPropagationScope  # noqa: Y015
 
 @_typing.final
 class TaskRouter(_message.Message):
@@ -95,26 +120,34 @@ class TaskRouter(_message.Message):
 
     SOURCEAPPID_FIELD_NUMBER: _builtins.int
     TARGETAPPID_FIELD_NUMBER: _builtins.int
+    TARGETAPPNAMESPACE_FIELD_NUMBER: _builtins.int
     sourceAppID: _builtins.str
     targetAppID: _builtins.str
+    targetAppNamespace: _builtins.str
     def __init__(
         self,
         *,
         sourceAppID: _builtins.str = ...,
         targetAppID: _builtins.str | None = ...,
+        targetAppNamespace: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID", "targetAppID", b"targetAppID"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID", "_targetAppNamespace", b"_targetAppNamespace", "targetAppID", b"targetAppID", "targetAppNamespace", b"targetAppNamespace"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID", "sourceAppID", b"sourceAppID", "targetAppID", b"targetAppID"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID", "_targetAppNamespace", b"_targetAppNamespace", "sourceAppID", b"sourceAppID", "targetAppID", b"targetAppID", "targetAppNamespace", b"targetAppNamespace"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__targetAppID: _TypeAlias = _typing.Literal["targetAppID"]  # noqa: Y015
     _WhichOneofArgType__targetAppID: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID"]  # noqa: Y015
+    _WhichOneofReturnType__targetAppNamespace: _TypeAlias = _typing.Literal["targetAppNamespace"]  # noqa: Y015
+    _WhichOneofArgType__targetAppNamespace: _TypeAlias = _typing.Literal["_targetAppNamespace", b"_targetAppNamespace"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__targetAppID) -> _WhichOneofReturnType__targetAppID | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__targetAppNamespace) -> _WhichOneofReturnType__targetAppNamespace | None: ...
 
 Global___TaskRouter: _TypeAlias = TaskRouter  # noqa: Y015
 
 @_typing.final
-class OrchestrationVersion(_message.Message):
+class WorkflowVersion(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     PATCHES_FIELD_NUMBER: _builtins.int
@@ -137,10 +170,10 @@ class OrchestrationVersion(_message.Message):
     _WhichOneofArgType__name: _TypeAlias = _typing.Literal["_name", b"_name"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__name) -> _WhichOneofReturnType__name | None: ...
 
-Global___OrchestrationVersion: _TypeAlias = OrchestrationVersion  # noqa: Y015
+Global___WorkflowVersion: _TypeAlias = WorkflowVersion  # noqa: Y015
 
 @_typing.final
-class OrchestrationInstance(_message.Message):
+class WorkflowInstance(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
@@ -160,7 +193,7 @@ class OrchestrationInstance(_message.Message):
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
-Global___OrchestrationInstance: _TypeAlias = OrchestrationInstance  # noqa: Y015
+Global___WorkflowInstance: _TypeAlias = WorkflowInstance  # noqa: Y015
 
 @_typing.final
 class TaskFailureDetails(_message.Message):
@@ -202,47 +235,55 @@ class ParentInstanceInfo(_message.Message):
     TASKSCHEDULEDID_FIELD_NUMBER: _builtins.int
     NAME_FIELD_NUMBER: _builtins.int
     VERSION_FIELD_NUMBER: _builtins.int
-    ORCHESTRATIONINSTANCE_FIELD_NUMBER: _builtins.int
+    WORKFLOWINSTANCE_FIELD_NUMBER: _builtins.int
     APPID_FIELD_NUMBER: _builtins.int
+    APPNAMESPACE_FIELD_NUMBER: _builtins.int
     taskScheduledId: _builtins.int
     appID: _builtins.str
+    appNamespace: _builtins.str
     @_builtins.property
     def name(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
     def version(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
-    def orchestrationInstance(self) -> Global___OrchestrationInstance: ...
+    def workflowInstance(self) -> Global___WorkflowInstance: ...
     def __init__(
         self,
         *,
         taskScheduledId: _builtins.int = ...,
         name: _wrappers_pb2.StringValue | None = ...,
         version: _wrappers_pb2.StringValue | None = ...,
-        orchestrationInstance: Global___OrchestrationInstance | None = ...,
+        workflowInstance: Global___WorkflowInstance | None = ...,
         appID: _builtins.str | None = ...,
+        appNamespace: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_appID", b"_appID", "appID", b"appID", "name", b"name", "orchestrationInstance", b"orchestrationInstance", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_appID", b"_appID", "_appNamespace", b"_appNamespace", "appID", b"appID", "appNamespace", b"appNamespace", "name", b"name", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_appID", b"_appID", "appID", b"appID", "name", b"name", "orchestrationInstance", b"orchestrationInstance", "taskScheduledId", b"taskScheduledId", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_appID", b"_appID", "_appNamespace", b"_appNamespace", "appID", b"appID", "appNamespace", b"appNamespace", "name", b"name", "taskScheduledId", b"taskScheduledId", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__appID: _TypeAlias = _typing.Literal["appID"]  # noqa: Y015
     _WhichOneofArgType__appID: _TypeAlias = _typing.Literal["_appID", b"_appID"]  # noqa: Y015
+    _WhichOneofReturnType__appNamespace: _TypeAlias = _typing.Literal["appNamespace"]  # noqa: Y015
+    _WhichOneofArgType__appNamespace: _TypeAlias = _typing.Literal["_appNamespace", b"_appNamespace"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__appID) -> _WhichOneofReturnType__appID | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__appNamespace) -> _WhichOneofReturnType__appNamespace | None: ...
 
 Global___ParentInstanceInfo: _TypeAlias = ParentInstanceInfo  # noqa: Y015
 
 @_typing.final
 class RerunParentInstanceInfo(_message.Message):
-    """RerunParentInstanceInfo is used to indicate that this orchestration was
+    """RerunParentInstanceInfo is used to indicate that this workflow was
     started as part of a rerun operation. Contains information about the parent
-    orchestration instance which was rerun.
+    workflow instance which was rerun.
     """
 
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
     instanceID: _builtins.str
-    """instanceID is the orchestration instance ID this orchestration has been
+    """instanceID is the workflow instance ID this workflow has been
     rerun from.
     """
     def __init__(
@@ -290,30 +331,7 @@ class TraceContext(_message.Message):
 Global___TraceContext: _TypeAlias = TraceContext  # noqa: Y015
 
 @_typing.final
-class OrchestrationIdReusePolicy(_message.Message):
-    DESCRIPTOR: _descriptor.Descriptor
-
-    OPERATIONSTATUS_FIELD_NUMBER: _builtins.int
-    ACTION_FIELD_NUMBER: _builtins.int
-    action: Global___CreateOrchestrationAction.ValueType
-    @_builtins.property
-    def operationStatus(self) -> _containers.RepeatedScalarFieldContainer[Global___OrchestrationStatus.ValueType]: ...
-    def __init__(
-        self,
-        *,
-        operationStatus: _abc.Iterable[Global___OrchestrationStatus.ValueType] | None = ...,
-        action: Global___CreateOrchestrationAction.ValueType = ...,
-    ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["action", b"action", "operationStatus", b"operationStatus"]  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
-
-Global___OrchestrationIdReusePolicy: _TypeAlias = OrchestrationIdReusePolicy  # noqa: Y015
-
-@_typing.final
-class OrchestrationState(_message.Message):
+class WorkflowState(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     @_typing.final
@@ -339,7 +357,7 @@ class OrchestrationState(_message.Message):
     INSTANCEID_FIELD_NUMBER: _builtins.int
     NAME_FIELD_NUMBER: _builtins.int
     VERSION_FIELD_NUMBER: _builtins.int
-    ORCHESTRATIONSTATUS_FIELD_NUMBER: _builtins.int
+    WORKFLOWSTATUS_FIELD_NUMBER: _builtins.int
     SCHEDULEDSTARTTIMESTAMP_FIELD_NUMBER: _builtins.int
     CREATEDTIMESTAMP_FIELD_NUMBER: _builtins.int
     LASTUPDATEDTIMESTAMP_FIELD_NUMBER: _builtins.int
@@ -353,7 +371,7 @@ class OrchestrationState(_message.Message):
     TAGS_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
-    orchestrationStatus: Global___OrchestrationStatus.ValueType
+    workflowStatus: Global___OrchestrationStatus.ValueType
     @_builtins.property
     def version(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
@@ -384,7 +402,7 @@ class OrchestrationState(_message.Message):
         instanceId: _builtins.str = ...,
         name: _builtins.str = ...,
         version: _wrappers_pb2.StringValue | None = ...,
-        orchestrationStatus: Global___OrchestrationStatus.ValueType = ...,
+        workflowStatus: Global___OrchestrationStatus.ValueType = ...,
         scheduledStartTimestamp: _timestamp_pb2.Timestamp | None = ...,
         createdTimestamp: _timestamp_pb2.Timestamp | None = ...,
         lastUpdatedTimestamp: _timestamp_pb2.Timestamp | None = ...,
@@ -399,8 +417,8 @@ class OrchestrationState(_message.Message):
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "output", b"output", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "name", b"name", "orchestrationStatus", b"orchestrationStatus", "output", b"output", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "name", b"name", "output", b"output", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version", "workflowStatus", b"workflowStatus"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
-Global___OrchestrationState: _TypeAlias = OrchestrationState  # noqa: Y015
+Global___WorkflowState: _TypeAlias = WorkflowState  # noqa: Y015

@@ -97,7 +97,12 @@ class TaskHubSidecarServiceStub(object):
                 _registered_method=True)
         self.CompleteOrchestratorTask = channel.unary_unary(
                 '/TaskHubSidecarService/CompleteOrchestratorTask',
-                request_serializer=orchestrator__service__pb2.OrchestratorResponse.SerializeToString,
+                request_serializer=orchestrator__service__pb2.WorkflowResponse.SerializeToString,
+                response_deserializer=orchestrator__service__pb2.CompleteTaskResponse.FromString,
+                _registered_method=True)
+        self.CompleteWorkflowTask = channel.unary_unary(
+                '/TaskHubSidecarService/CompleteWorkflowTask',
+                request_serializer=orchestrator__service__pb2.WorkflowResponse.SerializeToString,
                 response_deserializer=orchestrator__service__pb2.CompleteTaskResponse.FromString,
                 _registered_method=True)
         self.RerunWorkflowFromEvent = channel.unary_unary(
@@ -128,56 +133,56 @@ class TaskHubSidecarServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def StartInstance(self, request, context):
-        """Starts a new orchestration instance.
+        """Starts a new workflow instance.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def GetInstance(self, request, context):
-        """Gets the status of an existing orchestration instance.
+        """Gets the status of an existing workflow instance.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def WaitForInstanceStart(self, request, context):
-        """Waits for an orchestration instance to reach a running or completion state.
+        """Waits for a workflow instance to reach a running or completion state.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def WaitForInstanceCompletion(self, request, context):
-        """Waits for an orchestration instance to reach a completion state (completed, failed, terminated, etc.).
+        """Waits for a workflow instance to reach a completion state (completed, failed, terminated, etc.).
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def RaiseEvent(self, request, context):
-        """Raises an event to a running orchestration instance.
+        """Raises an event to a running workflow instance.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def TerminateInstance(self, request, context):
-        """Terminates a running orchestration instance.
+        """Terminates a running workflow instance.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def SuspendInstance(self, request, context):
-        """Suspends a running orchestration instance.
+        """Suspends a running workflow instance.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def ResumeInstance(self, request, context):
-        """Resumes a suspended orchestration instance.
+        """Resumes a suspended workflow instance.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -202,7 +207,15 @@ class TaskHubSidecarServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def CompleteOrchestratorTask(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Deprecated: Use CompleteWorkflowTask instead.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CompleteWorkflowTask(self, request, context):
+        """Completes a workflow work item.
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -291,7 +304,12 @@ def add_TaskHubSidecarServiceServicer_to_server(servicer, server):
             ),
             'CompleteOrchestratorTask': grpc.unary_unary_rpc_method_handler(
                     servicer.CompleteOrchestratorTask,
-                    request_deserializer=orchestrator__service__pb2.OrchestratorResponse.FromString,
+                    request_deserializer=orchestrator__service__pb2.WorkflowResponse.FromString,
+                    response_serializer=orchestrator__service__pb2.CompleteTaskResponse.SerializeToString,
+            ),
+            'CompleteWorkflowTask': grpc.unary_unary_rpc_method_handler(
+                    servicer.CompleteWorkflowTask,
+                    request_deserializer=orchestrator__service__pb2.WorkflowResponse.FromString,
                     response_serializer=orchestrator__service__pb2.CompleteTaskResponse.SerializeToString,
             ),
             'RerunWorkflowFromEvent': grpc.unary_unary_rpc_method_handler(
@@ -659,7 +677,34 @@ class TaskHubSidecarService(object):
             request,
             target,
             '/TaskHubSidecarService/CompleteOrchestratorTask',
-            orchestrator__service__pb2.OrchestratorResponse.SerializeToString,
+            orchestrator__service__pb2.WorkflowResponse.SerializeToString,
+            orchestrator__service__pb2.CompleteTaskResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CompleteWorkflowTask(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/TaskHubSidecarService/CompleteWorkflowTask',
+            orchestrator__service__pb2.WorkflowResponse.SerializeToString,
             orchestrator__service__pb2.CompleteTaskResponse.FromString,
             options,
             channel_credentials,

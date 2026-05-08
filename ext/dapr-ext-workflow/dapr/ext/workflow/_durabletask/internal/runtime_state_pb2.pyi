@@ -26,10 +26,10 @@ from dapr.ext.workflow._durabletask.internal import orchestration_pb2 as _orches
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -58,8 +58,8 @@ class RuntimeStateStalled(_message.Message):
 Global___RuntimeStateStalled: _TypeAlias = RuntimeStateStalled  # noqa: Y015
 
 @_typing.final
-class OrchestrationRuntimeState(_message.Message):
-    """OrchestrationRuntimeState holds the current state for an orchestration."""
+class WorkflowRuntimeState(_message.Message):
+    """WorkflowRuntimeState holds the current state for a workflow."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -90,7 +90,7 @@ class OrchestrationRuntimeState(_message.Message):
     @_builtins.property
     def pendingTimers(self) -> _containers.RepeatedCompositeFieldContainer[_history_events_pb2.HistoryEvent]: ...
     @_builtins.property
-    def pendingMessages(self) -> _containers.RepeatedCompositeFieldContainer[Global___OrchestrationRuntimeStateMessage]: ...
+    def pendingMessages(self) -> _containers.RepeatedCompositeFieldContainer[Global___WorkflowRuntimeStateMessage]: ...
     @_builtins.property
     def startEvent(self) -> _history_events_pb2.ExecutionStartedEvent: ...
     @_builtins.property
@@ -113,7 +113,7 @@ class OrchestrationRuntimeState(_message.Message):
         oldEvents: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
         pendingTasks: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
         pendingTimers: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
-        pendingMessages: _abc.Iterable[Global___OrchestrationRuntimeStateMessage] | None = ...,
+        pendingMessages: _abc.Iterable[Global___WorkflowRuntimeStateMessage] | None = ...,
         startEvent: _history_events_pb2.ExecutionStartedEvent | None = ...,
         completedEvent: _history_events_pb2.ExecutionCompletedEvent | None = ...,
         createdTime: _timestamp_pb2.Timestamp | None = ...,
@@ -132,29 +132,41 @@ class OrchestrationRuntimeState(_message.Message):
     _WhichOneofArgType__stalled: _TypeAlias = _typing.Literal["_stalled", b"_stalled"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__stalled) -> _WhichOneofReturnType__stalled | None: ...
 
-Global___OrchestrationRuntimeState: _TypeAlias = OrchestrationRuntimeState  # noqa: Y015
+Global___WorkflowRuntimeState: _TypeAlias = WorkflowRuntimeState  # noqa: Y015
 
 @_typing.final
-class OrchestrationRuntimeStateMessage(_message.Message):
-    """OrchestrationRuntimeStateMessage holds an OrchestratorMessage and the target instance ID."""
+class WorkflowRuntimeStateMessage(_message.Message):
+    """WorkflowRuntimeStateMessage holds a HistoryEvent payload and the target instance ID."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
     HISTORYEVENT_FIELD_NUMBER: _builtins.int
     TARGETINSTANCEID_FIELD_NUMBER: _builtins.int
-    TargetInstanceID: _builtins.str
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
+    targetInstanceId: _builtins.str
     @_builtins.property
     def historyEvent(self) -> _history_events_pb2.HistoryEvent: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history to deliver to the child workflow.
+        This is a transport field used when creating child workflows with
+        history propagation enabled. It is NOT stored as part of any
+        workflow's history events.
+        """
+
     def __init__(
         self,
         *,
         historyEvent: _history_events_pb2.HistoryEvent | None = ...,
-        TargetInstanceID: _builtins.str = ...,
+        targetInstanceId: _builtins.str = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["historyEvent", b"historyEvent"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["TargetInstanceID", b"TargetInstanceID", "historyEvent", b"historyEvent"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory", "targetInstanceId", b"targetInstanceId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
 
-Global___OrchestrationRuntimeStateMessage: _TypeAlias = OrchestrationRuntimeStateMessage  # noqa: Y015
+Global___WorkflowRuntimeStateMessage: _TypeAlias = WorkflowRuntimeStateMessage  # noqa: Y015

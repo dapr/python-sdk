@@ -28,7 +28,7 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from google.protobuf import wrappers_pb2 as google_dot_protobuf_dot_wrappers__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x62\x61\x63kend_service.proto\x12\x1d\x64urabletask.protos.backend.v1\x1a\x13orchestration.proto\x1a\x14history_events.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\"Y\n\x0f\x41\x64\x64\x45ventRequest\x12(\n\x08instance\x18\x01 \x01(\x0b\x32\x16.OrchestrationInstance\x12\x1c\n\x05\x65vent\x18\x02 \x01(\x0b\x32\r.HistoryEvent\"\x12\n\x10\x41\x64\x64\x45ventResponse\"`\n\x1f\x43ompleteActivityWorkItemRequest\x12\x17\n\x0f\x63ompletionToken\x18\x01 \x01(\t\x12$\n\rresponseEvent\x18\x02 \x01(\x0b\x32\r.HistoryEvent\"\"\n CompleteActivityWorkItemResponse\"\xb2\x03\n$CompleteOrchestrationWorkItemRequest\x12\x17\n\x0f\x63ompletionToken\x18\x01 \x01(\t\x12(\n\x08instance\x18\x02 \x01(\x0b\x32\x16.OrchestrationInstance\x12+\n\rruntimeStatus\x18\x03 \x01(\x0e\x32\x14.OrchestrationStatus\x12\x32\n\x0c\x63ustomStatus\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12!\n\nnewHistory\x18\x05 \x03(\x0b\x32\r.HistoryEvent\x12\x1f\n\x08newTasks\x18\x06 \x03(\x0b\x32\r.HistoryEvent\x12 \n\tnewTimers\x18\x07 \x03(\x0b\x32\r.HistoryEvent\x12G\n\x0bnewMessages\x18\x08 \x03(\x0b\x32\x32.durabletask.protos.backend.v1.OrchestratorMessage\x12\x37\n\x12numEventsProcessed\x18\t \x01(\x0b\x32\x1b.google.protobuf.Int32Value\"\'\n%CompleteOrchestrationWorkItemResponse\"]\n\x13OrchestratorMessage\x12(\n\x08instance\x18\x01 \x01(\x0b\x32\x16.OrchestrationInstance\x12\x1c\n\x05\x65vent\x18\x02 \x01(\x0b\x32\r.HistoryEvent\"\x95\x01\n\rWorkflowState\x12\x1c\n\x05inbox\x18\x01 \x03(\x0b\x32\r.HistoryEvent\x12\x1e\n\x07history\x18\x02 \x03(\x0b\x32\r.HistoryEvent\x12\x32\n\x0c\x63ustomStatus\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x12\n\ngeneration\x18\x04 \x01(\x04\"\x7f\n\x1d\x43reateWorkflowInstanceRequest\x12!\n\nstartEvent\x18\x01 \x01(\x0b\x32\r.HistoryEvent\x12\x30\n\x06policy\x18\x02 \x01(\x0b\x32\x1b.OrchestrationIdReusePolicyH\x00\x88\x01\x01\x42\t\n\x07_policy\"\xcf\x03\n\x15OrchestrationMetadata\x12\x12\n\ninstanceId\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12+\n\rruntimeStatus\x18\x03 \x01(\x0e\x32\x14.OrchestrationStatus\x12-\n\tcreatedAt\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x31\n\rlastUpdatedAt\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12+\n\x05input\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12,\n\x06output\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x32\n\x0c\x63ustomStatus\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12+\n\x0e\x66\x61ilureDetails\x18\t \x01(\x0b\x32\x13.TaskFailureDetails\x12/\n\x0b\x63ompletedAt\x18\n \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x18\n\x10parentInstanceId\x18\x0b \x01(\t\"W\n\x15WorkflowStateMetadata\x12\x13\n\x0binboxLength\x18\x01 \x01(\x04\x12\x15\n\rhistoryLength\x18\x02 \x01(\x04\x12\x12\n\ngeneration\x18\x03 \x01(\x04\"E\n\x0c\x44urableTimer\x12!\n\ntimerEvent\x18\x01 \x01(\x0b\x32\r.HistoryEvent\x12\x12\n\ngeneration\x18\x02 \x01(\x04\x42V\n+io.dapr.durabletask.implementation.protobufZ\x0b/api/protos\xaa\x02\x19\x44\x61pr.DurableTask.Protobufb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x62\x61\x63kend_service.proto\x12\x1d\x64urabletask.protos.backend.v1\x1a\x13orchestration.proto\x1a\x14history_events.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\"T\n\x0f\x41\x64\x64\x45ventRequest\x12#\n\x08instance\x18\x01 \x01(\x0b\x32\x11.WorkflowInstance\x12\x1c\n\x05\x65vent\x18\x02 \x01(\x0b\x32\r.HistoryEvent\"\x12\n\x10\x41\x64\x64\x45ventResponse\"`\n\x1f\x43ompleteActivityWorkItemRequest\x12\x17\n\x0f\x63ompletionToken\x18\x01 \x01(\t\x12$\n\rresponseEvent\x18\x02 \x01(\x0b\x32\r.HistoryEvent\"\"\n CompleteActivityWorkItemResponse\"\xa4\x03\n\x1f\x43ompleteWorkflowWorkItemRequest\x12\x17\n\x0f\x63ompletionToken\x18\x01 \x01(\t\x12#\n\x08instance\x18\x02 \x01(\x0b\x32\x11.WorkflowInstance\x12+\n\rruntimeStatus\x18\x03 \x01(\x0e\x32\x14.OrchestrationStatus\x12\x32\n\x0c\x63ustomStatus\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12!\n\nnewHistory\x18\x05 \x03(\x0b\x32\r.HistoryEvent\x12\x1f\n\x08newTasks\x18\x06 \x03(\x0b\x32\r.HistoryEvent\x12 \n\tnewTimers\x18\x07 \x03(\x0b\x32\r.HistoryEvent\x12\x43\n\x0bnewMessages\x18\x08 \x03(\x0b\x32..durabletask.protos.backend.v1.WorkflowMessage\x12\x37\n\x12numEventsProcessed\x18\t \x01(\x0b\x32\x1b.google.protobuf.Int32Value\"\"\n CompleteWorkflowWorkItemResponse\"T\n\x0fWorkflowMessage\x12#\n\x08instance\x18\x01 \x01(\x0b\x32\x11.WorkflowInstance\x12\x1c\n\x05\x65vent\x18\x02 \x01(\x0b\x32\r.HistoryEvent\"\x9c\x01\n\x14\x42\x61\x63kendWorkflowState\x12\x1c\n\x05inbox\x18\x01 \x03(\x0b\x32\r.HistoryEvent\x12\x1e\n\x07history\x18\x02 \x03(\x0b\x32\r.HistoryEvent\x12\x32\n\x0c\x63ustomStatus\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x12\n\ngeneration\x18\x04 \x01(\x04\"\x83\x01\n\x12\x41\x63tivityInvocation\x12#\n\x0chistoryEvent\x18\x01 \x01(\x0b\x32\r.HistoryEvent\x12\x32\n\x11propagatedHistory\x18\x02 \x01(\x0b\x32\x12.PropagatedHistoryH\x00\x88\x01\x01\x42\x14\n\x12_propagatedHistory\"\x9a\x01\n\x1d\x43reateWorkflowInstanceRequest\x12!\n\nstartEvent\x18\x01 \x01(\x0b\x32\r.HistoryEvent\x12\x32\n\x11propagatedHistory\x18\x03 \x01(\x0b\x32\x12.PropagatedHistoryH\x00\x88\x01\x01\x42\x14\n\x12_propagatedHistoryJ\x04\x08\x02\x10\x03R\x06policy\"\x94\x05\n\x10WorkflowMetadata\x12\x12\n\ninstanceId\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12+\n\rruntimeStatus\x18\x03 \x01(\x0e\x32\x14.OrchestrationStatus\x12-\n\tcreatedAt\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x31\n\rlastUpdatedAt\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12+\n\x05input\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12,\n\x06output\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x32\n\x0c\x63ustomStatus\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12+\n\x0e\x66\x61ilureDetails\x18\t \x01(\x0b\x32\x13.TaskFailureDetails\x12/\n\x0b\x63ompletedAt\x18\n \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x18\n\x10parentInstanceId\x18\x0b \x01(\t\x12\x32\n\x07version\x18\x0c \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x88\x01\x01\x12\x36\n\x0bparentAppId\x18\r \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x01\x88\x01\x01\x12\x32\n\tstartedAt\x18\x0e \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x02\x88\x01\x01\x42\n\n\x08_versionB\x0e\n\x0c_parentAppIdB\x0c\n\n_startedAt\"\xc3\x01\n\x1c\x42\x61\x63kendWorkflowStateMetadata\x12\x13\n\x0binboxLength\x18\x01 \x01(\x04\x12\x15\n\rhistoryLength\x18\x02 \x01(\x04\x12\x12\n\ngeneration\x18\x03 \x01(\x04\x12\x17\n\x0fsignatureLength\x18\x04 \x01(\x04\x12 \n\x18signingCertificateLength\x18\x05 \x01(\x04\x12(\n externalSigningCertificateLength\x18\x06 \x01(\x04\")\n\x12SigningCertificate\x12\x13\n\x0b\x63\x65rtificate\x18\x01 \x01(\x0c\"\xc4\x01\n\x10HistorySignature\x12\x17\n\x0fstartEventIndex\x18\x01 \x01(\x04\x12\x12\n\neventCount\x18\x02 \x01(\x04\x12$\n\x17previousSignatureDigest\x18\x03 \x01(\x0cH\x00\x88\x01\x01\x12\x14\n\x0c\x65ventsDigest\x18\x04 \x01(\x0c\x12\x18\n\x10\x63\x65rtificateIndex\x18\x05 \x01(\x04\x12\x11\n\tsignature\x18\x06 \x01(\x0c\x42\x1a\n\x18_previousSignatureDigest\"E\n\x0c\x44urableTimer\x12!\n\ntimerEvent\x18\x01 \x01(\x0b\x32\r.HistoryEvent\x12\x12\n\ngeneration\x18\x02 \x01(\x04\x42V\n+io.dapr.durabletask.implementation.protobufZ\x0b/api/protos\xaa\x02\x19\x44\x61pr.DurableTask.Protobufb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,27 +37,33 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n+io.dapr.durabletask.implementation.protobufZ\013/api/protos\252\002\031Dapr.DurableTask.Protobuf'
   _globals['_ADDEVENTREQUEST']._serialized_start=164
-  _globals['_ADDEVENTREQUEST']._serialized_end=253
-  _globals['_ADDEVENTRESPONSE']._serialized_start=255
-  _globals['_ADDEVENTRESPONSE']._serialized_end=273
-  _globals['_COMPLETEACTIVITYWORKITEMREQUEST']._serialized_start=275
-  _globals['_COMPLETEACTIVITYWORKITEMREQUEST']._serialized_end=371
-  _globals['_COMPLETEACTIVITYWORKITEMRESPONSE']._serialized_start=373
-  _globals['_COMPLETEACTIVITYWORKITEMRESPONSE']._serialized_end=407
-  _globals['_COMPLETEORCHESTRATIONWORKITEMREQUEST']._serialized_start=410
-  _globals['_COMPLETEORCHESTRATIONWORKITEMREQUEST']._serialized_end=844
-  _globals['_COMPLETEORCHESTRATIONWORKITEMRESPONSE']._serialized_start=846
-  _globals['_COMPLETEORCHESTRATIONWORKITEMRESPONSE']._serialized_end=885
-  _globals['_ORCHESTRATORMESSAGE']._serialized_start=887
-  _globals['_ORCHESTRATORMESSAGE']._serialized_end=980
-  _globals['_WORKFLOWSTATE']._serialized_start=983
-  _globals['_WORKFLOWSTATE']._serialized_end=1132
-  _globals['_CREATEWORKFLOWINSTANCEREQUEST']._serialized_start=1134
-  _globals['_CREATEWORKFLOWINSTANCEREQUEST']._serialized_end=1261
-  _globals['_ORCHESTRATIONMETADATA']._serialized_start=1264
-  _globals['_ORCHESTRATIONMETADATA']._serialized_end=1727
-  _globals['_WORKFLOWSTATEMETADATA']._serialized_start=1729
-  _globals['_WORKFLOWSTATEMETADATA']._serialized_end=1816
-  _globals['_DURABLETIMER']._serialized_start=1818
-  _globals['_DURABLETIMER']._serialized_end=1887
+  _globals['_ADDEVENTREQUEST']._serialized_end=248
+  _globals['_ADDEVENTRESPONSE']._serialized_start=250
+  _globals['_ADDEVENTRESPONSE']._serialized_end=268
+  _globals['_COMPLETEACTIVITYWORKITEMREQUEST']._serialized_start=270
+  _globals['_COMPLETEACTIVITYWORKITEMREQUEST']._serialized_end=366
+  _globals['_COMPLETEACTIVITYWORKITEMRESPONSE']._serialized_start=368
+  _globals['_COMPLETEACTIVITYWORKITEMRESPONSE']._serialized_end=402
+  _globals['_COMPLETEWORKFLOWWORKITEMREQUEST']._serialized_start=405
+  _globals['_COMPLETEWORKFLOWWORKITEMREQUEST']._serialized_end=825
+  _globals['_COMPLETEWORKFLOWWORKITEMRESPONSE']._serialized_start=827
+  _globals['_COMPLETEWORKFLOWWORKITEMRESPONSE']._serialized_end=861
+  _globals['_WORKFLOWMESSAGE']._serialized_start=863
+  _globals['_WORKFLOWMESSAGE']._serialized_end=947
+  _globals['_BACKENDWORKFLOWSTATE']._serialized_start=950
+  _globals['_BACKENDWORKFLOWSTATE']._serialized_end=1106
+  _globals['_ACTIVITYINVOCATION']._serialized_start=1109
+  _globals['_ACTIVITYINVOCATION']._serialized_end=1240
+  _globals['_CREATEWORKFLOWINSTANCEREQUEST']._serialized_start=1243
+  _globals['_CREATEWORKFLOWINSTANCEREQUEST']._serialized_end=1397
+  _globals['_WORKFLOWMETADATA']._serialized_start=1400
+  _globals['_WORKFLOWMETADATA']._serialized_end=2060
+  _globals['_BACKENDWORKFLOWSTATEMETADATA']._serialized_start=2063
+  _globals['_BACKENDWORKFLOWSTATEMETADATA']._serialized_end=2258
+  _globals['_SIGNINGCERTIFICATE']._serialized_start=2260
+  _globals['_SIGNINGCERTIFICATE']._serialized_end=2301
+  _globals['_HISTORYSIGNATURE']._serialized_start=2304
+  _globals['_HISTORYSIGNATURE']._serialized_end=2500
+  _globals['_DURABLETIMER']._serialized_start=2502
+  _globals['_DURABLETIMER']._serialized_end=2571
 # @@protoc_insertion_point(module_scope)

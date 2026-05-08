@@ -25,10 +25,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias as _TypeAlias
+if sys.version_info >= (3, 11):
+    from typing import TypeAlias as _TypeAlias, Never as _Never
 else:
-    from typing_extensions import TypeAlias as _TypeAlias
+    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated as _deprecated
@@ -68,6 +68,7 @@ class ConversationRequest(_message.Message):
         def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     @_typing.final
     class MetadataEntry(_message.Message):
@@ -83,8 +84,11 @@ class ConversationRequest(_message.Message):
             key: _builtins.str = ...,
             value: _builtins.str = ...,
         ) -> None: ...
+        _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     NAME_FIELD_NUMBER: _builtins.int
     CONTEXTID_FIELD_NUMBER: _builtins.int
@@ -173,6 +177,7 @@ class ConversationRequestAlpha2(_message.Message):
         def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     @_typing.final
     class MetadataEntry(_message.Message):
@@ -188,8 +193,11 @@ class ConversationRequestAlpha2(_message.Message):
             key: _builtins.str = ...,
             value: _builtins.str = ...,
         ) -> None: ...
+        _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     NAME_FIELD_NUMBER: _builtins.int
     CONTEXT_ID_FIELD_NUMBER: _builtins.int
@@ -672,8 +680,11 @@ class ConversationToolCallsOfFunction(_message.Message):
         name: _builtins.str = ...,
         arguments: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["arguments", b"arguments", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConversationToolCallsOfFunction: _TypeAlias = ConversationToolCallsOfFunction  # noqa: Y015
 
@@ -695,8 +706,11 @@ class ConversationMessageContent(_message.Message):
         *,
         text: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["text", b"text"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConversationMessageContent: _TypeAlias = ConversationMessageContent  # noqa: Y015
 
@@ -726,6 +740,7 @@ class ConversationResult(_message.Message):
         def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     RESULT_FIELD_NUMBER: _builtins.int
     PARAMETERS_FIELD_NUMBER: _builtins.int
@@ -741,8 +756,11 @@ class ConversationResult(_message.Message):
         result: _builtins.str = ...,
         parameters: _abc.Mapping[_builtins.str, _any_pb2.Any] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["parameters", b"parameters", "result", b"result"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConversationResult: _TypeAlias = ConversationResult  # noqa: Y015
 
@@ -875,8 +893,11 @@ class ConversationResultAlpha2CompletionUsageCompletionTokensDetails(_message.Me
         reasoning_tokens: _builtins.int = ...,
         rejected_prediction_tokens: _builtins.int = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["accepted_prediction_tokens", b"accepted_prediction_tokens", "audio_tokens", b"audio_tokens", "reasoning_tokens", b"reasoning_tokens", "rejected_prediction_tokens", b"rejected_prediction_tokens"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConversationResultAlpha2CompletionUsageCompletionTokensDetails: _TypeAlias = ConversationResultAlpha2CompletionUsageCompletionTokensDetails  # noqa: Y015
 
@@ -900,8 +921,11 @@ class ConversationResultAlpha2CompletionUsagePromptTokensDetails(_message.Messag
         audio_tokens: _builtins.int = ...,
         cached_tokens: _builtins.int = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["audio_tokens", b"audio_tokens", "cached_tokens", b"cached_tokens"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConversationResultAlpha2CompletionUsagePromptTokensDetails: _TypeAlias = ConversationResultAlpha2CompletionUsagePromptTokensDetails  # noqa: Y015
 
@@ -941,6 +965,7 @@ class ConversationResultChoices(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["finish_reason", b"finish_reason", "index", b"index", "message", b"message"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConversationResultChoices: _TypeAlias = ConversationResultChoices  # noqa: Y015
 
@@ -966,8 +991,11 @@ class ConversationResultMessage(_message.Message):
         content: _builtins.str = ...,
         tool_calls: _abc.Iterable[Global___ConversationToolCalls] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["content", b"content", "tool_calls", b"tool_calls"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConversationResultMessage: _TypeAlias = ConversationResultMessage  # noqa: Y015
 
@@ -1081,7 +1109,7 @@ class ConversationToolsFunction(_message.Message):
     def parameters(self) -> _struct_pb2.Struct:
         """The parameters the functions accepts, described as a JSON Schema object. 
         See the [guide](https://platform.openai.com/docs/guides/function-calling) for examples,
-        and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.	
+        and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
         Omitting `parameters` defines a function with an empty parameter list.
         """
 

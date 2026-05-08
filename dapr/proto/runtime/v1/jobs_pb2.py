@@ -26,7 +26,7 @@ from google.protobuf import any_pb2 as google_dot_protobuf_dot_any__pb2
 from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n dapr/proto/runtime/v1/jobs.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x19google/protobuf/any.proto\x1a!dapr/proto/common/v1/common.proto\"\xcf\x02\n\x03Job\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n\x08schedule\x18\x02 \x01(\tH\x00R\x08schedule\x88\x01\x01\x12\x1d\n\x07repeats\x18\x03 \x01(\rH\x01R\x07repeats\x88\x01\x01\x12\x1e\n\x08\x64ue_time\x18\x04 \x01(\tH\x02R\x07\x64ueTime\x88\x01\x01\x12\x15\n\x03ttl\x18\x05 \x01(\tH\x03R\x03ttl\x88\x01\x01\x12(\n\x04\x64\x61ta\x18\x06 \x01(\x0b\x32\x14.google.protobuf.AnyR\x04\x64\x61ta\x12R\n\x0e\x66\x61ilure_policy\x18\x07 \x01(\x0b\x32&.dapr.proto.common.v1.JobFailurePolicyH\x04R\rfailurePolicy\x88\x01\x01\x42\x0b\n\t_scheduleB\n\n\x08_repeatsB\x0b\n\t_due_timeB\x06\n\x04_ttlB\x11\n\x0f_failure_policy\"[\n\x12ScheduleJobRequest\x12\'\n\x03job\x18\x01 \x01(\x0b\x32\x1a.dapr.proto.runtime.v1.Job\x12\x1c\n\toverwrite\x18\x02 \x01(\x08R\toverwrite\"\x15\n\x13ScheduleJobResponse\"\x1d\n\rGetJobRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"9\n\x0eGetJobResponse\x12\'\n\x03job\x18\x01 \x01(\x0b\x32\x1a.dapr.proto.runtime.v1.Job\" \n\x10\x44\x65leteJobRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x13\n\x11\x44\x65leteJobResponse\"K\n\x1f\x44\x65leteJobsByPrefixRequestAlpha1\x12\x18\n\x0bname_prefix\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x0e\n\x0c_name_prefix\"\"\n DeleteJobsByPrefixResponseAlpha1\"\x17\n\x15ListJobsRequestAlpha1\"B\n\x16ListJobsResponseAlpha1\x12(\n\x04jobs\x18\x01 \x03(\x0b\x32\x1a.dapr.proto.runtime.v1.JobBm\n\nio.dapr.v1B\x0e\x44\x61prJobsProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n dapr/proto/runtime/v1/jobs.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x19google/protobuf/any.proto\x1a!dapr/proto/common/v1/common.proto\"\xcf\x02\n\x03Job\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n\x08schedule\x18\x02 \x01(\tH\x00R\x08schedule\x88\x01\x01\x12\x1d\n\x07repeats\x18\x03 \x01(\rH\x01R\x07repeats\x88\x01\x01\x12\x1e\n\x08\x64ue_time\x18\x04 \x01(\tH\x02R\x07\x64ueTime\x88\x01\x01\x12\x15\n\x03ttl\x18\x05 \x01(\tH\x03R\x03ttl\x88\x01\x01\x12(\n\x04\x64\x61ta\x18\x06 \x01(\x0b\x32\x14.google.protobuf.AnyR\x04\x64\x61ta\x12R\n\x0e\x66\x61ilure_policy\x18\x07 \x01(\x0b\x32&.dapr.proto.common.v1.JobFailurePolicyH\x04R\rfailurePolicy\x88\x01\x01\x42\x0b\n\t_scheduleB\n\n\x08_repeatsB\x0b\n\t_due_timeB\x06\n\x04_ttlB\x11\n\x0f_failure_policy\"[\n\x12ScheduleJobRequest\x12\'\n\x03job\x18\x01 \x01(\x0b\x32\x1a.dapr.proto.runtime.v1.Job\x12\x1c\n\toverwrite\x18\x02 \x01(\x08R\toverwrite\"\x15\n\x13ScheduleJobResponse\"\x1d\n\rGetJobRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"9\n\x0eGetJobResponse\x12\'\n\x03job\x18\x01 \x01(\x0b\x32\x1a.dapr.proto.runtime.v1.Job\" \n\x10\x44\x65leteJobRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x13\n\x11\x44\x65leteJobResponse\"K\n\x1f\x44\x65leteJobsByPrefixRequestAlpha1\x12\x18\n\x0bname_prefix\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x0e\n\x0c_name_prefix\"\"\n DeleteJobsByPrefixResponseAlpha1\"E\n\x19\x44\x65leteJobsByPrefixRequest\x12\x18\n\x0bname_prefix\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x0e\n\x0c_name_prefix\"\x1c\n\x1a\x44\x65leteJobsByPrefixResponse\"\x17\n\x15ListJobsRequestAlpha1\"B\n\x16ListJobsResponseAlpha1\x12(\n\x04jobs\x18\x01 \x03(\x0b\x32\x1a.dapr.proto.runtime.v1.Job\"\x11\n\x0fListJobsRequest\"<\n\x10ListJobsResponse\x12(\n\x04jobs\x18\x01 \x03(\x0b\x32\x1a.dapr.proto.runtime.v1.JobBm\n\nio.dapr.v1B\x0e\x44\x61prJobsProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -52,8 +52,16 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_DELETEJOBSBYPREFIXREQUESTALPHA1']._serialized_end=795
   _globals['_DELETEJOBSBYPREFIXRESPONSEALPHA1']._serialized_start=797
   _globals['_DELETEJOBSBYPREFIXRESPONSEALPHA1']._serialized_end=831
-  _globals['_LISTJOBSREQUESTALPHA1']._serialized_start=833
-  _globals['_LISTJOBSREQUESTALPHA1']._serialized_end=856
-  _globals['_LISTJOBSRESPONSEALPHA1']._serialized_start=858
-  _globals['_LISTJOBSRESPONSEALPHA1']._serialized_end=924
+  _globals['_DELETEJOBSBYPREFIXREQUEST']._serialized_start=833
+  _globals['_DELETEJOBSBYPREFIXREQUEST']._serialized_end=902
+  _globals['_DELETEJOBSBYPREFIXRESPONSE']._serialized_start=904
+  _globals['_DELETEJOBSBYPREFIXRESPONSE']._serialized_end=932
+  _globals['_LISTJOBSREQUESTALPHA1']._serialized_start=934
+  _globals['_LISTJOBSREQUESTALPHA1']._serialized_end=957
+  _globals['_LISTJOBSRESPONSEALPHA1']._serialized_start=959
+  _globals['_LISTJOBSRESPONSEALPHA1']._serialized_end=1025
+  _globals['_LISTJOBSREQUEST']._serialized_start=1027
+  _globals['_LISTJOBSREQUEST']._serialized_end=1044
+  _globals['_LISTJOBSRESPONSE']._serialized_start=1046
+  _globals['_LISTJOBSRESPONSE']._serialized_end=1106
 # @@protoc_insertion_point(module_scope)

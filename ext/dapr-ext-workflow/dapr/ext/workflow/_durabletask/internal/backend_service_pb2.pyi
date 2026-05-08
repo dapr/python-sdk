@@ -26,24 +26,24 @@ DESCRIPTOR: _descriptor.FileDescriptor
 
 @_typing.final
 class AddEventRequest(_message.Message):
-    """Request payload for adding new orchestration events."""
+    """Request payload for adding new workflow events."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCE_FIELD_NUMBER: _builtins.int
     EVENT_FIELD_NUMBER: _builtins.int
     @_builtins.property
-    def instance(self) -> _orchestration_pb2.OrchestrationInstance:
-        """The ID of the orchestration to send an event to."""
+    def instance(self) -> _orchestration_pb2.WorkflowInstance:
+        """The ID of the workflow to send an event to."""
 
     @_builtins.property
     def event(self) -> _history_events_pb2.HistoryEvent:
-        """The event to send to the orchestration."""
+        """The event to send to the workflow."""
 
     def __init__(
         self,
         *,
-        instance: _orchestration_pb2.OrchestrationInstance | None = ...,
+        instance: _orchestration_pb2.WorkflowInstance | None = ...,
         event: _history_events_pb2.HistoryEvent | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["event", b"event", "instance", b"instance"]  # noqa: Y015
@@ -56,7 +56,7 @@ Global___AddEventRequest: _TypeAlias = AddEventRequest  # noqa: Y015
 
 @_typing.final
 class AddEventResponse(_message.Message):
-    """Response payload for adding new orchestration events.
+    """Response payload for adding new workflow events.
     No fields
     """
 
@@ -85,7 +85,7 @@ class CompleteActivityWorkItemRequest(_message.Message):
     """The completion token that was provided when the work item was fetched."""
     @_builtins.property
     def responseEvent(self) -> _history_events_pb2.HistoryEvent:
-        """The response event that will be sent to the orchestrator.
+        """The response event that will be sent to the workflow.
         This must be either a TaskCompleted event or a TaskFailed event.
         """
 
@@ -123,8 +123,8 @@ class CompleteActivityWorkItemResponse(_message.Message):
 Global___CompleteActivityWorkItemResponse: _TypeAlias = CompleteActivityWorkItemResponse  # noqa: Y015
 
 @_typing.final
-class CompleteOrchestrationWorkItemRequest(_message.Message):
-    """Request payload for completing an orchestration work item."""
+class CompleteWorkflowWorkItemRequest(_message.Message):
+    """Request payload for completing a workflow work item."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -141,7 +141,7 @@ class CompleteOrchestrationWorkItemRequest(_message.Message):
     """The completion token that was provided when the work item was fetched."""
     runtimeStatus: _orchestration_pb2.OrchestrationStatus.ValueType
     @_builtins.property
-    def instance(self) -> _orchestration_pb2.OrchestrationInstance: ...
+    def instance(self) -> _orchestration_pb2.WorkflowInstance: ...
     @_builtins.property
     def customStatus(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
@@ -151,24 +151,24 @@ class CompleteOrchestrationWorkItemRequest(_message.Message):
     @_builtins.property
     def newTimers(self) -> _containers.RepeatedCompositeFieldContainer[_history_events_pb2.HistoryEvent]: ...
     @_builtins.property
-    def newMessages(self) -> _containers.RepeatedCompositeFieldContainer[Global___OrchestratorMessage]: ...
+    def newMessages(self) -> _containers.RepeatedCompositeFieldContainer[Global___WorkflowMessage]: ...
     @_builtins.property
     def numEventsProcessed(self) -> _wrappers_pb2.Int32Value:
-        """The number of work item events that were processed by the orchestrator.
-        This field is optional. If not set, the service should assume that the orchestrator processed all events.
+        """The number of work item events that were processed by the workflow.
+        This field is optional. If not set, the service should assume that the workflow processed all events.
         """
 
     def __init__(
         self,
         *,
         completionToken: _builtins.str = ...,
-        instance: _orchestration_pb2.OrchestrationInstance | None = ...,
+        instance: _orchestration_pb2.WorkflowInstance | None = ...,
         runtimeStatus: _orchestration_pb2.OrchestrationStatus.ValueType = ...,
         customStatus: _wrappers_pb2.StringValue | None = ...,
         newHistory: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
         newTasks: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
         newTimers: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
-        newMessages: _abc.Iterable[Global___OrchestratorMessage] | None = ...,
+        newMessages: _abc.Iterable[Global___WorkflowMessage] | None = ...,
         numEventsProcessed: _wrappers_pb2.Int32Value | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["customStatus", b"customStatus", "instance", b"instance", "numEventsProcessed", b"numEventsProcessed"]  # noqa: Y015
@@ -177,11 +177,11 @@ class CompleteOrchestrationWorkItemRequest(_message.Message):
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
-Global___CompleteOrchestrationWorkItemRequest: _TypeAlias = CompleteOrchestrationWorkItemRequest  # noqa: Y015
+Global___CompleteWorkflowWorkItemRequest: _TypeAlias = CompleteWorkflowWorkItemRequest  # noqa: Y015
 
 @_typing.final
-class CompleteOrchestrationWorkItemResponse(_message.Message):
-    """Response payload for completing an orchestration work item.
+class CompleteWorkflowWorkItemResponse(_message.Message):
+    """Response payload for completing a workflow work item.
     No fields
     """
 
@@ -196,28 +196,28 @@ class CompleteOrchestrationWorkItemResponse(_message.Message):
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
-Global___CompleteOrchestrationWorkItemResponse: _TypeAlias = CompleteOrchestrationWorkItemResponse  # noqa: Y015
+Global___CompleteWorkflowWorkItemResponse: _TypeAlias = CompleteWorkflowWorkItemResponse  # noqa: Y015
 
 @_typing.final
-class OrchestratorMessage(_message.Message):
-    """A message to be delivered to an orchestration by the backend."""
+class WorkflowMessage(_message.Message):
+    """A message to be delivered to a workflow by the backend."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCE_FIELD_NUMBER: _builtins.int
     EVENT_FIELD_NUMBER: _builtins.int
     @_builtins.property
-    def instance(self) -> _orchestration_pb2.OrchestrationInstance:
-        """The ID of the orchestration instance to receive the message."""
+    def instance(self) -> _orchestration_pb2.WorkflowInstance:
+        """The ID of the workflow instance to receive the message."""
 
     @_builtins.property
     def event(self) -> _history_events_pb2.HistoryEvent:
-        """The event payload to be received by the target orchestration."""
+        """The event payload to be received by the target workflow."""
 
     def __init__(
         self,
         *,
-        instance: _orchestration_pb2.OrchestrationInstance | None = ...,
+        instance: _orchestration_pb2.WorkflowInstance | None = ...,
         event: _history_events_pb2.HistoryEvent | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["event", b"event", "instance", b"instance"]  # noqa: Y015
@@ -226,10 +226,10 @@ class OrchestratorMessage(_message.Message):
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
-Global___OrchestratorMessage: _TypeAlias = OrchestratorMessage  # noqa: Y015
+Global___WorkflowMessage: _TypeAlias = WorkflowMessage  # noqa: Y015
 
 @_typing.final
-class WorkflowState(_message.Message):
+class BackendWorkflowState(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     INBOX_FIELD_NUMBER: _builtins.int
@@ -257,36 +257,70 @@ class WorkflowState(_message.Message):
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
-Global___WorkflowState: _TypeAlias = WorkflowState  # noqa: Y015
+Global___BackendWorkflowState: _TypeAlias = BackendWorkflowState  # noqa: Y015
+
+@_typing.final
+class ActivityInvocation(_message.Message):
+    """ActivityInvocation wraps a TaskScheduled HistoryEvent with optional
+    propagated history for delivery to an activity actor.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    HISTORYEVENT_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def historyEvent(self) -> _history_events_pb2.HistoryEvent: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history from the calling workflow."""
+
+    def __init__(
+        self,
+        *,
+        historyEvent: _history_events_pb2.HistoryEvent | None = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
+
+Global___ActivityInvocation: _TypeAlias = ActivityInvocation  # noqa: Y015
 
 @_typing.final
 class CreateWorkflowInstanceRequest(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     STARTEVENT_FIELD_NUMBER: _builtins.int
-    POLICY_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
     @_builtins.property
     def startEvent(self) -> _history_events_pb2.HistoryEvent: ...
     @_builtins.property
-    def policy(self) -> _orchestration_pb2.OrchestrationIdReusePolicy: ...
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history from the parent workflow."""
+
     def __init__(
         self,
         *,
         startEvent: _history_events_pb2.HistoryEvent | None = ...,
-        policy: _orchestration_pb2.OrchestrationIdReusePolicy | None = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_policy", b"_policy", "policy", b"policy", "startEvent", b"startEvent"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "propagatedHistory", b"propagatedHistory", "startEvent", b"startEvent"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_policy", b"_policy", "policy", b"policy", "startEvent", b"startEvent"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "propagatedHistory", b"propagatedHistory", "startEvent", b"startEvent"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType__policy: _TypeAlias = _typing.Literal["policy"]  # noqa: Y015
-    _WhichOneofArgType__policy: _TypeAlias = _typing.Literal["_policy", b"_policy"]  # noqa: Y015
-    def WhichOneof(self, oneof_group: _WhichOneofArgType__policy) -> _WhichOneofReturnType__policy | None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
 
 Global___CreateWorkflowInstanceRequest: _TypeAlias = CreateWorkflowInstanceRequest  # noqa: Y015
 
 @_typing.final
-class OrchestrationMetadata(_message.Message):
+class WorkflowMetadata(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
@@ -300,6 +334,9 @@ class OrchestrationMetadata(_message.Message):
     FAILUREDETAILS_FIELD_NUMBER: _builtins.int
     COMPLETEDAT_FIELD_NUMBER: _builtins.int
     PARENTINSTANCEID_FIELD_NUMBER: _builtins.int
+    VERSION_FIELD_NUMBER: _builtins.int
+    PARENTAPPID_FIELD_NUMBER: _builtins.int
+    STARTEDAT_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
     runtimeStatus: _orchestration_pb2.OrchestrationStatus.ValueType
@@ -318,6 +355,12 @@ class OrchestrationMetadata(_message.Message):
     def failureDetails(self) -> _orchestration_pb2.TaskFailureDetails: ...
     @_builtins.property
     def completedAt(self) -> _timestamp_pb2.Timestamp: ...
+    @_builtins.property
+    def version(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def parentAppId(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def startedAt(self) -> _timestamp_pb2.Timestamp: ...
     def __init__(
         self,
         *,
@@ -332,39 +375,169 @@ class OrchestrationMetadata(_message.Message):
         failureDetails: _orchestration_pb2.TaskFailureDetails | None = ...,
         completedAt: _timestamp_pb2.Timestamp | None = ...,
         parentInstanceId: _builtins.str = ...,
+        version: _wrappers_pb2.StringValue | None = ...,
+        parentAppId: _wrappers_pb2.StringValue | None = ...,
+        startedAt: _timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedAt", b"lastUpdatedAt", "output", b"output"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId", "_startedAt", b"_startedAt", "_version", b"_version", "completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedAt", b"lastUpdatedAt", "output", b"output", "parentAppId", b"parentAppId", "startedAt", b"startedAt", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedAt", b"lastUpdatedAt", "name", b"name", "output", b"output", "parentInstanceId", b"parentInstanceId", "runtimeStatus", b"runtimeStatus"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId", "_startedAt", b"_startedAt", "_version", b"_version", "completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedAt", b"lastUpdatedAt", "name", b"name", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "runtimeStatus", b"runtimeStatus", "startedAt", b"startedAt", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__parentAppId: _TypeAlias = _typing.Literal["parentAppId"]  # noqa: Y015
+    _WhichOneofArgType__parentAppId: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId"]  # noqa: Y015
+    _WhichOneofReturnType__startedAt: _TypeAlias = _typing.Literal["startedAt"]  # noqa: Y015
+    _WhichOneofArgType__startedAt: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt"]  # noqa: Y015
+    _WhichOneofReturnType__version: _TypeAlias = _typing.Literal["version"]  # noqa: Y015
+    _WhichOneofArgType__version: _TypeAlias = _typing.Literal["_version", b"_version"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__parentAppId) -> _WhichOneofReturnType__parentAppId | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__startedAt) -> _WhichOneofReturnType__startedAt | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__version) -> _WhichOneofReturnType__version | None: ...
 
-Global___OrchestrationMetadata: _TypeAlias = OrchestrationMetadata  # noqa: Y015
+Global___WorkflowMetadata: _TypeAlias = WorkflowMetadata  # noqa: Y015
 
 @_typing.final
-class WorkflowStateMetadata(_message.Message):
+class BackendWorkflowStateMetadata(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     INBOXLENGTH_FIELD_NUMBER: _builtins.int
     HISTORYLENGTH_FIELD_NUMBER: _builtins.int
     GENERATION_FIELD_NUMBER: _builtins.int
+    SIGNATURELENGTH_FIELD_NUMBER: _builtins.int
+    SIGNINGCERTIFICATELENGTH_FIELD_NUMBER: _builtins.int
+    EXTERNALSIGNINGCERTIFICATELENGTH_FIELD_NUMBER: _builtins.int
     inboxLength: _builtins.int
     historyLength: _builtins.int
     generation: _builtins.int
+    signatureLength: _builtins.int
+    """Number of HistorySignature entries stored (signature-NNNNNN keys)."""
+    signingCertificateLength: _builtins.int
+    """Number of SigningCertificate entries stored (sigcert-NNNNNN keys)."""
+    externalSigningCertificateLength: _builtins.int
+    """Number of ExternalSigningCertificate entries stored
+    (ext-sigcert-NNNNNN keys). Same lifecycle as signingCertificateLength:
+    monotonically grows within a run as new foreign signer certificates
+    are absorbed from incoming attestations, zeroed on ContinueAsNew,
+    cleared on instance purge. Subject to the same maxStateEntries
+    tampering bound.
+    """
     def __init__(
         self,
         *,
         inboxLength: _builtins.int = ...,
         historyLength: _builtins.int = ...,
         generation: _builtins.int = ...,
+        signatureLength: _builtins.int = ...,
+        signingCertificateLength: _builtins.int = ...,
+        externalSigningCertificateLength: _builtins.int = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["generation", b"generation", "historyLength", b"historyLength", "inboxLength", b"inboxLength"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["externalSigningCertificateLength", b"externalSigningCertificateLength", "generation", b"generation", "historyLength", b"historyLength", "inboxLength", b"inboxLength", "signatureLength", b"signatureLength", "signingCertificateLength", b"signingCertificateLength"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
-Global___WorkflowStateMetadata: _TypeAlias = WorkflowStateMetadata  # noqa: Y015
+Global___BackendWorkflowStateMetadata: _TypeAlias = BackendWorkflowStateMetadata  # noqa: Y015
+
+@_typing.final
+class SigningCertificate(_message.Message):
+    """A signing identity's X.509 certificate, stored once and referenced by index
+    from HistorySignature entries. This avoids duplicating the certificate
+    across every signature from the same identity. Stored as individual actor
+    state keys: sigcert-000000, sigcert-000001, etc.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CERTIFICATE_FIELD_NUMBER: _builtins.int
+    certificate: _builtins.bytes
+    """X.509 certificate chain of the signing identity. Certificates are
+    DER-encoded and concatenated directly in order: leaf first, followed by
+    intermediates. Each certificate is a self-delimiting ASN.1 SEQUENCE,
+    so the chain can be parsed by reading consecutive DER structures.
+    """
+    def __init__(
+        self,
+        *,
+        certificate: _builtins.bytes = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["certificate", b"certificate"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___SigningCertificate: _TypeAlias = SigningCertificate  # noqa: Y015
+
+@_typing.final
+class HistorySignature(_message.Message):
+    """Signing metadata for a contiguous range of history events.
+    This is metadata-only — it does NOT contain the events themselves.
+    Events are stored once in history-NNNNNN keys; this message references them
+    by index range and stores only the signing artifacts.
+    Stored as individual actor state keys: signature-000000, signature-000001,
+    etc.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    STARTEVENTINDEX_FIELD_NUMBER: _builtins.int
+    EVENTCOUNT_FIELD_NUMBER: _builtins.int
+    PREVIOUSSIGNATUREDIGEST_FIELD_NUMBER: _builtins.int
+    EVENTSDIGEST_FIELD_NUMBER: _builtins.int
+    CERTIFICATEINDEX_FIELD_NUMBER: _builtins.int
+    SIGNATURE_FIELD_NUMBER: _builtins.int
+    startEventIndex: _builtins.int
+    """Index of the first event covered by this signature (inclusive)."""
+    eventCount: _builtins.int
+    """Number of events covered by this signature."""
+    previousSignatureDigest: _builtins.bytes
+    """SHA-256 digest of the previous HistorySignature message (the entire
+    deterministically serialized protobuf message). Absent for the first
+    signature in the chain (no predecessor). When computing the signature
+    input for the root case, this value is treated as empty (zero-length).
+    """
+    eventsDigest: _builtins.bytes
+    """SHA-256 digest over the concatenation of the raw serialized bytes of each
+    history event in this range, in order. The bytes are the exact values
+    persisted to the state store (one per history-NNNNNN key).
+    """
+    certificateIndex: _builtins.int
+    """Index into the SigningCertificate table (sigcert-NNNNNN keys).
+    Multiple signatures from the same identity share the same index.
+    A new entry is appended only when the certificate rotates.
+    """
+    signature: _builtins.bytes
+    """Cryptographic signature over
+    SHA-256(previousSignatureDigest || eventsDigest)
+    using the private key corresponding to the referenced certificate.
+    The algorithm is determined by the certificate's key type:
+      Ed25519: raw Ed25519 signature over the input bytes
+      ECDSA:   fixed-size r||s over SHA-256(input), each component
+               zero-padded to the curve byte length
+      RSA:     PKCS#1 v1.5 with SHA-256
+    """
+    def __init__(
+        self,
+        *,
+        startEventIndex: _builtins.int = ...,
+        eventCount: _builtins.int = ...,
+        previousSignatureDigest: _builtins.bytes | None = ...,
+        eventsDigest: _builtins.bytes = ...,
+        certificateIndex: _builtins.int = ...,
+        signature: _builtins.bytes = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_previousSignatureDigest", b"_previousSignatureDigest", "previousSignatureDigest", b"previousSignatureDigest"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_previousSignatureDigest", b"_previousSignatureDigest", "certificateIndex", b"certificateIndex", "eventCount", b"eventCount", "eventsDigest", b"eventsDigest", "previousSignatureDigest", b"previousSignatureDigest", "signature", b"signature", "startEventIndex", b"startEventIndex"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__previousSignatureDigest: _TypeAlias = _typing.Literal["previousSignatureDigest"]  # noqa: Y015
+    _WhichOneofArgType__previousSignatureDigest: _TypeAlias = _typing.Literal["_previousSignatureDigest", b"_previousSignatureDigest"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__previousSignatureDigest) -> _WhichOneofReturnType__previousSignatureDigest | None: ...
+
+Global___HistorySignature: _TypeAlias = HistorySignature  # noqa: Y015
 
 @_typing.final
 class DurableTimer(_message.Message):

@@ -35,7 +35,7 @@ class _WorkerCapabilityEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_Work
     WORKER_CAPABILITY_UNSPECIFIED: _WorkerCapability.ValueType  # 0
     WORKER_CAPABILITY_HISTORY_STREAMING: _WorkerCapability.ValueType  # 1
     """Indicates that the worker is capable of streaming instance history as a more optimized
-    alternative to receiving the full history embedded in the orchestrator work-item.
+    alternative to receiving the full history embedded in the workflow work-item.
     When set, the service may return work items without any history events as an optimization.
     It is strongly recommended that all SDKs support this capability.
     """
@@ -45,7 +45,7 @@ class WorkerCapability(_WorkerCapability, metaclass=_WorkerCapabilityEnumTypeWra
 WORKER_CAPABILITY_UNSPECIFIED: WorkerCapability.ValueType  # 0
 WORKER_CAPABILITY_HISTORY_STREAMING: WorkerCapability.ValueType  # 1
 """Indicates that the worker is capable of streaming instance history as a more optimized
-alternative to receiving the full history embedded in the orchestrator work-item.
+alternative to receiving the full history embedded in the workflow work-item.
 When set, the service may return work items without any history events as an optimization.
 It is strongly recommended that all SDKs support this capability.
 """
@@ -58,10 +58,11 @@ class ActivityRequest(_message.Message):
     NAME_FIELD_NUMBER: _builtins.int
     VERSION_FIELD_NUMBER: _builtins.int
     INPUT_FIELD_NUMBER: _builtins.int
-    ORCHESTRATIONINSTANCE_FIELD_NUMBER: _builtins.int
+    WORKFLOWINSTANCE_FIELD_NUMBER: _builtins.int
     TASKID_FIELD_NUMBER: _builtins.int
     PARENTTRACECONTEXT_FIELD_NUMBER: _builtins.int
     TASKEXECUTIONID_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     taskId: _builtins.int
     taskExecutionId: _builtins.str
@@ -70,25 +71,35 @@ class ActivityRequest(_message.Message):
     @_builtins.property
     def input(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
-    def orchestrationInstance(self) -> _orchestration_pb2.OrchestrationInstance: ...
+    def workflowInstance(self) -> _orchestration_pb2.WorkflowInstance: ...
     @_builtins.property
     def parentTraceContext(self) -> _orchestration_pb2.TraceContext: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history from the calling workflow.
+        Delivered via the work item stream to the SDK, so that the
+        activity function can access it via ctx.
+        """
+
     def __init__(
         self,
         *,
         name: _builtins.str = ...,
         version: _wrappers_pb2.StringValue | None = ...,
         input: _wrappers_pb2.StringValue | None = ...,
-        orchestrationInstance: _orchestration_pb2.OrchestrationInstance | None = ...,
+        workflowInstance: _orchestration_pb2.WorkflowInstance | None = ...,
         taskId: _builtins.int = ...,
         parentTraceContext: _orchestration_pb2.TraceContext | None = ...,
         taskExecutionId: _builtins.str = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "orchestrationInstance", b"orchestrationInstance", "parentTraceContext", b"parentTraceContext", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "input", b"input", "parentTraceContext", b"parentTraceContext", "propagatedHistory", b"propagatedHistory", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "name", b"name", "orchestrationInstance", b"orchestrationInstance", "parentTraceContext", b"parentTraceContext", "taskExecutionId", b"taskExecutionId", "taskId", b"taskId", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "input", b"input", "name", b"name", "parentTraceContext", b"parentTraceContext", "propagatedHistory", b"propagatedHistory", "taskExecutionId", b"taskExecutionId", "taskId", b"taskId", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
 
 Global___ActivityRequest: _TypeAlias = ActivityRequest  # noqa: Y015
 
@@ -126,7 +137,7 @@ class ActivityResponse(_message.Message):
 Global___ActivityResponse: _TypeAlias = ActivityResponse  # noqa: Y015
 
 @_typing.final
-class OrchestratorRequest(_message.Message):
+class WorkflowRequest(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
@@ -135,6 +146,7 @@ class OrchestratorRequest(_message.Message):
     NEWEVENTS_FIELD_NUMBER: _builtins.int
     REQUIRESHISTORYSTREAMING_FIELD_NUMBER: _builtins.int
     ROUTER_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     requiresHistoryStreaming: _builtins.bool
     @_builtins.property
@@ -145,6 +157,13 @@ class OrchestratorRequest(_message.Message):
     def newEvents(self) -> _containers.RepeatedCompositeFieldContainer[_history_events_pb2.HistoryEvent]: ...
     @_builtins.property
     def router(self) -> _orchestration_pb2.TaskRouter: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history from a parent workflow.
+        Delivered via the work item stream to the SDK, so that the
+        workflow function can access it via ctx.
+        """
+
     def __init__(
         self,
         *,
@@ -154,19 +173,25 @@ class OrchestratorRequest(_message.Message):
         newEvents: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
         requiresHistoryStreaming: _builtins.bool = ...,
         router: _orchestration_pb2.TaskRouter | None = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "executionId", b"executionId", "router", b"router"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "executionId", b"executionId", "propagatedHistory", b"propagatedHistory", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "executionId", b"executionId", "instanceId", b"instanceId", "newEvents", b"newEvents", "pastEvents", b"pastEvents", "requiresHistoryStreaming", b"requiresHistoryStreaming", "router", b"router"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "executionId", b"executionId", "instanceId", b"instanceId", "newEvents", b"newEvents", "pastEvents", b"pastEvents", "propagatedHistory", b"propagatedHistory", "requiresHistoryStreaming", b"requiresHistoryStreaming", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
     _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
     _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
-Global___OrchestratorRequest: _TypeAlias = OrchestratorRequest  # noqa: Y015
+Global___WorkflowRequest: _TypeAlias = WorkflowRequest  # noqa: Y015
 
 @_typing.final
-class OrchestratorResponse(_message.Message):
+class WorkflowResponse(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
@@ -178,26 +203,26 @@ class OrchestratorResponse(_message.Message):
     instanceId: _builtins.str
     completionToken: _builtins.str
     @_builtins.property
-    def actions(self) -> _containers.RepeatedCompositeFieldContainer[_orchestrator_actions_pb2.OrchestratorAction]: ...
+    def actions(self) -> _containers.RepeatedCompositeFieldContainer[_orchestrator_actions_pb2.WorkflowAction]: ...
     @_builtins.property
     def customStatus(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
     def numEventsProcessed(self) -> _wrappers_pb2.Int32Value:
-        """The number of work item events that were processed by the orchestrator.
-        This field is optional. If not set, the service should assume that the orchestrator processed all events.
+        """The number of work item events that were processed by the workflow.
+        This field is optional. If not set, the service should assume that the workflow processed all events.
         """
 
     @_builtins.property
-    def version(self) -> _orchestration_pb2.OrchestrationVersion: ...
+    def version(self) -> _orchestration_pb2.WorkflowVersion: ...
     def __init__(
         self,
         *,
         instanceId: _builtins.str = ...,
-        actions: _abc.Iterable[_orchestrator_actions_pb2.OrchestratorAction] | None = ...,
+        actions: _abc.Iterable[_orchestrator_actions_pb2.WorkflowAction] | None = ...,
         customStatus: _wrappers_pb2.StringValue | None = ...,
         completionToken: _builtins.str = ...,
         numEventsProcessed: _wrappers_pb2.Int32Value | None = ...,
-        version: _orchestration_pb2.OrchestrationVersion | None = ...,
+        version: _orchestration_pb2.WorkflowVersion | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["_version", b"_version", "customStatus", b"customStatus", "numEventsProcessed", b"numEventsProcessed", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
@@ -207,7 +232,7 @@ class OrchestratorResponse(_message.Message):
     _WhichOneofArgType__version: _TypeAlias = _typing.Literal["_version", b"_version"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__version) -> _WhichOneofReturnType__version | None: ...
 
-Global___OrchestratorResponse: _TypeAlias = OrchestratorResponse  # noqa: Y015
+Global___WorkflowResponse: _TypeAlias = WorkflowResponse  # noqa: Y015
 
 @_typing.final
 class CreateInstanceRequest(_message.Message):
@@ -238,7 +263,6 @@ class CreateInstanceRequest(_message.Message):
     VERSION_FIELD_NUMBER: _builtins.int
     INPUT_FIELD_NUMBER: _builtins.int
     SCHEDULEDSTARTTIMESTAMP_FIELD_NUMBER: _builtins.int
-    ORCHESTRATIONIDREUSEPOLICY_FIELD_NUMBER: _builtins.int
     EXECUTIONID_FIELD_NUMBER: _builtins.int
     TAGS_FIELD_NUMBER: _builtins.int
     PARENTTRACECONTEXT_FIELD_NUMBER: _builtins.int
@@ -250,8 +274,6 @@ class CreateInstanceRequest(_message.Message):
     def input(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
     def scheduledStartTimestamp(self) -> _timestamp_pb2.Timestamp: ...
-    @_builtins.property
-    def orchestrationIdReusePolicy(self) -> _orchestration_pb2.OrchestrationIdReusePolicy: ...
     @_builtins.property
     def executionId(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
@@ -266,14 +288,13 @@ class CreateInstanceRequest(_message.Message):
         version: _wrappers_pb2.StringValue | None = ...,
         input: _wrappers_pb2.StringValue | None = ...,
         scheduledStartTimestamp: _timestamp_pb2.Timestamp | None = ...,
-        orchestrationIdReusePolicy: _orchestration_pb2.OrchestrationIdReusePolicy | None = ...,
         executionId: _wrappers_pb2.StringValue | None = ...,
         tags: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
         parentTraceContext: _orchestration_pb2.TraceContext | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["executionId", b"executionId", "input", b"input", "orchestrationIdReusePolicy", b"orchestrationIdReusePolicy", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["executionId", b"executionId", "input", b"input", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["executionId", b"executionId", "input", b"input", "instanceId", b"instanceId", "name", b"name", "orchestrationIdReusePolicy", b"orchestrationIdReusePolicy", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["executionId", b"executionId", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
@@ -325,19 +346,19 @@ class GetInstanceResponse(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     EXISTS_FIELD_NUMBER: _builtins.int
-    ORCHESTRATIONSTATE_FIELD_NUMBER: _builtins.int
+    WORKFLOWSTATE_FIELD_NUMBER: _builtins.int
     exists: _builtins.bool
     @_builtins.property
-    def orchestrationState(self) -> _orchestration_pb2.OrchestrationState: ...
+    def workflowState(self) -> _orchestration_pb2.WorkflowState: ...
     def __init__(
         self,
         *,
         exists: _builtins.bool = ...,
-        orchestrationState: _orchestration_pb2.OrchestrationState | None = ...,
+        workflowState: _orchestration_pb2.WorkflowState | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["orchestrationState", b"orchestrationState"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["workflowState", b"workflowState"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["exists", b"exists", "orchestrationState", b"orchestrationState"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["exists", b"exists", "workflowState", b"workflowState"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
@@ -625,26 +646,26 @@ Global___GetWorkItemsRequest: _TypeAlias = GetWorkItemsRequest  # noqa: Y015
 class WorkItem(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
-    ORCHESTRATORREQUEST_FIELD_NUMBER: _builtins.int
+    WORKFLOWREQUEST_FIELD_NUMBER: _builtins.int
     ACTIVITYREQUEST_FIELD_NUMBER: _builtins.int
     COMPLETIONTOKEN_FIELD_NUMBER: _builtins.int
     completionToken: _builtins.str
     @_builtins.property
-    def orchestratorRequest(self) -> Global___OrchestratorRequest: ...
+    def workflowRequest(self) -> Global___WorkflowRequest: ...
     @_builtins.property
     def activityRequest(self) -> Global___ActivityRequest: ...
     def __init__(
         self,
         *,
-        orchestratorRequest: Global___OrchestratorRequest | None = ...,
+        workflowRequest: Global___WorkflowRequest | None = ...,
         activityRequest: Global___ActivityRequest | None = ...,
         completionToken: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["activityRequest", b"activityRequest", "orchestratorRequest", b"orchestratorRequest", "request", b"request"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["activityRequest", b"activityRequest", "request", b"request", "workflowRequest", b"workflowRequest"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["activityRequest", b"activityRequest", "completionToken", b"completionToken", "orchestratorRequest", b"orchestratorRequest", "request", b"request"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["activityRequest", b"activityRequest", "completionToken", b"completionToken", "request", b"request", "workflowRequest", b"workflowRequest"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType_request: _TypeAlias = _typing.Literal["orchestratorRequest", "activityRequest"]  # noqa: Y015
+    _WhichOneofReturnType_request: _TypeAlias = _typing.Literal["workflowRequest", "activityRequest"]  # noqa: Y015
     _WhichOneofArgType_request: _TypeAlias = _typing.Literal["request", b"request"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType_request) -> _WhichOneofReturnType_request | None: ...
 
@@ -682,8 +703,8 @@ class RerunWorkflowFromEventRequest(_message.Message):
     OVERWRITEINPUT_FIELD_NUMBER: _builtins.int
     NEWCHILDWORKFLOWINSTANCEID_FIELD_NUMBER: _builtins.int
     sourceInstanceID: _builtins.str
-    """sourceInstanceID is the orchestration instance ID to rerun. Can be a top
-    level instance, or sub-orchestration instance.
+    """sourceInstanceID is the workflow instance ID to rerun. Can be a top
+    level instance, or child workflow instance.
     """
     eventID: _builtins.int
     """the event id to start the new workflow instance from."""
@@ -758,7 +779,7 @@ Global___RerunWorkflowFromEventResponse: _TypeAlias = RerunWorkflowFromEventResp
 
 @_typing.final
 class ListInstanceIDsRequest(_message.Message):
-    """ListInstanceIDsRequest is used to list all orchestration instances."""
+    """ListInstanceIDsRequest is used to list all workflow instances."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -828,8 +849,8 @@ Global___ListInstanceIDsResponse: _TypeAlias = ListInstanceIDsResponse  # noqa: 
 
 @_typing.final
 class GetInstanceHistoryRequest(_message.Message):
-    """GetInstanceHistoryRequest is used to get the full history of an
-    orchestration instance.
+    """GetInstanceHistoryRequest is used to get the full history of a
+    workflow instance.
     """
 
     DESCRIPTOR: _descriptor.Descriptor

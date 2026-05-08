@@ -7,7 +7,7 @@ from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_
 from dapr.proto.runtime.v1 import appcallback_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
-GRPC_GENERATED_VERSION = '1.76.0'
+GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -69,6 +69,11 @@ class AppCallbackStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkResponse.FromString,
                 _registered_method=True)
+        self.OnJobEvent = channel.unary_unary(
+                '/dapr.proto.runtime.v1.AppCallback/OnJobEvent',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.JobEventRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.JobEventResponse.FromString,
+                _registered_method=True)
 
 
 class AppCallbackServicer(object):
@@ -122,6 +127,13 @@ class AppCallbackServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def OnJobEvent(self, request, context):
+        """Sends job back to the app's endpoint at trigger time.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AppCallbackServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -154,6 +166,11 @@ def add_AppCallbackServicer_to_server(servicer, server):
                     servicer.OnBulkTopicEvent,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.TopicEventBulkResponse.SerializeToString,
+            ),
+            'OnJobEvent': grpc.unary_unary_rpc_method_handler(
+                    servicer.OnJobEvent,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.JobEventRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.JobEventResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -331,6 +348,33 @@ class AppCallback(object):
             metadata,
             _registered_method=True)
 
+    @staticmethod
+    def OnJobEvent(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.AppCallback/OnJobEvent',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.JobEventRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2.JobEventResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
 
 class AppCallbackHealthCheckStub(object):
     """AppCallbackHealthCheck V1 is an optional extension to AppCallback V1 to implement
@@ -447,7 +491,7 @@ class AppCallbackAlphaServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def OnJobEventAlpha1(self, request, context):
-        """Sends job back to the app's endpoint at trigger time.
+        """Deprecated: Sends job back to the app's endpoint at trigger time.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
