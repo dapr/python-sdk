@@ -1,5 +1,5 @@
 [project]
-name = "dapr-ext-fastapi-seherv-test"
+name = "dapr-ext-fastapi"
 dynamic = ["version"]
 description = "Dapr FastAPI Extension for the Dapr Python SDK."
 readme = "README.rst"
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "dapr-seherv-test",
+    "dapr",
     "uvicorn>=0.11.6,<1.0.0",
     "fastapi>=0.60.1,<1.0.0",
 ]
@@ -41,4 +41,4 @@ pattern = '(?P<version>\S+)'
 only-include = ["dapr/ext/fastapi"]
 
 [tool.uv.sources]
-dapr-seherv-test = { workspace = true }
+dapr = { workspace = true }

@@ -1,5 +1,5 @@
 [project]
-name = "dapr-seherv-test"
+name = "dapr"
 dynamic = ["version"]
 description = "The official release of Dapr Python SDK."
 readme = "README.md"

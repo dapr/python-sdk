@@ -8,13 +8,13 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "dapr-ext-fastapi-seherv-test",
-    "dapr-ext-grpc-seherv-test",
-    "dapr-ext-langgraph-seherv-test",
-    "dapr-ext-strands-seherv-test",
-    "dapr-ext-workflow-seherv-test",
-    "dapr-seherv-test",
-    "flask-dapr-seherv-test",
+    "dapr",
+    "dapr-ext-fastapi",
+    "dapr-ext-grpc",
+    "dapr-ext-langgraph",
+    "dapr-ext-strands",
+    "dapr-ext-workflow",
+    "flask-dapr",
 ]
 
 [[package]]
@@ -667,87 +667,7 @@ wheels = [
 ]
 
 [[package]]
-name = "dapr-ext-fastapi-seherv-test"
-source = { editable = "ext/dapr-ext-fastapi" }
-dependencies = [
-    { name = "dapr-seherv-test" },
-    { name = "fastapi" },
-    { name = "uvicorn" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dapr-seherv-test", editable = "." },
-    { name = "fastapi", specifier = ">=0.60.1,<1.0.0" },
-    { name = "uvicorn", specifier = ">=0.11.6,<1.0.0" },
-]
-
-[[package]]
-name = "dapr-ext-grpc-seherv-test"
-source = { editable = "ext/dapr-ext-grpc" }
-dependencies = [
-    { name = "cloudevents" },
-    { name = "dapr-seherv-test" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cloudevents", specifier = ">=1.0.0,<2.0.0" },
-    { name = "dapr-seherv-test", editable = "." },
-]
-
-[[package]]
-name = "dapr-ext-langgraph-seherv-test"
-source = { editable = "ext/dapr-ext-langgraph" }
-dependencies = [
-    { name = "dapr-seherv-test" },
-    { name = "langchain" },
-    { name = "langgraph" },
-    { name = "msgpack-python" },
-    { name = "python-ulid" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dapr-seherv-test", editable = "." },
-    { name = "langchain", specifier = ">=0.1.17,<2.0.0" },
-    { name = "langgraph", specifier = ">=0.3.6,<2.0.0" },
-    { name = "msgpack-python", specifier = ">=0.4.5,<1.0.0" },
-    { name = "python-ulid", specifier = ">=3.0.0,<4.0.0" },
-]
-
-[[package]]
-name = "dapr-ext-strands-seherv-test"
-source = { editable = "ext/dapr-ext-strands" }
-dependencies = [
-    { name = "dapr-seherv-test" },
-    { name = "msgpack-python" },
-    { name = "python-ulid" },
-    { name = "strands-agents" },
-    { name = "strands-agents-tools" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dapr-seherv-test", editable = "." },
-    { name = "msgpack-python", specifier = ">=0.4.5,<1.0.0" },
-    { name = "python-ulid", specifier = ">=3.0.0,<4.0.0" },
-    { name = "strands-agents", specifier = ">=1.30.0,<2.0.0" },
-    { name = "strands-agents-tools", specifier = ">=0.2.22,<1.0.0" },
-]
-
-[[package]]
-name = "dapr-ext-workflow-seherv-test"
-source = { editable = "ext/dapr-ext-workflow" }
-dependencies = [
-    { name = "dapr-seherv-test" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "dapr-seherv-test", editable = "." }]
-
-[[package]]
-name = "dapr-seherv-test"
+name = "dapr"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -873,6 +793,86 @@ tests = [
 ]
 
 [[package]]
+name = "dapr-ext-fastapi"
+source = { editable = "ext/dapr-ext-fastapi" }
+dependencies = [
+    { name = "dapr" },
+    { name = "fastapi" },
+    { name = "uvicorn" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dapr", editable = "." },
+    { name = "fastapi", specifier = ">=0.60.1,<1.0.0" },
+    { name = "uvicorn", specifier = ">=0.11.6,<1.0.0" },
+]
+
+[[package]]
+name = "dapr-ext-grpc"
+source = { editable = "ext/dapr-ext-grpc" }
+dependencies = [
+    { name = "cloudevents" },
+    { name = "dapr" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cloudevents", specifier = ">=1.0.0,<2.0.0" },
+    { name = "dapr", editable = "." },
+]
+
+[[package]]
+name = "dapr-ext-langgraph"
+source = { editable = "ext/dapr-ext-langgraph" }
+dependencies = [
+    { name = "dapr" },
+    { name = "langchain" },
+    { name = "langgraph" },
+    { name = "msgpack-python" },
+    { name = "python-ulid" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dapr", editable = "." },
+    { name = "langchain", specifier = ">=0.1.17,<2.0.0" },
+    { name = "langgraph", specifier = ">=0.3.6,<2.0.0" },
+    { name = "msgpack-python", specifier = ">=0.4.5,<1.0.0" },
+    { name = "python-ulid", specifier = ">=3.0.0,<4.0.0" },
+]
+
+[[package]]
+name = "dapr-ext-strands"
+source = { editable = "ext/dapr-ext-strands" }
+dependencies = [
+    { name = "dapr" },
+    { name = "msgpack-python" },
+    { name = "python-ulid" },
+    { name = "strands-agents" },
+    { name = "strands-agents-tools" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dapr", editable = "." },
+    { name = "msgpack-python", specifier = ">=0.4.5,<1.0.0" },
+    { name = "python-ulid", specifier = ">=3.0.0,<4.0.0" },
+    { name = "strands-agents", specifier = ">=1.30.0,<2.0.0" },
+    { name = "strands-agents-tools", specifier = ">=0.2.22,<1.0.0" },
+]
+
+[[package]]
+name = "dapr-ext-workflow"
+source = { editable = "ext/dapr-ext-workflow" }
+dependencies = [
+    { name = "dapr" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "dapr", editable = "." }]
+
+[[package]]
 name = "deprecation"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -948,16 +948,16 @@ wheels = [
 ]
 
 [[package]]
-name = "flask-dapr-seherv-test"
+name = "flask-dapr"
 source = { editable = "ext/flask_dapr" }
 dependencies = [
-    { name = "dapr-seherv-test" },
+    { name = "dapr" },
     { name = "flask" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "dapr-seherv-test", editable = "." },
+    { name = "dapr", editable = "." },
     { name = "flask", specifier = ">=1.1.4,<4.0.0" },
 ]
 
