@@ -41,9 +41,10 @@ jobs:
       if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
       run: |
         uv run python -c "
-        from dapr.version import __version__
-        assert '.dev' in __version__, (
-            f'main __version__ must contain .dev (got {__version__!r}); see RELEASE.md'
+        from importlib.metadata import version
+        package_version = version('dapr')
+        assert '.dev' in package_version, (
+            f'main version must contain .dev (got {package_version!r}); see RELEASE.md'
         )
         "
 

@@ -19,25 +19,20 @@ jobs:
       uses: astral-sh/setup-uv@v7
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
-    - name: Verify version.py matches tag
+    - name: Verify tag matches a stable VERSION
       if: startsWith(github.ref, 'refs/tags/v')
       run: |
         uv run python -c "
         import os
-        from dapr.version import __version__
-        tag_version = os.environ['GITHUB_REF'].removeprefix('refs/tags/v')
-        assert tag_version == __version__, (
-            f'Tag {os.environ[\"GITHUB_REF\"]!r} expects __version__={tag_version!r}, '
-            f'got {__version__!r}. Bump version files before tagging, see RELEASE.md'
+        from importlib.metadata import version
+        tag = os.environ['GITHUB_REF'].removeprefix('refs/tags/v')
+        package_version = version('dapr')
+        assert tag == package_version, (
+            f'Tag {os.environ[\"GITHUB_REF\"]!r} expects version={tag!r}, got {package_version!r}. '
+            'Bump VERSION before tagging, see RELEASE.md'
         )
-        "
-    - name: Verify release version is not a .dev
-      if: startsWith(github.ref, 'refs/tags/v')
-      run: |
-        uv run python -c "
-        from dapr.version import __version__
-        assert '.dev' not in __version__, (
-            f'__version__ {__version__!r} contains ".dev". Release tags must point to a stable or rc version'
+        assert '.dev' not in package_version, (
+            f'Version {package_version!r} contains .dev. Release tags must point to a stable or rc version'
         )
         "
     - name: Run Autoformatter
