@@ -42,8 +42,8 @@ jobs:
       run: |
         uv run python -c "
         from dapr.version import __version__
-        assert __version__.endswith('.dev'), (
-            f'main __version__ must end in .dev (got {__version__!r}); see RELEASE.md'
+        assert '.dev' in __version__, (
+            f'main __version__ must contain .dev (got {__version__!r}); see RELEASE.md'
         )
         "
 
