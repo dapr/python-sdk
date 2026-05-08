@@ -1,5 +1,5 @@
 [project]
-name = "dapr-ext-grpc"
+name = "dapr-ext-grpc-seherv-test"
 dynamic = ["version"]
 description = "Dapr gRPC AppCallback Extension for the Dapr Python SDK."
 readme = "README.rst"
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "dapr",
+    "dapr-seherv-test",
     "cloudevents>=1.0.0,<2.0.0",
 ]
 
@@ -40,4 +40,4 @@ pattern = '(?P<version>\S+)'
 only-include = ["dapr/ext/grpc"]
 
 [tool.uv.sources]
-dapr = { workspace = true }
+dapr-seherv-test = { workspace = true }

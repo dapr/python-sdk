@@ -1,5 +1,5 @@
 [project]
-name = "dapr-ext-workflow"
+name = "dapr-ext-workflow-seherv-test"
 dynamic = ["version"]
 description = "Dapr Workflow Authoring Extension for the Dapr Python SDK."
 readme = "README.rst"
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "dapr",
+    "dapr-seherv-test",
 ]
 
 [project.urls]
@@ -39,4 +39,4 @@ pattern = '(?P<version>\S+)'
 only-include = ["dapr/ext/workflow"]
 
 [tool.uv.sources]
-dapr = { workspace = true }
+dapr-seherv-test = { workspace = true }

@@ -1,5 +1,5 @@
 [project]
-name = "dapr-ext-langgraph"
+name = "dapr-ext-langgraph-seherv-test"
 dynamic = ["version"]
 description = "Dapr LangGraph Checkpointer Extension for the Dapr Python SDK."
 readme = "README.rst"
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "dapr",
+    "dapr-seherv-test",
     "langgraph>=0.3.6,<2.0.0",
     "langchain>=0.1.17,<2.0.0",
     "python-ulid>=3.0.0,<4.0.0",
@@ -43,4 +43,4 @@ pattern = '(?P<version>\S+)'
 only-include = ["dapr/ext/langgraph"]
 
 [tool.uv.sources]
-dapr = { workspace = true }
+dapr-seherv-test = { workspace = true }

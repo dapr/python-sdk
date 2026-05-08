@@ -1,5 +1,5 @@
 [project]
-name = "flask-dapr"
+name = "flask-dapr-seherv-test"
 dynamic = ["version"]
 description = "Dapr Flask Extension for the Dapr Python SDK."
 readme = "README.rst"
@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "Flask>=1.1.4,<4.0.0",
-    "dapr",
+    "dapr-seherv-test",
 ]
 
 [project.urls]
@@ -40,4 +40,4 @@ pattern = '(?P<version>\S+)'
 only-include = ["flask_dapr"]
 
 [tool.uv.sources]
-dapr = { workspace = true }
+dapr-seherv-test = { workspace = true }

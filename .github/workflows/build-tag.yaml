@@ -83,6 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TWINE_USERNAME: "__token__"
+      TWINE_REPOSITORY_URL: "https://test.pypi.org/legacy/"
     steps:
     - uses: actions/checkout@v6
     - name: Set up Python 3.10
@@ -98,46 +99,46 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python -m build --wheel
-        twine upload dist/*
+        twine upload --verbose dist/*
     - name: Build and publish dapr-ext-workflow
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-workflow
         python -m build --wheel
-        twine upload dist/*
+        twine upload --verbose dist/*
     - name: Build and publish Dapr Flask Extension
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/flask_dapr
         python -m build --wheel
-        twine upload dist/*
+        twine upload --verbose dist/*
     - name: Build and publish dapr-ext-grpc
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-grpc
         python -m build --wheel
-        twine upload dist/*
+        twine upload --verbose dist/*
     - name: Build and publish dapr-ext-fastapi
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-fastapi
         python -m build --wheel
-        twine upload dist/*
+        twine upload --verbose dist/*
     - name: Build and publish dapr-ext-langgraph
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-langgraph
         python -m build --wheel
-        twine upload dist/*
+        twine upload --verbose dist/*
     - name: Build and publish dapr-ext-strands
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         cd ext/dapr-ext-strands
         python -m build --wheel
-        twine upload dist/*
+        twine upload --verbose dist/*
