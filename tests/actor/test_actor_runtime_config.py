@@ -69,13 +69,14 @@ class ActorRuntimeConfigTests(unittest.TestCase):
 
         self.assertEqual(config._actor_idle_timeout, timedelta(seconds=3600))
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
-        self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
+        self.assertIsNone(config._drain_ongoing_call_timeout)
         self.assertEqual(config._drain_rebalanced_actors, True)
         self.assertEqual(config._reentrancy, None)
         self.assertEqual(config._entities, set())
         self.assertEqual(config._entitiesConfig, [])
         self.assertNotIn('reentrancy', config.as_dict().keys())
         self.assertNotIn('remindersStoragePartitions', config.as_dict().keys())
+        self.assertNotIn('drainOngoingCallTimeout', config.as_dict().keys())
         self.assertEqual(config.as_dict()['entitiesConfig'], [])
 
     def test_default_config_with_reentrancy(self):
@@ -84,7 +85,7 @@ class ActorRuntimeConfigTests(unittest.TestCase):
 
         self.assertEqual(config._actor_idle_timeout, timedelta(seconds=3600))
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
-        self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
+        self.assertIsNone(config._drain_ongoing_call_timeout)
         self.assertEqual(config._drain_rebalanced_actors, True)
         self.assertEqual(config._reentrancy, reentrancyConfig)
         self.assertEqual(config._entities, set())
@@ -110,7 +111,8 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
 
         d = config.as_dict()
-        self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
+        self.assertIsNone(config._drain_ongoing_call_timeout)
+        self.assertNotIn('drainOngoingCallTimeout', d)
         self.assertEqual(d['entitiesConfig'][0]['entities'], ['testactor1'])
         self.assertEqual(d['entitiesConfig'][0]['actorScanInterval'], timedelta(seconds=10))
         self.assertEqual(d['entitiesConfig'][0]['reentrancy']['enabled'], True)
@@ -130,7 +132,7 @@ class ActorRuntimeConfigTests(unittest.TestCase):
 
         self.assertEqual(config._actor_idle_timeout, timedelta(seconds=3600))
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
-        self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
+        self.assertIsNone(config._drain_ongoing_call_timeout)
         self.assertEqual(config._drain_rebalanced_actors, True)
         self.assertEqual(config._entities, {'actortype1'})
         self.assertEqual(config._entitiesConfig, [])
@@ -141,7 +143,7 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         config.update_entities(['actortype1', 'actortype1'])
         self.assertEqual(config._actor_idle_timeout, timedelta(seconds=3600))
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
-        self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
+        self.assertIsNone(config._drain_ongoing_call_timeout)
         self.assertEqual(config._drain_rebalanced_actors, True)
         self.assertEqual(config._entities, {'actortype1', 'actortype1'})
         self.assertEqual(config._entitiesConfig, [])
@@ -164,11 +166,16 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         config = ActorRuntimeConfig(reminders_storage_partitions=12)
         self.assertEqual(config._actor_idle_timeout, timedelta(seconds=3600))
         self.assertEqual(config._actor_scan_interval, timedelta(seconds=30))
-        self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=60))
+        self.assertIsNone(config._drain_ongoing_call_timeout)
         self.assertEqual(config._drain_rebalanced_actors, True)
         self.assertNotIn('reentrancy', config.as_dict().keys())
         self.assertEqual(config._reminders_storage_partitions, 12)
         self.assertEqual(config.as_dict()['remindersStoragePartitions'], 12)
+
+    def test_explicit_drain_ongoing_call_timeout(self):
+        config = ActorRuntimeConfig(drain_ongoing_call_timeout=timedelta(seconds=10))
+        self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=10))
+        self.assertEqual(config.as_dict()['drainOngoingCallTimeout'], timedelta(seconds=10))
 
 
 if __name__ == '__main__':
