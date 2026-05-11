@@ -1,9 +1,8 @@
-"""Cross-platform helpers for managing subprocess trees in tests.
-
-``dapr run`` spawns ``daprd`` and the user's app as siblings; signaling only
-the immediate process can orphan them if the signal isn't forwarded, which
-leaves stale listeners on the test ports across runs. Putting the whole
-subtree in its own group lets cleanup take them all down together.
+"""
+``dapr run`` spawns ``daprd`` and the user's app as siblings, not as children.
+Terminating only the immediate process can orphan them if the signal isn't forwarded,
+leaving stale listeners on the test ports across runs.
+Putting all the processes in the same group lets cleanup take them all down together.
 """
 
 from __future__ import annotations

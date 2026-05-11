@@ -136,3 +136,9 @@ coverage.lcov
 
 # macOS specific files
 .DS_Store
+
+# Integration test scratch dirs
+tests/integration/.binding-data/
+
+# Crypto test material generated at test time (see tests/crypto_utils.py)
+tests/integration/keys/
