@@ -17,10 +17,7 @@ limitations under the License.
 from dapr.ext.workflow._durabletask.task import TaskFailedError
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
-
-# MCP
 from dapr.ext.workflow.mcp import MCP_WORKFLOW_PREFIX, DaprMCPClient, MCPToolDef
-from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
@@ -42,5 +39,4 @@ __all__ = [
     'DaprMCPClient',
     'MCPToolDef',
     'MCP_WORKFLOW_PREFIX',
-    'create_pydantic_model_from_schema',
 ]

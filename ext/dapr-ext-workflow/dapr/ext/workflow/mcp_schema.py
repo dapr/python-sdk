@@ -11,14 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utility for converting MCP JSON Schema definitions to Pydantic models."""
+"""Utility for converting MCP JSON Schema definitions to Pydantic models.
+
+Pydantic is an optional dependency — it is imported lazily inside
+:func:`create_pydantic_model_from_schema` so that users of ``dapr-ext-workflow``
+who don't need MCP schema conversion are not forced to install it.
+"""
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, get_args, get_origin
 
-from pydantic import BaseModel, Field, create_model
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +41,7 @@ TYPE_MAPPING = {
 
 
 # TODO(@sicoyle): see if I can remove this and use something from official modelcontextprotocol python-sdk instead???
-def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -> Type[BaseModel]:
+def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -> Type['BaseModel']:
     """Create a Pydantic model from a JSON Schema definition.
 
     This function converts a JSON Schema object (commonly used in MCP tool
@@ -49,8 +55,17 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -
         A dynamically created Pydantic model class.
 
     Raises:
+        ImportError: If Pydantic is not installed.
         ValueError: If the schema is invalid or cannot be converted.
     """
+    try:
+        from pydantic import Field, create_model
+    except ImportError as e:
+        raise ImportError(
+            'create_pydantic_model_from_schema requires Pydantic. '
+            "Install it with: pip install 'pydantic>=2,<3'"
+        ) from e
+
     logger.debug("Creating Pydantic model '%s' from schema", model_name)
 
     try:
@@ -79,16 +94,22 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -
                 types = [v.get('type', 'string') for v in variants]
                 has_null = 'null' in types
                 non_null_variants = [v for v in variants if v.get('type') != 'null']
-                if non_null_variants:
-                    primary_type = non_null_variants[0].get('type', 'string')
-                    field_type = TYPE_MAPPING.get(primary_type, str)
-                    if primary_type == 'array' and 'items' in non_null_variants[0]:
-                        item_type = non_null_variants[0]['items'].get('type', 'string')
-                        field_type = List[TYPE_MAPPING.get(item_type, str)]
-                    elif primary_type == 'object':
-                        field_type = dict
-                else:
+                variant_types: List[Any] = []
+                for v in non_null_variants:
+                    v_type = v.get('type', 'string')
+                    if v_type == 'array' and 'items' in v:
+                        item_type = v['items'].get('type', 'string')
+                        variant_types.append(List[TYPE_MAPPING.get(item_type, str)])
+                    elif v_type == 'object':
+                        variant_types.append(dict)
+                    else:
+                        variant_types.append(TYPE_MAPPING.get(v_type, str))
+                if not variant_types:
                     field_type = str
+                elif len(variant_types) == 1:
+                    field_type = variant_types[0]
+                else:
+                    field_type = Union[tuple(variant_types)]  # type: ignore[assignment]
                 if has_null:
                     field_type = Optional[field_type]
             else:
@@ -102,7 +123,9 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -
                 default = ...
             else:
                 default = None
-                if not (hasattr(field_type, '__origin__') and field_type.__origin__ is Optional):
+                # Wrap in Optional[...] unless the type is already a Union that includes NoneType
+                # (e.g. produced by an anyOf with a 'null' variant above).
+                if type(None) not in get_args(field_type) or get_origin(field_type) is not Union:
                     field_type = Optional[field_type]
 
             field_description = field_props.get('description', '')

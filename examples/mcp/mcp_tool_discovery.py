@@ -47,8 +47,8 @@ from dapr.ext.workflow import (
     DaprWorkflowContext,
     WorkflowActivityContext,
     WorkflowRuntime,
-    create_pydantic_model_from_schema,
 )
+from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
 
 
 def main():
