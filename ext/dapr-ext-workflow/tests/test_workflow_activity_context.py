@@ -16,6 +16,8 @@ limitations under the License.
 import unittest
 from unittest import mock
 
+import dapr.ext.workflow._durabletask.internal.protos as pb
+from dapr.ext.workflow import PropagatedHistory
 from dapr.ext.workflow._durabletask import task
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 
@@ -24,6 +26,9 @@ mock_task = 10
 
 
 class FakeActivityContext:
+    def __init__(self, propagated_history=None):
+        self._propagated_history = propagated_history
+
     @property
     def orchestration_id(self):
         return mock_orchestration_id
@@ -31,6 +36,9 @@ class FakeActivityContext:
     @property
     def task_id(self):
         return mock_task
+
+    def get_propagated_history(self):
+        return self._propagated_history
 
 
 class WorkflowActivityContextTest(unittest.TestCase):
@@ -48,3 +56,33 @@ class WorkflowActivityContextTest(unittest.TestCase):
 
             actual_task_id = act_ctx.task_id
             assert actual_task_id == mock_task
+
+    def test_workflow_activity_context_get_propagated_history(self):
+        history_proto = pb.PropagatedHistory(
+            scope=pb.HISTORY_PROPAGATION_SCOPE_OWN_HISTORY,
+            chunks=[
+                pb.PropagatedHistoryChunk(
+                    appId='caller-app',
+                    instanceId='caller-instance',
+                    workflowName='Caller',
+                    rawEvents=[
+                        pb.HistoryEvent(
+                            eventId=0,
+                            executionStarted=pb.ExecutionStartedEvent(name='Caller'),
+                        ).SerializeToString(),
+                    ],
+                ),
+            ],
+        )
+        propagated = PropagatedHistory.from_proto(history_proto)
+        fake = FakeActivityContext(propagated_history=propagated)
+        act_ctx = WorkflowActivityContext(fake)
+
+        history = act_ctx.get_propagated_history()
+        assert history is not None
+        assert history.get_app_ids() == ['caller-app']
+
+    def test_workflow_activity_context_get_propagated_history_default_none(self):
+        fake = FakeActivityContext()
+        act_ctx = WorkflowActivityContext(fake)
+        assert act_ctx.get_propagated_history() is None

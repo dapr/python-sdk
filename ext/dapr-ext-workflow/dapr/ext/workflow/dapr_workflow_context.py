@@ -18,6 +18,7 @@ from typing import Any, Callable, List, Optional, TypeVar, Union
 
 from dapr.ext.workflow._durabletask import task
 from dapr.ext.workflow.logger import Logger, LoggerOptions
+from dapr.ext.workflow.propagation import PropagatedHistory, PropagationScope
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_context import Workflow, WorkflowContext
@@ -67,7 +68,9 @@ class DaprWorkflowContext(WorkflowContext):
         input: TInput = None,
         retry_policy: Optional[RetryPolicy] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> task.Task[TOutput]:
+        retry_obj = retry_policy.obj if retry_policy is not None else None
         # Handle string activity names for multi-app workflow scenarios
         if isinstance(activity, str):
             activity_name = activity
@@ -77,11 +80,12 @@ class DaprWorkflowContext(WorkflowContext):
                 )
             else:
                 self._logger.debug(f'{self.instance_id}: Creating activity {activity_name}')
-
-            if retry_policy is None:
-                return self.__obj.call_activity(activity=activity_name, input=input, app_id=app_id)
             return self.__obj.call_activity(
-                activity=activity_name, input=input, retry_policy=retry_policy.obj, app_id=app_id
+                activity=activity_name,
+                input=input,
+                retry_policy=retry_obj,
+                app_id=app_id,
+                propagation=propagation,
             )
 
         # Handle function activity objects (original behavior)
@@ -91,10 +95,12 @@ class DaprWorkflowContext(WorkflowContext):
         else:
             # this case should ideally never happen
             act = activity.__name__
-        if retry_policy is None:
-            return self.__obj.call_activity(activity=act, input=input, app_id=app_id)
         return self.__obj.call_activity(
-            activity=act, input=input, retry_policy=retry_policy.obj, app_id=app_id
+            activity=act,
+            input=input,
+            retry_policy=retry_obj,
+            app_id=app_id,
+            propagation=propagation,
         )
 
     def call_child_workflow(
@@ -105,22 +111,20 @@ class DaprWorkflowContext(WorkflowContext):
         instance_id: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> task.Task[TOutput]:
+        retry_obj = retry_policy.obj if retry_policy is not None else None
         # Handle string workflow names for multi-app workflow scenarios
         if isinstance(workflow, str):
             workflow_name = workflow
             self._logger.debug(f'{self.instance_id}: Creating child workflow {workflow_name}')
-
-            if retry_policy is None:
-                return self.__obj.call_sub_orchestrator(
-                    workflow_name, input=input, instance_id=instance_id, app_id=app_id
-                )
             return self.__obj.call_sub_orchestrator(
                 workflow_name,
                 input=input,
                 instance_id=instance_id,
-                retry_policy=retry_policy.obj,
+                retry_policy=retry_obj,
                 app_id=app_id,
+                propagation=propagation,
             )
 
         # Handle function workflow objects (original behavior)
@@ -137,13 +141,17 @@ class DaprWorkflowContext(WorkflowContext):
         else:
             # this case should ideally never happen
             wf.__name__ = workflow.__name__
-        if retry_policy is None:
-            return self.__obj.call_sub_orchestrator(
-                wf, input=input, instance_id=instance_id, app_id=app_id
-            )
         return self.__obj.call_sub_orchestrator(
-            wf, input=input, instance_id=instance_id, retry_policy=retry_policy.obj, app_id=app_id
+            wf,
+            input=input,
+            instance_id=instance_id,
+            retry_policy=retry_obj,
+            app_id=app_id,
+            propagation=propagation,
         )
+
+    def get_propagated_history(self) -> Optional[PropagatedHistory]:
+        return self.__obj.get_propagated_history()
 
     def wait_for_external_event(
         self,

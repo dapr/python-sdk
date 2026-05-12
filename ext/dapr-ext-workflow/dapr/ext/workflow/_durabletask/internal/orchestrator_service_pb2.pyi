@@ -62,6 +62,7 @@ class ActivityRequest(_message.Message):
     TASKID_FIELD_NUMBER: _builtins.int
     PARENTTRACECONTEXT_FIELD_NUMBER: _builtins.int
     TASKEXECUTIONID_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     taskId: _builtins.int
     taskExecutionId: _builtins.str
@@ -73,6 +74,13 @@ class ActivityRequest(_message.Message):
     def workflowInstance(self) -> _orchestration_pb2.WorkflowInstance: ...
     @_builtins.property
     def parentTraceContext(self) -> _orchestration_pb2.TraceContext: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history from the calling workflow.
+        Delivered via the work item stream to the SDK, so that the
+        activity function can access it via ctx.
+        """
+
     def __init__(
         self,
         *,
@@ -83,11 +91,15 @@ class ActivityRequest(_message.Message):
         taskId: _builtins.int = ...,
         parentTraceContext: _orchestration_pb2.TraceContext | None = ...,
         taskExecutionId: _builtins.str = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "parentTraceContext", b"parentTraceContext", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "input", b"input", "parentTraceContext", b"parentTraceContext", "propagatedHistory", b"propagatedHistory", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "name", b"name", "parentTraceContext", b"parentTraceContext", "taskExecutionId", b"taskExecutionId", "taskId", b"taskId", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "input", b"input", "name", b"name", "parentTraceContext", b"parentTraceContext", "propagatedHistory", b"propagatedHistory", "taskExecutionId", b"taskExecutionId", "taskId", b"taskId", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
 
 Global___ActivityRequest: _TypeAlias = ActivityRequest  # noqa: Y015
 
@@ -133,6 +145,7 @@ class WorkflowRequest(_message.Message):
     NEWEVENTS_FIELD_NUMBER: _builtins.int
     REQUIRESHISTORYSTREAMING_FIELD_NUMBER: _builtins.int
     ROUTER_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     requiresHistoryStreaming: _builtins.bool
     @_builtins.property
@@ -143,6 +156,13 @@ class WorkflowRequest(_message.Message):
     def newEvents(self) -> _containers.RepeatedCompositeFieldContainer[_history_events_pb2.HistoryEvent]: ...
     @_builtins.property
     def router(self) -> _orchestration_pb2.TaskRouter: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history from a parent workflow.
+        Delivered via the work item stream to the SDK, so that the
+        workflow function can access it via ctx.
+        """
+
     def __init__(
         self,
         *,
@@ -152,13 +172,19 @@ class WorkflowRequest(_message.Message):
         newEvents: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
         requiresHistoryStreaming: _builtins.bool = ...,
         router: _orchestration_pb2.TaskRouter | None = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "executionId", b"executionId", "router", b"router"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "executionId", b"executionId", "propagatedHistory", b"propagatedHistory", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "executionId", b"executionId", "instanceId", b"instanceId", "newEvents", b"newEvents", "pastEvents", b"pastEvents", "requiresHistoryStreaming", b"requiresHistoryStreaming", "router", b"router"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "executionId", b"executionId", "instanceId", b"instanceId", "newEvents", b"newEvents", "pastEvents", b"pastEvents", "propagatedHistory", b"propagatedHistory", "requiresHistoryStreaming", b"requiresHistoryStreaming", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
     _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
     _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___WorkflowRequest: _TypeAlias = WorkflowRequest  # noqa: Y015

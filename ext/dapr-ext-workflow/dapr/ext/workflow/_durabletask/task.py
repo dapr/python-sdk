@@ -19,6 +19,7 @@ from typing import Any, Callable, Generator, Generic, Optional, TypeVar, Union
 
 import dapr.ext.workflow._durabletask.internal.helpers as pbh
 import dapr.ext.workflow._durabletask.internal.protos as pb
+from dapr.ext.workflow.propagation import PropagatedHistory, PropagationScope
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -112,6 +113,7 @@ class OrchestrationContext(ABC):
         input: Optional[TInput] = None,
         retry_policy: Optional[RetryPolicy] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> Task[TOutput]:
         """Schedule an activity for execution.
 
@@ -125,6 +127,11 @@ class OrchestrationContext(ABC):
             The retry policy to use for this activity call.
         app_id: Optional[str]
             The app ID that will execute the activity. If not specified, the activity will be executed by the same app as the orchestrator.
+        propagation: Optional[PropagationScope]
+            Controls whether this workflow's history is propagated to the activity.
+            ``None`` (default) propagates nothing. ``OWN_HISTORY`` sends this
+            workflow's own events; ``LINEAGE`` additionally forwards any history
+            this workflow itself received from its parent.
 
         Returns
         -------
@@ -142,6 +149,7 @@ class OrchestrationContext(ABC):
         instance_id: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> Task[TOutput]:
         """Schedule sub-orchestrator function for execution.
 
@@ -158,6 +166,11 @@ class OrchestrationContext(ABC):
             The retry policy to use for this sub-orchestrator call.
         app_id: Optional[str]
             The app ID that will execute the sub-orchestrator. If not specified, the sub-orchestrator will be executed by the same app as the orchestrator.
+        propagation: Optional[PropagationScope]
+            Controls whether this workflow's history is propagated to the child
+            workflow. ``None`` (default) propagates nothing. ``OWN_HISTORY``
+            sends this workflow's own events; ``LINEAGE`` additionally forwards
+            any history this workflow itself received from its parent.
 
         Returns
         -------
@@ -224,6 +237,19 @@ class OrchestrationContext(ABC):
         -------
         bool
             True if the given patch name can be applied to the orchestration, False otherwise.
+        """
+        pass
+
+    @abstractmethod
+    def get_propagated_history(self) -> Optional[PropagatedHistory]:
+        """Return history propagated from a parent workflow, or ``None`` if
+        no history was propagated.
+
+        Propagated history is populated when a parent workflow calls this
+        workflow with a propagation scope (``OWN_HISTORY`` or ``LINEAGE``)
+        and the runtime has propagation enabled. The result is a structured
+        view of the caller's recorded events; use it to introspect upstream
+        activities or child workflows before deciding what to do.
         """
         pass
 
@@ -445,6 +471,7 @@ class RetryableTask(CompletableTask[T]):
         task_execution_id: str = '',
         instance_id: Optional[str] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> None:
         super().__init__()
         self._retry_policy = retry_policy
@@ -456,6 +483,7 @@ class RetryableTask(CompletableTask[T]):
         self._task_execution_id = task_execution_id
         self._instance_id = instance_id
         self._app_id = app_id
+        self._propagation = propagation
 
     def increment_attempt_count(self) -> None:
         self._attempt_count += 1
@@ -587,10 +615,17 @@ def when_any(tasks: list[Task]) -> WhenAnyTask:
 
 
 class ActivityContext:
-    def __init__(self, orchestration_id: str, task_id: int, task_execution_id: str = ''):
+    def __init__(
+        self,
+        orchestration_id: str,
+        task_id: int,
+        task_execution_id: str = '',
+        propagated_history: Optional[PropagatedHistory] = None,
+    ):
         self._orchestration_id = orchestration_id
         self._task_id = task_id
         self._task_execution_id = task_execution_id
+        self._propagated_history = propagated_history
 
     @property
     def orchestration_id(self) -> str:
@@ -633,6 +668,11 @@ class ActivityContext:
             The task execution ID for this activity invocation.
         """
         return self._task_execution_id
+
+    def get_propagated_history(self) -> Optional[PropagatedHistory]:
+        """Return history propagated from the calling workflow, or ``None`` if
+        the caller did not opt in to history propagation."""
+        return self._propagated_history
 
 
 # Orchestrators are generators that yield tasks and receive/return any type

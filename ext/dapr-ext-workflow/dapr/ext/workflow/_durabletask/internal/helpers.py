@@ -197,15 +197,19 @@ def new_schedule_task_action(
     encoded_input: Optional[str],
     router: Optional[pb.TaskRouter] = None,
     task_execution_id: str = '',
+    propagation_scope: Optional[int] = None,
 ) -> pb.WorkflowAction:
+    schedule = pb.ScheduleTaskAction(
+        name=name,
+        input=get_string_value(encoded_input),
+        router=router,
+        taskExecutionId=task_execution_id,
+    )
+    if propagation_scope is not None:
+        schedule.historyPropagationScope = propagation_scope
     return pb.WorkflowAction(
         id=id,
-        scheduleTask=pb.ScheduleTaskAction(
-            name=name,
-            input=get_string_value(encoded_input),
-            router=router,
-            taskExecutionId=task_execution_id,
-        ),
+        scheduleTask=schedule,
         router=router,
     )
 
@@ -222,15 +226,19 @@ def new_create_child_workflow_action(
     instance_id: Optional[str],
     encoded_input: Optional[str],
     router: Optional[pb.TaskRouter] = None,
+    propagation_scope: Optional[int] = None,
 ) -> pb.WorkflowAction:
+    child = pb.CreateChildWorkflowAction(
+        name=name,
+        instanceId=instance_id,
+        input=get_string_value(encoded_input),
+        router=router,
+    )
+    if propagation_scope is not None:
+        child.historyPropagationScope = propagation_scope
     return pb.WorkflowAction(
         id=id,
-        createChildWorkflow=pb.CreateChildWorkflowAction(
-            name=name,
-            instanceId=instance_id,
-            input=get_string_value(encoded_input),
-            router=router,
-        ),
+        createChildWorkflow=child,
         router=router,
     )
 
