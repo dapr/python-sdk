@@ -20,7 +20,7 @@ import tempfile
 import time
 import unittest
 import uuid
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from google.rpc import code_pb2, status_pb2
 
@@ -1710,6 +1710,43 @@ class DaprGrpcClientTests(unittest.TestCase):
         job = Job(name='error-test', schedule='@every 1m')
         with self.assertRaises(DaprGrpcError):
             dapr.schedule_job_alpha1(job)
+
+    def _capture_grpc_channel_options(self, **client_kwargs) -> dict[str, object]:
+        with (
+            patch('dapr.clients.grpc.client.grpc.secure_channel') as mock_secure,
+            patch('dapr.clients.grpc.client.grpc.insecure_channel') as mock_insecure,
+            patch(
+                'dapr.clients.grpc.client.grpc.intercept_channel',
+                side_effect=lambda ch, *_: ch,
+            ),
+        ):
+            mock_secure.return_value = MagicMock(name='secure-channel')
+            mock_insecure.return_value = MagicMock(name='insecure-channel')
+            DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}', **client_kwargs)
+            call = mock_insecure.call_args or mock_secure.call_args
+            return dict(call.kwargs['options'])
+
+    @patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 0)
+    def test_grpc_channel_options_default(self):
+        """Without env var or constructor arg, no message size options are set."""
+        options = self._capture_grpc_channel_options()
+        self.assertNotIn('grpc.max_send_message_length', options)
+        self.assertNotIn('grpc.max_receive_message_length', options)
+        self.assertIn('grpc.primary_user_agent', options)
+
+    @patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 8 * 1024 * 1024)
+    def test_grpc_channel_options_env_var_sets_receive_only(self):
+        """DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES sets receive size; send stays at gRPC default."""
+        options = self._capture_grpc_channel_options()
+        self.assertEqual(options.get('grpc.max_receive_message_length'), 8 * 1024 * 1024)
+        self.assertNotIn('grpc.max_send_message_length', options)
+
+    @patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 8 * 1024 * 1024)
+    def test_grpc_channel_options_constructor_arg_overrides_env(self):
+        """Explicit max_grpc_message_length wins over the env var and sets both send + receive."""
+        options = self._capture_grpc_channel_options(max_grpc_message_length=32 * 1024 * 1024)
+        self.assertEqual(options.get('grpc.max_send_message_length'), 32 * 1024 * 1024)
+        self.assertEqual(options.get('grpc.max_receive_message_length'), 32 * 1024 * 1024)
 
 
 if __name__ == '__main__':

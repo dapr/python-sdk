@@ -137,23 +137,26 @@ class DaprGrpcClient:
                 StreamUnaryClientInterceptor or
                 StreamStreamClientInterceptor, optional): gRPC interceptors.
             max_grpc_message_length (int, optional): The maximum grpc send and receive
-                message length in bytes.
+                message length in bytes. When omitted, the env var
+                ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` is consulted to set the
+                receive limit (matches the Java SDK property of the same name).
             retry_policy (RetryPolicy optional): Specifies retry behaviour
         """
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
         useragent = f'dapr-sdk-python/{__version__}'
-        if not max_grpc_message_length:
-            options = [
-                ('grpc.primary_user_agent', useragent),
-            ]
-        else:
-            options = [
-                ('grpc.max_send_message_length', max_grpc_message_length),  # type: ignore
-                ('grpc.max_receive_message_length', max_grpc_message_length),  # type: ignore
-                ('grpc.primary_user_agent', useragent),
-            ]
+        options = [('grpc.primary_user_agent', useragent)]
+        if max_grpc_message_length:
+            options.append(('grpc.max_send_message_length', max_grpc_message_length))  # type: ignore
+            options.append(('grpc.max_receive_message_length', max_grpc_message_length))  # type: ignore
+        elif settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES:
+            options.append(
+                (
+                    'grpc.max_receive_message_length',
+                    settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES,
+                )  # type: ignore
+            )
 
         if not address:
             address = settings.DAPR_GRPC_ENDPOINT or (
