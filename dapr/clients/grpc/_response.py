@@ -956,7 +956,7 @@ class GetMetadataResponse(DaprResponse):
         registered_components: Sequence[RegisteredComponents],
         extended_metadata: Dict[str, str],
         headers: MetadataTuple = (),
-        mcp_servers: Optional[Sequence['MetadataMCPServer']] = None,
+        mcp_servers: Optional[Sequence[MetadataMCPServer]] = None,
     ):
         """Initializes GetMetadataResponse.
 
@@ -1000,7 +1000,7 @@ class GetMetadataResponse(DaprResponse):
         return self._extended_metadata
 
     @property
-    def mcp_servers(self) -> Sequence['MetadataMCPServer']:
+    def mcp_servers(self) -> Sequence[MetadataMCPServer]:
         """List of loaded MCPServer resources."""
         return self._mcp_servers
 

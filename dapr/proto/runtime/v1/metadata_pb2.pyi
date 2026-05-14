@@ -23,10 +23,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated as _deprecated
@@ -74,11 +74,6 @@ class GetMetadataRequest(_message.Message):
     def __init__(
         self,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetMetadataRequest: _TypeAlias = GetMetadataRequest  # noqa: Y015
 
@@ -102,11 +97,8 @@ class GetMetadataResponse(_message.Message):
             key: _builtins.str = ...,
             value: _builtins.str = ...,
         ) -> None: ...
-        _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     ID_FIELD_NUMBER: _builtins.int
     ACTIVE_ACTORS_COUNT_FIELD_NUMBER: _builtins.int
@@ -122,6 +114,7 @@ class GetMetadataResponse(_message.Message):
     WORKFLOWS_FIELD_NUMBER: _builtins.int
     MCP_SERVERS_FIELD_NUMBER: _builtins.int
     WORKFLOW_ACCESS_POLICIES_FIELD_NUMBER: _builtins.int
+    RESILIENCIES_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     runtime_version: _builtins.str
     @_builtins.property
@@ -151,6 +144,8 @@ class GetMetadataResponse(_message.Message):
     def mcp_servers(self) -> _containers.RepeatedCompositeFieldContainer[Global___MetadataMCPServer]: ...
     @_builtins.property
     def workflow_access_policies(self) -> _containers.RepeatedCompositeFieldContainer[Global___MetadataWorkflowAccessPolicy]: ...
+    @_builtins.property
+    def resiliencies(self) -> _containers.RepeatedCompositeFieldContainer[Global___MetadataResiliency]: ...
     def __init__(
         self,
         *,
@@ -168,10 +163,11 @@ class GetMetadataResponse(_message.Message):
         workflows: Global___MetadataWorkflows | None = ...,
         mcp_servers: _abc.Iterable[Global___MetadataMCPServer] | None = ...,
         workflow_access_policies: _abc.Iterable[Global___MetadataWorkflowAccessPolicy] | None = ...,
+        resiliencies: _abc.Iterable[Global___MetadataResiliency] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "scheduler", b"scheduler", "workflows", b"workflows"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "mcp_servers", b"mcp_servers", "registered_components", b"registered_components", "runtime_version", b"runtime_version", "scheduler", b"scheduler", "subscriptions", b"subscriptions", "workflow_access_policies", b"workflow_access_policies", "workflows", b"workflows"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_scheduler", b"_scheduler", "_workflows", b"_workflows", "active_actors_count", b"active_actors_count", "actor_runtime", b"actor_runtime", "app_connection_properties", b"app_connection_properties", "enabled_features", b"enabled_features", "extended_metadata", b"extended_metadata", "http_endpoints", b"http_endpoints", "id", b"id", "mcp_servers", b"mcp_servers", "registered_components", b"registered_components", "resiliencies", b"resiliencies", "runtime_version", b"runtime_version", "scheduler", b"scheduler", "subscriptions", b"subscriptions", "workflow_access_policies", b"workflow_access_policies", "workflows", b"workflows"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__scheduler: _TypeAlias = _typing.Literal["scheduler"]  # noqa: Y015
     _WhichOneofArgType__scheduler: _TypeAlias = _typing.Literal["_scheduler", b"_scheduler"]  # noqa: Y015
@@ -195,11 +191,8 @@ class MetadataWorkflows(_message.Message):
         *,
         connected_workers: _builtins.int = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["connected_workers", b"connected_workers"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___MetadataWorkflows: _TypeAlias = MetadataWorkflows  # noqa: Y015
 
@@ -221,11 +214,8 @@ class MetadataScheduler(_message.Message):
         *,
         connected_addresses: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["connected_addresses", b"connected_addresses"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___MetadataScheduler: _TypeAlias = MetadataScheduler  # noqa: Y015
 
@@ -280,11 +270,8 @@ class ActorRuntime(_message.Message):
         host_ready: _builtins.bool = ...,
         placement: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["active_actors", b"active_actors", "host_ready", b"host_ready", "placement", b"placement", "runtime_status", b"runtime_status"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ActorRuntime: _TypeAlias = ActorRuntime  # noqa: Y015
 
@@ -302,11 +289,8 @@ class ActiveActorsCount(_message.Message):
         type: _builtins.str = ...,
         count: _builtins.int = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["count", b"count", "type", b"type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ActiveActorsCount: _TypeAlias = ActiveActorsCount  # noqa: Y015
 
@@ -331,11 +315,8 @@ class RegisteredComponents(_message.Message):
         version: _builtins.str = ...,
         capabilities: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["capabilities", b"capabilities", "name", b"name", "type", b"type", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___RegisteredComponents: _TypeAlias = RegisteredComponents  # noqa: Y015
 
@@ -350,11 +331,8 @@ class MetadataHTTPEndpoint(_message.Message):
         *,
         name: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___MetadataHTTPEndpoint: _TypeAlias = MetadataHTTPEndpoint  # noqa: Y015
 
@@ -369,11 +347,8 @@ class MetadataMCPServer(_message.Message):
         *,
         name: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___MetadataMCPServer: _TypeAlias = MetadataMCPServer  # noqa: Y015
 
@@ -393,13 +368,31 @@ class MetadataWorkflowAccessPolicy(_message.Message):
         *,
         name: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___MetadataWorkflowAccessPolicy: _TypeAlias = MetadataWorkflowAccessPolicy  # noqa: Y015
+
+@_typing.final
+class MetadataResiliency(_message.Message):
+    """MetadataResiliency describes a loaded Resiliency resource. Lets clients
+    verify which resiliency resources are currently in effect on the sidecar,
+    including after a hot reload.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    NAME_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    def __init__(
+        self,
+        *,
+        name: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___MetadataResiliency: _TypeAlias = MetadataResiliency  # noqa: Y015
 
 @_typing.final
 class AppConnectionProperties(_message.Message):
@@ -429,7 +422,6 @@ class AppConnectionProperties(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["channel_address", b"channel_address", "health", b"health", "max_concurrency", b"max_concurrency", "port", b"port", "protocol", b"protocol"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___AppConnectionProperties: _TypeAlias = AppConnectionProperties  # noqa: Y015
 
@@ -453,11 +445,8 @@ class AppConnectionHealthProperties(_message.Message):
         health_probe_timeout: _builtins.str = ...,
         health_threshold: _builtins.int = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["health_check_path", b"health_check_path", "health_probe_interval", b"health_probe_interval", "health_probe_timeout", b"health_probe_timeout", "health_threshold", b"health_threshold"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___AppConnectionHealthProperties: _TypeAlias = AppConnectionHealthProperties  # noqa: Y015
 
@@ -479,11 +468,8 @@ class PubsubSubscription(_message.Message):
             key: _builtins.str = ...,
             value: _builtins.str = ...,
         ) -> None: ...
-        _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     PUBSUB_NAME_FIELD_NUMBER: _builtins.int
     TOPIC_FIELD_NUMBER: _builtins.int
@@ -513,7 +499,6 @@ class PubsubSubscription(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["dead_letter_topic", b"dead_letter_topic", "metadata", b"metadata", "pubsub_name", b"pubsub_name", "rules", b"rules", "topic", b"topic", "type", b"type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___PubsubSubscription: _TypeAlias = PubsubSubscription  # noqa: Y015
 
@@ -529,11 +514,8 @@ class PubsubSubscriptionRules(_message.Message):
         *,
         rules: _abc.Iterable[Global___PubsubSubscriptionRule] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["rules", b"rules"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___PubsubSubscriptionRules: _TypeAlias = PubsubSubscriptionRules  # noqa: Y015
 
@@ -551,11 +533,8 @@ class PubsubSubscriptionRule(_message.Message):
         match: _builtins.str = ...,
         path: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["match", b"match", "path", b"path"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___PubsubSubscriptionRule: _TypeAlias = PubsubSubscriptionRule  # noqa: Y015
 
@@ -573,10 +552,7 @@ class SetMetadataRequest(_message.Message):
         key: _builtins.str = ...,
         value: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___SetMetadataRequest: _TypeAlias = SetMetadataRequest  # noqa: Y015

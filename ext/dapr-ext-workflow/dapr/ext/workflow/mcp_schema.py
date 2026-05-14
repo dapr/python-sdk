@@ -11,20 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utility for converting MCP JSON Schema definitions to Pydantic models.
-
-Pydantic is an optional dependency — it is imported lazily inside
-:func:`create_pydantic_model_from_schema` so that users of ``dapr-ext-workflow``
-who don't need MCP schema conversion are not forced to install it.
-"""
+"""Utility for converting MCP JSON Schema definitions to Pydantic models."""
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, get_args, get_origin
+from typing import Any, Dict, List, Optional, Type, Union, get_args, get_origin
 
-if TYPE_CHECKING:
-    from pydantic import BaseModel
+from pydantic import BaseModel, Field, create_model
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +34,7 @@ TYPE_MAPPING = {
 }
 
 
-# TODO(@sicoyle): see if I can remove this and use something from official modelcontextprotocol python-sdk instead???
-def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -> Type['BaseModel']:
+def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -> Type[BaseModel]:
     """Create a Pydantic model from a JSON Schema definition.
 
     This function converts a JSON Schema object (commonly used in MCP tool
@@ -55,17 +48,8 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -
         A dynamically created Pydantic model class.
 
     Raises:
-        ImportError: If Pydantic is not installed.
         ValueError: If the schema is invalid or cannot be converted.
     """
-    try:
-        from pydantic import Field, create_model
-    except ImportError as e:
-        raise ImportError(
-            'create_pydantic_model_from_schema requires Pydantic. '
-            "Install it with: pip install 'pydantic>=2,<3'"
-        ) from e
-
     logger.debug("Creating Pydantic model '%s' from schema", model_name)
 
     try:
@@ -97,8 +81,15 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -
                 variant_types: List[Any] = []
                 for v in non_null_variants:
                     v_type = v.get('type', 'string')
+                    # JSON Schema allows "type" to be a list (e.g. ["string", "null"]).
+                    # Pick the first non-null element so we have a hashable scalar.
+                    if isinstance(v_type, list):
+                        non_null = [t for t in v_type if t != 'null']
+                        v_type = non_null[0] if non_null else 'string'
                     if v_type == 'array' and 'items' in v:
                         item_type = v['items'].get('type', 'string')
+                        if isinstance(item_type, list):
+                            item_type = next((t for t in item_type if t != 'null'), 'string')
                         variant_types.append(List[TYPE_MAPPING.get(item_type, str)])
                     elif v_type == 'object':
                         variant_types.append(dict)
@@ -114,9 +105,15 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -
                     field_type = Optional[field_type]
             else:
                 json_type = field_props.get('type', 'string')
+                # Same list-type handling as above.
+                if isinstance(json_type, list):
+                    non_null = [t for t in json_type if t != 'null']
+                    json_type = non_null[0] if non_null else 'string'
                 field_type = TYPE_MAPPING.get(json_type, str)
                 if json_type == 'array' and 'items' in field_props:
                     item_type = field_props['items'].get('type', 'string')
+                    if isinstance(item_type, list):
+                        item_type = next((t for t in item_type if t != 'null'), 'string')
                     field_type = List[TYPE_MAPPING.get(item_type, str)]
 
             if field_name in required:

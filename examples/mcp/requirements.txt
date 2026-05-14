@@ -1,2 +1,3 @@
 dapr-ext-workflow
 mcp
+pydantic>=2.0
