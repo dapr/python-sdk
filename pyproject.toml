@@ -32,19 +32,16 @@ Documentation = "https://github.com/dapr/docs"
 Source = "https://github.com/dapr/python-sdk"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-namespaces = true
-include = ["dapr", "dapr.*"]
-exclude = ["tests*", "ext*", "examples*"]
+[tool.hatch.version]
+source = "regex"
+path = "VERSION"
+pattern = '(?P<version>\S+)'
 
-[tool.setuptools.package-data]
-"dapr" = ["py.typed"]
-
-[tool.setuptools.dynamic]
-version = {attr = "dapr.version.version.__version__"}
+[tool.hatch.build.targets.wheel]
+packages = ["dapr"]
 
 [tool.uv.workspace]
 members = [
@@ -120,16 +117,10 @@ warn_unused_configs = true
 warn_redundant_casts = true
 show_error_codes = true
 check_untyped_defs = true
-files = [
-    "dapr/actor/**/*.py",
-    "dapr/aio/**/*.py",
-    "dapr/clients/**/*.py",
-    "dapr/conf/**/*.py",
-    "dapr/serializers/**/*.py",
-    "ext/dapr-ext-grpc/dapr/**/*.py",
-    "ext/dapr-ext-fastapi/dapr/**/*.py",
-    "ext/flask_dapr/flask_dapr/*.py",
-    "examples/demo_actor/**/*.py",
+namespace_packages = true
+packages = [
+    "dapr",
+    "flask_dapr",
 ]
 
 [[tool.mypy.overrides]]

@@ -17,6 +17,8 @@ import unittest
 from datetime import datetime
 from unittest import mock
 
+import dapr.ext.workflow._durabletask.internal.protos as pb
+from dapr.ext.workflow import PropagatedHistory
 from dapr.ext.workflow._durabletask import worker
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
@@ -33,18 +35,24 @@ class FakeOrchestrationContext:
     def __init__(self):
         self.instance_id = mock_instance_id
         self.custom_status = None
+        self._propagated_history = None
 
     def create_timer(self, fire_at):
         return mock_create_timer
 
-    def call_activity(self, activity, input, app_id):
+    def call_activity(self, activity, input, app_id, retry_policy=None, propagation=None):
         return mock_call_activity
 
-    def call_sub_orchestrator(self, orchestrator, input, instance_id, app_id):
+    def call_sub_orchestrator(
+        self, orchestrator, input, instance_id, app_id, retry_policy=None, propagation=None
+    ):
         return mock_call_sub_orchestrator
 
     def set_custom_status(self, custom_status):
         self.custom_status = custom_status
+
+    def get_propagated_history(self):
+        return self._propagated_history
 
 
 class DaprWorkflowContextTest(unittest.TestCase):
@@ -74,3 +82,41 @@ class DaprWorkflowContextTest(unittest.TestCase):
 
             dapr_wf_ctx.set_custom_status(mock_custom_status)
             assert fakeContext.custom_status == mock_custom_status
+
+    def test_get_propagated_history_proxies_inner_context(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker._RuntimeOrchestrationContext',
+            return_value=FakeOrchestrationContext(),
+        ):
+            fake = worker._RuntimeOrchestrationContext(mock_instance_id)
+            history_proto = pb.PropagatedHistory(
+                scope=pb.HISTORY_PROPAGATION_SCOPE_OWN_HISTORY,
+                chunks=[
+                    pb.PropagatedHistoryChunk(
+                        appId='upstream',
+                        instanceId='upstream-1',
+                        workflowName='Caller',
+                        rawEvents=[
+                            pb.HistoryEvent(
+                                eventId=0,
+                                executionStarted=pb.ExecutionStartedEvent(name='Caller'),
+                            ).SerializeToString(),
+                        ],
+                    ),
+                ],
+            )
+            fake._propagated_history = PropagatedHistory.from_proto(history_proto)
+            dapr_wf_ctx = DaprWorkflowContext(fake)
+
+            history = dapr_wf_ctx.get_propagated_history()
+            assert history is not None
+            assert history.get_app_ids() == ['upstream']
+
+    def test_get_propagated_history_returns_none_when_not_set(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker._RuntimeOrchestrationContext',
+            return_value=FakeOrchestrationContext(),
+        ):
+            fake = worker._RuntimeOrchestrationContext(mock_instance_id)
+            dapr_wf_ctx = DaprWorkflowContext(fake)
+            assert dapr_wf_ctx.get_propagated_history() is None

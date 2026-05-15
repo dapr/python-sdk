@@ -21,10 +21,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -228,11 +228,8 @@ class ChildCompletionAttestationPayload(_message.Message):
         terminalStatus: Global___TerminalStatus.ValueType = ...,
         canonicalSpecVersion: _builtins.int = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["canonicalSpecVersion", b"canonicalSpecVersion", "ioDigest", b"ioDigest", "parentInstanceId", b"parentInstanceId", "parentTaskScheduledId", b"parentTaskScheduledId", "signerCertDigest", b"signerCertDigest", "terminalStatus", b"terminalStatus"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ChildCompletionAttestationPayload: _TypeAlias = ChildCompletionAttestationPayload  # noqa: Y015
 
@@ -261,11 +258,8 @@ class ChildCompletionAttestation(_message.Message):
         payload: _builtins.bytes = ...,
         signature: _builtins.bytes = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["payload", b"payload", "signature", b"signature"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ChildCompletionAttestation: _TypeAlias = ChildCompletionAttestation  # noqa: Y015
 
@@ -329,11 +323,8 @@ class ActivityCompletionAttestationPayload(_message.Message):
         terminalStatus: Global___ActivityTerminalStatus.ValueType = ...,
         canonicalSpecVersion: _builtins.int = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["activityName", b"activityName", "canonicalSpecVersion", b"canonicalSpecVersion", "ioDigest", b"ioDigest", "parentInstanceId", b"parentInstanceId", "parentTaskScheduledId", b"parentTaskScheduledId", "signerCertDigest", b"signerCertDigest", "terminalStatus", b"terminalStatus"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ActivityCompletionAttestationPayload: _TypeAlias = ActivityCompletionAttestationPayload  # noqa: Y015
 
@@ -359,11 +350,8 @@ class ActivityCompletionAttestation(_message.Message):
         payload: _builtins.bytes = ...,
         signature: _builtins.bytes = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["payload", b"payload", "signature", b"signature"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ActivityCompletionAttestation: _TypeAlias = ActivityCompletionAttestation  # noqa: Y015
 
@@ -403,10 +391,7 @@ class ExternalSigningCertificate(_message.Message):
         digest: _builtins.bytes = ...,
         certificate: _builtins.bytes = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["certificate", b"certificate", "digest", b"digest"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ExternalSigningCertificate: _TypeAlias = ExternalSigningCertificate  # noqa: Y015

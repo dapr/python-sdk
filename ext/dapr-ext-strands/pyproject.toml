@@ -31,19 +31,16 @@ Documentation = "https://github.com/dapr/docs"
 Source = "https://github.com/dapr/python-sdk"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "packaging", "tomli; python_version < '3.11'"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-namespaces = true
-include = ["dapr.*"]
-exclude = ["tests*"]
+[tool.hatch.version]
+source = "regex"
+path = "../../VERSION"
+pattern = '(?P<version>\S+)'
 
-[tool.setuptools.package-data]
-"dapr.ext.strands" = ["py.typed"]
-
-[tool.setuptools.dynamic]
-version = {attr = "dapr.ext.strands.version.__version__"}
+[tool.hatch.build.targets.wheel]
+only-include = ["dapr/ext/strands"]
 
 [tool.uv.sources]
 dapr = { workspace = true }

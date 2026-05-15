@@ -30,6 +30,7 @@ import dapr.ext.workflow._durabletask.internal.shared as shared
 import grpc
 from dapr.ext.workflow._durabletask import deterministic, task
 from dapr.ext.workflow._durabletask.internal.grpc_interceptor import DefaultClientInterceptorImpl
+from dapr.ext.workflow.propagation import PropagatedHistory, PropagationScope
 from google.protobuf import empty_pb2, timestamp_pb2
 
 TInput = TypeVar('TInput')
@@ -876,7 +877,14 @@ class TaskHubGrpcWorker:
     ):
         try:
             executor = _OrchestrationExecutor(self._registry, self._logger)
-            result = executor.execute(req.instanceId, req.pastEvents, req.newEvents)
+            propagated = (
+                PropagatedHistory.from_proto(req.propagatedHistory)
+                if req.HasField('propagatedHistory')
+                else None
+            )
+            result = executor.execute(
+                req.instanceId, req.pastEvents, req.newEvents, propagated_history=propagated
+            )
 
             version = None
             if result.version_name:
@@ -982,8 +990,18 @@ class TaskHubGrpcWorker:
         with span_context:
             try:
                 executor = _ActivityExecutor(self._registry, self._logger)
+                propagated = (
+                    PropagatedHistory.from_proto(req.propagatedHistory)
+                    if req.HasField('propagatedHistory')
+                    else None
+                )
                 result = executor.execute(
-                    instance_id, req.name, req.taskId, req.input.value, req.taskExecutionId
+                    instance_id,
+                    req.name,
+                    req.taskId,
+                    req.input.value,
+                    req.taskExecutionId,
+                    propagated_history=propagated,
                 )
                 res = pb.ActivityResponse(
                     instanceId=instance_id,
@@ -1070,6 +1088,13 @@ class _RuntimeOrchestrationContext(
         self._history_patches: dict[str, bool] = {}
         self._applied_patches: dict[str, bool] = {}
         self._encountered_patches: list[str] = []
+        self._propagated_history: Optional[PropagatedHistory] = None
+
+    def set_propagated_history(self, history: Optional[PropagatedHistory]) -> None:
+        self._propagated_history = history
+
+    def get_propagated_history(self) -> Optional[PropagatedHistory]:
+        return self._propagated_history
 
     def run(self, generator: Generator[task.Task, Any, Any]):
         self._generator = generator
@@ -1294,6 +1319,7 @@ class _RuntimeOrchestrationContext(
         input: Optional[TInput] = None,
         retry_policy: Optional[task.RetryPolicy] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> task.Task[TOutput]:
         id = self.next_sequence_number()
         task_execution_id = str(self.new_guid())
@@ -1306,6 +1332,7 @@ class _RuntimeOrchestrationContext(
             is_sub_orch=False,
             app_id=app_id,
             task_execution_id=task_execution_id,
+            propagation=propagation,
         )
         return self._pending_tasks.get(id, task.CompletableTask())
 
@@ -1317,6 +1344,7 @@ class _RuntimeOrchestrationContext(
         instance_id: Optional[str] = None,
         retry_policy: Optional[task.RetryPolicy] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> task.Task[TOutput]:
         id = self.next_sequence_number()
         if isinstance(orchestrator, str):
@@ -1331,6 +1359,7 @@ class _RuntimeOrchestrationContext(
             is_sub_orch=True,
             instance_id=instance_id,
             app_id=app_id,
+            propagation=propagation,
         )
         return self._pending_tasks.get(id, task.CompletableTask())
 
@@ -1346,6 +1375,7 @@ class _RuntimeOrchestrationContext(
         fn_task: Optional[task.CompletableTask[TOutput]] = None,
         app_id: Optional[str] = None,
         task_execution_id: str = '',
+        propagation: Optional[PropagationScope] = None,
     ):
         if id is None:
             id = self.next_sequence_number()
@@ -1361,6 +1391,7 @@ class _RuntimeOrchestrationContext(
         else:
             # When retrying, input is already encoded as a string (or None).
             encoded_input = str(input) if input is not None else None
+        propagation_scope = propagation.value if propagation is not None else None
         if not is_sub_orch:
             name = (
                 activity_function
@@ -1368,7 +1399,12 @@ class _RuntimeOrchestrationContext(
                 else task.get_name(activity_function)
             )
             action = ph.new_schedule_task_action(
-                id, name, encoded_input, router, task_execution_id=task_execution_id
+                id,
+                name,
+                encoded_input,
+                router,
+                task_execution_id=task_execution_id,
+                propagation_scope=propagation_scope,
             )
         else:
             if instance_id is None:
@@ -1377,7 +1413,12 @@ class _RuntimeOrchestrationContext(
             if not isinstance(activity_function, str):
                 raise ValueError('Orchestrator function name must be a string')
             action = ph.new_create_child_workflow_action(
-                id, activity_function, instance_id, encoded_input, router
+                id,
+                activity_function,
+                instance_id,
+                encoded_input,
+                router,
+                propagation_scope=propagation_scope,
             )
         self._pending_actions[id] = action
 
@@ -1394,6 +1435,7 @@ class _RuntimeOrchestrationContext(
                     task_execution_id=task_execution_id,
                     instance_id=instance_id,
                     app_id=app_id,
+                    propagation=propagation,
                 )
         self._pending_tasks[id] = fn_task
 
@@ -1541,6 +1583,7 @@ class _OrchestrationExecutor:
         instance_id: str,
         old_events: Sequence[pb.HistoryEvent],
         new_events: Sequence[pb.HistoryEvent],
+        propagated_history: Optional[PropagatedHistory] = None,
     ) -> ExecutionResults:
         if not new_events:
             raise task.WorkflowStateError(
@@ -1548,6 +1591,7 @@ class _OrchestrationExecutor:
             )
 
         ctx = _RuntimeOrchestrationContext(instance_id)
+        ctx.set_propagated_history(propagated_history)
         try:
             # Rebuild local state by replaying old history into the orchestrator function
             self._logger.debug(
@@ -1710,6 +1754,7 @@ class _OrchestrationExecutor:
                         fn_task=retryable,
                         app_id=retryable._app_id,
                         task_execution_id=retryable._task_execution_id,
+                        propagation=retryable._propagation,
                     )
                 else:
                     ctx.resume()
@@ -1964,6 +2009,7 @@ class _ActivityExecutor:
         task_id: int,
         encoded_input: Optional[str],
         task_execution_id: str = '',
+        propagated_history: Optional[PropagatedHistory] = None,
     ) -> Optional[str]:
         """Executes an activity function and returns the serialized result, if any."""
         self._logger.debug(f"{orchestration_id}/{task_id}: Executing activity '{name}'...")
@@ -1974,7 +2020,12 @@ class _ActivityExecutor:
             )
 
         activity_input = shared.from_json(encoded_input) if encoded_input else None
-        ctx = task.ActivityContext(orchestration_id, task_id, task_execution_id)
+        ctx = task.ActivityContext(
+            orchestration_id,
+            task_id,
+            task_execution_id,
+            propagated_history=propagated_history,
+        )
 
         # Execute the activity function
         activity_output = fn(ctx, activity_input)

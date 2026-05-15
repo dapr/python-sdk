@@ -44,3 +44,22 @@ def test_simple_workflow(dapr):
     output = dapr.run('--app-id workflow-simple -- python3 simple.py', timeout=60)
     for line in EXPECTED_SIMPLE:
         assert line in output, f'Missing in output: {line}'
+
+
+EXPECTED_HISTORY_PROPAGATION = [
+    '*** validating merchant merchant-42',
+    "*** process_payment received parent context for merchant 'merchant-42'",
+    '*** log_summary saw parent on app',
+    'validate_merchant -> completed=True output={"merchant_id": "merchant-42", "valid": true}',
+    '*** workflow completed: status=COMPLETED',
+]
+
+
+@pytest.mark.example_dir('workflow')
+def test_history_propagation(dapr):
+    output = dapr.run(
+        '--app-id workflow-history-propagation -- python3 history_propagation.py',
+        timeout=60,
+    )
+    for line in EXPECTED_HISTORY_PROPAGATION:
+        assert line in output, f'Missing in output: {line}'
