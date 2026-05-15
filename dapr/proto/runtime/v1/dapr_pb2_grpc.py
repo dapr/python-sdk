@@ -350,18 +350,8 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobResponse.FromString,
                 _registered_method=True)
-        self.ScheduleJob = channel.unary_unary(
-                '/dapr.proto.runtime.v1.Dapr/ScheduleJob',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobRequest.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobResponse.FromString,
-                _registered_method=True)
         self.GetJobAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/GetJobAlpha1',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobRequest.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobResponse.FromString,
-                _registered_method=True)
-        self.GetJob = channel.unary_unary(
-                '/dapr.proto.runtime.v1.Dapr/GetJob',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobResponse.FromString,
                 _registered_method=True)
@@ -370,30 +360,15 @@ class DaprStub(object):
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobResponse.FromString,
                 _registered_method=True)
-        self.DeleteJob = channel.unary_unary(
-                '/dapr.proto.runtime.v1.Dapr/DeleteJob',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobRequest.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobResponse.FromString,
-                _registered_method=True)
         self.DeleteJobsByPrefixAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/DeleteJobsByPrefixAlpha1',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixRequestAlpha1.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixResponseAlpha1.FromString,
                 _registered_method=True)
-        self.DeleteJobsByPrefix = channel.unary_unary(
-                '/dapr.proto.runtime.v1.Dapr/DeleteJobsByPrefix',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixRequest.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixResponse.FromString,
-                _registered_method=True)
         self.ListJobsAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/ListJobsAlpha1',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsRequestAlpha1.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsResponseAlpha1.FromString,
-                _registered_method=True)
-        self.ListJobs = channel.unary_unary(
-                '/dapr.proto.runtime.v1.Dapr/ListJobs',
-                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsRequest.SerializeToString,
-                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsResponse.FromString,
                 _registered_method=True)
         self.ConverseAlpha1 = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/ConverseAlpha1',
@@ -825,13 +800,6 @@ class DaprServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def ScheduleJobAlpha1(self, request, context):
-        """Deprecated: Create and schedule a job
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def ScheduleJob(self, request, context):
         """Create and schedule a job
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -839,13 +807,6 @@ class DaprServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def GetJobAlpha1(self, request, context):
-        """Deprecated: Gets a scheduled job
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def GetJob(self, request, context):
         """Gets a scheduled job
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -853,13 +814,6 @@ class DaprServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def DeleteJobAlpha1(self, request, context):
-        """Deprecated: Delete a job
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def DeleteJob(self, request, context):
         """Delete a job
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -867,29 +821,13 @@ class DaprServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def DeleteJobsByPrefixAlpha1(self, request, context):
-        """Deprecated: Delete jobs by name prefix
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def DeleteJobsByPrefix(self, request, context):
-        """Delete jobs by name prefix
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def ListJobsAlpha1(self, request, context):
-        """Deprecated: List all jobs
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def ListJobs(self, request, context):
-        """List all jobs
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -1211,18 +1149,8 @@ def add_DaprServicer_to_server(servicer, server):
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobResponse.SerializeToString,
             ),
-            'ScheduleJob': grpc.unary_unary_rpc_method_handler(
-                    servicer.ScheduleJob,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobRequest.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobResponse.SerializeToString,
-            ),
             'GetJobAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.GetJobAlpha1,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobRequest.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobResponse.SerializeToString,
-            ),
-            'GetJob': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetJob,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobResponse.SerializeToString,
             ),
@@ -1231,30 +1159,15 @@ def add_DaprServicer_to_server(servicer, server):
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobResponse.SerializeToString,
             ),
-            'DeleteJob': grpc.unary_unary_rpc_method_handler(
-                    servicer.DeleteJob,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobRequest.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobResponse.SerializeToString,
-            ),
             'DeleteJobsByPrefixAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteJobsByPrefixAlpha1,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixRequestAlpha1.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixResponseAlpha1.SerializeToString,
             ),
-            'DeleteJobsByPrefix': grpc.unary_unary_rpc_method_handler(
-                    servicer.DeleteJobsByPrefix,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixRequest.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixResponse.SerializeToString,
-            ),
             'ListJobsAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.ListJobsAlpha1,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsRequestAlpha1.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsResponseAlpha1.SerializeToString,
-            ),
-            'ListJobs': grpc.unary_unary_rpc_method_handler(
-                    servicer.ListJobs,
-                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsRequest.FromString,
-                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsResponse.SerializeToString,
             ),
             'ConverseAlpha1': grpc.unary_unary_rpc_method_handler(
                     servicer.ConverseAlpha1,
@@ -2899,33 +2812,6 @@ class Dapr(object):
             _registered_method=True)
 
     @staticmethod
-    def ScheduleJob(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/dapr.proto.runtime.v1.Dapr/ScheduleJob',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ScheduleJobResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
     def GetJobAlpha1(request,
             target,
             options=(),
@@ -2940,33 +2826,6 @@ class Dapr(object):
             request,
             target,
             '/dapr.proto.runtime.v1.Dapr/GetJobAlpha1',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def GetJob(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/dapr.proto.runtime.v1.Dapr/GetJob',
             dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.GetJobResponse.FromString,
             options,
@@ -3007,33 +2866,6 @@ class Dapr(object):
             _registered_method=True)
 
     @staticmethod
-    def DeleteJob(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/dapr.proto.runtime.v1.Dapr/DeleteJob',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
     def DeleteJobsByPrefixAlpha1(request,
             target,
             options=(),
@@ -3061,33 +2893,6 @@ class Dapr(object):
             _registered_method=True)
 
     @staticmethod
-    def DeleteJobsByPrefix(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/dapr.proto.runtime.v1.Dapr/DeleteJobsByPrefix',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.DeleteJobsByPrefixResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
     def ListJobsAlpha1(request,
             target,
             options=(),
@@ -3104,33 +2909,6 @@ class Dapr(object):
             '/dapr.proto.runtime.v1.Dapr/ListJobsAlpha1',
             dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsRequestAlpha1.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsResponseAlpha1.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def ListJobs(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/dapr.proto.runtime.v1.Dapr/ListJobs',
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsRequest.SerializeToString,
-            dapr_dot_proto_dot_runtime_dot_v1_dot_jobs__pb2.ListJobsResponse.FromString,
             options,
             channel_credentials,
             insecure,

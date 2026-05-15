@@ -51,6 +51,32 @@ from dapr.ext.workflow import (
 from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
 
 
+def call_mcp_tool_workflow(ctx: DaprWorkflowContext, input: dict):
+    """Workflow that calls an MCP tool as a child workflow.
+
+    Input dict shape::
+
+        {
+            "call_tool_workflow": "<dapr.internal.mcp.<server>.CallTool>",
+            "tool_name": "<tool name>",
+            "arguments": { ... },
+        }
+    """
+    result = yield ctx.call_child_workflow(
+        workflow=input['call_tool_workflow'],
+        input={
+            'toolName': input['tool_name'],
+            'arguments': input.get('arguments', {}),
+        },
+    )
+    return result
+
+
+def print_result(ctx: WorkflowActivityContext, input):
+    """Activity that prints the tool result."""
+    print(f'  Tool result: {input}')
+
+
 def main():
     # ------------------------------------------------------------------
     # 1. Discover MCP tools from a Dapr MCPServer resource.
@@ -90,22 +116,6 @@ def main():
         print(f'  Args model: {ArgsModel.__name__}')
         print(f'  Fields:     {list(ArgsModel.model_fields.keys())}\n')
 
-    # Define a simple workflow that calls the MCP tool.
-    def call_mcp_tool_workflow(ctx: DaprWorkflowContext, input: dict):
-        """Workflow that calls an MCP tool as a child workflow."""
-        result = yield ctx.call_child_workflow(
-            workflow=tool.call_tool_workflow,
-            input={
-                'toolName': tool.name,
-                'arguments': input.get('arguments', {}),
-            },
-        )
-        return result
-
-    def print_result(ctx: WorkflowActivityContext, input):
-        """Activity that prints the tool result."""
-        print(f'  Tool result: {input}')
-
     # Register and run the workflow.
     wfr = WorkflowRuntime()
     wfr.register_workflow(call_mcp_tool_workflow)
@@ -115,7 +125,11 @@ def main():
     wf_client = DaprWorkflowClient()
     instance_id = wf_client.schedule_new_workflow(
         workflow=call_mcp_tool_workflow,
-        input={'arguments': {'location': 'Seattle'}},
+        input={
+            'call_tool_workflow': tool.call_tool_workflow,
+            'tool_name': tool.name,
+            'arguments': {'location': 'Seattle'},
+        },
     )
     print(f'  Scheduled workflow: {instance_id}')
 
