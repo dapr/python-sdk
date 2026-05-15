@@ -39,8 +39,11 @@ class App:
         """Inits App object and creates gRPC server.
 
         Args:
-            max_grpc_messsage_length (int, optional): The maximum grpc send and receive
-                message length in bytes. Only used when kwargs are not set.
+            max_grpc_message_length (int, optional): The maximum grpc send and receive
+                message length in bytes. Only used when kwargs are not set. When this
+                argument is omitted, the env var
+                ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` is consulted to set the
+                receive limit (matches the Java SDK property of the same name).
             kwargs: arguments to grpc.server()
         """
         self._servicer = _CallbackServicer()
@@ -51,6 +54,13 @@ class App:
                 options = [
                     ('grpc.max_send_message_length', max_grpc_message_length),
                     ('grpc.max_receive_message_length', max_grpc_message_length),
+                ]
+            elif settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES:
+                options = [
+                    (
+                        'grpc.max_receive_message_length',
+                        settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES,
+                    ),
                 ]
             self._server = grpc.server(  # type: ignore
                 futures.ThreadPoolExecutor(max_workers=10), options=options

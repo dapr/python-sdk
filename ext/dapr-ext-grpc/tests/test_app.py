@@ -14,9 +14,12 @@ limitations under the License.
 """
 
 import unittest
+from unittest.mock import MagicMock, patch
 
 from cloudevents.sdk.event import v1
 from dapr.ext.grpc import App, BindingRequest, InvokeMethodRequest, Rule
+
+from dapr.conf import settings
 
 
 class AppTests(unittest.TestCase):
@@ -88,3 +91,47 @@ class AppTests(unittest.TestCase):
     def test_no_health_check(self):
         registered_cb = self._app._health_check_servicer._health_check_cb
         self.assertIsNone(registered_cb)
+
+
+class AppGrpcOptionsTests(unittest.TestCase):
+    """Exercises options passed to grpc.server() based on env var / constructor arg."""
+
+    @patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 0)
+    @patch('dapr.ext.grpc.app.grpc.server')
+    def test_default_no_size_options(self, mock_server):
+        mock_server.return_value = MagicMock()
+
+        App()
+
+        _, kwargs = mock_server.call_args
+        options = dict(kwargs.get('options') or [])
+        self.assertNotIn('grpc.max_send_message_length', options)
+        self.assertNotIn('grpc.max_receive_message_length', options)
+
+    @patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 8 * 1024 * 1024)
+    @patch('dapr.ext.grpc.app.grpc.server')
+    def test_env_var_sets_receive_only(self, mock_server):
+        mock_server.return_value = MagicMock()
+
+        App()
+
+        _, kwargs = mock_server.call_args
+        options = dict(kwargs.get('options') or [])
+        self.assertEqual(options.get('grpc.max_receive_message_length'), 8 * 1024 * 1024)
+        self.assertNotIn('grpc.max_send_message_length', options)
+
+    @patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 8 * 1024 * 1024)
+    @patch('dapr.ext.grpc.app.grpc.server')
+    def test_constructor_arg_overrides_env(self, mock_server):
+        mock_server.return_value = MagicMock()
+
+        App(max_grpc_message_length=32 * 1024 * 1024)
+
+        _, kwargs = mock_server.call_args
+        options = dict(kwargs.get('options') or [])
+        self.assertEqual(options.get('grpc.max_send_message_length'), 32 * 1024 * 1024)
+        self.assertEqual(options.get('grpc.max_receive_message_length'), 32 * 1024 * 1024)
+
+
+if __name__ == '__main__':
+    unittest.main()

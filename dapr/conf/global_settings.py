@@ -36,6 +36,10 @@ DAPR_API_METHOD_INVOCATION_PROTOCOL = 'http'
 
 DAPR_HTTP_TIMEOUT_SECONDS = 60
 
+# Maximum inbound gRPC message size in bytes for the SDK client and ext-grpc callback server.
+# 0 leaves the gRPC default (4 MiB) in place. See dapr/python-sdk#1023.
+DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES = 0
+
 # ----- Conversation API settings ------
 
 # Configuration for handling large enums to avoid massive JSON schemas that can exceed LLM token limits
