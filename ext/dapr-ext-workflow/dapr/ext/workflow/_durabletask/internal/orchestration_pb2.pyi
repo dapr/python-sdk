@@ -36,11 +36,13 @@ class _StalledReasonEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_Stalled
     DESCRIPTOR: _descriptor.EnumDescriptor
     PATCH_MISMATCH: _StalledReason.ValueType  # 0
     VERSION_NOT_AVAILABLE: _StalledReason.ValueType  # 1
+    PAYLOAD_SIZE_EXCEEDED: _StalledReason.ValueType  # 2
 
 class StalledReason(_StalledReason, metaclass=_StalledReasonEnumTypeWrapper): ...
 
 PATCH_MISMATCH: StalledReason.ValueType  # 0
 VERSION_NOT_AVAILABLE: StalledReason.ValueType  # 1
+PAYLOAD_SIZE_EXCEEDED: StalledReason.ValueType  # 2
 Global___StalledReason: _TypeAlias = StalledReason  # noqa: Y015
 
 class _OrchestrationStatus:
@@ -72,27 +74,75 @@ ORCHESTRATION_STATUS_SUSPENDED: OrchestrationStatus.ValueType  # 7
 ORCHESTRATION_STATUS_STALLED: OrchestrationStatus.ValueType  # 8
 Global___OrchestrationStatus: _TypeAlias = OrchestrationStatus  # noqa: Y015
 
+class _HistoryPropagationScope:
+    ValueType = _typing.NewType("ValueType", _builtins.int)
+    V: _TypeAlias = ValueType  # noqa: Y015
+
+class _HistoryPropagationScopeEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_HistoryPropagationScope.ValueType], _builtins.type):
+    DESCRIPTOR: _descriptor.EnumDescriptor
+    HISTORY_PROPAGATION_SCOPE_NONE: _HistoryPropagationScope.ValueType  # 0
+    """No propagation. This is the default for an unset/missing field; the
+    child receives no history from the caller.
+    """
+    HISTORY_PROPAGATION_SCOPE_OWN_HISTORY: _HistoryPropagationScope.ValueType  # 1
+    """Propagate the caller's own history events only. The child does
+    not see any ancestral history (trust boundary).
+    """
+    HISTORY_PROPAGATION_SCOPE_LINEAGE: _HistoryPropagationScope.ValueType  # 2
+    """Propagate the caller's own history events AND the full ancestral
+    chain. Any propagated history this workflow received from its
+    parent is forwarded to the child.
+    """
+
+class HistoryPropagationScope(_HistoryPropagationScope, metaclass=_HistoryPropagationScopeEnumTypeWrapper):
+    """HistoryPropagationScope controls how history is propagated to a child
+    workflow or activity
+    """
+
+HISTORY_PROPAGATION_SCOPE_NONE: HistoryPropagationScope.ValueType  # 0
+"""No propagation. This is the default for an unset/missing field; the
+child receives no history from the caller.
+"""
+HISTORY_PROPAGATION_SCOPE_OWN_HISTORY: HistoryPropagationScope.ValueType  # 1
+"""Propagate the caller's own history events only. The child does
+not see any ancestral history (trust boundary).
+"""
+HISTORY_PROPAGATION_SCOPE_LINEAGE: HistoryPropagationScope.ValueType  # 2
+"""Propagate the caller's own history events AND the full ancestral
+chain. Any propagated history this workflow received from its
+parent is forwarded to the child.
+"""
+Global___HistoryPropagationScope: _TypeAlias = HistoryPropagationScope  # noqa: Y015
+
 @_typing.final
 class TaskRouter(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     SOURCEAPPID_FIELD_NUMBER: _builtins.int
     TARGETAPPID_FIELD_NUMBER: _builtins.int
+    TARGETAPPNAMESPACE_FIELD_NUMBER: _builtins.int
     sourceAppID: _builtins.str
     targetAppID: _builtins.str
+    targetAppNamespace: _builtins.str
     def __init__(
         self,
         *,
         sourceAppID: _builtins.str = ...,
         targetAppID: _builtins.str | None = ...,
+        targetAppNamespace: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID", "targetAppID", b"targetAppID"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID", "_targetAppNamespace", b"_targetAppNamespace", "targetAppID", b"targetAppID", "targetAppNamespace", b"targetAppNamespace"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID", "sourceAppID", b"sourceAppID", "targetAppID", b"targetAppID"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID", "_targetAppNamespace", b"_targetAppNamespace", "sourceAppID", b"sourceAppID", "targetAppID", b"targetAppID", "targetAppNamespace", b"targetAppNamespace"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__targetAppID: _TypeAlias = _typing.Literal["targetAppID"]  # noqa: Y015
     _WhichOneofArgType__targetAppID: _TypeAlias = _typing.Literal["_targetAppID", b"_targetAppID"]  # noqa: Y015
+    _WhichOneofReturnType__targetAppNamespace: _TypeAlias = _typing.Literal["targetAppNamespace"]  # noqa: Y015
+    _WhichOneofArgType__targetAppNamespace: _TypeAlias = _typing.Literal["_targetAppNamespace", b"_targetAppNamespace"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__targetAppID) -> _WhichOneofReturnType__targetAppID | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__targetAppNamespace) -> _WhichOneofReturnType__targetAppNamespace | None: ...
 
 Global___TaskRouter: _TypeAlias = TaskRouter  # noqa: Y015
 
@@ -185,8 +235,10 @@ class ParentInstanceInfo(_message.Message):
     VERSION_FIELD_NUMBER: _builtins.int
     WORKFLOWINSTANCE_FIELD_NUMBER: _builtins.int
     APPID_FIELD_NUMBER: _builtins.int
+    APPNAMESPACE_FIELD_NUMBER: _builtins.int
     taskScheduledId: _builtins.int
     appID: _builtins.str
+    appNamespace: _builtins.str
     @_builtins.property
     def name(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
@@ -201,14 +253,20 @@ class ParentInstanceInfo(_message.Message):
         version: _wrappers_pb2.StringValue | None = ...,
         workflowInstance: Global___WorkflowInstance | None = ...,
         appID: _builtins.str | None = ...,
+        appNamespace: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_appID", b"_appID", "appID", b"appID", "name", b"name", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_appID", b"_appID", "_appNamespace", b"_appNamespace", "appID", b"appID", "appNamespace", b"appNamespace", "name", b"name", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_appID", b"_appID", "appID", b"appID", "name", b"name", "taskScheduledId", b"taskScheduledId", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_appID", b"_appID", "_appNamespace", b"_appNamespace", "appID", b"appID", "appNamespace", b"appNamespace", "name", b"name", "taskScheduledId", b"taskScheduledId", "version", b"version", "workflowInstance", b"workflowInstance"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__appID: _TypeAlias = _typing.Literal["appID"]  # noqa: Y015
     _WhichOneofArgType__appID: _TypeAlias = _typing.Literal["_appID", b"_appID"]  # noqa: Y015
+    _WhichOneofReturnType__appNamespace: _TypeAlias = _typing.Literal["appNamespace"]  # noqa: Y015
+    _WhichOneofArgType__appNamespace: _TypeAlias = _typing.Literal["_appNamespace", b"_appNamespace"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__appID) -> _WhichOneofReturnType__appID | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__appNamespace) -> _WhichOneofReturnType__appNamespace | None: ...
 
 Global___ParentInstanceInfo: _TypeAlias = ParentInstanceInfo  # noqa: Y015
 

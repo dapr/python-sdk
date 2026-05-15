@@ -142,18 +142,31 @@ class WorkflowRuntimeStateMessage(_message.Message):
 
     HISTORYEVENT_FIELD_NUMBER: _builtins.int
     TARGETINSTANCEID_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
     targetInstanceId: _builtins.str
     @_builtins.property
     def historyEvent(self) -> _history_events_pb2.HistoryEvent: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history to deliver to the child workflow.
+        This is a transport field used when creating child workflows with
+        history propagation enabled. It is NOT stored as part of any
+        workflow's history events.
+        """
+
     def __init__(
         self,
         *,
         historyEvent: _history_events_pb2.HistoryEvent | None = ...,
         targetInstanceId: _builtins.str = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["historyEvent", b"historyEvent"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["historyEvent", b"historyEvent", "targetInstanceId", b"targetInstanceId"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory", "targetInstanceId", b"targetInstanceId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
 
 Global___WorkflowRuntimeStateMessage: _TypeAlias = WorkflowRuntimeStateMessage  # noqa: Y015

@@ -536,3 +536,26 @@ timeout_seconds: 60
 dapr run --app-id wf-pydantic-example -- python3 pydantic_models.py
 ```
 <!--END_STEP-->
+
+### History Propagation
+
+This example demonstrates how a parent workflow can propagate its execution
+history to a child workflow and to an activity, and how the receivers query
+that history through `ctx.get_propagated_history()`.
+
+It shows:
+- `propagation=PropagationScope.OWN_HISTORY` on a child workflow call —
+  forwards the caller's events only.
+- `propagation=PropagationScope.LINEAGE` on an activity call — forwards the
+  caller's events *plus* anything the caller itself received from its parent.
+- `PropagatedHistory.get_workflow_by_name(...)` and `WorkflowResult.get_activity_by_name(...)`
+  on the receiving side.
+
+> **Requires** a Dapr sidecar with workflow history propagation support
+> (durabletask-go PR #85 / runtime 1.18+ ). With an older sidecar the
+> propagation field is silently dropped and `get_propagated_history()`
+> returns `None`.
+
+```sh
+dapr run --app-id workflow-history-propagation -- python3 history_propagation.py
+```
