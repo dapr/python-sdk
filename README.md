@@ -49,20 +49,24 @@ pip3 install dapr-ext-grpc
 pip3 install dapr-ext-fastapi
 ```
 
-* Development package
+* In-development version
+
+Only tagged releases are published to PyPI. To install the in-development
+version (the current state of `main`), point pip at the GitHub repository:
 
 ```sh
-# Install Dapr client sdk
-pip3 install dapr
+# Install the latest dev build of the Dapr client sdk
+pip3 install "dapr @ git+https://github.com/dapr/python-sdk.git@main"
 
-# Install Dapr gRPC AppCallback service extension
-pip3 install dapr-ext-grpc-dev
+# Install the latest dev build of the gRPC AppCallback service extension
+pip3 install "dapr-ext-grpc @ git+https://github.com/dapr/python-sdk.git@main#subdirectory=ext/dapr-ext-grpc"
 
-# Install Dapr Fast Api extension for Actor
-pip3 install dapr-ext-fastapi-dev
+# Install the latest dev build of the FastAPI extension for Actor
+pip3 install "dapr-ext-fastapi @ git+https://github.com/dapr/python-sdk.git@main#subdirectory=ext/dapr-ext-fastapi"
 ```
 
-> Note: Do not install both packages.
+Replace `@main` with a commit SHA or release branch (e.g. `@release-1.17`)
+to pin to a specific point in history.
 
 ### Try out examples
 

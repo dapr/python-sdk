@@ -28,17 +28,16 @@ Documentation = "https://github.com/dapr/docs"
 Source = "https://github.com/dapr/python-sdk"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "packaging", "tomli; python_version < '3.11'"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-include = ["flask_dapr*"]
+[tool.hatch.version]
+source = "regex"
+path = "../../VERSION"
+pattern = '(?P<version>\S+)'
 
-[tool.setuptools.package-data]
-"flask_dapr" = ["py.typed"]
-
-[tool.setuptools.dynamic]
-version = {attr = "flask_dapr.version.__version__"}
+[tool.hatch.build.targets.wheel]
+only-include = ["flask_dapr"]
 
 [tool.uv.sources]
 dapr = { workspace = true }

@@ -20,17 +20,17 @@ Installation
 PubSub Events
 -------------
 
-```python
-from flask import Flask, request
-from flask_dapr import DaprApp
+.. code-block:: python
 
-app = Flask('myapp')
-dapr_app = DaprApp(app)
-@dapr_app.subscribe(pubsub='pubsub', topic='some_topic', route='/some_endpoint')
-def my_event_handler():
-  # request.data contains pubsub event
-  pass
-```
+    from flask import Flask, request
+    from flask_dapr import DaprApp
+
+    app = Flask('myapp')
+    dapr_app = DaprApp(app)
+    @dapr_app.subscribe(pubsub='pubsub', topic='some_topic', route='/some_endpoint')
+    def my_event_handler():
+      # request.data contains pubsub event
+      pass
 
 References
 ----------
