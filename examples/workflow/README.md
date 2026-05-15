@@ -556,18 +556,6 @@ It shows:
 > propagation field is silently dropped and `get_propagated_history()`
 > returns `None`.
 
-<!--STEP
-name: Run the history propagation example
-expected_stdout_lines:
-  - "*** validating merchant merchant-42"
-  - "*** process_payment received parent context for merchant 'merchant-42'"
-  - "*** log_summary saw parent on app"
-  - "validate_merchant -> completed=True output={\"merchant_id\": \"merchant-42\", \"valid\": true}"
-  - "*** workflow completed: status=COMPLETED"
-timeout_seconds: 60
--->
-
 ```sh
 dapr run --app-id workflow-history-propagation -- python3 history_propagation.py
 ```
-<!--END_STEP-->

@@ -146,7 +146,7 @@ class WorkflowResult:
 
     Use :meth:`get_activity_by_name` / :meth:`get_child_workflow_by_name`
     to query specific items inside this chunk. Methods return the most-recent
-    occurrence by execution order, matching the Go SDK semantics.
+    occurrence by execution order.
     """
 
     instance_id: str
@@ -156,7 +156,10 @@ class WorkflowResult:
 
     def get_activities_by_name(self, name: str) -> list[ActivityResult]:
         """Return every activity in this chunk whose scheduled name matches, in
-        execution order. Empty list if none."""
+        execution order. Empty list if none.
+
+        See also: :meth:`get_activity_by_name` for the most recent match only.
+        """
         return [
             _resolve_activity(self._events, e)
             for e in self._events
@@ -168,6 +171,9 @@ class WorkflowResult:
 
         Raises :class:`PropagationNotFoundError` if no activity scheduled with
         ``name`` is present.
+
+        See also: :meth:`get_activities_by_name` to get every invocation in
+        execution order (e.g. when an activity is retried or called in a loop).
         """
         all_results = self.get_activities_by_name(name)
         if not all_results:
@@ -178,7 +184,10 @@ class WorkflowResult:
 
     def get_child_workflows_by_name(self, name: str) -> list[ChildWorkflowResult]:
         """Return every child workflow in this chunk whose name matches, in
-        execution order."""
+        execution order.
+
+        See also: :meth:`get_child_workflow_by_name` for the most recent match.
+        """
         return [
             _resolve_child_workflow(self._events, e.eventId, name)
             for e in self._events
@@ -190,6 +199,9 @@ class WorkflowResult:
         """Return the most recent child workflow in this chunk whose name matches.
 
         Raises :class:`PropagationNotFoundError` if no match is found.
+
+        See also: :meth:`get_child_workflows_by_name` to get every invocation
+        in execution order when the same child workflow is started more than once.
         """
         all_results = self.get_child_workflows_by_name(name)
         if not all_results:
@@ -215,6 +227,11 @@ class PropagatedHistory:
     distinct workflow instance. Chunks preserve execution order: index 0 is
     the oldest ancestor, the last chunk is the immediate parent. Use the
     ``get_*`` methods to slice the chain by app, instance, or workflow name.
+
+    Attributes:
+        events: All propagated history events, flattened in chunk order.
+            Treat as read-only; mutating the list breaks the chunk index.
+        scope: The propagation scope used to produce this history.
     """
 
     def __init__(
@@ -223,19 +240,9 @@ class PropagatedHistory:
         scope: PropagationScope,
         chunks: list[_HistoryChunk],
     ):
-        self._events = events
-        self._scope = scope
+        self.events = events
+        self.scope = scope
         self._chunks = chunks
-
-    @property
-    def events(self) -> list[pb.HistoryEvent]:
-        """All propagated history events, flattened in chunk order."""
-        return self._events
-
-    @property
-    def scope(self) -> PropagationScope:
-        """The propagation scope used to produce this history."""
-        return self._scope
 
     def get_app_ids(self) -> list[str]:
         """Ordered, deduplicated list of app IDs in the history chain."""
@@ -248,7 +255,7 @@ class PropagatedHistory:
         return result
 
     def _chunk_events(self, chunk: _HistoryChunk) -> list[pb.HistoryEvent]:
-        return self._events[chunk.start_event_index : chunk.start_event_index + chunk.event_count]
+        return self.events[chunk.start_event_index : chunk.start_event_index + chunk.event_count]
 
     def get_events_by_app_id(self, app_id: str) -> list[pb.HistoryEvent]:
         """Events produced by the given app, in execution order."""
@@ -292,13 +299,20 @@ class PropagatedHistory:
 
     def get_workflows_by_name(self, name: str) -> list[WorkflowResult]:
         """All workflows whose name matches, in execution order. Useful when
-        the chain contains the same name more than once (recursion / ContinueAsNew)."""
+        the chain contains the same name more than once (recursion / ContinueAsNew).
+
+        See also: :meth:`get_workflow_by_name` for a single-result helper that
+        returns only the most recent match.
+        """
         return [self._make_workflow_result(c) for c in self._chunks if c.workflow_name == name]
 
     def get_workflow_by_name(self, name: str) -> WorkflowResult:
         """Most recent workflow in the chain whose name matches.
 
         Raises :class:`PropagationNotFoundError` if no match is found.
+
+        See also: :meth:`get_workflows_by_name` to get every matching workflow
+        in execution order when the same name appears more than once.
         """
         all_results = self.get_workflows_by_name(name)
         if not all_results:
@@ -306,24 +320,41 @@ class PropagatedHistory:
         return all_results[-1]
 
     @classmethod
-    def from_proto(cls, ph: Optional[pb.PropagatedHistory]) -> Optional[PropagatedHistory]:
-        """Build a PropagatedHistory from the wire-form proto.
+    def from_proto(
+        cls, propagated_history: Optional[pb.PropagatedHistory]
+    ) -> Optional[PropagatedHistory]:
+        """Build a :class:`PropagatedHistory` from the wire-form proto.
 
         Each chunk's ``rawEvents`` are parsed once and the per-chunk events are
-        concatenated into a single ordered list. Structural validation runs
-        first: every chunk must carry a non-empty ``appId`` and every raw event
-        must parse as a ``HistoryEvent``. Returns ``None`` when ``ph`` itself
-        is ``None``.
+        concatenated into a single ordered list. Returns ``None`` when the
+        proto itself is ``None``.
+
+        Validation policy:
+
+        * ``appId`` is the only required field per chunk. It anchors the
+          chunk's signing identity in the chain of custody, so an empty
+          ``appId`` is treated as structurally invalid and rejected.
+        * ``instanceId`` and ``workflowName`` are best-effort metadata used
+          only by the query helpers. Some sidecars may not populate
+          ``workflowName`` at all, so they are accepted as empty rather than
+          rejected here.
+        * A ``rawEvents`` entry that fails to decode is fatal for the entire
+          history: a chunk's ``HistoryEvent`` count and the indices used by
+          downstream queries are derived from this loop, so silently dropping
+          a bad event would leave the structure internally inconsistent (e.g.
+          a TaskCompleted without its TaskScheduled). Fail at the trust
+          boundary instead.
 
         Raises:
-            ValueError: If the proto is structurally malformed.
+            ValueError: If the proto is structurally malformed (empty
+                ``appId`` or an unparseable ``rawEvents`` entry).
         """
-        if ph is None:
+        if propagated_history is None:
             return None
 
         events: list[pb.HistoryEvent] = []
         chunks: list[_HistoryChunk] = []
-        for i, c in enumerate(ph.chunks):
+        for i, c in enumerate(propagated_history.chunks):
             if not c.appId:
                 raise ValueError(f'propagated history: chunk {i} has empty appId')
             start = len(events)
@@ -346,4 +377,8 @@ class PropagatedHistory:
                     event_count=len(events) - start,
                 )
             )
-        return cls(events=events, scope=PropagationScope(ph.scope), chunks=chunks)
+        return cls(
+            events=events,
+            scope=PropagationScope(propagated_history.scope),
+            chunks=chunks,
+        )
