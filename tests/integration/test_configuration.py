@@ -1,49 +1,102 @@
-import subprocess
-import time
+import threading
 
 import pytest
+import redis
 
-REDIS_CONTAINER = 'dapr_redis'
+from dapr.clients.grpc._response import ConfigurationResponse
+from tests.wait_utils import wait_until
 
-EXPECTED_LINES = [
-    'Got key=orderId1 value=100 version=1 metadata={}',
-    'Got key=orderId2 value=200 version=1 metadata={}',
-    'Subscribe key=orderId2 value=210 version=2 metadata={}',
-    'Unsubscribed successfully? True',
-]
+STORE = 'configurationstore'
 
 
-@pytest.fixture()
-def redis_config():
-    """Seed configuration values in Redis before the test."""
-    subprocess.run(
-        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId1', '100||1'),
-        check=True,
-        capture_output=True,
+@pytest.fixture(scope='module')
+def client(dapr_env, redis_set_config):
+    redis_set_config('cfg-key-1', 'val-1')
+    redis_set_config('cfg-key-2', 'val-2')
+    return dapr_env.start_sidecar(app_id='test-config')
+
+
+@pytest.mark.xfail(
+    reason='The sidecar returns the subscription ID before the subscription is active',
+)
+def test_subscribe_first_update_race(client, request):
+    # https://github.com/dapr/components-contrib/issues/4361
+    # Triggers a race condition where the subscription ID arrives before the subscription is ready.
+    # A warm, bare connection to Redis is the only reliable way to trigger this race, because routing the `set()`
+    # through Dapr usually takes long enough for the subscription to become ready.
+    r = redis.Redis(host='127.0.0.1', port=6379)
+    r.ping()
+    event = threading.Event()
+
+    sub_id = client.subscribe_configuration(
+        store_name=STORE,
+        keys=['cfg-race-key'],
+        handler=lambda _id, _resp: event.set(),
     )
-    subprocess.run(
-        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId2', '200||1'),
-        check=True,
-        capture_output=True,
-    )
+    assert sub_id
+
+    # Clean up when the fail inevitably ends
+    request.addfinalizer(lambda: client.unsubscribe_configuration(store_name=STORE, id=sub_id))
+
+    r.set('cfg-race-key', 'val||1')
+    assert event.wait(timeout=2)
 
 
-@pytest.mark.example_dir('configuration')
-def test_configuration(dapr, redis_config):
-    dapr.start(
-        '--app-id configexample --resources-path components/ -- python3 configuration.py',
-        wait=5,
-    )
-    # Update Redis to trigger the subscription notification
-    subprocess.run(
-        ('docker', 'exec', 'dapr_redis', 'redis-cli', 'SET', 'orderId2', '210||2'),
-        check=True,
-        capture_output=True,
-    )
-    # configuration.py sleeps 10s after subscribing before it unsubscribes.
-    # Wait long enough for the full script to finish.
-    time.sleep(10)
+def test_get_single_key(client):
+    resp = client.get_configuration(store_name=STORE, keys=['cfg-key-1'])
+    assert 'cfg-key-1' in resp.items
+    assert resp.items['cfg-key-1'].value == 'val-1'
 
-    output = dapr.stop()
-    for line in EXPECTED_LINES:
-        assert line in output, f'Missing in output: {line}'
+
+def test_get_multiple_keys(client):
+    resp = client.get_configuration(store_name=STORE, keys=['cfg-key-1', 'cfg-key-2'])
+    assert resp.items['cfg-key-1'].value == 'val-1'
+    assert resp.items['cfg-key-2'].value == 'val-2'
+
+
+def test_get_missing_key_returns_empty_items(client):
+    resp = client.get_configuration(store_name=STORE, keys=['nonexistent-cfg-key'])
+    # Dapr omits keys that don't exist from the response.
+    assert 'nonexistent-cfg-key' not in resp.items
+
+
+def test_items_have_version(client):
+    resp = client.get_configuration(store_name=STORE, keys=['cfg-key-1'])
+    item = resp.items['cfg-key-1']
+    assert item.version
+
+
+def test_subscribe_receives_update(client, redis_set_config):
+    received: list[ConfigurationResponse] = []
+    event = threading.Event()
+
+    def handler(_id: str, resp: ConfigurationResponse) -> None:
+        received.append(resp)
+        event.set()
+
+    sub_id = client.subscribe_configuration(store_name=STORE, keys=['cfg-sub-key'], handler=handler)
+    assert sub_id
+
+    redis_set_config('cfg-sub-key', 'updated-val', version=2)
+
+    # This is necessary because the Dapr runtime returns the subscription ID before the Redis
+    # configuration component finishes registering the subscription
+    wait_until(event.is_set, timeout=10, interval=0.2)
+
+    assert len(received) >= 1
+    last = received[-1]
+    assert 'cfg-sub-key' in last.items
+    assert last.items['cfg-sub-key'].value == 'updated-val'
+
+    ok = client.unsubscribe_configuration(store_name=STORE, id=sub_id)
+    assert ok
+
+
+def test_unsubscribe_returns_true(client):
+    sub_id = client.subscribe_configuration(
+        store_name=STORE,
+        keys=['cfg-unsub-key'],
+        handler=lambda _id, _resp: None,
+    )
+    ok = client.unsubscribe_configuration(store_name=STORE, id=sub_id)
+    assert ok

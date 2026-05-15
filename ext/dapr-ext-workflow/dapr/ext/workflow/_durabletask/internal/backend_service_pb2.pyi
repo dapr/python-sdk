@@ -240,21 +240,62 @@ class BackendWorkflowState(_message.Message):
 Global___BackendWorkflowState: _TypeAlias = BackendWorkflowState  # noqa: Y015
 
 @_typing.final
+class ActivityInvocation(_message.Message):
+    """ActivityInvocation wraps a TaskScheduled HistoryEvent with optional
+    propagated history for delivery to an activity actor.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    HISTORYEVENT_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def historyEvent(self) -> _history_events_pb2.HistoryEvent: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history from the calling workflow."""
+
+    def __init__(
+        self,
+        *,
+        historyEvent: _history_events_pb2.HistoryEvent | None = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
+
+Global___ActivityInvocation: _TypeAlias = ActivityInvocation  # noqa: Y015
+
+@_typing.final
 class CreateWorkflowInstanceRequest(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     STARTEVENT_FIELD_NUMBER: _builtins.int
+    PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
     @_builtins.property
     def startEvent(self) -> _history_events_pb2.HistoryEvent: ...
+    @_builtins.property
+    def propagatedHistory(self) -> _history_events_pb2.PropagatedHistory:
+        """Propagated history from the parent workflow."""
+
     def __init__(
         self,
         *,
         startEvent: _history_events_pb2.HistoryEvent | None = ...,
+        propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["startEvent", b"startEvent"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "propagatedHistory", b"propagatedHistory", "startEvent", b"startEvent"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["startEvent", b"startEvent"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "propagatedHistory", b"propagatedHistory", "startEvent", b"startEvent"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
+    _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
 
 Global___CreateWorkflowInstanceRequest: _TypeAlias = CreateWorkflowInstanceRequest  # noqa: Y015
 
@@ -273,6 +314,9 @@ class WorkflowMetadata(_message.Message):
     FAILUREDETAILS_FIELD_NUMBER: _builtins.int
     COMPLETEDAT_FIELD_NUMBER: _builtins.int
     PARENTINSTANCEID_FIELD_NUMBER: _builtins.int
+    VERSION_FIELD_NUMBER: _builtins.int
+    PARENTAPPID_FIELD_NUMBER: _builtins.int
+    STARTEDAT_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
     runtimeStatus: _orchestration_pb2.OrchestrationStatus.ValueType
@@ -291,6 +335,12 @@ class WorkflowMetadata(_message.Message):
     def failureDetails(self) -> _orchestration_pb2.TaskFailureDetails: ...
     @_builtins.property
     def completedAt(self) -> _timestamp_pb2.Timestamp: ...
+    @_builtins.property
+    def version(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def parentAppId(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def startedAt(self) -> _timestamp_pb2.Timestamp: ...
     def __init__(
         self,
         *,
@@ -305,11 +355,26 @@ class WorkflowMetadata(_message.Message):
         failureDetails: _orchestration_pb2.TaskFailureDetails | None = ...,
         completedAt: _timestamp_pb2.Timestamp | None = ...,
         parentInstanceId: _builtins.str = ...,
+        version: _wrappers_pb2.StringValue | None = ...,
+        parentAppId: _wrappers_pb2.StringValue | None = ...,
+        startedAt: _timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedAt", b"lastUpdatedAt", "output", b"output"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId", "_startedAt", b"_startedAt", "_version", b"_version", "completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedAt", b"lastUpdatedAt", "output", b"output", "parentAppId", b"parentAppId", "startedAt", b"startedAt", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedAt", b"lastUpdatedAt", "name", b"name", "output", b"output", "parentInstanceId", b"parentInstanceId", "runtimeStatus", b"runtimeStatus"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId", "_startedAt", b"_startedAt", "_version", b"_version", "completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedAt", b"lastUpdatedAt", "name", b"name", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "runtimeStatus", b"runtimeStatus", "startedAt", b"startedAt", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__parentAppId: _TypeAlias = _typing.Literal["parentAppId"]  # noqa: Y015
+    _WhichOneofArgType__parentAppId: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId"]  # noqa: Y015
+    _WhichOneofReturnType__startedAt: _TypeAlias = _typing.Literal["startedAt"]  # noqa: Y015
+    _WhichOneofArgType__startedAt: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt"]  # noqa: Y015
+    _WhichOneofReturnType__version: _TypeAlias = _typing.Literal["version"]  # noqa: Y015
+    _WhichOneofArgType__version: _TypeAlias = _typing.Literal["_version", b"_version"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__parentAppId) -> _WhichOneofReturnType__parentAppId | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__startedAt) -> _WhichOneofReturnType__startedAt | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__version) -> _WhichOneofReturnType__version | None: ...
 
 Global___WorkflowMetadata: _TypeAlias = WorkflowMetadata  # noqa: Y015
 
@@ -322,6 +387,7 @@ class BackendWorkflowStateMetadata(_message.Message):
     GENERATION_FIELD_NUMBER: _builtins.int
     SIGNATURELENGTH_FIELD_NUMBER: _builtins.int
     SIGNINGCERTIFICATELENGTH_FIELD_NUMBER: _builtins.int
+    EXTERNALSIGNINGCERTIFICATELENGTH_FIELD_NUMBER: _builtins.int
     inboxLength: _builtins.int
     historyLength: _builtins.int
     generation: _builtins.int
@@ -329,6 +395,14 @@ class BackendWorkflowStateMetadata(_message.Message):
     """Number of HistorySignature entries stored (signature-NNNNNN keys)."""
     signingCertificateLength: _builtins.int
     """Number of SigningCertificate entries stored (sigcert-NNNNNN keys)."""
+    externalSigningCertificateLength: _builtins.int
+    """Number of ExternalSigningCertificate entries stored
+    (ext-sigcert-NNNNNN keys). Same lifecycle as signingCertificateLength:
+    monotonically grows within a run as new foreign signer certificates
+    are absorbed from incoming attestations, zeroed on ContinueAsNew,
+    cleared on instance purge. Subject to the same maxStateEntries
+    tampering bound.
+    """
     def __init__(
         self,
         *,
@@ -337,8 +411,9 @@ class BackendWorkflowStateMetadata(_message.Message):
         generation: _builtins.int = ...,
         signatureLength: _builtins.int = ...,
         signingCertificateLength: _builtins.int = ...,
+        externalSigningCertificateLength: _builtins.int = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["generation", b"generation", "historyLength", b"historyLength", "inboxLength", b"inboxLength", "signatureLength", b"signatureLength", "signingCertificateLength", b"signingCertificateLength"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["externalSigningCertificateLength", b"externalSigningCertificateLength", "generation", b"generation", "historyLength", b"historyLength", "inboxLength", b"inboxLength", "signatureLength", b"signatureLength", "signingCertificateLength", b"signingCertificateLength"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___BackendWorkflowStateMetadata: _TypeAlias = BackendWorkflowStateMetadata  # noqa: Y015

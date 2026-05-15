@@ -1,140 +1,219 @@
 import shlex
 import subprocess
-import tempfile
-import threading
-import time
+from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, Any, Generator
+from typing import Any, Generator, Iterator
 
+import httpx
 import pytest
 
-from tests._process_utils import get_kwargs_for_process_group, terminate_process_group
+from dapr.clients import DaprClient
+from dapr.conf import settings
+from tests.crypto_utils import remove_test_keys, write_test_keys
+from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
+from tests.wait_utils import wait_until
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-EXAMPLES_DIR = REPO_ROOT / 'examples'
+INTEGRATION_DIR = Path(__file__).resolve().parent
+RESOURCES_DIR = INTEGRATION_DIR / 'resources'
+APPS_DIR = INTEGRATION_DIR / 'apps'
+
+BINDING_DATA_DIR = INTEGRATION_DIR / '.binding-data'
+CRYPTO_KEYS_DIR = INTEGRATION_DIR / 'keys'
 
 
-def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line('markers', 'example_dir(name): set the example directory for a test')
+class DaprTestEnvironment:
+    """Manages Dapr sidecars and returns SDK clients for programmatic testing.
 
+    Unlike tests.examples.DaprRunner (which captures stdout for output-based assertions), this
+    class returns real DaprClient instances so tests can make assertions against SDK return values.
+    """
 
-class DaprRunner:
-    """Helper to run `dapr run` commands and capture output."""
+    def __init__(self, default_resources: Path = RESOURCES_DIR) -> None:
+        self.default_resources = default_resources
+        self.processes: list[subprocess.Popen[str]] = []
+        self.clients: list[DaprClient] = []
 
-    def __init__(self, cwd: Path) -> None:
-        self._cwd = cwd
-        self._bg_process: subprocess.Popen[str] | None = None
-        self._bg_output_file: IO[str] | None = None
-
-    @staticmethod
-    def _terminate(proc: subprocess.Popen[str]) -> None:
-        if proc.poll() is not None:
-            return
-
-        terminate_process_group(proc)
-        try:
-            proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            terminate_process_group(proc, force=True)
-            proc.wait()
-
-    def run(self, args: str, *, timeout: int = 30, until: list[str] | None = None) -> str:
-        """Run a foreground command, block until it finishes, and return output.
-
-        Use this for short-lived processes (e.g. a publisher that exits on its
-        own). For long-lived background services, use ``start()``/``stop()``.
+    def start_sidecar(
+        self,
+        app_id: str,
+        *,
+        grpc_port: int = 50001,
+        http_port: int = 3500,
+        app_port: int | None = None,
+        app_cmd: str | None = None,
+        resources: Path | None = None,
+    ) -> DaprClient:
+        """Start a Dapr sidecar and return a connected DaprClient.
 
         Args:
-            args: Arguments passed to ``dapr run``.
-            timeout: Maximum seconds to wait before killing the process.
-            until: If provided, the process is terminated as soon as every
-                string in this list has appeared in the accumulated output.
+            app_id: Dapr application ID.
+            grpc_port: Sidecar gRPC port.
+            http_port: Sidecar HTTP port (also used for the SDK health check).
+            app_port: Port the app listens on (implies ``--app-protocol grpc``).
+            app_cmd: Shell command to start alongside the sidecar.
+            resources: Path to resources YAML directory.  Defaults to
+                ``tests/integration/resources/``.
         """
+        resources = resources or self.default_resources
+
+        cmd = [
+            'dapr',
+            'run',
+            '--app-id',
+            app_id,
+            '--resources-path',
+            str(resources),
+            '--dapr-grpc-port',
+            str(grpc_port),
+            '--dapr-http-port',
+            str(http_port),
+        ]
+        if app_port is not None:
+            cmd.extend(['--app-port', str(app_port), '--app-protocol', 'grpc'])
+        if app_cmd is not None:
+            cmd.extend(['--', *shlex.split(app_cmd)])
+
         proc = subprocess.Popen(
-            args=('dapr', 'run', *shlex.split(args)),
-            cwd=self._cwd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            cmd,
+            cwd=INTEGRATION_DIR,
             text=True,
             **get_kwargs_for_process_group(),
         )
-        lines: list[str] = []
-        assert proc.stdout is not None
+        self.processes.append(proc)
 
-        # Kill the process if it exceeds the timeout.  A background timer is
-        # needed because `for line in proc.stdout` blocks indefinitely when
-        # the child never exits.
-        timer = threading.Timer(
-            interval=timeout, function=lambda: terminate_process_group(proc, force=True)
-        )
-        timer.start()
+        # Point the SDK health check at the actual sidecar HTTP port.
+        # DaprHealth.wait_for_sidecar() reads settings.DAPR_HTTP_PORT, which
+        # is initialized once at import time and won't reflect a non-default
+        # http_port unless we update it here. The DaprClient constructor
+        # polls /healthz/outbound on this port, so we don't need to sleep first.
+        settings.DAPR_HTTP_PORT = http_port
 
-        try:
-            for line in proc.stdout:
-                print(line, end='', flush=True)
-                lines.append(line)
-                if until and all(exp in ''.join(lines) for exp in until):
-                    break
-        finally:
-            timer.cancel()
-            self._terminate(proc)
+        client = DaprClient(address=f'127.0.0.1:{grpc_port}')
+        self.clients.append(client)
 
-        return ''.join(lines)
+        # /healthz/outbound (polled by DaprClient) only checks sidecar-side
+        # readiness. When we launched an app alongside the sidecar, also wait
+        # for /v1.0/healthz so invoke_method et al. don't race the app's server.
+        if app_cmd is not None:
+            _wait_for_app_health(http_port)
 
-    def start(self, args: str, *, wait: int = 5) -> None:
-        """Start a long-lived background service.
+        return client
 
-        Use this for servers/subscribers that must stay alive while a second
-        process runs via ``run()``. Call ``stop()`` to terminate and collect
-        output. Stdout is written to a temp file to avoid pipe-buffer deadlocks.
-        """
-        output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log')
-        proc = subprocess.Popen(
-            args=('dapr', 'run', *shlex.split(args)),
-            cwd=self._cwd,
-            stdout=output_file,
-            stderr=subprocess.STDOUT,
-            text=True,
-            **get_kwargs_for_process_group(),
-        )
-        self._bg_process = proc
-        self._bg_output_file = output_file
-        time.sleep(wait)
+    def cleanup(self) -> None:
+        for client in self.clients:
+            client.close()
+        self.clients.clear()
 
-    def stop(self) -> str:
-        """Stop the background service and return its captured output."""
-        if self._bg_process is None:
-            return ''
-        self._terminate(self._bg_process)
-        self._bg_process = None
-        return self._read_and_close_output()
-
-    def _read_and_close_output(self) -> str:
-        if self._bg_output_file is None:
-            return ''
-        self._bg_output_file.seek(0)
-        output = self._bg_output_file.read()
-        self._bg_output_file.close()
-        self._bg_output_file = None
-        print(output, end='', flush=True)
-        return output
+        for proc in self.processes:
+            if proc.poll() is None:
+                terminate_process_group(proc)
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    terminate_process_group(proc, force=True)
+                    proc.wait()
+        self.processes.clear()
 
 
-@pytest.fixture
-def dapr(request: pytest.FixtureRequest) -> Generator[DaprRunner, Any, None]:
-    """Provides a DaprRunner scoped to an example directory.
+def _wait_for_app_health(http_port: int, timeout: float = 30.0) -> None:
+    """Poll Dapr's app-facing /v1.0/healthz endpoint until it returns 2xx.
 
-    Use the ``example_dir`` marker to select which example:
-
-        @pytest.mark.example_dir('state_store')
-        def test_something(dapr):
-            ...
-
-    Defaults to the examples root if no marker is set.
+    ``/v1.0/healthz`` requires the app behind the sidecar to be reachable,
+    unlike ``/v1.0/healthz/outbound`` which only checks sidecar readiness.
     """
-    marker = request.node.get_closest_marker('example_dir')
-    cwd = EXAMPLES_DIR / marker.args[0] if marker else EXAMPLES_DIR
+    url = f'http://127.0.0.1:{http_port}/v1.0/healthz'
 
-    runner = DaprRunner(cwd)
-    yield runner
-    runner.stop()
+    def _check() -> bool:
+        try:
+            return httpx.get(url, timeout=2.0).is_success
+        except httpx.HTTPError:
+            return False
+
+    wait_until(_check, timeout=timeout, interval=0.2)
+
+
+@contextmanager
+def _isolate_dapr_settings() -> Iterator[None]:
+    """Pin SDK HTTP settings to the local test sidecar for the duration.
+
+    ``DaprHealth.get_api_url()`` consults three settings (see
+    ``dapr/clients/http/helpers.py``):
+
+    - ``DAPR_HTTP_ENDPOINT``, if set, wins and bypasses host/port entirely.
+    - ``DAPR_RUNTIME_HOST`` is the host component of the fallback URL.
+    - ``DAPR_HTTP_PORT`` is the port component of the fallback URL.
+
+    Any of these may be populated from the developer's environment (the Dapr
+    CLI sets them); without an override the SDK health check could target the
+    wrong sidecar. All three are snapshotted and restored so the test's
+    mutations don't leak across modules either.
+    """
+    originals = {
+        'DAPR_HTTP_ENDPOINT': settings.DAPR_HTTP_ENDPOINT,
+        'DAPR_RUNTIME_HOST': settings.DAPR_RUNTIME_HOST,
+        'DAPR_HTTP_PORT': settings.DAPR_HTTP_PORT,
+    }
+    settings.DAPR_HTTP_ENDPOINT = None
+    settings.DAPR_RUNTIME_HOST = '127.0.0.1'
+    try:
+        yield
+    finally:
+        for name, value in originals.items():
+            setattr(settings, name, value)
+
+
+@pytest.fixture(scope='module')
+def dapr_env() -> Generator[DaprTestEnvironment, Any, None]:
+    """Provides a DaprTestEnvironment for programmatic SDK testing.
+
+    Module-scoped so that all tests in a file share a single Dapr sidecar,
+    avoiding port conflicts from rapid start/stop cycles.
+    """
+    with _isolate_dapr_settings():
+        env = DaprTestEnvironment()
+        try:
+            yield env
+        finally:
+            env.cleanup()
+
+
+@pytest.fixture(autouse=True)
+def fail_if_dead_sidecars(dapr_env: DaprTestEnvironment) -> None:
+    """Fail the next test cleanly if a managed sidecar has died.
+
+    Without this, a crashed sidecar produces a cascade of gRPC connection
+    timeouts on every subsequent test in the module.
+    """
+    dead = [proc for proc in dapr_env.processes if proc.poll() is not None]
+    if not dead:
+        return
+    details = ', '.join(f'pid={p.pid} exit={p.returncode}' for p in dead)
+    raise RuntimeError(f'Dapr sidecar exited unexpectedly: {details}')
+
+
+@pytest.fixture(scope='module')
+def apps_dir() -> Path:
+    return APPS_DIR
+
+
+@pytest.fixture(scope='module')
+def resources_dir() -> Path:
+    return RESOURCES_DIR
+
+
+@pytest.fixture(scope='session', autouse=True)
+def crypto_keys() -> Generator[Path, None, None]:
+    """Generate temporary RSA + AES keys for ``cryptostore.yaml``.
+
+    Note: autouse is necessary because all sidecars load the entire resources/ folder, regardless
+    of which components they actually test.
+    """
+    try:
+        write_test_keys(CRYPTO_KEYS_DIR)
+        yield CRYPTO_KEYS_DIR
+    except Exception as exc:
+        raise RuntimeError(
+            'Crypto keys failed to generate dynamically, cannot continue testing'
+        ) from exc
+    finally:
+        remove_test_keys(CRYPTO_KEYS_DIR)

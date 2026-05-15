@@ -49,20 +49,24 @@ pip3 install dapr-ext-grpc
 pip3 install dapr-ext-fastapi
 ```
 
-* Development package
+* In-development version
+
+Only tagged releases are published to PyPI. To install the in-development
+version (the current state of `main`), point pip at the GitHub repository:
 
 ```sh
-# Install Dapr client sdk
-pip3 install dapr
+# Install the latest dev build of the Dapr client sdk
+pip3 install "dapr @ git+https://github.com/dapr/python-sdk.git@main"
 
-# Install Dapr gRPC AppCallback service extension
-pip3 install dapr-ext-grpc-dev
+# Install the latest dev build of the gRPC AppCallback service extension
+pip3 install "dapr-ext-grpc @ git+https://github.com/dapr/python-sdk.git@main#subdirectory=ext/dapr-ext-grpc"
 
-# Install Dapr Fast Api extension for Actor
-pip3 install dapr-ext-fastapi-dev
+# Install the latest dev build of the FastAPI extension for Actor
+pip3 install "dapr-ext-fastapi @ git+https://github.com/dapr/python-sdk.git@main#subdirectory=ext/dapr-ext-fastapi"
 ```
 
-> Note: Do not install both packages.
+Replace `@main` with a commit SHA or release branch (e.g. `@release-1.17`)
+to pin to a specific point in history.
 
 ### Try out examples
 
@@ -72,66 +76,56 @@ Go to [Examples](./examples)
 
 ### Build and test
 
-1. Clone python-sdk
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+2. Clone python-sdk
 
 ```bash
 git clone https://github.com/dapr/python-sdk.git
 cd python-sdk
 ```
 
-2. Create and activate a virtual environment
+3. Install all packages and dev dependencies
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv sync --all-packages --group dev
 ```
 
-3. Install a project in editable mode
+4. Run linter and autofix
 
 ```bash
-pip3 install -e .
-pip3 install -e ./ext/dapr-ext-grpc/
-pip3 install -e ./ext/dapr-ext-fastapi/
-pip3 install -e ./ext/dapr-ext-workflow/
-pip3 install -e ./ext/dapr-ext-langgraph/
-pip3 install -e ./ext/dapr-ext-strands/
+uv run ruff check --fix && uv run ruff format
 ```
 
-4. Install required packages
+5. Run unit tests
 
 ```bash
-pip3 install -r dev-requirements.txt
+uv run python -m unittest discover -v ./tests
 ```
 
-5. Run linter and autofix
+6. Run type check
 
 ```bash
-tox -e ruff
+uv run mypy
 ```
 
-6. Run unit-test
+7. Run integration tests
 
 ```bash
-tox -e py311
+uv run pytest tests/integration/
 ```
 
-7. Run type check
+8. Validate the examples
 
 ```bash
-tox -e type
+uv run pytest tests/examples/
 ```
 
-8. Run integration tests (validates the examples)
-
-```bash
-tox -e integration
-```
-
-If you need to run the examples against a pre-released version of the runtime, you can use the following command:
+If you need to run the examples or integration tests against a pre-released version of the runtime, you can use the following command:
 - Get your daprd runtime binary from [here](https://github.com/dapr/dapr/releases) for your platform.
 - Copy the binary to your dapr home folder at $HOME/.dapr/bin/daprd.
 Or using dapr cli directly: `dapr init --runtime-version <release version>`
-- Now you can run the examples with `tox -e integration`.
+- Now you can run the examples with `uv run pytest tests/examples/` or the integration tests with `uv run pytest tests/integration/`.
 
 
 ## Documentation
@@ -141,7 +135,11 @@ Documentation is generated using Sphinx. Extensions used are mainly Napoleon (To
 To generate documentation:
 
 ```bash
-tox -e doc
+uv run --with sphinx sphinx-apidoc -E -o docs/actor dapr/actor
+uv run --with sphinx sphinx-apidoc -E -o docs/clients dapr/clients
+uv run --with sphinx sphinx-apidoc -E -o docs/proto dapr/proto
+uv run --with sphinx sphinx-apidoc -E -o docs/serializers dapr/serializers
+uv run --with sphinx make html -C docs
 ```
 
 The generated files will be found in `docs/_build`.
@@ -149,9 +147,9 @@ The generated files will be found in `docs/_build`.
 ## Generate gRPC Protobuf client
 
 ```sh
-pip3 install -r tools/requirements.txt
+uv sync --all-packages --group dev
 export DAPR_BRANCH=release-1.17 # Optional, defaults to master
-./tools/regen_grpcclient.sh
+uv run ./tools/regen_grpcclient.sh
 ```
 
 ## Help & Feedback
@@ -161,4 +159,3 @@ Need help or have feedback on the SDK? Please open a GitHub issue or come chat w
 ## Code of Conduct
 
 This project follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
-

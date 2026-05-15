@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, Optional, TypeVar, Union
 
 from dapr.ext.workflow._durabletask import task
+from dapr.ext.workflow.propagation import PropagatedHistory, PropagationScope
 from dapr.ext.workflow.workflow_activity_context import Activity
 
 T = TypeVar('T')
@@ -112,6 +113,7 @@ class WorkflowContext(ABC):
         *,
         input: Optional[TInput] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> task.Task[TOutput]:
         """Schedule an activity for execution.
 
@@ -123,6 +125,11 @@ class WorkflowContext(ABC):
             The JSON-serializable input (or None) to pass to the activity.
         app_id: str | None
             The AppID that will execute the activity.
+        propagation: PropagationScope | None
+            Optional history propagation scope. ``OWN_HISTORY`` sends this
+            workflow's events to the activity; ``LINEAGE`` additionally
+            forwards history this workflow received from its parent. The
+            default (``None``) propagates nothing.
 
         Returns
         -------
@@ -139,6 +146,7 @@ class WorkflowContext(ABC):
         input: Optional[TInput] = None,
         instance_id: Optional[str] = None,
         app_id: Optional[str] = None,
+        propagation: Optional[PropagationScope] = None,
     ) -> task.Task[TOutput]:
         """Schedule child-workflow function for execution.
 
@@ -153,12 +161,23 @@ class WorkflowContext(ABC):
             random UUID will be used.
         app_id: str
             The AppID that will execute the workflow.
+        propagation: PropagationScope | None
+            Optional history propagation scope. ``OWN_HISTORY`` sends this
+            workflow's events to the child; ``LINEAGE`` additionally forwards
+            history this workflow received from its parent. The default
+            (``None``) propagates nothing.
 
         Returns
         -------
         Task
             A Durable Task that completes when the called child-workflow completes or fails.
         """
+        pass
+
+    @abstractmethod
+    def get_propagated_history(self) -> Optional[PropagatedHistory]:
+        """Return history propagated from a parent workflow, or ``None`` if
+        no history was propagated."""
         pass
 
     @abstractmethod

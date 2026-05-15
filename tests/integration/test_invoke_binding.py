@@ -1,79 +1,108 @@
-import subprocess
-import time
+# -*- coding: utf-8 -*-
+
+"""
+Copyright 2026 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from pathlib import Path
 
-import httpx
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-BINDING_DIR = REPO_ROOT / 'examples' / 'invoke-binding'
+from tests.naming_utils import unique_name
 
-EXPECTED_MESSAGES = [
-    '{"id":1,"message":"hello world"}',
-    '{"id":2,"message":"hello world"}',
-    '{"id":3,"message":"hello world"}',
-]
+BINDING = 'localbinding'
+BINDING_ROOT = Path(__file__).resolve().parent / '.binding-data'
 
 
-@pytest.fixture()
-def kafka():
-    try:
-        subprocess.run(
-            ('docker', 'compose', '-f', './docker-compose-single-kafka.yml', 'up', '-d'),
-            cwd=BINDING_DIR,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            timeout=120,
-        )
-    except subprocess.TimeoutExpired as e:
-        output = (e.stdout or b'').decode(errors='replace')
-        pytest.fail(f'Timed out starting Kafka:\n{output}')
-
-    # ``docker compose up -d`` returns once containers are created, but the
-    # wurstmeister Kafka image takes several seconds of broker registration
-    # before it can serve metadata. Without this wait, daprd races the broker
-    # and fails component init with "client has run out of available brokers".
-    time.sleep(20)
-
-    yield
-
-    try:
-        subprocess.run(
-            ('docker', 'compose', '-f', './docker-compose-single-kafka.yml', 'down'),
-            cwd=BINDING_DIR,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            timeout=120,
-        )
-    except subprocess.TimeoutExpired as e:
-        output = (e.stdout or b'').decode(errors='replace')
-        pytest.fail(f'Timed out stopping Kafka:\n{output}')
+@pytest.fixture(scope='module')
+def client(dapr_env):
+    return dapr_env.start_sidecar(app_id='test-invoke-binding')
 
 
-@pytest.mark.example_dir('invoke-binding')
-def test_invoke_binding(dapr, kafka):
-    dapr.start(
-        '--app-id receiver --app-protocol grpc --app-port 50051 '
-        '--dapr-http-port 3500 --resources-path ./components -- python3 invoke-input-binding.py',
-        wait=5,
+def test_create_writes_file_to_disk(client):
+    file_name = unique_name(prefix='binding-', suffix='.txt')
+    payload = b'hello from sync invoke_binding'
+
+    client.invoke_binding(
+        binding_name=BINDING,
+        operation='create',
+        data=payload,
+        binding_metadata={'fileName': file_name},
     )
 
-    # Publish through the receiver's sidecar (both scripts are infinite,
-    # so we reimplement the publisher here with a bounded loop).
-    for n in range(1, 4):
-        payload = {
-            'operation': 'create',
-            'data': {'id': n, 'message': 'hello world'},
-        }
-        response = httpx.post(
-            'http://localhost:3500/v1.0/bindings/kafkaBinding', json=payload, timeout=5
-        )
-        response.raise_for_status()
+    assert (BINDING_ROOT / file_name).read_bytes() == payload
 
-        time.sleep(1)
 
-    receiver_output = dapr.stop()
-    for line in EXPECTED_MESSAGES:
-        assert line in receiver_output, f'Missing in receiver output: {line}'
+def test_create_then_get_round_trip(client):
+    file_name = unique_name(prefix='binding-', suffix='.txt')
+    payload = b'sync round-trip payload'
+
+    client.invoke_binding(
+        binding_name=BINDING,
+        operation='create',
+        data=payload,
+        binding_metadata={'fileName': file_name},
+    )
+    response = client.invoke_binding(
+        binding_name=BINDING,
+        operation='get',
+        binding_metadata={'fileName': file_name},
+    )
+
+    assert response.data == payload
+
+
+def test_create_with_string_payload(client):
+    file_name = unique_name(prefix='binding-', suffix='.txt')
+    payload = 'sync string payload'
+
+    client.invoke_binding(
+        binding_name=BINDING,
+        operation='create',
+        data=payload,
+        binding_metadata={'fileName': file_name},
+    )
+
+    assert (BINDING_ROOT / file_name).read_text() == payload
+
+
+def test_delete_removes_file(client):
+    file_name = unique_name(prefix='binding-', suffix='.txt')
+    file_path = BINDING_ROOT / file_name
+
+    client.invoke_binding(
+        binding_name=BINDING,
+        operation='create',
+        data=b'to be deleted',
+        binding_metadata={'fileName': file_name},
+    )
+    assert file_path.exists()
+
+    client.invoke_binding(
+        binding_name=BINDING,
+        operation='delete',
+        binding_metadata={'fileName': file_name},
+    )
+    assert not file_path.exists()
+
+
+def test_list_includes_created_file(client):
+    file_name = unique_name(prefix='binding-', suffix='.txt')
+    client.invoke_binding(
+        binding_name=BINDING,
+        operation='create',
+        data=b'listed',
+        binding_metadata={'fileName': file_name},
+    )
+
+    response = client.invoke_binding(binding_name=BINDING, operation='list')
+    assert file_name in response.data.decode()

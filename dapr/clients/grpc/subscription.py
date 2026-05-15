@@ -63,7 +63,7 @@ class Subscription:
         self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
         self._set_stream_active()
         try:
-            next(self._stream)  # discard the initial message
+            next(self._stream)  # type: ignore[arg-type]  # discard the initial message
         except Exception as e:
             raise Exception(f'Error while initializing stream: {e}')
 
@@ -84,7 +84,7 @@ class Subscription:
 
         try:
             # Read the next message from the stream directly
-            message = next(self._stream)
+            message = next(self._stream)  # type: ignore[call-overload]
             return SubscriptionMessage(message.event_message)
         except RpcError as e:
             # If Dapr can't be reached, wait until it's ready and reconnect the stream.
