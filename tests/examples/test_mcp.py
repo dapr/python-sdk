@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
+
 from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
