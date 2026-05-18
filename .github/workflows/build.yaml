@@ -50,17 +50,44 @@ jobs:
 
   build:
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python_ver: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          - os: ubuntu-latest
+            python_version: "3.10"
+            tox_env: py310
+          - os: ubuntu-latest
+            python_version: "3.11"
+            tox_env: py311
+          - os: ubuntu-latest
+            python_version: "3.12"
+            tox_env: py312
+          - os: ubuntu-latest
+            python_version: "3.13"
+            tox_env: py313
+          - os: ubuntu-latest
+            python_version: "3.14"
+            tox_env: py314
+          - os: windows-latest
+            python_version: "3.10"
+            tox_env: py310
+          - os: windows-latest
+            python_version: "3.13"
+            tox_env: py313
+          - os: macos-latest
+            python_version: "3.10"
+            tox_env: py310
+          - os: macos-latest
+            python_version: "3.13"
+            tox_env: py313
     steps:
     - uses: actions/checkout@v6
-    - name: Set up Python ${{ matrix.python_ver }}
+    - name: Set up Python ${{ matrix.python_version }}
       uses: actions/setup-python@v6
       with:
-        python-version: ${{ matrix.python_ver }}
+        python-version: ${{ matrix.python_version }}
     - name: Install uv
       uses: astral-sh/setup-uv@v7
     - name: Install dependencies
