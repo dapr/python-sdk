@@ -61,7 +61,7 @@ dev = [
     "grpcio-tools==1.76.0",
     "types-python-dateutil~=2.9.0",
     "types-grpcio-status~=1.0.0",
-    "coverage~=7.13.4",
+    "coverage>=7.13.4,<7.15.0",
     "wheel~=0.46.3",
     "opentelemetry-sdk>=1.40,<1.42",
     "opentelemetry-instrumentation-grpc~=0.61b0",
