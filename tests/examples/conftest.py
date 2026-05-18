@@ -12,6 +12,10 @@ from tests.process_utils import get_kwargs_for_process_group, terminate_process_
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 EXAMPLES_DIR = REPO_ROOT / 'examples'
+DAPR_PORT_BIND_FAILURE_MARKERS = (
+    'bind: address already in use',
+    'failed to start internal gRPC server: could not listen on any endpoint',
+)
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -38,7 +42,18 @@ class DaprRunner:
             terminate_process_group(proc, force=True)
             proc.wait()
 
-    def run(self, args: str, *, timeout: int = 30, until: list[str] | None = None) -> str:
+    @staticmethod
+    def _is_dapr_port_bind_failure(output: str) -> bool:
+        return all(marker in output for marker in DAPR_PORT_BIND_FAILURE_MARKERS)
+
+    def run(
+        self,
+        args: str,
+        *,
+        timeout: int = 30,
+        until: list[str] | None = None,
+        port_bind_retries: int = 1,
+    ) -> str:
         """Run a foreground command, block until it finishes, and return output.
 
         Use this for short-lived processes (e.g. a publisher that exits on its
@@ -49,7 +64,19 @@ class DaprRunner:
             timeout: Maximum seconds to wait before killing the process.
             until: If provided, the process is terminated as soon as every
                 string in this list has appeared in the accumulated output.
+            port_bind_retries: Retry count for Dapr sidecar startup failures
+                caused by a transient random-port collision.
         """
+        attempts = max(1, port_bind_retries + 1)
+        for attempt in range(attempts):
+            output = self._run_once(args, timeout=timeout, until=until)
+            if attempt < attempts - 1 and self._is_dapr_port_bind_failure(output):
+                continue
+            return output
+
+        return output
+
+    def _run_once(self, args: str, *, timeout: int, until: list[str] | None) -> str:
         proc = subprocess.Popen(
             args=('dapr', 'run', *shlex.split(args)),
             cwd=self._cwd,
