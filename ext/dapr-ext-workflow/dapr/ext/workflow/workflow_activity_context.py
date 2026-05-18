@@ -15,9 +15,10 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from typing import Callable, Optional, TypeVar
 
 from dapr.ext.workflow._durabletask import task
+from dapr.ext.workflow.propagation import PropagatedHistory
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -42,6 +43,11 @@ class WorkflowActivityContext:
 
     def get_inner_context(self) -> task.ActivityContext:
         return self.__obj
+
+    def get_propagated_history(self) -> Optional[PropagatedHistory]:
+        """Return history propagated from the calling workflow, or ``None`` if
+        the caller did not opt in to history propagation."""
+        return self.__obj.get_propagated_history()
 
 
 # Activities are simple functions that can be scheduled by workflows

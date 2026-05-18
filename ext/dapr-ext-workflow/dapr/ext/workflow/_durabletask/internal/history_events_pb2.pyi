@@ -11,6 +11,7 @@ from google.protobuf import message as _message
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf import wrappers_pb2 as _wrappers_pb2
 from google.protobuf.internal import containers as _containers
+from dapr.ext.workflow._durabletask.internal import attestation_pb2 as _attestation_pb2
 import builtins as _builtins
 from dapr.ext.workflow._durabletask.internal import orchestration_pb2 as _orchestration_pb2
 import sys
@@ -148,8 +149,14 @@ class TaskScheduledEvent(_message.Message):
     PARENTTRACECONTEXT_FIELD_NUMBER: _builtins.int
     TASKEXECUTIONID_FIELD_NUMBER: _builtins.int
     RERUNPARENTINSTANCEINFO_FIELD_NUMBER: _builtins.int
+    HISTORYPROPAGATIONSCOPE_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     taskExecutionId: _builtins.str
+    historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType
+    """History propagation scope used when this task was originally scheduled.
+    Persisted on the event so rerun can re-issue the task with the same
+    scope after the action has been discarded.
+    """
     @_builtins.property
     def version(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
@@ -171,13 +178,19 @@ class TaskScheduledEvent(_message.Message):
         parentTraceContext: _orchestration_pb2.TraceContext | None = ...,
         taskExecutionId: _builtins.str = ...,
         rerunParentInstanceInfo: _orchestration_pb2.RerunParentInstanceInfo | None = ...,
+        historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "input", b"input", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "input", b"input", "name", b"name", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "taskExecutionId", b"taskExecutionId", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "name", b"name", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "taskExecutionId", b"taskExecutionId", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__historyPropagationScope: _TypeAlias = _typing.Literal["historyPropagationScope"]  # noqa: Y015
+    _WhichOneofArgType__historyPropagationScope: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope"]  # noqa: Y015
     _WhichOneofReturnType__rerunParentInstanceInfo: _TypeAlias = _typing.Literal["rerunParentInstanceInfo"]  # noqa: Y015
     _WhichOneofArgType__rerunParentInstanceInfo: _TypeAlias = _typing.Literal["_rerunParentInstanceInfo", b"_rerunParentInstanceInfo"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__historyPropagationScope) -> _WhichOneofReturnType__historyPropagationScope | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__rerunParentInstanceInfo) -> _WhichOneofReturnType__rerunParentInstanceInfo | None: ...
 
 Global___TaskScheduledEvent: _TypeAlias = TaskScheduledEvent  # noqa: Y015
@@ -189,21 +202,50 @@ class TaskCompletedEvent(_message.Message):
     TASKSCHEDULEDID_FIELD_NUMBER: _builtins.int
     RESULT_FIELD_NUMBER: _builtins.int
     TASKEXECUTIONID_FIELD_NUMBER: _builtins.int
+    ATTESTATION_FIELD_NUMBER: _builtins.int
+    SIGNERCERTIFICATE_FIELD_NUMBER: _builtins.int
     taskScheduledId: _builtins.int
     taskExecutionId: _builtins.str
+    signerCertificate: _builtins.bytes
+    """Companion: DER-encoded X.509 certificate chain of the executor's
+    signing identity (leaf first, intermediates concatenated; same
+    format as SigningCertificate.certificate in backend_service.proto).
+    Wire-only; stripped by the receiver before the event is written to
+    history-NNNNNN. The certificate lives once in ext-sigcert-NNNNNN,
+    referenced by attestation payload's signerCertDigest.
+    """
     @_builtins.property
     def result(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def attestation(self) -> _attestation_pb2.ActivityCompletionAttestation:
+        """Attestation signed by the activity executor's SPIFFE identity.
+        Present when the activity was executed under a signing-enabled
+        configuration. Verified on inbox ingestion against the companion
+        signerCertificate and preserved in stored history for future audit
+        and forwarding via provenance bundles.
+        """
+
     def __init__(
         self,
         *,
         taskScheduledId: _builtins.int = ...,
         result: _wrappers_pb2.StringValue | None = ...,
         taskExecutionId: _builtins.str = ...,
+        attestation: _attestation_pb2.ActivityCompletionAttestation | None = ...,
+        signerCertificate: _builtins.bytes | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["result", b"result"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_attestation", b"_attestation", "_signerCertificate", b"_signerCertificate", "attestation", b"attestation", "result", b"result", "signerCertificate", b"signerCertificate"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["result", b"result", "taskExecutionId", b"taskExecutionId", "taskScheduledId", b"taskScheduledId"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_attestation", b"_attestation", "_signerCertificate", b"_signerCertificate", "attestation", b"attestation", "result", b"result", "signerCertificate", b"signerCertificate", "taskExecutionId", b"taskExecutionId", "taskScheduledId", b"taskScheduledId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__attestation: _TypeAlias = _typing.Literal["attestation"]  # noqa: Y015
+    _WhichOneofArgType__attestation: _TypeAlias = _typing.Literal["_attestation", b"_attestation"]  # noqa: Y015
+    _WhichOneofReturnType__signerCertificate: _TypeAlias = _typing.Literal["signerCertificate"]  # noqa: Y015
+    _WhichOneofArgType__signerCertificate: _TypeAlias = _typing.Literal["_signerCertificate", b"_signerCertificate"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__attestation) -> _WhichOneofReturnType__attestation | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__signerCertificate) -> _WhichOneofReturnType__signerCertificate | None: ...
 
 Global___TaskCompletedEvent: _TypeAlias = TaskCompletedEvent  # noqa: Y015
 
@@ -214,21 +256,39 @@ class TaskFailedEvent(_message.Message):
     TASKSCHEDULEDID_FIELD_NUMBER: _builtins.int
     FAILUREDETAILS_FIELD_NUMBER: _builtins.int
     TASKEXECUTIONID_FIELD_NUMBER: _builtins.int
+    ATTESTATION_FIELD_NUMBER: _builtins.int
+    SIGNERCERTIFICATE_FIELD_NUMBER: _builtins.int
     taskScheduledId: _builtins.int
     taskExecutionId: _builtins.str
+    signerCertificate: _builtins.bytes
+    """Wire-only companion; see TaskCompletedEvent.signerCertificate."""
     @_builtins.property
     def failureDetails(self) -> _orchestration_pb2.TaskFailureDetails: ...
+    @_builtins.property
+    def attestation(self) -> _attestation_pb2.ActivityCompletionAttestation:
+        """See TaskCompletedEvent.attestation."""
+
     def __init__(
         self,
         *,
         taskScheduledId: _builtins.int = ...,
         failureDetails: _orchestration_pb2.TaskFailureDetails | None = ...,
         taskExecutionId: _builtins.str = ...,
+        attestation: _attestation_pb2.ActivityCompletionAttestation | None = ...,
+        signerCertificate: _builtins.bytes | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["failureDetails", b"failureDetails"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_attestation", b"_attestation", "_signerCertificate", b"_signerCertificate", "attestation", b"attestation", "failureDetails", b"failureDetails", "signerCertificate", b"signerCertificate"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["failureDetails", b"failureDetails", "taskExecutionId", b"taskExecutionId", "taskScheduledId", b"taskScheduledId"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_attestation", b"_attestation", "_signerCertificate", b"_signerCertificate", "attestation", b"attestation", "failureDetails", b"failureDetails", "signerCertificate", b"signerCertificate", "taskExecutionId", b"taskExecutionId", "taskScheduledId", b"taskScheduledId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__attestation: _TypeAlias = _typing.Literal["attestation"]  # noqa: Y015
+    _WhichOneofArgType__attestation: _TypeAlias = _typing.Literal["_attestation", b"_attestation"]  # noqa: Y015
+    _WhichOneofReturnType__signerCertificate: _TypeAlias = _typing.Literal["signerCertificate"]  # noqa: Y015
+    _WhichOneofArgType__signerCertificate: _TypeAlias = _typing.Literal["_signerCertificate", b"_signerCertificate"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__attestation) -> _WhichOneofReturnType__attestation | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__signerCertificate) -> _WhichOneofReturnType__signerCertificate | None: ...
 
 Global___TaskFailedEvent: _TypeAlias = TaskFailedEvent  # noqa: Y015
 
@@ -242,8 +302,14 @@ class ChildWorkflowInstanceCreatedEvent(_message.Message):
     INPUT_FIELD_NUMBER: _builtins.int
     PARENTTRACECONTEXT_FIELD_NUMBER: _builtins.int
     RERUNPARENTINSTANCEINFO_FIELD_NUMBER: _builtins.int
+    HISTORYPROPAGATIONSCOPE_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
+    historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType
+    """History propagation scope used when this child workflow was originally
+    scheduled. Persisted on the event so rerun can re-issue the child with
+    the same scope after the action has been discarded.
+    """
     @_builtins.property
     def version(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
@@ -265,13 +331,19 @@ class ChildWorkflowInstanceCreatedEvent(_message.Message):
         input: _wrappers_pb2.StringValue | None = ...,
         parentTraceContext: _orchestration_pb2.TraceContext | None = ...,
         rerunParentInstanceInfo: _orchestration_pb2.RerunParentInstanceInfo | None = ...,
+        historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "input", b"input", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__historyPropagationScope: _TypeAlias = _typing.Literal["historyPropagationScope"]  # noqa: Y015
+    _WhichOneofArgType__historyPropagationScope: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope"]  # noqa: Y015
     _WhichOneofReturnType__rerunParentInstanceInfo: _TypeAlias = _typing.Literal["rerunParentInstanceInfo"]  # noqa: Y015
     _WhichOneofArgType__rerunParentInstanceInfo: _TypeAlias = _typing.Literal["_rerunParentInstanceInfo", b"_rerunParentInstanceInfo"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__historyPropagationScope) -> _WhichOneofReturnType__historyPropagationScope | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__rerunParentInstanceInfo) -> _WhichOneofReturnType__rerunParentInstanceInfo | None: ...
 
 Global___ChildWorkflowInstanceCreatedEvent: _TypeAlias = ChildWorkflowInstanceCreatedEvent  # noqa: Y015
@@ -282,19 +354,48 @@ class ChildWorkflowInstanceCompletedEvent(_message.Message):
 
     TASKSCHEDULEDID_FIELD_NUMBER: _builtins.int
     RESULT_FIELD_NUMBER: _builtins.int
+    ATTESTATION_FIELD_NUMBER: _builtins.int
+    SIGNERCERTIFICATE_FIELD_NUMBER: _builtins.int
     taskScheduledId: _builtins.int
+    signerCertificate: _builtins.bytes
+    """Companion: DER-encoded X.509 certificate chain of the child's signing
+    identity (leaf first, intermediates concatenated; same format as
+    SigningCertificate.certificate in backend_service.proto). Wire-only;
+    stripped by the receiver before the event is written to
+    history-NNNNNN. The certificate lives once in ext-sigcert-NNNNNN,
+    referenced by attestation payload's signerCertDigest.
+    """
     @_builtins.property
     def result(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def attestation(self) -> _attestation_pb2.ChildCompletionAttestation:
+        """Attestation signed by the completing child workflow's SPIFFE
+        identity. Present when the child was executed under a signing-enabled
+        configuration. Verified on inbox ingestion against the companion
+        signerCertificate and preserved in stored history for future audit
+        and forwarding via provenance bundles.
+        """
+
     def __init__(
         self,
         *,
         taskScheduledId: _builtins.int = ...,
         result: _wrappers_pb2.StringValue | None = ...,
+        attestation: _attestation_pb2.ChildCompletionAttestation | None = ...,
+        signerCertificate: _builtins.bytes | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["result", b"result"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_attestation", b"_attestation", "_signerCertificate", b"_signerCertificate", "attestation", b"attestation", "result", b"result", "signerCertificate", b"signerCertificate"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["result", b"result", "taskScheduledId", b"taskScheduledId"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_attestation", b"_attestation", "_signerCertificate", b"_signerCertificate", "attestation", b"attestation", "result", b"result", "signerCertificate", b"signerCertificate", "taskScheduledId", b"taskScheduledId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__attestation: _TypeAlias = _typing.Literal["attestation"]  # noqa: Y015
+    _WhichOneofArgType__attestation: _TypeAlias = _typing.Literal["_attestation", b"_attestation"]  # noqa: Y015
+    _WhichOneofReturnType__signerCertificate: _TypeAlias = _typing.Literal["signerCertificate"]  # noqa: Y015
+    _WhichOneofArgType__signerCertificate: _TypeAlias = _typing.Literal["_signerCertificate", b"_signerCertificate"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__attestation) -> _WhichOneofReturnType__attestation | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__signerCertificate) -> _WhichOneofReturnType__signerCertificate | None: ...
 
 Global___ChildWorkflowInstanceCompletedEvent: _TypeAlias = ChildWorkflowInstanceCompletedEvent  # noqa: Y015
 
@@ -304,21 +405,65 @@ class ChildWorkflowInstanceFailedEvent(_message.Message):
 
     TASKSCHEDULEDID_FIELD_NUMBER: _builtins.int
     FAILUREDETAILS_FIELD_NUMBER: _builtins.int
+    ATTESTATION_FIELD_NUMBER: _builtins.int
+    SIGNERCERTIFICATE_FIELD_NUMBER: _builtins.int
     taskScheduledId: _builtins.int
+    signerCertificate: _builtins.bytes
+    """Wire-only companion; see
+    ChildWorkflowInstanceCompletedEvent.signerCertificate.
+    """
     @_builtins.property
     def failureDetails(self) -> _orchestration_pb2.TaskFailureDetails: ...
+    @_builtins.property
+    def attestation(self) -> _attestation_pb2.ChildCompletionAttestation:
+        """See ChildWorkflowInstanceCompletedEvent.attestation."""
+
     def __init__(
         self,
         *,
         taskScheduledId: _builtins.int = ...,
         failureDetails: _orchestration_pb2.TaskFailureDetails | None = ...,
+        attestation: _attestation_pb2.ChildCompletionAttestation | None = ...,
+        signerCertificate: _builtins.bytes | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["failureDetails", b"failureDetails"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_attestation", b"_attestation", "_signerCertificate", b"_signerCertificate", "attestation", b"attestation", "failureDetails", b"failureDetails", "signerCertificate", b"signerCertificate"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["failureDetails", b"failureDetails", "taskScheduledId", b"taskScheduledId"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_attestation", b"_attestation", "_signerCertificate", b"_signerCertificate", "attestation", b"attestation", "failureDetails", b"failureDetails", "signerCertificate", b"signerCertificate", "taskScheduledId", b"taskScheduledId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__attestation: _TypeAlias = _typing.Literal["attestation"]  # noqa: Y015
+    _WhichOneofArgType__attestation: _TypeAlias = _typing.Literal["_attestation", b"_attestation"]  # noqa: Y015
+    _WhichOneofReturnType__signerCertificate: _TypeAlias = _typing.Literal["signerCertificate"]  # noqa: Y015
+    _WhichOneofArgType__signerCertificate: _TypeAlias = _typing.Literal["_signerCertificate", b"_signerCertificate"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__attestation) -> _WhichOneofReturnType__attestation | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__signerCertificate) -> _WhichOneofReturnType__signerCertificate | None: ...
 
 Global___ChildWorkflowInstanceFailedEvent: _TypeAlias = ChildWorkflowInstanceFailedEvent  # noqa: Y015
+
+@_typing.final
+class DetachedWorkflowInstanceCreatedEvent(_message.Message):
+    """DetachedWorkflowInstanceCreatedEvent records that a running workflow
+    created a new, detached workflow instance via CreateDetachedWorkflowAction.
+    The new workflow has no parent linkage (no completion or failure flows
+    back), so this event only stores a pointer to the spawned instance — the
+    inputs themselves are consumed directly from the action when scheduling.
+    Replay matches on instanceId, so it is the same value the action carried.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    INSTANCEID_FIELD_NUMBER: _builtins.int
+    instanceId: _builtins.str
+    def __init__(
+        self,
+        *,
+        instanceId: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___DetachedWorkflowInstanceCreatedEvent: _TypeAlias = DetachedWorkflowInstanceCreatedEvent  # noqa: Y015
 
 @_typing.final
 class TimerOriginCreateTimer(_message.Message):
@@ -656,6 +801,7 @@ class HistoryEvent(_message.Message):
     EXECUTIONSUSPENDED_FIELD_NUMBER: _builtins.int
     EXECUTIONRESUMED_FIELD_NUMBER: _builtins.int
     EXECUTIONSTALLED_FIELD_NUMBER: _builtins.int
+    DETACHEDWORKFLOWINSTANCECREATED_FIELD_NUMBER: _builtins.int
     ROUTER_FIELD_NUMBER: _builtins.int
     eventId: _builtins.int
     @_builtins.property
@@ -699,6 +845,8 @@ class HistoryEvent(_message.Message):
     @_builtins.property
     def executionStalled(self) -> Global___ExecutionStalledEvent: ...
     @_builtins.property
+    def detachedWorkflowInstanceCreated(self) -> Global___DetachedWorkflowInstanceCreatedEvent: ...
+    @_builtins.property
     def router(self) -> _orchestration_pb2.TaskRouter: ...
     def __init__(
         self,
@@ -724,15 +872,16 @@ class HistoryEvent(_message.Message):
         executionSuspended: Global___ExecutionSuspendedEvent | None = ...,
         executionResumed: Global___ExecutionResumedEvent | None = ...,
         executionStalled: Global___ExecutionStalledEvent | None = ...,
+        detachedWorkflowInstanceCreated: Global___DetachedWorkflowInstanceCreatedEvent | None = ...,
         router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "childWorkflowInstanceCompleted", b"childWorkflowInstanceCompleted", "childWorkflowInstanceCreated", b"childWorkflowInstanceCreated", "childWorkflowInstanceFailed", b"childWorkflowInstanceFailed", "continueAsNew", b"continueAsNew", "eventRaised", b"eventRaised", "eventSent", b"eventSent", "eventType", b"eventType", "executionCompleted", b"executionCompleted", "executionResumed", b"executionResumed", "executionStalled", b"executionStalled", "executionStarted", b"executionStarted", "executionSuspended", b"executionSuspended", "executionTerminated", b"executionTerminated", "router", b"router", "taskCompleted", b"taskCompleted", "taskFailed", b"taskFailed", "taskScheduled", b"taskScheduled", "timerCreated", b"timerCreated", "timerFired", b"timerFired", "timestamp", b"timestamp", "workflowCompleted", b"workflowCompleted", "workflowStarted", b"workflowStarted"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "childWorkflowInstanceCompleted", b"childWorkflowInstanceCompleted", "childWorkflowInstanceCreated", b"childWorkflowInstanceCreated", "childWorkflowInstanceFailed", b"childWorkflowInstanceFailed", "continueAsNew", b"continueAsNew", "detachedWorkflowInstanceCreated", b"detachedWorkflowInstanceCreated", "eventRaised", b"eventRaised", "eventSent", b"eventSent", "eventType", b"eventType", "executionCompleted", b"executionCompleted", "executionResumed", b"executionResumed", "executionStalled", b"executionStalled", "executionStarted", b"executionStarted", "executionSuspended", b"executionSuspended", "executionTerminated", b"executionTerminated", "router", b"router", "taskCompleted", b"taskCompleted", "taskFailed", b"taskFailed", "taskScheduled", b"taskScheduled", "timerCreated", b"timerCreated", "timerFired", b"timerFired", "timestamp", b"timestamp", "workflowCompleted", b"workflowCompleted", "workflowStarted", b"workflowStarted"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "childWorkflowInstanceCompleted", b"childWorkflowInstanceCompleted", "childWorkflowInstanceCreated", b"childWorkflowInstanceCreated", "childWorkflowInstanceFailed", b"childWorkflowInstanceFailed", "continueAsNew", b"continueAsNew", "eventId", b"eventId", "eventRaised", b"eventRaised", "eventSent", b"eventSent", "eventType", b"eventType", "executionCompleted", b"executionCompleted", "executionResumed", b"executionResumed", "executionStalled", b"executionStalled", "executionStarted", b"executionStarted", "executionSuspended", b"executionSuspended", "executionTerminated", b"executionTerminated", "router", b"router", "taskCompleted", b"taskCompleted", "taskFailed", b"taskFailed", "taskScheduled", b"taskScheduled", "timerCreated", b"timerCreated", "timerFired", b"timerFired", "timestamp", b"timestamp", "workflowCompleted", b"workflowCompleted", "workflowStarted", b"workflowStarted"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "childWorkflowInstanceCompleted", b"childWorkflowInstanceCompleted", "childWorkflowInstanceCreated", b"childWorkflowInstanceCreated", "childWorkflowInstanceFailed", b"childWorkflowInstanceFailed", "continueAsNew", b"continueAsNew", "detachedWorkflowInstanceCreated", b"detachedWorkflowInstanceCreated", "eventId", b"eventId", "eventRaised", b"eventRaised", "eventSent", b"eventSent", "eventType", b"eventType", "executionCompleted", b"executionCompleted", "executionResumed", b"executionResumed", "executionStalled", b"executionStalled", "executionStarted", b"executionStarted", "executionSuspended", b"executionSuspended", "executionTerminated", b"executionTerminated", "router", b"router", "taskCompleted", b"taskCompleted", "taskFailed", b"taskFailed", "taskScheduled", b"taskScheduled", "timerCreated", b"timerCreated", "timerFired", b"timerFired", "timestamp", b"timestamp", "workflowCompleted", b"workflowCompleted", "workflowStarted", b"workflowStarted"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
     _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
-    _WhichOneofReturnType_eventType: _TypeAlias = _typing.Literal["executionStarted", "executionCompleted", "executionTerminated", "taskScheduled", "taskCompleted", "taskFailed", "childWorkflowInstanceCreated", "childWorkflowInstanceCompleted", "childWorkflowInstanceFailed", "timerCreated", "timerFired", "workflowStarted", "workflowCompleted", "eventSent", "eventRaised", "continueAsNew", "executionSuspended", "executionResumed", "executionStalled"]  # noqa: Y015
+    _WhichOneofReturnType_eventType: _TypeAlias = _typing.Literal["executionStarted", "executionCompleted", "executionTerminated", "taskScheduled", "taskCompleted", "taskFailed", "childWorkflowInstanceCreated", "childWorkflowInstanceCompleted", "childWorkflowInstanceFailed", "timerCreated", "timerFired", "workflowStarted", "workflowCompleted", "eventSent", "eventRaised", "continueAsNew", "executionSuspended", "executionResumed", "executionStalled", "detachedWorkflowInstanceCreated"]  # noqa: Y015
     _WhichOneofArgType_eventType: _TypeAlias = _typing.Literal["eventType", b"eventType"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
@@ -740,3 +889,98 @@ class HistoryEvent(_message.Message):
     def WhichOneof(self, oneof_group: _WhichOneofArgType_eventType) -> _WhichOneofReturnType_eventType | None: ...
 
 Global___HistoryEvent: _TypeAlias = HistoryEvent  # noqa: Y015
+
+@_typing.final
+class PropagatedHistoryChunk(_message.Message):
+    """A self-contained range of events produced by a single app, used when
+    history from multiple workflows is propagated to a downstream workflow
+    or activity. Each chunk owns the raw event bytes its producer signed;
+    receivers digest those bytes directly and decode them into typed
+    HistoryEvents on demand.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    RAWEVENTS_FIELD_NUMBER: _builtins.int
+    APPID_FIELD_NUMBER: _builtins.int
+    INSTANCEID_FIELD_NUMBER: _builtins.int
+    WORKFLOWNAME_FIELD_NUMBER: _builtins.int
+    RAWSIGNATURES_FIELD_NUMBER: _builtins.int
+    SIGNINGCERTCHAINS_FIELD_NUMBER: _builtins.int
+    appId: _builtins.str
+    instanceId: _builtins.str
+    """The workflow instance ID/name that produced the events in this chunk."""
+    workflowName: _builtins.str
+    @_builtins.property
+    def rawEvents(self) -> _containers.RepeatedScalarFieldContainer[_builtins.bytes]:
+        """Raw deterministic bytes of each HistoryEvent in this chunk, in execution
+        order. The producer marshals each event once and signs over these exact
+        bytes; receivers digest them directly and never re-marshal, so chunk
+        verification is independent of protobuf marshaler-version stability
+        across producer and receiver. This mirrors the approach attestations use
+        for ioDigest: signed bytes travel verbatim end-to-end. The chunk's
+        length is len(rawEvents).
+        """
+
+    @_builtins.property
+    def rawSignatures(self) -> _containers.RepeatedScalarFieldContainer[_builtins.bytes]:
+        """Raw deterministic bytes of each HistorySignature message produced by the
+        chunk's app at dispatch time, covering rawEvents in order. Receivers
+        unmarshal these on demand to verify the chain. Raw bytes are required
+        because HistorySignature.previousSignatureDigest commits to the exact
+        persisted serialization; re-marshaling on the wire would break chain
+        linkage. See backend_service.proto: HistorySignature.
+        """
+
+    @_builtins.property
+    def signingCertChains(self) -> _containers.RepeatedScalarFieldContainer[_builtins.bytes]:
+        """X.509 certificate chains of the chunk app's signing identities,
+        DER-concatenated leaf-first then intermediates (same encoding as
+        backend_service.proto: SigningCertificate.certificate). Each
+        HistorySignature in rawSignatures has a certificateIndex that indexes
+        into this list, scoped to the chunk's producer app. Raw bytes here avoid
+        a circular import on backend_service.proto's SigningCertificate type.
+        """
+
+    def __init__(
+        self,
+        *,
+        rawEvents: _abc.Iterable[_builtins.bytes] | None = ...,
+        appId: _builtins.str = ...,
+        instanceId: _builtins.str = ...,
+        workflowName: _builtins.str = ...,
+        rawSignatures: _abc.Iterable[_builtins.bytes] | None = ...,
+        signingCertChains: _abc.Iterable[_builtins.bytes] | None = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["appId", b"appId", "instanceId", b"instanceId", "rawEvents", b"rawEvents", "rawSignatures", b"rawSignatures", "signingCertChains", b"signingCertChains", "workflowName", b"workflowName"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___PropagatedHistoryChunk: _TypeAlias = PropagatedHistoryChunk  # noqa: Y015
+
+@_typing.final
+class PropagatedHistory(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    SCOPE_FIELD_NUMBER: _builtins.int
+    CHUNKS_FIELD_NUMBER: _builtins.int
+    scope: _orchestration_pb2.HistoryPropagationScope.ValueType
+    """The propagation scope that was used to produce this history."""
+    @_builtins.property
+    def chunks(self) -> _containers.RepeatedCompositeFieldContainer[Global___PropagatedHistoryChunk]:
+        """Per-app history chunks. Each chunk owns the raw event bytes its producer
+        signed (PropagatedHistoryChunk.rawEvents); receivers digest those bytes
+        directly and decode them into typed HistoryEvents on demand. Chunks are
+        ordered, non-overlapping, and together describe the full propagated
+        event sequence.
+        """
+
+    def __init__(
+        self,
+        *,
+        scope: _orchestration_pb2.HistoryPropagationScope.ValueType = ...,
+        chunks: _abc.Iterable[Global___PropagatedHistoryChunk] | None = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["chunks", b"chunks", "scope", b"scope"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___PropagatedHistory: _TypeAlias = PropagatedHistory  # noqa: Y015

@@ -164,7 +164,7 @@ class DaprGrpcError(RpcError):
         self._err_message = err.details()
         self._details = StatusDetails()
 
-        self._grpc_status = rpc_status.from_call(err)
+        self._grpc_status = rpc_status.from_call(err)  # type: ignore[arg-type]
         self._parse_details()
 
     def _parse_details(self):
