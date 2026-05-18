@@ -1,5 +1,8 @@
 import subprocess
+import time
 from pathlib import Path
+
+import pytest
 
 from tests.examples.conftest import DaprRunner
 
@@ -16,7 +19,9 @@ class FakeProcess:
         return self.returncode
 
 
-def test_run_retries_transient_dapr_port_bind_failure(monkeypatch, tmp_path: Path) -> None:
+def test_run_retries_transient_dapr_port_bind_failure(
+    monkeypatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     outputs = [
         (
             'level=error msg="Failed to listen for gRPC server on TCP address :33223 '
@@ -33,11 +38,18 @@ def test_run_retries_transient_dapr_port_bind_failure(monkeypatch, tmp_path: Pat
         return FakeProcess(outputs.pop(0))
 
     monkeypatch.setattr(subprocess, 'Popen', fake_popen)
+    sleeps: list[int] = []
+    monkeypatch.setattr(time, 'sleep', sleeps.append)
 
     output = DaprRunner(tmp_path).run('--app-id=secretsapp -- python3 example.py', timeout=1)
 
     assert output == "{'secretKey': 'secretValue'}\n"
     assert len(popen_calls) == 2
+    assert sleeps == [1]
+    assert (
+        'Dapr sidecar failed to bind a random port; retrying startup after 1s'
+        in capsys.readouterr().out
+    )
 
 
 def test_run_does_not_retry_non_port_bind_failure(monkeypatch, tmp_path: Path) -> None:

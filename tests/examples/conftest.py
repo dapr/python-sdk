@@ -52,7 +52,7 @@ class DaprRunner:
         *,
         timeout: int = 30,
         until: list[str] | None = None,
-        port_bind_retries: int = 1,
+        port_bind_retries: int = 3,
     ) -> str:
         """Run a foreground command, block until it finishes, and return output.
 
@@ -71,10 +71,15 @@ class DaprRunner:
         for attempt in range(attempts):
             output = self._run_once(args, timeout=timeout, until=until)
             if attempt < attempts - 1 and self._is_dapr_port_bind_failure(output):
+                print(
+                    'Dapr sidecar failed to bind a random port; '
+                    f'retrying startup after {2**attempt}s '
+                    f'(attempt {attempt + 1}/{attempts})',
+                    flush=True,
+                )
+                time.sleep(2**attempt)
                 continue
             return output
-
-        return output
 
     def _run_once(self, args: str, *, timeout: int, until: list[str] | None) -> str:
         proc = subprocess.Popen(
