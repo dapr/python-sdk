@@ -52,15 +52,18 @@ class WorkflowRuntimeTimeoutInterceptorTest(unittest.TestCase):
         listActivities.clear()
         listOrchestrators.clear()
         self._registry_patch = mock.patch(
-            'durabletask.worker._Registry', return_value=FakeTaskHubGrpcWorker()
+            'dapr.ext.workflow._durabletask.worker._Registry',
+            return_value=FakeTaskHubGrpcWorker(),
         )
         self._registry_patch.start()
 
     def tearDown(self):
         mock.patch.stopall()
 
-    def test_timeout_interceptor_is_prepended(self):
-        with mock.patch('durabletask.worker.TaskHubGrpcWorker') as mock_worker_cls:
+    def test_timeout_interceptor_is_added(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
             WorkflowRuntime()
             mock_worker_cls.assert_called_once()
             call_kwargs = mock_worker_cls.call_args[1]
@@ -72,29 +75,33 @@ class WorkflowRuntimeTimeoutInterceptorTest(unittest.TestCase):
 
     def test_timeout_interceptor_with_custom_interceptors(self):
         custom_interceptor = mock.MagicMock(spec=grpc.UnaryUnaryClientInterceptor)
-        with mock.patch('durabletask.worker.TaskHubGrpcWorker') as mock_worker_cls:
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
             WorkflowRuntime(interceptors=[custom_interceptor])
             call_kwargs = mock_worker_cls.call_args[1]
             interceptors = call_kwargs['interceptors']
             self.assertEqual(len(interceptors), 2)
             from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 
-            self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptor)
-            self.assertIs(interceptors[1], custom_interceptor)
+            self.assertIs(interceptors[0], custom_interceptor)
+            self.assertIsInstance(interceptors[1], DaprClientTimeoutInterceptor)
 
     def test_timeout_interceptor_preserves_custom_interceptor_order(self):
         custom1 = mock.MagicMock(spec=grpc.UnaryUnaryClientInterceptor)
         custom2 = mock.MagicMock(spec=grpc.UnaryStreamClientInterceptor)
-        with mock.patch('durabletask.worker.TaskHubGrpcWorker') as mock_worker_cls:
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
             WorkflowRuntime(interceptors=[custom1, custom2])
             call_kwargs = mock_worker_cls.call_args[1]
             interceptors = call_kwargs['interceptors']
             self.assertEqual(len(interceptors), 3)
             from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 
-            self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptor)
-            self.assertIs(interceptors[1], custom1)
-            self.assertIs(interceptors[2], custom2)
+            self.assertIs(interceptors[0], custom1)
+            self.assertIs(interceptors[1], custom2)
+            self.assertIsInstance(interceptors[2], DaprClientTimeoutInterceptor)
 
 
 class WorkflowRuntimeTest(unittest.TestCase):

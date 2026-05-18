@@ -114,7 +114,9 @@ class FakeAsyncTaskHubGrpcClient:
 
 class WorkflowClientAioTimeoutInterceptorTest(unittest.IsolatedAsyncioTestCase):
     async def test_timeout_interceptor_is_passed_to_client(self):
-        with mock.patch('durabletask.aio.client.AsyncTaskHubGrpcClient') as mock_client_cls:
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
             DaprWorkflowClient()
             mock_client_cls.assert_called_once()
             call_kwargs = mock_client_cls.call_args[1]
