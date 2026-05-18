@@ -45,10 +45,10 @@ from dapr.ext.workflow import (
     DaprMCPClient,
     DaprWorkflowClient,
     DaprWorkflowContext,
-    WorkflowActivityContext,
     WorkflowRuntime,
 )
 from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
+from pydantic import ValidationError
 
 
 def call_mcp_tool_workflow(ctx: DaprWorkflowContext, input: dict):
@@ -70,11 +70,6 @@ def call_mcp_tool_workflow(ctx: DaprWorkflowContext, input: dict):
         },
     )
     return result
-
-
-def print_result(ctx: WorkflowActivityContext, input):
-    """Activity that prints the tool result."""
-    print(f'  Tool result: {input}')
 
 
 def main():
@@ -110,16 +105,26 @@ def main():
     tool = tools[0]
     print(f"Using tool '{tool.name}' in a workflow...\n")
 
-    # Build a Pydantic model from the tool's JSON Schema for validation.
+    # Build a Pydantic model from the tool's JSON Schema and validate the args
+    # against it before scheduling the workflow. Tools may expose no schema —
+    # in that case the raw args are forwarded as-is.
+    raw_args = {'location': 'Seattle'}
+    args: dict = raw_args
+
     if tool.input_schema:
         ArgsModel = create_pydantic_model_from_schema(tool.input_schema, f'{tool.name}Args')
         print(f'  Args model: {ArgsModel.__name__}')
         print(f'  Fields:     {list(ArgsModel.model_fields.keys())}\n')
 
+        try:
+            args = ArgsModel.model_validate(raw_args).model_dump()
+        except ValidationError as exc:
+            print(f"  Arguments {raw_args!r} do not match tool '{tool.name}' schema: {exc}")
+            return
+
     # Register and run the workflow.
     wfr = WorkflowRuntime()
     wfr.register_workflow(call_mcp_tool_workflow)
-    wfr.register_activity(print_result)
     wfr.start()
 
     wf_client = DaprWorkflowClient()
@@ -128,7 +133,7 @@ def main():
         input={
             'call_tool_workflow': tool.call_tool_workflow,
             'tool_name': tool.name,
-            'arguments': {'location': 'Seattle'},
+            'arguments': args,
         },
     )
     print(f'  Scheduled workflow: {instance_id}')

@@ -134,5 +134,5 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str) -
         return create_model(model_name, **fields)
 
     except Exception as e:
-        logger.error('Failed to create model from schema: %s', e)
+        logger.exception('Failed to create model from schema')
         raise ValueError(f'Invalid schema: {e}') from e

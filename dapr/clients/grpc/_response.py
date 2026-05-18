@@ -977,7 +977,7 @@ class GetMetadataResponse(DaprResponse):
         self._active_actors_count = active_actors_count
         self._registered_components = registered_components
         self._extended_metadata = extended_metadata
-        self._mcp_servers = mcp_servers or []
+        self.mcp_servers: Sequence[MetadataMCPServer] = mcp_servers or []
 
     @property
     def application_id(self) -> str:
@@ -998,11 +998,6 @@ class GetMetadataResponse(DaprResponse):
     def extended_metadata(self) -> Dict[str, str]:
         """Mapping of custom (extended) attributes to their respective values."""
         return self._extended_metadata
-
-    @property
-    def mcp_servers(self) -> Sequence[MetadataMCPServer]:
-        """List of loaded MCPServer resources."""
-        return self._mcp_servers
 
 
 class RegisteredComponents(NamedTuple):

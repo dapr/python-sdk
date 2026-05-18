@@ -106,6 +106,7 @@ dapr-agents ships such a helper out of the box; for other frameworks the shim is
 from typing import Any, Dict, Optional, Type
 from pydantic import BaseModel
 from dapr.ext.workflow import DaprMCPClient
+from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
 
 # ---- 1. Discover ---------------------------------------------------------
 client = DaprMCPClient()
@@ -114,7 +115,7 @@ client.connect("weather")
 # ---- 2. Translate each MCPToolDef into your framework's tool ------------
 def to_my_framework_tool(tool_def):
     # Build an args model from the JSON Schema
-    args_model: Optional[Type[BaseModel]] = build_pydantic_model(
+    args_model: Optional[Type[BaseModel]] = create_pydantic_model_from_schema(
         tool_def.input_schema, f"{tool_def.name}Args"
     )
 
