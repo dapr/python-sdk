@@ -7,8 +7,8 @@ We use [uv](https://docs.astral.sh/uv/) to manage the regen environment.
 Run the following commands:
 
 ```sh
-uv sync
-export DAPR_BRANCH=release-1.16 # Optional, defaults to master
+uv sync --all-packages --group dev
+export DAPR_BRANCH=master # Optional, defaults to master
 uv run ./tools/regen_grpcclient.sh
 ```
 
