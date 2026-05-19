@@ -53,12 +53,17 @@ the packages. Each package's `pyproject.toml` reads from it.
 
 | Stage                              | `VERSION` example             |
 | ---------------------------------- | ----------------------------- |
-| Development (always on `main`)     | `1.18.0.dev`                  |
-| First RC (on `release-X.Y`)        | `1.18.0rc0`                   |
-| Subsequent RCs (on `release-X.Y`)  | `1.18.0rc1`, `1.18.0rc2`, …   |
-| Stable release                     | `1.18.0`                      |
-| Patch release candidate            | `1.18.1rc1`                   |
-| Stable patch release               | `1.18.1`                      |
+| Development (always on `main`)     | `X.Y.0.dev`                   |
+| First RC (on `release-X.Y`)        | `X.Y.0rc0`                    |
+| Subsequent RCs (on `release-X.Y`)  | `X.Y.0rc1`, `X.Y.0rc2`, …     |
+| Stable release                     | `X.Y.0`                       |
+| Patch release candidate            | `X.Y.1rc1`                    |
+| Stable patch release               | `X.Y.1`                       |
+
+`X.Y` is the major.minor of the release line you're working on (the branch
+name `release-X.Y` matches). `main` always carries the **next** un-released
+minor as `.dev` — once `release-X.Y` is forked, `main` advances from
+`X.Y.0.dev` to the next minor's `.dev` (e.g. `X.(Y+1).0.dev`).
 
 ## Remote convention
 
