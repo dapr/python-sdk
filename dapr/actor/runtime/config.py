@@ -117,7 +117,7 @@ class ActorRuntimeConfig:
         self,
         actor_idle_timeout: Optional[timedelta] = timedelta(hours=1),
         actor_scan_interval: Optional[timedelta] = timedelta(seconds=30),
-        drain_ongoing_call_timeout: Optional[timedelta] = timedelta(minutes=1),
+        drain_ongoing_call_timeout: Optional[timedelta] = None,
         drain_rebalanced_actors: Optional[bool] = True,
         reentrancy: Optional[ActorReentrancyConfig] = None,
         reminders_storage_partitions: Optional[int] = None,
@@ -130,9 +130,13 @@ class ActorRuntimeConfig:
             actor_scan_interval (datetime.timedelta): The duration which specifies how often to scan
                 for actors to deactivate idle actors. Actors that have been idle longer than
                 actor_idle_timeout will be deactivated.
-            drain_ongoing_call_timeout (datetime.timedelta): The duration which specifies the
-                timeout for the current active actor method to finish before actor deactivation.
-                If there is no current actor method call, this is ignored.
+            drain_ongoing_call_timeout (Optional[datetime.timedelta]): The duration which
+                specifies the timeout for the current active actor method to finish before
+                actor deactivation. If there is no current actor method call, this is
+                ignored. Defaults to None, which omits the field from the configuration
+                sent to daprd so the runtime applies its own default. An explicit value
+                must be shorter than the daprd placement dissemination timeout, otherwise
+                daprd will clamp it.
             drain_rebalanced_actors (bool): If true, Dapr will wait for drain_ongoing_call_timeout
                 to allow a current actor call to complete before trying to deactivate an actor.
             reentrancy (ActorReentrancyConfig): Configure the reentrancy behavior for an actor.
@@ -175,9 +179,11 @@ class ActorRuntimeConfig:
         configDict: Dict[str, Any] = {
             'actorIdleTimeout': self._actor_idle_timeout,
             'actorScanInterval': self._actor_scan_interval,
-            'drainOngoingCallTimeout': self._drain_ongoing_call_timeout,
             'drainRebalancedActors': self._drain_rebalanced_actors,
         }
+
+        if self._drain_ongoing_call_timeout is not None:
+            configDict['drainOngoingCallTimeout'] = self._drain_ongoing_call_timeout
 
         if self._reentrancy:
             configDict.update({'reentrancy': self._reentrancy.as_dict()})
