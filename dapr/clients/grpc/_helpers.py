@@ -63,7 +63,7 @@ def unpack(data: GrpcAny, message: GrpcMessage) -> None:
     """
     if not isinstance(message, GrpcMessage):
         raise ValueError('output message is not protocol buffer message object')
-    if not data.Is(message.DESCRIPTOR):
+    if not data.Is(message.DESCRIPTOR):  # type: ignore[arg-type]
         raise ValueError(f'invalid type. serialized message type: {data.type_url}')
     data.Unpack(message)
 
