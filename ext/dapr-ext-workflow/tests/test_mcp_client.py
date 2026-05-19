@@ -16,9 +16,10 @@ limitations under the License.
 import json
 import unittest
 from datetime import datetime
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from dapr.ext.workflow._durabletask import client
+from dapr.ext.workflow.aio.mcp import DaprMCPClient as AioDaprMCPClient
 from dapr.ext.workflow.mcp import MCP_WORKFLOW_PREFIX, DaprMCPClient, MCPToolDef
 from dapr.ext.workflow.workflow_state import WorkflowState
 
@@ -339,6 +340,49 @@ class TestDaprMCPClientValidation(unittest.TestCase):
         tools = mcp_client.get_all_tools()
         self.assertEqual(len(tools), 1)
         self.assertEqual(tools[0].name, '')
+
+
+class TestAioDaprMCPClientConnect(unittest.IsolatedAsyncioTestCase):
+    def _make_client(self, wf_client: AsyncMock) -> AioDaprMCPClient:
+        return AioDaprMCPClient(timeout_in_seconds=30, wf_client=wf_client)
+
+    async def test_connect_schedules_correct_workflow(self):
+        """connect() should schedule dapr.internal.mcp.<name>.ListTools."""
+        mock_wf = AsyncMock()
+        mock_wf.schedule_new_workflow.return_value = 'inst-1'
+        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state(
+            SAMPLE_LIST_TOOLS_RESPONSE
+        )
+
+        mcp_client = self._make_client(mock_wf)
+        await mcp_client.connect('weather')
+
+        mock_wf.schedule_new_workflow.assert_awaited_once()
+        call_kwargs = mock_wf.schedule_new_workflow.call_args
+        self.assertEqual(
+            call_kwargs.kwargs['workflow'],
+            'dapr.internal.mcp.weather.ListTools',
+        )
+        self.assertEqual(
+            call_kwargs.kwargs['input'],
+            {'mcpServerName': 'weather'},
+        )
+
+    async def test_connect_caches_tools(self):
+        """connect() should cache MCPToolDef objects."""
+        mock_wf = AsyncMock()
+        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state(
+            SAMPLE_LIST_TOOLS_RESPONSE
+        )
+
+        mcp_client = self._make_client(mock_wf)
+        await mcp_client.connect('weather')
+
+        tools = mcp_client.get_all_tools()
+        self.assertEqual(len(tools), 2)
+        self.assertIsInstance(tools[0], MCPToolDef)
+        self.assertEqual(tools[0].name, 'get_weather')
+        self.assertEqual(tools[1].name, 'get_forecast')
 
 
 class TestMCPWorkflowPrefix(unittest.TestCase):

@@ -51,7 +51,7 @@ from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
 from pydantic import ValidationError
 
 
-def call_mcp_tool_workflow(ctx: DaprWorkflowContext, input: dict):
+def call_mcp_tool_workflow(ctx: DaprWorkflowContext, wf_input: dict):
     """Workflow that calls an MCP tool as a child workflow.
 
     Input dict shape::
@@ -63,10 +63,10 @@ def call_mcp_tool_workflow(ctx: DaprWorkflowContext, input: dict):
         }
     """
     result = yield ctx.call_child_workflow(
-        workflow=input['call_tool_workflow'],
+        workflow=wf_input['call_tool_workflow'],
         input={
-            'toolName': input['tool_name'],
-            'arguments': input.get('arguments', {}),
+            'toolName': wf_input['tool_name'],
+            'arguments': wf_input.get('arguments', {}),
         },
     )
     return result
