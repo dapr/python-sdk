@@ -67,7 +67,7 @@ class ActorTests(unittest.TestCase):
         self.assertTrue(config._drain_rebalanced_actors)
         self.assertEqual(timedelta(hours=1), config._actor_idle_timeout)
         self.assertEqual(timedelta(seconds=30), config._actor_scan_interval)
-        self.assertEqual(timedelta(minutes=1), config._drain_ongoing_call_timeout)
+        self.assertIsNone(config._drain_ongoing_call_timeout)
         self.assertEqual(2, len(config._entities))
 
         # apply new config
