@@ -17,6 +17,7 @@ limitations under the License.
 from dapr.ext.workflow._durabletask.task import TaskFailedError
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
+from dapr.ext.workflow.mcp import DaprMCPClient, MCPToolDef
 from dapr.ext.workflow.propagation import (
     ActivityResult,
     ChildWorkflowResult,
@@ -48,4 +49,6 @@ __all__ = [
     'WorkflowResult',
     'ActivityResult',
     'ChildWorkflowResult',
+    'DaprMCPClient',
+    'MCPToolDef',
 ]

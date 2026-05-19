@@ -80,6 +80,7 @@ from dapr.clients.grpc._response import (
     GetMetadataResponse,
     GetSecretResponse,
     InvokeMethodResponse,
+    MetadataMCPServer,
     QueryResponse,
     QueryResponseItem,
     RegisteredComponents,
@@ -1726,6 +1727,7 @@ class DaprGrpcClientAsync:
             for i in response.registered_components
         ]
         extended_metadata = dict(response.extended_metadata.items())
+        mcp_servers = [MetadataMCPServer(name=s.name) for s in response.mcp_servers]
 
         return GetMetadataResponse(
             application_id=response.id,
@@ -1733,6 +1735,7 @@ class DaprGrpcClientAsync:
             registered_components=registered_components,
             extended_metadata=extended_metadata,
             headers=await call.initial_metadata(),
+            mcp_servers=mcp_servers,
         )
 
     async def schedule_job_alpha1(self, job: Job, overwrite: bool = False) -> DaprResponse:

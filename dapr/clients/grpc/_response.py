@@ -956,6 +956,7 @@ class GetMetadataResponse(DaprResponse):
         registered_components: Sequence[RegisteredComponents],
         extended_metadata: Dict[str, str],
         headers: MetadataTuple = (),
+        mcp_servers: Optional[Sequence[MetadataMCPServer]] = None,
     ):
         """Initializes GetMetadataResponse.
 
@@ -968,12 +969,15 @@ class GetMetadataResponse(DaprResponse):
             extended_metadata (Dict[str, str]): mapping of custom (extended)
                     attributes to their respective values.
             headers (Tuple, optional): the headers from Dapr gRPC response.
+            mcp_servers (Sequence[MetadataMCPServer], optional): list of
+                    loaded MCPServer resources.
         """
         super().__init__(headers)
         self._application_id = application_id
         self._active_actors_count = active_actors_count
         self._registered_components = registered_components
         self._extended_metadata = extended_metadata
+        self.mcp_servers: Sequence[MetadataMCPServer] = mcp_servers or []
 
     @property
     def application_id(self) -> str:
@@ -1010,6 +1014,13 @@ class RegisteredComponents(NamedTuple):
 
     capabilities: Sequence[str]
     """Supported capabilities for this component type and version."""
+
+
+class MetadataMCPServer(NamedTuple):
+    """Describes a loaded Dapr MCPServer resource."""
+
+    name: str
+    """Name of the MCPServer resource."""
 
 
 class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):

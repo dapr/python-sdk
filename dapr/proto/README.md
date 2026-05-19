@@ -1,12 +1,14 @@
 ## Generating gRPC interface and Protobuf
 
+We use [uv](https://docs.astral.sh/uv/) to manage the regen environment.
+
 ### Linux and MacOS
 
 Run the following commands:
 
 ```sh
 uv sync --all-packages --group dev
-export DAPR_BRANCH=release-1.17 # Optional, defaults to master
+export DAPR_BRANCH=master # Optional, defaults to master
 uv run ./tools/regen_grpcclient.sh
 ```
 

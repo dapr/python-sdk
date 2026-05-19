@@ -71,6 +71,7 @@ from dapr.clients.grpc._response import (
     GetMetadataResponse,
     GetSecretResponse,
     InvokeMethodResponse,
+    MetadataMCPServer,
     QueryResponse,
     QueryResponseItem,
     RegisteredComponents,
@@ -1831,6 +1832,7 @@ class DaprGrpcClient:
             for i in response.registered_components
         ]
         extended_metadata = dict(response.extended_metadata.items())
+        mcp_servers = [MetadataMCPServer(name=s.name) for s in response.mcp_servers]
 
         return GetMetadataResponse(
             application_id=response.id,
@@ -1838,6 +1840,7 @@ class DaprGrpcClient:
             registered_components=registered_components,
             extended_metadata=extended_metadata,
             headers=call.initial_metadata(),
+            mcp_servers=mcp_servers,
         )
 
     def set_metadata(self, attributeName: str, attributeValue: str) -> DaprResponse:
