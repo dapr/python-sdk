@@ -23,6 +23,8 @@ from dapr.ext.workflow import (
     PropagatedHistory,
     PropagationNotFoundError,
     PropagationScope,
+    propagate_lineage,
+    propagate_own_history,
 )
 from google.protobuf import wrappers_pb2
 
@@ -196,21 +198,21 @@ def test_get_workflows_returns_chunks_in_order(history: PropagatedHistory):
     assert workflows[1].instance_id == 'wf-002'
 
 
-def test_get_workflow_by_name_returns_match(history: PropagatedHistory):
-    wf = history.get_workflow_by_name('ProcessPayment')
+def test_get_last_workflow_by_name_returns_match(history: PropagatedHistory):
+    wf = history.get_last_workflow_by_name('ProcessPayment')
     assert wf.name == 'ProcessPayment'
     assert wf.instance_id == 'wf-002'
 
 
-def test_get_workflow_by_name_raises_when_missing(history: PropagatedHistory):
+def test_get_last_workflow_by_name_raises_when_missing(history: PropagatedHistory):
     with pytest.raises(PropagationNotFoundError):
-        history.get_workflow_by_name('NotARealWorkflow')
+        history.get_last_workflow_by_name('NotARealWorkflow')
 
 
 def test_get_workflows_by_name_returns_all_matches():
     """If the same workflow name appears in multiple chunks (e.g. ContinueAsNew
     or recursion), get_workflows_by_name returns every occurrence and
-    get_workflow_by_name returns the last."""
+    get_last_workflow_by_name returns the last."""
 
     chunk_events = [_execution_started('Loop')]
     proto = pb.PropagatedHistory(
@@ -225,15 +227,15 @@ def test_get_workflows_by_name_returns_all_matches():
 
     all_loops = ph.get_workflows_by_name('Loop')
     assert len(all_loops) == 2
-    assert ph.get_workflow_by_name('Loop').instance_id == 'wf-2'
+    assert ph.get_last_workflow_by_name('Loop').instance_id == 'wf-2'
 
 
 # --- Activity resolution ----------------------------------------------------
 
 
-def test_get_activity_by_name_returns_completed_result(history: PropagatedHistory):
-    merchant = history.get_workflow_by_name('MerchantCheckout')
-    activity = merchant.get_activity_by_name('ValidateMerchant')
+def test_get_last_activity_by_name_returns_completed_result(history: PropagatedHistory):
+    merchant = history.get_last_workflow_by_name('MerchantCheckout')
+    activity = merchant.get_last_activity_by_name('ValidateMerchant')
 
     assert activity.name == 'ValidateMerchant'
     assert activity.started
@@ -245,7 +247,7 @@ def test_get_activity_by_name_returns_completed_result(history: PropagatedHistor
 
 
 def test_get_activities_by_name_returns_all_invocations(history: PropagatedHistory):
-    payment = history.get_workflow_by_name('ProcessPayment')
+    payment = history.get_last_workflow_by_name('ProcessPayment')
     cards = payment.get_activities_by_name('ValidateCard')
 
     assert len(cards) == 2
@@ -257,20 +259,20 @@ def test_get_activities_by_name_returns_all_invocations(history: PropagatedHisto
     assert cards[1].error.errorMessage == 'card declined'
 
 
-def test_get_activity_by_name_returns_last_invocation(history: PropagatedHistory):
-    """get_activity_by_name returns the most recent invocation in execution
+def test_get_last_activity_by_name_returns_last_invocation(history: PropagatedHistory):
+    """get_last_activity_by_name returns the most recent invocation in execution
     order, matching Go semantics."""
-    payment = history.get_workflow_by_name('ProcessPayment')
-    last = payment.get_activity_by_name('ValidateCard')
+    payment = history.get_last_workflow_by_name('ProcessPayment')
+    last = payment.get_last_activity_by_name('ValidateCard')
     assert last.failed
     assert last.error is not None
     assert last.error.errorMessage == 'card declined'
 
 
-def test_get_activity_by_name_raises_when_missing(history: PropagatedHistory):
-    payment = history.get_workflow_by_name('ProcessPayment')
+def test_get_last_activity_by_name_raises_when_missing(history: PropagatedHistory):
+    payment = history.get_last_workflow_by_name('ProcessPayment')
     with pytest.raises(PropagationNotFoundError):
-        payment.get_activity_by_name('NotAnActivity')
+        payment.get_last_activity_by_name('NotAnActivity')
 
 
 def test_activity_not_yet_completed_reports_started_only():
@@ -286,7 +288,7 @@ def test_activity_not_yet_completed_reports_started_only():
     )
     ph = PropagatedHistory.from_proto(proto)
     assert ph is not None
-    pending = ph.get_workflow_by_name('StillRunning').get_activity_by_name('Pending')
+    pending = ph.get_last_workflow_by_name('StillRunning').get_last_activity_by_name('Pending')
 
     assert pending.started
     assert not pending.completed
@@ -298,18 +300,18 @@ def test_activity_not_yet_completed_reports_started_only():
 # --- Child workflow resolution ----------------------------------------------
 
 
-def test_get_child_workflow_by_name(history: PropagatedHistory):
-    merchant = history.get_workflow_by_name('MerchantCheckout')
-    child = merchant.get_child_workflow_by_name('ProcessPayment')
+def test_get_last_child_workflow_by_name(history: PropagatedHistory):
+    merchant = history.get_last_workflow_by_name('MerchantCheckout')
+    child = merchant.get_last_child_workflow_by_name('ProcessPayment')
 
     assert child.name == 'ProcessPayment'
     assert child.started
 
 
-def test_get_child_workflow_by_name_raises_when_missing(history: PropagatedHistory):
-    merchant = history.get_workflow_by_name('MerchantCheckout')
+def test_get_last_child_workflow_by_name_raises_when_missing(history: PropagatedHistory):
+    merchant = history.get_last_workflow_by_name('MerchantCheckout')
     with pytest.raises(PropagationNotFoundError):
-        merchant.get_child_workflow_by_name('NotAChild')
+        merchant.get_last_child_workflow_by_name('NotAChild')
 
 
 # --- from_proto / structural validation -------------------------------------
@@ -370,3 +372,14 @@ def test_from_proto_handles_empty_chunks():
     assert ph.events == []
     assert ph.get_app_ids() == []
     assert ph.get_workflows() == []
+
+
+# --- Factory helpers (go-sdk parity) ----------------------------------------
+
+
+def test_propagate_lineage_helper_returns_lineage_scope():
+    assert propagate_lineage() is PropagationScope.LINEAGE
+
+
+def test_propagate_own_history_helper_returns_own_history_scope():
+    assert propagate_own_history() is PropagationScope.OWN_HISTORY

@@ -25,6 +25,8 @@ from dapr.ext.workflow.propagation import (
     PropagationNotFoundError,
     PropagationScope,
     WorkflowResult,
+    propagate_lineage,
+    propagate_own_history,
 )
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
@@ -49,6 +51,8 @@ __all__ = [
     'WorkflowResult',
     'ActivityResult',
     'ChildWorkflowResult',
+    'propagate_lineage',
+    'propagate_own_history',
     'DaprMCPClient',
     'MCPToolDef',
 ]

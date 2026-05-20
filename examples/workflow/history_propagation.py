@@ -13,8 +13,8 @@
 """History propagation example.
 
 The parent workflow runs a couple of activities, then calls a child workflow
-with ``propagation=PropagationScope.OWN_HISTORY`` and an activity with
-``propagation=PropagationScope.LINEAGE``. The child workflow and the
+with ``propagation=propagate_own_history()`` and an activity with
+``propagation=propagate_lineage()``. The child workflow and the
 downstream activity read the parent's recorded history via
 ``ctx.get_propagated_history()`` and inspect specific events by name.
 
@@ -53,7 +53,7 @@ def log_summary(ctx: wf.WorkflowActivityContext, _: None) -> str:
 
     parent = workflows[-1]
     try:
-        validate = parent.get_activity_by_name('validate_merchant')
+        validate = parent.get_last_activity_by_name('validate_merchant')
     except wf.PropagationNotFoundError:
         print('*** log_summary: parent did not run validate_merchant', flush=True)
         return 'parent-missing-validate'
@@ -81,7 +81,7 @@ def process_payment(ctx: wf.DaprWorkflowContext, _: None):
 
     parent = workflows[-1]
     try:
-        validate = parent.get_activity_by_name('validate_merchant')
+        validate = parent.get_last_activity_by_name('validate_merchant')
     except wf.PropagationNotFoundError:
         print('*** process_payment: parent did not run validate_merchant', flush=True)
         return 'parent-missing-validate'
@@ -106,14 +106,14 @@ def merchant_checkout(ctx: wf.DaprWorkflowContext, merchant_id: str):
     child_result = yield ctx.call_child_workflow(
         process_payment,
         input=None,
-        propagation=wf.PropagationScope.OWN_HISTORY,
+        propagation=wf.propagate_own_history(),
     )
     print(f'*** child workflow result: {child_result}', flush=True)
 
     audit = yield ctx.call_activity(
         log_summary,
         input=None,
-        propagation=wf.PropagationScope.LINEAGE,
+        propagation=wf.propagate_lineage(),
     )
     print(f'*** audit activity result: {audit}', flush=True)
     return {'child': child_result, 'audit': audit}
