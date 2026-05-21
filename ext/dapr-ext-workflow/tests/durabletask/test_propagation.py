@@ -23,8 +23,6 @@ from dapr.ext.workflow import (
     PropagatedHistory,
     PropagationNotFoundError,
     PropagationScope,
-    propagate_lineage,
-    propagate_own_history,
 )
 from google.protobuf import wrappers_pb2
 
@@ -372,14 +370,3 @@ def test_from_proto_handles_empty_chunks():
     assert ph.events == []
     assert ph.get_app_ids() == []
     assert ph.get_workflows() == []
-
-
-# --- Factory helpers (go-sdk parity) ----------------------------------------
-
-
-def test_propagate_lineage_helper_returns_lineage_scope():
-    assert propagate_lineage() is PropagationScope.LINEAGE
-
-
-def test_propagate_own_history_helper_returns_own_history_scope():
-    assert propagate_own_history() is PropagationScope.OWN_HISTORY

@@ -544,9 +544,9 @@ history to a child workflow and to an activity, and how the receivers query
 that history through `ctx.get_propagated_history()`.
 
 It shows:
-- `propagation=propagate_own_history()` on a child workflow call —
+- `propagation=PropagationScope.OWN_HISTORY` on a child workflow call —
   forwards the caller's events only.
-- `propagation=propagate_lineage()` on an activity call — forwards the
+- `propagation=PropagationScope.LINEAGE` on an activity call — forwards the
   caller's events *plus* anything the caller itself received from its parent.
 - `PropagatedHistory.get_last_workflow_by_name(...)` and
   `WorkflowResult.get_last_activity_by_name(...)` on the receiving side.

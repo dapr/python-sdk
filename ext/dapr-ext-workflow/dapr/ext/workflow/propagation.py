@@ -34,31 +34,18 @@ class PropagationScope(Enum):
 
     Values map 1:1 to the protobuf ``HistoryPropagationScope`` enum; the
     plumbing layer reads ``.value`` when writing to proto fields.
+
+    * ``OWN_HISTORY`` — propagate the caller's events only; drop any ancestor
+      chain. Use as a trust boundary, where downstream code should only see
+      the immediate caller.
+    * ``LINEAGE`` — propagate the caller's events plus any ancestor events it
+      received. Use for chain-of-custody verification, where downstream code
+      needs visibility into the full lineage of upstream workflows.
     """
 
     NONE = int(pb.HISTORY_PROPAGATION_SCOPE_NONE)
     OWN_HISTORY = int(pb.HISTORY_PROPAGATION_SCOPE_OWN_HISTORY)
     LINEAGE = int(pb.HISTORY_PROPAGATION_SCOPE_LINEAGE)
-
-
-def propagate_lineage() -> PropagationScope:
-    """Propagate the caller's own events plus any ancestor events it received.
-
-    Use this for chain-of-custody verification, where downstream code needs
-    visibility into the full lineage of upstream workflows. Mirrors the
-    go-sdk ``workflow.PropagateLineage()`` helper.
-    """
-    return PropagationScope.LINEAGE
-
-
-def propagate_own_history() -> PropagationScope:
-    """Propagate the caller's events only; drop any ancestor chain.
-
-    Use this as a trust boundary, where downstream code should only see the
-    immediate caller. Mirrors the go-sdk ``workflow.PropagateOwnHistory()``
-    helper.
-    """
-    return PropagationScope.OWN_HISTORY
 
 
 class PropagationNotFoundError(Exception):
