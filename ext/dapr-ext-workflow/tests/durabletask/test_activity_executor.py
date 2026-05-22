@@ -59,6 +59,27 @@ def test_activity_not_registered():
     assert 'Bogus' in str(caught_exception)
 
 
+def test_sync_execute_rejects_async_activity():
+    """Sync ``execute`` must raise a clear RuntimeError when the activity returns a
+    coroutine. Guards against ``_is_async_callable`` missing an async callable at
+    registration; without this, JSON encoding would fail with a confusing TypeError.
+    """
+
+    async def async_activity(ctx: task.ActivityContext, _):
+        return 'never reached'
+
+    executor, name = _get_activity_executor(async_activity)
+
+    caught_exception: Optional[Exception] = None
+    try:
+        executor.execute(TEST_INSTANCE_ID, name, TEST_TASK_ID, None)
+    except Exception as ex:
+        caught_exception = ex
+
+    assert type(caught_exception) is RuntimeError
+    assert 'returned a coroutine' in str(caught_exception)
+
+
 def _get_activity_executor(fn: task.Activity) -> Tuple[worker._ActivityExecutor, str]:
     registry = worker._Registry()
     name = registry.add_activity(fn)

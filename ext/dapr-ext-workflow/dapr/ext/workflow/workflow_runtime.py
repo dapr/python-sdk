@@ -13,10 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import functools
 import inspect
 import time
 from functools import wraps
-from typing import Optional, Sequence, TypeVar, Union
+from typing import Any, Awaitable, Callable, Optional, Sequence, TypeVar, Union
 
 import grpc
 from dapr.ext.workflow._durabletask import task, worker
@@ -44,6 +45,73 @@ ClientInterceptor = Union[
     grpc.StreamUnaryClientInterceptor,
     grpc.StreamStreamClientInterceptor,
 ]
+
+# Durabletask returns decoded JSON, so we type the input as ``object | None`` and let the
+# wrapper narrow it via the activity's declared model.
+SyncActivityWrapper = Callable[[task.ActivityContext, object | None], object]
+AsyncActivityWrapper = Callable[[task.ActivityContext, object | None], Awaitable[object]]
+ActivityWrapper = SyncActivityWrapper | AsyncActivityWrapper
+
+
+def _is_async_callable(fn: Any) -> bool:
+    """Return True if ``fn`` is async. Catches ``functools.partial`` of coroutines,
+    sync decorators that wrap async functions, and callable instances with ``async __call__``.
+    """
+    candidate = fn
+    while isinstance(candidate, functools.partial):
+        candidate = candidate.func
+    candidate = inspect.unwrap(candidate) if callable(candidate) else candidate
+    if inspect.iscoroutinefunction(candidate):
+        return True
+    if not inspect.isfunction(candidate) and hasattr(candidate, '__call__'):
+        return inspect.iscoroutinefunction(candidate.__call__)
+    return False
+
+
+def _coerce_activity_input(inp: object | None, input_model: type | None) -> object | None:
+    """Coerce the raw input to the activity's declared model, if it has one."""
+    if inp is None or input_model is None or isinstance(inp, input_model):
+        return inp
+    return _model_protocol.coerce_to_model(inp, input_model)
+
+
+def _make_activity_wrapper(fn: Activity, logger: Logger) -> ActivityWrapper:
+    """Wrap a user activity for the durabletask worker.
+
+    Returns:
+        An ``async def`` wrapper for async activities, a plain ``def`` for sync.
+    """
+    accepts_input, input_model = _model_protocol.resolve_input(fn)
+
+    if _is_async_callable(fn):
+
+        async def async_activity_wrapper(
+            ctx: task.ActivityContext, inp: object | None = None
+        ) -> object:
+            activity_id = getattr(ctx, 'task_id', 'unknown')
+            try:
+                wf_ctx = WorkflowActivityContext(ctx)
+                if not accepts_input:
+                    return await fn(wf_ctx)
+                return await fn(wf_ctx, _coerce_activity_input(inp, input_model))
+            except Exception as e:
+                logger.warning(f'Activity execution failed - task_id: {activity_id}, error: {e}')
+                raise
+
+        return async_activity_wrapper
+
+    def sync_activity_wrapper(ctx: task.ActivityContext, inp: object | None = None) -> object:
+        activity_id = getattr(ctx, 'task_id', 'unknown')
+        try:
+            wf_ctx = WorkflowActivityContext(ctx)
+            if not accepts_input:
+                return fn(wf_ctx)
+            return fn(wf_ctx, _coerce_activity_input(inp, input_model))
+        except Exception as e:
+            logger.warning(f'Activity execution failed - task_id: {activity_id}, error: {e}')
+            raise
+
+    return sync_activity_wrapper
 
 
 class WorkflowRuntime:
@@ -180,36 +248,14 @@ class WorkflowRuntime:
         fn.__dict__['_workflow_registered'] = True
 
     def register_activity(self, fn: Activity, *, name: Optional[str] = None):
-        """Registers a workflow activity as a function that takes
-        a specified input type and returns a specified output type.
+        """Register a workflow activity. ``def`` and ``async def`` are both supported.
+        Async activities run on the worker's event loop. Sync activities run in the
+        thread pool sized by ``maximum_thread_pool_workers``.
         """
         effective_name = name or fn.__name__
         self._logger.info(f"Registering activity '{effective_name}' with runtime")
 
-        accepts_input, input_model = _model_protocol.resolve_input(fn)
-
-        def activityWrapper(ctx: task.ActivityContext, inp: Optional[TInput] = None):
-            """Responsible to call Activity function in activityWrapper"""
-            activity_id = getattr(ctx, 'task_id', 'unknown')
-
-            try:
-                wfActivityContext = WorkflowActivityContext(ctx)
-                if not accepts_input:
-                    result = fn(wfActivityContext)
-                else:
-                    if (
-                        (inp is not None)
-                        and (input_model is not None)
-                        and not isinstance(inp, input_model)
-                    ):
-                        inp = _model_protocol.coerce_to_model(inp, input_model)
-                    result = fn(wfActivityContext, inp)
-                return result
-            except Exception as e:
-                self._logger.warning(
-                    f'Activity execution failed - task_id: {activity_id}, error: {e}'
-                )
-                raise
+        activity_wrapper = _make_activity_wrapper(fn, self._logger)
 
         if hasattr(fn, '_activity_registered'):
             # whenever an activity is registered, it has a _dapr_alternate_name attribute
@@ -224,7 +270,7 @@ class WorkflowRuntime:
             fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
         self.__worker._registry.add_named_activity(
-            fn.__dict__['_dapr_alternate_name'], activityWrapper
+            fn.__dict__['_dapr_alternate_name'], activity_wrapper
         )
         fn.__dict__['_activity_registered'] = True
 
@@ -446,16 +492,23 @@ def alternate_name(name: Optional[str] = None):
         the workflow runtime. Defaults to None.
     """
 
-    def wrapper(fn: any):
+    def wrapper(fn: Any):
         if hasattr(fn, '_dapr_alternate_name'):
             raise ValueError(
                 f'Function {fn.__name__} already has an alternate name {fn._dapr_alternate_name}'
             )
         fn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
 
-        @wraps(fn)
-        def innerfn(*args, **kwargs):
-            return fn(*args, **kwargs)
+        if _is_async_callable(fn):
+
+            @wraps(fn)
+            async def innerfn(*args, **kwargs):
+                return await fn(*args, **kwargs)
+        else:
+
+            @wraps(fn)
+            def innerfn(*args, **kwargs):
+                return fn(*args, **kwargs)
 
         innerfn.__dict__['_dapr_alternate_name'] = name if name else fn.__name__
         innerfn.__signature__ = inspect.signature(fn)

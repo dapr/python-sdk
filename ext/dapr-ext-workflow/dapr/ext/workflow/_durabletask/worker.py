@@ -65,10 +65,10 @@ def _log_all_threads(logger: logging.Logger, context: str = ''):
 
 
 class ConcurrencyOptions:
-    """Configuration options for controlling concurrency of different work item types and the thread pool size.
+    """Concurrency limits for the worker.
 
-    This class provides fine-grained control over concurrent processing limits for
-    activities, orchestrations and the thread pool size.
+    ``maximum_thread_pool_workers`` only matters for sync activities.
+    Async activities run as coroutines on the event loop.
     """
 
     def __init__(
@@ -80,11 +80,12 @@ class ConcurrencyOptions:
         """Initialize concurrency options.
 
         Args:
-            maximum_concurrent_activity_work_items: Maximum number of activity work items
-                that can be processed concurrently. Defaults to 100 * processor_count.
-            maximum_concurrent_orchestration_work_items: Maximum number of orchestration work items
-                that can be processed concurrently. Defaults to 100 * processor_count.
-            maximum_thread_pool_workers: Maximum number of thread pool workers to use.
+            maximum_concurrent_activity_work_items: Cap on concurrent activity work items.
+                Defaults to ``100 * cpu_count``.
+            maximum_concurrent_orchestration_work_items: Cap on concurrent orchestration work
+                items. Defaults to ``100 * cpu_count``.
+            maximum_thread_pool_workers: Size of the thread pool used to run sync activities.
+                Async activities do not use this pool. Defaults to ``cpu_count + 4``.
         """
         processor_count = os.cpu_count() or 1
         default_concurrency = 100 * processor_count
@@ -658,8 +659,19 @@ class TaskHubGrpcWorker:
                                 work_item.completionToken,
                             )
                         elif work_item.HasField('activityRequest'):
+                            # Async user activities run on the event loop. Sync ones fall through
+                            # to the thread pool via _execute_activity.
+                            activity_fn = self._registry.get_activity(
+                                work_item.activityRequest.name
+                            )
+                            activity_handler = (
+                                self._execute_activity_async
+                                if activity_fn is not None
+                                and inspect.iscoroutinefunction(activity_fn)
+                                else self._execute_activity
+                            )
                             self._async_worker_manager.submit_activity(
-                                self._execute_activity,
+                                activity_handler,
                                 work_item.activityRequest,
                                 stub,
                                 work_item.completionToken,
@@ -807,10 +819,15 @@ class TaskHubGrpcWorker:
         self._channel_cleanup_threads.append(thread)
 
     def stop(self):
-        """Stops the worker and waits for any pending work items to complete."""
+        """Stop the worker and tear down its resources.
+
+        Idempotent and safe to call before ``start()`` because the thread pool
+        exists from construction.
+        """
         # Guards on _runLoop rather than _is_running so stop() can unblock a start()
         # that is still waiting for the work item stream to be established.
         if self._runLoop is None:
+            self._async_worker_manager.shutdown()
             return
 
         self._logger.info('Stopping gRPC worker...')
@@ -964,6 +981,102 @@ class TaskHubGrpcWorker:
                 f"Failed to deliver orchestrator response for '{req.instanceId}' to sidecar: {ex}"
             )
 
+    def _activity_span(self, req: pb.ActivityRequest, instance_id: str):
+        """Return an OTel span context manager, or a nullcontext if OTel is not installed."""
+        if otel_tracer is None:
+            return contextlib.nullcontext()
+        return otel_tracer.start_as_current_span(
+            name=f'activity: {req.name}',
+            context=otel_propagator.extract(
+                carrier={'traceparent': req.parentTraceContext.traceParent}
+            ),
+            attributes={
+                'dapr.ext.workflow._durabletask.task.instance_id': instance_id,
+                'dapr.ext.workflow._durabletask.task.id': req.taskId,
+                'dapr.ext.workflow._durabletask.activity.name': req.name,
+            },
+        )
+
+    def _propagated_history(self, req: pb.ActivityRequest) -> PropagatedHistory | None:
+        if req.HasField('propagatedHistory'):
+            return PropagatedHistory.from_proto(req.propagatedHistory)
+        return None
+
+    def _build_activity_result_response(
+        self,
+        req: pb.ActivityRequest,
+        instance_id: str,
+        result: str | None,
+        completion_token,
+    ) -> pb.ActivityResponse:
+        return pb.ActivityResponse(
+            instanceId=instance_id,
+            taskId=req.taskId,
+            result=ph.get_string_value(result),
+            completionToken=completion_token,
+        )
+
+    def _build_activity_failure_response(
+        self,
+        req: pb.ActivityRequest,
+        instance_id: str,
+        ex: BaseException,
+        completion_token,
+    ) -> pb.ActivityResponse:
+        return pb.ActivityResponse(
+            instanceId=instance_id,
+            taskId=req.taskId,
+            failureDetails=ph.new_failure_details(ex),
+            completionToken=completion_token,
+        )
+
+    def _send_activity_response(
+        self,
+        req: pb.ActivityRequest,
+        stub: stubs.TaskHubSidecarServiceStub,
+        res: pb.ActivityResponse,
+        completion_token,
+        instance_id: str,
+    ):
+        """Send an activity response, falling back to a failure response when the
+        result is too large to deliver."""
+        try:
+            stub.CompleteActivityTask(res)
+        except grpc.RpcError as rpc_error:  # type: ignore
+            if _is_message_too_large(rpc_error):
+                # Result is too large to deliver - fail the activity immediately.
+                # This can only be fixed with infrastructure changes (increasing gRPC max message size).
+                self._logger.error(
+                    f"Activity '{req.name}#{req.taskId}' result is too large to deliver "
+                    f'(RESOURCE_EXHAUSTED). Failing the activity task: {rpc_error.details()}'
+                )
+                oversize_error = RuntimeError(
+                    f'Activity result exceeds gRPC max message size: {rpc_error.details()}'
+                )
+                failure_res = self._build_activity_failure_response(
+                    req, instance_id, oversize_error, completion_token
+                )
+                try:
+                    stub.CompleteActivityTask(failure_res)
+                except Exception as ex:
+                    self._logger.exception(
+                        f"Failed to deliver activity failure response for '{req.name}#{req.taskId}' "
+                        f"of orchestration ID '{instance_id}': {ex}"
+                    )
+            else:
+                self._handle_grpc_execution_error(rpc_error, 'activity')
+        except ValueError:
+            # gRPC raises ValueError when the underlying channel has been closed (e.g. during reconnection).
+            self._logger.debug(
+                f"Could not deliver activity response for '{req.name}#{req.taskId}' of "
+                f"orchestration ID '{instance_id}': channel was closed (likely due to "
+                f'reconnection). The sidecar will re-dispatch this work item.'
+            )
+        except Exception as ex:
+            self._logger.exception(
+                f"Failed to deliver activity response for '{req.name}#{req.taskId}' of orchestration ID '{instance_id}' to sidecar: {ex}"
+            )
+
     def _execute_activity(
         self,
         req: pb.ActivityRequest,
@@ -971,91 +1084,69 @@ class TaskHubGrpcWorker:
         completionToken,
     ):
         instance_id = req.workflowInstance.instanceId
-
-        if otel_tracer is not None:
-            span_context = otel_tracer.start_as_current_span(
-                name=f'activity: {req.name}',
-                context=otel_propagator.extract(
-                    carrier={'traceparent': req.parentTraceContext.traceParent}
-                ),
-                attributes={
-                    'dapr.ext.workflow._durabletask.task.instance_id': instance_id,
-                    'dapr.ext.workflow._durabletask.task.id': req.taskId,
-                    'dapr.ext.workflow._durabletask.activity.name': req.name,
-                },
-            )
-        else:
-            span_context = contextlib.nullcontext()
-
-        with span_context:
+        with self._activity_span(req, instance_id):
             try:
                 executor = _ActivityExecutor(self._registry, self._logger)
-                propagated = (
-                    PropagatedHistory.from_proto(req.propagatedHistory)
-                    if req.HasField('propagatedHistory')
-                    else None
-                )
                 result = executor.execute(
                     instance_id,
                     req.name,
                     req.taskId,
                     req.input.value,
                     req.taskExecutionId,
-                    propagated_history=propagated,
+                    propagated_history=self._propagated_history(req),
                 )
-                res = pb.ActivityResponse(
-                    instanceId=instance_id,
-                    taskId=req.taskId,
-                    result=ph.get_string_value(result),
-                    completionToken=completionToken,
+                res = self._build_activity_result_response(
+                    req, instance_id, result, completionToken
                 )
             except Exception as ex:
-                res = pb.ActivityResponse(
-                    instanceId=instance_id,
-                    taskId=req.taskId,
-                    failureDetails=ph.new_failure_details(ex),
-                    completionToken=completionToken,
-                )
+                res = self._build_activity_failure_response(req, instance_id, ex, completionToken)
+            self._send_activity_response(req, stub, res, completionToken, instance_id)
 
+    async def _execute_activity_async(
+        self,
+        req: pb.ActivityRequest,
+        stub: stubs.TaskHubSidecarServiceStub,
+        completionToken,
+    ):
+        """Run an async activity on the event loop and send its result to the sidecar.
+        The gRPC send goes through ``run_in_executor`` to avoid blocking the loop.
+        """
+        instance_id = req.workflowInstance.instanceId
+        with self._activity_span(req, instance_id):
             try:
-                stub.CompleteActivityTask(res)
-            except grpc.RpcError as rpc_error:  # type: ignore
-                if _is_message_too_large(rpc_error):
-                    # Result is too large to deliver - fail the activity immediately.
-                    # This can only be fixed with infrastructure changes (increasing gRPC max message size).
-                    self._logger.error(
-                        f"Activity '{req.name}#{req.taskId}' result is too large to deliver "
-                        f'(RESOURCE_EXHAUSTED). Failing the activity task: {rpc_error.details()}'
-                    )
-                    failure_res = pb.ActivityResponse(
-                        instanceId=instance_id,
-                        taskId=req.taskId,
-                        failureDetails=ph.new_failure_details(
-                            RuntimeError(
-                                f'Activity result exceeds gRPC max message size: {rpc_error.details()}'
-                            )
-                        ),
-                        completionToken=completionToken,
-                    )
-                    try:
-                        stub.CompleteActivityTask(failure_res)
-                    except Exception as ex:
-                        self._logger.exception(
-                            f"Failed to deliver activity failure response for '{req.name}#{req.taskId}' "
-                            f"of orchestration ID '{instance_id}': {ex}"
-                        )
-                else:
-                    self._handle_grpc_execution_error(rpc_error, 'activity')
-            except ValueError:
-                # gRPC raises ValueError when the underlying channel has been closed (e.g. during reconnection).
-                self._logger.debug(
-                    f"Could not deliver activity response for '{req.name}#{req.taskId}' of "
-                    f"orchestration ID '{instance_id}': channel was closed (likely due to "
-                    f'reconnection). The sidecar will re-dispatch this work item.'
+                executor = _ActivityExecutor(self._registry, self._logger)
+                result = await executor.execute_async(
+                    instance_id,
+                    req.name,
+                    req.taskId,
+                    req.input.value,
+                    req.taskExecutionId,
+                    propagated_history=self._propagated_history(req),
                 )
+                res = self._build_activity_result_response(
+                    req, instance_id, result, completionToken
+                )
+            except asyncio.CancelledError:
+                raise
             except Exception as ex:
-                self._logger.exception(
-                    f"Failed to deliver activity response for '{req.name}#{req.taskId}' of orchestration ID '{instance_id}' to sidecar: {ex}"
+                res = self._build_activity_failure_response(req, instance_id, ex, completionToken)
+            loop = asyncio.get_running_loop()
+            try:
+                await loop.run_in_executor(
+                    None,
+                    self._send_activity_response,
+                    req,
+                    stub,
+                    res,
+                    completionToken,
+                    instance_id,
+                )
+            except RuntimeError as exc:
+                # Default executor shut down. Raising would only leak a
+                # 'Task exception was never retrieved' since nobody awaits this task.
+                self._logger.warning(
+                    f"Could not deliver activity response for '{req.name}#{req.taskId}': "
+                    f'{exc}. The sidecar will re-dispatch this work item.'
                 )
 
 
@@ -2002,6 +2093,41 @@ class _ActivityExecutor:
         self._registry = registry
         self._logger = logger
 
+    def _resolve(
+        self,
+        orchestration_id: str,
+        name: str,
+        task_id: int,
+        encoded_input: str | None,
+        task_execution_id: str,
+        propagated_history: PropagatedHistory | None,
+    ) -> tuple[task.Activity, task.ActivityContext, Any]:
+        """Look up the registered activity and build its ``(fn, ctx, input)`` call args."""
+        self._logger.debug(f"{orchestration_id}/{task_id}: Executing activity '{name}'...")
+        fn = self._registry.get_activity(name)
+        if not fn:
+            raise ActivityNotRegisteredError(
+                f"Activity function named '{name}' was not registered!"
+            )
+        activity_input = shared.from_json(encoded_input) if encoded_input else None
+        ctx = task.ActivityContext(
+            orchestration_id,
+            task_id,
+            task_execution_id,
+            propagated_history=propagated_history,
+        )
+        return fn, ctx, activity_input
+
+    def _encode_output(
+        self, orchestration_id: str, name: str, task_id: int, activity_output: Any
+    ) -> str | None:
+        encoded_output = shared.to_json(activity_output) if activity_output is not None else None
+        chars = len(encoded_output) if encoded_output else 0
+        self._logger.debug(
+            f"{orchestration_id}/{task_id}: Activity '{name}' completed successfully with {chars} char(s) of encoded output."
+        )
+        return encoded_output
+
     def execute(
         self,
         orchestration_id: str,
@@ -2011,31 +2137,48 @@ class _ActivityExecutor:
         task_execution_id: str = '',
         propagated_history: Optional[PropagatedHistory] = None,
     ) -> Optional[str]:
-        """Executes an activity function and returns the serialized result, if any."""
-        self._logger.debug(f"{orchestration_id}/{task_id}: Executing activity '{name}'...")
-        fn = self._registry.get_activity(name)
-        if not fn:
-            raise ActivityNotRegisteredError(
-                f"Activity function named '{name}' was not registered!"
-            )
+        """Run a sync activity function and return the serialized result, if any.
 
-        activity_input = shared.from_json(encoded_input) if encoded_input else None
-        ctx = task.ActivityContext(
+        Raises ``RuntimeError`` if the activity returns a coroutine, which happens when
+        ``_is_async_callable`` fails to detect an async callable at registration.
+        """
+        fn, ctx, activity_input = self._resolve(
             orchestration_id,
+            name,
             task_id,
+            encoded_input,
             task_execution_id,
-            propagated_history=propagated_history,
+            propagated_history,
         )
-
-        # Execute the activity function
         activity_output = fn(ctx, activity_input)
+        if inspect.iscoroutine(activity_output):
+            activity_output.close()
+            raise RuntimeError(
+                f"Activity '{name}' returned a coroutine on the sync path. "
+                f'Declare it with ``async def`` so the worker dispatches it on the event loop.'
+            )
+        return self._encode_output(orchestration_id, name, task_id, activity_output)
 
-        encoded_output = shared.to_json(activity_output) if activity_output is not None else None
-        chars = len(encoded_output) if encoded_output else 0
-        self._logger.debug(
-            f"{orchestration_id}/{task_id}: Activity '{name}' completed successfully with {chars} char(s) of encoded output."
+    async def execute_async(
+        self,
+        orchestration_id: str,
+        name: str,
+        task_id: int,
+        encoded_input: str | None,
+        task_execution_id: str = '',
+        propagated_history: PropagatedHistory | None = None,
+    ) -> str | None:
+        """Await a coroutine activity function and return the serialized result, if any."""
+        fn, ctx, activity_input = self._resolve(
+            orchestration_id,
+            name,
+            task_id,
+            encoded_input,
+            task_execution_id,
+            propagated_history,
         )
-        return encoded_output
+        activity_output = await fn(ctx, activity_input)
+        return self._encode_output(orchestration_id, name, task_id, activity_output)
 
 
 def _get_non_determinism_error(task_id: int, action_name: str) -> task.NonDeterminismError:
