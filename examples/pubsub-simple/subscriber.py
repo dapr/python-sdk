@@ -15,9 +15,9 @@ import json
 from time import sleep
 
 from cloudevents.sdk.event import v1
-from dapr.ext.grpc import App
 
 from dapr.clients.grpc._response import TopicEventResponse
+from dapr.ext.grpc import App
 from dapr.proto import appcallback_v1
 
 app = App()

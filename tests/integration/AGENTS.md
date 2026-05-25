@@ -89,7 +89,7 @@ Each test file defines its own module-scoped fixture (`client` or `sidecar`) tha
 | `test_crypto.py` | Cryptography | `encrypt`, `decrypt` (RSA + AES round-trips against `crypto.dapr.localstorage`) |
 | `test_conversation.py` | Conversation | `converse_alpha1`, `converse_alpha2` against `conversation.echo` |
 | `test_conversation_ollama.py` | Conversation (real LLM) | `converse_alpha1`, `converse_alpha2` against `conversation.ollama`; skips if `ollama` CLI is missing |
-| `test_workflow.py` | Workflow (`dapr-ext-workflow`) | `WorkflowRuntime`, `DaprWorkflowClient.schedule_new_workflow`, `wait_for_workflow_start`, `wait_for_workflow_completion`, `raise_workflow_event`, `pause_workflow`, `resume_workflow`, `terminate_workflow`, `purge_workflow`, `get_workflow_state` |
+| `test_workflow.py` | Workflow (`dapr.ext.workflow`) | `WorkflowRuntime`, `DaprWorkflowClient.schedule_new_workflow`, `wait_for_workflow_start`, `wait_for_workflow_completion`, `raise_workflow_event`, `pause_workflow`, `resume_workflow`, `terminate_workflow`, `purge_workflow`, `get_workflow_state` |
 
 ### Async client coverage
 

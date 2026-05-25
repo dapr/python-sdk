@@ -1,3 +1,2 @@
-dapr-ext-workflow>=1.17.0.dev
-dapr>=1.17.0.dev
-pydantic>=2.0
+dapr[workflow] >= 1.19.0.dev
+pydantic >= 2.0

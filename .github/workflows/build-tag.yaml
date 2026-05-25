@@ -68,7 +68,7 @@ jobs:
       run: uv run mypy
     - name: Run unit-tests
       run: |
-        uv run coverage run -m pytest tests ext -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
+        uv run coverage run -m pytest tests -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
         uv run coverage xml
     - name: Upload test coverage
       uses: codecov/codecov-action@v6
@@ -93,46 +93,14 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-workflow
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-workflow
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish Dapr Flask Extension
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/flask_dapr
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-grpc
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-grpc
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-fastapi
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-fastapi
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-langgraph
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-langgraph
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-strands
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-strands
-        python -m build --wheel
-        twine upload dist/*
+        # --skip-existing makes the step retry-safe: if a previous attempt
+        # partially succeeded and the workflow is re-run, twine treats an
+        # already-uploaded file as success instead of failing the step.
+        twine upload --skip-existing dist/*
+    # The previously-separate distributions (dapr-ext-fastapi, dapr-ext-grpc,
+    # dapr-ext-langgraph, dapr-ext-strands, dapr-ext-workflow, flask-dapr)
+    # are intentionally NOT republished. Bundling the extension code into
+    # the `dapr` wheel means publishing a forwarding stub would leave files
+    # under `dapr/ext/<name>/` claimed by both distributions, and `pip
+    # uninstall <legacy>` would delete files that core dapr now provides.
+    # See RELEASE.md and the runtime warning in dapr/__init__.py.

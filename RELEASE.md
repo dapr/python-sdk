@@ -2,17 +2,34 @@
 
 This document describes the release process for the Dapr Python SDK.
 
-A single tag (`v*`) triggers the release of **all packages** published from this repository:
+A single tag (`v*`) triggers the release of the core SDK only:
 
-| PyPI package |
-|---|
-| `dapr` (core SDK) |
-| `dapr-ext-workflow` |
-| `dapr-ext-grpc` |
-| `dapr-ext-fastapi` |
-| `flask_dapr` |
-| `dapr-ext-langgraph` |
-| `dapr-ext-strands` |
+| PyPI package | Notes |
+|---|---|
+| `dapr` (core SDK) | Includes every extension under `dapr.ext.*`. Users opt in to per-extension third-party deps via extras: `pip install "dapr[fastapi]"`, etc. The legacy top-level `flask_dapr` import path remains available as a thin shim inside this wheel and emits `FutureWarning`. |
+
+**The previously-separate distributions** — `dapr-ext-fastapi`, `dapr-ext-grpc`,
+`dapr-ext-langgraph`, `dapr-ext-strands`, `dapr-ext-workflow`, `flask-dapr` —
+are **no longer published**. Republishing them as `dapr-ext-name` shims that 
+depend on `dapr[name]` was considered but rejected: any shim that doesn't carry 
+the actual extension code creates a `RECORD` ownership conflict with the legacy 
+versions in existing user environments, and `pip uninstall` of a legacy package would
+delete files that core `dapr` now provides.
+
+Existing installs must migrate explicitly:
+
+```sh
+pip uninstall -y dapr-ext-fastapi dapr-ext-grpc dapr-ext-langgraph dapr-ext-strands dapr-ext-workflow flask-dapr
+pip install --force-reinstall --no-deps dapr
+pip install "dapr[<extras>]"
+```
+
+`--force-reinstall --no-deps dapr` rewrites the `dapr/ext/<name>/` files the
+legacy uninstall removed; keeping it separate from the extras install avoids
+churning user-pinned versions of fastapi, uvicorn, langchain, etc.
+`dapr/__init__.py` detects both the legacy-installed and post-uninstall
+states at import time and prints the recovery command as a `FutureWarning`.
+Suppress with `DAPR_SKIP_LEGACY_CHECK=1`.
 
 You can also create the tag via a **GitHub Release**, which auto-creates the tag and provides
 a changelog UI.
