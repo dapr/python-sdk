@@ -2,16 +2,17 @@
 
 This example demonstrates the [Jobs API](https://docs.dapr.io/developing-applications/building-blocks/jobs/) in Dapr.
 It demonstrates the following APIs:
-- **schedule_job_alpha1**: Schedule a job to run at specified times
-- **get_job_alpha1**: Retrieve details about a scheduled job
-- **delete_job_alpha1**: Delete a scheduled job
+- **schedule_job**: Schedule a job to run at specified times
+- **get_job**: Retrieve details about a scheduled job
+- **delete_job**: Delete a scheduled job
 
 It includes two examples that showcase different aspects of the Jobs API:
 
 1. **`job_management.py`** - Focuses on job scheduling patterns and management operations
 2. **`job_processing.py`** - Shows the complete workflow including job event handling
 
-> **Note:** The Jobs API is currently in Alpha and subject to change. Make sure to use the latest proto bindings.
+> **Note:** The Jobs API is stable as of Dapr 1.18. The SDK calls the stable RPCs and
+> transparently falls back to the deprecated `*_alpha1` RPCs when talking to an older sidecar.
 
 ## Prerequisites
 
@@ -248,7 +249,7 @@ The callback service must:
 
 ## Additional Information
 
-- The Jobs API is currently in **Alpha** and subject to change
+- The Jobs API is **stable** as of Dapr 1.18 (the SDK falls back to the `*_alpha1` RPCs on older sidecars)
 - Jobs are persistent and will survive Dapr sidecar restarts
 - Job names must be unique within the Dapr application
 - Both `schedule` and `due_time` are optional - if neither is provided, the job will trigger immediately
