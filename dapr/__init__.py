@@ -17,10 +17,10 @@ limitations under the License.
 # the environment in.
 #
 # 1. Legacy `dapr-ext-*` or `flask-dapr` dist still installed alongside
-#    core dapr. 
+#    core dapr.
 #    Pre-1.19 each extension was its own dist owning files under
-#    `dapr/ext/<name>/`, the new core wheel ships those same files. 
-#    pip has no cross-dist ownership awareness, so `pip uninstall <legacy>` 
+#    `dapr/ext/<name>/`, the new core wheel ships those same files.
+#    pip has no cross-dist ownership awareness, so `pip uninstall <legacy>`
 #    walks the legacy RECORD and deletes `dapr/ext/<name>/*.py` from disk. End
 #    state: `pip show dapr` reports OK, but `from dapr.ext.<name> import ...`
 #    raises ModuleNotFoundError.

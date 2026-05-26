@@ -10,11 +10,25 @@ A single tag (`v*`) triggers the release of the core SDK only:
 
 **The previously-separate distributions** — `dapr-ext-fastapi`, `dapr-ext-grpc`,
 `dapr-ext-langgraph`, `dapr-ext-strands`, `dapr-ext-workflow`, `flask-dapr` —
-are **no longer published**. Republishing them as `dapr-ext-name` shims that 
-depend on `dapr[name]` was considered but rejected: any shim that doesn't carry 
-the actual extension code creates a `RECORD` ownership conflict with the legacy 
-versions in existing user environments, and `pip uninstall` of a legacy package would
-delete files that core `dapr` now provides.
+are **no longer published**.
+
+The design constraint was keeping `from dapr.ext.X import ...` stable across
+the upgrade, so the cost lands once in pip during migration rather than
+forever in every existing codebase that already imports those paths.
+
+The price: legacy dists on disk now claim the same files core `dapr` ships,
+and pip has no cross-dist ownership awareness. `pip uninstall <legacy>` walks
+the legacy RECORD and deletes `dapr/ext/<name>/*.py` from disk, leaving a
+silently broken install: `pip show dapr` reports 1.19 installed, but
+`from dapr.ext.<name> import ...` raises `ModuleNotFoundError`. The recipe
+below uses `--force-reinstall --no-deps dapr` to rewrite those files after
+the legacy uninstall removes them.
+
+Republishing the legacy distributions as `dapr-ext-name` shims depending on
+`dapr[name]` was considered and rejected: any shim that doesn't ship the
+actual files leaves the legacy version's RECORD on disk in existing
+environments, so the same uninstall failure mode remains. They would also
+add a per-extension release artifact to maintain in perpetuity.
 
 Existing installs must migrate explicitly:
 
