@@ -158,7 +158,7 @@ def test_orchestration_executor_exposes_propagated_history():
     history = captured['history']
     assert history is not None
     assert history.get_app_ids() == ['parent-app']
-    assert history.get_workflow_by_name('Parent').instance_id == 'parent-instance'
+    assert history.get_last_workflow_by_name('Parent').instance_id == 'parent-instance'
 
 
 def test_orchestration_executor_propagated_history_is_none_by_default():
@@ -209,7 +209,7 @@ def test_activity_executor_exposes_propagated_history():
     history = captured['history']
     assert history is not None
     assert history.get_app_ids() == ['parent-app']
-    assert history.get_workflow_by_name('Caller').instance_id == 'parent-instance'
+    assert history.get_last_workflow_by_name('Caller').instance_id == 'parent-instance'
 
 
 def test_activity_executor_propagated_history_is_none_by_default():
