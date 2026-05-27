@@ -53,11 +53,6 @@ MCP_WORKFLOW_PREFIX: str = 'dapr.internal.mcp.'
 _MCP_METHOD_LIST_TOOLS = '.ListTools'
 _MCP_METHOD_CALL_TOOL = '.CallTool'
 
-# `dapr run` reports the sidecar ready when its HTTP port responds, but
-# MCPServer-derived workflows aren't registered until daprd finishes its
-# loadMCPServers init step. A schedule_new_workflow call inside that window
-# comes back as CANCELLED or UNAVAILABLE. Retry such failures within the
-# caller's timeout budget instead of surfacing them as hard failures.
 _TRANSIENT_GRPC_CODES = frozenset({
     grpc.StatusCode.CANCELLED,
     grpc.StatusCode.UNAVAILABLE,
