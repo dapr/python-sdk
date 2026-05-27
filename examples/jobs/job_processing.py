@@ -98,7 +98,7 @@ def schedule_jobs():
             # Job 1: Simple hello job (no data)
             print(f'Scheduling hello-job for {due_time_1}...', flush=True)
             hello_job = Job(name='hello-job', due_time=due_time_1)
-            client.schedule_job_alpha1(hello_job)
+            client.schedule_job(hello_job)
             print('✓ hello-job scheduled', flush=True)
 
             # Job 2: Data processing job (with JSON data)
@@ -116,7 +116,7 @@ def schedule_jobs():
                 data=create_job_data(job_data),
                 failure_policy=ConstantFailurePolicy(max_retries=2, interval_seconds=5),
             )
-            client.schedule_job_alpha1(data_job)
+            client.schedule_job(data_job)
             print('✓ data-job scheduled', flush=True)
 
             print('Jobs scheduled! Waiting for execution...', flush=True)
