@@ -15,12 +15,20 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 import uuid
 from typing import Optional, Set
 
 from dapr.ext.workflow.aio.dapr_workflow_client import DaprWorkflowClient
-from dapr.ext.workflow.mcp import _MCP_METHOD_LIST_TOOLS, MCP_WORKFLOW_PREFIX, _DaprMCPClientBase
+from dapr.ext.workflow.mcp import (
+    _MCP_METHOD_LIST_TOOLS,
+    _SCHEDULE_RETRY_INTERVAL_SECONDS,
+    MCP_WORKFLOW_PREFIX,
+    _DaprMCPClientBase,
+    _is_transient_schedule_error,
+)
 from dapr.ext.workflow.workflow_state import WorkflowStatus
 
 logger = logging.getLogger(__name__)
@@ -84,15 +92,27 @@ class DaprMCPClient(_DaprMCPClientBase):
 
         logger.debug('Scheduling %s (instance=%s)', workflow_name, instance_id)
 
-        await self._wf_client.schedule_new_workflow(
-            workflow=workflow_name,
-            input={'mcpServerName': mcpserver_name},
-            instance_id=instance_id,
-        )
+        deadline = time.monotonic() + self._timeout
+        while True:
+            try:
+                await self._wf_client.schedule_new_workflow(
+                    workflow=workflow_name,
+                    input={'mcpServerName': mcpserver_name},
+                    instance_id=instance_id,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001 — classified by helper
+                if not _is_transient_schedule_error(exc) or time.monotonic() >= deadline:
+                    raise
+                logger.debug(
+                    'schedule_new_workflow returned transient error %s; retrying', exc
+                )
+                await asyncio.sleep(_SCHEDULE_RETRY_INTERVAL_SECONDS)
 
+        remaining = max(deadline - time.monotonic(), 1.0)
         state = await self._wf_client.wait_for_workflow_completion(
             instance_id=instance_id,
-            timeout_in_seconds=self._timeout,
+            timeout_in_seconds=int(remaining),
             fetch_payloads=True,
         )
 

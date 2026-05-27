@@ -33,9 +33,12 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
+
+import grpc
 
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.workflow_state import WorkflowStatus
@@ -49,6 +52,33 @@ MCP_WORKFLOW_PREFIX: str = 'dapr.internal.mcp.'
 
 _MCP_METHOD_LIST_TOOLS = '.ListTools'
 _MCP_METHOD_CALL_TOOL = '.CallTool'
+
+# `dapr run` reports the sidecar ready when its HTTP port responds, but
+# MCPServer-derived workflows aren't registered until daprd finishes its
+# loadMCPServers init step. A schedule_new_workflow call inside that window
+# comes back as CANCELLED or UNAVAILABLE. Retry such failures within the
+# caller's timeout budget instead of surfacing them as hard failures.
+_TRANSIENT_GRPC_CODES = frozenset({
+    grpc.StatusCode.CANCELLED,
+    grpc.StatusCode.UNAVAILABLE,
+})
+_SCHEDULE_RETRY_INTERVAL_SECONDS = 0.5
+
+
+def _is_transient_schedule_error(exc: BaseException) -> bool:
+    """True if a schedule_new_workflow failure should be retried.
+
+    Walks ``__cause__`` so we catch both raw ``grpc.RpcError`` and any
+    durabletask-layer wrapping.
+    """
+    if isinstance(exc, grpc.RpcError):
+        code = getattr(exc, 'code', None)
+        if callable(code) and code() in _TRANSIENT_GRPC_CODES:
+            return True
+    cause = getattr(exc, '__cause__', None)
+    if cause is not None and cause is not exc:
+        return _is_transient_schedule_error(cause)
+    return False
 
 
 # TODO(@sicoyle): see if I can use the mcp pkg class instead for this?
@@ -210,15 +240,27 @@ class DaprMCPClient(_DaprMCPClientBase):
 
         logger.debug('Scheduling %s (instance=%s)', workflow_name, instance_id)
 
-        self._wf_client.schedule_new_workflow(
-            workflow=workflow_name,
-            input={'mcpServerName': mcpserver_name},
-            instance_id=instance_id,
-        )
+        deadline = time.monotonic() + self._timeout
+        while True:
+            try:
+                self._wf_client.schedule_new_workflow(
+                    workflow=workflow_name,
+                    input={'mcpServerName': mcpserver_name},
+                    instance_id=instance_id,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001 — classified by helper
+                if not _is_transient_schedule_error(exc) or time.monotonic() >= deadline:
+                    raise
+                logger.debug(
+                    'schedule_new_workflow returned transient error %s; retrying', exc
+                )
+                time.sleep(_SCHEDULE_RETRY_INTERVAL_SECONDS)
 
+        remaining = max(deadline - time.monotonic(), 1.0)
         state = self._wf_client.wait_for_workflow_completion(
             instance_id=instance_id,
-            timeout_in_seconds=self._timeout,
+            timeout_in_seconds=int(remaining),
             fetch_payloads=True,
         )
 
