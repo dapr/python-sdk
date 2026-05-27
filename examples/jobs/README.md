@@ -252,7 +252,7 @@ The callback service must:
 - The Jobs API is **stable** as of Dapr 1.18 (the SDK falls back to the `*_alpha1` RPCs on older sidecars)
 - Jobs are persistent and will survive Dapr sidecar restarts
 - Job names must be unique within the Dapr application
-- Both `schedule` and `due_time` are optional - if neither is provided, the job will trigger immediately
+- At least one of `schedule` or `due_time` must be provided when scheduling a job
 - Requires Dapr runtime v1.14+ for Jobs API support
 
 For more information about the Jobs API, see:

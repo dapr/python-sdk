@@ -598,7 +598,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.jobs[request.job.name] = request.job
         self.job_overwrites[request.job.name] = request.overwrite
 
-        return empty_pb2.Empty()
+        return api_v1.ScheduleJobResponse()
 
     def _get_job(self, request, context):
         self.check_for_exception(context)
@@ -620,7 +620,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         if request.name in self.jobs:
             del self.jobs[request.name]
 
-        return empty_pb2.Empty()
+        return api_v1.DeleteJobResponse()
 
     def ScheduleJob(self, request, context):
         self._reject_if_alpha_only(context)
