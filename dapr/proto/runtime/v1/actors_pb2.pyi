@@ -18,6 +18,7 @@ from collections import abc as _abc
 from dapr.proto.common.v1 import common_pb2 as _common_pb2
 from google.protobuf import any_pb2 as _any_pb2
 from google.protobuf import descriptor as _descriptor
+from google.protobuf import duration_pb2 as _duration_pb2
 from google.protobuf import message as _message
 from google.protobuf.internal import containers as _containers
 import builtins as _builtins
@@ -608,3 +609,585 @@ class UnregisterActorRemindersByTypeResponse(_message.Message):
     ) -> None: ...
 
 Global___UnregisterActorRemindersByTypeResponse: _TypeAlias = UnregisterActorRemindersByTypeResponse  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsRequestAlpha1(_message.Message):
+    """----------------------------------------------------------------------------
+    Actor host streaming protocol (SubscribeActorEventsAlpha1 on the Dapr
+    service). The app is the gRPC client: it dials daprd, opens the stream,
+    sends an initial registration message, and then exchanges callback
+    request/response pairs correlated by id. Apps using this protocol do not
+    need to expose an HTTP or gRPC server port.
+
+    Naming convention: every oneof variant type is prefixed with its parent
+    message name (SubscribeActorEventsRequestAlpha1 /
+    SubscribeActorEventsResponseAlpha1) so the wire types are self-describing
+    and can't collide with unrelated messages.
+    ----------------------------------------------------------------------------
+
+    SubscribeActorEventsRequestAlpha1 is a message flowing from the app to
+    daprd on the actor event stream. The first message must be the initial
+    request (registering the actor host); every subsequent message must be a
+    response correlated by id to a request previously emitted by daprd.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    INITIAL_REQUEST_FIELD_NUMBER: _builtins.int
+    INVOKE_RESPONSE_FIELD_NUMBER: _builtins.int
+    REMINDER_RESPONSE_FIELD_NUMBER: _builtins.int
+    TIMER_RESPONSE_FIELD_NUMBER: _builtins.int
+    DEACTIVATE_RESPONSE_FIELD_NUMBER: _builtins.int
+    REQUEST_FAILED_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def initial_request(self) -> Global___SubscribeActorEventsRequestInitialAlpha1: ...
+    @_builtins.property
+    def invoke_response(self) -> Global___SubscribeActorEventsRequestInvokeResponseAlpha1: ...
+    @_builtins.property
+    def reminder_response(self) -> Global___SubscribeActorEventsRequestReminderResponseAlpha1: ...
+    @_builtins.property
+    def timer_response(self) -> Global___SubscribeActorEventsRequestReminderResponseAlpha1: ...
+    @_builtins.property
+    def deactivate_response(self) -> Global___SubscribeActorEventsRequestDeactivateResponseAlpha1: ...
+    @_builtins.property
+    def request_failed(self) -> Global___SubscribeActorEventsRequestFailedAlpha1:
+        """request_failed is sent in place of a typed response when the app
+        cannot process the request (e.g. the actor method does not exist).
+        The id correlates back to the originating request; the code is a gRPC
+        status code (see google.golang.org/grpc/codes) and lets daprd map
+        codes.NotFound to a permanent, non-retryable failure.
+        """
+
+    def __init__(
+        self,
+        *,
+        initial_request: Global___SubscribeActorEventsRequestInitialAlpha1 | None = ...,
+        invoke_response: Global___SubscribeActorEventsRequestInvokeResponseAlpha1 | None = ...,
+        reminder_response: Global___SubscribeActorEventsRequestReminderResponseAlpha1 | None = ...,
+        timer_response: Global___SubscribeActorEventsRequestReminderResponseAlpha1 | None = ...,
+        deactivate_response: Global___SubscribeActorEventsRequestDeactivateResponseAlpha1 | None = ...,
+        request_failed: Global___SubscribeActorEventsRequestFailedAlpha1 | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["deactivate_response", b"deactivate_response", "initial_request", b"initial_request", "invoke_response", b"invoke_response", "reminder_response", b"reminder_response", "request_failed", b"request_failed", "request_type", b"request_type", "timer_response", b"timer_response"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["deactivate_response", b"deactivate_response", "initial_request", b"initial_request", "invoke_response", b"invoke_response", "reminder_response", b"reminder_response", "request_failed", b"request_failed", "request_type", b"request_type", "timer_response", b"timer_response"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType_request_type: _TypeAlias = _typing.Literal["initial_request", "invoke_response", "reminder_response", "timer_response", "deactivate_response", "request_failed"]  # noqa: Y015
+    _WhichOneofArgType_request_type: _TypeAlias = _typing.Literal["request_type", b"request_type"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType_request_type) -> _WhichOneofReturnType_request_type | None: ...
+
+Global___SubscribeActorEventsRequestAlpha1: _TypeAlias = SubscribeActorEventsRequestAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsRequestInitialAlpha1(_message.Message):
+    """SubscribeActorEventsRequestInitialAlpha1 is the first message the app
+    sends when opening the stream. It advertises the actor types the app
+    hosts and the runtime configuration that applies to them.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ENTITIES_FIELD_NUMBER: _builtins.int
+    ACTOR_IDLE_TIMEOUT_FIELD_NUMBER: _builtins.int
+    DRAIN_ONGOING_CALL_TIMEOUT_FIELD_NUMBER: _builtins.int
+    DRAIN_REBALANCED_ACTORS_FIELD_NUMBER: _builtins.int
+    REENTRANCY_FIELD_NUMBER: _builtins.int
+    ENTITIES_CONFIG_FIELD_NUMBER: _builtins.int
+    drain_rebalanced_actors: _builtins.bool
+    """drain_rebalanced_actors, when true, instructs Dapr to drain invocations
+    from a rebalanced actor rather than aborting them.
+    """
+    @_builtins.property
+    def entities(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """entities is the list of actor types this app hosts."""
+
+    @_builtins.property
+    def actor_idle_timeout(self) -> _duration_pb2.Duration:
+        """actor_idle_timeout is the default idle timeout for all actor types.
+        Unset means use Dapr's default.
+        """
+
+    @_builtins.property
+    def drain_ongoing_call_timeout(self) -> _duration_pb2.Duration:
+        """drain_ongoing_call_timeout is the duration Dapr waits for ongoing
+        invocations to finish when an actor is rebalanced. Unset means use
+        Dapr's default.
+        """
+
+    @_builtins.property
+    def reentrancy(self) -> Global___ActorReentrancyConfig:
+        """reentrancy is the default reentrancy configuration applied to all
+        actor types.
+        """
+
+    @_builtins.property
+    def entities_config(self) -> _containers.RepeatedCompositeFieldContainer[Global___ActorEntityConfig]:
+        """entities_config applies per-actor-type overrides on top of the
+        defaults above.
+        """
+
+    def __init__(
+        self,
+        *,
+        entities: _abc.Iterable[_builtins.str] | None = ...,
+        actor_idle_timeout: _duration_pb2.Duration | None = ...,
+        drain_ongoing_call_timeout: _duration_pb2.Duration | None = ...,
+        drain_rebalanced_actors: _builtins.bool | None = ...,
+        reentrancy: Global___ActorReentrancyConfig | None = ...,
+        entities_config: _abc.Iterable[Global___ActorEntityConfig] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_actor_idle_timeout", b"_actor_idle_timeout", "_drain_ongoing_call_timeout", b"_drain_ongoing_call_timeout", "_drain_rebalanced_actors", b"_drain_rebalanced_actors", "_reentrancy", b"_reentrancy", "actor_idle_timeout", b"actor_idle_timeout", "drain_ongoing_call_timeout", b"drain_ongoing_call_timeout", "drain_rebalanced_actors", b"drain_rebalanced_actors", "reentrancy", b"reentrancy"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_actor_idle_timeout", b"_actor_idle_timeout", "_drain_ongoing_call_timeout", b"_drain_ongoing_call_timeout", "_drain_rebalanced_actors", b"_drain_rebalanced_actors", "_reentrancy", b"_reentrancy", "actor_idle_timeout", b"actor_idle_timeout", "drain_ongoing_call_timeout", b"drain_ongoing_call_timeout", "drain_rebalanced_actors", b"drain_rebalanced_actors", "entities", b"entities", "entities_config", b"entities_config", "reentrancy", b"reentrancy"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__actor_idle_timeout: _TypeAlias = _typing.Literal["actor_idle_timeout"]  # noqa: Y015
+    _WhichOneofArgType__actor_idle_timeout: _TypeAlias = _typing.Literal["_actor_idle_timeout", b"_actor_idle_timeout"]  # noqa: Y015
+    _WhichOneofReturnType__drain_ongoing_call_timeout: _TypeAlias = _typing.Literal["drain_ongoing_call_timeout"]  # noqa: Y015
+    _WhichOneofArgType__drain_ongoing_call_timeout: _TypeAlias = _typing.Literal["_drain_ongoing_call_timeout", b"_drain_ongoing_call_timeout"]  # noqa: Y015
+    _WhichOneofReturnType__drain_rebalanced_actors: _TypeAlias = _typing.Literal["drain_rebalanced_actors"]  # noqa: Y015
+    _WhichOneofArgType__drain_rebalanced_actors: _TypeAlias = _typing.Literal["_drain_rebalanced_actors", b"_drain_rebalanced_actors"]  # noqa: Y015
+    _WhichOneofReturnType__reentrancy: _TypeAlias = _typing.Literal["reentrancy"]  # noqa: Y015
+    _WhichOneofArgType__reentrancy: _TypeAlias = _typing.Literal["_reentrancy", b"_reentrancy"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__actor_idle_timeout) -> _WhichOneofReturnType__actor_idle_timeout | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__drain_ongoing_call_timeout) -> _WhichOneofReturnType__drain_ongoing_call_timeout | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__drain_rebalanced_actors) -> _WhichOneofReturnType__drain_rebalanced_actors | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__reentrancy) -> _WhichOneofReturnType__reentrancy | None: ...
+
+Global___SubscribeActorEventsRequestInitialAlpha1: _TypeAlias = SubscribeActorEventsRequestInitialAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsRequestInvokeResponseAlpha1(_message.Message):
+    """SubscribeActorEventsRequestInvokeResponseAlpha1 is the app's response to
+    a SubscribeActorEventsResponseInvokeRequestAlpha1 (actor method call).
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
+        def __init__(
+            self,
+            *,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
+        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+    ID_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    ERROR_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    data: _builtins.bytes
+    error: _builtins.bool
+    """error, when true, signals that data is an application-defined error
+    payload returned from the actor method. Dapr passes the payload
+    through to the original caller verbatim.
+    """
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
+        """metadata carries response-level headers, including "content-type"."""
+
+    def __init__(
+        self,
+        *,
+        id: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+        error: _builtins.bool = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "error", b"error", "id", b"id", "metadata", b"metadata"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___SubscribeActorEventsRequestInvokeResponseAlpha1: _TypeAlias = SubscribeActorEventsRequestInvokeResponseAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsRequestReminderResponseAlpha1(_message.Message):
+    """SubscribeActorEventsRequestReminderResponseAlpha1 is the app's response
+    to both reminder and timer callbacks. The cancel flag signals that the
+    reminder or timer should not fire again.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ID_FIELD_NUMBER: _builtins.int
+    CANCEL_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    cancel: _builtins.bool
+    def __init__(
+        self,
+        *,
+        id: _builtins.str = ...,
+        cancel: _builtins.bool = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["cancel", b"cancel", "id", b"id"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___SubscribeActorEventsRequestReminderResponseAlpha1: _TypeAlias = SubscribeActorEventsRequestReminderResponseAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsRequestDeactivateResponseAlpha1(_message.Message):
+    """SubscribeActorEventsRequestDeactivateResponseAlpha1 is the app's ack
+    for a SubscribeActorEventsResponseDeactivateRequestAlpha1.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ID_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    def __init__(
+        self,
+        *,
+        id: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___SubscribeActorEventsRequestDeactivateResponseAlpha1: _TypeAlias = SubscribeActorEventsRequestDeactivateResponseAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsRequestFailedAlpha1(_message.Message):
+    """SubscribeActorEventsRequestFailedAlpha1 signals an app-side failure for
+    a previously received request. The id correlates with the originating
+    request, the code is a gRPC status code.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ID_FIELD_NUMBER: _builtins.int
+    CODE_FIELD_NUMBER: _builtins.int
+    MESSAGE_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    code: _builtins.int
+    message: _builtins.str
+    def __init__(
+        self,
+        *,
+        id: _builtins.str = ...,
+        code: _builtins.int = ...,
+        message: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["code", b"code", "id", b"id", "message", b"message"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___SubscribeActorEventsRequestFailedAlpha1: _TypeAlias = SubscribeActorEventsRequestFailedAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsResponseAlpha1(_message.Message):
+    """SubscribeActorEventsResponseAlpha1 is a message flowing from daprd to
+    the app on the actor event stream. The first message is the initial
+    response acknowledging registration; every subsequent message is a
+    callback request with a unique id the app must echo on its response.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    INITIAL_RESPONSE_FIELD_NUMBER: _builtins.int
+    INVOKE_REQUEST_FIELD_NUMBER: _builtins.int
+    REMINDER_REQUEST_FIELD_NUMBER: _builtins.int
+    TIMER_REQUEST_FIELD_NUMBER: _builtins.int
+    DEACTIVATE_REQUEST_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def initial_response(self) -> Global___SubscribeActorEventsResponseInitialAlpha1: ...
+    @_builtins.property
+    def invoke_request(self) -> Global___SubscribeActorEventsResponseInvokeRequestAlpha1: ...
+    @_builtins.property
+    def reminder_request(self) -> Global___SubscribeActorEventsResponseReminderRequestAlpha1: ...
+    @_builtins.property
+    def timer_request(self) -> Global___SubscribeActorEventsResponseTimerRequestAlpha1: ...
+    @_builtins.property
+    def deactivate_request(self) -> Global___SubscribeActorEventsResponseDeactivateRequestAlpha1: ...
+    def __init__(
+        self,
+        *,
+        initial_response: Global___SubscribeActorEventsResponseInitialAlpha1 | None = ...,
+        invoke_request: Global___SubscribeActorEventsResponseInvokeRequestAlpha1 | None = ...,
+        reminder_request: Global___SubscribeActorEventsResponseReminderRequestAlpha1 | None = ...,
+        timer_request: Global___SubscribeActorEventsResponseTimerRequestAlpha1 | None = ...,
+        deactivate_request: Global___SubscribeActorEventsResponseDeactivateRequestAlpha1 | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["deactivate_request", b"deactivate_request", "initial_response", b"initial_response", "invoke_request", b"invoke_request", "reminder_request", b"reminder_request", "response_type", b"response_type", "timer_request", b"timer_request"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["deactivate_request", b"deactivate_request", "initial_response", b"initial_response", "invoke_request", b"invoke_request", "reminder_request", b"reminder_request", "response_type", b"response_type", "timer_request", b"timer_request"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType_response_type: _TypeAlias = _typing.Literal["initial_response", "invoke_request", "reminder_request", "timer_request", "deactivate_request"]  # noqa: Y015
+    _WhichOneofArgType_response_type: _TypeAlias = _typing.Literal["response_type", b"response_type"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType_response_type) -> _WhichOneofReturnType_response_type | None: ...
+
+Global___SubscribeActorEventsResponseAlpha1: _TypeAlias = SubscribeActorEventsResponseAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsResponseInitialAlpha1(_message.Message):
+    """SubscribeActorEventsResponseInitialAlpha1 acks the app's registration
+    message. An empty body indicates success; failures are surfaced as a
+    gRPC error on the stream itself.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+Global___SubscribeActorEventsResponseInitialAlpha1: _TypeAlias = SubscribeActorEventsResponseInitialAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsResponseInvokeRequestAlpha1(_message.Message):
+    """SubscribeActorEventsResponseInvokeRequestAlpha1 is the callback payload
+    daprd sends when an actor method is invoked. The app echoes id on its
+    SubscribeActorEventsRequestInvokeResponseAlpha1.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
+        def __init__(
+            self,
+            *,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
+        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+    ID_FIELD_NUMBER: _builtins.int
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    METHOD_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    method: _builtins.str
+    data: _builtins.bytes
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
+        """metadata carries request-level headers from the original caller,
+        including "content-type" and "Dapr-Reentrancy-Id" when reentrancy is
+        enabled for the actor type.
+        """
+
+    def __init__(
+        self,
+        *,
+        id: _builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        method: _builtins.str = ...,
+        data: _builtins.bytes = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "id", b"id", "metadata", b"metadata", "method", b"method"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___SubscribeActorEventsResponseInvokeRequestAlpha1: _TypeAlias = SubscribeActorEventsResponseInvokeRequestAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
+    """SubscribeActorEventsResponseReminderRequestAlpha1 is the callback
+    payload daprd sends when an actor reminder fires.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ID_FIELD_NUMBER: _builtins.int
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    PERIOD_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    name: _builtins.str
+    due_time: _builtins.str
+    period: _builtins.str
+    @_builtins.property
+    def data(self) -> _any_pb2.Any: ...
+    def __init__(
+        self,
+        *,
+        id: _builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        name: _builtins.str = ...,
+        due_time: _builtins.str = ...,
+        period: _builtins.str = ...,
+        data: _any_pb2.Any | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "id", b"id", "name", b"name", "period", b"period"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___SubscribeActorEventsResponseReminderRequestAlpha1: _TypeAlias = SubscribeActorEventsResponseReminderRequestAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
+    """SubscribeActorEventsResponseTimerRequestAlpha1 is the callback payload
+    daprd sends when an actor timer fires.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ID_FIELD_NUMBER: _builtins.int
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    PERIOD_FIELD_NUMBER: _builtins.int
+    CALLBACK_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    name: _builtins.str
+    due_time: _builtins.str
+    period: _builtins.str
+    callback: _builtins.str
+    @_builtins.property
+    def data(self) -> _any_pb2.Any: ...
+    def __init__(
+        self,
+        *,
+        id: _builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        name: _builtins.str = ...,
+        due_time: _builtins.str = ...,
+        period: _builtins.str = ...,
+        callback: _builtins.str = ...,
+        data: _any_pb2.Any | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "id", b"id", "name", b"name", "period", b"period"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___SubscribeActorEventsResponseTimerRequestAlpha1: _TypeAlias = SubscribeActorEventsResponseTimerRequestAlpha1  # noqa: Y015
+
+@_typing.final
+class SubscribeActorEventsResponseDeactivateRequestAlpha1(_message.Message):
+    """SubscribeActorEventsResponseDeactivateRequestAlpha1 is the callback
+    payload daprd sends when an actor instance is being deactivated.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ID_FIELD_NUMBER: _builtins.int
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    id: _builtins.str
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    def __init__(
+        self,
+        *,
+        id: _builtins.str = ...,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "id", b"id"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___SubscribeActorEventsResponseDeactivateRequestAlpha1: _TypeAlias = SubscribeActorEventsResponseDeactivateRequestAlpha1  # noqa: Y015
+
+@_typing.final
+class ActorEntityConfig(_message.Message):
+    """ActorEntityConfig overrides the default actor runtime configuration for
+    a specific set of entities.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ENTITIES_FIELD_NUMBER: _builtins.int
+    ACTOR_IDLE_TIMEOUT_FIELD_NUMBER: _builtins.int
+    DRAIN_ONGOING_CALL_TIMEOUT_FIELD_NUMBER: _builtins.int
+    DRAIN_REBALANCED_ACTORS_FIELD_NUMBER: _builtins.int
+    REENTRANCY_FIELD_NUMBER: _builtins.int
+    drain_rebalanced_actors: _builtins.bool
+    @_builtins.property
+    def entities(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    @_builtins.property
+    def actor_idle_timeout(self) -> _duration_pb2.Duration: ...
+    @_builtins.property
+    def drain_ongoing_call_timeout(self) -> _duration_pb2.Duration: ...
+    @_builtins.property
+    def reentrancy(self) -> Global___ActorReentrancyConfig: ...
+    def __init__(
+        self,
+        *,
+        entities: _abc.Iterable[_builtins.str] | None = ...,
+        actor_idle_timeout: _duration_pb2.Duration | None = ...,
+        drain_ongoing_call_timeout: _duration_pb2.Duration | None = ...,
+        drain_rebalanced_actors: _builtins.bool | None = ...,
+        reentrancy: Global___ActorReentrancyConfig | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_actor_idle_timeout", b"_actor_idle_timeout", "_drain_ongoing_call_timeout", b"_drain_ongoing_call_timeout", "_drain_rebalanced_actors", b"_drain_rebalanced_actors", "_reentrancy", b"_reentrancy", "actor_idle_timeout", b"actor_idle_timeout", "drain_ongoing_call_timeout", b"drain_ongoing_call_timeout", "drain_rebalanced_actors", b"drain_rebalanced_actors", "reentrancy", b"reentrancy"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_actor_idle_timeout", b"_actor_idle_timeout", "_drain_ongoing_call_timeout", b"_drain_ongoing_call_timeout", "_drain_rebalanced_actors", b"_drain_rebalanced_actors", "_reentrancy", b"_reentrancy", "actor_idle_timeout", b"actor_idle_timeout", "drain_ongoing_call_timeout", b"drain_ongoing_call_timeout", "drain_rebalanced_actors", b"drain_rebalanced_actors", "entities", b"entities", "reentrancy", b"reentrancy"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__actor_idle_timeout: _TypeAlias = _typing.Literal["actor_idle_timeout"]  # noqa: Y015
+    _WhichOneofArgType__actor_idle_timeout: _TypeAlias = _typing.Literal["_actor_idle_timeout", b"_actor_idle_timeout"]  # noqa: Y015
+    _WhichOneofReturnType__drain_ongoing_call_timeout: _TypeAlias = _typing.Literal["drain_ongoing_call_timeout"]  # noqa: Y015
+    _WhichOneofArgType__drain_ongoing_call_timeout: _TypeAlias = _typing.Literal["_drain_ongoing_call_timeout", b"_drain_ongoing_call_timeout"]  # noqa: Y015
+    _WhichOneofReturnType__drain_rebalanced_actors: _TypeAlias = _typing.Literal["drain_rebalanced_actors"]  # noqa: Y015
+    _WhichOneofArgType__drain_rebalanced_actors: _TypeAlias = _typing.Literal["_drain_rebalanced_actors", b"_drain_rebalanced_actors"]  # noqa: Y015
+    _WhichOneofReturnType__reentrancy: _TypeAlias = _typing.Literal["reentrancy"]  # noqa: Y015
+    _WhichOneofArgType__reentrancy: _TypeAlias = _typing.Literal["_reentrancy", b"_reentrancy"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__actor_idle_timeout) -> _WhichOneofReturnType__actor_idle_timeout | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__drain_ongoing_call_timeout) -> _WhichOneofReturnType__drain_ongoing_call_timeout | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__drain_rebalanced_actors) -> _WhichOneofReturnType__drain_rebalanced_actors | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__reentrancy) -> _WhichOneofReturnType__reentrancy | None: ...
+
+Global___ActorEntityConfig: _TypeAlias = ActorEntityConfig  # noqa: Y015
+
+@_typing.final
+class ActorReentrancyConfig(_message.Message):
+    """ActorReentrancyConfig configures actor reentrancy behavior."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ENABLED_FIELD_NUMBER: _builtins.int
+    MAX_STACK_DEPTH_FIELD_NUMBER: _builtins.int
+    enabled: _builtins.bool
+    max_stack_depth: _builtins.int
+    def __init__(
+        self,
+        *,
+        enabled: _builtins.bool = ...,
+        max_stack_depth: _builtins.int | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_max_stack_depth", b"_max_stack_depth", "max_stack_depth", b"max_stack_depth"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_max_stack_depth", b"_max_stack_depth", "enabled", b"enabled", "max_stack_depth", b"max_stack_depth"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__max_stack_depth: _TypeAlias = _typing.Literal["max_stack_depth"]  # noqa: Y015
+    _WhichOneofArgType__max_stack_depth: _TypeAlias = _typing.Literal["_max_stack_depth", b"_max_stack_depth"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__max_stack_depth) -> _WhichOneofReturnType__max_stack_depth | None: ...
+
+Global___ActorReentrancyConfig: _TypeAlias = ActorReentrancyConfig  # noqa: Y015
