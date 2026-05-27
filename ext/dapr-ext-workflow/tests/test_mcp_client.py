@@ -469,6 +469,28 @@ class TestDaprMCPClientConnectRetry(unittest.TestCase):
             with self.assertRaises(grpc.RpcError):
                 mcp_client.connect('weather')
 
+    def test_budget_exhausted_after_schedule_succeeds(self):
+        """If retries burn the budget but schedule eventually succeeds, raise
+        without calling wait_for_workflow_completion (timeout=0 means
+        'wait forever' in the underlying client)."""
+        mock_wf = MagicMock()
+        mock_wf.schedule_new_workflow.side_effect = [
+            _StubRpcError(grpc.StatusCode.CANCELLED),
+            'inst-1',
+        ]
+
+        mcp_client = DaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
+        # monotonic: 0.0 → deadline = 1.0; 0.4 → sleep_for = 0.5 (still in budget);
+        # 2.0 → post-loop remaining = -1.0 → raise.
+        with patch('dapr.ext.workflow.mcp.time.sleep'), patch(
+            'dapr.ext.workflow.mcp.time.monotonic',
+            side_effect=[0.0, 0.4, 2.0],
+        ):
+            with self.assertRaises(RuntimeError) as ctx:
+                mcp_client.connect('weather')
+        self.assertIn('timed out', str(ctx.exception))
+        mock_wf.wait_for_workflow_completion.assert_not_called()
+
 
 class TestAioDaprMCPClientConnectRetry(unittest.IsolatedAsyncioTestCase):
     """Async counterpart of TestDaprMCPClientConnectRetry."""
@@ -503,6 +525,24 @@ class TestAioDaprMCPClientConnectRetry(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(grpc.RpcError):
                 await mcp_client.connect('weather')
+
+    async def test_budget_exhausted_after_schedule_succeeds(self):
+        """Async mirror of the fail-fast-after-schedule-success guard."""
+        mock_wf = AsyncMock()
+        mock_wf.schedule_new_workflow.side_effect = [
+            _StubRpcError(grpc.StatusCode.CANCELLED),
+            'inst-1',
+        ]
+
+        mcp_client = AioDaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
+        with patch('dapr.ext.workflow.aio.mcp.asyncio.sleep', new=AsyncMock()), patch(
+            'dapr.ext.workflow.aio.mcp.time.monotonic',
+            side_effect=[0.0, 0.4, 2.0],
+        ):
+            with self.assertRaises(RuntimeError) as ctx:
+                await mcp_client.connect('weather')
+        self.assertIn('timed out', str(ctx.exception))
+        mock_wf.wait_for_workflow_completion.assert_not_awaited()
 
 
 class TestMCPWorkflowPrefix(unittest.TestCase):

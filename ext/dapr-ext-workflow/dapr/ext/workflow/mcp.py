@@ -245,17 +245,29 @@ class DaprMCPClient(_DaprMCPClientBase):
                 )
                 break
             except Exception as exc:  # noqa: BLE001 — classified by helper
-                if not _is_transient_schedule_error(exc) or time.monotonic() >= deadline:
+                if not _is_transient_schedule_error(exc):
+                    raise
+                sleep_for = min(
+                    _SCHEDULE_RETRY_INTERVAL_SECONDS, deadline - time.monotonic()
+                )
+                if sleep_for <= 0:
                     raise
                 logger.debug(
                     'schedule_new_workflow returned transient error %s; retrying', exc
                 )
-                time.sleep(_SCHEDULE_RETRY_INTERVAL_SECONDS)
+                time.sleep(sleep_for)
 
-        remaining = max(deadline - time.monotonic(), 1.0)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError(
+                f"ListTools workflow for MCPServer '{mcpserver_name}' "
+                f'timed out after {self._timeout}s'
+            )
+        # wait_for_workflow_completion treats timeout=0 as "wait forever",
+        # so floor the gRPC timeout at 1s when sub-second remaining survives.
         state = self._wf_client.wait_for_workflow_completion(
             instance_id=instance_id,
-            timeout_in_seconds=int(remaining),
+            timeout_in_seconds=max(int(remaining), 1),
             fetch_payloads=True,
         )
 
