@@ -19,7 +19,6 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import grpc
-
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.aio.mcp import DaprMCPClient as AioDaprMCPClient
 from dapr.ext.workflow.mcp import MCP_WORKFLOW_PREFIX, DaprMCPClient, MCPToolDef
@@ -440,9 +439,7 @@ class TestDaprMCPClientConnectRetry(unittest.TestCase):
     def test_non_transient_propagates_immediately(self):
         """A non-CANCELLED/UNAVAILABLE error must not be retried."""
         mock_wf = MagicMock()
-        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(
-            grpc.StatusCode.PERMISSION_DENIED
-        )
+        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(grpc.StatusCode.PERMISSION_DENIED)
 
         mcp_client = DaprMCPClient(timeout_in_seconds=30, wf_client=mock_wf)
         with patch('dapr.ext.workflow.mcp.time.sleep') as sleep_mock:
@@ -455,16 +452,17 @@ class TestDaprMCPClientConnectRetry(unittest.TestCase):
     def test_deadline_exhausted_raises_last_error(self):
         """When the timeout budget runs out mid-retry, propagate the last error."""
         mock_wf = MagicMock()
-        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(
-            grpc.StatusCode.CANCELLED
-        )
+        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(grpc.StatusCode.CANCELLED)
 
         mcp_client = DaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
         # Patch monotonic to advance past the deadline immediately so we don't
         # actually sleep for a second in tests.
-        with patch('dapr.ext.workflow.mcp.time.sleep'), patch(
-            'dapr.ext.workflow.mcp.time.monotonic',
-            side_effect=[0.0, 2.0],
+        with (
+            patch('dapr.ext.workflow.mcp.time.sleep'),
+            patch(
+                'dapr.ext.workflow.mcp.time.monotonic',
+                side_effect=[0.0, 2.0],
+            ),
         ):
             with self.assertRaises(grpc.RpcError):
                 mcp_client.connect('weather')
@@ -482,9 +480,12 @@ class TestDaprMCPClientConnectRetry(unittest.TestCase):
         mcp_client = DaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
         # monotonic: 0.0 → deadline = 1.0; 0.4 → sleep_for = 0.5 (still in budget);
         # 2.0 → post-loop remaining = -1.0 → raise.
-        with patch('dapr.ext.workflow.mcp.time.sleep'), patch(
-            'dapr.ext.workflow.mcp.time.monotonic',
-            side_effect=[0.0, 0.4, 2.0],
+        with (
+            patch('dapr.ext.workflow.mcp.time.sleep'),
+            patch(
+                'dapr.ext.workflow.mcp.time.monotonic',
+                side_effect=[0.0, 0.4, 2.0],
+            ),
         ):
             with self.assertRaises(RuntimeError) as ctx:
                 mcp_client.connect('weather')
@@ -514,14 +515,15 @@ class TestAioDaprMCPClientConnectRetry(unittest.IsolatedAsyncioTestCase):
 
     async def test_deadline_exhausted_raises(self):
         mock_wf = AsyncMock()
-        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(
-            grpc.StatusCode.CANCELLED
-        )
+        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(grpc.StatusCode.CANCELLED)
 
         mcp_client = AioDaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
-        with patch('dapr.ext.workflow.aio.mcp.asyncio.sleep', new=AsyncMock()), patch(
-            'dapr.ext.workflow.aio.mcp.time.monotonic',
-            side_effect=[0.0, 2.0],
+        with (
+            patch('dapr.ext.workflow.aio.mcp.asyncio.sleep', new=AsyncMock()),
+            patch(
+                'dapr.ext.workflow.aio.mcp.time.monotonic',
+                side_effect=[0.0, 2.0],
+            ),
         ):
             with self.assertRaises(grpc.RpcError):
                 await mcp_client.connect('weather')
@@ -535,9 +537,12 @@ class TestAioDaprMCPClientConnectRetry(unittest.IsolatedAsyncioTestCase):
         ]
 
         mcp_client = AioDaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
-        with patch('dapr.ext.workflow.aio.mcp.asyncio.sleep', new=AsyncMock()), patch(
-            'dapr.ext.workflow.aio.mcp.time.monotonic',
-            side_effect=[0.0, 0.4, 2.0],
+        with (
+            patch('dapr.ext.workflow.aio.mcp.asyncio.sleep', new=AsyncMock()),
+            patch(
+                'dapr.ext.workflow.aio.mcp.time.monotonic',
+                side_effect=[0.0, 0.4, 2.0],
+            ),
         ):
             with self.assertRaises(RuntimeError) as ctx:
                 await mcp_client.connect('weather')

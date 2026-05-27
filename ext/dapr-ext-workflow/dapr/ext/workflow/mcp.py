@@ -39,7 +39,6 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
 import grpc
-
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.workflow_state import WorkflowStatus
 
@@ -53,10 +52,12 @@ MCP_WORKFLOW_PREFIX: str = 'dapr.internal.mcp.'
 _MCP_METHOD_LIST_TOOLS = '.ListTools'
 _MCP_METHOD_CALL_TOOL = '.CallTool'
 
-_TRANSIENT_GRPC_CODES = frozenset({
-    grpc.StatusCode.CANCELLED,
-    grpc.StatusCode.UNAVAILABLE,
-})
+_TRANSIENT_GRPC_CODES = frozenset(
+    {
+        grpc.StatusCode.CANCELLED,
+        grpc.StatusCode.UNAVAILABLE,
+    }
+)
 _SCHEDULE_RETRY_INTERVAL_SECONDS = 0.5
 
 
@@ -247,14 +248,10 @@ class DaprMCPClient(_DaprMCPClientBase):
             except Exception as exc:  # noqa: BLE001 — classified by helper
                 if not _is_transient_schedule_error(exc):
                     raise
-                sleep_for = min(
-                    _SCHEDULE_RETRY_INTERVAL_SECONDS, deadline - time.monotonic()
-                )
+                sleep_for = min(_SCHEDULE_RETRY_INTERVAL_SECONDS, deadline - time.monotonic())
                 if sleep_for <= 0:
                     raise
-                logger.debug(
-                    'schedule_new_workflow returned transient error %s; retrying', exc
-                )
+                logger.debug('schedule_new_workflow returned transient error %s; retrying', exc)
                 time.sleep(sleep_for)
 
         remaining = deadline - time.monotonic()
