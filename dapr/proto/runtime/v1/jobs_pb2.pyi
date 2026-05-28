@@ -288,6 +288,44 @@ class DeleteJobsByPrefixResponseAlpha1(_message.Message):
 Global___DeleteJobsByPrefixResponseAlpha1: _TypeAlias = DeleteJobsByPrefixResponseAlpha1  # noqa: Y015
 
 @_typing.final
+class DeleteJobsByPrefixRequest(_message.Message):
+    """DeleteJobsByPrefixRequest is the stable message to delete jobs by name prefix."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    NAME_PREFIX_FIELD_NUMBER: _builtins.int
+    name_prefix: _builtins.str
+    """name_prefix is the prefix of the job names to delete. If not provided, all
+    jobs associated with this app ID will be deleted.
+    """
+    def __init__(
+        self,
+        *,
+        name_prefix: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_name_prefix", b"_name_prefix", "name_prefix", b"name_prefix"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_name_prefix", b"_name_prefix", "name_prefix", b"name_prefix"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__name_prefix: _TypeAlias = _typing.Literal["name_prefix"]  # noqa: Y015
+    _WhichOneofArgType__name_prefix: _TypeAlias = _typing.Literal["_name_prefix", b"_name_prefix"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__name_prefix) -> _WhichOneofReturnType__name_prefix | None: ...
+
+Global___DeleteJobsByPrefixRequest: _TypeAlias = DeleteJobsByPrefixRequest  # noqa: Y015
+
+@_typing.final
+class DeleteJobsByPrefixResponse(_message.Message):
+    """Empty"""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+Global___DeleteJobsByPrefixResponse: _TypeAlias = DeleteJobsByPrefixResponse  # noqa: Y015
+
+@_typing.final
 class ListJobsRequestAlpha1(_message.Message):
     """Empty"""
 
@@ -319,3 +357,36 @@ class ListJobsResponseAlpha1(_message.Message):
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___ListJobsResponseAlpha1: _TypeAlias = ListJobsResponseAlpha1  # noqa: Y015
+
+@_typing.final
+class ListJobsRequest(_message.Message):
+    """Empty"""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+Global___ListJobsRequest: _TypeAlias = ListJobsRequest  # noqa: Y015
+
+@_typing.final
+class ListJobsResponse(_message.Message):
+    """ListJobsResponse is the stable message response containing the list of jobs."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    JOBS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def jobs(self) -> _containers.RepeatedCompositeFieldContainer[Global___Job]:
+        """The list of jobs."""
+
+    def __init__(
+        self,
+        *,
+        jobs: _abc.Iterable[Global___Job] | None = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["jobs", b"jobs"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___ListJobsResponse: _TypeAlias = ListJobsResponse  # noqa: Y015

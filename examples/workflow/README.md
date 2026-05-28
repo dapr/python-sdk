@@ -548,8 +548,8 @@ It shows:
   forwards the caller's events only.
 - `propagation=PropagationScope.LINEAGE` on an activity call — forwards the
   caller's events *plus* anything the caller itself received from its parent.
-- `PropagatedHistory.get_workflow_by_name(...)` and `WorkflowResult.get_activity_by_name(...)`
-  on the receiving side.
+- `PropagatedHistory.get_last_workflow_by_name(...)` and
+  `WorkflowResult.get_last_activity_by_name(...)` on the receiving side.
 
 > **Requires** a Dapr sidecar with workflow history propagation support
 > (durabletask-go PR #85 / runtime 1.18+ ). With an older sidecar the
