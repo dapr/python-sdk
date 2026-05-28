@@ -84,7 +84,7 @@ Each test file defines its own module-scoped fixture (`client` or `sidecar`) tha
 | `test_metadata.py` | Metadata | `get_metadata`, `set_metadata` |
 | `test_distributed_lock.py` | Distributed lock | `try_lock`, `unlock`, context manager |
 | `test_configuration.py` | Configuration | `get_configuration`, `subscribe_configuration`, `unsubscribe_configuration` |
-| `test_jobs.py` | Jobs scheduler | `schedule_job_alpha1`, `get_job_alpha1`, `delete_job_alpha1` |
+| `test_jobs.py` | Jobs scheduler | `schedule_job`, `get_job`, `delete_job` |
 | `test_invoke_binding.py` | Output bindings | `invoke_binding` (create/get/delete against `bindings.localstorage`) |
 | `test_crypto.py` | Cryptography | `encrypt`, `decrypt` (RSA + AES round-trips against `crypto.dapr.localstorage`) |
 | `test_conversation.py` | Conversation | `converse_alpha1`, `converse_alpha2` against `conversation.echo` |
@@ -105,7 +105,7 @@ Async counterparts exercise `dapr.aio.clients.DaprClient` (the gRPC async client
 | `test_configuration_async.py` | `get_configuration` |
 | `test_distributed_lock_async.py` | `try_lock`, `unlock` |
 | `test_metadata_async.py` | `get_metadata`, `set_metadata` |
-| `test_jobs_async.py` | `schedule_job_alpha1`, `get_job_alpha1`, `delete_job_alpha1` |
+| `test_jobs_async.py` | `schedule_job`, `get_job`, `delete_job` |
 | `test_crypto_async.py` | `encrypt`, `decrypt` |
 | `test_conversation_async.py` | `converse_alpha1`, `converse_alpha2` |
 
