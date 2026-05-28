@@ -28,6 +28,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.metadata: Dict[str, str] = {}
         self.jobs: Dict[str, api_v1.Job] = {}
         self.job_overwrites: Dict[str, bool] = {}
+        # When True the stable Job RPCs return UNIMPLEMENTED so the client must
+        # fall back to the *Alpha1 RPCs (emulates a pre-1.18 sidecar).
+        self.jobs_alpha_only = False
         self._next_exception = None
         # When set, the next BulkPublishEvent call returns this many entries as failed.
         self._bulk_publish_fail_next: Optional[Tuple[int, str]] = None
@@ -578,48 +581,67 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             outputs=outputs,
         )
 
-    def ScheduleJobAlpha1(self, request, context):
+    def _reject_if_alpha_only(self, context):
+        """Aborts with UNIMPLEMENTED when emulating a pre-1.18 sidecar."""
+        if self.jobs_alpha_only:
+            context.abort(grpc.StatusCode.UNIMPLEMENTED, 'stable Jobs API not implemented')
+
+    def _schedule_job(self, request, context):
         self.check_for_exception(context)
 
-        # Validate job name
         if not request.job.name:
             raise ValueError('Job name is required')
 
-        # Validate job name
         if not request.job.schedule and not request.job.due_time:
             raise ValueError('Schedule is empty')
 
-        # Store the job
         self.jobs[request.job.name] = request.job
         self.job_overwrites[request.job.name] = request.overwrite
 
-        return empty_pb2.Empty()
+        return api_v1.ScheduleJobResponse()
 
-    def GetJobAlpha1(self, request, context):
+    def _get_job(self, request, context):
         self.check_for_exception(context)
 
-        # Validate job name
         if not request.name:
             raise ValueError('Job name is required')
 
-        # Check if job exists
         if request.name not in self.jobs:
             raise Exception(f'Job "{request.name}" not found')
 
         return api_v1.GetJobResponse(job=self.jobs[request.name])
 
-    def DeleteJobAlpha1(self, request, context):
+    def _delete_job(self, request, context):
         self.check_for_exception(context)
 
-        # Validate job name
         if not request.name:
             raise ValueError('Job name is required')
 
-        # Check if job exists (optional - some implementations might not error)
         if request.name in self.jobs:
             del self.jobs[request.name]
 
-        return empty_pb2.Empty()
+        return api_v1.DeleteJobResponse()
+
+    def ScheduleJob(self, request, context):
+        self._reject_if_alpha_only(context)
+        return self._schedule_job(request, context)
+
+    def GetJob(self, request, context):
+        self._reject_if_alpha_only(context)
+        return self._get_job(request, context)
+
+    def DeleteJob(self, request, context):
+        self._reject_if_alpha_only(context)
+        return self._delete_job(request, context)
+
+    def ScheduleJobAlpha1(self, request, context):
+        return self._schedule_job(request, context)
+
+    def GetJobAlpha1(self, request, context):
+        return self._get_job(request, context)
+
+    def DeleteJobAlpha1(self, request, context):
+        return self._delete_job(request, context)
 
     def SetMetadata(self, request: api_v1.SetMetadataRequest, context):
         self.metadata[request.key] = request.value
