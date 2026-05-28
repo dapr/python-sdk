@@ -1545,16 +1545,16 @@ class DaprGrpcClientTests(unittest.TestCase):
             self.assertEqual(choice.finish_reason, 'tool_calls')
 
     #
-    # Tests for Jobs API (Alpha)
+    # Tests for Jobs API
     #
 
-    def test_schedule_job_alpha1_success(self):
+    def test_schedule_job_success(self):
         """Test successful job scheduling."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         job = Job(name='test-job', schedule='@every 1m')
 
         # Schedule the job
-        response = dapr.schedule_job_alpha1(job)
+        response = dapr.schedule_job(job)
 
         # Verify response type
         self.assertIsInstance(response, DaprResponse)
@@ -1569,13 +1569,13 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Verify data field is always set (even if empty)
         self.assertTrue(stored_job.HasField('data'))
 
-    def test_schedule_job_alpha1_success_with_overwrite(self):
+    def test_schedule_job_success_with_overwrite(self):
         """Test successful job scheduling."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         job = Job(name='test-job', schedule='@every 1m')
 
         # Schedule the job
-        response = dapr.schedule_job_alpha1(job=job, overwrite=True)
+        response = dapr.schedule_job(job=job, overwrite=True)
 
         # Verify response type
         self.assertIsInstance(response, DaprResponse)
@@ -1590,7 +1590,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Verify data field is always set (even if empty)
         self.assertTrue(stored_job.HasField('data'))
 
-    def test_schedule_job_alpha1_success_with_data(self):
+    def test_schedule_job_success_with_data(self):
         """Test successful job scheduling with data payload."""
         from google.protobuf.any_pb2 import Any as GrpcAny
 
@@ -1603,7 +1603,7 @@ class DaprGrpcClientTests(unittest.TestCase):
         job = Job(name='test-job-with-data', schedule='@every 2m', data=data, repeats=3, ttl='10m')
 
         # Schedule the job
-        response = dapr.schedule_job_alpha1(job)
+        response = dapr.schedule_job(job)
 
         # Verify response type
         self.assertIsInstance(response, DaprResponse)
@@ -1623,30 +1623,30 @@ class DaprGrpcClientTests(unittest.TestCase):
             stored_job.data.value, b'{"message": "Hello from job!", "priority": "high"}'
         )
 
-    def test_schedule_job_alpha1_validation_error(self):
+    def test_schedule_job_validation_error(self):
         """Test validation error in job scheduling."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
         # Test empty job name - this should be caught by client validation
         with self.assertRaises(ValueError):
             job = Job(name='', schedule='@every 1m')
-            dapr.schedule_job_alpha1(job)
+            dapr.schedule_job(job)
 
         # Test missing schedule and due_time - this should be caught by client validation
         with self.assertRaises(ValueError):
             job = Job(name='test-job')
-            dapr.schedule_job_alpha1(job)
+            dapr.schedule_job(job)
 
-    def test_get_job_alpha1_success(self):
+    def test_get_job_success(self):
         """Test successful job retrieval."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
         # First schedule a job
         original_job = Job(name='test-job', schedule='@every 1m', repeats=5, ttl='1h')
-        dapr.schedule_job_alpha1(original_job)
+        dapr.schedule_job(original_job)
 
         # Now retrieve it
-        retrieved_job = dapr.get_job_alpha1('test-job')
+        retrieved_job = dapr.get_job('test-job')
 
         # Verify response
         self.assertIsInstance(retrieved_job, Job)
@@ -1655,33 +1655,33 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(retrieved_job.repeats, 5)
         self.assertEqual(retrieved_job.ttl, '1h')
 
-    def test_get_job_alpha1_validation_error(self):
+    def test_get_job_validation_error(self):
         """Test validation error in job retrieval."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
         with self.assertRaises(ValueError):
-            dapr.get_job_alpha1('')
+            dapr.get_job('')
 
-    def test_get_job_alpha1_not_found(self):
+    def test_get_job_not_found(self):
         """Test getting a job that doesn't exist."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
         with self.assertRaises(DaprGrpcError):
-            dapr.get_job_alpha1('non-existent-job')
+            dapr.get_job('non-existent-job')
 
-    def test_delete_job_alpha1_success(self):
+    def test_delete_job_success(self):
         """Test successful job deletion."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
         # First schedule a job
         job = Job(name='test-job', schedule='@every 1m')
-        dapr.schedule_job_alpha1(job)
+        dapr.schedule_job(job)
 
         # Verify job exists
         self.assertIn('test-job', self._fake_dapr_server.jobs)
 
         # Delete the job
-        response = dapr.delete_job_alpha1('test-job')
+        response = dapr.delete_job('test-job')
 
         # Verify response
         self.assertIsInstance(response, DaprResponse)
@@ -1689,12 +1689,12 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Verify job was removed from fake server
         self.assertNotIn('test-job', self._fake_dapr_server.jobs)
 
-    def test_delete_job_alpha1_validation_error(self):
+    def test_delete_job_validation_error(self):
         """Test validation error in job deletion."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
 
         with self.assertRaises(ValueError):
-            dapr.delete_job_alpha1('')
+            dapr.delete_job('')
 
     def test_jobs_error_handling(self):
         """Test error handling for Jobs API using fake server's exception mechanism."""
@@ -1709,7 +1709,41 @@ class DaprGrpcClientTests(unittest.TestCase):
         # Try to schedule a job - should raise DaprGrpcError
         job = Job(name='error-test', schedule='@every 1m')
         with self.assertRaises(DaprGrpcError):
+            dapr.schedule_job(job)
+
+    def test_jobs_fall_back_to_alpha_when_stable_unimplemented(self):
+        """If the sidecar lacks the stable Job RPCs, the client retries Alpha1."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        self._fake_dapr_server.jobs_alpha_only = True
+
+        try:
+            dapr.schedule_job(Job(name='fallback-job', schedule='@every 1m'))
+            self.assertIn('fallback-job', self._fake_dapr_server.jobs)
+
+            retrieved = dapr.get_job('fallback-job')
+            self.assertEqual(retrieved.name, 'fallback-job')
+
+            dapr.delete_job('fallback-job')
+            self.assertNotIn('fallback-job', self._fake_dapr_server.jobs)
+        finally:
+            self._fake_dapr_server.jobs_alpha_only = False
+
+    def test_job_alpha1_methods_are_deprecated_aliases(self):
+        """The *_alpha1 methods still work but emit a DeprecationWarning."""
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        job = Job(name='alpha-alias-job', schedule='@every 1m')
+
+        with self.assertWarns(DeprecationWarning):
             dapr.schedule_job_alpha1(job)
+        self.assertIn('alpha-alias-job', self._fake_dapr_server.jobs)
+
+        with self.assertWarns(DeprecationWarning):
+            retrieved = dapr.get_job_alpha1('alpha-alias-job')
+        self.assertEqual(retrieved.name, 'alpha-alias-job')
+
+        with self.assertWarns(DeprecationWarning):
+            dapr.delete_job_alpha1('alpha-alias-job')
+        self.assertNotIn('alpha-alias-job', self._fake_dapr_server.jobs)
 
     def _capture_grpc_channel_options(self, **client_kwargs) -> dict[str, object]:
         with (
