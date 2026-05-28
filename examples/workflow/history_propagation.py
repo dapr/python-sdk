@@ -53,7 +53,7 @@ def log_summary(ctx: wf.WorkflowActivityContext, _: None) -> str:
 
     parent = workflows[-1]
     try:
-        validate = parent.get_activity_by_name('validate_merchant')
+        validate = parent.get_last_activity_by_name('validate_merchant')
     except wf.PropagationNotFoundError:
         print('*** log_summary: parent did not run validate_merchant', flush=True)
         return 'parent-missing-validate'
@@ -81,7 +81,7 @@ def process_payment(ctx: wf.DaprWorkflowContext, _: None):
 
     parent = workflows[-1]
     try:
-        validate = parent.get_activity_by_name('validate_merchant')
+        validate = parent.get_last_activity_by_name('validate_merchant')
     except wf.PropagationNotFoundError:
         print('*** process_payment: parent did not run validate_merchant', flush=True)
         return 'parent-missing-validate'
