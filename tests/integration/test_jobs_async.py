@@ -42,15 +42,15 @@ async def test_schedule_then_get_returns_job(sidecar):
     due = _future(days=365)
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
-        await d.schedule_job_alpha1(Job(name=name, due_time=due))
+        await d.schedule_job(Job(name=name, due_time=due))
         try:
-            retrieved = await d.get_job_alpha1(name=name)
+            retrieved = await d.get_job(name=name)
             assert retrieved.name == name
             assert retrieved.due_time == due
         except Exception as exc:
-            raise AssertionError(f'get_job_alpha1 did not return scheduled job {name}') from exc
+            raise AssertionError(f'get_job did not return scheduled job {name}') from exc
         finally:
-            await d.delete_job_alpha1(name=name)
+            await d.delete_job(name=name)
 
 
 async def test_delete_removes_job(sidecar):
@@ -58,8 +58,8 @@ async def test_delete_removes_job(sidecar):
     due = _future(days=365)
 
     async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
-        await d.schedule_job_alpha1(Job(name=name, due_time=due))
-        await d.delete_job_alpha1(name=name)
+        await d.schedule_job(Job(name=name, due_time=due))
+        await d.delete_job(name=name)
 
         with pytest.raises(DaprGrpcError):
-            await d.get_job_alpha1(name=name)
+            await d.get_job(name=name)
