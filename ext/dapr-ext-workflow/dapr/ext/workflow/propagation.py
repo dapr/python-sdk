@@ -34,6 +34,13 @@ class PropagationScope(Enum):
 
     Values map 1:1 to the protobuf ``HistoryPropagationScope`` enum; the
     plumbing layer reads ``.value`` when writing to proto fields.
+
+    * ``OWN_HISTORY`` — propagate the caller's events only; drop any ancestor
+      chain. Use as a trust boundary, where downstream code should only see
+      the immediate caller.
+    * ``LINEAGE`` — propagate the caller's events plus any ancestor events it
+      received. Use for chain-of-custody verification, where downstream code
+      needs visibility into the full lineage of upstream workflows.
     """
 
     NONE = int(pb.HISTORY_PROPAGATION_SCOPE_NONE)
@@ -144,7 +151,7 @@ def _resolve_child_workflow(
 class WorkflowResult:
     """A scoped view of a single workflow's chunk in propagated history.
 
-    Use :meth:`get_activity_by_name` / :meth:`get_child_workflow_by_name`
+    Use :meth:`get_last_activity_by_name` / :meth:`get_last_child_workflow_by_name`
     to query specific items inside this chunk. Methods return the most-recent
     occurrence by execution order.
     """
@@ -158,7 +165,7 @@ class WorkflowResult:
         """Return every activity in this chunk whose scheduled name matches, in
         execution order. Empty list if none.
 
-        See also: :meth:`get_activity_by_name` for the most recent match only.
+        See also: :meth:`get_last_activity_by_name` for the most recent match only.
         """
         return [
             _resolve_activity(self._events, e)
@@ -166,7 +173,7 @@ class WorkflowResult:
             if e.HasField('taskScheduled') and e.taskScheduled.name == name
         ]
 
-    def get_activity_by_name(self, name: str) -> ActivityResult:
+    def get_last_activity_by_name(self, name: str) -> ActivityResult:
         """Return the most recent activity in this chunk whose name matches.
 
         Raises :class:`PropagationNotFoundError` if no activity scheduled with
@@ -186,7 +193,7 @@ class WorkflowResult:
         """Return every child workflow in this chunk whose name matches, in
         execution order.
 
-        See also: :meth:`get_child_workflow_by_name` for the most recent match.
+        See also: :meth:`get_last_child_workflow_by_name` for the most recent match.
         """
         return [
             _resolve_child_workflow(self._events, e.eventId, name)
@@ -195,7 +202,7 @@ class WorkflowResult:
             and e.childWorkflowInstanceCreated.name == name
         ]
 
-    def get_child_workflow_by_name(self, name: str) -> ChildWorkflowResult:
+    def get_last_child_workflow_by_name(self, name: str) -> ChildWorkflowResult:
         """Return the most recent child workflow in this chunk whose name matches.
 
         Raises :class:`PropagationNotFoundError` if no match is found.
@@ -301,12 +308,12 @@ class PropagatedHistory:
         """All workflows whose name matches, in execution order. Useful when
         the chain contains the same name more than once (recursion / ContinueAsNew).
 
-        See also: :meth:`get_workflow_by_name` for a single-result helper that
+        See also: :meth:`get_last_workflow_by_name` for a single-result helper that
         returns only the most recent match.
         """
         return [self._make_workflow_result(c) for c in self._chunks if c.workflow_name == name]
 
-    def get_workflow_by_name(self, name: str) -> WorkflowResult:
+    def get_last_workflow_by_name(self, name: str) -> WorkflowResult:
         """Most recent workflow in the chain whose name matches.
 
         Raises :class:`PropagationNotFoundError` if no match is found.
