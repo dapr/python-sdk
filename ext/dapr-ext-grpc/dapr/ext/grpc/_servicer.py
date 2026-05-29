@@ -247,7 +247,7 @@ class _CallbackServicer(
         # TODO: support output bindings options
         return appcallback_v1.BindingEventResponse()
 
-    def OnJobEventAlpha1(self, request: JobEventRequest, context):
+    def _handle_job_event(self, request: JobEventRequest, context):
         """Handles job events from Dapr runtime.
 
         This method is called by Dapr when a scheduled job is triggered.
@@ -279,6 +279,14 @@ class _CallbackServicer(
 
         # Return empty response
         return appcallback_v1.JobEventResponse()
+
+    def OnJobEvent(self, request: JobEventRequest, context):
+        """Handles job events on the stable AppCallback service."""
+        return self._handle_job_event(request, context)
+
+    def OnJobEventAlpha1(self, request: JobEventRequest, context):
+        """Handles job events on the deprecated AppCallbackAlpha service."""
+        return self._handle_job_event(request, context)
 
     def _handle_bulk_topic_event(
         self, request: TopicEventBulkRequest, context

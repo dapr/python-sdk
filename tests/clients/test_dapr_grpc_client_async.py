@@ -1530,16 +1530,16 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         await dapr.close()
 
     #
-    # Tests for Jobs API (Alpha) - Async
+    # Tests for Jobs API - Async
     #
 
-    async def test_schedule_job_alpha1_success(self):
+    async def test_schedule_job_success(self):
         """Test successful async job scheduling."""
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
         job = Job(name='async-test-job', schedule='@every 1m')
 
         # Schedule the job
-        response = await dapr.schedule_job_alpha1(job)
+        response = await dapr.schedule_job(job)
 
         # Verify response type
         self.assertIsInstance(response, DaprResponse)
@@ -1556,13 +1556,13 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         await dapr.close()
 
-    async def test_schedule_job_alpha1_success_with_overwrite(self):
+    async def test_schedule_job_success_with_overwrite(self):
         """Test successful async job scheduling."""
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
         job = Job(name='async-test-job', schedule='@every 1m')
 
         # Schedule the job with overwrite
-        response = await dapr.schedule_job_alpha1(job=job, overwrite=True)
+        response = await dapr.schedule_job(job=job, overwrite=True)
 
         # Verify response type
         self.assertIsInstance(response, DaprResponse)
@@ -1579,7 +1579,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         await dapr.close()
 
-    async def test_schedule_job_alpha1_success_with_data(self):
+    async def test_schedule_job_success_with_data(self):
         """Test successful async job scheduling with data payload."""
         from google.protobuf.any_pb2 import Any as GrpcAny
 
@@ -1594,7 +1594,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         )
 
         # Schedule the job
-        response = await dapr.schedule_job_alpha1(job)
+        response = await dapr.schedule_job(job)
 
         # Verify response type
         self.assertIsInstance(response, DaprResponse)
@@ -1617,19 +1617,19 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         await dapr.close()
 
-    async def test_schedule_job_alpha1_validation_error(self):
+    async def test_schedule_job_validation_error(self):
         """Test async validation error in job scheduling."""
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
         # Test empty job name - this should be caught by client validation
         with self.assertRaises(ValueError):
             job = Job(name='', schedule='@every 1m')
-            await dapr.schedule_job_alpha1(job)
+            await dapr.schedule_job(job)
 
         # Test missing schedule and due_time - this should be caught by client validation
         with self.assertRaises(ValueError):
             job = Job(name='async-test-job')
-            await dapr.schedule_job_alpha1(job)
+            await dapr.schedule_job(job)
 
         await dapr.close()
 
@@ -1646,20 +1646,20 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         # Try to schedule a job - should raise DaprGrpcError
         job = Job(name='async-error-test', schedule='@every 1m')
         with self.assertRaises(DaprGrpcError):
-            await dapr.schedule_job_alpha1(job)
+            await dapr.schedule_job(job)
 
         await dapr.close()
 
-    async def test_get_job_alpha1_success(self):
+    async def test_get_job_success(self):
         """Test successful async job retrieval."""
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
         # First schedule a job
         original_job = Job(name='async-get-test-job', schedule='@every 1m', repeats=5, ttl='1h')
-        await dapr.schedule_job_alpha1(original_job)
+        await dapr.schedule_job(original_job)
 
         # Now retrieve it
-        retrieved_job = await dapr.get_job_alpha1('async-get-test-job')
+        retrieved_job = await dapr.get_job('async-get-test-job')
 
         # Verify response
         self.assertIsInstance(retrieved_job, Job)
@@ -1670,16 +1670,16 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         await dapr.close()
 
-    async def test_get_job_alpha1_validation_error(self):
+    async def test_get_job_validation_error(self):
         """Test async validation error in job retrieval."""
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
         with self.assertRaises(ValueError):
-            await dapr.get_job_alpha1('')
+            await dapr.get_job('')
 
         await dapr.close()
 
-    async def test_get_job_alpha1_not_found(self):
+    async def test_get_job_not_found(self):
         """Test async getting a job that doesn't exist."""
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
@@ -1689,23 +1689,23 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         )
 
         with self.assertRaises(DaprGrpcError):
-            await dapr.get_job_alpha1('async-non-existent-job')
+            await dapr.get_job('async-non-existent-job')
 
         await dapr.close()
 
-    async def test_delete_job_alpha1_success(self):
+    async def test_delete_job_success(self):
         """Test successful async job deletion."""
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
         # First schedule a job
         job = Job(name='async-delete-test-job', schedule='@every 1m')
-        await dapr.schedule_job_alpha1(job)
+        await dapr.schedule_job(job)
 
         # Verify job exists
         self.assertIn('async-delete-test-job', self._fake_dapr_server.jobs)
 
         # Delete the job
-        response = await dapr.delete_job_alpha1('async-delete-test-job')
+        response = await dapr.delete_job('async-delete-test-job')
 
         # Verify response
         self.assertIsInstance(response, DaprResponse)
@@ -1715,12 +1715,12 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         await dapr.close()
 
-    async def test_delete_job_alpha1_validation_error(self):
+    async def test_delete_job_validation_error(self):
         """Test async validation error in job deletion."""
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
         with self.assertRaises(ValueError):
-            await dapr.delete_job_alpha1('')
+            await dapr.delete_job('')
 
         await dapr.close()
 
@@ -1743,11 +1743,11 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         )
 
         # 1. Schedule the job
-        schedule_response = await dapr.schedule_job_alpha1(job=job, overwrite=True)
+        schedule_response = await dapr.schedule_job(job=job, overwrite=True)
         self.assertIsInstance(schedule_response, DaprResponse)
 
         # 2. Get the job and verify all fields
-        retrieved_job = await dapr.get_job_alpha1('async-lifecycle-job')
+        retrieved_job = await dapr.get_job('async-lifecycle-job')
         self.assertEqual(retrieved_job.name, 'async-lifecycle-job')
         self.assertEqual(retrieved_job.schedule, '@every 5m')
         self.assertEqual(retrieved_job.repeats, 10)
@@ -1755,11 +1755,48 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(retrieved_job.data.value, b'{"lifecycle": "test"}')
 
         # 3. Delete the job
-        delete_response = await dapr.delete_job_alpha1('async-lifecycle-job')
+        delete_response = await dapr.delete_job('async-lifecycle-job')
         self.assertIsInstance(delete_response, DaprResponse)
 
         # 4. Verify job is gone
         self.assertNotIn('async-lifecycle-job', self._fake_dapr_server.jobs)
+
+        await dapr.close()
+
+    async def test_jobs_fall_back_to_alpha_when_stable_unimplemented(self):
+        """If the sidecar lacks the stable Job RPCs, the client retries Alpha1."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        self._fake_dapr_server.jobs_alpha_only = True
+
+        try:
+            await dapr.schedule_job(Job(name='async-fallback-job', schedule='@every 1m'))
+            self.assertIn('async-fallback-job', self._fake_dapr_server.jobs)
+
+            retrieved = await dapr.get_job('async-fallback-job')
+            self.assertEqual(retrieved.name, 'async-fallback-job')
+
+            await dapr.delete_job('async-fallback-job')
+            self.assertNotIn('async-fallback-job', self._fake_dapr_server.jobs)
+        finally:
+            self._fake_dapr_server.jobs_alpha_only = False
+            await dapr.close()
+
+    async def test_job_alpha1_methods_are_deprecated_aliases(self):
+        """The *_alpha1 methods still work but emit a DeprecationWarning."""
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        job = Job(name='async-alpha-alias-job', schedule='@every 1m')
+
+        with self.assertWarns(DeprecationWarning):
+            await dapr.schedule_job_alpha1(job)
+        self.assertIn('async-alpha-alias-job', self._fake_dapr_server.jobs)
+
+        with self.assertWarns(DeprecationWarning):
+            retrieved = await dapr.get_job_alpha1('async-alpha-alias-job')
+        self.assertEqual(retrieved.name, 'async-alpha-alias-job')
+
+        with self.assertWarns(DeprecationWarning):
+            await dapr.delete_job_alpha1('async-alpha-alias-job')
+        self.assertNotIn('async-alpha-alias-job', self._fake_dapr_server.jobs)
 
         await dapr.close()
 

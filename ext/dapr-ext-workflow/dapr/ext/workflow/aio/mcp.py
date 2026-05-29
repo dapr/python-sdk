@@ -15,12 +15,20 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 import uuid
 from typing import Optional, Set
 
 from dapr.ext.workflow.aio.dapr_workflow_client import DaprWorkflowClient
-from dapr.ext.workflow.mcp import _MCP_METHOD_LIST_TOOLS, MCP_WORKFLOW_PREFIX, _DaprMCPClientBase
+from dapr.ext.workflow.mcp import (
+    _MCP_METHOD_LIST_TOOLS,
+    _SCHEDULE_RETRY_INTERVAL_SECONDS,
+    MCP_WORKFLOW_PREFIX,
+    _DaprMCPClientBase,
+    _is_transient_schedule_error,
+)
 from dapr.ext.workflow.workflow_state import WorkflowStatus
 
 logger = logging.getLogger(__name__)
@@ -84,15 +92,35 @@ class DaprMCPClient(_DaprMCPClientBase):
 
         logger.debug('Scheduling %s (instance=%s)', workflow_name, instance_id)
 
-        await self._wf_client.schedule_new_workflow(
-            workflow=workflow_name,
-            input={'mcpServerName': mcpserver_name},
-            instance_id=instance_id,
-        )
+        deadline = time.monotonic() + self._timeout
+        while True:
+            try:
+                await self._wf_client.schedule_new_workflow(
+                    workflow=workflow_name,
+                    input={'mcpServerName': mcpserver_name},
+                    instance_id=instance_id,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001 — classified by helper
+                if not _is_transient_schedule_error(exc):
+                    raise
+                sleep_for = min(_SCHEDULE_RETRY_INTERVAL_SECONDS, deadline - time.monotonic())
+                if sleep_for <= 0:
+                    raise
+                logger.debug('schedule_new_workflow returned transient error %s; retrying', exc)
+                await asyncio.sleep(sleep_for)
 
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError(
+                f"ListTools workflow for MCPServer '{mcpserver_name}' "
+                f'timed out after {self._timeout}s'
+            )
+        # wait_for_workflow_completion treats timeout=0 as "wait forever",
+        # so floor the gRPC timeout at 1s when sub-second remaining survives.
         state = await self._wf_client.wait_for_workflow_completion(
             instance_id=instance_id,
-            timeout_in_seconds=self._timeout,
+            timeout_in_seconds=max(int(remaining), 1),
             fetch_payloads=True,
         )
 
