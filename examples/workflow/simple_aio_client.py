@@ -42,7 +42,7 @@ non_existent_id_error = 'no such instance exists'
 
 retry_policy = RetryPolicy(
     first_retry_interval=timedelta(seconds=1),
-    max_number_of_attempts=3,
+    max_attempts=3,
     backoff_coefficient=2,
     max_retry_interval=timedelta(seconds=10),
     retry_timeout=timedelta(seconds=100),

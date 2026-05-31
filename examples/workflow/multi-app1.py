@@ -25,7 +25,7 @@ def app1_workflow(ctx: wf.DaprWorkflowContext):
 
     try:
         retry_policy = wf.RetryPolicy(
-            max_number_of_attempts=2,
+            max_attempts=2,
             first_retry_interval=timedelta(milliseconds=100),
             max_retry_interval=timedelta(seconds=3),
         )
