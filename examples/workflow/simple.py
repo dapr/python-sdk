@@ -145,7 +145,7 @@ def main():
     metadata = wf_client.get_workflow_state(instance_id=instance_id)
     print(f'Get response from {workflow_name} after resume call: {metadata.runtime_status.name}')
 
-    sleep(20)  # Give the workflow time to reach the event wait state
+    sleep(10)  # Give the workflow time to reach the event wait state
     wf_client.raise_workflow_event(instance_id=instance_id, event_name=event_name, data=event_data)
 
     print('========= Waiting for Workflow completion', flush=True)
