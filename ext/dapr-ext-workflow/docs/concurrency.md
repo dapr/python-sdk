@@ -33,23 +33,20 @@ Two distinct uses of threads exist.
 duration. Size to peak concurrent sync-activity count.
 
 **Async response delivery.** Each async activity, on completion, schedules
-`stub.CompleteActivityTask` via `loop.run_in_executor(None, ...)`. That uses
-asyncio's **default executor**, which is process-wide and sized to
-`min(32, cpu_count + 4)`. It is *not* `maximum_thread_pool_workers`.
+`stub.CompleteActivityTask` via `loop.run_in_executor(None, ...)`. That uses the
+**default executor of the worker's own event loop**, which asyncio creates lazily
+at `min(32, cpu_count + 4)` threads. The default executor is per-loop, not
+process-wide, and it is *not* `maximum_thread_pool_workers`.
 
 If the sidecar takes >5 ms to acknowledge and the worker runs >30 concurrent
-async activities, response delivery serializes through the default executor and
-tail latency inflates. Install a larger default executor before starting:
+async activities, response delivery serializes through that pool and tail latency
+inflates. The pool is not configurable from application code: `TaskHubGrpcWorker.start()`
+runs the loop on a dedicated background thread via `asyncio.new_event_loop()`, so a
+`set_default_executor(...)` call in the caller thread targets a different loop and
+has no effect. To keep completions from outrunning the pool, lower
+`maximum_concurrent_activity_work_items` so fewer async activities finish at once.
 
-```python
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-
-asyncio.get_event_loop().set_default_executor(ThreadPoolExecutor(max_workers=200))
-```
-
-This goes away when the worker migrates to `grpc.aio`. Until then, the default
-executor is a separate knob from `maximum_thread_pool_workers`.
+This thread hop goes away when the worker migrates to `grpc.aio`.
 
 ## Sharing httpx clients
 
@@ -80,4 +77,4 @@ uv run python ext/dapr-ext-workflow/benchmarks/bench_async_activities.py
 
 Override the 120 s sustained run with `DAPR_BENCH_SUSTAINED_SECONDS=30` for a
 faster local check. Set `DAPR_BENCH_WITH_SIDECAR=1` to exercise the end-to-end
-path against a real sidecar. Results land in `RESULTS.md`.
+path against a real sidecar. The script creates `benchmarks/RESULTS.md`.

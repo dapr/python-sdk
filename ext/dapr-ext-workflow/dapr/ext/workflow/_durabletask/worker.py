@@ -819,15 +819,10 @@ class TaskHubGrpcWorker:
         self._channel_cleanup_threads.append(thread)
 
     def stop(self):
-        """Stop the worker and tear down its resources.
-
-        Idempotent and safe to call before ``start()`` because the thread pool
-        exists from construction.
-        """
+        """Stops the worker and waits for any pending work items to complete."""
         # Guards on _runLoop rather than _is_running so stop() can unblock a start()
         # that is still waiting for the work item stream to be established.
         if self._runLoop is None:
-            self._async_worker_manager.shutdown()
             return
 
         self._logger.info('Stopping gRPC worker...')

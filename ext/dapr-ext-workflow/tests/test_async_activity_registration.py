@@ -169,7 +169,7 @@ class AsyncActivityRegistrationTest(_AsyncActivityRegistrationTestBase):
 
 
 class IsAsyncCallableTest(unittest.TestCase):
-    """Pin the contract of ``_is_async_callable`` against decorator shapes that bare
+    """Pin the contract of ``_is_async_callable`` against decorator shapes that a bare
     ``inspect.iscoroutinefunction`` would miss. These are the patterns the fix for finding
     #5 was meant to address. Without coverage, a future refactor can silently regress
     async-activity routing for any of them.
