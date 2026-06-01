@@ -37,7 +37,6 @@ import logging
 import math
 import os
 import platform
-import resource
 import shutil
 import socket
 import statistics
@@ -165,9 +164,19 @@ def _percentile(sorted_samples_ms: list[float], q: float) -> float:
     return sorted_samples_ms[lo] + frac * (sorted_samples_ms[hi] - sorted_samples_ms[lo])
 
 
+try:
+    import resource as _resource  # POSIX only
+except ImportError:
+    _resource = None
+
+
 def _current_rss_kb() -> int:
-    """Process RSS in KB. macOS returns bytes from getrusage; Linux returns KB."""
-    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    """Process RSS in KB. macOS returns bytes from getrusage; Linux returns KB.
+    Returns 0 on Windows since `resource` is unavailable there.
+    """
+    if _resource is None:
+        return 0
+    rss = _resource.getrusage(_resource.RUSAGE_SELF).ru_maxrss
     if IS_DARWIN:
         return rss // 1024
     return rss

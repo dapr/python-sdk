@@ -13,8 +13,8 @@
 
 The work-item dispatcher at the top of ``worker.py``'s gRPC loop selects between
 ``_execute_activity`` (sync, runs in the thread pool) and ``_execute_activity_async``
-(coroutine, awaited on the event loop) using ``inspect.iscoroutinefunction(handler)``
-via ``_AsyncWorkerManager._run_func``. These tests pin the async-ness of each handler so
+(coroutine, awaited on the event loop) using ``is_async_callable(handler)`` via
+``_AsyncWorkerManager._run_func``. These tests pin the async-ness of each handler so
 the dispatch routing stays correct.
 """
 

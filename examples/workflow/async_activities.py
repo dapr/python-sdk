@@ -80,9 +80,9 @@ def summarize_fetches(ctx: wf.WorkflowActivityContext, results: list[dict]) -> s
 
 def main() -> None:
     urls = [
-        'https://httpbin.org/uuid',
-        'https://httpbin.org/get',
-        'https://httpbin.org/headers',
+        'https://example.com',
+        'https://example.org',
+        'https://example.net',
     ]
 
     wfr.start()

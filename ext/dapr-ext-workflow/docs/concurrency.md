@@ -27,18 +27,17 @@ backpressure.
 
 ## Sizing the thread pool
 
-Two distinct uses of threads exist.
+The worker thread pool, sized by `maximum_thread_pool_workers`, has two uses.
 
 **Sync activity execution.** Each `def` activity holds one thread for its
 duration. Size to peak concurrent sync-activity count.
 
 **Async response delivery.** Each async activity, on completion, schedules
-`stub.CompleteActivityTask` on the worker thread pool to avoid blocking the loop
-during the gRPC send. The pool is the same one sync activities use, sized by
-`maximum_thread_pool_workers`. If the sidecar takes >5 ms to acknowledge and the
-worker runs many concurrent async activities, response delivery can serialize
-through the pool and tail latency inflates. Raise `maximum_thread_pool_workers`
-to widen response-delivery throughput.
+`stub.CompleteActivityTask` on the same pool to avoid blocking the loop during
+the gRPC send. If the sidecar takes >5 ms to acknowledge and the worker runs
+many concurrent async activities, response delivery can serialize through the
+pool and tail latency inflates. Raise `maximum_thread_pool_workers` to widen
+response-delivery throughput.
 
 Mixed workloads with long-running sync activities can starve async response
 delivery (and vice versa) since they share the pool. If that becomes an issue,

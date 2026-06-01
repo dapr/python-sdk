@@ -2141,7 +2141,7 @@ class _ActivityExecutor:
         """Run a sync activity function and return the serialized result, if any.
 
         Raises ``RuntimeError`` if the activity returns a coroutine, which happens when
-        ``_is_async_callable`` fails to detect an async callable at registration.
+        ``is_async_callable`` fails to detect an async callable at registration.
         """
         resolved_fn, ctx, activity_input = self._resolve(
             fn,
@@ -2157,7 +2157,9 @@ class _ActivityExecutor:
             activity_output.close()
             raise RuntimeError(
                 f"Activity '{name}' returned a coroutine on the sync path. "
-                f'Declare it with ``async def`` so the worker dispatches it on the event loop.'
+                f'Declare it with ``async def``, or if it already is, check that any wrapping '
+                f'decorator uses ``@functools.wraps(fn)`` and does not wrap the async callable '
+                f'in a sync ``def`` (``is_async_callable`` needs to see through the decorator).'
             )
         return self._encode_output(orchestration_id, name, task_id, activity_output)
 
