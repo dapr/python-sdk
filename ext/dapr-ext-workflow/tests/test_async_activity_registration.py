@@ -59,7 +59,7 @@ class _AsyncActivityRegistrationTestBase(unittest.TestCase):
         worker = self.runtime._WorkflowRuntime__worker
         self.runtime.shutdown()
         worker._async_worker_manager.shutdown()
-        mock.patch.stopall()
+        self._registry_patch.stop()
 
 
 class AsyncActivityRegistrationTest(_AsyncActivityRegistrationTestBase):

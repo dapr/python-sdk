@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import functools
 import inspect
 import time
 from functools import wraps
@@ -21,6 +20,7 @@ from typing import Any, Awaitable, Callable, Optional, Sequence, TypeVar, Union
 
 import grpc
 from dapr.ext.workflow._durabletask import task, worker
+from dapr.ext.workflow._durabletask.internal.shared import is_async_callable as _is_async_callable
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import getAddress
@@ -51,21 +51,6 @@ ClientInterceptor = Union[
 SyncActivityWrapper = Callable[[task.ActivityContext, object | None], object]
 AsyncActivityWrapper = Callable[[task.ActivityContext, object | None], Awaitable[object]]
 ActivityWrapper = SyncActivityWrapper | AsyncActivityWrapper
-
-
-def _is_async_callable(fn: Any) -> bool:
-    """Return True if ``fn`` is async. Catches ``functools.partial`` of coroutines,
-    sync decorators that wrap async functions, and callable instances with ``async __call__``.
-    """
-    candidate = fn
-    while isinstance(candidate, functools.partial):
-        candidate = candidate.func
-    candidate = inspect.unwrap(candidate) if callable(candidate) else candidate
-    if inspect.iscoroutinefunction(candidate):
-        return True
-    if not inspect.isfunction(candidate) and hasattr(candidate, '__call__'):
-        return inspect.iscoroutinefunction(candidate.__call__)
-    return False
 
 
 def _coerce_activity_input(inp: object | None, input_model: type | None) -> object | None:

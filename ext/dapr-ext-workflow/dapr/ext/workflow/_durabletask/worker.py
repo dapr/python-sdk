@@ -30,6 +30,7 @@ import dapr.ext.workflow._durabletask.internal.shared as shared
 import grpc
 from dapr.ext.workflow._durabletask import deterministic, task
 from dapr.ext.workflow._durabletask.internal.grpc_interceptor import DefaultClientInterceptorImpl
+from dapr.ext.workflow._durabletask.internal.shared import is_async_callable
 from dapr.ext.workflow.propagation import PropagatedHistory, PropagationScope
 from google.protobuf import empty_pb2, timestamp_pb2
 
@@ -67,8 +68,8 @@ def _log_all_threads(logger: logging.Logger, context: str = ''):
 class ConcurrencyOptions:
     """Concurrency limits for the worker.
 
-    ``maximum_thread_pool_workers`` only matters for sync activities.
-    Async activities run as coroutines on the event loop.
+    ``maximum_thread_pool_workers`` sizes the pool used to run sync activities and to
+    deliver async-activity responses to the sidecar.
     """
 
     def __init__(
@@ -84,8 +85,9 @@ class ConcurrencyOptions:
                 Defaults to ``100 * cpu_count``.
             maximum_concurrent_orchestration_work_items: Cap on concurrent orchestration work
                 items. Defaults to ``100 * cpu_count``.
-            maximum_thread_pool_workers: Size of the thread pool used to run sync activities.
-                Async activities do not use this pool. Defaults to ``cpu_count + 4``.
+            maximum_thread_pool_workers: Size of the worker thread pool. Sync activities run
+                on this pool, and async-activity gRPC response sends also borrow a thread
+                from it. Defaults to ``cpu_count + 4``.
         """
         processor_count = os.cpu_count() or 1
         default_concurrency = 100 * processor_count
@@ -666,8 +668,7 @@ class TaskHubGrpcWorker:
                             )
                             activity_handler = (
                                 self._execute_activity_async
-                                if activity_fn is not None
-                                and inspect.iscoroutinefunction(activity_fn)
+                                if activity_fn is not None and is_async_callable(activity_fn)
                                 else self._execute_activity
                             )
                             self._async_worker_manager.submit_activity(
@@ -1108,7 +1109,7 @@ class TaskHubGrpcWorker:
         completionToken,
     ):
         """Run an async activity on the event loop and send its result to the sidecar.
-        The gRPC send goes through ``run_in_executor`` to avoid blocking the loop.
+        The gRPC send runs on the worker thread pool to avoid blocking the loop.
         """
         instance_id = req.workflowInstance.instanceId
         with self._activity_span(req, instance_id):
@@ -1133,7 +1134,7 @@ class TaskHubGrpcWorker:
             loop = asyncio.get_running_loop()
             try:
                 await loop.run_in_executor(
-                    None,
+                    self._async_worker_manager.thread_pool,
                     self._send_activity_response,
                     req,
                     stub,
@@ -1142,7 +1143,7 @@ class TaskHubGrpcWorker:
                     instance_id,
                 )
             except RuntimeError as exc:
-                # Default executor shut down (worker is tearing down). Treat as transient:
+                # Manager thread pool shut down (worker is tearing down). Treat as transient:
                 # the sidecar will re-dispatch the work item once the worker reconnects.
                 self._logger.warning(
                     f"Could not deliver activity response for '{req.name}#{req.taskId}': "
@@ -2133,10 +2134,10 @@ class _ActivityExecutor:
         orchestration_id: str,
         name: str,
         task_id: int,
-        encoded_input: Optional[str],
+        encoded_input: str | None,
         task_execution_id: str = '',
-        propagated_history: Optional[PropagatedHistory] = None,
-    ) -> Optional[str]:
+        propagated_history: PropagatedHistory | None = None,
+    ) -> str | None:
         """Run a sync activity function and return the serialized result, if any.
 
         Raises ``RuntimeError`` if the activity returns a coroutine, which happens when
@@ -2420,7 +2421,7 @@ class _AsyncWorkerManager:
                 queue.task_done()
 
     async def _run_func(self, func, *args, **kwargs):
-        if inspect.iscoroutinefunction(func):
+        if is_async_callable(func):
             return await func(*args, **kwargs)
         else:
             loop = asyncio.get_running_loop()

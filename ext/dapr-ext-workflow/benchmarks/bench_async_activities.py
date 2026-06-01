@@ -259,11 +259,6 @@ def _git_commit() -> str:
     return 'unknown'
 
 
-def _default_executor_size() -> int:
-    """Effective max_workers for asyncio's default executor."""
-    return min(32, (os.cpu_count() or 1) + 4)
-
-
 @dataclass(slots=True)
 class RunEnvironment:
     """Snapshot of the machine the benchmark ran on."""
@@ -278,7 +273,6 @@ class RunEnvironment:
     cpu_logical_cores: int
     cpu_physical_cores_hint: int
     total_memory_gb: float
-    asyncio_default_executor_workers: int
     is_ci: bool
 
     @classmethod
@@ -294,7 +288,6 @@ class RunEnvironment:
             cpu_logical_cores=os.cpu_count() or 0,
             cpu_physical_cores_hint=os.cpu_count() or 0,
             total_memory_gb=_total_memory_gb(),
-            asyncio_default_executor_workers=_default_executor_size(),
             is_ci=any(os.environ.get(k) for k in ('CI', 'GITHUB_ACTIONS', 'TRAVIS', 'BUILDKITE')),
         )
 
@@ -884,7 +877,7 @@ async def run_delivery_overhead() -> list[ScenarioMetrics]:
             server_latency_s=server_latency,
             activity_kind='async',
             send_latency_s=send_latency,
-            notes='asyncio default executor caps response delivery at min(32, cpu+4) workers',
+            notes='response delivery shares the worker thread pool sized by maximum_thread_pool_workers',
         )
         metrics.append(m)
     return metrics
@@ -1056,9 +1049,6 @@ def _format_environment_block(env: RunEnvironment) -> str:
         f'- **Platform**: `{env.platform}`\n'
         f'- **CPU**: {env.cpu_model} ({env.cpu_logical_cores} logical cores)\n'
         f'- **Memory**: {mem_str}\n'
-        f'- **asyncio default executor**: max_workers ='
-        f' {env.asyncio_default_executor_workers}'
-        f' (`min(32, cpu_count + 4)`)\n'
         f'- **CI environment**: {"yes" if env.is_ci else "no"}\n'
         '\n'
         '**Numbers from this report are specific to this machine.** Re-run the benchmark'
@@ -1135,10 +1125,9 @@ def _write_results(
         '## 5. Sidecar response delivery overhead',
         '',
         'Mock `CompleteActivityTask` is given an artificial delay. Async responses go through'
-        " `loop.run_in_executor(None, ...)`, so they share asyncio's default executor"
-        f' (max `min(32, cpu_count + 4)`; on this run, `cpu_count={os.cpu_count() or 1}`).'
-        ' Delivery latency above ~5 ms × concurrency exceeds the default pool and serializes,'
-        ' inflating tail latency.',
+        ' `loop.run_in_executor(thread_pool, ...)`, sharing the worker thread pool sized by'
+        ' `maximum_thread_pool_workers`. Delivery latency above ~5 ms × concurrency exceeds the'
+        ' pool and serializes, inflating tail latency.',
         '',
         _format_concurrency_table(delivery),
         '',

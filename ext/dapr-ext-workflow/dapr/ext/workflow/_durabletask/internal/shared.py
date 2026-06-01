@@ -10,6 +10,8 @@
 # limitations under the License.
 
 import dataclasses
+import functools
+import inspect
 import json
 import logging
 import os
@@ -18,6 +20,21 @@ from typing import Any, Optional, Sequence, Union
 
 import grpc
 from dapr.ext.workflow import _model_protocol
+
+
+def is_async_callable(fn: Any) -> bool:
+    """Return True if ``fn`` is async. Catches ``functools.partial`` of coroutines,
+    sync decorators that wrap async functions, and callable instances with ``async __call__``.
+    """
+    candidate = fn
+    while isinstance(candidate, functools.partial):
+        candidate = candidate.func
+    candidate = inspect.unwrap(candidate) if callable(candidate) else candidate
+    if inspect.iscoroutinefunction(candidate):
+        return True
+    if not inspect.isfunction(candidate) and hasattr(candidate, '__call__'):
+        return inspect.iscoroutinefunction(candidate.__call__)
+    return False
 
 ClientInterceptor = Union[
     grpc.UnaryUnaryClientInterceptor,

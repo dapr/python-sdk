@@ -9,7 +9,7 @@ Sizing notes for the worker's concurrency knobs. Numbers come from
 | --- | --- | --- |
 | `maximum_concurrent_activity_work_items` | `100 × cpu_count` | Async semaphore cap on in-flight activity work items. |
 | `maximum_concurrent_orchestration_work_items` | `100 × cpu_count` | Same, for orchestrations. |
-| `maximum_thread_pool_workers` | `cpu_count + 4` | Thread pool size for **sync** activities. Async activities run as coroutines on the event loop and never enter this pool. |
+| `maximum_thread_pool_workers` | `cpu_count + 4` | Worker thread pool size. Sync activities run on this pool, and async-activity gRPC response sends also borrow a thread from it. |
 
 A `def` activity consumes a semaphore slot **and** a thread pool worker. An
 `async def` activity consumes only a semaphore slot.
@@ -33,19 +33,17 @@ Two distinct uses of threads exist.
 duration. Size to peak concurrent sync-activity count.
 
 **Async response delivery.** Each async activity, on completion, schedules
-`stub.CompleteActivityTask` via `loop.run_in_executor(None, ...)`. That uses the
-**default executor of the worker's own event loop**, which asyncio creates lazily
-at `min(32, cpu_count + 4)` threads. The default executor is per-loop, not
-process-wide, and it is *not* `maximum_thread_pool_workers`.
+`stub.CompleteActivityTask` on the worker thread pool to avoid blocking the loop
+during the gRPC send. The pool is the same one sync activities use, sized by
+`maximum_thread_pool_workers`. If the sidecar takes >5 ms to acknowledge and the
+worker runs many concurrent async activities, response delivery can serialize
+through the pool and tail latency inflates. Raise `maximum_thread_pool_workers`
+to widen response-delivery throughput.
 
-If the sidecar takes >5 ms to acknowledge and the worker runs >30 concurrent
-async activities, response delivery serializes through that pool and tail latency
-inflates. The SDK exposes no knob to set the worker loop's executor:
-`TaskHubGrpcWorker.start()` runs the loop on a dedicated background thread via
-`asyncio.new_event_loop()`, so a `set_default_executor(...)` call from the caller
-thread targets a different loop and has no effect. To keep completions from
-outrunning the pool, lower `maximum_concurrent_activity_work_items` so fewer
-async activities finish at once.
+Mixed workloads with long-running sync activities can starve async response
+delivery (and vice versa) since they share the pool. If that becomes an issue,
+size `maximum_thread_pool_workers` to the sum of peak sync activity concurrency
+and peak in-flight async response sends.
 
 This thread hop goes away when the worker migrates to `grpc.aio`.
 
