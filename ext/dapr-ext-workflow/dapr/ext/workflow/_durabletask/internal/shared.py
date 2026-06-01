@@ -36,6 +36,7 @@ def is_async_callable(fn: Any) -> bool:
         return inspect.iscoroutinefunction(candidate.__call__)
     return False
 
+
 ClientInterceptor = Union[
     grpc.UnaryUnaryClientInterceptor,
     grpc.UnaryStreamClientInterceptor,
