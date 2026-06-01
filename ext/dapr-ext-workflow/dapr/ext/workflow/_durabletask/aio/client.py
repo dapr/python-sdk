@@ -123,7 +123,7 @@ class AsyncTaskHubGrpcClient:
         return new_orchestration_state(req.instanceId, res)
 
     async def wait_for_orchestration_start(
-        self, instance_id: str, *, fetch_payloads: bool = False, timeout: int = 0
+        self, instance_id: str, *, fetch_payloads: bool = False, timeout: Optional[int] = 0
     ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
         self._logger.info(
@@ -142,7 +142,7 @@ class AsyncTaskHubGrpcClient:
             raise TimeoutError('Timed-out waiting for the orchestration to start')
 
     async def wait_for_orchestration_completion(
-        self, instance_id: str, *, fetch_payloads: bool = True, timeout: int = 0
+        self, instance_id: str, *, fetch_payloads: bool = True, timeout: Optional[int] = 0
     ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
         self._logger.info(
@@ -187,17 +187,26 @@ class AsyncTaskHubGrpcClient:
         grpc.StatusCode.UNAVAILABLE,
     )
 
+    # See TaskHubGrpcClient._MAX_TRANSIENT_RETRY_SECONDS — same grace window for
+    # unbounded (timeout=0) callers so a down sidecar surfaces the original
+    # error instead of retrying forever.
+    _MAX_TRANSIENT_RETRY_SECONDS = 30.0
+
     async def _call_with_transient_retry(self, instance_id, timeout, call_fn):
         """Async mirror of TaskHubGrpcClient._call_with_transient_retry.
         Retries FAILED_PRECONDITION/UNAVAILABLE with capped exponential
         backoff while clamping sleep and per-call gRPC timeout to the
-        remaining budget. The first call passes ``timeout`` verbatim so
-        callers observe identical behavior on a healthy runtime.
+        remaining budget. The first call uses the caller's timeout unchanged
+        (``None`` when unbounded) so callers observe identical behavior on a
+        healthy runtime. In unbounded
+        mode, continuous transient retries are capped at
+        ``_MAX_TRANSIENT_RETRY_SECONDS`` before the original error propagates.
         """
         unbounded = timeout in (0, None)
         deadline = None if unbounded else time.monotonic() + timeout
         grpc_timeout = None if unbounded else timeout
         backoff = 0.5
+        transient_deadline = None  # unbounded mode only; anchored on first transient
         while True:
             try:
                 return await call_fn(grpc_timeout)
@@ -208,16 +217,26 @@ class AsyncTaskHubGrpcClient:
                 if code not in self._TRANSIENT_RPC_CODES:
                     raise
 
+                now = time.monotonic()
+
+                if unbounded:
+                    if transient_deadline is None:
+                        transient_deadline = now + self._MAX_TRANSIENT_RETRY_SECONDS
+                    elif now >= transient_deadline:
+                        raise
+
                 if deadline is None:
                     remaining = None
                 else:
-                    remaining = deadline - time.monotonic()
+                    remaining = deadline - now
                     if remaining <= 0:
                         raise _TransientTimeout()
 
                 sleep_for = min(backoff, 5.0)
                 if remaining is not None:
                     sleep_for = min(sleep_for, remaining)
+                if transient_deadline is not None:
+                    sleep_for = min(sleep_for, transient_deadline - now)
                 self._logger.warning(
                     f"Transient gRPC error {code.name} waiting on instance '{instance_id}'; "
                     f'retrying in {sleep_for:.2f}s'

@@ -156,3 +156,33 @@ def test_wait_for_orchestration_start_non_transient_propagates(monkeypatch):
     with pytest.raises(grpc.RpcError):
         c.wait_for_orchestration_start(instance_id, timeout=10)
     assert c._stub.WaitForInstanceStart.call_count == 1
+
+
+def test_wait_for_orchestration_start_unbounded_transient_gives_up_with_rpc_error(monkeypatch):
+    """With timeout=0 (unbounded), persistent transient errors are retried only
+    for the grace window, then the original RpcError propagates — NOT a hang and
+    NOT a TimeoutError, preserving the pre-retry contract that timeout=0 surfaces
+    the gRPC error rather than TimeoutError."""
+    instance_id = 'test-instance'
+
+    # Advance well past _MAX_TRANSIENT_RETRY_SECONDS on each transient so the
+    # grace window is exhausted within a couple of retries.
+    fake_time = [0.0]
+
+    def fake_monotonic():
+        fake_time[0] += 20.0  # 20, 40, 60, ... — anchors at 20, deadline 50
+        return fake_time[0]
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.monotonic', fake_monotonic)
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.sleep', lambda s: None)
+
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceStart.side_effect = _make_rpc_error(grpc.StatusCode.UNAVAILABLE)
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        c.wait_for_orchestration_start(instance_id, timeout=0)
+    assert not isinstance(exc_info.value, TimeoutError)
+    # Retried at least once before giving up (proves it didn't fail-fast like the
+    # non-transient path, and didn't loop forever).
+    assert c._stub.WaitForInstanceStart.call_count >= 2
