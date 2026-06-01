@@ -168,10 +168,9 @@ class TaskHubGrpcClient:
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        # close() is best-effort and swallows its own errors, so a plain call safe here.
-        # Returning False — i.e. not suppressing the original exception -
-        # is the same behavior as the previous try/finally, without
-        # the `return in finally` SyntaxWarning on Python 3.14+.
+        # close() is best-effort and swallows its own errors, so a plain call is safe here.
+        # Returning False (i.e., not suppressing the original exception) is the same behavior
+        # as the previous try/finally, without the `return in finally` SyntaxWarning on Python 3.14+.
         self.close()
         return False
 
