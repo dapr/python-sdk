@@ -14,6 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
+**/**/*.egg-info/
 lib/
 lib64/
 parts/
@@ -26,6 +27,11 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+**/**/__pycache__/
+**/**/.mypy_cache/
+**/**/.pytest_cache/
+**/**/.ruff_cache/
+**/**/.venv/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
