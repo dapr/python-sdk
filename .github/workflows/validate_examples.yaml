@@ -37,7 +37,7 @@ jobs:
       GOOS: linux
       GOARCH: amd64
       GOPROXY: https://proxy.golang.org
-      DAPR_RUNTIME_VER: 1.16.10
+      DAPR_RUNTIME_VER: 1.16.14
       DAPR_CLI_VER: 1.16.5
       DAPR_CLI_REF: ${{ github.event.inputs.daprcli_commit }}
       DAPR_REF: ${{ github.event.inputs.daprdapr_commit }}
