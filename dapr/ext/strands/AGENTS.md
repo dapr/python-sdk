@@ -80,7 +80,6 @@ manager = DaprSessionManager.from_address(
 
 - `dapr` (core, same wheel as this extension)
 - `strands-agents >= 1.30.0, < 2.0.0`
-- `strands-agents-tools >= 0.2.22, < 1.0.0`
 - `python-ulid >= 3.0.0, < 4.0.0`
 - `msgpack >= 1.0, < 2.0`
 

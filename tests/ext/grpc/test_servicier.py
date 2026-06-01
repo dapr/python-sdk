@@ -361,5 +361,35 @@ class BindingTests(unittest.TestCase):
             )
 
 
+class JobEventTests(unittest.TestCase):
+    def setUp(self):
+        self._servicer = _CallbackServicer()
+        self._handler = Mock()
+        self._servicer.register_job_event('test-job', self._handler)
+        self.fake_context = MagicMock()
+
+    def _request(self, name='test-job', payload=b'hello'):
+        return appcallback_v1.JobEventRequest(name=name, data=GrpcAny(value=payload))
+
+    def test_on_job_event_stable_routes_to_handler(self):
+        resp = self._servicer.OnJobEvent(self._request(), self.fake_context)
+
+        self.assertIsInstance(resp, appcallback_v1.JobEventResponse)
+        self._handler.assert_called_once()
+        job_event = self._handler.call_args[0][0]
+        self.assertEqual(job_event.name, 'test-job')
+        self.assertEqual(job_event.get_data_as_string(), 'hello')
+
+    def test_on_job_event_alpha1_routes_to_same_handler(self):
+        resp = self._servicer.OnJobEventAlpha1(self._request(), self.fake_context)
+
+        self.assertIsInstance(resp, appcallback_v1.JobEventResponse)
+        self._handler.assert_called_once()
+
+    def test_non_registered_job_event(self):
+        with self.assertRaises(NotImplementedError):
+            self._servicer.OnJobEvent(self._request(name='unknown-job'), self.fake_context)
+
+
 if __name__ == '__main__':
     unittest.main()

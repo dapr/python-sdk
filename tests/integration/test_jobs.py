@@ -38,51 +38,51 @@ def test_schedule_then_get_returns_job(client):
     name = unique_name(prefix='sync-job-')
     due = _future(days=365)
 
-    client.schedule_job_alpha1(Job(name=name, due_time=due))
+    client.schedule_job(Job(name=name, due_time=due))
     try:
-        retrieved = client.get_job_alpha1(name=name)
+        retrieved = client.get_job(name=name)
         assert retrieved.name == name
         assert retrieved.due_time == due
     except Exception as exc:
-        raise AssertionError(f'get_job_alpha1 did not return scheduled job {name}') from exc
+        raise AssertionError(f'get_job did not return scheduled job {name}') from exc
     finally:
-        client.delete_job_alpha1(name=name)
+        client.delete_job(name=name)
 
 
 def test_delete_removes_job(client):
     name = unique_name(prefix='sync-job-del-')
     due = _future(days=365)
 
-    client.schedule_job_alpha1(Job(name=name, due_time=due))
-    client.delete_job_alpha1(name=name)
+    client.schedule_job(Job(name=name, due_time=due))
+    client.delete_job(name=name)
 
     with pytest.raises(DaprGrpcError):
-        client.get_job_alpha1(name=name)
+        client.get_job(name=name)
 
 
 def test_schedule_with_recurring_schedule(client):
     name = unique_name(prefix='sync-job-recurring-')
     schedule = '@every 1h'
 
-    client.schedule_job_alpha1(Job(name=name, schedule=schedule, repeats=10))
+    client.schedule_job(Job(name=name, schedule=schedule, repeats=10))
     try:
-        retrieved = client.get_job_alpha1(name=name)
+        retrieved = client.get_job(name=name)
         assert retrieved.schedule == schedule
         assert retrieved.repeats == 10
     except Exception as exc:
         raise AssertionError(f'Recurring schedule failed for job {name}') from exc
     finally:
-        client.delete_job_alpha1(name=name)
+        client.delete_job(name=name)
 
 
 def test_schedule_without_schedule_or_due_time_raises(client):
     with pytest.raises(ValueError):
-        client.schedule_job_alpha1(Job(name=unique_name(prefix='sync-job-bad-')))
+        client.schedule_job(Job(name=unique_name(prefix='sync-job-bad-')))
 
 
 def test_schedule_with_blank_name_raises(client):
     with pytest.raises(ValueError):
-        client.schedule_job_alpha1(Job(name='', due_time=_future(days=1)))
+        client.schedule_job(Job(name='', due_time=_future(days=1)))
 
 
 def test_overwrite_replaces_existing_job(client):
@@ -90,12 +90,12 @@ def test_overwrite_replaces_existing_job(client):
     initial_due = _future(days=30)
     updated_due = _future(days=60)
 
-    client.schedule_job_alpha1(Job(name=name, due_time=initial_due))
+    client.schedule_job(Job(name=name, due_time=initial_due))
     try:
-        client.schedule_job_alpha1(Job(name=name, due_time=updated_due), overwrite=True)
-        retrieved = client.get_job_alpha1(name=name)
+        client.schedule_job(Job(name=name, due_time=updated_due), overwrite=True)
+        retrieved = client.get_job(name=name)
         assert retrieved.due_time == updated_due
     except Exception as exc:
         raise AssertionError(f'overwrite=True did not replace due_time for job {name}') from exc
     finally:
-        client.delete_job_alpha1(name=name)
+        client.delete_job(name=name)

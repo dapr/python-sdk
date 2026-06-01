@@ -20,7 +20,7 @@ def main():
         simple_job = Job(name='simple-job', schedule='@every 30s')
 
         try:
-            client.schedule_job_alpha1(job=simple_job, overwrite=True)
+            client.schedule_job(job=simple_job, overwrite=True)
             print('✓ Simple job scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule simple job: {e}', flush=True)
@@ -37,7 +37,7 @@ def main():
         )
 
         try:
-            client.schedule_job_alpha1(job=recurring_job, overwrite=True)
+            client.schedule_job(job=recurring_job, overwrite=True)
             print('✓ Recurring job scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule recurring job: {e}', flush=True)
@@ -53,7 +53,7 @@ def main():
         )
 
         try:
-            client.schedule_job_alpha1(one_time_job)
+            client.schedule_job(one_time_job)
             print('✓ One-time job scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule one-time job: {e}', flush=True)
@@ -71,7 +71,7 @@ def main():
         )
 
         try:
-            client.schedule_job_alpha1(job=drop_policy_job, overwrite=True)
+            client.schedule_job(job=drop_policy_job, overwrite=True)
             print('✓ Job with drop failure policy scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule job with drop policy: {e}', flush=True)
@@ -85,7 +85,7 @@ def main():
         )
 
         try:
-            client.schedule_job_alpha1(job=constant_policy_job, overwrite=True)
+            client.schedule_job(job=constant_policy_job, overwrite=True)
             print('✓ Job with constant retry policy scheduled successfully', flush=True)
         except Exception as e:
             print(f'✗ Failed to schedule job with retry policy: {e}', flush=True)
@@ -93,7 +93,7 @@ def main():
         # Example 4: Get job details
         print('\n4. Getting job details...', flush=True)
         try:
-            job = client.get_job_alpha1('recurring-hello-job')
+            job = client.get_job('recurring-hello-job')
             print('✓ Retrieved job details:', flush=True)
             print(f'  - Name: {job.name}', flush=True)
             print(f'  - Schedule: {job.schedule}', flush=True)
@@ -119,7 +119,7 @@ def main():
             'retry-policy-job',
         ]:
             try:
-                client.delete_job_alpha1(job_name)
+                client.delete_job(job_name)
                 print(f'✓ Deleted job: {job_name}', flush=True)
             except Exception as e:
                 print(f'✗ Failed to delete job {job_name}: {e}', flush=True)

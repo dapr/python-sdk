@@ -16,12 +16,25 @@ limitations under the License.
 import json
 import unittest
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import grpc
 
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.aio.mcp import DaprMCPClient as AioDaprMCPClient
 from dapr.ext.workflow.mcp import MCP_WORKFLOW_PREFIX, DaprMCPClient, MCPToolDef
 from dapr.ext.workflow.workflow_state import WorkflowState
+
+
+class _StubRpcError(grpc.RpcError):
+    """Test double for grpc.RpcError with a configurable status code."""
+
+    def __init__(self, status_code: grpc.StatusCode):
+        super().__init__()
+        self._status_code = status_code
+
+    def code(self) -> grpc.StatusCode:
+        return self._status_code
 
 
 def _make_completed_state(output_json: dict) -> WorkflowState:
@@ -383,6 +396,159 @@ class TestAioDaprMCPClientConnect(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(tools[0], MCPToolDef)
         self.assertEqual(tools[0].name, 'get_weather')
         self.assertEqual(tools[1].name, 'get_forecast')
+
+
+class TestDaprMCPClientConnectRetry(unittest.TestCase):
+    """Tests for connect()'s retry-on-transient-gRPC-error path."""
+
+    def test_retries_then_succeeds_on_cancelled(self):
+        """A CANCELLED schedule failure should be retried within the timeout budget."""
+        mock_wf = MagicMock()
+        mock_wf.schedule_new_workflow.side_effect = [
+            _StubRpcError(grpc.StatusCode.CANCELLED),
+            _StubRpcError(grpc.StatusCode.CANCELLED),
+            'inst-1',
+        ]
+        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state(
+            SAMPLE_LIST_TOOLS_RESPONSE
+        )
+
+        mcp_client = DaprMCPClient(timeout_in_seconds=30, wf_client=mock_wf)
+        with patch('dapr.ext.workflow.mcp.time.sleep'):
+            mcp_client.connect('weather')
+
+        self.assertEqual(mock_wf.schedule_new_workflow.call_count, 3)
+        self.assertEqual(len(mcp_client.get_all_tools()), 2)
+
+    def test_retries_on_unavailable(self):
+        """UNAVAILABLE should also be treated as transient."""
+        mock_wf = MagicMock()
+        mock_wf.schedule_new_workflow.side_effect = [
+            _StubRpcError(grpc.StatusCode.UNAVAILABLE),
+            'inst-1',
+        ]
+        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state(
+            SAMPLE_LIST_TOOLS_RESPONSE
+        )
+
+        mcp_client = DaprMCPClient(timeout_in_seconds=30, wf_client=mock_wf)
+        with patch('dapr.ext.workflow.mcp.time.sleep'):
+            mcp_client.connect('weather')
+
+        self.assertEqual(mock_wf.schedule_new_workflow.call_count, 2)
+
+    def test_non_transient_propagates_immediately(self):
+        """A non-CANCELLED/UNAVAILABLE error must not be retried."""
+        mock_wf = MagicMock()
+        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(grpc.StatusCode.PERMISSION_DENIED)
+
+        mcp_client = DaprMCPClient(timeout_in_seconds=30, wf_client=mock_wf)
+        with patch('dapr.ext.workflow.mcp.time.sleep') as sleep_mock:
+            with self.assertRaises(grpc.RpcError):
+                mcp_client.connect('weather')
+
+        self.assertEqual(mock_wf.schedule_new_workflow.call_count, 1)
+        sleep_mock.assert_not_called()
+
+    def test_deadline_exhausted_raises_last_error(self):
+        """When the timeout budget runs out mid-retry, propagate the last error."""
+        mock_wf = MagicMock()
+        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(grpc.StatusCode.CANCELLED)
+
+        mcp_client = DaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
+        # Patch monotonic to advance past the deadline immediately so we don't
+        # actually sleep for a second in tests.
+        with (
+            patch('dapr.ext.workflow.mcp.time.sleep'),
+            patch(
+                'dapr.ext.workflow.mcp.time.monotonic',
+                side_effect=[0.0, 2.0],
+            ),
+        ):
+            with self.assertRaises(grpc.RpcError):
+                mcp_client.connect('weather')
+
+    def test_budget_exhausted_after_schedule_succeeds(self):
+        """If retries burn the budget but schedule eventually succeeds, raise
+        without calling wait_for_workflow_completion (timeout=0 means
+        'wait forever' in the underlying client)."""
+        mock_wf = MagicMock()
+        mock_wf.schedule_new_workflow.side_effect = [
+            _StubRpcError(grpc.StatusCode.CANCELLED),
+            'inst-1',
+        ]
+
+        mcp_client = DaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
+        # monotonic: 0.0 → deadline = 1.0; 0.4 → sleep_for = 0.5 (still in budget);
+        # 2.0 → post-loop remaining = -1.0 → raise.
+        with (
+            patch('dapr.ext.workflow.mcp.time.sleep'),
+            patch(
+                'dapr.ext.workflow.mcp.time.monotonic',
+                side_effect=[0.0, 0.4, 2.0],
+            ),
+        ):
+            with self.assertRaises(RuntimeError) as ctx:
+                mcp_client.connect('weather')
+        self.assertIn('timed out', str(ctx.exception))
+        mock_wf.wait_for_workflow_completion.assert_not_called()
+
+
+class TestAioDaprMCPClientConnectRetry(unittest.IsolatedAsyncioTestCase):
+    """Async counterpart of TestDaprMCPClientConnectRetry."""
+
+    async def test_retries_then_succeeds_on_cancelled(self):
+        mock_wf = AsyncMock()
+        mock_wf.schedule_new_workflow.side_effect = [
+            _StubRpcError(grpc.StatusCode.CANCELLED),
+            'inst-1',
+        ]
+        mock_wf.wait_for_workflow_completion.return_value = _make_completed_state(
+            SAMPLE_LIST_TOOLS_RESPONSE
+        )
+
+        mcp_client = AioDaprMCPClient(timeout_in_seconds=30, wf_client=mock_wf)
+        with patch('dapr.ext.workflow.aio.mcp.asyncio.sleep', new=AsyncMock()):
+            await mcp_client.connect('weather')
+
+        self.assertEqual(mock_wf.schedule_new_workflow.await_count, 2)
+        self.assertEqual(len(mcp_client.get_all_tools()), 2)
+
+    async def test_deadline_exhausted_raises(self):
+        mock_wf = AsyncMock()
+        mock_wf.schedule_new_workflow.side_effect = _StubRpcError(grpc.StatusCode.CANCELLED)
+
+        mcp_client = AioDaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
+        with (
+            patch('dapr.ext.workflow.aio.mcp.asyncio.sleep', new=AsyncMock()),
+            patch(
+                'dapr.ext.workflow.aio.mcp.time.monotonic',
+                side_effect=[0.0, 2.0],
+            ),
+        ):
+            with self.assertRaises(grpc.RpcError):
+                await mcp_client.connect('weather')
+
+    async def test_budget_exhausted_after_schedule_succeeds(self):
+        """Async mirror of the fail-fast-after-schedule-success guard."""
+        mock_wf = AsyncMock()
+        mock_wf.schedule_new_workflow.side_effect = [
+            _StubRpcError(grpc.StatusCode.CANCELLED),
+            'inst-1',
+        ]
+
+        mcp_client = AioDaprMCPClient(timeout_in_seconds=1, wf_client=mock_wf)
+        with (
+            patch('dapr.ext.workflow.aio.mcp.asyncio.sleep', new=AsyncMock()),
+            patch(
+                'dapr.ext.workflow.aio.mcp.time.monotonic',
+                side_effect=[0.0, 0.4, 2.0],
+            ),
+        ):
+            with self.assertRaises(RuntimeError) as ctx:
+                await mcp_client.connect('weather')
+        self.assertIn('timed out', str(ctx.exception))
+        mock_wf.wait_for_workflow_completion.assert_not_awaited()
 
 
 class TestMCPWorkflowPrefix(unittest.TestCase):
