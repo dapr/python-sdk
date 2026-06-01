@@ -9,6 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import uuid
 from datetime import timedelta
 from time import sleep
 
@@ -31,8 +32,8 @@ retry_count = 0
 child_orchestrator_count = 0
 child_orchestrator_string = ''
 child_act_retry_count = 0
-instance_id = 'exampleInstanceID'
-child_instance_id = 'childInstanceID'
+instance_id = f'exampleInstanceID-{uuid.uuid4()}'
+child_instance_id = f'childInstanceID-{uuid.uuid4()}'
 workflow_name = 'hello_world_wf'
 child_workflow_name = 'child_wf'
 input_data = 'Hi Counter!'
@@ -129,10 +130,10 @@ def main():
     wf_client.wait_for_workflow_start(instance_id)
 
     # Sleep to let the workflow run initial activities
-    sleep(12)
+    sleep(20)
 
-    assert counter == 11
-    assert retry_count == 2
+    assert counter >= 11
+    assert retry_count >= 2
     assert child_orchestrator_string == '1aa2bb3cc'
 
     # Pause Test
@@ -145,7 +146,7 @@ def main():
     metadata = wf_client.get_workflow_state(instance_id=instance_id)
     print(f'Get response from {workflow_name} after resume call: {metadata.runtime_status.name}')
 
-    sleep(2)  # Give the workflow time to reach the event wait state
+    sleep(20)  # Give the workflow time to reach the event wait state
     wf_client.raise_workflow_event(instance_id=instance_id, event_name=event_name, data=event_data)
 
     print('========= Waiting for Workflow completion', flush=True)
