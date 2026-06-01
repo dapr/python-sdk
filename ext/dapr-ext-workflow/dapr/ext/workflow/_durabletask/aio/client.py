@@ -9,7 +9,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
+import time
 import uuid
 from datetime import datetime
 from typing import Any, Optional, Sequence, Union
@@ -33,6 +35,7 @@ from dapr.ext.workflow._durabletask.client import (
     TOutput,
     WorkflowIdReusePolicy,
     WorkflowState,
+    _TransientTimeout,
     new_orchestration_state,
 )
 from google.protobuf import wrappers_pb2
@@ -123,31 +126,30 @@ class AsyncTaskHubGrpcClient:
         self, instance_id: str, *, fetch_payloads: bool = False, timeout: int = 0
     ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
-        try:
-            grpc_timeout = None if timeout == 0 else timeout
-            self._logger.info(
-                f"Waiting {'indefinitely' if timeout == 0 else f'up to {timeout}s'} for instance '{instance_id}' to start."
-            )
+        self._logger.info(
+            f"Waiting {'indefinitely' if timeout in (0, None) else f'up to {timeout}s'} for instance '{instance_id}' to start."
+        )
+
+        async def _call(grpc_timeout):
             res: pb.GetInstanceResponse = await self._stub.WaitForInstanceStart(
                 req, timeout=grpc_timeout
             )
             return new_orchestration_state(req.instanceId, res)
-        except grpc.RpcError as rpc_error:
-            if rpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore
-                # Replace gRPC error with the built-in TimeoutError
-                raise TimeoutError('Timed-out waiting for the orchestration to start')
-            else:
-                raise
+
+        try:
+            return await self._call_with_transient_retry(instance_id, timeout, _call)
+        except _TransientTimeout:
+            raise TimeoutError('Timed-out waiting for the orchestration to start')
 
     async def wait_for_orchestration_completion(
         self, instance_id: str, *, fetch_payloads: bool = True, timeout: int = 0
     ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
-        try:
-            grpc_timeout = None if timeout == 0 else timeout
-            self._logger.info(
-                f"Waiting {'indefinitely' if timeout == 0 else f'up to {timeout}s'} for instance '{instance_id}' to complete."
-            )
+        self._logger.info(
+            f"Waiting {'indefinitely' if timeout in (0, None) else f'up to {timeout}s'} for instance '{instance_id}' to complete."
+        )
+
+        async def _call(grpc_timeout):
             res: pb.GetInstanceResponse = await self._stub.WaitForInstanceCompletion(
                 req, timeout=grpc_timeout
             )
@@ -167,14 +169,68 @@ class AsyncTaskHubGrpcClient:
                 self._logger.info(f"Instance '{instance_id}' was terminated.")
             elif state.runtime_status == OrchestrationStatus.COMPLETED:
                 self._logger.info(f"Instance '{instance_id}' completed.")
-
             return state
-        except grpc.RpcError as rpc_error:
-            if rpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore
-                # Replace gRPC error with the built-in TimeoutError
-                raise TimeoutError('Timed-out waiting for the orchestration to complete')
-            else:
-                raise
+
+        try:
+            return await self._call_with_transient_retry(instance_id, timeout, _call)
+        except _TransientTimeout:
+            raise TimeoutError('Timed-out waiting for the orchestration to complete')
+
+    # Transient gRPC codes that indicate the workflow runtime is temporarily
+    # unable to locate the workflow actor — typically immediately after a Dapr
+    # sidecar restart (e.g. recovery from chaos). The placement service has the
+    # actor registration, but local daprd hasn't received the dissemination yet.
+    # Without retry, every poll fails permanently with FAILED_PRECONDITION even
+    # though the workflow runtime state is intact.
+    _TRANSIENT_RPC_CODES = (
+        grpc.StatusCode.FAILED_PRECONDITION,
+        grpc.StatusCode.UNAVAILABLE,
+    )
+
+    async def _call_with_transient_retry(self, instance_id, timeout, call_fn):
+        """Async mirror of TaskHubGrpcClient._call_with_transient_retry.
+        Retries FAILED_PRECONDITION/UNAVAILABLE with capped exponential
+        backoff while clamping sleep and per-call gRPC timeout to the
+        remaining budget. The first call passes ``timeout`` verbatim so
+        callers observe identical behavior on a healthy runtime.
+        """
+        unbounded = timeout in (0, None)
+        deadline = None if unbounded else time.monotonic() + timeout
+        grpc_timeout = None if unbounded else timeout
+        backoff = 0.5
+        while True:
+            try:
+                return await call_fn(grpc_timeout)
+            except grpc.RpcError as rpc_error:
+                code = rpc_error.code()  # type: ignore
+                if code == grpc.StatusCode.DEADLINE_EXCEEDED:
+                    raise _TransientTimeout()
+                if code not in self._TRANSIENT_RPC_CODES:
+                    raise
+
+                if deadline is None:
+                    remaining = None
+                else:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise _TransientTimeout()
+
+                sleep_for = min(backoff, 5.0)
+                if remaining is not None:
+                    sleep_for = min(sleep_for, remaining)
+                self._logger.warning(
+                    f"Transient gRPC error {code.name} waiting on instance '{instance_id}'; "
+                    f'retrying in {sleep_for:.2f}s'
+                )
+                await asyncio.sleep(sleep_for)
+                backoff = min(backoff * 2, 5.0)
+
+                if deadline is None:
+                    grpc_timeout = None
+                else:
+                    grpc_timeout = deadline - time.monotonic()
+                    if grpc_timeout <= 0:
+                        raise _TransientTimeout()
 
     async def raise_orchestration_event(
         self, instance_id: str, event_name: str, *, data: Optional[Any] = None
