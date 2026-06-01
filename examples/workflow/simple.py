@@ -33,7 +33,6 @@ child_orchestrator_count = 0
 child_orchestrator_string = ''
 child_act_retry_count = 0
 instance_id = f'exampleInstanceID-{uuid.uuid4()}'
-child_instance_id = f'childInstanceID-{uuid.uuid4()}'
 workflow_name = 'hello_world_wf'
 child_workflow_name = 'child_wf'
 input_data = 'Hi Counter!'
