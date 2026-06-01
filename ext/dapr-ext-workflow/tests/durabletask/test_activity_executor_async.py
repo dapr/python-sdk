@@ -37,7 +37,7 @@ TEST_TASK_ID = 42
 def _get_activity_executor(fn: task.Activity) -> tuple[worker._ActivityExecutor, str]:
     registry = worker._Registry()
     name = registry.add_activity(fn)
-    executor = worker._ActivityExecutor(registry, TEST_LOGGER)
+    executor = worker._ActivityExecutor(TEST_LOGGER)
     return executor, name
 
 
@@ -51,7 +51,13 @@ def test_async_activity_inputs():
     activity_input = 'Hello, 世界!'
     executor, name = _get_activity_executor(test_async_activity)
     result = asyncio.run(
-        executor.execute_async(TEST_INSTANCE_ID, name, TEST_TASK_ID, json.dumps(activity_input))
+        executor.execute_async(
+            test_async_activity,
+            TEST_INSTANCE_ID,
+            name,
+            TEST_TASK_ID,
+            json.dumps(activity_input),
+        )
     )
     assert result is not None
 
@@ -61,17 +67,6 @@ def test_async_activity_inputs():
     assert TEST_TASK_ID == result_task_id
 
 
-def test_async_activity_not_registered():
-    async def test_async_activity(ctx: task.ActivityContext, _):
-        pass  # not used
-
-    executor, _ = _get_activity_executor(test_async_activity)
-
-    with pytest.raises(worker.ActivityNotRegisteredError) as exc_info:
-        asyncio.run(executor.execute_async(TEST_INSTANCE_ID, 'Bogus', TEST_TASK_ID, None))
-    assert 'Bogus' in str(exc_info.value)
-
-
 def test_async_activity_exception_propagates():
     async def test_async_activity(ctx: task.ActivityContext, _):
         raise RuntimeError('boom')
@@ -79,7 +74,9 @@ def test_async_activity_exception_propagates():
     executor, name = _get_activity_executor(test_async_activity)
 
     with pytest.raises(RuntimeError) as exc_info:
-        asyncio.run(executor.execute_async(TEST_INSTANCE_ID, name, TEST_TASK_ID, None))
+        asyncio.run(
+            executor.execute_async(test_async_activity, TEST_INSTANCE_ID, name, TEST_TASK_ID, None)
+        )
     assert 'boom' in str(exc_info.value)
 
 

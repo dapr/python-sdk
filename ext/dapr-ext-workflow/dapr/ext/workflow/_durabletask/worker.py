@@ -672,6 +672,7 @@ class TaskHubGrpcWorker:
                             )
                             self._async_worker_manager.submit_activity(
                                 activity_handler,
+                                activity_fn,
                                 work_item.activityRequest,
                                 stub,
                                 work_item.completionToken,
@@ -1074,6 +1075,7 @@ class TaskHubGrpcWorker:
 
     def _execute_activity(
         self,
+        fn: task.Activity | None,
         req: pb.ActivityRequest,
         stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
@@ -1081,8 +1083,9 @@ class TaskHubGrpcWorker:
         instance_id = req.workflowInstance.instanceId
         with self._activity_span(req, instance_id):
             try:
-                executor = _ActivityExecutor(self._registry, self._logger)
+                executor = _ActivityExecutor(self._logger)
                 result = executor.execute(
+                    fn,
                     instance_id,
                     req.name,
                     req.taskId,
@@ -1099,6 +1102,7 @@ class TaskHubGrpcWorker:
 
     async def _execute_activity_async(
         self,
+        fn: task.Activity,
         req: pb.ActivityRequest,
         stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
@@ -1109,8 +1113,9 @@ class TaskHubGrpcWorker:
         instance_id = req.workflowInstance.instanceId
         with self._activity_span(req, instance_id):
             try:
-                executor = _ActivityExecutor(self._registry, self._logger)
+                executor = _ActivityExecutor(self._logger)
                 result = await executor.execute_async(
+                    fn,
                     instance_id,
                     req.name,
                     req.taskId,
@@ -2084,12 +2089,12 @@ class _OrchestrationExecutor:
 
 
 class _ActivityExecutor:
-    def __init__(self, registry: _Registry, logger: logging.Logger):
-        self._registry = registry
+    def __init__(self, logger: logging.Logger):
         self._logger = logger
 
     def _resolve(
         self,
+        fn: task.Activity | None,
         orchestration_id: str,
         name: str,
         task_id: int,
@@ -2097,10 +2102,9 @@ class _ActivityExecutor:
         task_execution_id: str,
         propagated_history: PropagatedHistory | None,
     ) -> tuple[task.Activity, task.ActivityContext, Any]:
-        """Look up the registered activity and build its ``(fn, ctx, input)`` call args."""
+        """Validate ``fn`` and build its ``(fn, ctx, input)`` call args."""
         self._logger.debug(f"{orchestration_id}/{task_id}: Executing activity '{name}'...")
-        fn = self._registry.get_activity(name)
-        if not fn:
+        if fn is None:
             raise ActivityNotRegisteredError(
                 f"Activity function named '{name}' was not registered!"
             )
@@ -2125,6 +2129,7 @@ class _ActivityExecutor:
 
     def execute(
         self,
+        fn: task.Activity | None,
         orchestration_id: str,
         name: str,
         task_id: int,
@@ -2137,7 +2142,8 @@ class _ActivityExecutor:
         Raises ``RuntimeError`` if the activity returns a coroutine, which happens when
         ``_is_async_callable`` fails to detect an async callable at registration.
         """
-        fn, ctx, activity_input = self._resolve(
+        resolved_fn, ctx, activity_input = self._resolve(
+            fn,
             orchestration_id,
             name,
             task_id,
@@ -2145,7 +2151,7 @@ class _ActivityExecutor:
             task_execution_id,
             propagated_history,
         )
-        activity_output = fn(ctx, activity_input)
+        activity_output = resolved_fn(ctx, activity_input)
         if inspect.iscoroutine(activity_output):
             activity_output.close()
             raise RuntimeError(
@@ -2156,6 +2162,7 @@ class _ActivityExecutor:
 
     async def execute_async(
         self,
+        fn: task.Activity,
         orchestration_id: str,
         name: str,
         task_id: int,
@@ -2164,7 +2171,8 @@ class _ActivityExecutor:
         propagated_history: PropagatedHistory | None = None,
     ) -> str | None:
         """Await a coroutine activity function and return the serialized result, if any."""
-        fn, ctx, activity_input = self._resolve(
+        resolved_fn, ctx, activity_input = self._resolve(
+            fn,
             orchestration_id,
             name,
             task_id,
@@ -2172,7 +2180,7 @@ class _ActivityExecutor:
             task_execution_id,
             propagated_history,
         )
-        activity_output = await fn(ctx, activity_input)
+        activity_output = await resolved_fn(ctx, activity_input)
         return self._encode_output(orchestration_id, name, task_id, activity_output)
 
 

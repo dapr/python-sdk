@@ -42,11 +42,6 @@ class FakeRegistry:
         self.activities[name] = fn
 
 
-class FakeWorker:
-    def __init__(self) -> None:
-        self._registry = FakeRegistry()
-
-
 class _AsyncActivityRegistrationTestBase(unittest.TestCase):
     def setUp(self) -> None:
         self._registry_patch = mock.patch(

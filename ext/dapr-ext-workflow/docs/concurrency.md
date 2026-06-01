@@ -40,11 +40,12 @@ process-wide, and it is *not* `maximum_thread_pool_workers`.
 
 If the sidecar takes >5 ms to acknowledge and the worker runs >30 concurrent
 async activities, response delivery serializes through that pool and tail latency
-inflates. The pool is not configurable from application code: `TaskHubGrpcWorker.start()`
-runs the loop on a dedicated background thread via `asyncio.new_event_loop()`, so a
-`set_default_executor(...)` call in the caller thread targets a different loop and
-has no effect. To keep completions from outrunning the pool, lower
-`maximum_concurrent_activity_work_items` so fewer async activities finish at once.
+inflates. The SDK exposes no knob to set the worker loop's executor:
+`TaskHubGrpcWorker.start()` runs the loop on a dedicated background thread via
+`asyncio.new_event_loop()`, so a `set_default_executor(...)` call from the caller
+thread targets a different loop and has no effect. To keep completions from
+outrunning the pool, lower `maximum_concurrent_activity_work_items` so fewer
+async activities finish at once.
 
 This thread hop goes away when the worker migrates to `grpc.aio`.
 
