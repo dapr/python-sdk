@@ -1142,8 +1142,8 @@ class TaskHubGrpcWorker:
                     instance_id,
                 )
             except RuntimeError as exc:
-                # Default executor shut down. Raising would only leak a
-                # 'Task exception was never retrieved' since nobody awaits this task.
+                # Default executor shut down (worker is tearing down). Treat as transient:
+                # the sidecar will re-dispatch the work item once the worker reconnects.
                 self._logger.warning(
                     f"Could not deliver activity response for '{req.name}#{req.taskId}': "
                     f'{exc}. The sidecar will re-dispatch this work item.'

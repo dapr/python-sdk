@@ -519,7 +519,7 @@ async def _run_full(
     for i in range(n_items):
         req = _build_activity_request(activity_name, task_id=i, instance_id='bench')
         submit_ts[i] = time.perf_counter()
-        manager.submit_activity(handler, req, stub, '')
+        manager.submit_activity(handler, activity_fn, req, stub, '')
 
     await manager.activity_queue.join()
     wallclock_s = time.perf_counter() - submit_start
@@ -701,7 +701,9 @@ async def _run_sustained(
                 if now >= next_submit:
                     req = _build_activity_request(activity_name, submitted, 'bench-sus')
                     submit_ts[submitted] = now
-                    manager.submit_activity(worker._execute_activity_async, req, stub, '')
+                    manager.submit_activity(
+                        worker._execute_activity_async, activity_fn, req, stub, ''
+                    )
                     submitted += 1
                     next_submit += submit_interval
                     continue

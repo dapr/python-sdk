@@ -38,8 +38,10 @@ def worker() -> Iterator[TaskHubGrpcWorker]:
     try:
         yield instance
     finally:
-        # Tears down the manager's ThreadPoolExecutor so each test doesn't leak threads.
+        # The worker was never started, so ``stop()`` early-returns; shut the manager
+        # down directly so the test doesn't leak threads if any work was submitted.
         instance.stop()
+        instance._async_worker_manager.shutdown()
 
 
 @pytest.fixture

@@ -54,7 +54,11 @@ class _AsyncActivityRegistrationTestBase(unittest.TestCase):
 
     def tearDown(self) -> None:
         # Tear down the worker's ThreadPoolExecutor so each test doesn't leak threads/fds.
+        # The runtime never started, so ``shutdown()`` -> ``stop()`` early-returns;
+        # shut the manager down directly to actually close the executor.
+        worker = self.runtime._WorkflowRuntime__worker
         self.runtime.shutdown()
+        worker._async_worker_manager.shutdown()
         mock.patch.stopall()
 
 
