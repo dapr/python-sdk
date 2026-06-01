@@ -93,9 +93,9 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python -m build --wheel
-        # --skip-existing makes the step retry-safe: if a previous attempt
-        # partially succeeded and the workflow is re-run, twine treats an
-        # already-uploaded file as success instead of failing the step.
+        # --skip-existing makes re-runs retry-safe. PyPI does not allow
+        # overwriting an existing release; replacing a tagged version's
+        # contents requires bumping VERSION and re-tagging.
         twine upload --skip-existing dist/*
     # The previously-separate distributions (dapr-ext-fastapi, dapr-ext-grpc,
     # dapr-ext-langgraph, dapr-ext-strands, dapr-ext-workflow, flask-dapr)

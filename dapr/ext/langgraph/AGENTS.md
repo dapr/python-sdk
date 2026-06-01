@@ -72,7 +72,7 @@ cp.delete_thread(config)
 - `langgraph >= 0.3.6, < 2.0.0`
 - `langchain >= 0.1.17, < 2.0.0`
 - `python-ulid >= 3.0.0, < 4.0.0` (for checkpoint ID ordering)
-- `msgpack-python >= 0.4.5, < 1.0.0` (for binary serialization)
+- `msgpack >= 1.0, < 2.0` (for binary serialization)
 
 ## Testing
 
