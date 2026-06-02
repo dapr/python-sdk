@@ -209,7 +209,7 @@ Two example directories exercise workflows:
   - `cross-app1.py`, `cross-app2.py`, `cross-app3.py` — cross-app calls
   - `versioning.py` — workflow versioning with `is_patched()`
   - `simple_aio_client.py` — async client variant
-  - `async_activities.py` — `async def` activities (HTTP fan-out with `httpx.AsyncClient`)
+  - `async_activities.py` — `async def` activities (fan-out/fan-in with simulated I/O, configurable payload sizes)
 
 ## Testing
 

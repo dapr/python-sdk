@@ -14,12 +14,32 @@ Sizing notes for the worker's concurrency knobs. Numbers come from
 A `def` activity consumes a semaphore slot **and** a thread pool worker. An
 `async def` activity consumes only a semaphore slot.
 
+## Choosing sync vs async
+
+Sync (`def`) activities are fully supported and unchanged: they run on the thread
+pool. Keep CPU-bound work sync. An `async def` that burns CPU blocks the event loop
+and starves every other activity.
+
+For **I/O-bound** activities (HTTP calls, database queries, anything that waits),
+prefer `async def`. A sync activity holds a thread for the whole wait, so concurrency
+is capped at the pool size (`cpu_count + 4`); an async activity holds only a semaphore
+slot, so in-flight concurrency scales to `maximum_concurrent_activity_work_items`. The
+benchmark shows the gap widening with fan-out width. If your activities wait on I/O,
+moving them to `async def` is the single biggest concurrency win available.
+
+Raising `maximum_thread_pool_workers` lifts the ceiling for a sync I/O activity you can't
+convert yet, but threads scale worse than the loop. Each costs stack memory and contends
+on the GIL, so the activity semaphore reaches `100 × cpu_count` in flight where a thread
+pool that size would not. It buys headroom, not the async ceiling.
+
+Async helps concurrent activities, not sequential chains. A chain of dependent steps
+costs the sum of its steps either way, sync or async.
+
 ## Sizing the activity cap
 
-The cap is the lever for throughput and queue wait. Throughput plateaus around
-`cap ≈ peak_in_flight`. Past the cap, queue wait grows linearly. The benchmark's
-failure-threshold sweep shows the inflection point clearly. Rule of thumb: set
-the cap to ~2x the expected steady-state in-flight count to absorb bursts.
+The cap is the lever for throughput and queue wait. Below the cap, in-flight work
+runs concurrently; past it, submissions wait in the queue. Rule of thumb: set the
+cap to ~2x the expected steady-state in-flight count to absorb bursts.
 
 If activities call a downstream with a hard concurrency limit (e.g. a database
 with a 100-connection pool), set the cap below that limit so it doubles as
@@ -46,13 +66,12 @@ and peak in-flight async response sends.
 
 This thread hop goes away when the worker migrates to `grpc.aio`.
 
-## Sharing httpx clients
+## Reusing clients in async activities
 
-The pattern in `examples/workflow/async_activities.py` opens a fresh
-`httpx.AsyncClient` per activity. Correct for most workloads, but each call pays
-TCP + TLS setup, and throughput plateaus around a few hundred req/s.
-
-For higher throughput, share a single client across activities:
+When async activities call out over the network (HTTP, a database), a fresh client per
+call bounds throughput by connection setup, not the I/O. A per-call `httpx.AsyncClient`
+plateaus around a few hundred req/s. Reuse one client and size its pool to the activity
+cap:
 
 ```python
 _shared_client: httpx.AsyncClient | None = None
@@ -74,6 +93,6 @@ uv sync --all-packages --group dev
 uv run python ext/dapr-ext-workflow/benchmarks/bench_async_activities.py
 ```
 
-Override the 120 s sustained run with `DAPR_BENCH_SUSTAINED_SECONDS=30`
-for a faster local check. Set `DAPR_BENCH_WITH_SIDECAR=1` to exercise the
-end-to-end path against a real sidecar. The script creates `benchmarks/RESULTS.md`.
+`DAPR_BENCH_SUSTAINED_SECONDS` overrides the 120 s sustained run and
+`DAPR_BENCH_ACTIVITY_MS` the per-activity duration, for a faster local check. The
+script creates `benchmarks/RESULTS.md`.

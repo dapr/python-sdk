@@ -134,6 +134,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 markers = [
     'example_dir(name): set the example directory for the dapr fixture',
+    'perf: timing-sensitive dispatch regression tests (reuse the benchmark harness)',
 ]
 pythonpath = ["."]
 asyncio_mode = "auto"

@@ -10,10 +10,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Async activities running alongside sync ones in a single workflow.
+"""Async activities running alongside a sync one in a fan-out/fan-in workflow.
 
-Starts three async activities that do an HTTP request, then a sync activity that
-sums up the results. Shows that sync and async activities work side by side.
+Each async activity simulates an I/O-bound call: it takes a payload, awaits a fixed
+delay (standing in for a network round-trip), and returns a result payload. The async
+instances run concurrently on the worker's event loop; a final sync activity aggregates
+the results. Fan-out width, input/output payload sizes, and the delay are configurable
+via environment variables.
 
 Run with:
 
@@ -23,73 +26,72 @@ Run with:
 
 from __future__ import annotations
 
+import asyncio
+import os
+import random
+import string
 from time import sleep
 
 import dapr.ext.workflow as wf
-import httpx
 from pydantic import BaseModel
+
+FAN_OUT = int(os.environ.get('WORKFLOW_FAN_OUT', '5'))
+INPUT_BYTES = int(os.environ.get('WORKFLOW_INPUT_BYTES', '2048'))
+OUTPUT_BYTES = int(os.environ.get('WORKFLOW_OUTPUT_BYTES', '1024'))
+IO_SECONDS = float(os.environ.get('WORKFLOW_IO_SECONDS', '1.0'))
 
 wfr = wf.WorkflowRuntime()
 
 
-class FetchRequest(BaseModel):
-    url: str
-    timeout_seconds: float = 5.0
+def _random_digits(n: int) -> str:
+    return ''.join(random.choices(string.digits, k=n))
 
 
-class FetchResult(BaseModel):
-    url: str
-    status_code: int
-    body_length: int
+class Payload(BaseModel):
+    index: int
+    data: str
 
 
-@wfr.workflow(name='parallel_fetch_workflow')
-def parallel_fetch_workflow(ctx: wf.DaprWorkflowContext, urls: list[str]):
-    fetch_tasks = [
-        ctx.call_activity(fetch_url, input=FetchRequest(url=url).model_dump()) for url in urls
-    ]
-    results = yield wf.when_all(fetch_tasks)
-    summary = yield ctx.call_activity(summarize_fetches, input=results)
+@wfr.workflow(name='fan_out_fan_in_workflow')
+def fan_out_fan_in_workflow(ctx: wf.DaprWorkflowContext, payloads: list[dict]):
+    tasks = [ctx.call_activity(process_payload, input=p) for p in payloads]
+    results = yield wf.when_all(tasks)
+    summary = yield ctx.call_activity(summarize, input=results)
     return summary
 
 
-@wfr.activity(name='fetch_url')
-async def fetch_url(ctx: wf.WorkflowActivityContext, request: FetchRequest) -> dict:
-    """Async activity: fetch a URL with httpx. Multiple instances run concurrently."""
-    async with httpx.AsyncClient(timeout=request.timeout_seconds) as client:
-        response = await client.get(request.url)
-    result = FetchResult(
-        url=request.url,
-        status_code=response.status_code,
-        body_length=len(response.content),
-    )
+@wfr.activity(name='process_payload')
+async def process_payload(ctx: wf.WorkflowActivityContext, payload: Payload) -> str:
+    """Async activity: simulate an I/O-bound call. Instances run concurrently on the loop."""
+    await asyncio.sleep(IO_SECONDS)
+    result = _random_digits(OUTPUT_BYTES)
     print(
-        f'[async] fetched {result.url} -> {result.status_code} ({result.body_length}B)', flush=True
+        f'[async] payload {payload.index}: {len(payload.data)}B in -> {len(result)}B out',
+        flush=True,
     )
-    return result.model_dump()
+    return result
 
 
-@wfr.activity(name='summarize_fetches')
-def summarize_fetches(ctx: wf.WorkflowActivityContext, results: list[dict]) -> str:
-    """Sync activity: runs in the sync-fallback thread pool. Unchanged from before."""
-    total_bytes = sum(r['body_length'] for r in results)
-    summary = f'fetched {len(results)} URLs, total {total_bytes} bytes'
+@wfr.activity(name='summarize')
+def summarize(ctx: wf.WorkflowActivityContext, results: list[str]) -> str:
+    """Sync activity: aggregate the fan-out results on the thread pool."""
+    total_bytes = sum(len(r) for r in results)
+    total_zeros = sum(r.count('0') for r in results)
+    summary = f'{len(results)} results, {total_bytes} bytes, {total_zeros} zeros'
     print(f'[sync] {summary}', flush=True)
     return summary
 
 
 def main() -> None:
-    urls = [
-        'https://example.com',
-        'https://example.org',
-        'https://example.net',
+    payloads = [
+        Payload(index=i, data=_random_digits(INPUT_BYTES)).model_dump() for i in range(FAN_OUT)
     ]
 
     wfr.start()
     sleep(5)  # wait for workflow runtime to start
 
     wf_client = wf.DaprWorkflowClient()
-    instance_id = wf_client.schedule_new_workflow(workflow=parallel_fetch_workflow, input=urls)
+    instance_id = wf_client.schedule_new_workflow(workflow=fan_out_fan_in_workflow, input=payloads)
     print(f'Workflow started. Instance ID: {instance_id}')
 
     state = wf_client.wait_for_workflow_completion(instance_id, timeout_in_seconds=60)
