@@ -1143,8 +1143,11 @@ class TaskHubGrpcWorker:
                     instance_id,
                 )
             except RuntimeError as exc:
-                # Manager thread pool shut down (worker is tearing down). Treat as transient:
-                # the sidecar will re-dispatch the work item once the worker reconnects.
+                # Only swallow if the manager thread pool was shut down (worker is tearing
+                # down). The sidecar will re-dispatch the work item once the worker reconnects.
+                # Other RuntimeErrors are unexpected and bubble up to the work-item processor.
+                if not self._async_worker_manager._shutdown:
+                    raise
                 self._logger.warning(
                     f"Could not deliver activity response for '{req.name}#{req.taskId}': "
                     f'{exc}. The sidecar will re-dispatch this work item.'

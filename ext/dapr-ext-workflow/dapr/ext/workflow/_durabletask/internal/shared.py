@@ -29,7 +29,13 @@ def is_async_callable(fn: Any) -> bool:
     candidate = fn
     while isinstance(candidate, functools.partial):
         candidate = candidate.func
-    candidate = inspect.unwrap(candidate) if callable(candidate) else candidate
+    if callable(candidate):
+        try:
+            candidate = inspect.unwrap(candidate)
+        except ValueError:
+            # Cyclic ``__wrapped__`` chain from a malformed decorator. Fall back to the
+            # outermost callable; misclassification is preferable to crashing dispatch.
+            pass
     if inspect.iscoroutinefunction(candidate):
         return True
     if not inspect.isfunction(candidate) and hasattr(candidate, '__call__'):

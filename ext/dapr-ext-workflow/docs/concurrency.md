@@ -70,9 +70,10 @@ hosts or need per-call timeout isolation, stick with per-call clients.
 ## Re-running the benchmark
 
 ```bash
+uv sync --all-packages --group dev
 uv run python ext/dapr-ext-workflow/benchmarks/bench_async_activities.py
 ```
 
-Override the 120 s sustained run with `DAPR_BENCH_SUSTAINED_SECONDS=30` for a
-faster local check. Set `DAPR_BENCH_WITH_SIDECAR=1` to exercise the end-to-end
-path against a real sidecar. The script creates `benchmarks/RESULTS.md`.
+Override the 120 s sustained run with `DAPR_BENCH_SUSTAINED_SECONDS=30`
+for a faster local check. Set `DAPR_BENCH_WITH_SIDECAR=1` to exercise the
+end-to-end path against a real sidecar. The script creates `benchmarks/RESULTS.md`.
