@@ -6,9 +6,9 @@ The Strands extension provides distributed session management for [Strands Agent
 
 ```
 ext/dapr-ext-strands/
-├── pyproject.toml                              # Deps: dapr, strands-agents, strands-agents-tools, python-ulid, msgpack-python
-├── setup.py
+├── pyproject.toml                              # Deps: dapr, strands-agents, python-ulid, msgpack-python
 ├── tests/
+
 │   └── test_session_manager.py            # Unit tests with mocked DaprClient
 └── dapr/ext/strands/
     ├── __init__.py                        # Exports: DaprSessionManager
@@ -80,7 +80,6 @@ manager = DaprSessionManager.from_address(
 
 - `dapr >= 1.17.0.dev`
 - `strands-agents` — Strands agents framework
-- `strands-agents-tools` — Strands agent tools
 - `python-ulid >= 3.0.0`
 - `msgpack-python >= 0.4.5`
 
