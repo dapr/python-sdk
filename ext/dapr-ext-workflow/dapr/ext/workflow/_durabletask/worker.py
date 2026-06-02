@@ -2160,9 +2160,9 @@ class _ActivityExecutor:
             activity_output.close()
             raise RuntimeError(
                 f"Activity '{name}' returned a coroutine on the sync path. "
-                f'Declare it with ``async def``, or if it already is, check that any wrapping '
-                f'decorator uses ``@functools.wraps(fn)`` and does not wrap the async callable '
-                f'in a sync ``def`` (``is_async_callable`` needs to see through the decorator).'
+                f'Declare it with ``async def``, or if it already is, ensure any decorator '
+                f'wrapping it uses ``@functools.wraps(fn)`` so the runtime can detect the '
+                f'underlying async function.'
             )
         return self._encode_output(orchestration_id, name, task_id, activity_output)
 
