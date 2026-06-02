@@ -352,6 +352,7 @@ class TaskHubGrpcWorker:
             self._interceptors = None
 
         self._async_worker_manager = _AsyncWorkerManager(self._concurrency_options, self._logger)
+        self._activity_executor = _ActivityExecutor(self._logger)
 
     @property
     def concurrency_options(self) -> ConcurrencyOptions:
@@ -1084,8 +1085,7 @@ class TaskHubGrpcWorker:
         instance_id = req.workflowInstance.instanceId
         with self._activity_span(req, instance_id):
             try:
-                executor = _ActivityExecutor(self._logger)
-                result = executor.execute(
+                result = self._activity_executor.execute(
                     fn,
                     instance_id,
                     req.name,
@@ -1114,8 +1114,7 @@ class TaskHubGrpcWorker:
         instance_id = req.workflowInstance.instanceId
         with self._activity_span(req, instance_id):
             try:
-                executor = _ActivityExecutor(self._logger)
-                result = await executor.execute_async(
+                result = await self._activity_executor.execute_async(
                     fn,
                     instance_id,
                     req.name,
@@ -1143,10 +1142,11 @@ class TaskHubGrpcWorker:
                     instance_id,
                 )
             except RuntimeError as exc:
-                # Only swallow if the manager thread pool was shut down (worker is tearing
-                # down). The sidecar will re-dispatch the work item once the worker reconnects.
-                # Other RuntimeErrors are unexpected and bubble up to the work-item processor.
-                if not self._async_worker_manager._shutdown:
+                # Swallow only when the thread pool itself is shut down (worker tearing down).
+                # Other RuntimeErrors are unexpected and propagate to the work-item processor.
+                # The sidecar will re-dispatch this work item once the worker reconnects.
+                pool = self._async_worker_manager.thread_pool
+                if not getattr(pool, '_shutdown', False):
                     raise
                 self._logger.warning(
                     f"Could not deliver activity response for '{req.name}#{req.taskId}': "

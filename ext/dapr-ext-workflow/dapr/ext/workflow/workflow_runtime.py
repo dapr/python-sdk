@@ -68,32 +68,34 @@ def _make_activity_wrapper(fn: Activity, logger: Logger) -> ActivityWrapper:
     """
     accepts_input, input_model = _model_protocol.resolve_input(fn)
 
+    def _call_args(ctx: task.ActivityContext, inp: object | None) -> tuple:
+        wf_ctx = WorkflowActivityContext(ctx)
+        if not accepts_input:
+            return (wf_ctx,)
+        return (wf_ctx, _coerce_activity_input(inp, input_model))
+
+    def _log_failure(ctx: task.ActivityContext, exc: Exception) -> None:
+        activity_id = getattr(ctx, 'task_id', 'unknown')
+        logger.warning(f'Activity execution failed - task_id: {activity_id}, error: {exc}')
+
     if _is_async_callable(fn):
 
         async def async_activity_wrapper(
             ctx: task.ActivityContext, inp: object | None = None
         ) -> object:
-            activity_id = getattr(ctx, 'task_id', 'unknown')
             try:
-                wf_ctx = WorkflowActivityContext(ctx)
-                if not accepts_input:
-                    return await fn(wf_ctx)
-                return await fn(wf_ctx, _coerce_activity_input(inp, input_model))
-            except Exception as e:
-                logger.warning(f'Activity execution failed - task_id: {activity_id}, error: {e}')
+                return await fn(*_call_args(ctx, inp))
+            except Exception as exc:
+                _log_failure(ctx, exc)
                 raise
 
         return async_activity_wrapper
 
     def sync_activity_wrapper(ctx: task.ActivityContext, inp: object | None = None) -> object:
-        activity_id = getattr(ctx, 'task_id', 'unknown')
         try:
-            wf_ctx = WorkflowActivityContext(ctx)
-            if not accepts_input:
-                return fn(wf_ctx)
-            return fn(wf_ctx, _coerce_activity_input(inp, input_model))
-        except Exception as e:
-            logger.warning(f'Activity execution failed - task_id: {activity_id}, error: {e}')
+            return fn(*_call_args(ctx, inp))
+        except Exception as exc:
+            _log_failure(ctx, exc)
             raise
 
     return sync_activity_wrapper
