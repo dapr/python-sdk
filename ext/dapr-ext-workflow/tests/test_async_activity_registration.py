@@ -24,8 +24,9 @@ import inspect
 import unittest
 from unittest import mock
 
+from dapr.ext.workflow._durabletask.internal.shared import is_async_callable
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
-from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, _is_async_callable
+from dapr.ext.workflow.workflow_runtime import WorkflowRuntime
 from pydantic import BaseModel
 
 
@@ -168,7 +169,7 @@ class AsyncActivityRegistrationTest(_AsyncActivityRegistrationTestBase):
 
 
 class IsAsyncCallableTest(unittest.TestCase):
-    """Pin the contract of ``_is_async_callable`` against decorator shapes that a bare
+    """Pin the contract of ``is_async_callable`` against decorator shapes that a bare
     ``inspect.iscoroutinefunction`` would miss. These are the patterns the fix for finding
     #5 was meant to address. Without coverage, a future refactor can silently regress
     async-activity routing for any of them.
@@ -177,26 +178,26 @@ class IsAsyncCallableTest(unittest.TestCase):
     def test_plain_async_function_is_async(self) -> None:
         async def fn() -> None: ...
 
-        self.assertTrue(_is_async_callable(fn))
+        self.assertTrue(is_async_callable(fn))
 
     def test_plain_sync_function_is_not_async(self) -> None:
         def fn() -> None: ...
 
-        self.assertFalse(_is_async_callable(fn))
+        self.assertFalse(is_async_callable(fn))
 
     def test_functools_partial_of_async_is_async(self) -> None:
         async def fn(prefix: str, payload: str) -> str:
             return prefix + payload
 
         partial_fn = functools.partial(fn, 'hello-')
-        self.assertTrue(_is_async_callable(partial_fn))
+        self.assertTrue(is_async_callable(partial_fn))
 
     def test_functools_partial_of_sync_is_not_async(self) -> None:
         def fn(prefix: str, payload: str) -> str:
             return prefix + payload
 
         partial_fn = functools.partial(fn, 'hello-')
-        self.assertFalse(_is_async_callable(partial_fn))
+        self.assertFalse(is_async_callable(partial_fn))
 
     def test_wraps_chain_over_async_is_async(self) -> None:
         """A sync decorator that uses @functools.wraps exposes the inner via __wrapped__."""
@@ -207,7 +208,7 @@ class IsAsyncCallableTest(unittest.TestCase):
         def outer(ctx: object, inp: object) -> object:
             return inner(ctx, inp)
 
-        self.assertTrue(_is_async_callable(outer))
+        self.assertTrue(is_async_callable(outer))
 
     def test_nested_partial_and_wraps_chain_is_async(self) -> None:
         """partial(@wraps over async). Exercises both unwrap stages in order."""
@@ -220,21 +221,42 @@ class IsAsyncCallableTest(unittest.TestCase):
             return inner(prefix, payload)
 
         partial_wrapped = functools.partial(wrapped, 'hi-')
-        self.assertTrue(_is_async_callable(partial_wrapped))
+        self.assertTrue(is_async_callable(partial_wrapped))
 
     def test_callable_class_instance_with_async_call_is_async(self) -> None:
         class AsyncCallable:
             async def __call__(self, ctx: object, inp: object) -> str:
                 return 'ok'
 
-        self.assertTrue(_is_async_callable(AsyncCallable()))
+        self.assertTrue(is_async_callable(AsyncCallable()))
 
     def test_callable_class_instance_with_sync_call_is_not_async(self) -> None:
         class SyncCallable:
             def __call__(self, ctx: object, inp: object) -> str:
                 return 'ok'
 
-        self.assertFalse(_is_async_callable(SyncCallable()))
+        self.assertFalse(is_async_callable(SyncCallable()))
+
+    def test_cyclic_wrapped_chain_does_not_crash(self) -> None:
+        """A self-referential ``__wrapped__`` makes ``inspect.unwrap`` raise; detection must
+        fall back to the outermost callable instead of propagating the error."""
+
+        async def async_cyclic() -> None: ...
+
+        async_cyclic.__wrapped__ = async_cyclic  # type: ignore[attr-defined]
+
+        def sync_cyclic() -> None: ...
+
+        sync_cyclic.__wrapped__ = sync_cyclic  # type: ignore[attr-defined]
+
+        self.assertTrue(is_async_callable(async_cyclic))
+        self.assertFalse(is_async_callable(sync_cyclic))
+
+    def test_non_callable_input_is_not_async(self) -> None:
+        """The worker passes ``None`` for an unregistered activity and relies on a False
+        result to route to the sync handler."""
+        self.assertFalse(is_async_callable(None))
+        self.assertFalse(is_async_callable(42))
 
 
 class AsyncAndSyncCoexistTest(_AsyncActivityRegistrationTestBase):

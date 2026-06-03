@@ -75,9 +75,7 @@ async def process_payload(ctx: wf.WorkflowActivityContext, payload: Payload) -> 
 @wfr.activity(name='summarize')
 def summarize(ctx: wf.WorkflowActivityContext, results: list[str]) -> str:
     """Sync activity: aggregate the fan-out results on the thread pool."""
-    total_bytes = sum(len(r) for r in results)
-    total_zeros = sum(r.count('0') for r in results)
-    summary = f'{len(results)} results, {total_bytes} bytes, {total_zeros} zeros'
+    summary = f'{len(results)} results, {sum(len(r) for r in results)} bytes'
     print(f'[sync] {summary}', flush=True)
     return summary
 
