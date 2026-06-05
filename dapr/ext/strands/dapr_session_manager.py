@@ -15,13 +15,14 @@ import json
 import logging
 from typing import Any, Dict, List, Literal, Optional, cast
 
-from dapr.clients import DaprClient
-from dapr.clients.grpc._state import Consistency, StateOptions
 from strands import _identifier
 from strands.session.repository_session_manager import RepositorySessionManager
 from strands.session.session_repository import SessionRepository
 from strands.types.exceptions import SessionException
 from strands.types.session import Session, SessionAgent, SessionMessage
+
+from dapr.clients import DaprClient
+from dapr.clients.grpc._state import Consistency, StateOptions
 
 logger = logging.getLogger(__name__)
 

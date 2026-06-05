@@ -20,6 +20,8 @@ from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
 try:
     from dapr.ext.grpc.app import App, Rule  # type:ignore
 except ImportError as exc:
+    if exc.name != 'cloudevents':
+        raise
     raise ImportError(
         f'dapr.ext.grpc is missing an optional dependency ({exc.name!r}). '
         f'Install the extension with: pip install "dapr[grpc]"'

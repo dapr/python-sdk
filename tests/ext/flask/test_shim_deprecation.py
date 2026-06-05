@@ -5,6 +5,8 @@ not a `DeprecationWarning` (which Python's default filter would suppress for
 non-`__main__` callers).
 """
 
+# TODO: remove in 1.20 with the flask_dapr shim.
+
 import sys
 
 import pytest

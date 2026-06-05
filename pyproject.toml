@@ -75,6 +75,7 @@ pattern = '(?P<version>\S+)'
 # `RECORD`. Materialising `dapr/ext/__init__.py` here would lock out every
 # future externally-published dapr.ext.* plugin by claiming ownership of the
 # namespace parent.
+# TODO: drop flask_dapr in 1.20 (with the shim).
 packages = ["dapr", "flask_dapr"]
 # Repo-internal docs (contributor / AI-agent guidance) live next to the code
 # for discoverability but should not ship in the published wheel.
@@ -150,6 +151,15 @@ select = [
 
 # TODO: Add those back progressively as we fix the issues
 ignore = ["E501", "E203", "E712", "E722", "E713"]
+
+[tool.ruff.lint.isort]
+# Extensions now live inside the core `dapr` wheel, so `dapr` and the
+# `flask_dapr` shim are first-party, not third-party imports.
+known-first-party = ["dapr", "flask_dapr"]
+# Without this, same-package autodetection on files under `dapr/ext/*` keeps
+# `dapr` in the third-party group, so the first-party setting above never
+# takes effect for the bundled extensions.
+detect-same-package = false
 
 [tool.ruff.format]
 quote-style = 'single'

@@ -17,6 +17,8 @@ try:
     from .actor import DaprActor
     from .app import DaprApp
 except ImportError as exc:
+    if exc.name != 'fastapi':
+        raise
     raise ImportError(
         f'dapr.ext.fastapi is missing an optional dependency ({exc.name!r}). '
         f'Install the extension with: pip install "dapr[fastapi]"'

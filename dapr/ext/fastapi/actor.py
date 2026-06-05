@@ -15,12 +15,13 @@ limitations under the License.
 
 from typing import Any, List, Optional, Type
 
-from dapr.actor import Actor, ActorRuntime
-from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
-from dapr.serializers import DefaultJSONSerializer
 from fastapi import APIRouter, FastAPI, Request, Response, status  # type: ignore
 from fastapi.logger import logger
 from fastapi.responses import JSONResponse
+
+from dapr.actor import Actor, ActorRuntime
+from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
+from dapr.serializers import DefaultJSONSerializer
 
 DEFAULT_CONTENT_TYPE = 'application/json; utf-8'
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'

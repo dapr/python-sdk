@@ -16,12 +16,12 @@ limitations under the License.
 import warnings
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
+import grpc
 from cloudevents.sdk.event import v1  # type: ignore
 from google.protobuf import empty_pb2
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.struct_pb2 import Struct
 
-import grpc
 from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._request import BindingRequest, InvokeMethodRequest, JobEvent
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse

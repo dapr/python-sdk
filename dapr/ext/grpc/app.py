@@ -17,6 +17,7 @@ from concurrent import futures
 from typing import Dict, Optional
 
 import grpc
+
 from dapr.conf import settings
 from dapr.ext.grpc._health_servicer import _HealthCheckServicer  # type: ignore
 from dapr.ext.grpc._servicer import Rule, _CallbackServicer  # type: ignore

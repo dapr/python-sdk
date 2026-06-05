@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+# TODO: remove in 1.20 with the detection in dapr/__init__.py it tests.
+
 import importlib.metadata
 import tempfile
 import unittest

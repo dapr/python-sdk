@@ -16,10 +16,11 @@ limitations under the License.
 import asyncio
 from typing import Any, Optional, Type
 
+from flask import jsonify, make_response, request
+
 from dapr.actor import Actor, ActorRuntime
 from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
 from dapr.serializers import DefaultJSONSerializer
-from flask import jsonify, make_response, request
 
 DEFAULT_CONTENT_TYPE = 'application/json; utf-8'
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'

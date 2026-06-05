@@ -17,6 +17,8 @@ try:
     from .actor import DaprActor
     from .app import DaprApp
 except ImportError as exc:
+    if exc.name != 'flask':
+        raise
     raise ImportError(
         f'dapr.ext.flask is missing an optional dependency ({exc.name!r}). '
         f'Install the extension with: pip install "dapr[flask]"'

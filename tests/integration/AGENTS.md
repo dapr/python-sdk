@@ -14,13 +14,13 @@ Run locally (requires a running Dapr runtime via `dapr init`):
 
 ```bash
 # All integration tests
-tox -e integration
+uv run pytest tests/integration/
 
 # Single test file
-tox -e integration -- test_state_store.py
+uv run pytest tests/integration/test_state_store.py
 
 # Single test
-tox -e integration -- test_state_store.py -k test_save_and_get
+uv run pytest tests/integration/test_state_store.py -k test_save_and_get
 ```
 
 ## Directory structure

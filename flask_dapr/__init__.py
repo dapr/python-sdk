@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+# TODO: remove in 1.20.
 # Deprecation shim for the pre-1.19 `flask_dapr` top-level import path.
 # Use `dapr.ext.flask` instead.
 

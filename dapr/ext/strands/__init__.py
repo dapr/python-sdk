@@ -16,6 +16,8 @@ limitations under the License.
 try:
     from dapr.ext.strands.dapr_session_manager import DaprSessionManager
 except ImportError as exc:
+    if exc.name != 'strands':
+        raise
     raise ImportError(
         f'dapr.ext.strands is missing an optional dependency ({exc.name!r}). '
         f'Install the extension with: pip install "dapr[strands]"'

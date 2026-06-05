@@ -16,6 +16,8 @@ limitations under the License.
 try:
     from dapr.ext.langgraph.dapr_checkpointer import DaprCheckpointer
 except ImportError as exc:
+    if exc.name != 'langgraph':
+        raise
     raise ImportError(
         f'dapr.ext.langgraph is missing an optional dependency ({exc.name!r}). '
         f'Install the extension with: pip install "dapr[langgraph]"'
