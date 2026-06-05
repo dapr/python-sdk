@@ -20,11 +20,9 @@ from dapr.clients.http.helpers import get_api_url
 if TYPE_CHECKING:
     from dapr.serializers import Serializer
 
-from dapr.clients.base import DaprActorClientBase
+from dapr.clients.base import DAPR_REENTRANCY_ID_HEADER, DaprActorClientBase
 from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.retry import RetryPolicy
-
-DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
 
 
 class DaprActorHttpClient(DaprActorClientBase):

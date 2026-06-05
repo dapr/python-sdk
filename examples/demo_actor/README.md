@@ -5,6 +5,7 @@ This document describes how to create an Actor(DemoActor) and invoke its methods
 - **The actor interface(demo_actor_interface.py).** This contains the interface definition for the actor. Actor interfaces can be defined with any name. The interface defines the actor contract that is shared by the actor implementation and the clients calling the actor. Because client may depend on it, it typically makes sense to define it in an assembly that is separate from the actor implementation.
 - **The actor service(demo_actor_service.py).** This implements FastAPI service that is going to host the actor. It contains the implementation of the actor, `demo_actor.py`. An actor implementation is a class that derives from the base type `Actor` and implements the interfaces defined in `demo_actor_interface.py`.
 - **The actor service for flask(demo_actor_flask.py).** This implements Flask web service that is going to host the actor.
+- **The actor service for gRPC(demo_actor_grpc_service.py).** This hosts the actor over the app-initiated gRPC actor stream (alpha) — no HTTP callback endpoints at all.
 - **The actor client(demo_actor_client.py)** This contains the implementation of the actor client which calls DemoActor's method defined in Actor Interfaces.
 - **Actor tests(test_demo_actor.py)** This contains actor unit tests using mock actor testing functionality.
 
@@ -122,6 +123,52 @@ expected_stdout_lines:
    ```
 
 <!-- END_STEP -->
+
+## Run in self-hosted mode with gRPC actor hosting (alpha)
+
+Instead of exposing HTTP callback endpoints, the actor host can receive all
+actor callbacks (method invocations, reminders, timers, deactivations) over a
+single app-initiated gRPC stream (`SubscribeActorEventsAlpha1`). The same
+`DemoActor` implementation runs unchanged; only the hosting service differs.
+
+> This feature is **alpha** and requires a Dapr runtime that supports the
+> `SubscribeActorEventsAlpha1` RPC. daprd must be configured with a gRPC app
+> channel (`--app-protocol grpc` plus `--app-port`); the service listens on
+> the app port with an empty gRPC server, but no actor traffic flows through
+> it — every actor callback arrives over the host's outbound stream, and all
+> outbound actor operations (state, reminders, timers) use daprd's gRPC API.
+
+1. Run the gRPC Demo Actor service in a new terminal window
+
+   ```bash
+   cd demo_actor
+   dapr run --app-id demo-actor --app-port 3000 --app-protocol grpc -- python3 demo_actor_grpc_service.py
+   ```
+
+   Expected output:
+   ```
+   ...
+   DemoActor is hosted over the Dapr gRPC actor stream
+   Activate DemoActor actor!
+   has_value: False
+   set_my_data: {'data': 'new_data'}
+   has_value: True
+   set reminder to True
+   set reminder is done
+   set_timer to True
+   set_timer is done
+   receive_reminder is called - demo_reminder reminder - b'reminder_state'
+   time_callback is called - timer_state
+   clear_my_data
+   ...
+   ```
+
+2. Run the Demo client in a new terminal window (same client as the HTTP example)
+
+   ```bash
+   cd demo_actor
+   dapr run --app-id demo-client -- python3 demo_actor_client.py
+   ```
 
 ## Run DemoActor on Kubernetes
 
