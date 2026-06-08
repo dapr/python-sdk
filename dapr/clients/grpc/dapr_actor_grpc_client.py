@@ -26,6 +26,7 @@ from dapr.clients.base import DAPR_REENTRANCY_ID_HEADER, DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError
 from dapr.clients.grpc._channel import create_aio_channel
 from dapr.proto import api_service_v1, api_v1, common_v1
+from dapr.serializers import DefaultJSONSerializer, Serializer
 from dapr.serializers.util import convert_from_dapr_duration
 
 
@@ -36,6 +37,12 @@ class DaprActorGrpcClient(DaprActorClientBase):
     timers) over the unary RPCs of daprd's gRPC API instead of the actor HTTP
     endpoints. Used by :class:`ActorGrpcHost` so actor apps hosted over the
     ``SubscribeActorEventsAlpha1`` stream never need daprd's HTTP port.
+
+    Unlike the HTTP client, which forwards the runtime's already-serialized
+    request body verbatim, this client unpacks the body into proto fields and
+    must re-serialize the embedded JSON values. It does so with the same
+    serializer the runtime used so the bytes daprd persists (state) or echoes
+    back (timer data) stay identical to the HTTP transport's.
     """
 
     def __init__(
@@ -43,6 +50,7 @@ class DaprActorGrpcClient(DaprActorClientBase):
         timeout: int = 60,
         address: Optional[str] = None,
         channel: Optional[grpc.aio.Channel] = None,
+        serializer: Serializer = DefaultJSONSerializer(),
     ):
         """Creates the gRPC actor client.
 
@@ -53,8 +61,12 @@ class DaprActorGrpcClient(DaprActorClientBase):
             channel (grpc.aio.Channel, optional): externally owned channel to
                 reuse; when provided ``address`` is ignored and ``close()``
                 leaves the channel open.
+            serializer (Serializer): serializer used to re-encode the JSON
+                values unpacked from request bodies; must match the runtime's
+                so persisted/echoed bytes are identical to the HTTP transport.
         """
         self._timeout = timeout
+        self._serializer = serializer
         self._owns_channel = channel is None
         self._channel = channel if channel is not None else create_aio_channel(address)
         self._stub = api_service_v1.DaprStub(self._channel)
@@ -100,7 +112,7 @@ class DaprActorGrpcClient(DaprActorClientBase):
             data (bytes): Json-serialized the transactional state operations.
         """
         operations_raw = json.loads(data)
-        operations = [_to_transactional_operation(op) for op in operations_raw]
+        operations = [_to_transactional_operation(op, self._serializer) for op in operations_raw]
         request = api_v1.ExecuteActorStateTransactionRequest(
             actor_type=actor_type,
             actor_id=actor_id,
@@ -173,7 +185,7 @@ class DaprActorGrpcClient(DaprActorClientBase):
             period=timer.get('period') or '',
             ttl=timer.get('ttl') or '',
             callback=timer.get('callback') or '',
-            data=json.dumps(timer_state).encode('utf-8'),
+            data=self._serializer.serialize(timer_state),
         )
         await self._stub.RegisterActorTimer(request, timeout=self._timeout)
 
@@ -187,12 +199,13 @@ class DaprActorGrpcClient(DaprActorClientBase):
 
 def _to_transactional_operation(
     operation: Dict[str, Any],
+    serializer: Serializer,
 ) -> api_v1.TransactionalActorStateOperation:
     """Converts one JSON transactional operation into its proto form.
 
     The JSON shape is produced by ``StateProvider.save_state``; the value is
-    re-serialized to raw JSON bytes, which daprd stores verbatim — the same
-    representation the HTTP endpoint persists.
+    re-serialized with the runtime's serializer into raw JSON bytes, which
+    daprd stores verbatim — byte-identical to what the HTTP endpoint persists.
     """
     request: Dict[str, Any] = operation['request']
 
@@ -201,7 +214,7 @@ def _to_transactional_operation(
         key=request['key'],
     )
     if 'value' in request:
-        value_bytes = json.dumps(request['value']).encode('utf-8')
+        value_bytes = serializer.serialize(request['value'])
         proto_operation.value.CopyFrom(any_pb2.Any(value=value_bytes))
     metadata: Optional[Dict[str, str]] = request.get('metadata')
     if metadata:

@@ -184,7 +184,7 @@ class ActorGrpcHost:
             message_serializer,
             state_serializer,
             actor_factory=actor_factory,
-            actor_client=self._get_actor_client(),
+            actor_client=self._get_actor_client(message_serializer),
         )
 
     async def start(self) -> None:
@@ -280,12 +280,12 @@ class ActorGrpcHost:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    def _get_actor_client(self) -> DaprActorGrpcClient:
+    def _get_actor_client(self, serializer: Serializer) -> DaprActorGrpcClient:
         if self._channel is None:
             self._channel = create_aio_channel(self._address)
         if self._actor_client is None:
             self._actor_client = DaprActorGrpcClient(
-                timeout=self._timeout_seconds, channel=self._channel
+                timeout=self._timeout_seconds, channel=self._channel, serializer=serializer
             )
         return self._actor_client
 

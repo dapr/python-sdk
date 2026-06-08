@@ -102,14 +102,16 @@ class DaprActorGrpcClientTests(unittest.IsolatedAsyncioTestCase):
         upsert = request.operations[0]
         self.assertEqual('upsert', upsert.operationType)
         self.assertEqual('key1', upsert.key)
-        self.assertEqual({'x': 1}, json.loads(upsert.value.value))
+        # daprd persists Any.value verbatim, so the bytes must match the
+        # runtime serializer's compact output, not spaced json.dumps defaults.
+        self.assertEqual(b'{"x":1}', upsert.value.value)
         self.assertEqual({'ttlInSeconds': '60'}, dict(upsert.metadata))
 
         delete = request.operations[1]
         self.assertEqual('delete', delete.operationType)
         self.assertEqual('key2', delete.key)
         self.assertEqual(
-            b'{"x": 1}', self._fake_dapr_server.actor_state[('DemoActor', 'a1', 'key1')]
+            b'{"x":1}', self._fake_dapr_server.actor_state[('DemoActor', 'a1', 'key1')]
         )
 
     async def test_register_reminder(self):
@@ -192,7 +194,9 @@ class DaprActorGrpcClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('0h0m5s0ms0μs', request.due_time)
         self.assertEqual('0h0m10s0ms0μs', request.period)
         self.assertEqual('0h2m0s0ms0μs', request.ttl)
-        self.assertEqual({'setting': 1}, json.loads(request.data))
+        # daprd base64-wraps these bytes and the host recovers them verbatim,
+        # so they must match the runtime serializer's compact output.
+        self.assertEqual(b'{"setting":1}', request.data)
 
     async def test_unregister_reminder_and_timer(self):
         await self.client.unregister_reminder('DemoActor', 'a1', 'demo_reminder')
