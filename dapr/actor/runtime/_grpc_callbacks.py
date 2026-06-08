@@ -184,7 +184,7 @@ def _maybe_unwrap_grpc_registered_value(value: bytes) -> bytes:
     try:
         decoded = base64.b64decode(parsed, validate=True)
         json.loads(decoded)
-    except ValueError:
+    except Exception:  # noqa: BLE001
         return value
     return decoded
 
