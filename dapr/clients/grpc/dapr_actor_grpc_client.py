@@ -143,8 +143,10 @@ class DaprActorGrpcClient(DaprActorClientBase):
             period=reminder.get('period') or '',
             ttl=reminder.get('ttl') or '',
             data=_decode_reminder_state(reminder.get('data')),
-            failure_policy=_to_failure_policy(reminder.get('failurePolicy')),
         )
+        failure_policy = _to_failure_policy(reminder.get('failurePolicy'))
+        if failure_policy is not None:
+            request.failure_policy.CopyFrom(failure_policy)
         await self._stub.RegisterActorReminder(request, timeout=self._timeout)
 
     async def unregister_reminder(self, actor_type: str, actor_id: str, name: str) -> None:

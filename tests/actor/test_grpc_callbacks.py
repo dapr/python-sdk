@@ -21,6 +21,7 @@ from datetime import timedelta
 from google.protobuf import any_pb2, wrappers_pb2
 
 from dapr.actor.runtime._grpc_callbacks import (
+    ActorCallbackNotFoundError,
     build_initial_request,
     build_invoke_error_payload,
     build_reminder_fire_body,
@@ -242,11 +243,17 @@ class InvokeErrorPayloadTests(unittest.TestCase):
 
 
 class StatusCodeMappingTests(unittest.TestCase):
-    def test_unregistered_actor_type_maps_to_not_found(self):
-        self.assertEqual(5, status_code_for_exception(ValueError('X is not registered.')))
+    def test_missing_actor_type_maps_to_not_found(self):
+        error = ActorCallbackNotFoundError('X is not registered.')
+        self.assertEqual(5, status_code_for_exception(error))
 
     def test_unknown_method_maps_to_not_found(self):
         self.assertEqual(5, status_code_for_exception(AttributeError('no method')))
+
+    def test_value_error_maps_to_unknown(self):
+        # A plain ValueError (e.g. invalid payload, non-remindable actor) is
+        # retryable, not a permanent NOT_FOUND.
+        self.assertEqual(2, status_code_for_exception(ValueError('bad payload')))
 
     def test_generic_exception_maps_to_unknown(self):
         self.assertEqual(2, status_code_for_exception(RuntimeError('boom')))

@@ -15,7 +15,7 @@ limitations under the License.
 
 import asyncio
 import logging
-from typing import Callable, Optional, Set, Type
+from typing import Awaitable, Callable, Optional, Protocol, Set, Type, TypeVar
 
 import grpc.aio  # type: ignore
 from grpc import StatusCode  # type: ignore[attr-defined]
@@ -25,6 +25,7 @@ from dapr.actor.id import ActorId
 from dapr.actor.runtime._grpc_callbacks import (
     CONTENT_TYPE_HEADER,
     JSON_CONTENT_TYPE,
+    ActorCallbackNotFoundError,
     build_initial_request,
     build_invoke_error_payload,
     build_reminder_fire_body,
@@ -63,6 +64,19 @@ def _log_dispatch_task_exception(task: 'asyncio.Task[None]') -> None:
     exception = task.exception()
     if exception is not None:
         logger.error('Unhandled exception in actor dispatch task', exc_info=exception)
+
+
+class _ActorCallbackRequest(Protocol):
+    """The fields shared by every callback daprd pushes on the stream."""
+
+    @property
+    def id(self) -> str: ...
+
+    @property
+    def actor_type(self) -> str: ...
+
+
+_CallbackRequestT = TypeVar('_CallbackRequestT', bound=_ActorCallbackRequest)
 
 
 class _StreamSession:
@@ -205,11 +219,18 @@ class ActorGrpcHost:
                 # registration can only mean stop() raced start().
                 self._run_task.result()
         except BaseException:
-            await self.stop()
+            await self.close()
             raise
 
     async def stop(self) -> None:
-        """Stops serving callbacks and closes the connection to daprd."""
+        """Stops serving callbacks, leaving the host restartable.
+
+        Cancels the stream and drains in-flight callbacks but keeps the gRPC
+        channel and outbound actor client open. Those objects are wired into
+        the already-registered :class:`ActorRuntime` managers, so closing them
+        here would break a later :meth:`start` and any outbound actor op; use
+        :meth:`close` for terminal teardown.
+        """
         self._stopping = True
         if self._session is not None:
             self._session.close()
@@ -221,13 +242,22 @@ class ActorGrpcHost:
                 pass
             self._run_task = None
         await self._drain_dispatch_tasks()
+        self._registered.clear()
+
+    async def close(self) -> None:
+        """Stops serving and releases the gRPC channel. Terminal.
+
+        After ``close`` the host cannot be restarted, because the registered
+        actor managers still reference the now-closed outbound client. Create
+        a new host (and re-register actors) to host again.
+        """
+        await self.stop()
         if self._actor_client is not None:
             await self._actor_client.close()
             self._actor_client = None
         if self._channel is not None:
             await self._channel.close()
             self._channel = None
-        self._registered.clear()
 
     async def run_forever(self) -> None:
         """Starts the host and serves callbacks until cancelled.
@@ -241,14 +271,14 @@ class ActorGrpcHost:
         try:
             await asyncio.shield(self._run_task)
         finally:
-            await self.stop()
+            await self.close()
 
     async def __aenter__(self) -> 'ActorGrpcHost':
         await self.start()
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-        await self.stop()
+        await self.close()
 
     def _get_actor_client(self) -> DaprActorGrpcClient:
         if self._channel is None:
@@ -348,25 +378,39 @@ class ActorGrpcHost:
         """Routes one callback to the actor runtime and replies on the stream."""
         callback_type = message.WhichOneof('response_type')
         if callback_type == 'invoke_request':
-            await self._on_invoke(session, message.invoke_request)
+            await self._guard_and_handle(session, message.invoke_request, self._on_invoke)
         elif callback_type == 'reminder_request':
-            await self._on_reminder(session, message.reminder_request)
+            await self._guard_and_handle(session, message.reminder_request, self._on_reminder)
         elif callback_type == 'timer_request':
-            await self._on_timer(session, message.timer_request)
+            await self._guard_and_handle(session, message.timer_request, self._on_timer)
         elif callback_type == 'deactivate_request':
-            await self._on_deactivate(session, message.deactivate_request)
+            await self._guard_and_handle(session, message.deactivate_request, self._on_deactivate)
         else:
             logger.warning('Ignoring unexpected actor stream message: %s', callback_type)
+
+    async def _guard_and_handle(
+        self,
+        session: _StreamSession,
+        request: _CallbackRequestT,
+        handler: Callable[[_StreamSession, _CallbackRequestT], Awaitable[None]],
+    ) -> None:
+        """Rejects callbacks for unhosted actor types, then runs the handler.
+
+        Checking registration here means an unknown actor type maps to
+        NOT_FOUND consistently across every callback kind (daprd treats it as
+        a permanent failure).
+        """
+        if request.actor_type not in ActorRuntime.get_registered_actor_types():
+            not_found = ActorCallbackNotFoundError(f'{request.actor_type} is not registered.')
+            await self._send_request_failed(session, request.id, not_found)
+            return
+        await handler(session, request)
 
     async def _on_invoke(
         self,
         session: _StreamSession,
         request: api_v1.SubscribeActorEventsResponseInvokeRequestAlpha1,
     ) -> None:
-        if request.actor_type not in ActorRuntime.get_registered_actor_types():
-            not_registered = ValueError(f'{request.actor_type} is not registered.')
-            await self._send_request_failed(session, request.id, not_registered)
-            return
         try:
             reentrancy_id = extract_reentrancy_id(request.metadata)
             result = await ActorRuntime.dispatch(

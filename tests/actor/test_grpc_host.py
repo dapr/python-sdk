@@ -219,7 +219,7 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         self.host = ActorGrpcHost(address=f'localhost:{GRPC_PORT}')
 
     async def asyncTearDown(self):
-        await self.host.stop()
+        await self.host.close()
         ActorRuntime._actor_managers.clear()
         ActorRuntime._actor_managers.update(self._saved_managers)
         ActorRuntime.set_actor_config(self._saved_config)
@@ -428,6 +428,34 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_stop_before_start_is_a_noop(self):
         await self.host.stop()
+
+    async def test_restart_after_stop_reuses_transport(self):
+        # stop() must keep the channel/outbound client alive so the registered
+        # runtime managers stay valid and the host can serve again.
+        await self._serve_plans(
+            _plan([_invoke_message('req-1', 'GetName')]),
+            _plan([_invoke_message('req-2', 'GetName')]),
+        )
+        await self._await_replies(1)
+
+        channel_before = self.host._channel
+        await self.host.stop()
+        self.assertIsNotNone(self.host._channel)
+        self.assertIs(channel_before, self.host._channel)
+
+        await self.host.start()
+        replies = await self._await_replies(2)
+
+        reply_ids = {reply.invoke_response.id for reply in replies}
+        self.assertEqual({'req-1', 'req-2'}, reply_ids)
+
+    async def test_close_releases_transport(self):
+        await self._serve_callbacks()
+
+        await self.host.close()
+
+        self.assertIsNone(self.host._channel)
+        self.assertIsNone(self.host._actor_client)
 
     async def test_unknown_stream_message_is_ignored(self):
         from dapr.actor.runtime.grpc_host import _StreamSession

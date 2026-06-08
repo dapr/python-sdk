@@ -33,6 +33,15 @@ CONTENT_TYPE_HEADER = 'content-type'
 JSON_CONTENT_TYPE = 'application/json'
 
 
+class ActorCallbackNotFoundError(Exception):
+    """Signals a callback whose target actor type or method does not exist.
+
+    Mapped to gRPC ``NOT_FOUND`` so daprd treats it as a permanent,
+    non-retryable failure, matching how the HTTP transport surfaces an unknown
+    actor type or method.
+    """
+
+
 def build_initial_request(
     config: ActorRuntimeConfig,
 ) -> api_v1.SubscribeActorEventsRequestInitialAlpha1:
@@ -182,9 +191,11 @@ def _maybe_unwrap_grpc_registered_value(value: bytes) -> bytes:
     if not isinstance(parsed, str):
         return value
     try:
+        # binascii.Error (invalid base64) and json.JSONDecodeError are both
+        # ValueError subclasses, so either falls back to the original value.
         decoded = base64.b64decode(parsed, validate=True)
         json.loads(decoded)
-    except Exception:  # noqa: BLE001
+    except ValueError:
         return value
     return decoded
 
@@ -205,10 +216,12 @@ def build_invoke_error_payload(exception: Exception) -> bytes:
 def status_code_for_exception(exception: Exception) -> int:
     """Maps a dispatch exception to the gRPC status code for ``request_failed``.
 
-    ``ValueError`` (unregistered actor type) and ``AttributeError`` (unknown
-    actor method) map to ``NOT_FOUND``, which daprd treats as a permanent,
-    non-retryable failure. Everything else maps to ``UNKNOWN``.
+    Only a missing actor type (:class:`ActorCallbackNotFoundError`) or unknown
+    actor method (``AttributeError`` from the method dispatcher) map to
+    ``NOT_FOUND``, which daprd treats as a permanent, non-retryable failure.
+    Everything else — including a plain ``ValueError`` such as an invalid
+    payload or a non-remindable actor — maps to ``UNKNOWN`` so daprd may retry.
     """
-    if isinstance(exception, (ValueError, AttributeError)):
+    if isinstance(exception, (ActorCallbackNotFoundError, AttributeError)):
         return StatusCode.NOT_FOUND.value[0]
     return StatusCode.UNKNOWN.value[0]
