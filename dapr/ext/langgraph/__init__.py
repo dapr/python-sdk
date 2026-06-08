@@ -13,10 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+_LANGGRAPH_OPTIONAL_MODULES = frozenset({'msgpack', 'langchain_core', 'langgraph', 'ulid'})
+
 try:
     from dapr.ext.langgraph.dapr_checkpointer import DaprCheckpointer
 except ImportError as exc:
-    if exc.name != 'langgraph':
+    if exc.name not in _LANGGRAPH_OPTIONAL_MODULES:
         raise
     raise ImportError(
         f'dapr.ext.langgraph is missing an optional dependency ({exc.name!r}). '
