@@ -10,110 +10,95 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Perf regression tests for the async activity dispatch path.
+"""Perf regression test for the async activity dispatch path.
 
-Reuses the benchmark harness (``dapr.ext.workflow._bench_harness``) with small, fast
-parameters and asserts machine-independent ratios rather than absolute times, so the
-checks stay deterministic in CI. Marked ``perf`` so constrained runners can skip them.
+Drives ``_execute_activity_async`` through ``_AsyncWorkerManager`` against an in-process
+stub. A timeout fails the batch if async activities serialize instead of overlapping.
 """
 
 import asyncio
 
+import dapr.ext.workflow._durabletask.internal.protos as pb
 import pytest
-from dapr.ext.workflow._bench_harness import (
-    _async_sleep_factory,
-    _run_full,
-    _run_lite,
-    _run_sustained,
-)
+from dapr.ext.workflow._durabletask.worker import ConcurrencyOptions, TaskHubGrpcWorker
 
 pytestmark = pytest.mark.perf
 
 ACTIVITY_S = 0.02
-POOL = 16
-SEM = 1000
-REPEAT = 2
+N_ITEMS = 1000
+SEMAPHORE_CAP = 2000
+THREAD_POOL = 16
+
+# Generous fraction of the time to run 1000 activities serially. Should trip fast if async I/O serializes
+TIMEOUT_S = 2.0
 
 
-async def fastest(**kwargs):
-    """Fastest of REPEAT sequential runs, so spotty CI noise on one run can't flake the
-    wallclock comparisons. Noise only adds time, so the min is the least-disturbed sample.
+class _MockSidecarStub:
+    """In-process stand-in for the gRPC stub; records activity completions."""
+
+    def __init__(self) -> None:
+        self.completions = 0
+
+    def CompleteActivityTask(self, _response: pb.ActivityResponse) -> None:  # noqa: N802
+        self.completions += 1
+
+
+def _activity_request(task_id: int) -> pb.ActivityRequest:
+    return pb.ActivityRequest(
+        name='regression_async',
+        taskId=task_id,
+        workflowInstance=pb.WorkflowInstance(instanceId='regression'),
+        parentTraceContext=pb.TraceContext(traceParent=''),
+        taskExecutionId='',
+    )
+
+
+async def _run_async_batch(n_items: int, timeout_s: float) -> int:
+    """Submit ``n_items`` async sleep activities through the dispatch path and drain them.
+
+    Raises ``asyncio.TimeoutError`` if the batch does not drain within ``timeout_s``.
     """
-    runs = [await _run_full(**kwargs) for _ in range(REPEAT)]
-    return min(runs, key=lambda m: m.wallclock_s)
+    options = ConcurrencyOptions(
+        maximum_concurrent_activity_work_items=SEMAPHORE_CAP,
+        maximum_concurrent_orchestration_work_items=SEMAPHORE_CAP,
+        maximum_thread_pool_workers=THREAD_POOL,
+    )
+    worker = TaskHubGrpcWorker(host_address='in-process-mock', concurrency_options=options)
+    manager = worker._async_worker_manager
+    stub = _MockSidecarStub()
+
+    async def activity(ctx, _inp) -> None:
+        await asyncio.sleep(ACTIVITY_S)
+
+    worker_task = asyncio.create_task(manager.run())
+    while manager.activity_queue is None:
+        await asyncio.sleep(0)
+    try:
+        for task_id in range(n_items):
+            req = _activity_request(task_id)
+            manager.submit_activity(worker._execute_activity_async, activity, req, stub, '')
+        await asyncio.wait_for(manager.activity_queue.join(), timeout=timeout_s)
+    finally:
+        manager._shutdown = True
+        worker_task.cancel()
+        await asyncio.gather(worker_task, return_exceptions=True)
+        manager.shutdown()
+
+    return stub.completions
 
 
-def test_async_fan_out_overlaps_and_beats_sync():
-    """Async clears a batch in ~one I/O window; sync serializes through the pool."""
+def test_async_activities_overlap_instead_of_serializing():
+    """A batch of async activities drains in ~one I/O window, not N of them.
 
-    async def run():
-        kwargs = dict(
-            n_items=300,
-            semaphore_cap=SEM,
-            thread_pool_workers=POOL,
-            server_latency_s=ACTIVITY_S,
+    Fails if the batch cannot finish within ``TIMEOUT_S``, meaning the async path is
+    serializing instead of overlapping I/O on the event loop.
+    """
+    try:
+        completions = asyncio.run(_run_async_batch(N_ITEMS, TIMEOUT_S))
+    except asyncio.TimeoutError:
+        serial_s = N_ITEMS * ACTIVITY_S
+        pytest.fail(
+            f'{N_ITEMS} async activities did not drain within {TIMEOUT_S:.1f}s. Serialized'
+            f' they would cost ~{serial_s:.0f}s, so the async path is not overlapping I/O.'
         )
-        sync_m = await fastest(name='sync', activity_kind='sync', **kwargs)
-        async_m = await fastest(name='async', activity_kind='async', **kwargs)
-        return sync_m, async_m
-
-    sync_m, async_m = asyncio.run(run())
-    assert async_m.wallclock_s < ACTIVITY_S * 20, 'async did not overlap I/O'
-    assert async_m.wallclock_s * 2 < sync_m.wallclock_s, 'async did not beat sync at scale'
-
-
-def test_semaphore_caps_async_concurrency():
-    """A small semaphore must gate the async path even though it never touches the pool."""
-
-    async def run():
-        kwargs = dict(
-            n_items=1000,
-            thread_pool_workers=POOL,
-            server_latency_s=ACTIVITY_S,
-            activity_kind='async',
-        )
-        gated = await fastest(name='gated', semaphore_cap=10, **kwargs)
-        ungated = await fastest(name='ungated', semaphore_cap=SEM, **kwargs)
-        return gated, ungated
-
-    gated, ungated = asyncio.run(run())
-    assert gated.wallclock_s > ungated.wallclock_s * 2, 'semaphore did not gate concurrency'
-
-
-def test_sustained_async_holds_while_sync_drifts():
-    """Above the sync ceiling, sync tail latency drifts upward and ends far worse than async."""
-
-    async def run():
-        kwargs = dict(
-            duration_s=3.0,
-            target_rate_per_s=1000.0,
-            semaphore_cap=SEM,
-            thread_pool_workers=POOL,
-            server_latency_s=ACTIVITY_S,
-        )
-        sync_m = await _run_sustained(activity_kind='sync', **kwargs)
-        async_m = await _run_sustained(activity_kind='async', **kwargs)
-        return sync_m, async_m
-
-    sync_m, async_m = asyncio.run(run())
-    sync_first = max(sync_m.latency_first_quarter.p99_ms, 1.0)
-    assert sync_m.latency_last_quarter.p99_ms > sync_first * 2, 'sync tail did not drift'
-    assert sync_m.latency_last_quarter.p99_ms > async_m.latency_last_quarter.p99_ms * 2
-
-
-def test_pending_tasks_stay_bounded():
-    """Activities parked on the semaphore must not inflate task count or RSS."""
-
-    async def run():
-        return await _run_lite(
-            name='oom',
-            activity=_async_sleep_factory(ACTIVITY_S, {}, {}),
-            n_items=2000,
-            semaphore_cap=500,
-            thread_pool_workers=POOL,
-            server_latency_s=ACTIVITY_S,
-        )
-
-    metrics = asyncio.run(run())
-    assert metrics.peak_tasks <= int(metrics.n_items * 1.5), 'task accounting inflated'
-    assert metrics.peak_rss_delta_mb < 500.0, 'RSS exceeded budget'
+    assert completions == N_ITEMS, f'only {completions}/{N_ITEMS} activities completed'

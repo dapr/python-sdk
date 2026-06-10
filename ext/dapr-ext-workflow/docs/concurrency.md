@@ -1,7 +1,6 @@
 # Concurrency configuration for `dapr-ext-workflow`
 
-Sizing notes for the worker's concurrency knobs. Numbers come from
-`benchmarks/bench_async_activities.py`. Re-run it on local hardware to validate.
+Sizing notes for the worker's concurrency knobs.
 
 ## Knobs
 
@@ -24,8 +23,8 @@ For **I/O-bound** activities (HTTP calls, database queries, anything that waits)
 prefer `async def`. A sync activity holds a thread for the whole wait, so concurrency
 is capped at the pool size (`cpu_count + 4`); an async activity holds only a semaphore
 slot, so in-flight concurrency scales to `maximum_concurrent_activity_work_items`. The
-benchmark shows the gap widening with fan-out width. If your activities wait on I/O,
-moving them to `async def` is the single biggest concurrency win available.
+gap widens with fan-out width. If your activities wait on I/O, moving them to `async def`
+is the single biggest concurrency win available.
 
 Raising `maximum_thread_pool_workers` lifts the ceiling for a sync I/O activity you can't
 convert yet, but threads scale worse than the loop. Each costs stack memory and contends
@@ -85,14 +84,3 @@ def _get_client() -> httpx.AsyncClient:
 
 The caller owns closing it during worker shutdown. For activities that hit many
 hosts or need per-call timeout isolation, stick with per-call clients.
-
-## Re-running the benchmark
-
-```bash
-uv sync --all-packages --group dev
-uv run python ext/dapr-ext-workflow/benchmarks/bench_async_activities.py
-```
-
-`DAPR_BENCH_SUSTAINED_SECONDS` overrides the 120 s sustained run and
-`DAPR_BENCH_ACTIVITY_MS` the per-activity duration, for a faster local check. The
-script creates `benchmarks/RESULTS.md`.
