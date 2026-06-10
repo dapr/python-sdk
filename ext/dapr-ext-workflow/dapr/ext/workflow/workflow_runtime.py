@@ -22,7 +22,7 @@ import grpc
 from dapr.ext.workflow._durabletask import task, worker
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 from dapr.ext.workflow.logger import Logger, LoggerOptions
-from dapr.ext.workflow.util import getAddress
+from dapr.ext.workflow.util import get_grpc_channel_options, getAddress
 from dapr.ext.workflow.workflow_activity_context import Activity, WorkflowActivityContext
 from dapr.ext.workflow.workflow_context import Workflow
 
@@ -59,7 +59,17 @@ class WorkflowRuntime:
         maximum_concurrent_orchestration_work_items: Optional[int] = None,
         maximum_thread_pool_workers: Optional[int] = None,
         worker_ready_timeout: Optional[float] = None,
+        max_grpc_message_length: Optional[int] = None,
     ):
+        """Initializes the workflow runtime.
+
+        Args:
+            max_grpc_message_length: Maximum gRPC message size in bytes for the
+                workflow channel, applied symmetrically to both send and receive
+                directions. Precedence: this kwarg, then the
+                ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` env var, then the
+                gRPC default (4 MiB) when neither is set.
+        """
         self._logger = Logger('WorkflowRuntime', logger_options)
         self._worker_ready_timeout = 30.0 if worker_ready_timeout is None else worker_ready_timeout
 
@@ -78,6 +88,7 @@ class WorkflowRuntime:
         if interceptors:
             all_interceptors.extend(interceptors)
         all_interceptors.append(DaprClientTimeoutInterceptor())
+        channel_options = get_grpc_channel_options(max_grpc_message_length)
         self.__worker = worker.TaskHubGrpcWorker(
             host_address=uri.endpoint,
             metadata=metadata,
@@ -85,6 +96,7 @@ class WorkflowRuntime:
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
             interceptors=all_interceptors,
+            channel_options=channel_options,
             concurrency_options=worker.ConcurrencyOptions(
                 maximum_concurrent_activity_work_items=maximum_concurrent_activity_work_items,
                 maximum_concurrent_orchestration_work_items=maximum_concurrent_orchestration_work_items,
