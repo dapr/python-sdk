@@ -81,16 +81,24 @@ class _CallbackServicer(
         self._registered_topics: List[appcallback_v1.TopicSubscription] = []
         self._registered_bindings: List[str] = []
 
-        self._wildcard_topics: List[Tuple[str, str, str, bool, TopicSubscribeCallable]] = []
+        self._route_map: Dict[Tuple[str, str], TopicSubscribeCallable] = {}
+        self._validation_disabled_pubsubs: Dict[str, TopicSubscribeCallable] = {}
 
-    def _match_topic(self, pattern: str, topic: str) -> bool:
-        import re
+    def _get_topic_callback(
+        self, pubsub_name: str, topic: str, path: str
+    ) -> Optional[TopicSubscribeCallable]:
+        pubsub_topic = pubsub_name + DELIMITER + topic + DELIMITER + path
+        if pubsub_topic in self._topic_map:
+            return self._topic_map[pubsub_topic]
 
-        re_pattern = re.escape(pattern)
-        re_pattern = re_pattern.replace(r'\+', r'[^/]*')
-        re_pattern = re_pattern.replace(r'\*', r'[^/.]+')
-        re_pattern = re_pattern.replace(r'\#', r'.*')
-        return bool(re.match(f'^{re_pattern}$', topic))
+        if (pubsub_name, path) in self._route_map:
+            return self._route_map[(pubsub_name, path)]
+
+        if path == '':
+            if pubsub_name in self._validation_disabled_pubsubs:
+                return self._validation_disabled_pubsubs[pubsub_name]
+
+        return None
 
     def register_method(self, method: str, cb: InvokeMethodCallable) -> None:
         """Registers method for service invocation."""
@@ -111,14 +119,16 @@ class _CallbackServicer(
         """Registers topic subscription for pubsub."""
         topic_key = pubsub_name + DELIMITER + topic
         pubsub_topic = topic_key + DELIMITER
-        path = ''
         if rule is not None:
             path = getattr(cb, '__name__', rule.match)
             pubsub_topic = pubsub_topic + path
         if pubsub_topic in self._topic_map:
             raise ValueError(f'{topic} is already registered with {pubsub_name}')
         self._topic_map[pubsub_topic] = cb
-        self._wildcard_topics.append((pubsub_name, topic, path, disable_topic_validation, cb))
+        self._route_map[(pubsub_name, topic)] = cb
+
+        if disable_topic_validation:
+            self._validation_disabled_pubsubs[pubsub_name] = cb
 
         registered_topic = self._registered_topics_map.get(topic_key)
         sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription()
@@ -206,22 +216,10 @@ class _CallbackServicer(
 
     def OnTopicEvent(self, request: TopicEventRequest, context):
         """Subscribes events from Pubsub."""
-        pubsub_topic = request.pubsub_name + DELIMITER + request.topic + DELIMITER + request.path
-
-        if pubsub_topic in self._topic_map:
-            cb = self._topic_map[pubsub_topic]
-        else:
-            cb = None
-            for p_name, t_pattern, path, d_val, w_cb in self._wildcard_topics:
-                if p_name == request.pubsub_name and request.path == path:
-                    if self._match_topic(t_pattern, request.topic) or (
-                        d_val and not any(c in t_pattern for c in ['+', '#', '*'])
-                    ):
-                        cb = w_cb
-                        break
-            if cb is None:
-                context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-                raise NotImplementedError(f'topic {request.topic} topic not implemented!')
+        cb = self._get_topic_callback(request.pubsub_name, request.topic, request.path)
+        if cb is None:
+            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
+            raise NotImplementedError(f'topic {request.topic} is not implemented!')
 
         customdata: Struct = request.extensions
         extensions = dict()
@@ -309,21 +307,9 @@ class _CallbackServicer(
         self, request: TopicEventBulkRequest, context
     ) -> Optional[TopicEventBulkResponse]:
         """Process bulk topic event request - routes each entry to the appropriate topic handler."""
-        topic_key = request.pubsub_name + DELIMITER + request.topic + DELIMITER + request.path
-
-        if topic_key in self._topic_map:
-            cb = self._topic_map[topic_key]  # callback
-        else:
-            cb = None
-            for p_name, t_pattern, path, d_val, w_cb in self._wildcard_topics:
-                if p_name == request.pubsub_name and request.path == path:
-                    if self._match_topic(t_pattern, request.topic) or (
-                        d_val and not any(c in t_pattern for c in ['+', '#', '*'])
-                    ):
-                        cb = w_cb
-                        break
-            if cb is None:
-                return None  # we don't have a handler
+        cb = self._get_topic_callback(request.pubsub_name, request.topic, request.path)
+        if cb is None:
+            return None  # we don't have a handler
 
         statuses = []
         for entry in request.entries:

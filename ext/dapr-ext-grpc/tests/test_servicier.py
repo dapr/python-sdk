@@ -200,7 +200,7 @@ class TopicSubscriptionTests(unittest.TestCase):
 
         self._servicer.OnTopicEvent(
             appcallback_v1.TopicEventRequest(
-                pubsub_name='pubsub_multi_wildcard', topic='orders/123/items'
+                pubsub_name='pubsub_multi_wildcard', topic='orders/123/items', path='orders/+/items'
             ),
             self.fake_context,
         )
@@ -208,7 +208,9 @@ class TopicSubscriptionTests(unittest.TestCase):
 
         self._servicer.OnTopicEvent(
             appcallback_v1.TopicEventRequest(
-                pubsub_name='pubsub_multi_wildcard', topic='inventory/warehouse/aisle4'
+                pubsub_name='pubsub_multi_wildcard',
+                topic='inventory/warehouse/aisle4',
+                path='inventory/#',
             ),
             self.fake_context,
         )
