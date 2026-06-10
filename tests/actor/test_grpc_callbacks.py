@@ -34,6 +34,7 @@ from dapr.actor.runtime.config import (
     ActorRuntimeConfig,
     ActorTypeConfig,
 )
+from dapr.actor.runtime.method_dispatcher import ActorMethodNotFoundError
 from dapr.clients.exceptions import DaprInternalError
 from dapr.proto import api_v1
 
@@ -248,12 +249,18 @@ class StatusCodeMappingTests(unittest.TestCase):
         self.assertEqual(5, status_code_for_exception(error))
 
     def test_unknown_method_maps_to_not_found(self):
-        self.assertEqual(5, status_code_for_exception(AttributeError('no method')))
+        self.assertEqual(5, status_code_for_exception(ActorMethodNotFoundError('no method')))
 
     def test_value_error_maps_to_unknown(self):
         # A plain ValueError (e.g. invalid payload, non-remindable actor) is
         # retryable, not a permanent NOT_FOUND.
         self.assertEqual(2, status_code_for_exception(ValueError('bad payload')))
+
+    def test_attribute_error_from_actor_code_maps_to_unknown(self):
+        # Only the dispatcher's ActorMethodNotFoundError means "method does
+        # not exist"; an AttributeError raised inside the actor's own code is
+        # an application error.
+        self.assertEqual(2, status_code_for_exception(AttributeError('user code bug')))
 
     def test_generic_exception_maps_to_unknown(self):
         self.assertEqual(2, status_code_for_exception(RuntimeError('boom')))

@@ -35,6 +35,7 @@ from dapr.actor.runtime._grpc_callbacks import (
 )
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.method_dispatcher import ActorMethodNotFoundError
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.clients.grpc._channel import create_aio_channel
 from dapr.clients.grpc.dapr_actor_grpc_client import DaprActorGrpcClient
@@ -206,21 +207,39 @@ class ActorGrpcHost:
 
         self._stopping = False
         self._registered.clear()
-        self._run_task = asyncio.create_task(self._run_loop())
+        run_task = asyncio.create_task(self._run_loop())
+        self._run_task = run_task
 
         try:
             registered_task = asyncio.create_task(self._registered.wait())
             done, _ = await asyncio.wait(
-                {registered_task, self._run_task}, return_when=asyncio.FIRST_COMPLETED
+                {registered_task, run_task}, return_when=asyncio.FIRST_COMPLETED
             )
-            if self._run_task in done:
+            if run_task in done:
                 registered_task.cancel()
                 # Surfaces the connection error; a clean exit without
                 # registration can only mean stop() raced start().
-                self._run_task.result()
+                run_task.result()
         except BaseException:
             await self.close()
             raise
+        # Failures past this point no longer have a start() call to land in;
+        # the callback logs them and resets state so the host is restartable.
+        run_task.add_done_callback(self._on_run_task_done)
+
+    def _on_run_task_done(self, task: 'asyncio.Task[None]') -> None:
+        """Handles the serving task ending after a successful registration."""
+        if task.cancelled() or self._stopping:
+            return
+        exception = task.exception()
+        if exception is None:
+            return
+        logger.error(
+            'Actor event stream task failed; the host is no longer serving callbacks',
+            exc_info=exception,
+        )
+        self._run_task = None
+        self._registered.clear()
 
     async def stop(self) -> None:
         """Stops serving callbacks, leaving the host restartable.
@@ -238,8 +257,10 @@ class ActorGrpcHost:
             self._run_task.cancel()
             try:
                 await self._run_task
-            except (asyncio.CancelledError, Exception):  # noqa: B014
+            except asyncio.CancelledError:
                 pass
+            except Exception as exception:  # noqa: BLE001
+                logger.warning('Actor event stream task raised during stop: %r', exception)
             self._run_task = None
         await self._drain_dispatch_tasks()
         self._registered.clear()
@@ -267,9 +288,14 @@ class ActorGrpcHost:
             >>> asyncio.run(host.run_forever())
         """
         await self.start()
-        assert self._run_task is not None
+        run_task = self._run_task
+        if run_task is None:
+            # The serving task already died between start() returning and
+            # here; _on_run_task_done logged the failure.
+            await self.close()
+            raise RuntimeError('Actor event stream task failed during startup, see logs')
         try:
-            await asyncio.shield(self._run_task)
+            await asyncio.shield(run_task)
         finally:
             await self.close()
 
@@ -421,9 +447,11 @@ class ActorGrpcHost:
                 data=result,
                 metadata={CONTENT_TYPE_HEADER: JSON_CONTENT_TYPE},
             )
-        except AttributeError as exception:
+        except ActorMethodNotFoundError as exception:
             # Raised by the method dispatcher for unknown actor methods; daprd
-            # maps NOT_FOUND to a permanent, non-retryable failure.
+            # maps NOT_FOUND to a permanent, non-retryable failure. A plain
+            # AttributeError from inside the actor's code is an application
+            # error and falls through to the error-payload branch below.
             await self._send_request_failed(session, request.id, exception)
             return
         except Exception as exception:  # noqa: BLE001

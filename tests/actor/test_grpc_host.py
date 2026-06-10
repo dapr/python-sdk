@@ -70,6 +70,9 @@ class HostTestActorInterface(ActorInterface):
     @actormethod(name='FailWithValueError')
     async def fail_with_value_error(self) -> None: ...
 
+    @actormethod(name='FailWithAttributeError')
+    async def fail_with_attribute_error(self) -> None: ...
+
 
 class HostTestActor(Actor, HostTestActorInterface, Remindable):
     """Records every callback so tests can assert against real dispatches."""
@@ -96,6 +99,9 @@ class HostTestActor(Actor, HostTestActorInterface, Remindable):
 
     async def fail_with_value_error(self) -> None:
         raise ValueError('bad user input')
+
+    async def fail_with_attribute_error(self) -> None:
+        raise AttributeError('user code touched a missing attribute')
 
     async def receive_reminder(
         self,
@@ -328,6 +334,19 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         payload = json.loads(reply.invoke_response.data)
         self.assertIn('bad user input', payload['message'])
 
+    async def test_handler_attribute_error_returns_error_payload(self):
+        """An AttributeError raised inside the actor's code is an application
+        error (error payload), not an unknown-method NOT_FOUND."""
+        await self._serve_callbacks([_invoke_message('req-1', 'FailWithAttributeError')])
+
+        replies = await self._await_replies(1)
+
+        reply = replies[0]
+        self.assertEqual('invoke_response', reply.WhichOneof('request_type'))
+        self.assertTrue(reply.invoke_response.error)
+        payload = json.loads(reply.invoke_response.data)
+        self.assertIn('user code touched a missing attribute', payload['message'])
+
     async def test_reentrancy_id_reaches_actor_context(self):
         invoke = _invoke_message('req-1', 'WhoAmI', metadata={'Dapr-Reentrancy-Id': 'rid-42'})
         await self._serve_callbacks([invoke])
@@ -408,6 +427,28 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
 
         reply_ids = {reply.invoke_response.id for reply in replies}
         self.assertEqual({'req-1', 'req-2'}, reply_ids)
+
+    async def test_run_task_death_after_registration_is_logged_and_resets(self):
+        """A non-transient failure after a successful registration has no
+        start() call to land in: it must be logged and reset the host so a
+        new start() is possible."""
+        with mock.patch('dapr.actor.runtime.grpc_host._RECONNECT_DELAY_SECONDS', 0.05):
+            with self.assertLogs('dapr.actor.runtime.grpc_host', level='ERROR') as logs:
+                await self._serve_plans(
+                    _plan(end='abort'),
+                    _plan(reject=StatusCode.FAILED_PRECONDITION),
+                )
+                await self._wait_until(lambda: self.host._run_task is None, timeout=10.0)
+
+        self.assertTrue(
+            any('no longer serving callbacks' in line for line in logs.output),
+            logs.output,
+        )
+        self.assertFalse(self.host._registered.is_set())
+        # The transport survived, so the host can start again.
+        self._fake_dapr_server.actor_stream_plans.append(_plan())
+        await self.host.start()
+        self.assertTrue(self.host._registered.is_set())
 
     async def test_start_raises_on_non_transient_rejection(self):
         self._fake_dapr_server.actor_stream_plans.append(

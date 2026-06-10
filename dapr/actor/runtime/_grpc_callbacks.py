@@ -25,6 +25,7 @@ from dapr.actor.runtime.config import (
     ActorRuntimeConfig,
     ActorTypeConfig,
 )
+from dapr.actor.runtime.method_dispatcher import ActorMethodNotFoundError
 from dapr.clients.base import DAPR_REENTRANCY_ID_HEADER
 from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
 from dapr.proto import api_v1
@@ -216,12 +217,13 @@ def build_invoke_error_payload(exception: Exception) -> bytes:
 def status_code_for_exception(exception: Exception) -> int:
     """Maps a dispatch exception to the gRPC status code for ``request_failed``.
 
-    Only a missing actor type (:class:`ActorCallbackNotFoundError`) or unknown
-    actor method (``AttributeError`` from the method dispatcher) map to
-    ``NOT_FOUND``, which daprd treats as a permanent, non-retryable failure.
-    Everything else — including a plain ``ValueError`` such as an invalid
-    payload or a non-remindable actor — maps to ``UNKNOWN`` so daprd may retry.
+    Only a missing actor type (:class:`ActorCallbackNotFoundError`) or a
+    missing actor method (:class:`ActorMethodNotFoundError` from the method
+    dispatcher) map to ``NOT_FOUND``, which daprd treats as a permanent,
+    non-retryable failure. Everything else — including ``ValueError`` or
+    ``AttributeError`` raised inside the actor's own code — maps to
+    ``UNKNOWN`` so daprd may retry.
     """
-    if isinstance(exception, (ActorCallbackNotFoundError, AttributeError)):
+    if isinstance(exception, (ActorCallbackNotFoundError, ActorMethodNotFoundError)):
         return StatusCode.NOT_FOUND.value[0]
     return StatusCode.UNKNOWN.value[0]
