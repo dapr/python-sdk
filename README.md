@@ -90,7 +90,7 @@ pip3 install "dapr @ git+https://github.com/dapr/python-sdk.git@main"
 pip3 install "dapr[grpc,fastapi] @ git+https://github.com/dapr/python-sdk.git@main"
 ```
 
-Replace `@main` with a commit SHA or release branch (e.g. `@release-1.17`)
+Replace `@main` with a commit SHA or release branch (e.g. `@release-1.18`)
 to pin to a specific point in history.
 
 ### Try out examples
@@ -175,7 +175,7 @@ The generated files will be found in `docs/_build`.
 
 ```sh
 uv sync --all-packages --group dev
-export DAPR_BRANCH=release-1.17 # Optional, defaults to master
+export DAPR_BRANCH=release-1.18 # Optional, defaults to master
 uv run ./tools/regen_grpcclient.sh
 ```
 
