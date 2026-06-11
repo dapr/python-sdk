@@ -78,7 +78,11 @@ def _make_activity_wrapper(fn: Activity, logger: Logger) -> ActivityWrapper:
         activity_id = getattr(ctx, 'task_id', 'unknown')
         logger.warning(f'Activity execution failed - task_id: {activity_id}, error: {exc}')
 
-    if _is_async_callable(fn):
+    is_async = _is_async_callable(fn)
+    activity_name = getattr(fn, '__name__', repr(fn))
+    kind = 'async' if is_async else 'sync'
+    logger.debug(f"Registering activity '{activity_name}' on the {kind} dispatch path.")
+    if is_async:
 
         async def async_activity_wrapper(
             ctx: task.ActivityContext, inp: object | None = None

@@ -21,6 +21,8 @@ from typing import Any, Optional, Sequence, Union
 import grpc
 from dapr.ext.workflow import _model_protocol
 
+logger = logging.getLogger(__name__)
+
 
 def is_async_callable(fn: Any) -> bool:
     """Return True if ``fn`` is async. Catches ``functools.partial`` of coroutines,
@@ -35,7 +37,9 @@ def is_async_callable(fn: Any) -> bool:
         except ValueError:
             # Cyclic ``__wrapped__`` chain from a malformed decorator. Fall back to the
             # outermost callable; misclassification is preferable to crashing dispatch.
-            pass
+            logger.warning(
+                f'Cyclic __wrapped__ on {fn!r}, using outermost callable for async detection.'
+            )
     if inspect.iscoroutinefunction(candidate):
         return True
     if not inspect.isfunction(candidate) and hasattr(candidate, '__call__'):

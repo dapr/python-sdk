@@ -24,7 +24,7 @@ from dapr.ext.workflow._durabletask.worker import ConcurrencyOptions, TaskHubGrp
 
 pytestmark = pytest.mark.perf
 
-ACTIVITY_S = 0.02
+ACTIVITY_DURATION_SECONDS = 0.02
 N_ITEMS = 1000
 SEMAPHORE_CAP = 2000
 THREAD_POOL = 16
@@ -68,9 +68,10 @@ async def _run_async_batch(n_items: int, timeout_s: float) -> int:
     stub = _MockSidecarStub()
 
     async def activity(ctx, _inp) -> None:
-        await asyncio.sleep(ACTIVITY_S)
+        await asyncio.sleep(ACTIVITY_DURATION_SECONDS)
 
     worker_task = asyncio.create_task(manager.run())
+    # Non-blocking poll: yield to the event loop until the worker creates the activity queue
     while manager.activity_queue is None:
         await asyncio.sleep(0)
     try:
@@ -96,7 +97,7 @@ def test_async_activities_overlap_instead_of_serializing():
     try:
         completions = asyncio.run(_run_async_batch(N_ITEMS, TIMEOUT_S))
     except asyncio.TimeoutError:
-        serial_s = N_ITEMS * ACTIVITY_S
+        serial_s = N_ITEMS * ACTIVITY_DURATION_SECONDS
         pytest.fail(
             f'{N_ITEMS} async activities did not drain within {TIMEOUT_S:.1f}s. Serialized'
             f' they would cost ~{serial_s:.0f}s, so the async path is not overlapping I/O.'
