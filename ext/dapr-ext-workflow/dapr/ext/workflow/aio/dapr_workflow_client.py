@@ -21,7 +21,7 @@ from typing import Any, Optional, TypeVar, Union
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow._durabletask.aio import client as aioclient
 from dapr.ext.workflow.logger import Logger, LoggerOptions
-from dapr.ext.workflow.util import getAddress
+from dapr.ext.workflow.util import get_grpc_channel_options, getAddress
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.workflow_state import WorkflowState
 from grpc.aio import AioRpcError
@@ -49,7 +49,17 @@ class DaprWorkflowClient:
         host: Optional[str] = None,
         port: Optional[str] = None,
         logger_options: Optional[LoggerOptions] = None,
+        max_grpc_message_length: Optional[int] = None,
     ):
+        """Initializes the async workflow client.
+
+        Args:
+            max_grpc_message_length: Maximum gRPC message size in bytes for the
+                workflow channel, applied symmetrically to both send and receive
+                directions. Precedence: this kwarg, then the
+                ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` env var, then the
+                gRPC default (4 MiB) when neither is set.
+        """
         address = getAddress(host, port)
 
         try:
@@ -63,6 +73,7 @@ class DaprWorkflowClient:
         if settings.DAPR_API_TOKEN:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         options = self._logger.get_options()
+        channel_options = get_grpc_channel_options(max_grpc_message_length)
         self.__obj = aioclient.AsyncTaskHubGrpcClient(
             host_address=uri.endpoint,
             metadata=metadata,
@@ -70,6 +81,7 @@ class DaprWorkflowClient:
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
             interceptors=[DaprClientTimeoutInterceptorAsync()],
+            channel_options=channel_options,
         )
 
     async def schedule_new_workflow(

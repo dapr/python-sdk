@@ -13,9 +13,38 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Optional
+from typing import Any, Optional, Sequence
 
 from dapr.conf import settings
+
+
+def get_grpc_channel_options(
+    max_grpc_message_length: Optional[int] = None,
+) -> Optional[Sequence[tuple[str, Any]]]:
+    """Resolves gRPC channel options for the workflow message-size limit.
+
+    Resolution order: the explicit ``max_grpc_message_length`` kwarg, then
+    ``settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES``, else ``None``.
+
+    Sets BOTH send and receive limits symmetrically because workflow activity
+    payloads cross the channel in both directions. ``None`` is returned when no
+    limit is configured, preserving the gRPC default behavior.
+
+    Args:
+        max_grpc_message_length: Explicit max gRPC message size in bytes. Takes
+            precedence over the env-var setting when truthy.
+
+    Returns:
+        A sequence of ``(option, value)`` tuples setting both send and receive
+        limits, or ``None`` when no limit is configured.
+    """
+    size = max_grpc_message_length or settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES or None
+    if size is None:
+        return None
+    return [
+        ('grpc.max_send_message_length', size),
+        ('grpc.max_receive_message_length', size),
+    ]
 
 
 def getAddress(host: Optional[str] = None, port: Optional[str] = None) -> str:

@@ -23,6 +23,8 @@ from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 from pydantic import BaseModel, ValidationError
 
+from dapr.conf import settings
+
 
 class Order(BaseModel):
     order_id: str
@@ -829,3 +831,63 @@ class PydanticInputCoercionTest(unittest.TestCase):
         wrapper = self.fake_registry._activity_fns['optional_no_default_act']
 
         self.assertIsNone(wrapper(mock.MagicMock(), None))
+
+
+class WorkflowRuntimeChannelOptionsTest(unittest.TestCase):
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 0)
+    def test_explicit_kwarg_sets_symmetric_channel_options(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
+            WorkflowRuntime(max_grpc_message_length=8 * 1024 * 1024)
+            channel_options = mock_worker_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 8 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 8 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 16 * 1024 * 1024)
+    def test_env_var_sets_symmetric_channel_options(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
+            WorkflowRuntime()
+            channel_options = mock_worker_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 16 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 16 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 16 * 1024 * 1024)
+    def test_kwarg_takes_precedence_over_env_var(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
+            WorkflowRuntime(max_grpc_message_length=8 * 1024 * 1024)
+            channel_options = mock_worker_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 8 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 8 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 0)
+    def test_neither_set_passes_none(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
+            WorkflowRuntime()
+            channel_options = mock_worker_cls.call_args[1]['channel_options']
+            self.assertIsNone(channel_options)
+
+
+if __name__ == '__main__':
+    unittest.main()
