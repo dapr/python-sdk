@@ -207,6 +207,7 @@ ignore_errors = true
 [tool.pytest.ini_options]
 markers = [
     'example_dir(name): set the example directory for the dapr fixture',
+    'perf: timing-sensitive dispatch regression tests',
 ]
 pythonpath = ["."]
 asyncio_mode = "auto"

@@ -10,6 +10,8 @@
 # limitations under the License.
 
 import dataclasses
+import functools
+import inspect
 import json
 import logging
 import os
@@ -19,6 +21,32 @@ from typing import Any, Optional, Sequence, Union
 import grpc
 
 from dapr.ext.workflow import _model_protocol
+
+logger = logging.getLogger(__name__)
+
+
+def is_async_callable(fn: Any) -> bool:
+    """Return True if ``fn`` is async. Catches ``functools.partial`` of coroutines,
+    sync decorators that wrap async functions, and callable instances with ``async __call__``.
+    """
+    candidate = fn
+    while isinstance(candidate, functools.partial):
+        candidate = candidate.func
+    if callable(candidate):
+        try:
+            candidate = inspect.unwrap(candidate)
+        except ValueError:
+            # Cyclic ``__wrapped__`` chain from a malformed decorator. Fall back to the
+            # outermost callable; misclassification is preferable to crashing dispatch.
+            logger.warning(
+                f'Cyclic __wrapped__ on {fn!r}, using outermost callable for async detection.'
+            )
+    if inspect.iscoroutinefunction(candidate):
+        return True
+    if not inspect.isfunction(candidate) and hasattr(candidate, '__call__'):
+        return inspect.iscoroutinefunction(candidate.__call__)
+    return False
+
 
 ClientInterceptor = Union[
     grpc.UnaryUnaryClientInterceptor,

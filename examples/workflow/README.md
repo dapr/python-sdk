@@ -559,3 +559,35 @@ It shows:
 ```sh
 dapr run --app-id workflow-history-propagation -- python3 history_propagation.py
 ```
+
+### Async Activities
+
+This example fans out several `async def` activities, then aggregates their
+results in a sync activity. Each async activity awaits a delay to stand in for
+an I/O call, so the instances run concurrently on the worker's event loop
+instead of taking a thread each.
+
+Fan-out width and payload sizes are set with environment variables:
+`WORKFLOW_FAN_OUT` (default 5), `WORKFLOW_INPUT_BYTES` (default 2048),
+`WORKFLOW_OUTPUT_BYTES` (default 1024), and `WORKFLOW_IO_SECONDS` (default 1.0).
+
+See [concurrency.md](../../dapr/ext/workflow/docs/concurrency.md) for when to
+prefer async over sync activities and how to size the concurrency knobs.
+
+```sh
+dapr run --app-id workflow-async-activities -- python3 async_activities.py
+```
+
+The output should look like this (the async lines can arrive in any order):
+
+```
+Workflow started. Instance ID: 7b3e9c1f...
+[async] payload 0: 2048B in -> 1024B out
+[async] payload 1: 2048B in -> 1024B out
+[async] payload 2: 2048B in -> 1024B out
+[async] payload 3: 2048B in -> 1024B out
+[async] payload 4: 2048B in -> 1024B out
+[sync] 5 results, 5120 bytes
+Workflow completed! Status: COMPLETED
+Workflow result: 5 results, 5120 bytes
+```

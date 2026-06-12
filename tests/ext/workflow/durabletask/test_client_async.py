@@ -165,7 +165,11 @@ def test_async_client_construct_with_metadata():
     with patch(
         'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel'
     ) as mock_channel:
-        AsyncTaskHubGrpcClient(host_address=HOST_ADDRESS, metadata=METADATA)
+        client = AsyncTaskHubGrpcClient(host_address=HOST_ADDRESS, metadata=METADATA)
+        assert mock_channel.call_count == 0  # channel is built lazily, not at construction
+
+        client._get_stub()
+
         # Ensure channel created with an interceptor that has the expected metadata
         args, kwargs = mock_channel.call_args
         assert args[0] == HOST_ADDRESS
@@ -173,6 +177,18 @@ def test_async_client_construct_with_metadata():
         interceptors = kwargs['interceptors']
         assert isinstance(interceptors[0], DefaultClientInterceptorImpl)
         assert interceptors[0]._metadata == METADATA
+
+
+def test_async_client_channel_is_lazy():
+    with patch(
+        'dapr.ext.workflow._durabletask.aio.internal.shared.grpc_aio.insecure_channel'
+    ) as mock_channel:
+        client = AsyncTaskHubGrpcClient(host_address=HOST_ADDRESS)
+        assert mock_channel.call_count == 0  # not built at construction
+
+        client._get_stub()
+        client._get_stub()
+        assert mock_channel.call_count == 1  # built once on first use, then cached
 
 
 def test_aio_channel_passes_base_options_and_max_lengths():
