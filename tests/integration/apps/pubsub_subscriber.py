@@ -6,10 +6,10 @@ Used by integration tests to verify message delivery without relying on stdout.
 import json
 
 from cloudevents.sdk.event import v1
-from dapr.ext.grpc import App
 
 from dapr.clients import DaprClient
 from dapr.clients.grpc._response import TopicEventResponse
+from dapr.ext.grpc import App
 
 app = App()
 

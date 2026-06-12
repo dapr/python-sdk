@@ -32,8 +32,9 @@ import random
 import string
 from time import sleep
 
-import dapr.ext.workflow as wf
 from pydantic import BaseModel
+
+import dapr.ext.workflow as wf
 
 FAN_OUT = int(os.environ.get('WORKFLOW_FAN_OUT', '5'))
 INPUT_BYTES = int(os.environ.get('WORKFLOW_INPUT_BYTES', '2048'))

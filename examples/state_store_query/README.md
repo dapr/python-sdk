@@ -15,7 +15,7 @@ It demonstrates the following APIs:
 
 <!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 ```bash
-pip3 install dapr dapr-ext-grpc
+pip3 install "dapr[grpc]"
 ```
 
 ## Store the configuration in configurationstore

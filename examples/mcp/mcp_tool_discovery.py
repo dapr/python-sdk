@@ -41,6 +41,8 @@ Run
     dapr run --app-id mcp-demo --resources-path ./resources -- python mcp_tool_discovery.py
 """
 
+from pydantic import ValidationError
+
 from dapr.ext.workflow import (
     DaprMCPClient,
     DaprWorkflowClient,
@@ -48,7 +50,6 @@ from dapr.ext.workflow import (
     WorkflowRuntime,
 )
 from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
-from pydantic import ValidationError
 
 
 def call_mcp_tool_workflow(ctx: DaprWorkflowContext, wf_input: dict):

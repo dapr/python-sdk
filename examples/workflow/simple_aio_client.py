@@ -12,6 +12,8 @@
 import asyncio
 from datetime import timedelta
 
+from dapr.clients.exceptions import DaprInternalError
+from dapr.conf import Settings
 from dapr.ext.workflow import (
     DaprWorkflowContext,
     RetryPolicy,
@@ -20,9 +22,6 @@ from dapr.ext.workflow import (
     when_any,
 )
 from dapr.ext.workflow.aio import DaprWorkflowClient
-
-from dapr.clients.exceptions import DaprInternalError
-from dapr.conf import Settings
 
 settings = Settings()
 
