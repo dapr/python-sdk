@@ -1,4 +1,4 @@
-# Concurrency configuration for `dapr-ext-workflow`
+# Concurrency configuration for `dapr.ext.workflow`
 
 Sizing notes for the worker's concurrency knobs.
 
