@@ -20,6 +20,15 @@ from dapr.actor.runtime._type_utils import get_dispatchable_attrs
 from dapr.actor.runtime.actor import Actor
 
 
+class ActorMethodNotFoundError(AttributeError):
+    """Raised when dispatching a method the actor type does not define.
+
+    Subclasses ``AttributeError`` for backwards compatibility, but lets
+    transports distinguish a missing actor method (a permanent, addressable
+    failure) from an ``AttributeError`` raised inside the actor's own code.
+    """
+
+
 class ActorMethodDispatcher:
     def __init__(self, type_info: ActorTypeInformation):
         self._dispatch_mapping = get_dispatchable_attrs(type_info.implementation_type)
@@ -42,4 +51,6 @@ class ActorMethodDispatcher:
 
     def _check_name_exist(self, name: str):
         if name not in self._dispatch_mapping:
-            raise AttributeError(f'type object {self.__class__.__name__} has no method {name}')
+            raise ActorMethodNotFoundError(
+                f'type object {self.__class__.__name__} has no method {name}'
+            )
