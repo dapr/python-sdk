@@ -18,7 +18,7 @@ tests/ext/flask/
 
 Installed via the `flask` extra on core dapr: `pip install "dapr[flask]"`.
 
-The legacy top-level import path (`from flask_dapr import DaprApp, DaprActor`) is still supported through a thin shim at the repo root that emits a `FutureWarning`. The shim is scheduled for removal one release after the bundling change ships. All new code and docs should use the canonical `from dapr.ext.flask import ...` path.
+The legacy top-level import path (`from flask_dapr import DaprApp, DaprActor`) is still supported through a thin shim at the repo root that emits a `FutureWarning`. The shim is kept through 1.21 and removed in 1.22, giving users on 1.18 (the last release to ship the standalone distributions) the full N-2 support window to migrate. All new code and docs should use the canonical `from dapr.ext.flask import ...` path.
 
 ## Public API
 
@@ -89,6 +89,6 @@ Note: No tests for `DaprActor` in this extension (unlike FastAPI which tests `_w
 ## Key details
 
 - **Synchronous + asyncio bridge**: Flask is sync, but `ActorRuntime` is async. The extension uses `asyncio.run()` for each actor operation.
-- **Canonical import path**: Use `from dapr.ext.flask import DaprApp, DaprActor`. The legacy `flask_dapr` top-level path still works but emits `FutureWarning` and will be removed next cycle.
+- **Canonical import path**: Use `from dapr.ext.flask import DaprApp, DaprActor`. The legacy `flask_dapr` top-level path still works but emits `FutureWarning` and will be removed in 1.22.
 - **Similar to FastAPI extension**: The two extensions have nearly identical functionality. When modifying one, check if the same change is needed in the other.
 - **Reentrancy ID**: Actor method invocation extracts `Dapr-Reentrancy-Id` header, same as FastAPI extension.

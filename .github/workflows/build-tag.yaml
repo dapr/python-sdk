@@ -97,7 +97,7 @@ jobs:
         # overwriting an existing release; replacing a tagged version's
         # contents requires bumping VERSION and re-tagging.
         twine upload --skip-existing dist/*
-    # TODO: remove in 1.20.
+    # TODO: remove in 1.22.
     # The previously-separate distributions (dapr-ext-fastapi, dapr-ext-grpc,
     # dapr-ext-langgraph, dapr-ext-strands, dapr-ext-workflow, flask-dapr)
     # are intentionally NOT republished. Bundling the extension code into

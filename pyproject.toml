@@ -75,7 +75,7 @@ pattern = '(?P<version>\S+)'
 # `RECORD`. Materialising `dapr/ext/__init__.py` here would lock out every
 # future externally-published dapr.ext.* plugin by claiming ownership of the
 # namespace parent.
-# TODO: drop flask_dapr in 1.20 (with the shim).
+# TODO: drop flask_dapr in 1.22 (with the shim).
 packages = ["dapr", "flask_dapr"]
 # Repo-internal docs (contributor / AI-agent guidance) live next to the code
 # for discoverability but should not ship in the published wheel.

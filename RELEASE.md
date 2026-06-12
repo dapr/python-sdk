@@ -8,9 +8,10 @@ A single tag (`v*`) triggers the release of the core SDK only:
 |---|---|
 | `dapr` (core SDK) | Includes every extension under `dapr.ext.*`. Users opt in to per-extension third-party deps via extras: `pip install "dapr[fastapi]"`, etc. The legacy top-level `flask_dapr` import path remains available as a thin shim inside this wheel and emits `FutureWarning`. |
 
-**The previously-separate distributions** — `dapr-ext-fastapi`, `dapr-ext-grpc`,
+**As of 1.19, the previously-separate distributions** — `dapr-ext-fastapi`, `dapr-ext-grpc`,
 `dapr-ext-langgraph`, `dapr-ext-strands`, `dapr-ext-workflow`, `flask-dapr` —
-are **no longer published**.
+are **no longer published**. Backport branches that predate 1.19 (`release-1.18`,
+`release-1.17`) still build and publish them for fixes shipped to those releases.
 
 The design constraint was keeping `from dapr.ext.X import ...` stable across
 the upgrade, so the cost lands once in pip during migration rather than
@@ -44,6 +45,11 @@ churning user-pinned versions of fastapi, uvicorn, langchain, etc.
 `dapr/__init__.py` detects both the legacy-installed and post-uninstall
 states at import time and prints the recovery command as a `FutureWarning`.
 Suppress with `DAPR_SKIP_LEGACY_CHECK=1`.
+
+The warning and the `flask_dapr` shim are kept through 1.21 and removed in
+1.22. 1.18 is the last release to ship the standalone distributions, and N-2
+support keeps it alive until 1.21, so this window covers every user who could
+still be migrating.
 
 You can also create the tag via a **GitHub Release**, which auto-creates the tag and provides
 a changelog UI.

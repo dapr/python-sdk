@@ -13,7 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-# TODO: remove in 1.20 (pre-1.19 dapr-ext-* / flask-dapr migration only).
+# TODO: remove in 1.22 (legacy dapr-ext-* / flask-dapr migration).
+# Kept through 1.21, when N-2 support forces the last 1.18 users to upgrade.
 #
 # On import, checks for two states a legacy dapr-ext-* install could leave
 # the environment in.
