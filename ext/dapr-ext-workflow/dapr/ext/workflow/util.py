@@ -38,8 +38,8 @@ def get_grpc_channel_options(
         A sequence of ``(option, value)`` tuples setting both send and receive
         limits, or ``None`` when no limit is configured.
     """
-    size = max_grpc_message_length or settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES or None
-    if size is None:
+    size = max_grpc_message_length or settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES
+    if not size:
         return None
     return [
         ('grpc.max_send_message_length', size),
