@@ -1,1 +1,1 @@
-dapr-ext-fastapi>=1.17.0.dev
+dapr[fastapi,flask] >= 1.19.0.dev

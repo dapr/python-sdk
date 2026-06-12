@@ -14,7 +14,7 @@ License: Apache 2.0
 ## Project structure
 
 ```
-dapr/                        # Core SDK package
+dapr/                        # Core SDK package (single PyPI dist: `pip install dapr`)
 ├── actor/                   # Actor framework (virtual actor model)
 ├── aio/                     # Async I/O modules
 ├── clients/                 # Dapr clients (gRPC and HTTP)
@@ -22,19 +22,21 @@ dapr/                        # Core SDK package
 ├── conf/                    # Configuration (settings, environment)
 ├── proto/                   # Auto-generated gRPC protobuf stubs (DO NOT EDIT)
 ├── serializers/             # JSON and pluggable serializers
-└── version/                 # Version metadata
+├── version/                 # Version metadata
+└── ext/                     # Extensions, installable as extras to the base package
+    ├── fastapi/             #   FastAPI integration         ← see dapr/ext/fastapi/AGENTS.md   (`pip install dapr[fastapi]`)
+    ├── flask/               #   Flask integration           ← see dapr/ext/flask/AGENTS.md     (`pip install dapr[flask]`)
+    ├── grpc/                #   gRPC App extension          ← see dapr/ext/grpc/AGENTS.md      (`pip install dapr[grpc]`)
+    ├── langgraph/           #   LangGraph checkpointer      ← see dapr/ext/langgraph/AGENTS.md (`pip install dapr[langgraph]`)
+    ├── strands/             #   Strands agent sessions      ← see dapr/ext/strands/AGENTS.md   (`pip install dapr[strands]`)
+    └── workflow/            #   Workflow authoring          ← see dapr/ext/workflow/AGENTS.md  (`pip install dapr[workflow]`)
 
-ext/                         # Extension packages (each is a separate PyPI package)
-├── dapr-ext-workflow/       # Workflow authoring  ← see ext/dapr-ext-workflow/AGENTS.md
-├── dapr-ext-grpc/           # gRPC App extension  ← see ext/dapr-ext-grpc/AGENTS.md
-├── dapr-ext-fastapi/        # FastAPI integration  ← see ext/dapr-ext-fastapi/AGENTS.md
-├── dapr-ext-langgraph/      # LangGraph checkpointer  ← see ext/dapr-ext-langgraph/AGENTS.md
-├── dapr-ext-strands/        # Strands agent sessions  ← see ext/dapr-ext-strands/AGENTS.md
-└── flask_dapr/              # Flask integration  ← see ext/flask_dapr/AGENTS.md
+flask_dapr/                  # Deprecation shim: re-exports dapr.ext.flask with FutureWarning
 
 tests/                       # Unit tests (mirrors dapr/ package structure)
-├── examples/                # Output-based tests that run examples and check stdout
-├── integration/             # Programmatic SDK tests using DaprClient directly
+├── ext/                     #   Extension tests, one subdir per extension
+├── examples/                #   Output-based tests that run examples and check stdout
+├── integration/             #   Programmatic SDK tests using DaprClient directly
 examples/                    # User-facing example applications  ← see examples/AGENTS.md
 docs/                        # Sphinx documentation source
 tools/                       # Build and release scripts
@@ -42,7 +44,7 @@ tools/                       # Build and release scripts
 
 ## Key architectural patterns
 
-- **Namespace packages**: The `dapr` namespace is shared across the core SDK and extensions via `find_namespace_packages`. Extensions live in `ext/` but install into the `dapr.ext.*` namespace. Do not add `__init__.py` to namespace package roots in extensions.
+- **Namespace packages**: `dapr.ext` is an implicit PEP 420 namespace package. See the Gotchas section below before adding anything at that path.
 - **Client architecture**: `DaprGrpcClient` (primary, high-performance) and HTTP-based clients. Both implement shared interfaces.
 - **Actor model**: `Actor` base class, `ActorInterface` with `@actormethod` decorator, `ActorProxy`/`ActorProxyFactory` for client-side references, `ActorRuntime` for server-side hosting.
 - **Serialization**: Pluggable via `Serializer` base class. `DefaultJSONSerializer` is the default.
@@ -50,16 +52,18 @@ tools/                       # Build and release scripts
 
 ## Extension overview
 
-Each extension is a **separate PyPI package** with its own `pyproject.toml`, `setup.py`, `tests/`, and `AGENTS.md`.
+Extensions are bundled into the core `dapr` wheel and exposed as installable extras. Each one lives under `dapr/ext/<name>/` with its own `AGENTS.md`.
 
-| Extension | Package | Purpose | Active development |
-|-----------|---------|---------|-------------------|
-| `dapr-ext-workflow` | `dapr.ext.workflow` | Durable workflow orchestration (durabletask vendored internally) | **High** — major focus area |
-| `dapr-ext-grpc` | `dapr.ext.grpc` | gRPC server for Dapr callbacks (methods, pub/sub, bindings, jobs) | Moderate |
-| `dapr-ext-fastapi` | `dapr.ext.fastapi` | FastAPI integration for pub/sub and actors | Moderate |
-| `flask_dapr` | `flask_dapr` | Flask integration for pub/sub and actors | Low |
-| `dapr-ext-langgraph` | `dapr.ext.langgraph` | LangGraph checkpoint persistence to Dapr state store | Moderate |
-| `dapr-ext-strands` | `dapr.ext.strands` | Strands agent session management via Dapr state store | New |
+| Extra | Import path | Purpose | Active development |
+|-------|-------------|---------|--------------------|
+| `dapr[workflow]` | `dapr.ext.workflow` | Durable workflow orchestration (durabletask vendored internally) | **High**, major focus area |
+| `dapr[grpc]` | `dapr.ext.grpc` | gRPC server for Dapr callbacks (methods, pub/sub, bindings, jobs) | Moderate |
+| `dapr[fastapi]` | `dapr.ext.fastapi` | FastAPI integration for pub/sub and actors | Moderate |
+| `dapr[flask]` | `dapr.ext.flask` | Flask integration for pub/sub and actors (legacy `flask_dapr` import path is a deprecated shim) | Low |
+| `dapr[langgraph]` | `dapr.ext.langgraph` | LangGraph checkpoint persistence to Dapr state store | Moderate |
+| `dapr[strands]` | `dapr.ext.strands` | Strands agent session management via Dapr state store | New |
+
+The previously-separate distributions (`dapr-ext-*`, `flask-dapr`) are no longer published. `dapr/__init__.py` emits a `FutureWarning` if it detects a legacy install at import time; see `RELEASE.md` for the migration recipe.
 
 ## Examples and testing
 
@@ -95,17 +99,20 @@ uv sync --all-packages --group dev
 Tests use Python's built-in `unittest` framework with `coverage`. The vendored durabletask tests use `pytest`.
 
 ```bash
-# Run all unit tests
-uv run python -m unittest discover -v ./tests
+# All unit tests. pytest is required: `unittest discover` silently skips the
+# pytest-style tests under tests/ext/flask and tests/ext/workflow/durabletask.
+uv run pytest -m "not e2e" ./tests --ignore=tests/integration --ignore=tests/examples
 
-# Extension tests (run each separately)
-uv run python -m unittest discover -v ./ext/dapr-ext-workflow/tests
-uv run pytest -m "not e2e" ./ext/dapr-ext-workflow/tests/durabletask/
-uv run python -m unittest discover -v ./ext/dapr-ext-grpc/tests
-uv run python -m unittest discover -v ./ext/dapr-ext-fastapi/tests
-uv run python -m unittest discover -v ./ext/dapr-ext-langgraph/tests
-uv run python -m unittest discover -v ./ext/dapr-ext-strands/tests
-uv run python -m unittest discover -v ./ext/flask_dapr/tests
+# Single extension (unittest discover works for these — no pytest-style tests):
+uv run python -m unittest discover -v ./tests/ext/workflow
+uv run python -m unittest discover -v ./tests/ext/grpc
+uv run python -m unittest discover -v ./tests/ext/fastapi
+uv run python -m unittest discover -v ./tests/ext/langgraph
+uv run python -m unittest discover -v ./tests/ext/strands
+
+# pytest-style suites:
+uv run pytest -m "not e2e" ./tests/ext/workflow/durabletask/
+uv run pytest ./tests/ext/flask/test_shim_deprecation.py
 
 # Run linting and formatting
 uv run ruff check --fix && uv run ruff format
@@ -143,7 +150,7 @@ uv run ruff check --fix && uv run ruff format
 uv run mypy
 ```
 
-MyPy is configured to check: `dapr/actor/`, `dapr/aio/`, `dapr/clients/`, `dapr/conf/`, `dapr/serializers/`, `ext/dapr-ext-grpc/`, `ext/dapr-ext-fastapi/`, `ext/flask_dapr/`, and `examples/demo_actor/`. Proto stubs (`dapr.proto.*`) have errors ignored. Configuration lives in `pyproject.toml` under `[tool.mypy]`.
+MyPy checks the `dapr` and `flask_dapr` packages (covering all bundled extensions under `dapr.ext.*`). Proto stubs (`dapr.proto.*`) have errors ignored, and unstubbed third-party libs (`langgraph.*`, `langchain.*`, `strands.*`, `strands_agents.*`, `grpc.aio`) are marked `ignore_missing_imports`. Configuration in `pyproject.toml` under `[tool.mypy]`.
 
 ## Commit and PR conventions
 
@@ -171,14 +178,14 @@ When completing any task on this project, work through this checklist. Not every
 
 ### Unit tests
 
-- [ ] Add or update unit tests under `tests/` (core SDK) or `ext/*/tests/` (extensions)
-- [ ] Tests use `unittest` — follow the existing test patterns in the relevant directory
-- [ ] Verify tests pass: `python -m unittest discover -v ./tests` (or the relevant test directory)
+- [ ] Add or update unit tests under `tests/` (core SDK) or `tests/ext/<name>/` (extensions)
+- [ ] Tests are predominantly `unittest.TestCase`; follow the existing patterns in the relevant directory. A few pytest-style tests exist for fixture-dependent scenarios (e.g. `pytest.warns` for the `flask_dapr` shim).
+- [ ] Verify tests pass: `uv run pytest -m "not e2e" ./tests --ignore=tests/integration --ignore=tests/examples` (must use pytest; `unittest discover` silently skips pytest-style tests)
 
 ### Linting and type checking
 
 - [ ] Run `uv run ruff check --fix && uv run ruff format` and fix any remaining issues
-- [ ] Run `uv run mypy` if you changed files covered by mypy (actor, aio, clients, conf, serializers, ext-grpc, ext-fastapi, flask_dapr)
+- [ ] Run `uv run mypy` if you changed files covered by mypy (the `dapr` and `flask_dapr` packages, which includes all bundled extensions under `dapr.ext.*`)
 
 ### Examples (integration tests)
 
@@ -195,7 +202,7 @@ When completing any task on this project, work through this checklist. Not every
 ### Final verification
 
 - [ ] Run `uv run ruff check --fix && uv run ruff format` — linting must be clean
-- [ ] Run `uv run python -m unittest discover -v ./tests` — all unit tests must pass
+- [ ] Run `uv run pytest -m "not e2e" ./tests --ignore=tests/integration --ignore=tests/examples` — all unit tests must pass
 - [ ] If you touched examples: `uv run pytest tests/examples/test_<example-name>.py` to validate locally
 - [ ] Commits must be signed off for DCO: `git commit -s`
 
@@ -203,21 +210,20 @@ When completing any task on this project, work through this checklist. Not every
 
 | File | Purpose |
 |------|---------|
-| `pyproject.toml` | Package metadata, dependencies, ruff, mypy, and uv workspace config |
+| `pyproject.toml` | Package metadata, extras, dependencies, ruff, mypy, and uv workspace config |
 | `uv.lock` | Locked dependency versions (reproducible installs) |
-| `setup.py` | PyPI publish helper (handles dev version suffixing) |
-| `ext/*/pyproject.toml` | Extension package metadata and dependencies |
+| `dapr/__init__.py` | Imports `_detect_legacy_extension_dists` to warn about legacy `dapr-ext-*` / `flask-dapr` installs that collide with the bundled extension files |
 | `dapr/version/version.py` | SDK version string |
 | `tests/examples/` | Output-based tests that validate examples by checking stdout |
 | `tests/integration/` | Programmatic SDK tests using DaprClient directly |
 
 ## Gotchas
 
-- **Namespace packages**: Do not add `__init__.py` to the top-level `dapr/` directory in extensions — it will break namespace package resolution.
+- **Namespace packages**: `dapr.ext` is a PEP 420 implicit namespace package. Do **not** create `dapr/ext/__init__.py`; that would block any future externally-published `dapr.ext.*` distribution from coexisting with the core wheel on install.
 - **Proto files**: Never manually edit anything under `dapr/proto/`. These are generated.
-- **Extension independence**: Each extension is a separate PyPI package. Core SDK changes should not break extensions; extension changes should not require core SDK changes unless intentional.
+- **Bundled extensions**: live under `dapr/ext/<name>/`, opted in via extras (`dapr[fastapi]`, etc.). The legacy `dapr-ext-*` and `flask-dapr` distributions are no longer published; legacy installs must be uninstalled before upgrading or `import dapr` will emit a `FutureWarning`.
 - **DCO signoff**: PRs will be blocked by the DCO bot if commits lack `Signed-off-by`. Always use `git commit -s`.
 - **Ruff version pinned**: `pyproject.toml` pins `ruff==0.14.1` in `[dependency-groups].dev`. Use `uv sync --all-packages --group dev` to get the exact version.
 - **Examples are tested by output matching**: Changing output format (log messages, print statements) can break `tests/examples/`. Always check expected output there when modifying user-visible output.
 - **Background processes in examples**: Examples that start background services (servers, subscribers) must include a cleanup step to stop them, or CI will hang.
-- **Workflow is the most active area**: See `ext/dapr-ext-workflow/AGENTS.md` for workflow-specific architecture and constraints.
+- **Workflow is the most active area**: See `dapr/ext/workflow/AGENTS.md` for workflow-specific architecture and constraints.
