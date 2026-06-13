@@ -26,7 +26,100 @@ on:
     types: [validate-examples]
   merge_group:
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    env:
+      CHECKOUT_REPO: ${{ github.repository }}
+      CHECKOUT_REF: ${{ github.ref }}
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Parse repository_dispatch payload
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          if [ ${{ github.event.client_payload.command }} = "ok-to-test" ]; then
+            echo "CHECKOUT_REPO=${{ github.event.client_payload.pull_head_repo }}" >> $GITHUB_ENV
+            echo "CHECKOUT_REF=${{ github.event.client_payload.pull_head_ref }}" >> $GITHUB_ENV
+          fi
+
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.CHECKOUT_REPO }}
+          ref: ${{ env.CHECKOUT_REF }}
+
+      - name: Compute compatibility test matrix
+        id: set-matrix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 << 'PY'
+          import json
+          import os
+          import urllib.request
+
+          sdk_version = open('VERSION').read().strip()
+          base_version = sdk_version.split('.dev')[0]
+          major_text, minor_text, *_ = base_version.split('.')
+          major = int(major_text)
+          minor = int(minor_text)
+          runtime_minors = [f'{major}.{minor - offset}' for offset in range(3)]
+
+          request = urllib.request.Request(
+              'https://api.github.com/repos/dapr/dapr/releases?per_page=100',
+              headers={'Authorization': f'Bearer {os.environ["GITHUB_TOKEN"]}'},
+          )
+          releases = json.load(urllib.request.urlopen(request, timeout=30))
+
+          def version_key(version: str) -> tuple[int, ...]:
+              base_version, _, suffix = version.partition('-')
+              parts = tuple(int(part) for part in base_version.split('.'))
+              if suffix.startswith('rc.'):
+                  return parts + (int(suffix.removeprefix('rc.')),)
+              return parts
+
+          def latest_patch(runtime_minor: str) -> str | None:
+              prefix = f'{runtime_minor}.'
+              for prerelease in (False, True):
+                  versions = [
+                      release['tag_name'].removeprefix('v')
+                      for release in releases
+                      if release.get('prerelease') == prerelease
+                      and release['tag_name'].removeprefix('v').startswith(prefix)
+                  ]
+                  if versions:
+                      return sorted(versions, key=version_key)[-1]
+              return None
+
+          python_versions = ['3.10', '3.11', '3.12', '3.13', '3.14']
+          matrix_include = []
+          for runtime_minor in runtime_minors:
+              runtime_version = latest_patch(runtime_minor)
+              if runtime_version is None:
+                  print(f'Warning: no Dapr runtime release found for {runtime_minor}, skipping')
+                  continue
+              for python_version in python_versions:
+                  matrix_include.append(
+                      {
+                          'python_ver': python_version,
+                          'runtime_version': runtime_version,
+                      }
+                  )
+
+          if not matrix_include:
+              raise SystemExit('No Dapr runtime releases found for compatibility matrix')
+
+          matrix = {'include': matrix_include}
+          print(f'SDK version: {sdk_version}')
+          print(f'Runtime minors: {runtime_minors}')
+          print(f'Matrix ({len(matrix_include)} jobs): {json.dumps(matrix)}')
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output_file:
+              output_file.write(f'matrix={json.dumps(matrix)}\n')
+          PY
+
   validate:
+    needs: prepare
     runs-on: ubuntu-latest
     env:
       CHECKOUT_REPO: ${{ github.repository }}
@@ -34,8 +127,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        python_ver: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       - name: Parse repository_dispatch payload
         if: github.event_name == 'repository_dispatch'
@@ -50,35 +142,6 @@ jobs:
         with:
           repository: ${{ env.CHECKOUT_REPO }}
           ref: ${{ env.CHECKOUT_REF }}
-      - name: Determine latest Dapr Runtime version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          MIN_RUNTIME_VERSION="1.18.0"
-          RUNTIME_VERSION=$(curl -fsS -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "https://api.github.com/repos/dapr/dapr/releases?per_page=10" | \
-            jq -r 'map(select(.prerelease == false)) | sort_by(.created_at) | reverse | .[0].tag_name | ltrimstr("v")')
-          if [ -z "$RUNTIME_VERSION" ] || [ "$RUNTIME_VERSION" = "null" ]; then
-            echo "Failed to resolve Dapr Runtime version" && exit 1
-          fi
-          if [ "$(printf '%s\n' "$MIN_RUNTIME_VERSION" "$RUNTIME_VERSION" | sort -V | head -n1)" != "$MIN_RUNTIME_VERSION" ]; then
-            echo "Resolved runtime version $RUNTIME_VERSION is below minimum $MIN_RUNTIME_VERSION, using minimum instead"
-            RUNTIME_VERSION="$MIN_RUNTIME_VERSION"
-          fi
-          echo "DAPR_RUNTIME_VER=$RUNTIME_VERSION" >> $GITHUB_ENV
-          echo "Found $RUNTIME_VERSION"
-      - name: Determine latest Dapr CLI version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          CLI_VERSION=$(curl -fsS -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "https://api.github.com/repos/dapr/cli/releases?per_page=10" | \
-            jq -r 'map(select(.prerelease == false)) | sort_by(.created_at) | reverse | .[0].tag_name | ltrimstr("v")')
-          if [ -z "$CLI_VERSION" ] || [ "$CLI_VERSION" = "null" ]; then
-            echo "Failed to resolve Dapr CLI version" && exit 1
-          fi
-          echo "DAPR_CLI_VER=$CLI_VERSION" >> $GITHUB_ENV
-          echo "Found $CLI_VERSION"
       - name: Set up Python ${{ matrix.python_ver }}
         uses: actions/setup-python@v6
         with:
@@ -92,9 +155,10 @@ jobs:
         with:
           commit: ${{ github.event.inputs.daprcli_commit }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Dapr runtime
+      - name: Set up Dapr runtime ${{ matrix.runtime_version }}
         uses: dapr/.github/.github/actions/setup-dapr-runtime@main
         with:
+          version: ${{ matrix.runtime_version }}
           commit: ${{ github.event.inputs.daprdapr_commit }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Llama
