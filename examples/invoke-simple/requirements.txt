@@ -1,2 +1,1 @@
-dapr-ext-grpc >= 1.17.0.dev
-dapr >= 1.17.0.dev
+dapr[grpc] >= 1.19.0.dev

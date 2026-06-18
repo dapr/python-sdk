@@ -211,7 +211,7 @@ class ActorRuntimeTests(unittest.TestCase):
     def test_parse_incoming_reentrancy_header_flask(self):
         from flask import Flask
 
-        from ext.flask_dapr import flask_dapr
+        from dapr.ext import flask as flask_dapr
 
         app = Flask(f'{FakeReentrantActor.__name__}Service')
         flask_dapr.DaprActor(app)
@@ -242,9 +242,10 @@ class ActorRuntimeTests(unittest.TestCase):
             )
 
     def test_parse_incoming_reentrancy_header_fastapi(self):
-        from dapr.ext import fastapi
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
+
+        from dapr.ext import fastapi
 
         app = FastAPI(title=f'{FakeReentrantActor.__name__}Service')
         fastapi.DaprActor(app)

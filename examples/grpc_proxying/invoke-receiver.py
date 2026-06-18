@@ -2,8 +2,9 @@ import logging
 
 import grpc
 import helloworld_service_pb2_grpc
-from dapr.ext.grpc import App
 from helloworld_service_pb2 import HelloReply, HelloRequest
+
+from dapr.ext.grpc import App
 
 
 class HelloWorldService(helloworld_service_pb2_grpc.HelloWorldService):

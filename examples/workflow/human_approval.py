@@ -16,7 +16,6 @@ from dataclasses import asdict, dataclass
 from datetime import timedelta
 
 import dapr.ext.workflow as wf
-
 from dapr.clients import DaprClient
 
 wfr = wf.WorkflowRuntime()

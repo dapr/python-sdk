@@ -12,6 +12,8 @@
 from datetime import timedelta
 from time import sleep
 
+from dapr.clients.exceptions import DaprInternalError
+from dapr.conf import Settings
 from dapr.ext.workflow import (
     DaprWorkflowClient,
     DaprWorkflowContext,
@@ -20,9 +22,6 @@ from dapr.ext.workflow import (
     WorkflowRuntime,
     when_any,
 )
-
-from dapr.clients.exceptions import DaprInternalError
-from dapr.conf import Settings
 
 settings = Settings()
 
