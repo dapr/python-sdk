@@ -20,27 +20,18 @@ from typing import Any, Dict, Mapping, Optional
 from google.protobuf import any_pb2, wrappers_pb2
 from grpc import StatusCode  # type: ignore[attr-defined]
 
+from dapr.actor.error import ActorNotFoundError
 from dapr.actor.runtime.config import (
     ActorReentrancyConfig,
     ActorRuntimeConfig,
     ActorTypeConfig,
 )
-from dapr.actor.runtime.method_dispatcher import ActorMethodNotFoundError
 from dapr.clients.base import DAPR_REENTRANCY_ID_HEADER
 from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
 from dapr.proto import api_v1
 
 CONTENT_TYPE_HEADER = 'content-type'
 JSON_CONTENT_TYPE = 'application/json'
-
-
-class ActorCallbackNotFoundError(Exception):
-    """Signals a callback whose target actor type or method does not exist.
-
-    Mapped to gRPC ``NOT_FOUND`` so daprd treats it as a permanent,
-    non-retryable failure, matching how the HTTP transport surfaces an unknown
-    actor type or method.
-    """
 
 
 def build_initial_request(
@@ -217,13 +208,11 @@ def build_invoke_error_payload(exception: Exception) -> bytes:
 def status_code_for_exception(exception: Exception) -> int:
     """Maps a dispatch exception to the gRPC status code for ``request_failed``.
 
-    Only a missing actor type (:class:`ActorCallbackNotFoundError`) or a
-    missing actor method (:class:`ActorMethodNotFoundError` from the method
-    dispatcher) map to ``NOT_FOUND``, which daprd treats as a permanent,
-    non-retryable failure. Everything else — including ``ValueError`` or
-    ``AttributeError`` raised inside the actor's own code — maps to
-    ``UNKNOWN`` so daprd may retry.
+    A missing actor type or method (:class:`ActorNotFoundError`) maps to
+    ``NOT_FOUND``, which daprd treats as a permanent, non-retryable failure.
+    Everything else — including ``ValueError`` or ``AttributeError`` raised
+    inside the actor's own code — maps to ``UNKNOWN`` so daprd may retry.
     """
-    if isinstance(exception, (ActorCallbackNotFoundError, ActorMethodNotFoundError)):
+    if isinstance(exception, ActorNotFoundError):
         return StatusCode.NOT_FOUND.value[0]
     return StatusCode.UNKNOWN.value[0]

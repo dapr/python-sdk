@@ -17,8 +17,8 @@ import asyncio
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
-from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.actor.runtime.state_change import ActorStateChange, StateChangeKind
+from dapr.common.reentrancy_context import reentrancy_ctx
 
 if TYPE_CHECKING:
     from dapr.actor.runtime.actor import Actor

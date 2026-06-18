@@ -22,9 +22,9 @@ from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.manager import ActorManager
-from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
+from dapr.common.reentrancy_context import reentrancy_ctx
 from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer, Serializer
 

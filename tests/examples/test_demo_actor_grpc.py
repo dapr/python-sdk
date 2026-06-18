@@ -38,7 +38,7 @@ EXPECTED_CLIENT = [
 def test_demo_actor_grpc(dapr):
     dapr.start(
         f'--app-id demo-actor --app-port 3001 --app-protocol grpc '
-        f'--dapr-grpc-port {DAPR_GRPC_PORT} -- python3 demo_actor_grpc_service.py',
+        f'--dapr-grpc-port {DAPR_GRPC_PORT} -- uv run demo_actor_grpc_service.py',
         wait=10,
     )
     if not actor_stream_supported(DAPR_GRPC_PORT):

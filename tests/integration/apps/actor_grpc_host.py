@@ -1,23 +1,32 @@
-"""Actor host over the gRPC actor stream for integration tests.
+# -*- coding: utf-8 -*-
+
+"""
+Copyright 2026 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Actor host over the gRPC actor stream for integration tests.
 
 Registers GrpcIntegrationActor with ActorGrpcHost and serves callbacks over
-the SubscribeActorEventsAlpha1 stream. An empty gRPC server listens on
-APP_PORT because daprd requires a gRPC app channel before accepting the
-stream; no actor traffic flows through it.
+the SubscribeActorEventsAlpha1 stream. ActorGrpcHost owns the minimal
+app-channel listener daprd requires (on APP_PORT), so this app writes no
+server boilerplate.
 """
 
 import asyncio
-import os
 from datetime import timedelta
 from typing import Optional
-
-import grpc.aio  # type: ignore
 
 from dapr.actor import Actor, ActorGrpcHost, ActorInterface, Remindable, actormethod
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.runtime import ActorRuntime
-
-APP_PORT = int(os.getenv('APP_PORT', '9131'))
 
 
 class GrpcIntegrationActorInterface(ActorInterface):
@@ -115,17 +124,10 @@ async def main() -> None:
     # Short idle timeout so the idle-deactivation test completes quickly.
     ActorRuntime.set_actor_config(ActorRuntimeConfig(actor_idle_timeout=timedelta(seconds=3)))
 
-    app_server = grpc.aio.server()
-    app_server.add_insecure_port(f'[::]:{APP_PORT}')
-    await app_server.start()
-
     host = ActorGrpcHost()
     await host.register_actor(GrpcIntegrationActor)
     print('GrpcIntegrationActor host started', flush=True)
-    try:
-        await host.run_forever()
-    finally:
-        await app_server.stop(grace=None)
+    await host.run_forever()
 
 
 if __name__ == '__main__':

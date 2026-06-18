@@ -13,9 +13,11 @@
 """DemoActor hosted over the Dapr gRPC actor stream (alpha).
 
 Unlike demo_actor_service.py (FastAPI) and demo_actor_flask.py (Flask), this
-service exposes no actor callback endpoints: it dials daprd's gRPC port and
-receives all actor callbacks (invocations, reminders, timers, deactivations)
-over a single app-initiated stream.
+service exposes no actor callback endpoints and writes no server boilerplate:
+ActorGrpcHost dials daprd's gRPC port, receives all actor callbacks
+(invocations, reminders, timers, deactivations) over a single app-initiated
+stream, and manages the minimal app-channel listener daprd requires (on the
+port from the APP_PORT env var that `dapr run` sets).
 
 Run with:
     dapr run --app-id demo-actor --app-port 3000 --app-protocol grpc -- \
@@ -23,16 +25,12 @@ Run with:
 """
 
 import asyncio
-import os
 
-import grpc.aio  # type: ignore
 from demo_actor import DemoActor
 
 from dapr.actor import ActorGrpcHost
 from dapr.actor.runtime.config import ActorReentrancyConfig, ActorRuntimeConfig, ActorTypeConfig
 from dapr.actor.runtime.runtime import ActorRuntime
-
-APP_PORT = int(os.getenv('APP_PORT', '3000'))
 
 
 async def main() -> None:
@@ -48,21 +46,10 @@ async def main() -> None:
     )
     ActorRuntime.set_actor_config(config)
 
-    # daprd currently requires a gRPC app channel (--app-protocol grpc --app-port)
-    # before it accepts the actor event stream, so listen on the app port with an
-    # empty gRPC server. No actor traffic arrives here: every actor callback is
-    # delivered over the host's outbound stream.
-    app_server = grpc.aio.server()
-    app_server.add_insecure_port(f'[::]:{APP_PORT}')
-    await app_server.start()
-
     host = ActorGrpcHost()
     await host.register_actor(DemoActor)
     print(f'{DemoActor.__name__} is hosted over the Dapr gRPC actor stream', flush=True)
-    try:
-        await host.run_forever()
-    finally:
-        await app_server.stop(grace=None)
+    await host.run_forever()
 
 
 if __name__ == '__main__':

@@ -25,6 +25,7 @@ from grpc.aio import AioRpcError
 from dapr.clients.base import DAPR_REENTRANCY_ID_HEADER, DaprActorClientBase
 from dapr.clients.exceptions import DaprInternalError
 from dapr.clients.grpc._channel import create_aio_channel
+from dapr.common.reentrancy_context import reentrancy_ctx
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.serializers import DefaultJSONSerializer, Serializer
 from dapr.serializers.util import convert_from_dapr_duration
@@ -85,9 +86,6 @@ class DaprActorGrpcClient(DaprActorClientBase):
         in the request metadata map under the same header name the HTTP
         transport uses.
         """
-        # import to avoid circular dependency
-        from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
-
         metadata: Dict[str, str] = {}
         reentrancy_id = reentrancy_ctx.get()
         if reentrancy_id:

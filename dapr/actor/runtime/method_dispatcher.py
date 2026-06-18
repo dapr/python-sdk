@@ -15,18 +15,10 @@ limitations under the License.
 
 from typing import Any, Dict, List
 
+from dapr.actor.error import ActorMethodNotFoundError
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime._type_utils import get_dispatchable_attrs
 from dapr.actor.runtime.actor import Actor
-
-
-class ActorMethodNotFoundError(AttributeError):
-    """Raised when dispatching a method the actor type does not define.
-
-    Subclasses ``AttributeError`` for backwards compatibility, but lets
-    transports distinguish a missing actor method (a permanent, addressable
-    failure) from an ``AttributeError`` raised inside the actor's own code.
-    """
 
 
 class ActorMethodDispatcher:

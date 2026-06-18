@@ -222,7 +222,10 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         self._saved_config = ActorRuntime.get_actor_config()
         ActorRuntime._actor_managers.clear()
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
-        self.host = ActorGrpcHost(address=f'localhost:{GRPC_PORT}')
+        # app_port=0 disables the host-managed app-channel listener: the fake
+        # sidecar never dials the app, and it keeps tests deterministic if
+        # APP_PORT happens to be set in the environment.
+        self.host = ActorGrpcHost(address=f'localhost:{GRPC_PORT}', app_port=0)
 
     async def asyncTearDown(self):
         await self.host.close()
@@ -498,6 +501,28 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(self.host._channel)
         self.assertIsNone(self.host._actor_client)
 
+    def test_resolve_app_port_precedence(self):
+        # Explicit arg wins; 0 disables; None falls back to the APP_PORT env var.
+        self.assertEqual(3000, ActorGrpcHost._resolve_app_port(3000))
+        self.assertIsNone(ActorGrpcHost._resolve_app_port(0))
+        with mock.patch.dict('os.environ', {'APP_PORT': '9999'}):
+            self.assertEqual(9999, ActorGrpcHost._resolve_app_port(None))
+        with mock.patch.dict('os.environ', {}, clear=True):
+            self.assertIsNone(ActorGrpcHost._resolve_app_port(None))
+
+    async def test_owns_app_channel_listener(self):
+        # When an app port is set, the host starts the empty app-channel
+        # listener daprd needs and tears it down on close.
+        host = ActorGrpcHost(address=f'localhost:{GRPC_PORT}', app_port=50099)
+        self._fake_dapr_server.actor_stream_plans.append(_plan())
+        await host.register_actor(HostTestActor)
+        try:
+            await host.start()
+            self.assertIsNotNone(host._app_server)
+        finally:
+            await host.close()
+        self.assertIsNone(host._app_server)
+
     async def test_unknown_stream_message_is_ignored(self):
         from dapr.actor.runtime.grpc_host import _StreamSession
 
@@ -509,6 +534,20 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
 
         session.send.assert_not_called()
         self.assertIn('Ignoring unexpected actor stream message', logs.output[0])
+
+    def test_dispatch_covers_every_callback_variant(self):
+        """Guards against a new daprd response_type oneof field being added
+        without a matching branch in _dispatch. initial_response is the
+        registration ack handled in _run_session, not a dispatched callback."""
+        oneof = api_v1.SubscribeActorEventsResponseAlpha1.DESCRIPTOR.oneofs_by_name['response_type']
+        proto_variants = {field.name for field in oneof.fields}
+        dispatched = {
+            'invoke_request',
+            'reminder_request',
+            'timer_request',
+            'deactivate_request',
+        }
+        self.assertEqual(proto_variants - {'initial_response'}, dispatched)
 
     async def test_context_manager(self):
         self._fake_dapr_server.actor_stream_plans.append(_plan())

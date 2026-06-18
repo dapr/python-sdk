@@ -131,18 +131,19 @@ actor callbacks (method invocations, reminders, timers, deactivations) over a
 single app-initiated gRPC stream (`SubscribeActorEventsAlpha1`). The same
 `DemoActor` implementation runs unchanged; only the hosting service differs.
 
-> This feature is **alpha** and requires a Dapr runtime that supports the
-> `SubscribeActorEventsAlpha1` RPC. daprd must be configured with a gRPC app
-> channel (`--app-protocol grpc` plus `--app-port`); the service listens on
-> the app port with an empty gRPC server, but no actor traffic flows through
-> it — every actor callback arrives over the host's outbound stream, and all
-> outbound actor operations (state, reminders, timers) use daprd's gRPC API.
+> This feature is **alpha** and requires **Dapr runtime v1.18.0 or later** (the
+> first release with the `SubscribeActorEventsAlpha1` RPC). daprd needs a gRPC
+> app channel, so run with `--app-protocol grpc --app-port`; `ActorGrpcHost`
+> manages the minimal listener on that port for you (no server boilerplate in
+> your code), and every actor callback arrives over the host's outbound stream
+> while outbound actor operations (state, reminders, timers) use daprd's gRPC
+> API.
 
 1. Run the gRPC Demo Actor service in a new terminal window
 
    ```bash
    cd demo_actor
-   dapr run --app-id demo-actor --app-port 3000 --app-protocol grpc -- python3 demo_actor_grpc_service.py
+   dapr run --app-id demo-actor --app-port 3000 --app-protocol grpc -- uv run demo_actor_grpc_service.py
    ```
 
    Expected output:
@@ -167,7 +168,7 @@ single app-initiated gRPC stream (`SubscribeActorEventsAlpha1`). The same
 
    ```bash
    cd demo_actor
-   dapr run --app-id demo-client -- python3 demo_actor_client.py
+   dapr run --app-id demo-client -- uv run demo_actor_client.py
    ```
 
 ## Run DemoActor on Kubernetes

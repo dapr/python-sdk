@@ -15,17 +15,18 @@ limitations under the License.
 
 import asyncio
 import logging
+import os
 from typing import Awaitable, Callable, Optional, Protocol, Set, Type, TypeVar
 
 import grpc.aio  # type: ignore
 from grpc import StatusCode  # type: ignore[attr-defined]
 from grpc.aio import AioRpcError
 
+from dapr.actor.error import ActorMethodNotFoundError, ActorTypeNotFoundError
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._grpc_callbacks import (
     CONTENT_TYPE_HEADER,
     JSON_CONTENT_TYPE,
-    ActorCallbackNotFoundError,
     build_initial_request,
     build_invoke_error_payload,
     build_reminder_fire_body,
@@ -35,7 +36,6 @@ from dapr.actor.runtime._grpc_callbacks import (
 )
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.method_dispatcher import ActorMethodNotFoundError
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.clients.grpc._channel import create_aio_channel
 from dapr.clients.grpc.dapr_actor_grpc_client import DaprActorGrpcClient
@@ -114,28 +114,34 @@ class ActorGrpcHost:
     Instead of exposing HTTP callback endpoints, the host dials daprd's gRPC
     port, opens the ``SubscribeActorEventsAlpha1`` stream, registers the actor
     types of :class:`ActorRuntime` and serves invocation, reminder, timer, and
-    deactivation callbacks pushed over the stream. The app does not need an
-    inbound port for actor callbacks; the open stream is the liveness signal.
+    deactivation callbacks pushed over the stream. No inbound port is needed
+    for actor callbacks; the open stream is the liveness signal.
 
-    daprd must be configured with a gRPC app channel (``--app-protocol grpc``)
-    and a daprd version that supports the ``SubscribeActorEventsAlpha1`` RPC.
-    Hosting actors over HTTP extensions and this host in the same process is
-    not supported: both share the process-global :class:`ActorRuntime`.
+    daprd does, however, require a gRPC app channel to exist before it accepts
+    the stream (run with ``--app-protocol grpc --app-port``). The host manages
+    that minimal listener for you: by default it starts an empty gRPC server on
+    the app port (``app_port``, falling back to the ``APP_PORT`` env var that
+    ``dapr run`` sets), so callbacks never touch a server you write. Pass
+    ``app_port=0`` if you already run your own gRPC app server (e.g. a
+    :class:`dapr.ext.grpc.App` for pub/sub or service invocation).
+
+    Requires a daprd version that supports the ``SubscribeActorEventsAlpha1``
+    RPC. Hosting actors over HTTP extensions and this host in the same process
+    is not supported: both share the process-global :class:`ActorRuntime`.
 
     Example:
 
         >>> from dapr.actor.runtime.grpc_host import ActorGrpcHost
         >>> host = ActorGrpcHost()
         >>> await host.register_actor(DemoActor)
-        >>> await host.start()
-        ... # actors now served over the stream
-        >>> await host.stop()
+        >>> await host.run_forever()
     """
 
     def __init__(
         self,
         address: Optional[str] = None,
         timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+        app_port: Optional[int] = None,
     ):
         """Creates the host.
 
@@ -145,16 +151,34 @@ class ActorGrpcHost:
                 ``DAPR_RUNTIME_HOST``/``DAPR_GRPC_PORT``).
             timeout_seconds (int): per-call timeout for the actors' outbound
                 operations (state, reminders, timers, invocations).
+            app_port (int, optional): port for the empty gRPC app-channel
+                listener the host starts so daprd accepts the stream. Defaults
+                to the ``APP_PORT`` env var (set by ``dapr run``). Pass ``0`` to
+                disable it when you run your own gRPC app server.
         """
         self._address = address
         self._timeout_seconds = timeout_seconds
+        self._app_port = self._resolve_app_port(app_port)
         self._channel: Optional[grpc.aio.Channel] = None
         self._actor_client: Optional[DaprActorGrpcClient] = None
+        self._app_server: Optional[grpc.aio.Server] = None
         self._run_task: Optional[asyncio.Task] = None
         self._registered = asyncio.Event()
         self._stopping = False
         self._session: Optional[_StreamSession] = None
         self._dispatch_tasks: Set[asyncio.Task] = set()
+
+    @staticmethod
+    def _resolve_app_port(app_port: Optional[int]) -> Optional[int]:
+        """Resolves the app-channel port, falling back to the APP_PORT env var.
+
+        Returns None (no host-managed listener) when neither is set or the
+        value is 0.
+        """
+        if app_port is None:
+            env_port = os.getenv('APP_PORT')
+            app_port = int(env_port) if env_port else None
+        return app_port or None
 
     async def register_actor(
         self,
@@ -207,6 +231,7 @@ class ActorGrpcHost:
 
         self._stopping = False
         self._registered.clear()
+        await self._start_app_channel_listener()
         run_task = asyncio.create_task(self._run_loop())
         self._run_task = run_task
 
@@ -273,12 +298,31 @@ class ActorGrpcHost:
         a new host (and re-register actors) to host again.
         """
         await self.stop()
+        if self._app_server is not None:
+            await self._app_server.stop(grace=None)
+            self._app_server = None
         if self._actor_client is not None:
             await self._actor_client.close()
             self._actor_client = None
         if self._channel is not None:
             await self._channel.close()
             self._channel = None
+
+    async def _start_app_channel_listener(self) -> None:
+        """Starts the empty gRPC server daprd needs to bring up the app channel.
+
+        daprd dials the app's gRPC port before it accepts the actor event
+        stream, so a listener must exist there; no services are registered
+        because every actor callback travels over the stream, not this server.
+        Skipped when no app port is configured (the app runs its own server).
+        """
+        if self._app_port is None or self._app_server is not None:
+            return
+        server = grpc.aio.server()
+        server.add_insecure_port(f'[::]:{self._app_port}')
+        await server.start()
+        self._app_server = server
+        logger.info('Actor host app-channel listener started on port %s', self._app_port)
 
     async def run_forever(self) -> None:
         """Starts the host and serves callbacks until cancelled.
@@ -401,18 +445,28 @@ class ActorGrpcHost:
     async def _dispatch(
         self, session: _StreamSession, message: api_v1.SubscribeActorEventsResponseAlpha1
     ) -> None:
-        """Routes one callback to the actor runtime and replies on the stream."""
+        """Routes one callback to the actor runtime and replies on the stream.
+
+        Explicit per-variant accessors (rather than a ``getattr`` dispatch
+        table) keep each handler statically type-checked against its request
+        type. ``test_dispatch_covers_every_callback_variant`` guards against a
+        new daprd ``response_type`` oneof field slipping past unhandled.
+        """
         callback_type = message.WhichOneof('response_type')
-        if callback_type == 'invoke_request':
-            await self._guard_and_handle(session, message.invoke_request, self._on_invoke)
-        elif callback_type == 'reminder_request':
-            await self._guard_and_handle(session, message.reminder_request, self._on_reminder)
-        elif callback_type == 'timer_request':
-            await self._guard_and_handle(session, message.timer_request, self._on_timer)
-        elif callback_type == 'deactivate_request':
-            await self._guard_and_handle(session, message.deactivate_request, self._on_deactivate)
-        else:
-            logger.warning('Ignoring unexpected actor stream message: %s', callback_type)
+        match callback_type:
+            case 'invoke_request':
+                await self._guard_and_handle(session, message.invoke_request, self._on_invoke)
+            case 'reminder_request':
+                await self._guard_and_handle(session, message.reminder_request, self._on_reminder)
+            case 'timer_request':
+                await self._guard_and_handle(session, message.timer_request, self._on_timer)
+            case 'deactivate_request':
+                await self._guard_and_handle(
+                    session, message.deactivate_request, self._on_deactivate
+                )
+            case _:
+                # Unknown variant or nothing set: surface it, don't drop silently.
+                logger.warning('Ignoring unexpected actor stream message: %s', callback_type)
 
     async def _guard_and_handle(
         self,
@@ -427,7 +481,7 @@ class ActorGrpcHost:
         a permanent failure).
         """
         if request.actor_type not in ActorRuntime.get_registered_actor_types():
-            not_found = ActorCallbackNotFoundError(f'{request.actor_type} is not registered.')
+            not_found = ActorTypeNotFoundError(f'{request.actor_type} is not registered.')
             await self._send_request_failed(session, request.id, not_found)
             return
         await handler(session, request)

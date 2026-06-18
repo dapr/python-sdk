@@ -20,8 +20,12 @@ from datetime import timedelta
 
 from google.protobuf import any_pb2, wrappers_pb2
 
+from dapr.actor.error import (
+    ActorMethodNotFoundError,
+    ActorNotFoundError,
+    ActorTypeNotFoundError,
+)
 from dapr.actor.runtime._grpc_callbacks import (
-    ActorCallbackNotFoundError,
     build_initial_request,
     build_invoke_error_payload,
     build_reminder_fire_body,
@@ -34,7 +38,6 @@ from dapr.actor.runtime.config import (
     ActorRuntimeConfig,
     ActorTypeConfig,
 )
-from dapr.actor.runtime.method_dispatcher import ActorMethodNotFoundError
 from dapr.clients.exceptions import DaprInternalError
 from dapr.proto import api_v1
 
@@ -245,7 +248,7 @@ class InvokeErrorPayloadTests(unittest.TestCase):
 
 class StatusCodeMappingTests(unittest.TestCase):
     def test_missing_actor_type_maps_to_not_found(self):
-        error = ActorCallbackNotFoundError('X is not registered.')
+        error = ActorTypeNotFoundError('X is not registered.')
         self.assertEqual(5, status_code_for_exception(error))
 
     def test_unknown_method_maps_to_not_found(self):
@@ -264,6 +267,24 @@ class StatusCodeMappingTests(unittest.TestCase):
 
     def test_generic_exception_maps_to_unknown(self):
         self.assertEqual(2, status_code_for_exception(RuntimeError('boom')))
+
+
+class ActorErrorPublicApiTests(unittest.TestCase):
+    """Locks the actor errors as a public, catchable part of the SDK surface."""
+
+    def test_errors_are_exported_from_dapr_actor(self):
+        import dapr.actor as actor_pkg
+
+        self.assertIs(actor_pkg.ActorNotFoundError, ActorNotFoundError)
+        self.assertIs(actor_pkg.ActorMethodNotFoundError, ActorMethodNotFoundError)
+        self.assertIs(actor_pkg.ActorTypeNotFoundError, ActorTypeNotFoundError)
+
+    def test_error_hierarchy(self):
+        self.assertTrue(issubclass(ActorTypeNotFoundError, ActorNotFoundError))
+        self.assertTrue(issubclass(ActorMethodNotFoundError, ActorNotFoundError))
+        # Backwards compatible with code that caught the dispatcher's
+        # historical bare AttributeError.
+        self.assertTrue(issubclass(ActorMethodNotFoundError, AttributeError))
 
 
 if __name__ == '__main__':
