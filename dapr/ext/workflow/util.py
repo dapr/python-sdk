@@ -23,16 +23,22 @@ def get_grpc_channel_options(
 ) -> Optional[Sequence[tuple[str, Any]]]:
     """Resolves gRPC channel options for the workflow message-size limit.
 
-    Resolution order: the explicit ``max_grpc_message_length`` kwarg, then
-    ``settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES``, else ``None``.
+    Precedence: explicit ``max_grpc_message_length`` kwarg (if non-zero),
+    else ``settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` (if non-zero),
+    else the gRPC default. A ``0`` in either source is interpreted as
+    "no opinion / use default" and falls through to the next source — this
+    matches ``global_settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES = 0``
+    being the documented "unset" sentinel.
 
     Sets BOTH send and receive limits symmetrically because workflow activity
-    payloads cross the channel in both directions. ``None`` is returned when no
-    limit is configured, preserving the gRPC default behavior.
+    payloads cross the channel in both directions. Returns ``None`` when no
+    explicit limit is configured so callers leave the channel unconfigured and
+    the gRPC default applies.
 
     Args:
-        max_grpc_message_length: Explicit max gRPC message size in bytes. Takes
-            precedence over the env-var setting when truthy.
+        max_grpc_message_length: Explicit max gRPC message size in bytes.
+            ``0`` or ``None`` means "no opinion" and falls through to the
+            env var.
 
     Returns:
         A sequence of ``(option, value)`` tuples setting both send and receive

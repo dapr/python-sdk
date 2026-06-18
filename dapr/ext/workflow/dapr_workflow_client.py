@@ -56,11 +56,16 @@ class DaprWorkflowClient:
         """Initializes the sync workflow client.
 
         Args:
+            host: Dapr sidecar gRPC hostname. Defaults to
+                ``settings.DAPR_RUNTIME_HOST`` (or ``DAPR_GRPC_ENDPOINT`` when set).
+            port: Dapr sidecar gRPC port. Defaults to ``settings.DAPR_GRPC_PORT``.
+            logger_options: Configuration for the client's internal logger.
             max_grpc_message_length: Maximum gRPC message size in bytes for the
                 workflow channel, applied symmetrically to both send and receive
-                directions. Precedence: this kwarg, then the
-                ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` env var, then the
-                gRPC default (4 MiB) when neither is set.
+                directions. Precedence: this kwarg (if non-zero), then the
+                ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` env var (if non-zero),
+                then the gRPC default (4 MiB). ``0`` in either source means
+                "no opinion" and falls through to the next source.
         """
         address = getAddress(host, port)
 
