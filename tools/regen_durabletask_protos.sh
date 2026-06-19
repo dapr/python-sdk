@@ -16,9 +16,9 @@
 # Regenerate Python protobuf/gRPC stubs for the vendored durabletask package.
 #
 # Proto source files are fetched from the durabletask-protobuf repository.
-# Generated output goes to ext/dapr-ext-workflow/dapr/ext/workflow/_durabletask/internal/
+# Generated output goes to dapr/ext/workflow/_durabletask/internal/
 #
-# Prerequisites: uv sync --all-packages --group dev
+# Prerequisites: uv sync --all-extras --group dev
 #
 # Usage:
 #   ./tools/regen_durabletask_protos.sh
@@ -28,7 +28,7 @@ set -euo pipefail
 
 DURABLETASK_PROTOBUF_BRANCH=${DURABLETASK_PROTOBUF_BRANCH:-main}
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUTPUT_DIR="${REPO_ROOT}/ext/dapr-ext-workflow/dapr/ext/workflow/_durabletask/internal"
+OUTPUT_DIR="${REPO_ROOT}/dapr/ext/workflow/_durabletask/internal"
 PYTHON_PACKAGE="dapr.ext.workflow._durabletask.internal"
 
 if type "curl" > /dev/null 2>&1; then

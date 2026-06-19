@@ -68,62 +68,62 @@ Common component types used in examples: `state.redis`, `pubsub.redis`, `lock.re
 ### State management
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
-| `state_store` | Standalone client | `dapr`, `dapr-ext-grpc` | Yes |
-| `state_store_query` | Standalone client | `dapr`, `dapr-ext-grpc` | Yes |
+| `state_store` | Standalone client | `dapr[grpc]` | Yes |
+| `state_store_query` | Standalone client | `dapr[grpc]` | Yes |
 
 ### Service invocation
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
-| `invoke-simple` | Client-server (receiver/caller) | `dapr`, `dapr-ext-grpc` | No |
-| `invoke-custom-data` | Client-server (protobuf) | `dapr`, `dapr-ext-grpc` | No |
+| `invoke-simple` | Client-server (receiver/caller) | `dapr[grpc]` | No |
+| `invoke-custom-data` | Client-server (protobuf) | `dapr[grpc]` | No |
 | `invoke-http` | Client-server (Flask) | `dapr`, Flask | No |
-| `invoke-binding` | Client with bindings | `dapr`, `dapr-ext-grpc` | Yes |
-| `grpc_proxying` | Client-server (gRPC proxy) | `dapr`, `dapr-ext-grpc` | No (has config.yaml) |
+| `invoke-binding` | Client with bindings | `dapr[grpc]` | Yes |
+| `grpc_proxying` | Client-server (gRPC proxy) | `dapr[grpc]` | No (has config.yaml) |
 
 ### Pub/sub
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
-| `pubsub-simple` | Client-server (publisher/subscriber) | `dapr`, `dapr-ext-grpc` | No |
+| `pubsub-simple` | Client-server (publisher/subscriber) | `dapr[grpc]` | No |
 | `pubsub-streaming` | Streaming pub/sub | `dapr` (base only) | No |
 | `pubsub-streaming-async` | Async streaming pub/sub | `dapr` (base only) | No |
 
 ### Virtual actors
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
-| `demo_actor` | Client-server (FastAPI/Flask + client) | `dapr`, `dapr-ext-fastapi` | No |
+| `demo_actor` | Client-server (FastAPI/Flask + client) | `dapr[fastapi]` (FastAPI) / `dapr[flask]` (Flask) | No |
 
 ### Workflow
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
-| `workflow` | Multiple standalone scripts | `dapr-ext-workflow`, `dapr` | No |
+| `workflow` | Multiple standalone scripts | `dapr[workflow]` | No |
 
 The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_in.py`, `human_approval.py`, `monitor.py`, `child_workflow.py`, `cross-app1/2/3.py`, `versioning.py`, `simple_aio_client.py`.
 
 ### Secrets, configuration, locks
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
-| `secret_store` | Standalone client | `dapr`, `dapr-ext-grpc` | Yes |
-| `configuration` | Standalone client with subscription | `dapr`, `dapr-ext-grpc` | Yes |
-| `distributed_lock` | Standalone client | `dapr`, `dapr-ext-grpc` | Yes |
+| `secret_store` | Standalone client | `dapr[grpc]` | Yes |
+| `configuration` | Standalone client with subscription | `dapr[grpc]` | Yes |
+| `distributed_lock` | Standalone client | `dapr[grpc]` | Yes |
 
 ### Cryptography
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
-| `crypto` | Standalone (sync + async) | `dapr`, `dapr-ext-grpc` | Yes |
+| `crypto` | Standalone (sync + async) | `dapr[grpc]` | Yes |
 
 ### Jobs, tracing, metadata, errors
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
-| `jobs` | Standalone + gRPC event handler | `dapr`, `dapr-ext-grpc` | No |
-| `w3c-tracing` | Client-server with OpenTelemetry | `dapr`, `dapr-ext-grpc`, OpenTelemetry | No |
-| `metadata` | Standalone client | `dapr`, `dapr-ext-grpc` | Yes |
-| `error_handling` | Standalone client | `dapr`, `dapr-ext-grpc` | Yes |
+| `jobs` | Standalone + gRPC event handler | `dapr[grpc]` | No |
+| `w3c-tracing` | Client-server with OpenTelemetry | `dapr[grpc]`, OpenTelemetry | No |
+| `metadata` | Standalone client | `dapr[grpc]` | Yes |
+| `error_handling` | Standalone client | `dapr[grpc]` | Yes |
 
 ### AI/LLM integrations
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
 | `conversation` | Standalone client | `dapr` (base, uses sidecar) | No (uses config/) |
-| `langgraph-checkpointer` | Standalone gRPC server | `dapr-ext-langgraph`, LangGraph, LangChain | Yes |
+| `langgraph-checkpointer` | Standalone gRPC server | `dapr[langgraph]`, LangGraph, LangChain | Yes |
 
 ## Adding a new example
 

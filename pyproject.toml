@@ -27,6 +27,34 @@ dependencies = [
     "typing-extensions>=4.4.0,<5.0.0",
 ]
 
+[project.optional-dependencies]
+fastapi = [
+    "fastapi>=0.60.1,<1.0.0",
+    "uvicorn>=0.11.6,<1.0.0",
+]
+flask = [
+    "Flask>=1.1.4,<4.0.0",
+]
+grpc = [
+    "cloudevents>=1.0.0,<2.0.0",
+]
+langgraph = [
+    "langgraph>=0.3.6,<2.0.0",
+    "langchain>=0.1.17,<2.0.0",
+    "python-ulid>=3.0.0,<4.0.0",
+    "msgpack>=1.0,<2.0",
+]
+strands = [
+    "strands-agents>=1.30.0,<2.0.0",
+    "python-ulid>=3.0.0,<4.0.0",
+    "msgpack>=1.0,<2.0",
+]
+# workflow has no third-party runtime deps beyond core dapr. The empty extra
+# exists so users get a consistent `pip install dapr[<ext>]` shape and so the
+# extra is reserved if workflow ever grows external deps.
+workflow = []
+all = ["dapr[fastapi,flask,grpc,langgraph,strands,workflow]"]
+
 [project.urls]
 Documentation = "https://github.com/dapr/docs"
 Source = "https://github.com/dapr/python-sdk"
@@ -41,20 +69,33 @@ path = "VERSION"
 pattern = '(?P<version>\S+)'
 
 [tool.hatch.build.targets.wheel]
-packages = ["dapr"]
-
-[tool.uv.workspace]
-members = [
-    "ext/dapr-ext-workflow",
-    "ext/dapr-ext-grpc",
-    "ext/dapr-ext-fastapi",
-    "ext/dapr-ext-langgraph",
-    "ext/dapr-ext-strands",
-    "ext/flask_dapr",
+# IMPORTANT: do NOT introduce dapr/ext/__init__.py. `dapr.ext` is kept as an
+# implicit PEP 420 namespace package so external plugins can publish their own
+# distributions under `dapr.ext.*` without colliding with this wheel's
+# `RECORD`. Materialising `dapr/ext/__init__.py` here would lock out every
+# future externally-published dapr.ext.* plugin by claiming ownership of the
+# namespace parent.
+# TODO: drop flask_dapr in 1.22 (with the shim).
+packages = ["dapr", "flask_dapr"]
+# Repo-internal docs (contributor / AI-agent guidance) live next to the code
+# for discoverability but should not ship in the published wheel.
+exclude = [
+    "**/AGENTS.md",
+    "dapr/ext/*/README.md",
 ]
+
+# No workspace members. Before the bundling, each extension was a separate
+# workspace package under ext/. Now all extension code lives in the core
+# `dapr` package and is opt-in via [project.optional-dependencies].
+[tool.uv.workspace]
+members = []
 
 [dependency-groups]
 dev = [
+    # Pull in every extension's third-party deps so the full test suite runs
+    # in the dev env. `dapr` here resolves to this workspace project itself,
+    # so `dapr[all]` activates every extras list declared above.
+    "dapr[all]",
     "mypy==1.20.2",
     "mypy-extensions~=1.1.0",
     "mypy-protobuf==5.0.0",
@@ -88,7 +129,12 @@ tests = [
 target-version = "py310"
 line-length = 100
 fix = true
-extend-exclude = [".github", "dapr/proto", "ext/dapr-ext-workflow/dapr/ext/workflow/_durabletask/internal/*_pb2*"]
+extend-exclude = [".github", "dapr/proto", "dapr/ext/workflow/_durabletask/internal/*_pb2*"]
+# Honor extend-exclude even when ruff is invoked with explicit file paths
+# (pre-commit hooks, lint-staged, manual debugging). Without this, ruff would
+# happily lint and "fix" the generated `*_pb2.py` stubs and strip the
+# `import attestation_pb2` lines that the protobuf descriptor pool needs.
+force-exclude = true
 
 [tool.ruff.lint]
 select = [
@@ -105,6 +151,15 @@ select = [
 
 # TODO: Add those back progressively as we fix the issues
 ignore = ["E501", "E203", "E712", "E722", "E713"]
+
+[tool.ruff.lint.isort]
+# Extensions now live inside the core `dapr` wheel, so `dapr` and the
+# `flask_dapr` shim are first-party, not third-party imports.
+known-first-party = ["dapr", "flask_dapr"]
+# Without this, same-package autodetection on files under `dapr/ext/*` keeps
+# `dapr` in the third-party group, so the first-party setting above never
+# takes effect for the bundled extensions.
+detect-same-package = false
 
 [tool.ruff.format]
 quote-style = 'single'
@@ -131,9 +186,28 @@ ignore_errors = true
 module = ["grpc.aio"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["langgraph.*", "langchain.*", "strands.*", "strands_agents.*"]
+ignore_missing_imports = true
+
+# Bundling the extensions into the core wheel brings their source under mypy's
+# namespace walk for the first time. These modules carry pre-existing type
+# errors that were previously hidden by the separate-workspace-package layout.
+# Ignored here to keep this packaging PR scope-limited; clean up in a follow-up.
+# TODO: drop these overrides as each module's type errors are fixed.
+[[tool.mypy.overrides]]
+module = [
+    "dapr.ext.fastapi.*",
+    "dapr.ext.langgraph.*",
+    "dapr.ext.strands.*",
+    "dapr.ext.workflow.*",
+]
+ignore_errors = true
+
 [tool.pytest.ini_options]
 markers = [
     'example_dir(name): set the example directory for the dapr fixture',
+    'perf: timing-sensitive dispatch regression tests',
 ]
 pythonpath = ["."]
 asyncio_mode = "auto"

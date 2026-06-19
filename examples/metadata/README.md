@@ -22,7 +22,7 @@ It creates a client using `DaprClient`, uses a set of components defined in the
 <!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 
 ```bash
-pip3 install dapr dapr-ext-grpc
+pip3 install "dapr[grpc]"
 ```
 
 ## Run the example

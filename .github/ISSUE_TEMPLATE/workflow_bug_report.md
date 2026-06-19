@@ -1,6 +1,6 @@
 ---
 name: WORKFLOW SDK Bug report
-about: Report a bug in dapr-ext-workflow
+about: Report a bug in dapr.ext.workflow
 title: "[WORKFLOW SDK BUG] <title>"
 labels: dapr-ext-workflow, kind/enhancement
 assignees: ''
