@@ -70,18 +70,32 @@ class AsyncTaskHubGrpcClient:
         else:
             interceptors = None
 
-        channel = get_grpc_aio_channel(
-            host_address=host_address,
-            secure_channel=secure_channel,
-            interceptors=interceptors,
-            options=channel_options,
-        )
-        self._channel = channel
-        self._stub = stubs.TaskHubSidecarServiceStub(channel)
+        self._host_address = host_address
+        self._secure_channel = secure_channel
+        self._interceptors = interceptors
+        self._channel_options = channel_options
+        self._channel: grpc.aio.Channel | None = None
+        self._stub: stubs.TaskHubSidecarServiceStub | None = None
         self._logger = shared.get_logger('client', log_handler, log_formatter)
 
+    def _get_stub(self) -> stubs.TaskHubSidecarServiceStub:
+        """Lazily create the channel and stub on first use.
+
+        Async grpc binds a channel to the loop active at creation, deferring it avoids binding to the wrong loop.
+        """
+        if self._stub is None:
+            self._channel = get_grpc_aio_channel(
+                host_address=self._host_address,
+                secure_channel=self._secure_channel,
+                interceptors=self._interceptors,
+                options=self._channel_options,
+            )
+            self._stub = stubs.TaskHubSidecarServiceStub(self._channel)
+        return self._stub
+
     async def aclose(self):
-        await self._channel.close()
+        if self._channel is not None:
+            await self._channel.close()
 
     async def __aenter__(self):
         return self
@@ -112,14 +126,14 @@ class AsyncTaskHubGrpcClient:
         )
 
         self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")
-        res: pb.CreateInstanceResponse = await self._stub.StartInstance(req)
+        res: pb.CreateInstanceResponse = await self._get_stub().StartInstance(req)
         return res.instanceId
 
     async def get_orchestration_state(
         self, instance_id: str, *, fetch_payloads: bool = True
     ) -> Optional[WorkflowState]:
         req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
-        res: pb.GetInstanceResponse = await self._stub.GetInstance(req)
+        res: pb.GetInstanceResponse = await self._get_stub().GetInstance(req)
         return new_orchestration_state(req.instanceId, res)
 
     async def wait_for_orchestration_start(
@@ -131,7 +145,7 @@ class AsyncTaskHubGrpcClient:
         )
 
         async def _call(grpc_timeout):
-            res: pb.GetInstanceResponse = await self._stub.WaitForInstanceStart(
+            res: pb.GetInstanceResponse = await self._get_stub().WaitForInstanceStart(
                 req, timeout=grpc_timeout
             )
             return new_orchestration_state(req.instanceId, res)
@@ -150,7 +164,7 @@ class AsyncTaskHubGrpcClient:
         )
 
         async def _call(grpc_timeout):
-            res: pb.GetInstanceResponse = await self._stub.WaitForInstanceCompletion(
+            res: pb.GetInstanceResponse = await self._get_stub().WaitForInstanceCompletion(
                 req, timeout=grpc_timeout
             )
             state = new_orchestration_state(req.instanceId, res)
@@ -261,7 +275,7 @@ class AsyncTaskHubGrpcClient:
         )
 
         self._logger.info(f"Raising event '{event_name}' for instance '{instance_id}'.")
-        await self._stub.RaiseEvent(req)
+        await self._get_stub().RaiseEvent(req)
 
     async def terminate_orchestration(
         self, instance_id: str, *, output: Optional[Any] = None, recursive: bool = True
@@ -273,19 +287,19 @@ class AsyncTaskHubGrpcClient:
         )
 
         self._logger.info(f"Terminating instance '{instance_id}'.")
-        await self._stub.TerminateInstance(req)
+        await self._get_stub().TerminateInstance(req)
 
     async def suspend_orchestration(self, instance_id: str):
         req = pb.SuspendRequest(instanceId=instance_id)
         self._logger.info(f"Suspending instance '{instance_id}'.")
-        await self._stub.SuspendInstance(req)
+        await self._get_stub().SuspendInstance(req)
 
     async def resume_orchestration(self, instance_id: str):
         req = pb.ResumeRequest(instanceId=instance_id)
         self._logger.info(f"Resuming instance '{instance_id}'.")
-        await self._stub.ResumeInstance(req)
+        await self._get_stub().ResumeInstance(req)
 
     async def purge_orchestration(self, instance_id: str, recursive: bool = True):
         req = pb.PurgeInstancesRequest(instanceId=instance_id, recursive=recursive)
         self._logger.info(f"Purging instance '{instance_id}'.")
-        await self._stub.PurgeInstances(req)
+        await self._get_stub().PurgeInstances(req)

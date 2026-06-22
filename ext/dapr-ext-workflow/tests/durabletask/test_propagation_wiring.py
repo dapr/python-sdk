@@ -191,12 +191,13 @@ def test_activity_executor_exposes_propagated_history():
 
     registry = worker._Registry()
     activity_name = registry.add_activity(reading_activity)
-    executor = worker._ActivityExecutor(registry, TEST_LOGGER)
+    executor = worker._ActivityExecutor(TEST_LOGGER)
 
     propagated = PropagatedHistory.from_proto(_single_chunk_history('Caller'))
     assert propagated is not None
 
     encoded_output = executor.execute(
+        reading_activity,
         orchestration_id='wf-1',
         name=activity_name,
         task_id=1,
@@ -221,8 +222,9 @@ def test_activity_executor_propagated_history_is_none_by_default():
 
     registry = worker._Registry()
     activity_name = registry.add_activity(reading_activity)
-    executor = worker._ActivityExecutor(registry, TEST_LOGGER)
+    executor = worker._ActivityExecutor(TEST_LOGGER)
     executor.execute(
+        reading_activity,
         orchestration_id='wf-1',
         name=activity_name,
         task_id=1,

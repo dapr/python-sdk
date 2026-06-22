@@ -9,6 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from typing import Optional, Sequence, Union
 
 import grpc
@@ -27,6 +28,30 @@ ClientInterceptor = Union[
     grpc_aio.StreamStreamClientInterceptor,
 ]
 
+_POLLER_NOISE_MARKER = 'PollerCompletionQueue._handle_events'
+
+
+class _GrpcAioPollerNoiseFilter(logging.Filter):
+    """Drops the harmless grpc.aio poller BlockingIOError (EAGAIN) records.
+
+    The poller does a non-blocking read on its wake-up fd and can get EAGAIN, which
+    asyncio logs at ERROR even though the read is retried and nothing is lost.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        exc = record.exc_info[1] if record.exc_info else None
+        is_poller_noise = isinstance(exc, BlockingIOError) and (
+            _POLLER_NOISE_MARKER in record.getMessage()
+        )
+        return not is_poller_noise
+
+
+def _silence_grpc_aio_poller_noise() -> None:
+    """Install the poller-noise filter on the asyncio logger if not already present."""
+    asyncio_logger = logging.getLogger('asyncio')
+    if not any(isinstance(f, _GrpcAioPollerNoiseFilter) for f in asyncio_logger.filters):
+        asyncio_logger.addFilter(_GrpcAioPollerNoiseFilter())
+
 
 def get_grpc_aio_channel(
     host_address: Optional[str],
@@ -42,6 +67,8 @@ def get_grpc_aio_channel(
         interceptors: Optional sequence of client interceptors to apply to the channel.
         options: Optional sequence of gRPC channel options as (key, value) tuples. Keys defined in https://grpc.github.io/grpc/core/group__grpc__arg__keys.html
     """
+    _silence_grpc_aio_poller_noise()
+
     if host_address is None:
         host_address = get_default_host_address()
 
