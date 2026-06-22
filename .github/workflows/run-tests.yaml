@@ -52,71 +52,7 @@ jobs:
         id: set-matrix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python3 << 'PY'
-          import json
-          import os
-          import urllib.request
-
-          sdk_version = open('VERSION').read().strip()
-          base_version = sdk_version.split('.dev')[0]
-          major_text, minor_text, *_ = base_version.split('.')
-          major = int(major_text)
-          minor = int(minor_text)
-          runtime_minors = [f'{major}.{minor - offset}' for offset in range(3)]
-
-          request = urllib.request.Request(
-              'https://api.github.com/repos/dapr/dapr/releases?per_page=100',
-              headers={'Authorization': f'Bearer {os.environ["GITHUB_TOKEN"]}'},
-          )
-          releases = json.load(urllib.request.urlopen(request, timeout=30))
-
-          def version_key(version: str) -> tuple[int, ...]:
-              base_version, _, suffix = version.partition('-')
-              parts = tuple(int(part) for part in base_version.split('.'))
-              if suffix.startswith('rc.'):
-                  return parts + (int(suffix.removeprefix('rc.')),)
-              return parts
-
-          def latest_patch(runtime_minor: str) -> str | None:
-              prefix = f'{runtime_minor}.'
-              for prerelease in (False, True):
-                  versions = [
-                      release['tag_name'].removeprefix('v')
-                      for release in releases
-                      if release.get('prerelease') == prerelease
-                      and release['tag_name'].removeprefix('v').startswith(prefix)
-                  ]
-                  if versions:
-                      return sorted(versions, key=version_key)[-1]
-              return None
-
-          python_versions = ['3.10', '3.11', '3.12', '3.13', '3.14']
-          matrix_include = []
-          for runtime_minor in runtime_minors:
-              runtime_version = latest_patch(runtime_minor)
-              if runtime_version is None:
-                  print(f'Warning: no Dapr runtime release found for {runtime_minor}, skipping')
-                  continue
-              for python_version in python_versions:
-                  matrix_include.append(
-                      {
-                          'python_ver': python_version,
-                          'runtime_version': runtime_version,
-                      }
-                  )
-
-          if not matrix_include:
-              raise SystemExit('No Dapr runtime releases found for compatibility matrix')
-
-          matrix = {'include': matrix_include}
-          print(f'SDK version: {sdk_version}')
-          print(f'Runtime minors: {runtime_minors}')
-          print(f'Matrix ({len(matrix_include)} jobs): {json.dumps(matrix)}')
-
-          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output_file:
-              output_file.write(f'matrix={json.dumps(matrix)}\n')
-          PY
+        run: python tools/compute_compat_matrix.py
 
   validate:
     needs: prepare
