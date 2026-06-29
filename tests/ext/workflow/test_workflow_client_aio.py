@@ -20,6 +20,7 @@ from unittest import mock
 
 from grpc.aio import AioRpcError
 
+from dapr.conf import settings
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.aio import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
@@ -126,6 +127,62 @@ class WorkflowClientAioTimeoutInterceptorTest(unittest.IsolatedAsyncioTestCase):
             from dapr.aio.clients.grpc.interceptors import DaprClientTimeoutInterceptorAsync
 
             self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptorAsync)
+
+
+class WorkflowClientAioChannelOptionsTest(unittest.TestCase):
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 0)
+    def test_explicit_kwarg_sets_symmetric_channel_options(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient(max_grpc_message_length=8 * 1024 * 1024)
+            channel_options = mock_client_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 8 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 8 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 16 * 1024 * 1024)
+    def test_env_var_sets_symmetric_channel_options(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient()
+            channel_options = mock_client_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 16 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 16 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 16 * 1024 * 1024)
+    def test_kwarg_takes_precedence_over_env_var(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient(max_grpc_message_length=8 * 1024 * 1024)
+            channel_options = mock_client_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 8 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 8 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 0)
+    def test_neither_set_passes_none(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient()
+            channel_options = mock_client_cls.call_args[1]['channel_options']
+            self.assertIsNone(channel_options)
 
 
 class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
