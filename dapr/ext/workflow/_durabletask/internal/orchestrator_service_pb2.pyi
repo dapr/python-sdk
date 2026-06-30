@@ -19,10 +19,10 @@ from dapr.ext.workflow._durabletask.internal import orchestrator_actions_pb2 as 
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -33,21 +33,31 @@ class _WorkerCapability:
 class _WorkerCapabilityEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_WorkerCapability.ValueType], _builtins.type):
     DESCRIPTOR: _descriptor.EnumDescriptor
     WORKER_CAPABILITY_UNSPECIFIED: _WorkerCapability.ValueType  # 0
-    WORKER_CAPABILITY_HISTORY_STREAMING: _WorkerCapability.ValueType  # 1
-    """Indicates that the worker is capable of streaming instance history as a more optimized
-    alternative to receiving the full history embedded in the workflow work-item.
-    When set, the service may return work items without any history events as an optimization.
-    It is strongly recommended that all SDKs support this capability.
+    WORKER_CAPABILITY_STATEFUL_HISTORY: _WorkerCapability.ValueType  # 2
+    """Indicates that the worker retains an instance's accumulated history in
+    memory between workflow turns on the same work-item stream, so that the
+    service can send only the new events (the delta) instead of the full
+    history each turn. When the service has dispatched a turn for an
+    instance to this stream and believes the stream is still warm for it, it
+    may set WorkflowRequest.cachedHistory and drop the committed-history
+    prefix the worker already holds from pastEvents, leaving only the delta
+    there. On a cache miss the worker recovers the full history via the
+    GetInstanceHistory RPC, so the optimization never affects correctness.
     """
 
 class WorkerCapability(_WorkerCapability, metaclass=_WorkerCapabilityEnumTypeWrapper): ...
 
 WORKER_CAPABILITY_UNSPECIFIED: WorkerCapability.ValueType  # 0
-WORKER_CAPABILITY_HISTORY_STREAMING: WorkerCapability.ValueType  # 1
-"""Indicates that the worker is capable of streaming instance history as a more optimized
-alternative to receiving the full history embedded in the workflow work-item.
-When set, the service may return work items without any history events as an optimization.
-It is strongly recommended that all SDKs support this capability.
+WORKER_CAPABILITY_STATEFUL_HISTORY: WorkerCapability.ValueType  # 2
+"""Indicates that the worker retains an instance's accumulated history in
+memory between workflow turns on the same work-item stream, so that the
+service can send only the new events (the delta) instead of the full
+history each turn. When the service has dispatched a turn for an
+instance to this stream and believes the stream is still warm for it, it
+may set WorkflowRequest.cachedHistory and drop the committed-history
+prefix the worker already holds from pastEvents, leaving only the delta
+there. On a cache miss the worker recovers the full history via the
+GetInstanceHistory RPC, so the optimization never affects correctness.
 """
 Global___WorkerCapability: _TypeAlias = WorkerCapability  # noqa: Y015
 
@@ -132,9 +142,44 @@ class ActivityResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["completionToken", b"completionToken", "failureDetails", b"failureDetails", "instanceId", b"instanceId", "result", b"result", "taskId", b"taskId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ActivityResponse: _TypeAlias = ActivityResponse  # noqa: Y015
+
+@_typing.final
+class CachedHistory(_message.Message):
+    """CachedHistory is set on a WorkflowRequest when the service has intentionally
+    omitted the committed history prefix the worker is expected to already hold
+    for this instance from a previous turn on the same stream (see
+    WORKER_CAPABILITY_STATEFUL_HISTORY). Its presence means pastEvents carries
+    only the delta since the worker was last brought up to date; its absence
+    means pastEvents is the full committed history. The worker reconstructs the
+    full past history by prepending its cached events to pastEvents. The service
+    only sets this for workers that advertised
+    WORKER_CAPABILITY_STATEFUL_HISTORY and that it believes to be warm for the
+    instance, so it is always safe for a worker to fall back to the
+    GetInstanceHistory RPC.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    EVENTCOUNT_FIELD_NUMBER: _builtins.int
+    eventCount: _builtins.int
+    """eventCount is the number of leading (committed) history events the
+    service believes the worker already holds, i.e. the length of the prefix
+    omitted from pastEvents. The worker's cached prefix must contain exactly
+    this many events; if it does not, the worker must treat this as a cache
+    miss and fetch the full history via GetInstanceHistory before applying
+    newEvents.
+    """
+    def __init__(
+        self,
+        *,
+        eventCount: _builtins.int = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["eventCount", b"eventCount"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___CachedHistory: _TypeAlias = CachedHistory  # noqa: Y015
 
 @_typing.final
 class WorkflowRequest(_message.Message):
@@ -147,6 +192,7 @@ class WorkflowRequest(_message.Message):
     REQUIRESHISTORYSTREAMING_FIELD_NUMBER: _builtins.int
     ROUTER_FIELD_NUMBER: _builtins.int
     PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
+    CACHEDHISTORY_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     requiresHistoryStreaming: _builtins.bool
     @_builtins.property
@@ -164,6 +210,14 @@ class WorkflowRequest(_message.Message):
         workflow function can access it via ctx.
         """
 
+    @_builtins.property
+    def cachedHistory(self) -> Global___CachedHistory:
+        """cachedHistory, when present, signals that pastEvents holds only the
+        delta and the worker must reconstruct the omitted prefix from its own
+        cache (or fetch it via GetInstanceHistory on a miss). Absent for
+        full-history sends.
+        """
+
     def __init__(
         self,
         *,
@@ -174,15 +228,20 @@ class WorkflowRequest(_message.Message):
         requiresHistoryStreaming: _builtins.bool = ...,
         router: _orchestration_pb2.TaskRouter | None = ...,
         propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
+        cachedHistory: Global___CachedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "executionId", b"executionId", "propagatedHistory", b"propagatedHistory", "router", b"router"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_cachedHistory", b"_cachedHistory", "_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "cachedHistory", b"cachedHistory", "executionId", b"executionId", "propagatedHistory", b"propagatedHistory", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "executionId", b"executionId", "instanceId", b"instanceId", "newEvents", b"newEvents", "pastEvents", b"pastEvents", "propagatedHistory", b"propagatedHistory", "requiresHistoryStreaming", b"requiresHistoryStreaming", "router", b"router"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_cachedHistory", b"_cachedHistory", "_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "cachedHistory", b"cachedHistory", "executionId", b"executionId", "instanceId", b"instanceId", "newEvents", b"newEvents", "pastEvents", b"pastEvents", "propagatedHistory", b"propagatedHistory", "requiresHistoryStreaming", b"requiresHistoryStreaming", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__cachedHistory: _TypeAlias = _typing.Literal["cachedHistory"]  # noqa: Y015
+    _WhichOneofArgType__cachedHistory: _TypeAlias = _typing.Literal["_cachedHistory", b"_cachedHistory"]  # noqa: Y015
     _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
     _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
     _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
     _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__cachedHistory) -> _WhichOneofReturnType__cachedHistory | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
     @_typing.overload
@@ -252,11 +311,8 @@ class CreateInstanceRequest(_message.Message):
             key: _builtins.str = ...,
             value: _builtins.str = ...,
         ) -> None: ...
-        _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
     NAME_FIELD_NUMBER: _builtins.int
@@ -296,7 +352,6 @@ class CreateInstanceRequest(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["executionId", b"executionId", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___CreateInstanceRequest: _TypeAlias = CreateInstanceRequest  # noqa: Y015
 
@@ -311,11 +366,8 @@ class CreateInstanceResponse(_message.Message):
         *,
         instanceId: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___CreateInstanceResponse: _TypeAlias = CreateInstanceResponse  # noqa: Y015
 
@@ -333,11 +385,8 @@ class GetInstanceRequest(_message.Message):
         instanceId: _builtins.str = ...,
         getInputsAndOutputs: _builtins.bool = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["getInputsAndOutputs", b"getInputsAndOutputs", "instanceId", b"instanceId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetInstanceRequest: _TypeAlias = GetInstanceRequest  # noqa: Y015
 
@@ -360,7 +409,6 @@ class GetInstanceResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["exists", b"exists", "workflowState", b"workflowState"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetInstanceResponse: _TypeAlias = GetInstanceResponse  # noqa: Y015
 
@@ -386,7 +434,6 @@ class RaiseEventRequest(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "instanceId", b"instanceId", "name", b"name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___RaiseEventRequest: _TypeAlias = RaiseEventRequest  # noqa: Y015
 
@@ -399,11 +446,6 @@ class RaiseEventResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___RaiseEventResponse: _TypeAlias = RaiseEventResponse  # noqa: Y015
 
@@ -429,7 +471,6 @@ class TerminateRequest(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId", "output", b"output", "recursive", b"recursive"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___TerminateRequest: _TypeAlias = TerminateRequest  # noqa: Y015
 
@@ -442,11 +483,6 @@ class TerminateResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___TerminateResponse: _TypeAlias = TerminateResponse  # noqa: Y015
 
@@ -469,7 +505,6 @@ class SuspendRequest(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId", "reason", b"reason"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___SuspendRequest: _TypeAlias = SuspendRequest  # noqa: Y015
 
@@ -482,11 +517,6 @@ class SuspendResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___SuspendResponse: _TypeAlias = SuspendResponse  # noqa: Y015
 
@@ -509,7 +539,6 @@ class ResumeRequest(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId", "reason", b"reason"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ResumeRequest: _TypeAlias = ResumeRequest  # noqa: Y015
 
@@ -522,11 +551,6 @@ class ResumeResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ResumeResponse: _TypeAlias = ResumeResponse  # noqa: Y015
 
@@ -600,7 +624,6 @@ class PurgeInstanceFilter(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["createdTimeFrom", b"createdTimeFrom", "createdTimeTo", b"createdTimeTo", "runtimeStatus", b"runtimeStatus"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___PurgeInstanceFilter: _TypeAlias = PurgeInstanceFilter  # noqa: Y015
 
@@ -623,7 +646,6 @@ class PurgeInstancesResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["deletedInstanceCount", b"deletedInstanceCount", "isComplete", b"isComplete"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___PurgeInstancesResponse: _TypeAlias = PurgeInstancesResponse  # noqa: Y015
 
@@ -631,14 +653,22 @@ Global___PurgeInstancesResponse: _TypeAlias = PurgeInstancesResponse  # noqa: Y0
 class GetWorkItemsRequest(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
+    CAPABILITIES_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def capabilities(self) -> _containers.RepeatedScalarFieldContainer[Global___WorkerCapability.ValueType]:
+        """capabilities advertises the optional protocol features this worker
+        supports, so the service can opt into optimizations on a per-stream
+        basis. Workers that leave this empty receive the default (fully
+        self-contained) behavior.
+        """
+
     def __init__(
         self,
+        *,
+        capabilities: _abc.Iterable[Global___WorkerCapability.ValueType] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["capabilities", b"capabilities"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetWorkItemsRequest: _TypeAlias = GetWorkItemsRequest  # noqa: Y015
 
@@ -680,11 +710,6 @@ class CompleteTaskResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___CompleteTaskResponse: _TypeAlias = CompleteTaskResponse  # noqa: Y015
 
@@ -769,11 +794,8 @@ class RerunWorkflowFromEventResponse(_message.Message):
         *,
         newInstanceID: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["newInstanceID", b"newInstanceID"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___RerunWorkflowFromEventResponse: _TypeAlias = RerunWorkflowFromEventResponse  # noqa: Y015
 
@@ -862,11 +884,8 @@ class GetInstanceHistoryRequest(_message.Message):
         *,
         instanceId: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetInstanceHistoryRequest: _TypeAlias = GetInstanceHistoryRequest  # noqa: Y015
 
@@ -884,10 +903,7 @@ class GetInstanceHistoryResponse(_message.Message):
         *,
         events: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["events", b"events"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetInstanceHistoryResponse: _TypeAlias = GetInstanceHistoryResponse  # noqa: Y015
