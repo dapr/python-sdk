@@ -16,12 +16,13 @@ import logging
 import os
 import random
 import threading
+import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from threading import Event, Thread
 from types import GeneratorType
-from typing import Any, Generator, Iterator, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Generator, Iterator, Optional, Sequence, TypeVar, Union
 
 import grpc
 from google.protobuf import empty_pb2, timestamp_pb2
@@ -223,6 +224,125 @@ def _is_message_too_large(rpc_error: grpc.RpcError) -> bool:
 
 
 # TODO: refactor this to closely match durabletask-go/client/worker_grpc.go instead of this.
+_DEFAULT_HISTORY_CACHE_TTL = 3600.0
+_DEFAULT_HISTORY_CACHE_MAX_INSTANCES = 100_000
+_HISTORY_CACHE_SWEEP_INTERVAL = 60.0
+
+
+class _CachedHistory:
+    """One instance's cached committed history on a work-item stream."""
+
+    __slots__ = ('events', 'last_access', 'num_bytes')
+
+    def __init__(self, events: list[pb.HistoryEvent], last_access: float, num_bytes: int):
+        self.events = events
+        self.last_access = last_access
+        self.num_bytes = num_bytes
+
+
+class _WorkflowHistoryCache:
+    """Per-stream cache of each instance's committed history, enabling delta work items.
+
+    A worker advertising WORKER_CAPABILITY_STATEFUL_HISTORY keeps the committed history it
+    replayed for each instance so the sidecar can send only the new events (the delta).
+    Entries are reclaimed by a sliding TTL, an instance-count cap, and an optional byte
+    budget (LRU eviction). Eviction is always safe: a miss is recovered via the
+    GetInstanceHistory RPC, so it only costs one extra fetch.
+    """
+
+    def __init__(
+        self,
+        *,
+        ttl: float = _DEFAULT_HISTORY_CACHE_TTL,
+        max_instances: int = _DEFAULT_HISTORY_CACHE_MAX_INSTANCES,
+        max_bytes: int = 0,
+        clock: Callable[[], float] = time.monotonic,
+    ):
+        self._ttl = ttl if ttl > 0 else _DEFAULT_HISTORY_CACHE_TTL
+        self._max_instances = (
+            max_instances if max_instances > 0 else _DEFAULT_HISTORY_CACHE_MAX_INSTANCES
+        )
+        self._max_bytes = max_bytes if max_bytes > 0 else 0
+        self._clock = clock
+        self._lock = threading.Lock()
+        self._entries: dict[str, _CachedHistory] = {}
+        self._total_bytes = 0
+
+    def get(self, instance_id: str) -> Optional[list[pb.HistoryEvent]]:
+        """Returns an instance's cached committed history, refreshing its TTL."""
+        with self._lock:
+            entry = self._entries.get(instance_id)
+            if entry is None:
+                return None
+            entry.last_access = self._clock()
+            return entry.events
+
+    def put(self, instance_id: str, events: list[pb.HistoryEvent]) -> None:
+        """Caches an instance's committed history, evicting LRU entries to stay in bounds."""
+        num_bytes = sum(event.ByteSize() for event in events)
+        with self._lock:
+            existing = self._entries.get(instance_id)
+            if existing is not None:
+                self._total_bytes -= existing.num_bytes
+            self._entries[instance_id] = _CachedHistory(events, self._clock(), num_bytes)
+            self._total_bytes += num_bytes
+            self._evict_to_fit(instance_id)
+
+    def delete(self, instance_id: str) -> None:
+        """Drops an instance's cached history (e.g. once it completes)."""
+        with self._lock:
+            self._remove(instance_id)
+
+    def reset(self) -> None:
+        """Clears the cache; used when the stream reconnects (and starts cold)."""
+        with self._lock:
+            self._entries.clear()
+            self._total_bytes = 0
+
+    def sweep_expired(self) -> None:
+        """Evicts entries whose last turn was longer ago than the TTL."""
+        now = self._clock()
+        with self._lock:
+            expired = [
+                instance_id
+                for instance_id, entry in self._entries.items()
+                if now - entry.last_access > self._ttl
+            ]
+            for instance_id in expired:
+                self._remove(instance_id)
+
+    def _remove(self, instance_id: str) -> None:
+        entry = self._entries.pop(instance_id, None)
+        if entry is not None:
+            self._total_bytes -= entry.num_bytes
+
+    def _evict_to_fit(self, keep: str) -> None:
+        """Evicts LRU entries until within the count and byte bounds.
+
+        Always keeps the just-touched entry so the active working set is never evicted out
+        from under the current turn; a lone entry over the byte budget is kept (soft overage).
+        """
+        while len(self._entries) > 1:
+            over_count = len(self._entries) > self._max_instances
+            over_bytes = self._max_bytes > 0 and self._total_bytes > self._max_bytes
+            if not over_count and not over_bytes:
+                return
+            victim = self._lru_except(keep)
+            if victim is None:
+                return
+            self._remove(victim)
+
+    def _lru_except(self, keep: str) -> Optional[str]:
+        oldest_id: Optional[str] = None
+        oldest_access = 0.0
+        for instance_id, entry in self._entries.items():
+            if instance_id == keep:
+                continue
+            if oldest_id is None or entry.last_access < oldest_access:
+                oldest_id, oldest_access = instance_id, entry.last_access
+        return oldest_id
+
+
 class TaskHubGrpcWorker:
     """A gRPC-based worker for processing durable task orchestrations and activities.
 
@@ -323,6 +443,10 @@ class TaskHubGrpcWorker:
         channel_options: Optional[Sequence[tuple[str, Any]]] = None,
         stop_timeout: float = 30.0,
         keepalive_interval: float = 30.0,
+        disable_stateful_history: bool = False,
+        history_cache_ttl: float = _DEFAULT_HISTORY_CACHE_TTL,
+        history_cache_max_instances: int = _DEFAULT_HISTORY_CACHE_MAX_INSTANCES,
+        history_cache_max_bytes: int = 0,
     ):
         self._registry = _Registry()
         self._host_address = host_address if host_address else shared.get_default_host_address()
@@ -354,6 +478,14 @@ class TaskHubGrpcWorker:
 
         self._async_worker_manager = _AsyncWorkerManager(self._concurrency_options, self._logger)
         self._activity_executor = _ActivityExecutor(self._logger)
+
+        self._disable_stateful_history = disable_stateful_history
+        self._history_cache = _WorkflowHistoryCache(
+            ttl=history_cache_ttl,
+            max_instances=history_cache_max_instances,
+            max_bytes=history_cache_max_bytes,
+        )
+        self._history_janitor: Optional[Thread] = None
 
     @property
     def concurrency_options(self) -> ConcurrencyOptions:
@@ -392,6 +524,11 @@ class TaskHubGrpcWorker:
             loop.run_until_complete(self._async_run_loop())
 
         self._logger.info(f'Starting gRPC worker that connects to {self._host_address}')
+        if not self._disable_stateful_history:
+            self._history_janitor = Thread(
+                target=self._sweep_history_cache_loop, name='WorkerHistoryJanitor', daemon=True
+            )
+            self._history_janitor.start()
         self._runLoop = Thread(target=run_loop, name='WorkerRunLoop')
         self._runLoop.start()
         while not self._stream_ready.wait(timeout=1):
@@ -483,6 +620,9 @@ class TaskHubGrpcWorker:
             self._current_channel = None
             current_stub = None
             self._response_stream = None
+            # The sidecar drops this stream's warm set on disconnect, so start the
+            # next stream cold to stay in sync.
+            self._history_cache.reset()
 
             if current_reader_thread is not None:
                 current_reader_thread.join(timeout=5)
@@ -523,6 +663,10 @@ class TaskHubGrpcWorker:
                 assert current_stub is not None
                 stub = current_stub
                 get_work_items_request = pb.GetWorkItemsRequest()
+                if not self._disable_stateful_history:
+                    get_work_items_request.capabilities.append(
+                        pb.WORKER_CAPABILITY_STATEFUL_HISTORY
+                    )
                 try:
                     self._response_stream = stub.GetWorkItems(get_work_items_request)
                     self._logger.info(
@@ -885,6 +1029,49 @@ class TaskHubGrpcWorker:
         else:
             self._logger.exception(f'Failed to deliver {request_type} result: {rpc_error}')
 
+    def _sweep_history_cache_loop(self):
+        """Periodically reclaims TTL-expired history cache entries until shutdown."""
+        while not self._shutdown.wait(_HISTORY_CACHE_SWEEP_INTERVAL):
+            self._history_cache.sweep_expired()
+
+    def _resolve_history(
+        self, req: pb.WorkflowRequest, stub: stubs.TaskHubSidecarServiceStub
+    ) -> list[pb.HistoryEvent]:
+        """Resolves the full committed history to replay for a workflow work item.
+
+        For a full send it is the request's pastEvents. For a delta send (cachedHistory) it
+        is the cached prefix plus the delta, recovered via GetInstanceHistory on any cache
+        miss (cold stream, eviction, or a prefix-length mismatch).
+        """
+        if not req.HasField('cachedHistory'):
+            return list(req.pastEvents)
+
+        cached = self._history_cache.get(req.instanceId)
+        if cached is not None and len(cached) == req.cachedHistory.eventCount:
+            return cached + list(req.pastEvents)
+
+        response = stub.GetInstanceHistory(pb.GetInstanceHistoryRequest(instanceId=req.instanceId))
+        return list(response.events)
+
+    def _update_history_cache(
+        self, instance_id: str, committed_history: list[pb.HistoryEvent], actions
+    ) -> None:
+        """Refreshes the per-stream history cache after a turn.
+
+        Caches only the committed history (never the not-yet-committed new events), and
+        drops the entry when the turn ends the execution. The current instance ends via a
+        completeWorkflow action whatever its status (completed/failed/terminated/
+        continued-as-new); a terminateWorkflow action targets a different instance and is
+        deliberately not treated as a reset.
+        """
+        if self._disable_stateful_history:
+            return
+        ended = any(a.WhichOneof('workflowActionType') == 'completeWorkflow' for a in actions)
+        if ended:
+            self._history_cache.delete(instance_id)
+            return
+        self._history_cache.put(instance_id, committed_history)
+
     def _execute_orchestrator(
         self,
         req: pb.WorkflowRequest,
@@ -898,9 +1085,11 @@ class TaskHubGrpcWorker:
                 if req.HasField('propagatedHistory')
                 else None
             )
+            old_events = self._resolve_history(req, stub)
             result = executor.execute(
-                req.instanceId, req.pastEvents, req.newEvents, propagated_history=propagated
+                req.instanceId, old_events, req.newEvents, propagated_history=propagated
             )
+            self._update_history_cache(req.instanceId, old_events, result.actions)
 
             version = None
             if result.version_name:

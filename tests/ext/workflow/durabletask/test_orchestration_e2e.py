@@ -121,6 +121,56 @@ def test_activity_sequence():
     assert state.serialized_custom_status is None
 
 
+def _run_accumulate(disable_stateful_history: bool) -> Optional[client.WorkflowState]:
+    """Runs a 20-turn activity sequence and returns its terminal state.
+
+    Each sequential activity is a distinct turn with a longer committed history, so a
+    stateful worker receives most turns as cached-history deltas. Requires a sidecar built
+    with the durabletask-go stateful-history change.
+    """
+
+    def plus_one(_: task.ActivityContext, value: int) -> int:
+        return value + 1
+
+    def accumulate(ctx: task.OrchestrationContext, start: int):
+        current = start
+        for _ in range(20):
+            current = yield ctx.call_activity(plus_one, input=current)
+        return current
+
+    with worker.TaskHubGrpcWorker(
+        stop_timeout=2.0, disable_stateful_history=disable_stateful_history
+    ) as w:
+        w.add_orchestrator(accumulate)
+        w.add_activity(plus_one)
+        w.start()
+
+        with client.TaskHubGrpcClient() as task_hub_client:
+            instance_id = task_hub_client.schedule_new_orchestration(accumulate, input=0)
+            return task_hub_client.wait_for_orchestration_completion(instance_id, timeout=30)
+
+
+def test_stateful_history_multi_turn():
+    """A multi-turn workflow completes correctly with the stateful-history delta path on.
+
+    Deltas are exercised because the worker advertises WORKER_CAPABILITY_STATEFUL_HISTORY by
+    default; the reconstructed history must yield the same result a full-history run would.
+    Wire-level delta verification lives in the durabletask-go and dapr integration suites.
+    """
+    state = _run_accumulate(disable_stateful_history=False)
+    assert state is not None
+    assert state.runtime_status == client.OrchestrationStatus.COMPLETED
+    assert state.serialized_output == json.dumps(20)
+
+
+def test_stateful_history_disabled_matches():
+    """With the optimization disabled (full history every turn) the result is identical."""
+    state = _run_accumulate(disable_stateful_history=True)
+    assert state is not None
+    assert state.runtime_status == client.OrchestrationStatus.COMPLETED
+    assert state.serialized_output == json.dumps(20)
+
+
 def test_activity_error_handling():
     def throw(_: task.ActivityContext, input: int) -> int:
         raise RuntimeError('Kah-BOOOOM!!!')
