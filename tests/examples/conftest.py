@@ -113,25 +113,61 @@ class DaprRunner:
 
         return ''.join(lines)
 
-    def start(self, args: str, *, wait: int = 5) -> None:
+    def start(self, args: str, *, wait: int = 5, port_bind_retries: int = 3) -> None:
         """Start a long-lived background service.
 
         Use this for servers/subscribers that must stay alive while a second
         process runs via ``run()``. Call ``stop()`` to terminate and collect
         output. Stdout is written to a temp file to avoid pipe-buffer deadlocks.
+
+        Args:
+            args: Arguments passed to ``dapr run``.
+            wait: Seconds to wait for the sidecar to come up before returning.
+            port_bind_retries: Retry count for Dapr sidecar startup failures
+                caused by a transient random-port collision.
         """
-        output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log')
-        proc = subprocess.Popen(
-            args=('dapr', 'run', *shlex.split(args)),
-            cwd=self._cwd,
-            stdout=output_file,
-            stderr=subprocess.STDOUT,
-            text=True,
-            **get_kwargs_for_process_group(),
-        )
-        self._bg_process = proc
-        self._bg_output_file = output_file
-        time.sleep(wait)
+        attempts = max(1, port_bind_retries + 1)
+        for attempt in range(attempts):
+            output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log')
+            proc = subprocess.Popen(
+                args=('dapr', 'run', *shlex.split(args)),
+                cwd=self._cwd,
+                stdout=output_file,
+                stderr=subprocess.STDOUT,
+                text=True,
+                **get_kwargs_for_process_group(),
+            )
+            time.sleep(wait)
+
+            can_retry = attempt < attempts - 1
+            if can_retry and self._started_with_port_bind_failure(proc, output_file):
+                self._terminate(proc)
+                output_file.close()
+                print(
+                    'Dapr background sidecar failed to bind a random port; '
+                    f'retrying startup after {2**attempt}s '
+                    f'(attempt {attempt + 1}/{attempts})',
+                    flush=True,
+                )
+                time.sleep(2**attempt)
+                continue
+
+            self._bg_process = proc
+            self._bg_output_file = output_file
+            return
+
+    def _started_with_port_bind_failure(
+        self, proc: subprocess.Popen[str], output_file: IO[str]
+    ) -> bool:
+        """Whether a background sidecar already exited from a random-port collision.
+
+        Reads the log only once the process has exited; seeking the temp file
+        while daprd is still writing would corrupt its shared append offset.
+        """
+        if proc.poll() is None:
+            return False
+        output_file.seek(0)
+        return self._is_dapr_port_bind_failure(output_file.read())
 
     def stop(self) -> str:
         """Stop the background service and return its captured output."""
