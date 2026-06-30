@@ -99,4 +99,4 @@ jobs:
         uv run coverage run -m pytest tests -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
         uv run coverage xml
     - name: Upload test coverage
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
