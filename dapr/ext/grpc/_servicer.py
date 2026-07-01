@@ -82,7 +82,7 @@ class _CallbackServicer(
         self._registered_bindings: List[str] = []
 
         self._route_map: Dict[Tuple[str, str], TopicSubscribeCallable] = {}
-        self._validation_disabled_pubsubs: Dict[str, TopicSubscribeCallable] = {}
+        self._validation_disabled_pubsubs: Dict[str, List[TopicSubscribeCallable]] = {}
 
     def _get_topic_callback(
         self, pubsub_name: str, topic: str, path: str
@@ -95,8 +95,13 @@ class _CallbackServicer(
             return self._route_map[(pubsub_name, path)]
 
         if path == '':
+            if (pubsub_name, topic) in self._route_map:
+                return self._route_map[(pubsub_name, topic)]
+
             if pubsub_name in self._validation_disabled_pubsubs:
-                return self._validation_disabled_pubsubs[pubsub_name]
+                callbacks = self._validation_disabled_pubsubs[pubsub_name]
+                if len(callbacks) == 1:
+                    return callbacks[0]
 
         return None
 
@@ -125,10 +130,13 @@ class _CallbackServicer(
         if pubsub_topic in self._topic_map:
             raise ValueError(f'{topic} is already registered with {pubsub_name}')
         self._topic_map[pubsub_topic] = cb
-        self._route_map[(pubsub_name, topic)] = cb
+        routing_path = path if rule is not None else topic
+        self._route_map[(pubsub_name, routing_path)] = cb
 
         if disable_topic_validation:
-            self._validation_disabled_pubsubs[pubsub_name] = cb
+            if pubsub_name not in self._validation_disabled_pubsubs:
+                self._validation_disabled_pubsubs[pubsub_name] = []
+            self._validation_disabled_pubsubs[pubsub_name].append(cb)
 
         registered_topic = self._registered_topics_map.get(topic_key)
         sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription()
@@ -142,6 +150,10 @@ class _CallbackServicer(
             )
             if dead_letter_topic:
                 sub.dead_letter_topic = dead_letter_topic
+
+            if disable_topic_validation and rule is None:
+                sub.routes.default = topic
+
             registered_topic = _RegisteredSubscription(sub, rules)
             self._registered_topics_map[topic_key] = registered_topic
             self._registered_topics.append(sub)
