@@ -36,7 +36,7 @@ flask = [
     "Flask>=1.1.4,<4.0.0",
 ]
 grpc = [
-    "cloudevents>=1.0.0,<2.0.0",
+    "cloudevents>=1.0.0,<3.0.0",
 ]
 langgraph = [
     "langgraph>=0.3.6,<2.0.0",
