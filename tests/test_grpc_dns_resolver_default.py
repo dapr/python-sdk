@@ -16,36 +16,36 @@ limitations under the License.
 import unittest
 from unittest import mock
 
-import dapr as dapr_pkg
+from dapr.clients.grpc import _helpers
 
-_ENV = dapr_pkg._GRPC_DNS_RESOLVER_ENV
-_NATIVE = dapr_pkg._GRPC_DNS_RESOLVER_NATIVE
+_ENV = _helpers._GRPC_DNS_RESOLVER_ENV
+_NATIVE = _helpers._GRPC_DNS_RESOLVER_NATIVE
 
 
-class TestDefaultGrpcDnsResolverNative(unittest.TestCase):
+class TestSetDefaultGrpcDnsResolver(unittest.TestCase):
     def test_sets_native_on_darwin_when_unset(self):
         with (
-            mock.patch.object(dapr_pkg.sys, 'platform', 'darwin'),
-            mock.patch.dict(dapr_pkg.os.environ, {}, clear=True),
+            mock.patch.object(_helpers.sys, 'platform', 'darwin'),
+            mock.patch.dict(_helpers.os.environ, {}, clear=True),
         ):
-            dapr_pkg._default_grpc_dns_resolver_native()
-            self.assertEqual(dapr_pkg.os.environ[_ENV], _NATIVE)
+            _helpers.set_default_grpc_dns_resolver()
+            self.assertEqual(_helpers.os.environ[_ENV], _NATIVE)
 
     def test_preserves_explicit_value_on_darwin(self):
         with (
-            mock.patch.object(dapr_pkg.sys, 'platform', 'darwin'),
-            mock.patch.dict(dapr_pkg.os.environ, {_ENV: 'ares'}, clear=True),
+            mock.patch.object(_helpers.sys, 'platform', 'darwin'),
+            mock.patch.dict(_helpers.os.environ, {_ENV: 'ares'}, clear=True),
         ):
-            dapr_pkg._default_grpc_dns_resolver_native()
-            self.assertEqual(dapr_pkg.os.environ[_ENV], 'ares')
+            _helpers.set_default_grpc_dns_resolver()
+            self.assertEqual(_helpers.os.environ[_ENV], 'ares')
 
     def test_noop_on_non_darwin(self):
         with (
-            mock.patch.object(dapr_pkg.sys, 'platform', 'linux'),
-            mock.patch.dict(dapr_pkg.os.environ, {}, clear=True),
+            mock.patch.object(_helpers.sys, 'platform', 'linux'),
+            mock.patch.dict(_helpers.os.environ, {}, clear=True),
         ):
-            dapr_pkg._default_grpc_dns_resolver_native()
-            self.assertNotIn(_ENV, dapr_pkg.os.environ)
+            _helpers.set_default_grpc_dns_resolver()
+            self.assertNotIn(_ENV, _helpers.os.environ)
 
 
 if __name__ == '__main__':
