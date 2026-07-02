@@ -192,7 +192,7 @@ class App:
 
             from dapr.ext.grpc import SubscriptionMessage
 
-            @app.subscribe('pubsub_name', 'topic', metadata=(('session-id', 'session-id-value'),))
+            @app.subscribe('pubsub_name', 'topic', metadata={'session-id': 'session-id-value'})
             def topic(event: SubscriptionMessage) -> None:
                 ...
 
