@@ -27,6 +27,7 @@ Installed via the `grpc` extra on core dapr: `pip install "dapr[grpc]"`.
 from dapr.ext.grpc import (
     App,                    # Main entry point — decorator-based gRPC server
     Rule,                   # CEL-based topic rule with priority
+    SubscriptionMessage,    # Event type received by pub/sub topic handlers (preferred)
     InvokeMethodRequest,    # Request object for service invocation handlers
     InvokeMethodResponse,   # Response object for service invocation handlers
     BindingRequest,         # Request object for input binding handlers
@@ -56,7 +57,7 @@ def handle_method(request: InvokeMethodRequest) -> InvokeMethodResponse:
 
 @app.subscribe(pubsub_name='pubsub', topic='orders', metadata={}, dead_letter_topic=None,
                 rule=Rule('event.type == "order"', priority=1), disable_topic_validation=False)
-def handle_event(event: v1.Event) -> Optional[TopicEventResponse]:
+def handle_event(event: SubscriptionMessage) -> Optional[TopicEventResponse]:
     ...
 
 @app.binding('binding_name')
@@ -115,7 +116,7 @@ app.register_health_check(lambda: None)  # Not a decorator — direct registrati
 ## Dependencies (declared via the `grpc` extra in the root `pyproject.toml`)
 
 - `dapr` (core, same wheel as this extension)
-- `cloudevents >= 1.0.0, < 2.0.0`
+- `cloudevents >= 1.0.0, < 2.0.0` (deprecated, only used for the legacy handler event type)
 
 ## Testing
 
@@ -133,6 +134,6 @@ Test patterns:
 
 - **Synchronous only**: Uses `grpc.server()` with `ThreadPoolExecutor(10)`. No async handler support.
 - **Default port**: 3010 (from `dapr.conf.global_settings.GRPC_APP_PORT`)
-- **CloudEvents**: Requires `cloudevents >= 1.0.0` for pub/sub event handling
+- **Topic handler event type**: inferred from the handler annotation. Annotating the event parameter with `dapr.ext.grpc.SubscriptionMessage` — the same SDK-owned type the streaming subscription API (`DaprClient.subscribe`) delivers, with `metadata()` populated from the gRPC invocation metadata — delivers that type. Unannotated or otherwise-annotated handlers receive the DEPRECATED `cloudevents.sdk.event.v1.Event` and `subscribe()` emits a `DeprecationWarning` at registration. Deprecation timeline: 1.20 delivers `SubscriptionMessage` to unannotated handlers (legacy only via explicit `v1.Event` annotation), 1.21 drops `cloudevents` from the `grpc` extra (import becomes conditional), 1.22 removes the legacy path entirely (same release the `flask_dapr` shim goes away). New code must annotate with `SubscriptionMessage`. (Internally the choice is plumbed through `_CallbackServicer.register_topic(legacy_cloudevent=...)`.)
 - **Duplicate registration**: Registering the same method/topic/binding name twice raises `ValueError`
 - **Missing handlers**: Calling an unregistered method/topic/binding raises `NotImplementedError` (gRPC UNIMPLEMENTED)
