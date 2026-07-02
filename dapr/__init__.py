@@ -54,6 +54,25 @@ _LEGACY_DISTS_WITH_BUNDLED_PATHS: dict[str, str] = {
 }
 
 
+_GRPC_DNS_RESOLVER_ENV = 'GRPC_DNS_RESOLVER'
+_GRPC_DNS_RESOLVER_NATIVE = 'native'
+
+
+def _default_grpc_dns_resolver_native() -> None:
+    """Default gRPC to the OS-native DNS resolver on macOS.
+
+    grpcio bundles the c-ares resolver, which on macOS frequently ignores the
+    system DNS configuration (VPN, split-DNS, IPv6) and cancels lookups that
+    resolve fine system-wide. The failure surfaces as ``StatusCode.UNAVAILABLE``
+    with "DNS query cancelled" even though the endpoint is reachable. Deferring
+    to getaddrinfo respects the OS resolver and avoids this. This must run before grpc's C-core
+    reads its config, which is why it lives in this package init.
+    """
+    if sys.platform != 'darwin':
+        return
+    os.environ.setdefault(_GRPC_DNS_RESOLVER_ENV, _GRPC_DNS_RESOLVER_NATIVE)
+
+
 def _safe_dist_version(dist: importlib.metadata.Distribution) -> str:
     try:
         return dist.version
@@ -179,6 +198,8 @@ def _check_for_legacy_extension_issues() -> None:
             f'  pip install "dapr[<extras>]"'
         )
 
+
+_default_grpc_dns_resolver_native()
 
 try:
     _check_for_legacy_extension_issues()
