@@ -10,7 +10,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python 3.10
       uses: actions/setup-python@v6
       with:
@@ -55,7 +55,7 @@ jobs:
       matrix:
         python_ver: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python_ver }}
       uses: actions/setup-python@v6
       with:
@@ -71,7 +71,7 @@ jobs:
         uv run coverage run -m pytest tests -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
         uv run coverage xml
     - name: Upload test coverage
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
   publish:
     needs: build
     if: github.event_name != 'pull_request'
@@ -79,7 +79,7 @@ jobs:
     env:
       TWINE_USERNAME: "__token__"
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python 3.10
       uses: actions/setup-python@v6
       with:
