@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright 2023 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,9 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-# Backwards-compatible alias. The reentrancy context moved to dapr.common so
-# the actor clients (dapr.clients) can import it without a circular dependency
-# on dapr.actor; existing imports of this path keep working.
-from dapr.common.reentrancy_context import reentrancy_ctx
+from contextvars import ContextVar
+from typing import Optional
 
-__all__ = ['reentrancy_ctx']
+# The actor reentrancy id (Dapr-Reentrancy-Id) is shared between the actor
+# runtime (dapr.actor) and the actor clients (dapr.clients). It lives in this
+# neutral leaf module so both can import it at the top level: dapr.clients
+# eagerly imports the actor HTTP client and dapr.actor imports it back, so an
+# import of dapr.actor from within dapr.clients would be circular.
+reentrancy_ctx: ContextVar[Optional[str]] = ContextVar('reentrancy_ctx', default=None)
