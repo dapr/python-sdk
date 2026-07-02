@@ -13,15 +13,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import inspect
+import warnings
 from concurrent import futures
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional, get_type_hints
 
 import grpc
 
+from dapr.common.pubsub.subscription import SubscriptionMessage
 from dapr.conf import settings
 from dapr.ext.grpc._health_servicer import _HealthCheckServicer  # type: ignore
 from dapr.ext.grpc._servicer import Rule, _CallbackServicer  # type: ignore
 from dapr.proto import appcallback_service_v1
+
+
+def _wants_subscription_message(func: Callable) -> bool:
+    """True if the handler's first parameter is annotated with SubscriptionMessage.
+
+    Falls back to False (legacy cloudevents delivery) whenever the signature or the
+    annotation cannot be resolved, so inference never breaks registration.
+    """
+    try:
+        parameters = list(inspect.signature(func).parameters.values())
+        resolved_hints = get_type_hints(func)
+    except Exception:
+        return False
+    if not parameters:
+        return False
+    annotation = resolved_hints.get(parameters[0].name)
+    return isinstance(annotation, type) and issubclass(annotation, SubscriptionMessage)
 
 
 class App:
@@ -162,13 +182,18 @@ class App:
     ):
         """A decorator that is used to register the subscribing topic method.
 
+        The event type the handler receives is inferred from its annotation: annotate the
+        event parameter with :class:`dapr.ext.grpc.SubscriptionMessage` to receive that type.
+        Unannotated (or otherwise-annotated) handlers receive the deprecated
+        ``cloudevents.sdk.event.v1.Event`` and trigger a :class:`DeprecationWarning`.
+
         The below example registers 'topic' subscription topic and pass custom
         metadata to pubsub component::
 
-            from cloudevents.sdk.event import v1
+            from dapr.ext.grpc import SubscriptionMessage
 
             @app.subscribe('pubsub_name', 'topic', metadata=(('session-id', 'session-id-value'),))
-            def topic(event: v1.Event) -> None:
+            def topic(event: SubscriptionMessage) -> None:
                 ...
 
         Args:
@@ -180,6 +205,17 @@ class App:
         """
 
         def decorator(func):
+            handler_wants_subscription_message = _wants_subscription_message(func)
+            if not handler_wants_subscription_message:
+                warnings.warn(
+                    'Topic handlers receive a deprecated cloudevents.sdk.event.v1.Event unless '
+                    'their event parameter is annotated with dapr.ext.grpc.SubscriptionMessage. '
+                    'Annotate the handler to adopt SubscriptionMessage and silence this warning; '
+                    'a future release will deliver SubscriptionMessage to all handlers and drop '
+                    'the cloudevents dependency.',
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
             self._servicer.register_topic(
                 pubsub_name,
                 topic,
@@ -188,6 +224,7 @@ class App:
                 dead_letter_topic,
                 rule,
                 disable_topic_validation,
+                legacy_cloudevent=not handler_wants_subscription_message,
             )
 
         return decorator
