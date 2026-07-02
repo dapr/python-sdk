@@ -57,6 +57,7 @@ from dapr.clients.grpc._helpers import (
     MetadataTuple,
     convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
+    set_default_grpc_dns_resolver,
     to_bytes,
     validateNotBlankString,
     validateNotNone,
@@ -188,6 +189,8 @@ class DaprGrpcClientAsync:
                 ]
             )
             interceptors.append(api_token_interceptor)
+
+        set_default_grpc_dns_resolver()
 
         # Create gRPC channel
         if self._uri.tls:
