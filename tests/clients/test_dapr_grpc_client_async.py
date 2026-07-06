@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import json
+import logging
 import socket
 import tempfile
 import unittest
@@ -38,6 +39,7 @@ from dapr.clients.grpc._response import (
     UnlockResponseStatus,
 )
 from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
+from dapr.common.logging import GrpcAioPollerNoiseFilter
 from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.conf import settings
 from dapr.proto import common_v1
@@ -61,6 +63,18 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     @classmethod
     def tearDownClass(cls):
         cls._fake_dapr_server.stop()
+
+    async def test_client_installs_grpc_aio_poller_noise_filter(self):
+        asyncio_logger = logging.getLogger('asyncio')
+        for existing in list(asyncio_logger.filters):
+            if isinstance(existing, GrpcAioPollerNoiseFilter):
+                asyncio_logger.removeFilter(existing)
+
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.close()
+
+        installed = [f for f in asyncio_logger.filters if isinstance(f, GrpcAioPollerNoiseFilter)]
+        self.assertEqual(len(installed), 1)
 
     async def test_http_extension(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
