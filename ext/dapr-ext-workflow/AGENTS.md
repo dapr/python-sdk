@@ -122,7 +122,7 @@ Workflow (orchestrator) functions must remain generators (`def` with `yield`). T
 
 **Concurrency sizing and load characterization.** See `docs/concurrency.md` for sizing recommendations (`maximum_concurrent_activity_work_items`, `maximum_thread_pool_workers`) and an async-vs-sync decision tree. `tests/ext/workflow/durabletask/test_async_dispatch_regression.py` (marked `perf`) guards the core invariant: a batch of async activities overlaps on the event loop instead of serializing through the thread pool.
 
-**grpc.aio poller log noise.** The async client can emit benign `BlockingIOError: [Errno 11]` ERROR lines from `grpc.aio`'s `PollerCompletionQueue` under load. It is harmless and retried. `get_grpc_aio_channel` installs an internal `asyncio`-logger filter (`_silence_grpc_aio_poller_noise`) that drops only those records, so the SDK suppresses it automatically with no user action.
+**grpc.aio poller log noise.** The async client can emit benign `BlockingIOError: [Errno 11]` ERROR lines from `grpc.aio`'s `PollerCompletionQueue` under load (upstream grpc/grpc#42357). It is harmless and retried. `get_grpc_aio_channel` installs an `asyncio`-logger filter (`silence_grpc_aio_poller_noise` from `dapr.common.logging`, shared with the core async `DaprClient`) that drops only those records, so the SDK suppresses it automatically with no user action.
 
 
 ### DaprWorkflowClient (`dapr_workflow_client.py`)
