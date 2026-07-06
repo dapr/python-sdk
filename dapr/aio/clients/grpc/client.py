@@ -57,6 +57,7 @@ from dapr.clients.grpc._helpers import (
     MetadataTuple,
     convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
+    set_default_grpc_dns_resolver,
     to_bytes,
     validateNotBlankString,
     validateNotNone,
@@ -93,6 +94,7 @@ from dapr.clients.grpc._response import (
 from dapr.clients.grpc._state import StateItem, StateOptions
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
+from dapr.common.logging import silence_grpc_aio_poller_noise
 from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
@@ -188,6 +190,9 @@ class DaprGrpcClientAsync:
                 ]
             )
             interceptors.append(api_token_interceptor)
+
+        set_default_grpc_dns_resolver()
+        silence_grpc_aio_poller_noise()
 
         # Create gRPC channel
         if self._uri.tls:
