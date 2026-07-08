@@ -36,3 +36,13 @@ class ActorMethodNotFoundError(ActorNotFoundError, AttributeError):
     letting callers distinguish a missing actor method from an
     ``AttributeError`` raised inside the actor's own code.
     """
+
+
+class ActorPayloadDecodeError(ValueError):
+    """Raised when a callback payload cannot be decoded.
+
+    Deterministic: the same payload will fail on every delivery, so retrying
+    cannot succeed. The gRPC actor host reports it to daprd as
+    ``INVALID_ARGUMENT`` rather than ``UNKNOWN`` to signal a malformed
+    request instead of a transient handler failure.
+    """

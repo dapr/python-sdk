@@ -20,7 +20,7 @@ from typing import Any, Dict, Mapping, Optional
 from google.protobuf import any_pb2, wrappers_pb2
 from grpc import StatusCode  # type: ignore[attr-defined]
 
-from dapr.actor.error import ActorNotFoundError
+from dapr.actor.error import ActorNotFoundError, ActorPayloadDecodeError
 from dapr.actor.runtime.config import (
     ActorReentrancyConfig,
     ActorRuntimeConfig,
@@ -144,7 +144,7 @@ def _parse_json_value(value: bytes, callback_kind: str) -> Any:
     try:
         return json.loads(value)
     except ValueError as error:
-        raise ValueError(f'{callback_kind} data is not valid JSON: {error}') from error
+        raise ActorPayloadDecodeError(f'{callback_kind} data is not valid JSON: {error}') from error
 
 
 def _any_to_json_value(callback_request: Any) -> Optional[bytes]:
@@ -210,9 +210,13 @@ def status_code_for_exception(exception: Exception) -> int:
 
     A missing actor type or method (:class:`ActorNotFoundError`) maps to
     ``NOT_FOUND``, which daprd treats as a permanent, non-retryable failure.
-    Everything else — including ``ValueError`` or ``AttributeError`` raised
-    inside the actor's own code — maps to ``UNKNOWN`` so daprd may retry.
+    An undecodable payload (:class:`ActorPayloadDecodeError`) is deterministic
+    — retrying cannot succeed — and maps to ``INVALID_ARGUMENT``. Everything
+    else — including ``ValueError`` or ``AttributeError`` raised inside the
+    actor's own code — maps to ``UNKNOWN`` so daprd may retry.
     """
     if isinstance(exception, ActorNotFoundError):
         return StatusCode.NOT_FOUND.value[0]
+    if isinstance(exception, ActorPayloadDecodeError):
+        return StatusCode.INVALID_ARGUMENT.value[0]
     return StatusCode.UNKNOWN.value[0]

@@ -45,6 +45,7 @@ from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.proto import api_v1
+from dapr.serializers import DefaultJSONSerializer
 from tests.clients.fake_dapr_server import FakeDaprSidecar
 
 GRPC_PORT = 50010
@@ -120,7 +121,19 @@ class HostTestActor(Actor, HostTestActorInterface, Remindable):
         HostTestActor.deactivated_ids.append(self.id.id)
 
 
-def _plan(*rounds, end='hold', reject=None):
+class SecondHostTestActorInterface(ActorInterface):
+    @actormethod(name='Ping')
+    async def ping(self) -> str: ...
+
+
+class SecondHostTestActor(Actor, SecondHostTestActorInterface):
+    """Minimal second actor type for multi-registration tests."""
+
+    async def ping(self) -> str:
+        return 'pong'
+
+
+def _plan(*rounds, end='hold', reject=None, eof_before_ack=False):
     """Builds one connection script for the fake daprd's actor event stream.
 
     Args:
@@ -130,9 +143,13 @@ def _plan(*rounds, end='hold', reject=None):
             'abort' drops it with UNAVAILABLE, 'eof' closes it cleanly.
         reject: when set, the connection is rejected with this status code
             before the registration is acked.
+        eof_before_ack: when True, the stream closes cleanly without acking
+            the registration (daprd dropping mid-handshake).
     """
     if reject is not None:
         return {'reject': reject}
+    if eof_before_ack:
+        return {'eof_before_ack': True}
     return {'rounds': list(rounds), 'end': end}
 
 
@@ -453,6 +470,22 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         await self.host.start()
         self.assertTrue(self.host._registered.is_set())
 
+    async def test_reconnects_when_stream_closes_during_handshake(self):
+        """A clean stream close before the registration ack (daprd mid-restart)
+        is transient: the host must reconnect, not die on a protocol error."""
+        with mock.patch('dapr.actor.runtime.grpc_host._RECONNECT_DELAY_SECONDS', 0.05):
+            await self._serve_plans(
+                _plan(eof_before_ack=True),
+                _plan([_invoke_message('req-1', 'GetName')]),
+            )
+
+            await self._wait_until(
+                lambda: len(self._fake_dapr_server.actor_stream_initials) >= 2, timeout=10.0
+            )
+            replies = await self._await_replies(1, timeout=10.0)
+
+        self.assertEqual('req-1', replies[0].invoke_response.id)
+
     async def test_start_raises_on_non_transient_rejection(self):
         self._fake_dapr_server.actor_stream_plans.append(
             _plan(reject=StatusCode.FAILED_PRECONDITION)
@@ -499,7 +532,32 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         await self.host.close()
 
         self.assertIsNone(self.host._channel)
-        self.assertIsNone(self.host._actor_client)
+
+    async def test_each_registration_gets_its_own_serializers(self):
+        """Per-actor serializers must not be clobbered by the first
+        registration's: each register_actor call wires its own client."""
+        ascii_serializer = DefaultJSONSerializer(ensure_ascii=True)
+        utf8_serializer = DefaultJSONSerializer(ensure_ascii=False)
+
+        await self.host.register_actor(
+            HostTestActor,
+            message_serializer=ascii_serializer,
+            state_serializer=ascii_serializer,
+        )
+        await self.host.register_actor(
+            SecondHostTestActor,
+            message_serializer=utf8_serializer,
+            state_serializer=utf8_serializer,
+        )
+
+        first_client = ActorRuntime._actor_managers['HostTestActor']._runtime_ctx.dapr_client
+        second_client = ActorRuntime._actor_managers['SecondHostTestActor']._runtime_ctx.dapr_client
+        self.assertIsNot(first_client, second_client)
+        self.assertIs(ascii_serializer, first_client._message_serializer)
+        self.assertIs(utf8_serializer, second_client._message_serializer)
+        self.assertIs(utf8_serializer, second_client._state_serializer)
+        # Both clients share the host's channel.
+        self.assertIs(first_client._channel, second_client._channel)
 
     def test_resolve_app_port_precedence(self):
         # Explicit arg wins; 0 disables; None falls back to the APP_PORT env var.

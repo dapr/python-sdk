@@ -22,7 +22,11 @@ import grpc.aio  # type: ignore
 from grpc import StatusCode  # type: ignore[attr-defined]
 from grpc.aio import AioRpcError
 
-from dapr.actor.error import ActorMethodNotFoundError, ActorTypeNotFoundError
+from dapr.actor.error import (
+    ActorMethodNotFoundError,
+    ActorPayloadDecodeError,
+    ActorTypeNotFoundError,
+)
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._grpc_callbacks import (
     CONTENT_TYPE_HEADER,
@@ -160,7 +164,6 @@ class ActorGrpcHost:
         self._timeout_seconds = timeout_seconds
         self._app_port = self._resolve_app_port(app_port)
         self._channel: Optional[grpc.aio.Channel] = None
-        self._actor_client: Optional[DaprActorGrpcClient] = None
         self._app_server: Optional[grpc.aio.Server] = None
         self._run_task: Optional[asyncio.Task] = None
         self._registered = asyncio.Event()
@@ -209,7 +212,7 @@ class ActorGrpcHost:
             message_serializer,
             state_serializer,
             actor_factory=actor_factory,
-            actor_client=self._get_actor_client(message_serializer),
+            actor_client=self._create_actor_client(message_serializer, state_serializer),
         )
 
     async def start(self) -> None:
@@ -231,11 +234,11 @@ class ActorGrpcHost:
 
         self._stopping = False
         self._registered.clear()
-        await self._start_app_channel_listener()
-        run_task = asyncio.create_task(self._run_loop())
-        self._run_task = run_task
-
         try:
+            await self._start_app_channel_listener()
+            run_task = asyncio.create_task(self._run_loop())
+            self._run_task = run_task
+
             registered_task = asyncio.create_task(self._registered.wait())
             done, _ = await asyncio.wait(
                 {registered_task, run_task}, return_when=asyncio.FIRST_COMPLETED
@@ -294,16 +297,18 @@ class ActorGrpcHost:
         """Stops serving and releases the gRPC channel. Terminal.
 
         After ``close`` the host cannot be restarted, because the registered
-        actor managers still reference the now-closed outbound client. Create
-        a new host (and re-register actors) to host again.
+        actor managers still reference outbound clients bound to the
+        now-closed channel. Create a new host (and re-register actors) to
+        host again.
         """
         await self.stop()
         if self._app_server is not None:
-            await self._app_server.stop(grace=None)
+            try:
+                await self._app_server.stop(grace=None)
+            except Exception as exception:  # noqa: BLE001
+                # The listener may have failed before fully starting.
+                logger.debug('App-channel listener raised during stop: %r', exception)
             self._app_server = None
-        if self._actor_client is not None:
-            await self._actor_client.close()
-            self._actor_client = None
         if self._channel is not None:
             await self._channel.close()
             self._channel = None
@@ -319,9 +324,15 @@ class ActorGrpcHost:
         if self._app_port is None or self._app_server is not None:
             return
         server = grpc.aio.server()
-        server.add_insecure_port(f'[::]:{self._app_port}')
-        await server.start()
+        # Track the server before starting it so close() reaps it even when
+        # start() fails part-way (e.g. the port is already bound).
         self._app_server = server
+        bound_port = server.add_insecure_port(f'[::]:{self._app_port}')
+        if bound_port == 0:
+            raise RuntimeError(
+                f'Failed to bind the actor app-channel listener on port {self._app_port}'
+            )
+        await server.start()
         logger.info('Actor host app-channel listener started on port %s', self._app_port)
 
     async def run_forever(self) -> None:
@@ -350,14 +361,23 @@ class ActorGrpcHost:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    def _get_actor_client(self, serializer: Serializer) -> DaprActorGrpcClient:
+    def _create_actor_client(
+        self, message_serializer: Serializer, state_serializer: Serializer
+    ) -> DaprActorGrpcClient:
+        """Builds the outbound client for one actor registration.
+
+        One client per registration (all sharing the host's channel) so each
+        actor type keeps its own serializers, mirroring how the HTTP path
+        builds a ``DaprActorHttpClient`` per ``register_actor`` call.
+        """
         if self._channel is None:
             self._channel = create_aio_channel(self._address)
-        if self._actor_client is None:
-            self._actor_client = DaprActorGrpcClient(
-                timeout=self._timeout_seconds, channel=self._channel, serializer=serializer
-            )
-        return self._actor_client
+        return DaprActorGrpcClient(
+            timeout=self._timeout_seconds,
+            channel=self._channel,
+            message_serializer=message_serializer,
+            state_serializer=state_serializer,
+        )
 
     async def _run_loop(self) -> None:
         while not self._stopping:
@@ -416,10 +436,15 @@ class ActorGrpcHost:
             await asyncio.wait_for(stream.write(registration), _HANDSHAKE_TIMEOUT_SECONDS)
 
             first_message = await asyncio.wait_for(stream.read(), _HANDSHAKE_TIMEOUT_SECONDS)
-            is_ack = first_message not in (None, _GRPC_AIO_EOF) and first_message.HasField(
-                'initial_response'
-            )
-            if not is_ack:
+            if first_message in (None, _GRPC_AIO_EOF):
+                # daprd accepted the stream but dropped it before acking
+                # (e.g. mid-restart): transient, let _run_loop reconnect.
+                logger.warning('Actor event stream closed during registration handshake')
+                return
+            if not first_message.HasField('initial_response'):
+                # A non-ack *message* is a protocol violation (version skew or
+                # daprd bug): deliberately fatal — retrying cannot fix it, and
+                # failing fast beats a silent reconnect loop.
                 raise RuntimeError(
                     f'Expected initial_response from daprd, received: {first_message}'
                 )
@@ -571,7 +596,12 @@ class ActorGrpcHost:
     async def _send_request_failed(
         self, session: _StreamSession, request_id: str, exception: Exception
     ) -> None:
-        logger.warning('Actor callback %s failed: %r', request_id, exception)
+        if isinstance(exception, ActorPayloadDecodeError):
+            # Deterministic: the same payload fails on every redelivery, so
+            # make each occurrence loud enough to be noticed.
+            logger.error('Actor callback %s has an undecodable payload: %r', request_id, exception)
+        else:
+            logger.warning('Actor callback %s failed: %r', request_id, exception)
         request_failed = api_v1.SubscribeActorEventsRequestFailedAlpha1(
             id=request_id,
             code=status_code_for_exception(exception),

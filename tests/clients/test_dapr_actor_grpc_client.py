@@ -114,6 +114,27 @@ class DaprActorGrpcClientTests(unittest.IsolatedAsyncioTestCase):
             b'{"x":1}', self._fake_dapr_server.actor_state[('DemoActor', 'a1', 'key1')]
         )
 
+    async def test_state_values_use_the_state_serializer(self):
+        """State values must be re-encoded with the state serializer, not the
+        message serializer, matching StateProvider.save_state over HTTP."""
+        client = DaprActorGrpcClient(
+            address=f'localhost:{self.grpc_port}',
+            message_serializer=DefaultJSONSerializer(ensure_ascii=True),
+            state_serializer=DefaultJSONSerializer(ensure_ascii=False),
+        )
+        try:
+            operations = [{'operation': 'upsert', 'request': {'key': 'k', 'value': 'café'}}]
+            body = json.dumps(operations).encode('utf-8')
+
+            await client.save_state_transactionally('DemoActor', 'a1', body)
+        finally:
+            await client.close()
+
+        request = self._last_request('ExecuteActorStateTransaction')
+        # ensure_ascii=False (state serializer) keeps the raw UTF-8 bytes; the
+        # ascii message serializer would have escaped it to b'"caf\\u00e9"'.
+        self.assertEqual('"café"'.encode('utf-8'), request.operations[0].value.value)
+
     async def test_register_reminder(self):
         state = b'reminder_state'
         reminder = ActorReminderData(

@@ -18,6 +18,7 @@ from dapr.actor.client.proxy import ActorProxy, ActorProxyFactory
 from dapr.actor.error import (
     ActorMethodNotFoundError,
     ActorNotFoundError,
+    ActorPayloadDecodeError,
     ActorTypeNotFoundError,
 )
 from dapr.actor.id import ActorId
@@ -36,6 +37,7 @@ __all__ = [
     'Actor',
     'ActorMethodNotFoundError',
     'ActorNotFoundError',
+    'ActorPayloadDecodeError',
     'ActorReminderFailurePolicy',
     'ActorRuntime',
     'ActorTypeNotFoundError',

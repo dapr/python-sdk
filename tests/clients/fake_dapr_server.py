@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+
+"""
+Copyright 2026 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import json
 from concurrent import futures
 from typing import Any, Dict, List, Optional, Tuple
@@ -282,6 +297,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         plan = self.actor_stream_plans.pop(0) if self.actor_stream_plans else {}
         if plan.get('reject') is not None:
             context.abort(plan['reject'], 'rejected by test plan')
+        if plan.get('eof_before_ack'):
+            # Close the stream cleanly without acking the registration,
+            # simulating daprd dropping the stream mid-handshake.
+            return
 
         yield api_v1.SubscribeActorEventsResponseAlpha1(
             initial_response=api_v1.SubscribeActorEventsResponseInitialAlpha1()

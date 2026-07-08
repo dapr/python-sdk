@@ -23,6 +23,7 @@ from google.protobuf import any_pb2, wrappers_pb2
 from dapr.actor.error import (
     ActorMethodNotFoundError,
     ActorNotFoundError,
+    ActorPayloadDecodeError,
     ActorTypeNotFoundError,
 )
 from dapr.actor.runtime._grpc_callbacks import (
@@ -224,12 +225,14 @@ class TimerFireBodyTests(unittest.TestCase):
 
         self.assertEqual({'key': 'value'}, body['data'])
 
-    def test_invalid_json_data_raises_value_error(self):
+    def test_invalid_json_data_raises_payload_decode_error(self):
         timer_request = self._timer_request(any_pb2.Any(value=b'\x00not json'))
 
-        with self.assertRaises(ValueError) as raised:
+        with self.assertRaises(ActorPayloadDecodeError) as raised:
             build_timer_fire_body(timer_request)
         self.assertIn('timer data is not valid JSON', str(raised.exception))
+        # Remains catchable as ValueError for backwards compatibility.
+        self.assertIsInstance(raised.exception, ValueError)
 
 
 class InvokeErrorPayloadTests(unittest.TestCase):
@@ -255,9 +258,15 @@ class StatusCodeMappingTests(unittest.TestCase):
         self.assertEqual(5, status_code_for_exception(ActorMethodNotFoundError('no method')))
 
     def test_value_error_maps_to_unknown(self):
-        # A plain ValueError (e.g. invalid payload, non-remindable actor) is
-        # retryable, not a permanent NOT_FOUND.
-        self.assertEqual(2, status_code_for_exception(ValueError('bad payload')))
+        # A plain ValueError (e.g. a non-remindable actor) is retryable,
+        # not a permanent NOT_FOUND.
+        self.assertEqual(2, status_code_for_exception(ValueError('transient failure')))
+
+    def test_payload_decode_error_maps_to_invalid_argument(self):
+        # Undecodable payloads are deterministic; INVALID_ARGUMENT signals a
+        # malformed request rather than a transient handler failure.
+        error = ActorPayloadDecodeError('timer data is not valid JSON')
+        self.assertEqual(3, status_code_for_exception(error))
 
     def test_attribute_error_from_actor_code_maps_to_unknown(self):
         # Only the dispatcher's ActorMethodNotFoundError means "method does
