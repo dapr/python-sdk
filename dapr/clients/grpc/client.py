@@ -44,6 +44,7 @@ from dapr.clients.grpc._helpers import (
     MetadataTuple,
     convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
+    set_default_grpc_dns_resolver,
     to_bytes,
     validateNotBlankString,
     validateNotNone,
@@ -168,6 +169,8 @@ class DaprGrpcClient:
             self._uri = GrpcEndpoint(address)
         except ValueError as error:
             raise DaprInternalError(f'{error}') from error
+
+        set_default_grpc_dns_resolver()
 
         if self._uri.tls:
             self._channel = grpc.secure_channel(  # type: ignore

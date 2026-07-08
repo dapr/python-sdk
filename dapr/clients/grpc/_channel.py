@@ -18,6 +18,8 @@ from typing import Any, List, Optional, Sequence, Tuple
 import grpc.aio  # type: ignore
 
 from dapr.clients.exceptions import DaprInternalError
+from dapr.clients.grpc._helpers import set_default_grpc_dns_resolver
+from dapr.common.logging import silence_grpc_aio_poller_noise
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.version import __version__
@@ -91,6 +93,12 @@ def create_aio_channel(
         channel_interceptors.append(
             DaprClientInterceptorAsync([('dapr-api-token', settings.DAPR_API_TOKEN)])
         )
+
+    # Process-wide, idempotent setup; applied here so every aio channel
+    # consumer (Dapr client, actor client, actor host) gets the macOS DNS
+    # fix and the poller-noise filter, not just DaprClient.
+    set_default_grpc_dns_resolver()
+    silence_grpc_aio_poller_noise()
 
     if uri.tls:
         return grpc.aio.secure_channel(
