@@ -41,10 +41,13 @@ def test_job_management(dapr):
 
 @pytest.mark.example_dir('jobs')
 def test_job_processing(dapr):
-    dapr.start(
+    # job_processing.py schedules its jobs ~5s after startup with 1-3s due
+    # times, so run until every expected line has appeared instead of
+    # stopping right after sidecar readiness.
+    output = dapr.run(
         '--app-id jobs-workflow --app-protocol grpc --app-port 50051 -- python3 job_processing.py',
-        wait=15,
+        timeout=60,
+        until=EXPECTED_PROCESSING,
     )
-    output = dapr.stop()
     for line in EXPECTED_PROCESSING:
         assert line in output, f'Missing in output: {line}'

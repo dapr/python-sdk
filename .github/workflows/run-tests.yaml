@@ -97,11 +97,14 @@ jobs:
         with:
           commit: ${{ github.event.inputs.daprdapr_commit }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      # The official install.sh spends ~1.5 minutes creating a system user and
+      # a systemd service that CI does not need; extracting the tarball and
+      # running `ollama serve` directly takes seconds.
       - name: Set up Llama
         run: |
-          curl -fsSL https://ollama.com/install.sh | sh
-          nohup ollama serve &
-          sleep 10
+          curl -fsSL https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst | sudo tar --zstd -xf - -C /usr/local
+          nohup ollama serve > "$RUNNER_TEMP/ollama-serve.log" 2>&1 &
+          timeout 60 bash -c 'until curl -fsS http://127.0.0.1:11434/api/tags > /dev/null; do sleep 1; done'
           ollama pull llama3.2:latest
       - name: Run integration tests
         run: |

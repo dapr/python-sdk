@@ -14,6 +14,47 @@ EXPECTED_MESSAGES = [
     '{"id":3,"message":"hello world"}',
 ]
 
+KAFKA_TOPIC = 'sample'
+
+
+def _wait_for_kafka_topic(topic: str, timeout: float = 120) -> None:
+    """Polls the broker until the auto-created topic is listable.
+
+    ``docker compose up -d`` returns once containers are created, but the
+    wurstmeister Kafka image takes several seconds of broker registration
+    before it can serve metadata. Without this wait, daprd races the broker
+    and fails component init with "client has run out of available brokers".
+    """
+    list_topics_command = (
+        'docker',
+        'compose',
+        '-f',
+        './docker-compose-single-kafka.yml',
+        'exec',
+        '-T',
+        'kafka',
+        'kafka-topics.sh',
+        '--bootstrap-server',
+        'localhost:9092',
+        '--list',
+    )
+    deadline = time.monotonic() + timeout
+    last_output = ''
+    while time.monotonic() < deadline:
+        result = subprocess.run(
+            list_topics_command,
+            cwd=BINDING_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=30,
+        )
+        last_output = result.stdout
+        if result.returncode == 0 and topic in result.stdout.split():
+            return
+        time.sleep(1)
+    pytest.fail(f'Kafka topic {topic!r} not available after {timeout}s:\n{last_output}')
+
 
 @pytest.fixture()
 def kafka():
@@ -30,11 +71,7 @@ def kafka():
         output = (e.stdout or b'').decode(errors='replace')
         pytest.fail(f'Timed out starting Kafka:\n{output}')
 
-    # ``docker compose up -d`` returns once containers are created, but the
-    # wurstmeister Kafka image takes several seconds of broker registration
-    # before it can serve metadata. Without this wait, daprd races the broker
-    # and fails component init with "client has run out of available brokers".
-    time.sleep(20)
+    _wait_for_kafka_topic(KAFKA_TOPIC)
 
     yield
 
@@ -57,7 +94,6 @@ def test_invoke_binding(dapr, kafka):
     dapr.start(
         '--app-id receiver --app-protocol grpc --app-port 50051 '
         '--dapr-http-port 3500 --resources-path ./components -- python3 invoke-input-binding.py',
-        wait=5,
     )
 
     # Publish through the receiver's sidecar (both scripts are infinite,
