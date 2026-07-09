@@ -63,9 +63,9 @@ async def main():
     print('Register timer', flush=True)
     await proxy.SetTimer(True)
 
-    # Wait for 30 seconds to see reminder and timer is triggered
-    print('waiting for 30 seconds', flush=True)
-    await asyncio.sleep(30)
+    # Both fire at due_time=5s, so 12 seconds is enough to observe them
+    print('waiting for 12 seconds', flush=True)
+    await asyncio.sleep(12)
 
     # Stop reminder and timer
     print('stop reminder', flush=True)

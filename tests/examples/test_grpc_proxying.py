@@ -9,7 +9,6 @@ EXPECTED_CALLER = [
 def test_grpc_proxying(dapr):
     dapr.start(
         '--app-id invoke-receiver --app-protocol grpc --app-port 50051 --config config.yaml -- python3 invoke-receiver.py',
-        wait=5,
     )
     caller_output = dapr.run(
         '--app-id invoke-caller --dapr-grpc-port 50007 --config config.yaml -- python3 invoke-caller.py',

@@ -11,7 +11,6 @@ def test_invoke_simple(dapr):
     dapr.start(
         '--app-id invoke-receiver --app-protocol grpc --app-port 50051 '
         '--dapr-http-port 3500 -- python3 invoke-receiver.py',
-        wait=5,
     )
 
     # invoke-caller.py runs an infinite loop, so we invoke the method
