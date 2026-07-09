@@ -25,7 +25,6 @@ EXPECTED_PUBLISHER = [
 def test_pubsub_simple(dapr):
     dapr.start(
         '--app-id python-subscriber --app-protocol grpc --app-port 50051 -- python3 subscriber.py',
-        wait=5,
     )
     publisher_output = dapr.run(
         '--app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 '
