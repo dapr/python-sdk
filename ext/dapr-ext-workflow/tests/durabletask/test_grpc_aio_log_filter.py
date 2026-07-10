@@ -12,8 +12,9 @@
 import logging
 from unittest.mock import patch
 
-from dapr.common.logging import GrpcAioPollerNoiseFilter
 from dapr.ext.workflow._durabletask.aio.internal import shared
+
+from dapr.common.logging import GrpcAioPollerNoiseFilter
 
 HOST_ADDRESS = 'localhost:50051'
 
