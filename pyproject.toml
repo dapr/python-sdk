@@ -19,9 +19,9 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "protobuf>=4.22.5,<8.0.0",
-    "grpcio>=1.76.0,<2.0.0",
-    "grpcio-status>=1.76.0,<2.0.0",
+    "protobuf>=6.33.5,<8.0.0",
+    "grpcio>=1.81.1,<2.0.0",
+    "grpcio-status>=1.81.1,<2.0.0",
     "aiohttp>=3.9.5,<4.0.0",
     "python-dateutil>=2.8.1,<3.0.0",
     "typing-extensions>=4.4.0,<5.0.0",
@@ -99,22 +99,21 @@ dev = [
     "mypy==1.20.2",
     "mypy-extensions~=1.1.0",
     "mypy-protobuf==5.0.0",
-    "grpcio-tools==1.76.0",
+    "grpcio-tools==1.81.1",
     "types-python-dateutil~=2.9.0",
     "types-grpcio-status~=1.0.0",
-    "coverage>=7.13.4,<7.15.0",
+    "coverage>=7.13.4,<7.16.0",
     "wheel~=0.46.3",
-    "opentelemetry-sdk>=1.40,<1.42",
+    "opentelemetry-sdk>=1.40,<1.44",
     "opentelemetry-instrumentation-grpc~=0.61b0",
     "opentelemetry-exporter-zipkin~=1.11.1",
     "httpx~=0.28.1",
-    "pyOpenSSL~=26.0.0",
-    "cryptography>=42.0.0",
+    "cryptography>=49.0.0",
     "redis>=7.4.0",
     "Flask~=3.1.3",
-    "pytest~=9.0.2",
+    "pytest>=9.0.2,<9.2.0",
     "pytest-asyncio>=0.23",
-    "ruff==0.14.1",
+    "ruff==0.15.19",
     "python-dotenv~=1.2.2",
     "pydantic~=2.13.3",
     "PyYAML~=6.0.3",
@@ -211,3 +210,12 @@ markers = [
 ]
 pythonpath = ["."]
 asyncio_mode = "auto"
+
+[tool.coverage.run]
+# Without `source`, files never imported by the test run are invisible to
+# coverage and silently inflate the total reported to codecov.
+source = ['dapr', 'flask_dapr']
+# Leading ** keeps the pattern cwd-independent: coverage absolutizes
+# non-wildcard patterns against the invocation directory, so a bare
+# 'dapr/proto/**' only matches when run from the repo root.
+omit = ['**/dapr/proto/**']

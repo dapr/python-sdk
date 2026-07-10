@@ -20,6 +20,31 @@ from fastapi import FastAPI
 
 from dapr.ext.fastapi.actor import DaprActor, _wrap_response
 
+EXPECTED_ACTOR_PATHS = {
+    '/healthz',
+    '/dapr/config',
+    '/actors/{actor_type_name}/{actor_id}',
+    '/actors/{actor_type_name}/{actor_id}/method/{method_name}',
+    '/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}',
+    '/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}',
+}
+
+
+def _operation_tags(app: FastAPI) -> list[tuple[str, list[str] | None]]:
+    """Returns the ``(path, tags)`` pair of every operation in the app's OpenAPI schema.
+
+    The schema is read instead of ``app.router.routes`` because FastAPI 0.137+ stores
+    routes registered via ``include_router`` in a nested tree rather than a flat list, so
+    the actor routes no longer surface as top-level ``APIRoute`` objects. The OpenAPI
+    schema is the public, stable surface that ``router_tags`` is meant to drive.
+    """
+    schema = app.openapi()
+    return [
+        (path, operation.get('tags'))
+        for path, operations in schema['paths'].items()
+        for operation in operations.values()
+    ]
+
 
 class DaprActorTest(unittest.TestCase):
     def test_wrap_response_str(self):
@@ -52,37 +77,20 @@ class DaprActorTest(unittest.TestCase):
         DaprActor(app=app2)
         DaprActor(app=app3, router_tags=None)
 
-        PATHS_WITH_EXPECTED_TAGS = [
-            '/healthz',
-            '/dapr/config',
-            '/actors/{actor_type_name}/{actor_id}',
-            '/actors/{actor_type_name}/{actor_id}/method/{method_name}',
-            '/actors/{actor_type_name}/{actor_id}/method/timer/{timer_name}',
-            '/actors/{actor_type_name}/{actor_id}/method/remind/{reminder_name}',
-        ]
+        custom_tag_operations = _operation_tags(app1)
+        self.assertEqual(EXPECTED_ACTOR_PATHS, {path for path, _tags in custom_tag_operations})
+        for _path, tags in custom_tag_operations:
+            self.assertEqual(['MyTag', 'Actor'], tags)
 
-        foundTags = False
-        for route in app1.router.routes:
-            if hasattr(route, 'tags'):
-                self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
-                self.assertEqual(['MyTag', 'Actor'], route.tags)
-                foundTags = True
-        if not foundTags:
-            self.fail('No tags found')
+        default_tag_operations = _operation_tags(app2)
+        self.assertEqual(EXPECTED_ACTOR_PATHS, {path for path, _tags in default_tag_operations})
+        for _path, tags in default_tag_operations:
+            self.assertEqual(['Actor'], tags)
 
-        foundTags = False
-        for route in app2.router.routes:
-            if hasattr(route, 'tags'):
-                self.assertIn(route.path, PATHS_WITH_EXPECTED_TAGS)
-                self.assertEqual(['Actor'], route.tags)
-                foundTags = True
-        if not foundTags:
-            self.fail('No tags found')
-
-        for route in app3.router.routes:
-            if hasattr(route, 'tags'):
-                if len(route.tags) > 0:
-                    self.fail('Found tags on route that should not have any')
+        untagged_operations = _operation_tags(app3)
+        self.assertEqual(EXPECTED_ACTOR_PATHS, {path for path, _tags in untagged_operations})
+        for _path, tags in untagged_operations:
+            self.assertFalse(tags)
 
 
 if __name__ == '__main__':

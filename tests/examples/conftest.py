@@ -16,6 +16,7 @@ DAPR_PORT_BIND_FAILURE_MARKERS = (
     'bind: address already in use',
     'failed to start internal gRPC server: could not listen on any endpoint',
 )
+DAPR_SIDECAR_READY_MARKER = "You're up and running!"
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -113,7 +114,7 @@ class DaprRunner:
 
         return ''.join(lines)
 
-    def start(self, args: str, *, wait: int = 5, port_bind_retries: int = 3) -> None:
+    def start(self, args: str, *, wait: int = 30, port_bind_retries: int = 3) -> None:
         """Start a long-lived background service.
 
         Use this for servers/subscribers that must stay alive while a second
@@ -122,7 +123,8 @@ class DaprRunner:
 
         Args:
             args: Arguments passed to ``dapr run``.
-            wait: Seconds to wait for the sidecar to come up before returning.
+            wait: Maximum seconds to poll for sidecar readiness before
+                proceeding anyway.
             port_bind_retries: Retry count for Dapr sidecar startup failures
                 caused by a transient random-port collision.
         """
@@ -137,7 +139,7 @@ class DaprRunner:
                 text=True,
                 **get_kwargs_for_process_group(),
             )
-            time.sleep(wait)
+            self._wait_until_ready(proc, output_file, timeout=wait)
 
             can_retry = attempt < attempts - 1
             if can_retry and self._started_with_port_bind_failure(proc, output_file):
@@ -155,6 +157,29 @@ class DaprRunner:
             self._bg_process = proc
             self._bg_output_file = output_file
             return
+
+    @staticmethod
+    def _wait_until_ready(
+        proc: subprocess.Popen[str], output_file: IO[str], *, timeout: int
+    ) -> None:
+        """Polls the sidecar log every second until `dapr run` reports readiness.
+
+        Returns early when the process exits (``start`` then inspects the
+        output for a port-bind failure) and gives up after ``timeout`` seconds,
+        at which point the caller proceeds as if ready.
+
+        The log is re-opened by name for each read: the ``output_file`` handle
+        shares its offset with the child process, so seeking it directly would
+        corrupt the child's writes.
+        """
+        log_path = Path(output_file.name)
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if proc.poll() is not None:
+                return
+            if DAPR_SIDECAR_READY_MARKER in log_path.read_text(errors='replace'):
+                return
+            time.sleep(1)
 
     def _started_with_port_bind_failure(
         self, proc: subprocess.Popen[str], output_file: IO[str]

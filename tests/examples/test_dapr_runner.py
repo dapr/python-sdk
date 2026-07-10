@@ -96,6 +96,9 @@ PORT_BIND_FAILURE_OUTPUT = (
 )
 
 
+SIDECAR_READY_OUTPUT = "✅  You're up and running! Both Dapr and your app logs will appear here.\n"
+
+
 def test_start_retries_transient_dapr_port_bind_failure(
     monkeypatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -117,7 +120,7 @@ def test_start_retries_transient_dapr_port_bind_failure(
     DaprRunner(tmp_path).start('--app-id demo-actor -- uvicorn demo:app', wait=0)
 
     assert len(popen_calls) == 2
-    assert sleeps == [0, 1, 0]
+    assert sleeps == [1]
     assert (
         'Dapr background sidecar failed to bind a random port; retrying startup after 1s'
         in capsys.readouterr().out
@@ -136,3 +139,62 @@ def test_start_does_not_retry_non_port_bind_failure(monkeypatch, tmp_path: Path)
     DaprRunner(tmp_path).start('--app-id demo-actor -- uvicorn demo:app', wait=0)
 
     assert len(popen_calls) == 1
+
+
+def test_start_returns_without_sleeping_when_sidecar_is_already_ready(
+    monkeypatch, tmp_path: Path
+) -> None:
+    def fake_popen(*args, **kwargs) -> FakeBackgroundProcess:
+        return FakeBackgroundProcess(SIDECAR_READY_OUTPUT, None, kwargs['stdout'])
+
+    monkeypatch.setattr(subprocess, 'Popen', fake_popen)
+    sleeps: list[int] = []
+    monkeypatch.setattr(time, 'sleep', sleeps.append)
+
+    DaprRunner(tmp_path).start('--app-id demo-actor -- uvicorn demo:app', wait=30)
+
+    assert sleeps == []
+
+
+def test_start_polls_every_second_until_sidecar_is_ready(monkeypatch, tmp_path: Path) -> None:
+    stdout_files: list[IO[str]] = []
+
+    def fake_popen(*args, **kwargs) -> FakeBackgroundProcess:
+        stdout_files.append(kwargs['stdout'])
+        return FakeBackgroundProcess('sidecar still starting\n', None, kwargs['stdout'])
+
+    monkeypatch.setattr(subprocess, 'Popen', fake_popen)
+    sleeps: list[int] = []
+
+    def sleep_then_become_ready(seconds: int) -> None:
+        sleeps.append(seconds)
+        if len(sleeps) == 2:
+            stdout_files[0].write(SIDECAR_READY_OUTPUT)
+            stdout_files[0].flush()
+
+    monkeypatch.setattr(time, 'sleep', sleep_then_become_ready)
+
+    DaprRunner(tmp_path).start('--app-id demo-actor -- uvicorn demo:app', wait=30)
+
+    assert sleeps == [1, 1]
+
+
+def test_start_gives_up_polling_after_wait_seconds(monkeypatch, tmp_path: Path) -> None:
+    def fake_popen(*args, **kwargs) -> FakeBackgroundProcess:
+        return FakeBackgroundProcess('sidecar never becomes ready\n', None, kwargs['stdout'])
+
+    monkeypatch.setattr(subprocess, 'Popen', fake_popen)
+
+    clock = {'now': 0.0}
+    sleeps: list[int] = []
+
+    def fake_sleep(seconds: int) -> None:
+        sleeps.append(seconds)
+        clock['now'] += seconds
+
+    monkeypatch.setattr(time, 'monotonic', lambda: clock['now'])
+    monkeypatch.setattr(time, 'sleep', fake_sleep)
+
+    DaprRunner(tmp_path).start('--app-id demo-actor -- uvicorn demo:app', wait=3)
+
+    assert sleeps == [1, 1, 1]

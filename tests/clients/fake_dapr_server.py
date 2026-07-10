@@ -23,6 +23,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._http_server = FakeHttpServer(self.http_port)  # Needed for the healthcheck endpoint
         api_service_v1.add_DaprServicer_to_server(self, self._grpc_server)
         self.store = {}
+        self.transaction_operation_metadata: Dict[str, Dict[str, str]] = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
         self.metadata: Dict[str, str] = {}
@@ -284,7 +285,11 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         headers = ()
         trailers = ()
+        self.transaction_operation_metadata = {}
         for operation in request.operations:
+            self.transaction_operation_metadata[operation.request.key] = dict(
+                operation.request.metadata
+            )
             if operation.operationType == 'delete':
                 del self.store[operation.request.key]
             else:
