@@ -51,6 +51,9 @@ jobs:
   build:
     needs: lint
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write  # codecov OIDC upload auth
     strategy:
       fail-fast: false
       matrix:
@@ -100,3 +103,13 @@ jobs:
         uv run coverage xml
     - name: Upload test coverage
       uses: codecov/codecov-action@v7
+      with:
+        # Tokenless uploads are rejected on the protected main branch ("Token
+        # required because branch is protected"), which left codecov comparing
+        # PRs against a stale base. OIDC authenticates uploads from this repo;
+        # fork PRs still fall back to tokenless.
+        use_oidc: true
+        # Surface upload failures on branch pushes so the main base report
+        # can't silently go stale again, without letting codecov outages
+        # block PRs or the merge queue.
+        fail_ci_if_error: ${{ github.event_name == 'push' }}

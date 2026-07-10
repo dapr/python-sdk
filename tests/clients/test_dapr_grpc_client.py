@@ -562,11 +562,19 @@ class DaprGrpcClientTests(unittest.TestCase):
         dapr.execute_state_transaction(
             store_name='statestore',
             operations=[
-                TransactionalStateOperation(key=key, data=value, etag='foo'),
+                TransactionalStateOperation(
+                    key=key, data=value, etag='foo', metadata={'outbox.projection': 'true'}
+                ),
                 TransactionalStateOperation(key=another_key, data=another_value),
             ],
             transactional_metadata={'metakey': 'metavalue'},
         )
+
+        self.assertEqual(
+            self._fake_dapr_server.transaction_operation_metadata[key],
+            {'outbox.projection': 'true'},
+        )
+        self.assertEqual(self._fake_dapr_server.transaction_operation_metadata[another_key], {})
 
         resp = dapr.get_bulk_state(store_name='statestore', keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)

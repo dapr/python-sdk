@@ -88,7 +88,7 @@ expected_stdout_lines:
   - 'call GetMyData actor method to get the state'
   - 'Register reminder'
   - 'Register timer'
-  - 'waiting for 30 seconds'
+  - 'waiting for 12 seconds'
   - 'stop reminder'
   - 'stop timer'
   - 'clear actor state'
@@ -116,7 +116,7 @@ expected_stdout_lines:
    {'data': 'new_data', 'ts': datetime.datetime(2020, 11, 13, 0, 38, 36, 163000, tzinfo=tzutc())}
    Register reminder
    Register timer
-   waiting for 30 seconds
+   waiting for 12 seconds
    stop reminder
    stop timer
    clear actor state
