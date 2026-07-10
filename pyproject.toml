@@ -210,3 +210,12 @@ markers = [
 ]
 pythonpath = ["."]
 asyncio_mode = "auto"
+
+[tool.coverage.run]
+# Without `source`, files never imported by the test run are invisible to
+# coverage and silently inflate the total reported to codecov.
+source = ['dapr', 'flask_dapr']
+# Leading ** keeps the pattern cwd-independent: coverage absolutizes
+# non-wildcard patterns against the invocation directory, so a bare
+# 'dapr/proto/**' only matches when run from the repo root.
+omit = ['**/dapr/proto/**']

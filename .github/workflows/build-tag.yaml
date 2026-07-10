@@ -50,6 +50,9 @@ jobs:
   build:
     needs: lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # codecov OIDC upload auth
     strategy:
       fail-fast: false
       matrix:
@@ -72,6 +75,11 @@ jobs:
         uv run coverage xml
     - name: Upload test coverage
       uses: codecov/codecov-action@v7
+      with:
+        # Tokenless uploads are rejected outside fork PRs; OIDC authenticates
+        # tag builds. fail_ci_if_error stays off here: a codecov outage must
+        # not block a release (publish depends on this job).
+        use_oidc: true
   publish:
     needs: build
     if: github.event_name != 'pull_request'
