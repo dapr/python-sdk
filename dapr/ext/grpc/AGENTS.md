@@ -14,7 +14,7 @@ dapr/ext/grpc/
 
 tests/ext/grpc/
 ├── test_app.py                    # Decorator registration tests
-├── test_servicier.py              # Routing, handlers, bulk events
+├── test_servicer.py               # Routing, handlers, bulk events
 ├── test_health_servicer.py        # Health check tests
 └── test_topic_event_response.py   # Response status tests
 ```
@@ -126,7 +126,7 @@ uv run python -m unittest discover -v ./tests/ext/grpc
 
 Test patterns:
 - `test_app.py` — decorator registration, health check registration
-- `test_servicier.py` — handler invocation with mock gRPC context, return type handling (str, bytes, proto, response object), topic subscriptions, bulk events, bindings, duplicate registration errors
+- `test_servicer.py` — handler invocation with mock gRPC context, return type handling (str, bytes, proto, response object), topic subscriptions, bulk events, bindings, duplicate registration errors
 - `test_health_servicer.py` — health check callback invocation, missing callback (UNIMPLEMENTED)
 - `test_topic_event_response.py` — response creation from enum and string values
 
