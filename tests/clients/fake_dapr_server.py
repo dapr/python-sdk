@@ -1,10 +1,26 @@
+# -*- coding: utf-8 -*-
+
+"""
+Copyright 2026 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import json
 from concurrent import futures
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import grpc
 from google.protobuf import empty_pb2, struct_pb2
 from google.protobuf.any_pb2 import Any as GrpcAny
+from google.protobuf.message import Message
 from google.rpc import code_pb2, status_pb2
 from grpc_status import rpc_status
 
@@ -37,6 +53,17 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._bulk_publish_fail_next: Optional[Tuple[int, str]] = None
         # When True, the next BulkPublishEvent (stable) call returns UNIMPLEMENTED; Alpha1 is unchanged.
         self._bulk_publish_stable_unimplemented_next: bool = False
+        # Unary actor RPCs record (rpc_name, request) tuples and use actor_state as backing store.
+        self.actor_requests: List[Tuple[str, Message]] = []
+        self.actor_state: Dict[Tuple[str, str, str], bytes] = {}
+        # SubscribeActorEventsAlpha1: one plan is consumed per stream connection. Each plan is a
+        # dict with 'rounds' (lists of SubscribeActorEventsResponseAlpha1 pushed per round, the
+        # server reads one correlated reply per pushed message before the next round) and 'end'
+        # ('abort' simulates a sidecar drop, 'eof' closes cleanly, 'hold' keeps the stream open
+        # until the client goes away).
+        self.actor_stream_plans: List[Dict[str, Any]] = []
+        self.actor_stream_initials: List[api_v1.SubscribeActorEventsRequestInitialAlpha1] = []
+        self.actor_stream_replies: List[api_v1.SubscribeActorEventsRequestAlpha1] = []
 
     def set_bulk_publish_unimplemented_on_stable_next(self) -> None:
         """Make the next BulkPublishEvent (stable) call return UNIMPLEMENTED.
@@ -261,6 +288,83 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                 status_pb2.Status(code=code_pb2.UNAVAILABLE, message='Simulated disconnection')
             )
         )
+
+    def SubscribeActorEventsAlpha1(self, request_iterator, context):
+        first = next(request_iterator)
+        if not first.HasField('initial_request'):
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'expected initial_request')
+        self.actor_stream_initials.append(first.initial_request)
+
+        plan = self.actor_stream_plans.pop(0) if self.actor_stream_plans else {}
+        if plan.get('reject') is not None:
+            context.abort(plan['reject'], 'rejected by test plan')
+        if plan.get('eof_before_ack'):
+            # Close the stream cleanly without acking the registration,
+            # simulating daprd dropping the stream mid-handshake.
+            return
+
+        yield api_v1.SubscribeActorEventsResponseAlpha1(
+            initial_response=api_v1.SubscribeActorEventsResponseInitialAlpha1()
+        )
+        for round_messages in plan.get('rounds', []):
+            for message in round_messages:
+                yield message
+            for _ in round_messages:
+                self.actor_stream_replies.append(next(request_iterator))
+
+        end_behavior = plan.get('end', 'hold')
+        if end_behavior == 'abort':
+            context.abort_with_status(
+                rpc_status.to_status(
+                    status_pb2.Status(code=code_pb2.UNAVAILABLE, message='Simulated disconnection')
+                )
+            )
+        elif end_behavior == 'hold':
+            # Drain late replies until the client cancels or closes the stream.
+            for request in request_iterator:
+                self.actor_stream_replies.append(request)
+
+    def InvokeActor(self, request, context):
+        self.check_for_exception(context)
+        self.actor_requests.append(('InvokeActor', request))
+        return api_v1.InvokeActorResponse(data=request.data)
+
+    def GetActorState(self, request, context):
+        self.check_for_exception(context)
+        self.actor_requests.append(('GetActorState', request))
+        key = (request.actor_type, request.actor_id, request.key)
+        return api_v1.GetActorStateResponse(data=self.actor_state.get(key, b''))
+
+    def ExecuteActorStateTransaction(self, request, context):
+        self.check_for_exception(context)
+        self.actor_requests.append(('ExecuteActorStateTransaction', request))
+        for operation in request.operations:
+            key = (request.actor_type, request.actor_id, operation.key)
+            if operation.operationType == 'delete':
+                self.actor_state.pop(key, None)
+            else:
+                self.actor_state[key] = operation.value.value
+        return empty_pb2.Empty()
+
+    def RegisterActorReminder(self, request, context):
+        self.check_for_exception(context)
+        self.actor_requests.append(('RegisterActorReminder', request))
+        return empty_pb2.Empty()
+
+    def UnregisterActorReminder(self, request, context):
+        self.check_for_exception(context)
+        self.actor_requests.append(('UnregisterActorReminder', request))
+        return empty_pb2.Empty()
+
+    def RegisterActorTimer(self, request, context):
+        self.check_for_exception(context)
+        self.actor_requests.append(('RegisterActorTimer', request))
+        return empty_pb2.Empty()
+
+    def UnregisterActorTimer(self, request, context):
+        self.check_for_exception(context)
+        self.actor_requests.append(('UnregisterActorTimer', request))
+        return empty_pb2.Empty()
 
     def SaveState(self, request, context):
         self.check_for_exception(context)
