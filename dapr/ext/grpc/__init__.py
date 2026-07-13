@@ -16,6 +16,7 @@ limitations under the License.
 from dapr.clients.grpc._jobs import ConstantFailurePolicy, DropFailurePolicy, FailurePolicy, Job
 from dapr.clients.grpc._request import BindingRequest, InvokeMethodRequest, JobEvent
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
+from dapr.common.pubsub.subscription import SubscriptionMessage
 
 try:
     from dapr.ext.grpc.app import App, Rule  # type:ignore
@@ -30,6 +31,7 @@ except ImportError as exc:
 __all__ = [
     'App',
     'Rule',
+    'SubscriptionMessage',
     'InvokeMethodRequest',
     'InvokeMethodResponse',
     'BindingRequest',

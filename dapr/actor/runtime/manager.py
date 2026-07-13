@@ -23,8 +23,8 @@ from dapr.actor.runtime._reminder_data import ActorReminderData
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.method_dispatcher import ActorMethodDispatcher
-from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.clients.exceptions import DaprInternalError
+from dapr.common.reentrancy_context import reentrancy_ctx
 
 TIMER_METHOD_NAME = 'fire_timer'
 REMINDER_METHOD_NAME = 'receive_reminder'

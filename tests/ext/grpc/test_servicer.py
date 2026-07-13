@@ -427,3 +427,127 @@ class JobEventTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TopicEventTypeDeliveryTests(unittest.TestCase):
+    """Handlers registered with legacy_cloudevent=False receive SubscriptionMessage objects."""
+
+    def setUp(self):
+        self._servicer = _CallbackServicer()
+        self._handler = Mock()
+        self._handler.return_value = TopicEventResponse('success')
+
+        self.fake_context = MagicMock()
+        self.fake_context.invocation_metadata.return_value = (
+            ('key1', 'value1'),
+            ('key2', 'value2'),
+        )
+
+    def _topic_request(self):
+        return appcallback_v1.TopicEventRequest(
+            id='event-1',
+            source='app-1',
+            type='com.example.test',
+            spec_version='1.0',
+            data_content_type='application/json',
+            data=b'{"message": "hello"}',
+            topic='topic1',
+            pubsub_name='pubsub1',
+        )
+
+    def test_legacy_default_delivers_cloudevent(self):
+        from cloudevents.sdk.event import v1
+
+        self._servicer.register_topic('pubsub1', 'topic1', self._handler, {})
+        self._servicer.OnTopicEvent(self._topic_request(), self.fake_context)
+
+        event = self._handler.call_args[0][0]
+        self.assertIsInstance(event, v1.Event)
+        self.assertEqual('event-1', event.EventID())
+
+    def test_opt_out_delivers_topic_event(self):
+        from dapr.ext.grpc import SubscriptionMessage
+
+        self._servicer.register_topic(
+            'pubsub1', 'topic1', self._handler, {}, legacy_cloudevent=False
+        )
+        self._servicer.OnTopicEvent(self._topic_request(), self.fake_context)
+
+        event = self._handler.call_args[0][0]
+        self.assertIsInstance(event, SubscriptionMessage)
+        self.assertEqual('event-1', event.id())
+        self.assertEqual('app-1', event.source())
+        self.assertEqual('com.example.test', event.type())
+        self.assertEqual('topic1', event.topic())
+        self.assertEqual('pubsub1', event.pubsub_name())
+        self.assertEqual('application/json', event.data_content_type())
+        self.assertEqual(b'{"message": "hello"}', event.raw_data())
+        self.assertEqual({'message': 'hello'}, event.data())
+        self.assertEqual({'key1': 'value1', 'key2': 'value2'}, event.metadata())
+
+    def test_opt_out_bulk_cloud_event_entry(self):
+        from dapr.ext.grpc import SubscriptionMessage
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+            TopicEventCERequest,
+        )
+
+        self._servicer.register_topic(
+            'pubsub1', 'topic1', self._handler, {}, legacy_cloudevent=False
+        )
+        ce = TopicEventCERequest(
+            id='ce-1',
+            source='app-1',
+            type='com.example.test',
+            spec_version='1.0',
+            data_content_type='text/plain',
+            data=b'payload',
+        )
+        entry = TopicEventBulkRequestEntry(
+            entry_id='entry1', cloud_event=ce, metadata={'prop': 'val'}
+        )
+        request = TopicEventBulkRequest(
+            id='bulk1', pubsub_name='pubsub1', topic='topic1', path='', entries=[entry]
+        )
+
+        resp = self._servicer.OnBulkTopicEvent(request, self.fake_context)
+
+        self.assertEqual(
+            appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS,
+            resp.statuses[0].status,
+        )
+        event = self._handler.call_args[0][0]
+        self.assertIsInstance(event, SubscriptionMessage)
+        self.assertEqual('ce-1', event.id())
+        self.assertEqual('topic1', event.topic())
+        self.assertEqual('pubsub1', event.pubsub_name())
+        self.assertEqual('payload', event.data())
+        self.assertEqual('val', event.metadata()['prop'])
+        self.assertEqual('value1', event.metadata()['key1'])
+
+    def test_opt_out_bulk_raw_entry(self):
+        from dapr.ext.grpc import SubscriptionMessage
+        from dapr.proto.runtime.v1.appcallback_pb2 import (
+            TopicEventBulkRequest,
+            TopicEventBulkRequestEntry,
+        )
+
+        self._servicer.register_topic(
+            'pubsub1', 'topic1', self._handler, {}, legacy_cloudevent=False
+        )
+        entry = TopicEventBulkRequestEntry(
+            entry_id='entry1', bytes=b'{"a": 1}', content_type='application/json'
+        )
+        request = TopicEventBulkRequest(
+            id='bulk1', pubsub_name='pubsub1', topic='topic1', path='', entries=[entry]
+        )
+
+        resp = self._servicer.OnBulkTopicEvent(request, self.fake_context)
+
+        self.assertEqual(1, len(resp.statuses))
+        event = self._handler.call_args[0][0]
+        self.assertIsInstance(event, SubscriptionMessage)
+        self.assertEqual('entry1', event.id())
+        self.assertEqual({'a': 1}, event.data())
+        self.assertEqual('topic1', event.topic())

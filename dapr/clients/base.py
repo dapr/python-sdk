@@ -16,6 +16,8 @@ limitations under the License.
 from abc import ABC, abstractmethod
 from typing import Optional
 
+DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
+
 
 class DaprActorClientBase(ABC):
     """A base class that represents Dapr Actor Client."""
