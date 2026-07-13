@@ -29,6 +29,12 @@ Submodules
    :show-inheritance:
 
 
+.. automodule:: actor.runtime.grpc_host
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 .. automodule:: actor.runtime.manager
    :members:
    :undoc-members:
