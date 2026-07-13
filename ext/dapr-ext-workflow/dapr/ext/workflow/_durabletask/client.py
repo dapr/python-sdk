@@ -61,8 +61,15 @@ class OrchestrationStatus(Enum):
         return helpers.get_orchestration_status_str(self.value)
 
 
+# TODO(v1.21): remove OrchestrationIdReuseAction, WorkflowIdReusePolicy, and the reuse_id_policy
+# parameter on schedule_new_orchestration (sync and aio) — deprecated in 1.18, kept for the
+# 3-version policy.
 class OrchestrationIdReuseAction(Enum):
-    """Action to take when scheduling an orchestration whose ID already exists."""
+    """Action to take when scheduling an orchestration whose ID already exists.
+
+    Deprecated: has no effect and will be removed in a future release. An orchestration ID
+    can always be reused once the existing instance has reached a terminal state.
+    """
 
     ERROR = 0
     IGNORE = 1
@@ -71,7 +78,11 @@ class OrchestrationIdReuseAction(Enum):
 
 @dataclass
 class WorkflowIdReusePolicy:
-    """Policy controlling what happens when a new orchestration is scheduled with an ID that already exists."""
+    """Policy controlling what happens when a new orchestration is scheduled with an ID that already exists.
+
+    Deprecated: has no effect and will be removed in a future release. An orchestration ID
+    can always be reused once the existing instance has reached a terminal state.
+    """
 
     action: OrchestrationIdReuseAction
     operation_status: list[OrchestrationStatus]
