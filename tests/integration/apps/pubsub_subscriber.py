@@ -3,23 +3,19 @@
 Used by integration tests to verify message delivery without relying on stdout.
 """
 
-import json
-
-from cloudevents.sdk.event import v1
-
 from dapr.clients import DaprClient
 from dapr.clients.grpc._response import TopicEventResponse
-from dapr.ext.grpc import App
+from dapr.ext.grpc import App, SubscriptionMessage
 
 app = App()
 
 
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
-def handle_topic_a(event: v1.Event) -> TopicEventResponse:
-    data = json.loads(event.Data())
+def handle_topic_a(event: SubscriptionMessage) -> TopicEventResponse:
+    data = event.data()
     key = f'received-{data["run_id"]}-{data["id"]}'
     with DaprClient() as d:
-        d.save_state('statestore', key, event.Data())
+        d.save_state('statestore', key, event.raw_data())
     return TopicEventResponse('success')
 
 
