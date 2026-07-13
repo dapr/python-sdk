@@ -129,7 +129,7 @@ Workflow (orchestrator) functions must remain generators (`def` with `yield`). T
 
 Client for workflow lifecycle management:
 
-- `schedule_new_workflow(workflow, *, input, instance_id, start_at, reuse_id_policy)` → returns `instance_id`
+- `schedule_new_workflow(workflow, *, input, instance_id, start_at, reuse_id_policy)` → returns `instance_id`. `reuse_id_policy` is deprecated (no effect, emits `DeprecationWarning`): an instance ID can always be reused once the existing instance is in a terminal state.
 - `get_workflow_state(instance_id, *, fetch_payloads=True)` → `Optional[WorkflowState]`
 - `wait_for_workflow_start(instance_id, *, fetch_payloads, timeout_in_seconds)`
 - `wait_for_workflow_completion(instance_id, *, fetch_payloads, timeout_in_seconds)`
