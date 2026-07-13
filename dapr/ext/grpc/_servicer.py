@@ -25,6 +25,7 @@ from google.protobuf.struct_pb2 import Struct
 from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._request import BindingRequest, InvokeMethodRequest, JobEvent
 from dapr.clients.grpc._response import InvokeMethodResponse, TopicEventResponse
+from dapr.common.pubsub.subscription import SubscriptionMessage
 from dapr.proto import appcallback_service_v1, appcallback_v1, common_v1
 from dapr.proto.common.v1.common_pb2 import InvokeRequest
 from dapr.proto.runtime.v1.appcallback_pb2 import (
@@ -36,7 +37,9 @@ from dapr.proto.runtime.v1.appcallback_pb2 import (
 )
 
 InvokeMethodCallable = Callable[[InvokeMethodRequest], Union[str, bytes, InvokeMethodResponse]]
-TopicSubscribeCallable = Callable[[v1.Event], Optional[TopicEventResponse]]
+TopicSubscribeCallable = Callable[
+    [Union[v1.Event, SubscriptionMessage]], Optional[TopicEventResponse]
+]
 BindingCallable = Callable[[BindingRequest], None]
 JobEventCallable = Callable[[JobEvent], None]
 
@@ -74,6 +77,7 @@ class _CallbackServicer(
     def __init__(self):
         self._invoke_method_map: Dict[str, InvokeMethodCallable] = {}
         self._topic_map: Dict[str, TopicSubscribeCallable] = {}
+        self._topic_legacy_event: Dict[TopicSubscribeCallable, bool] = {}
         self._binding_map: Dict[str, BindingCallable] = {}
         self._job_event_map: Dict[str, JobEventCallable] = {}
 
@@ -120,8 +124,15 @@ class _CallbackServicer(
         dead_letter_topic: Optional[str] = None,
         rule: Optional[Rule] = None,
         disable_topic_validation: Optional[bool] = False,
+        legacy_cloudevent: bool = True,
     ) -> None:
-        """Registers topic subscription for pubsub."""
+        """Registers topic subscription for pubsub.
+
+        Args:
+            legacy_cloudevent (bool): when True (deprecated default), the handler receives a
+                ``cloudevents.sdk.event.v1.Event``; when False, it receives a
+                :class:`dapr.common.pubsub.subscription.SubscriptionMessage`.
+        """
         topic_key = pubsub_name + DELIMITER + topic
         pubsub_topic = topic_key + DELIMITER
         if rule is not None:
@@ -130,6 +141,7 @@ class _CallbackServicer(
         if pubsub_topic in self._topic_map:
             raise ValueError(f'{topic} is already registered with {pubsub_name}')
         self._topic_map[pubsub_topic] = cb
+        self._topic_legacy_event[cb] = legacy_cloudevent
         routing_path = path if rule is not None else topic
         self._route_map[(pubsub_name, routing_path)] = cb
 
@@ -233,21 +245,27 @@ class _CallbackServicer(
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
             raise NotImplementedError(f'topic {request.topic} is not implemented!')
 
-        customdata: Struct = request.extensions
-        extensions = dict()
-        for k, v in customdata.items():
-            extensions[k] = v
-        for k, v in context.invocation_metadata():
-            extensions['_metadata_' + k] = v
+        invocation_metadata = dict(context.invocation_metadata())
 
-        event = v1.Event()
-        event.SetEventType(request.type)
-        event.SetEventID(request.id)
-        event.SetSource(request.source)
-        event.SetData(request.data)
-        event.SetContentType(request.data_content_type)
-        event.SetSubject(request.topic)
-        event.SetExtensions(extensions)
+        event: Union[v1.Event, SubscriptionMessage]
+        if self._topic_legacy_event.get(cb, True):
+            customdata: Struct = request.extensions
+            extensions = dict()
+            for k, v in customdata.items():
+                extensions[k] = v
+            for k, v in invocation_metadata.items():
+                extensions['_metadata_' + k] = v
+
+            event = v1.Event()
+            event.SetEventType(request.type)
+            event.SetEventID(request.id)
+            event.SetSource(request.source)
+            event.SetData(request.data)
+            event.SetContentType(request.data_content_type)
+            event.SetSubject(request.topic)
+            event.SetExtensions(extensions)
+        else:
+            event = SubscriptionMessage(request, invocation_metadata)
 
         response = cb(event)
         if isinstance(response, TopicEventResponse):
@@ -323,35 +341,20 @@ class _CallbackServicer(
         if cb is None:
             return None  # we don't have a handler
 
+        use_legacy_event = self._topic_legacy_event.get(cb, True)
+        invocation_metadata = dict(context.invocation_metadata())
+
         statuses = []
         for entry in request.entries:
             entry_id = entry.entry_id
             try:
-                # Build event from entry & send req with many entries
-                event = v1.Event()
-                extensions = dict()
-                if entry.HasField('cloud_event') and entry.cloud_event:
-                    ce = entry.cloud_event
-                    event.SetEventType(ce.type)
-                    event.SetEventID(ce.id)
-                    event.SetSource(ce.source)
-                    event.SetData(ce.data)
-                    event.SetContentType(ce.data_content_type)
-                    if ce.extensions:
-                        for k, v in ce.extensions.items():
-                            extensions[k] = v
+                event: Union[v1.Event, SubscriptionMessage]
+                if use_legacy_event:
+                    event = self._bulk_entry_legacy_event(entry, request, invocation_metadata)
                 else:
-                    event.SetEventID(entry_id)
-                    event.SetData(entry.bytes if entry.HasField('bytes') else b'')
-                    event.SetContentType(entry.content_type or '')
-                event.SetSubject(request.topic)
-                if entry.metadata:
-                    for k, v in entry.metadata.items():
-                        extensions[k] = v
-                for k, v in context.invocation_metadata():
-                    extensions['_metadata_' + k] = v
-                if extensions:
-                    event.SetExtensions(extensions)
+                    event = self._bulk_entry_subscription_message(
+                        entry, request, invocation_metadata
+                    )
 
                 response = cb(event)  # invoke app registered handler and send event
                 if isinstance(response, TopicEventResponse):
@@ -364,6 +367,70 @@ class _CallbackServicer(
                 appcallback_v1.TopicEventBulkResponseEntry(entry_id=entry_id, status=status)
             )
         return appcallback_v1.TopicEventBulkResponse(statuses=statuses)
+
+    def _bulk_entry_legacy_event(
+        self,
+        entry,
+        request: TopicEventBulkRequest,
+        invocation_metadata: Dict[str, str],
+    ) -> v1.Event:
+        """Builds the deprecated cloudevents v1.Event for a bulk entry."""
+        event = v1.Event()
+        extensions = dict()
+        if entry.HasField('cloud_event') and entry.cloud_event:
+            ce = entry.cloud_event
+            event.SetEventType(ce.type)
+            event.SetEventID(ce.id)
+            event.SetSource(ce.source)
+            event.SetData(ce.data)
+            event.SetContentType(ce.data_content_type)
+            if ce.extensions:
+                for k, v in ce.extensions.items():
+                    extensions[k] = v
+        else:
+            event.SetEventID(entry.entry_id)
+            event.SetData(entry.bytes if entry.HasField('bytes') else b'')
+            event.SetContentType(entry.content_type or '')
+        event.SetSubject(request.topic)
+        if entry.metadata:
+            for k, v in entry.metadata.items():
+                extensions[k] = v
+        for k, v in invocation_metadata.items():
+            extensions['_metadata_' + k] = v
+        if extensions:
+            event.SetExtensions(extensions)
+        return event
+
+    def _bulk_entry_subscription_message(
+        self,
+        entry,
+        request: TopicEventBulkRequest,
+        invocation_metadata: Dict[str, str],
+    ) -> SubscriptionMessage:
+        """Builds a SubscriptionMessage for a bulk entry via a synthesized TopicEventRequest."""
+        if entry.HasField('cloud_event') and entry.cloud_event:
+            ce = entry.cloud_event
+            entry_request = TopicEventRequest(
+                id=ce.id,
+                source=ce.source,
+                type=ce.type,
+                spec_version=ce.spec_version,
+                data_content_type=ce.data_content_type,
+                data=ce.data,
+                topic=request.topic,
+                pubsub_name=request.pubsub_name,
+                extensions=ce.extensions,
+            )
+        else:
+            entry_request = TopicEventRequest(
+                id=entry.entry_id,
+                data=entry.bytes if entry.HasField('bytes') else b'',
+                data_content_type=entry.content_type or '',
+                topic=request.topic,
+                pubsub_name=request.pubsub_name,
+            )
+        metadata = {**invocation_metadata, **dict(entry.metadata)}
+        return SubscriptionMessage(entry_request, metadata)
 
     def OnBulkTopicEvent(self, request: TopicEventBulkRequest, context):
         """Subscribes bulk events from Pubsub"""
