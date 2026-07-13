@@ -77,13 +77,37 @@ class _CallbackServicer(
     def __init__(self):
         self._invoke_method_map: Dict[str, InvokeMethodCallable] = {}
         self._topic_map: Dict[str, TopicSubscribeCallable] = {}
-        self._topic_legacy_event: Dict[str, bool] = {}
+        self._topic_legacy_event: Dict[TopicSubscribeCallable, bool] = {}
         self._binding_map: Dict[str, BindingCallable] = {}
         self._job_event_map: Dict[str, JobEventCallable] = {}
 
         self._registered_topics_map: Dict[str, _RegisteredSubscription] = {}
         self._registered_topics: List[appcallback_v1.TopicSubscription] = []
         self._registered_bindings: List[str] = []
+
+        self._route_map: Dict[Tuple[str, str], TopicSubscribeCallable] = {}
+        self._validation_disabled_pubsubs: Dict[str, List[TopicSubscribeCallable]] = {}
+
+    def _get_topic_callback(
+        self, pubsub_name: str, topic: str, path: str
+    ) -> Optional[TopicSubscribeCallable]:
+        pubsub_topic = pubsub_name + DELIMITER + topic + DELIMITER + path
+        if pubsub_topic in self._topic_map:
+            return self._topic_map[pubsub_topic]
+
+        if (pubsub_name, path) in self._route_map:
+            return self._route_map[(pubsub_name, path)]
+
+        if path == '':
+            if (pubsub_name, topic) in self._route_map:
+                return self._route_map[(pubsub_name, topic)]
+
+            if pubsub_name in self._validation_disabled_pubsubs:
+                callbacks = self._validation_disabled_pubsubs[pubsub_name]
+                if len(callbacks) == 1:
+                    return callbacks[0]
+
+        return None
 
     def register_method(self, method: str, cb: InvokeMethodCallable) -> None:
         """Registers method for service invocation."""
@@ -109,10 +133,7 @@ class _CallbackServicer(
                 ``cloudevents.sdk.event.v1.Event``; when False, it receives a
                 :class:`dapr.common.pubsub.subscription.SubscriptionMessage`.
         """
-        if not disable_topic_validation:
-            topic_key = pubsub_name + DELIMITER + topic
-        else:
-            topic_key = pubsub_name
+        topic_key = pubsub_name + DELIMITER + topic
         pubsub_topic = topic_key + DELIMITER
         if rule is not None:
             path = getattr(cb, '__name__', rule.match)
@@ -120,7 +141,14 @@ class _CallbackServicer(
         if pubsub_topic in self._topic_map:
             raise ValueError(f'{topic} is already registered with {pubsub_name}')
         self._topic_map[pubsub_topic] = cb
-        self._topic_legacy_event[pubsub_topic] = legacy_cloudevent
+        self._topic_legacy_event[cb] = legacy_cloudevent
+        routing_path = path if rule is not None else topic
+        self._route_map[(pubsub_name, routing_path)] = cb
+
+        if disable_topic_validation:
+            if pubsub_name not in self._validation_disabled_pubsubs:
+                self._validation_disabled_pubsubs[pubsub_name] = []
+            self._validation_disabled_pubsubs[pubsub_name].append(cb)
 
         registered_topic = self._registered_topics_map.get(topic_key)
         sub: appcallback_v1.TopicSubscription = appcallback_v1.TopicSubscription()
@@ -134,6 +162,10 @@ class _CallbackServicer(
             )
             if dead_letter_topic:
                 sub.dead_letter_topic = dead_letter_topic
+
+            if disable_topic_validation and rule is None:
+                sub.routes.default = topic
+
             registered_topic = _RegisteredSubscription(sub, rules)
             self._registered_topics_map[topic_key] = registered_topic
             self._registered_topics.append(sub)
@@ -208,20 +240,15 @@ class _CallbackServicer(
 
     def OnTopicEvent(self, request: TopicEventRequest, context):
         """Subscribes events from Pubsub."""
-        pubsub_topic = request.pubsub_name + DELIMITER + request.topic + DELIMITER + request.path
-        no_validation_key = request.pubsub_name + DELIMITER + request.path
-
-        if pubsub_topic not in self._topic_map:
-            if no_validation_key in self._topic_map:
-                pubsub_topic = no_validation_key
-            else:
-                context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-                raise NotImplementedError(f'topic {request.topic} is not implemented!')
+        cb = self._get_topic_callback(request.pubsub_name, request.topic, request.path)
+        if cb is None:
+            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
+            raise NotImplementedError(f'topic {request.topic} is not implemented!')
 
         invocation_metadata = dict(context.invocation_metadata())
 
         event: Union[v1.Event, SubscriptionMessage]
-        if self._topic_legacy_event.get(pubsub_topic, True):
+        if self._topic_legacy_event.get(cb, True):
             customdata: Struct = request.extensions
             extensions = dict()
             for k, v in customdata.items():
@@ -240,7 +267,7 @@ class _CallbackServicer(
         else:
             event = SubscriptionMessage(request, invocation_metadata)
 
-        response = self._topic_map[pubsub_topic](event)
+        response = cb(event)
         if isinstance(response, TopicEventResponse):
             return appcallback_v1.TopicEventResponse(status=response.status.value)
         return empty_pb2.Empty()
@@ -310,15 +337,11 @@ class _CallbackServicer(
         self, request: TopicEventBulkRequest, context
     ) -> Optional[TopicEventBulkResponse]:
         """Process bulk topic event request - routes each entry to the appropriate topic handler."""
-        topic_key = request.pubsub_name + DELIMITER + request.topic + DELIMITER + request.path
-        no_validation_key = request.pubsub_name + DELIMITER + request.path
-
-        if topic_key not in self._topic_map and no_validation_key not in self._topic_map:
+        cb = self._get_topic_callback(request.pubsub_name, request.topic, request.path)
+        if cb is None:
             return None  # we don't have a handler
 
-        handler_key = topic_key if topic_key in self._topic_map else no_validation_key
-        cb = self._topic_map[handler_key]  # callback
-        use_legacy_event = self._topic_legacy_event.get(handler_key, True)
+        use_legacy_event = self._topic_legacy_event.get(cb, True)
         invocation_metadata = dict(context.invocation_metadata())
 
         statuses = []

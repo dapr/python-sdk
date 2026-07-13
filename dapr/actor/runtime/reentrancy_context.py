@@ -13,7 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from contextvars import ContextVar
-from typing import Optional
+# Backwards-compatible alias. The reentrancy context moved to dapr.common so
+# the actor clients (dapr.clients) can import it without a circular dependency
+# on dapr.actor; existing imports of this path keep working.
+from dapr.common.reentrancy_context import reentrancy_ctx
 
-reentrancy_ctx: ContextVar[Optional[str]] = ContextVar('reentrancy_ctx', default=None)
+__all__ = ['reentrancy_ctx']

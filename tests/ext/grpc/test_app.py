@@ -98,21 +98,16 @@ class SubscribeEventTypeInferenceTests(unittest.TestCase):
 
     def setUp(self):
         self._app = App()
+        self._received = []
         self.fake_context = MagicMock()
         self.fake_context.invocation_metadata.return_value = ()
 
     def _subscribe_and_deliver(self, handler):
-        received = []
+        """Registers the handler as-is and delivers one event; the handler must record it."""
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter('always')
-            wrapped = self._app.subscribe(pubsub_name='pubsub', topic='topic')(handler)
-            del wrapped
+            self._app.subscribe(pubsub_name='pubsub', topic='topic')(handler)
 
-        def recording_handler(event):
-            received.append(event)
-            return handler(event)
-
-        self._app._servicer._topic_map['pubsub:topic:'] = recording_handler
         request = appcallback_v1.TopicEventRequest(
             id='event-1',
             data_content_type='application/json',
@@ -122,11 +117,11 @@ class SubscribeEventTypeInferenceTests(unittest.TestCase):
         )
         self._app._servicer.OnTopicEvent(request, self.fake_context)
         deprecations = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-        return received[0], deprecations
+        return self._received[0], deprecations
 
     def test_unannotated_handler_warns_and_gets_legacy_event(self):
         def handler(event):
-            pass
+            self._received.append(event)
 
         event, deprecations = self._subscribe_and_deliver(handler)
         self.assertNotIsInstance(event, SubscriptionMessage)
@@ -136,7 +131,7 @@ class SubscribeEventTypeInferenceTests(unittest.TestCase):
 
     def test_annotated_handler_gets_subscription_message_without_warning(self):
         def handler(event: SubscriptionMessage):
-            pass
+            self._received.append(event)
 
         event, deprecations = self._subscribe_and_deliver(handler)
         self.assertIsInstance(event, SubscriptionMessage)
@@ -147,7 +142,7 @@ class SubscribeEventTypeInferenceTests(unittest.TestCase):
         from cloudevents.sdk.event import v1
 
         def handler(event: v1.Event):
-            pass
+            self._received.append(event)
 
         event, deprecations = self._subscribe_and_deliver(handler)
         self.assertIsInstance(event, v1.Event)
@@ -155,7 +150,7 @@ class SubscribeEventTypeInferenceTests(unittest.TestCase):
 
     def test_string_annotation_resolves(self):
         def handler(event: 'SubscriptionMessage'):
-            pass
+            self._received.append(event)
 
         event, deprecations = self._subscribe_and_deliver(handler)
         self.assertIsInstance(event, SubscriptionMessage)
@@ -163,7 +158,7 @@ class SubscribeEventTypeInferenceTests(unittest.TestCase):
 
     def test_unresolvable_annotation_falls_back_to_legacy(self):
         def handler(event):
-            pass
+            self._received.append(event)
 
         handler.__annotations__ = {'event': 'NotARealType'}
         event, deprecations = self._subscribe_and_deliver(handler)

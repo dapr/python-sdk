@@ -182,6 +182,40 @@ class TopicSubscriptionTests(unittest.TestCase):
                 self.fake_context,
             )
 
+    def test_multiple_wildcard_subscriptions(self):
+        self._servicer.register_topic(
+            'pubsub_multi_wildcard',
+            'orders/+/items',
+            self._topic1_method,
+            None,
+            disable_topic_validation=True,
+        )
+        self._servicer.register_topic(
+            'pubsub_multi_wildcard',
+            'inventory/#',
+            self._topic2_method,
+            None,
+            disable_topic_validation=True,
+        )
+
+        self._servicer.OnTopicEvent(
+            appcallback_v1.TopicEventRequest(
+                pubsub_name='pubsub_multi_wildcard', topic='orders/123/items', path='orders/+/items'
+            ),
+            self.fake_context,
+        )
+        self._topic1_method.assert_called_once()
+
+        self._servicer.OnTopicEvent(
+            appcallback_v1.TopicEventRequest(
+                pubsub_name='pubsub_multi_wildcard',
+                topic='inventory/warehouse/aisle4',
+                path='inventory/#',
+            ),
+            self.fake_context,
+        )
+        self._topic2_method.assert_called_once()
+
 
 class BulkTopicEventTests(unittest.TestCase):
     def setUp(self):

@@ -17,7 +17,7 @@ import asyncio
 import socket
 import time
 import uuid
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -45,13 +45,10 @@ from dapr.aio.clients.grpc._response import (
     DecryptResponse,
     EncryptResponse,
 )
-from dapr.aio.clients.grpc.interceptors import (
-    DaprClientInterceptorAsync,
-    DaprClientTimeoutInterceptorAsync,
-)
 from dapr.aio.clients.grpc.subscription import Subscription
 from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
 from dapr.clients.grpc import conversation
+from dapr.clients.grpc._channel import create_aio_channel, resolve_grpc_endpoint
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataTuple,
@@ -94,10 +91,7 @@ from dapr.clients.grpc._state import StateItem, StateOptions
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamInactiveError
-from dapr.conf import settings
-from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
-from dapr.version import __version__
 
 
 class DaprGrpcClientAsync:
@@ -152,55 +146,14 @@ class DaprGrpcClientAsync:
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
-        useragent = f'dapr-sdk-python/{__version__}'
-        options: List[Tuple[str, Any]] = [('grpc.primary_user_agent', useragent)]
-        if max_grpc_message_length:
-            options.append(('grpc.max_send_message_length', max_grpc_message_length))
-            options.append(('grpc.max_receive_message_length', max_grpc_message_length))
-        elif settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES:
-            options.append(
-                (
-                    'grpc.max_receive_message_length',
-                    settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES,
-                )
-            )
-
-        if not address:
-            address = settings.DAPR_GRPC_ENDPOINT or (
-                f'{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}'
-            )
-
-        try:
-            self._uri = GrpcEndpoint(address)
-        except ValueError as error:
-            raise DaprInternalError(f'{error}') from error
-
-        # Prepare interceptors
-        if interceptors is None:
-            interceptors = [DaprClientTimeoutInterceptorAsync()]
-        else:
-            interceptors.append(DaprClientTimeoutInterceptorAsync())
-
-        if settings.DAPR_API_TOKEN:
-            api_token_interceptor = DaprClientInterceptorAsync(
-                [
-                    ('dapr-api-token', settings.DAPR_API_TOKEN),
-                ]
-            )
-            interceptors.append(api_token_interceptor)
-
-        # Create gRPC channel
-        if self._uri.tls:
-            self._channel = grpc.aio.secure_channel(
-                self._uri.endpoint,
-                credentials=self.get_credentials(),
-                options=options,
-                interceptors=interceptors,
-            )  # type: ignore
-        else:
-            self._channel = grpc.aio.insecure_channel(
-                self._uri.endpoint, options, interceptors=interceptors
-            )  # type: ignore
+        self._uri = resolve_grpc_endpoint(address)
+        credentials = self.get_credentials() if self._uri.tls else None
+        self._channel = create_aio_channel(
+            address,
+            interceptors=interceptors,
+            max_grpc_message_length=max_grpc_message_length,
+            credentials=credentials,
+        )
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
@@ -1023,6 +976,7 @@ class DaprGrpcClientAsync:
                     key=o.key,
                     value=to_bytes(o.data) if o.data is not None else to_bytes(''),
                     etag=common_v1.Etag(value=o.etag) if o.etag is not None else None,
+                    metadata=o.metadata,
                 ),
             )
             for o in operations
