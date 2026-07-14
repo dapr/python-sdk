@@ -385,9 +385,12 @@ class WhenAllTask(CompositeTask[list[T]]):
     """A task that completes when all of its child tasks complete."""
 
     def __init__(self, tasks: list[Task[T]]):
+        # Do not reset _completed_tasks / _failed_tasks after super().__init__.
+        # CompositeTask already initializes them and counts any children that are
+        # already complete via on_child_completed(). Resetting the counters here
+        # drops those completions, so deferred when_all(children) hangs forever
+        # when some (but not all) children finished before when_all was constructed.
         super().__init__(tasks)
-        self._completed_tasks = 0
-        self._failed_tasks = 0
         # If there are no child tasks, this composite should complete immediately
         if len(self._tasks) == 0:
             self._result = []  # type: ignore[assignment]

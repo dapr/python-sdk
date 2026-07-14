@@ -61,6 +61,63 @@ def test_when_all_happy_path_returns_ordered_results_and_completes_last():
     assert all_task.get_result() == ['one', 'two', 'three']
 
 
+def test_when_all_counts_already_complete_children():
+    """Deferred when_all must retain completions that happened before construction.
+
+    Pattern: schedule children, do other work (timer/activity), then when_all.
+    Children that finish during that gap must still be counted; otherwise
+    when_all hangs forever when some but not all children finished early.
+    """
+    children = [task.CompletableTask() for _ in range(5)]
+    for child in children[:3]:
+        child.complete(f'done-{id(child)}')
+
+    all_task = task.when_all(children)
+
+    assert not all_task.is_complete
+    assert all_task.get_completed_tasks() == 3
+
+    children[3].complete('four')
+    assert not all_task.is_complete
+
+    children[4].complete('five')
+    assert all_task.is_complete
+    assert all_task.get_completed_tasks() == 5
+    assert len(all_task.get_result()) == 5
+
+
+def test_when_all_all_children_already_complete():
+    """when_all of already-complete children should complete immediately."""
+    children = [task.CompletableTask() for _ in range(3)]
+    for i, child in enumerate(children):
+        child.complete(f'v{i}')
+
+    all_task = task.when_all(children)
+
+    assert all_task.is_complete
+    assert all_task.get_result() == ['v0', 'v1', 'v2']
+
+
+def test_when_any_of_when_all_with_precompleted_children():
+    """when_any([when_all(children), timeout]) must unblock when children finish early."""
+    children = [task.CompletableTask() for _ in range(3)]
+    children[0].complete('a')
+    children[1].complete('b')
+
+    timeout = task.CompletableTask()
+    all_task = task.when_all(children)
+    any_task = task.when_any([all_task, timeout])
+
+    assert not any_task.is_complete
+    assert all_task.get_completed_tasks() == 2
+
+    children[2].complete('c')
+
+    assert all_task.is_complete
+    assert any_task.is_complete
+    assert any_task.get_result() is all_task
+
+
 def test_when_all_is_composable_with_when_any():
     c1 = task.CompletableTask()
     c2 = task.CompletableTask()
