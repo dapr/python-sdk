@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Optional, TypeVar, Union
+from warnings import warn
 
 from grpc.aio import AioRpcError
 
@@ -109,12 +110,22 @@ class DaprWorkflowClient:
             start_at: The time when the workflow instance should start executing.
             If not specified or if a date-time in the past is specified, the workflow instance will
             be scheduled immediately.
-            reuse_id_policy: Optional policy to reuse the workflow id when there is a conflict with
-            an existing workflow instance.
+            reuse_id_policy: Deprecated and has no effect; it will be removed in a future
+            release. A workflow instance ID can always be reused once the existing instance
+            with that ID has reached a terminal state (e.g. COMPLETED, FAILED, or TERMINATED).
 
         Returns:
             The ID of the scheduled workflow instance.
         """
+        # TODO(v1.21): remove reuse_id_policy — deprecated in 1.18, kept for the 3-version policy.
+        if reuse_id_policy is not None:
+            warn(
+                'reuse_id_policy is deprecated and has no effect; it will be removed in a '
+                'future release. A workflow instance ID can always be reused once the existing '
+                'instance with that ID has reached a terminal state.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if isinstance(workflow, str):
             workflow_name = workflow
         elif hasattr(workflow, '_dapr_alternate_name'):

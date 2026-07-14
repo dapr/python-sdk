@@ -11,29 +11,30 @@
 # limitations under the License.
 # ------------------------------------------------------------
 
-import json
 from time import sleep
 
-from cloudevents.sdk.event import v1
-
 from dapr.clients.grpc._response import TopicEventResponse
-from dapr.ext.grpc import App
+from dapr.ext.grpc import App, SubscriptionMessage
 from dapr.proto import appcallback_v1
 
+# Handlers annotated with SubscriptionMessage receive that type. Unannotated handlers
+# receive the deprecated cloudevents.sdk.event.v1.Event and a DeprecationWarning.
 app = App()
 should_retry = True  # To control whether dapr should retry sending a message
 
 
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
-def mytopic(event: v1.Event) -> TopicEventResponse:
+def mytopic(event: SubscriptionMessage) -> TopicEventResponse:
     global should_retry
-    data = json.loads(event.Data())
+    # event.data() is already parsed based on the content type (dict for application/json)
+    data = event.data()
     print(
         f'Subscriber received: id={data["id"]}, message="{data["message"]}", '
-        f'content_type="{event.content_type}"',
+        f'content_type="{event.data_content_type()}"',
         flush=True,
     )
-    # event.Metadata() contains a dictionary of cloud event extensions and publish metadata
+    # event.extensions() contains the cloud event extensions and
+    # event.metadata() the delivery metadata
     if should_retry:
         should_retry = False  # we only retry once in this example
         sleep(0.5)  # add some delay to help with ordering of expected logs
@@ -42,25 +43,21 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
 
 
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_CE')
-def receive_cloud_events(event: v1.Event) -> TopicEventResponse:
-    print('Subscriber received: ' + event.Subject(), flush=True)
+def receive_cloud_events(event: SubscriptionMessage) -> TopicEventResponse:
+    print('Subscriber received: ' + event.topic(), flush=True)
 
-    content_type = event.content_type
-    data = event.Data()
+    content_type = event.data_content_type()
+    # event.data() is parsed by content type: dict for JSON, str for plain text
+    data = event.data()
 
     try:
         if content_type == 'application/json':
-            # Handle JSON data
-            json_data = json.loads(data)
             print(
-                f'Subscriber received a json cloud event: id={json_data["id"]}, message="{json_data["message"]}", '
-                f'content_type="{event.content_type}"',
+                f'Subscriber received a json cloud event: id={data["id"]}, message="{data["message"]}", '
+                f'content_type="{content_type}"',
                 flush=True,
             )
         elif content_type == 'text/plain':
-            # Handle plain text data
-            if isinstance(data, bytes):
-                data = data.decode('utf-8')
             print(
                 f'Subscriber received plain text cloud event: {data}, '
                 f'content_type="{content_type}"',
@@ -78,21 +75,21 @@ def receive_cloud_events(event: v1.Event) -> TopicEventResponse:
 
 
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_D', dead_letter_topic='TOPIC_D_DEAD')
-def fail_and_send_to_dead_topic(event: v1.Event) -> TopicEventResponse:
+def fail_and_send_to_dead_topic(event: SubscriptionMessage) -> TopicEventResponse:
     return TopicEventResponse('retry')
 
 
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_D_DEAD')
-def mytopic_dead(event: v1.Event) -> TopicEventResponse:
-    data = json.loads(event.Data())
+def mytopic_dead(event: SubscriptionMessage) -> TopicEventResponse:
+    data = event.data()
     print(
         f'Dead-Letter Subscriber received: id={data["id"]}, message="{data["message"]}", '
-        f'content_type="{event.content_type}"',
+        f'content_type="{event.data_content_type()}"',
         flush=True,
     )
-    print('Dead-Letter Subscriber. Received via deadletter topic: ' + event.Subject(), flush=True)
+    print('Dead-Letter Subscriber. Received via deadletter topic: ' + event.topic(), flush=True)
     print(
-        'Dead-Letter Subscriber. Originally intended topic: ' + event.Extensions()['topic'],
+        'Dead-Letter Subscriber. Originally intended topic: ' + event.extensions()['topic'],
         flush=True,
     )
     return TopicEventResponse('success')
@@ -110,11 +107,11 @@ for id in range(4, 7):
 
 # this allows subscribing to all events sent to this app - useful for wildcard topics
 @app.subscribe(pubsub_name='pubsub', topic='topic/#', disable_topic_validation=True)
-def mytopic_wildcard(event: v1.Event) -> TopicEventResponse:
-    data = json.loads(event.Data())
+def mytopic_wildcard(event: SubscriptionMessage) -> TopicEventResponse:
+    data = event.data()
     print(
         f'Wildcard-Subscriber received: id={data["id"]}, message="{data["message"]}", '
-        f'content_type="{event.content_type}"',
+        f'content_type="{event.data_content_type()}"',
         flush=True,
     )
     return TopicEventResponse('success')

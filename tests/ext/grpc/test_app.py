@@ -14,12 +14,12 @@ limitations under the License.
 """
 
 import unittest
+import warnings
 from unittest.mock import MagicMock, patch
 
-from cloudevents.sdk.event import v1
-
 from dapr.conf import settings
-from dapr.ext.grpc import App, BindingRequest, InvokeMethodRequest, Rule
+from dapr.ext.grpc import App, BindingRequest, InvokeMethodRequest, Rule, SubscriptionMessage
+from dapr.proto import appcallback_v1
 
 
 class AppTests(unittest.TestCase):
@@ -51,17 +51,17 @@ class AppTests(unittest.TestCase):
 
     def test_subscribe_decorator(self):
         @self._app.subscribe(pubsub_name='pubsub', topic='topic')
-        def handle_default(event: v1.Event) -> None:
+        def handle_default(event: SubscriptionMessage) -> None:
             pass
 
         @self._app.subscribe(
             pubsub_name='pubsub', topic='topic', rule=Rule('event.type == "test"', 1)
         )
-        def handle_test_event(event: v1.Event) -> None:
+        def handle_test_event(event: SubscriptionMessage) -> None:
             pass
 
         @self._app.subscribe(pubsub_name='pubsub', topic='topic2', dead_letter_topic='topic2_dead')
-        def handle_dead_letter(event: v1.Event) -> None:
+        def handle_dead_letter(event: SubscriptionMessage) -> None:
             pass
 
         subscription_map = self._app._servicer._topic_map
@@ -91,6 +91,79 @@ class AppTests(unittest.TestCase):
     def test_no_health_check(self):
         registered_cb = self._app._health_check_servicer._health_check_cb
         self.assertIsNone(registered_cb)
+
+
+class SubscribeEventTypeInferenceTests(unittest.TestCase):
+    """subscribe() infers the delivered event type from the handler's annotation."""
+
+    def setUp(self):
+        self._app = App()
+        self._received = []
+        self.fake_context = MagicMock()
+        self.fake_context.invocation_metadata.return_value = ()
+
+    def _subscribe_and_deliver(self, handler):
+        """Registers the handler as-is and delivers one event; the handler must record it."""
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            self._app.subscribe(pubsub_name='pubsub', topic='topic')(handler)
+
+        request = appcallback_v1.TopicEventRequest(
+            id='event-1',
+            data_content_type='application/json',
+            data=b'{"a": 1}',
+            topic='topic',
+            pubsub_name='pubsub',
+        )
+        self._app._servicer.OnTopicEvent(request, self.fake_context)
+        deprecations = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        return self._received[0], deprecations
+
+    def test_unannotated_handler_warns_and_gets_legacy_event(self):
+        def handler(event):
+            self._received.append(event)
+
+        event, deprecations = self._subscribe_and_deliver(handler)
+        self.assertNotIsInstance(event, SubscriptionMessage)
+        self.assertEqual('event-1', event.EventID())
+        self.assertEqual(1, len(deprecations))
+        self.assertIn('SubscriptionMessage', str(deprecations[0].message))
+
+    def test_annotated_handler_gets_subscription_message_without_warning(self):
+        def handler(event: SubscriptionMessage):
+            self._received.append(event)
+
+        event, deprecations = self._subscribe_and_deliver(handler)
+        self.assertIsInstance(event, SubscriptionMessage)
+        self.assertEqual('event-1', event.id())
+        self.assertEqual([], deprecations)
+
+    def test_legacy_annotated_handler_warns_and_gets_legacy_event(self):
+        from cloudevents.sdk.event import v1
+
+        def handler(event: v1.Event):
+            self._received.append(event)
+
+        event, deprecations = self._subscribe_and_deliver(handler)
+        self.assertIsInstance(event, v1.Event)
+        self.assertEqual(1, len(deprecations))
+
+    def test_string_annotation_resolves(self):
+        def handler(event: 'SubscriptionMessage'):
+            self._received.append(event)
+
+        event, deprecations = self._subscribe_and_deliver(handler)
+        self.assertIsInstance(event, SubscriptionMessage)
+        self.assertEqual([], deprecations)
+
+    def test_unresolvable_annotation_falls_back_to_legacy(self):
+        def handler(event):
+            self._received.append(event)
+
+        handler.__annotations__ = {'event': 'NotARealType'}
+        event, deprecations = self._subscribe_and_deliver(handler)
+        self.assertNotIsInstance(event, SubscriptionMessage)
+        self.assertEqual(1, len(deprecations))
 
 
 class AppGrpcOptionsTests(unittest.TestCase):
