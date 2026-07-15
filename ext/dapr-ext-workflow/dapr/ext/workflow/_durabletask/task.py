@@ -364,10 +364,33 @@ class CompositeTask(Task[T]):
     _tasks: list[Task]
 
     def __init__(self, tasks: list[Task]):
+        """Adopts the child tasks and replays completions for any already-complete child.
+
+        Invokes the subclass's ``on_child_completed`` during construction, so
+        subclasses must set every attribute that override reads before calling
+        ``super().__init__()``, and must not reset counting state after it.
+
+        Raises:
+            ValueError: If the same task instance appears more than once in ``tasks``,
+                or if a still-pending task already belongs to another pending composite.
+        """
         super().__init__()
+        unique_task_count = len({id(task) for task in tasks})
+        if unique_task_count != len(tasks):
+            raise ValueError(
+                'the same task instance was passed to when_all/when_any more than once; '
+                'a task notifies its parent composite only once, so duplicates would hang'
+            )
+        for task in tasks:
+            has_live_parent = task._parent is not None and not task._parent.is_complete
+            if has_live_parent and not task.is_complete:
+                raise ValueError(
+                    'a pending task passed to when_all/when_any already belongs to another '
+                    'pending composite; a task notifies only its latest composite, so the '
+                    'earlier one would hang'
+                )
         self._tasks = tasks
         self._completed_tasks = 0
-        self._failed_tasks = 0
         for task in tasks:
             task._parent = self
             if task.is_complete:
@@ -385,11 +408,8 @@ class WhenAllTask(CompositeTask[list[T]]):
     """A task that completes when all of its child tasks complete."""
 
     def __init__(self, tasks: list[Task[T]]):
-        # Do not reset _completed_tasks / _failed_tasks after super().__init__.
-        # CompositeTask already initializes them and counts any children that are
-        # already complete via on_child_completed(). Resetting the counters here
-        # drops those completions, so deferred when_all(children) hangs forever
-        # when some (but not all) children finished before when_all was constructed.
+        # CompositeTask.__init__ already counted pre-completed children; do not reset
+        # _completed_tasks after it, or a deferred when_all over them hangs forever.
         super().__init__(tasks)
         # If there are no child tasks, this composite should complete immediately
         if len(self._tasks) == 0:
@@ -579,6 +599,7 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
         timeout: Optional[Union[datetime, timedelta]] = None,
         on_timeout: Optional[Callable[[], None]] = None,
     ):
+        # Set before super().__init__(), which may replay completions into on_child_completed.
         self._event_task = event_task
         self._timer_task = timer_task
         self._event_name = event_name
