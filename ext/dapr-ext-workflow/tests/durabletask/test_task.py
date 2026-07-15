@@ -118,6 +118,65 @@ def test_when_any_of_when_all_with_precompleted_children():
     assert any_task.get_result() is all_task
 
 
+def test_when_all_rejects_duplicate_task_instances():
+    """A child notifies its parent composite only once, so a duplicated pending
+    child would leave when_all one notification short and hanging forever.
+    Composites reject duplicates upfront instead."""
+    child = task.CompletableTask()
+
+    with pytest.raises(ValueError, match='more than once'):
+        task.when_all([child, child])
+
+
+def test_when_all_rejects_duplicate_already_complete_task_instances():
+    """Duplicates are rejected regardless of completion state, so behavior does
+    not depend on whether the child finished before or after construction."""
+    child = task.CompletableTask()
+    child.complete('x')
+
+    with pytest.raises(ValueError, match='more than once'):
+        task.when_all([child, child])
+
+
+def test_when_any_rejects_duplicate_task_instances():
+    child = task.CompletableTask()
+
+    with pytest.raises(ValueError, match='more than once'):
+        task.when_any([child, child])
+
+
+def test_composite_rejects_pending_child_owned_by_live_composite():
+    """A task has a single parent slot, so two live composites over the same
+    pending child would leave the earlier one unnotified and hanging forever.
+    Constructing the second composite fails fast instead."""
+    t1 = task.CompletableTask()
+    t2 = task.CompletableTask()
+    t3 = task.CompletableTask()
+    task.when_all([t1, t2])
+
+    with pytest.raises(ValueError, match='already belongs'):
+        task.when_any([t1, t3])
+
+
+def test_sequential_composite_reuse_after_completion_is_allowed():
+    """Winner-then-gather must keep working: reusing a losing (still pending)
+    child is fine once the first composite completed, because completed
+    composites ignore late notifications. Only live overlap is rejected."""
+    t1 = task.CompletableTask()
+    t2 = task.CompletableTask()
+    any_task = task.when_any([t1, t2])
+    t1.complete('winner')
+    assert any_task.is_complete
+
+    all_task = task.when_all([t1, t2])
+    assert all_task.get_completed_tasks() == 1
+    assert not all_task.is_complete
+
+    t2.complete('loser')
+    assert all_task.is_complete
+    assert all_task.get_result() == ['winner', 'loser']
+
+
 def test_when_all_is_composable_with_when_any():
     c1 = task.CompletableTask()
     c2 = task.CompletableTask()
