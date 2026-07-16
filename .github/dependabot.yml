@@ -9,6 +9,25 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
+      # MAINTAINERS: do not bump grpcio-tools like a normal dev dependency.
+      # Its pinned version must stay the one that generated the committed files
+      # under dapr/proto/. Regenerating with a newer version raises the minimum
+      # grpcio/protobuf that SDK users are able to install. Leaving it alone is
+      # always safe: old generated code works with every newer runtime.
+      #
+      # Bump it only when one of these happens:
+      #   - our .proto files need a newer protoc to compile
+      #   - a newly supported Python version has no wheels for the current
+      #     grpcio/protobuf floor versions
+      #   - a security fix lands in protoc/grpc code generation
+      #   - a grpcio or protobuf major release forces a migration
+      #
+      # How to bump, all in one PR:
+      #   1. update the grpcio-tools pin in pyproject.toml
+      #   2. rerun tools/regen_grpcclient.sh and tools/regen_durabletask_protos.sh
+      #   3. raise the grpcio/protobuf floors in [project.dependencies]
+      # tests/test_proto_gencode_floor.py fails CI if these steps drift apart.
+      - dependency-name: "grpcio-tools"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
