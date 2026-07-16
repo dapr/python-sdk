@@ -100,9 +100,16 @@ jobs:
       # The official install.sh spends ~1.5 minutes creating a system user and
       # a systemd service that CI does not need; extracting the tarball and
       # running `ollama serve` directly takes seconds.
+      # The version is pinned so an upstream release cannot silently break CI.
       - name: Set up Llama
         run: |
-          curl -fsSL https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst | sudo tar --zstd -xf - -C /usr/local
+          curl -fsSL https://github.com/ollama/ollama/releases/download/v0.32.0/ollama-linux-amd64.tar.zst | sudo tar --zstd -xf - -C /usr/local
+          # TODO: temporary workaround — the Sapphire Rapids CPU backend
+          # segfaults during first inference (ollama/ollama#17006,
+          # ollama/ollama#17205); removing it makes ollama fall back to a
+          # slower generic backend that works on every runner. Drop this line
+          # once the pin moves to a release that fixes those issues.
+          sudo rm -f /usr/local/lib/ollama/libggml-cpu-sapphirerapids.so
           nohup ollama serve > "$RUNNER_TEMP/ollama-serve.log" 2>&1 &
           timeout 60 bash -c 'until curl -fsS http://127.0.0.1:11434/api/tags > /dev/null; do sleep 1; done'
           ollama pull llama3.2:latest
