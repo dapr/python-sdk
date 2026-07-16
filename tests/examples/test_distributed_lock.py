@@ -15,7 +15,6 @@ EXPECTED_LINES = [
 def test_distributed_lock(dapr):
     output = dapr.run(
         '--app-id=locksapp --app-protocol grpc --resources-path components/ -- python3 lock.py',
-        timeout=10,
     )
     for line in EXPECTED_LINES:
         assert line in output, f'Missing in output: {line}'

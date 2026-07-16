@@ -8,15 +8,25 @@ from typing import IO, Any, Generator
 
 import pytest
 
+from tests.port_utils import SidecarPorts, wait_for_ports_free
 from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 EXAMPLES_DIR = REPO_ROOT / 'examples'
-DAPR_PORT_BIND_FAILURE_MARKERS = (
-    'bind: address already in use',
-    'failed to start internal gRPC server: could not listen on any endpoint',
-)
 DAPR_SIDECAR_READY_MARKER = "You're up and running!"
+
+# A DaprRunner has at most one background (start/stop) and one foreground
+# (run) sidecar alive at a time, so two fixed port blocks cover every test.
+FOREGROUND_PORTS = SidecarPorts(http=13601, grpc=13602, internal_grpc=13603, metrics=13604)
+BACKGROUND_PORTS = SidecarPorts(http=13611, grpc=13612, internal_grpc=13613, metrics=13614)
+
+PORT_FLAGS = (
+    '--dapr-http-port',
+    '--dapr-grpc-port',
+    '--dapr-internal-grpc-port',
+    '--metrics-port',
+    '--app-port',
+)
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -33,19 +43,65 @@ class DaprRunner:
 
     @staticmethod
     def _terminate(proc: subprocess.Popen[str]) -> None:
-        if proc.poll() is not None:
-            return
+        """Terminates a ``dapr run`` invocation and everything it spawned.
 
-        terminate_process_group(proc)
-        try:
-            proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            terminate_process_group(proc, force=True)
-            proc.wait()
+        The group is force-killed even after a clean CLI exit: daprd shuts
+        down gracefully after the CLI and there is no value in waiting for
+        it in tests — the port gate in ``_prepare_launch`` protects the next
+        sidecar against anything the sweep misses.
+        """
+        if proc.poll() is None:
+            terminate_process_group(proc)
+            try:
+                proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                pass
+        terminate_process_group(proc, force=True)
+        proc.wait()
 
     @staticmethod
-    def _is_dapr_port_bind_failure(output: str) -> bool:
-        return all(marker in output for marker in DAPR_PORT_BIND_FAILURE_MARKERS)
+    def _with_pinned_ports(args: str, ports: SidecarPorts) -> list[str]:
+        """Builds the ``dapr run`` argv, pinning any listener port the caller left unset.
+
+        Random CLI ports are never used: the CLI's picker can hand the same
+        port to two listeners of one daprd (see "Port allocation" in
+        tests/integration/AGENTS.md).
+        """
+        tokens = shlex.split(args)
+        separator = tokens.index('--') if '--' in tokens else len(tokens)
+        dapr_tokens = tokens[:separator]
+
+        def is_set(flag: str) -> bool:
+            return any(token == flag or token.startswith(f'{flag}=') for token in dapr_tokens)
+
+        additions = [
+            token
+            for flag, port in ports.as_flags().items()
+            if not is_set(flag)
+            for token in (flag, str(port))
+        ]
+        return [*dapr_tokens, *additions, *tokens[separator:]]
+
+    @staticmethod
+    def _listener_ports(tokens: list[str]) -> list[int]:
+        """Extracts every port the sidecar and its app will bind from the argv."""
+        separator = tokens.index('--') if '--' in tokens else len(tokens)
+        dapr_tokens = tokens[:separator]
+
+        ports: list[int] = []
+        for index, token in enumerate(dapr_tokens):
+            for flag in PORT_FLAGS:
+                if token == flag:
+                    ports.append(int(dapr_tokens[index + 1]))
+                elif token.startswith(f'{flag}='):
+                    ports.append(int(token.split('=', 1)[1]))
+        return ports
+
+    def _prepare_launch(self, args: str, ports: SidecarPorts) -> list[str]:
+        """Pins the sidecar's ports and blocks until all of them are bindable."""
+        tokens = self._with_pinned_ports(args, ports)
+        wait_for_ports_free(self._listener_ports(tokens))
+        return tokens
 
     def run(
         self,
@@ -53,7 +109,6 @@ class DaprRunner:
         *,
         timeout: int = 30,
         until: list[str] | None = None,
-        port_bind_retries: int = 3,
     ) -> str:
         """Run a foreground command, block until it finishes, and return output.
 
@@ -61,30 +116,15 @@ class DaprRunner:
         own). For long-lived background services, use ``start()``/``stop()``.
 
         Args:
-            args: Arguments passed to ``dapr run``.
+            args: Arguments passed to ``dapr run``. Listener ports not set
+                here are pinned from ``FOREGROUND_PORTS``.
             timeout: Maximum seconds to wait before killing the process.
             until: If provided, the process is terminated as soon as every
                 string in this list has appeared in the accumulated output.
-            port_bind_retries: Retry count for Dapr sidecar startup failures
-                caused by a transient random-port collision.
         """
-        attempts = max(1, port_bind_retries + 1)
-        for attempt in range(attempts):
-            output = self._run_once(args, timeout=timeout, until=until)
-            if attempt < attempts - 1 and self._is_dapr_port_bind_failure(output):
-                print(
-                    'Dapr sidecar failed to bind a random port; '
-                    f'retrying startup after {2**attempt}s '
-                    f'(attempt {attempt + 1}/{attempts})',
-                    flush=True,
-                )
-                time.sleep(2**attempt)
-                continue
-            return output
-
-    def _run_once(self, args: str, *, timeout: int, until: list[str] | None) -> str:
+        tokens = self._prepare_launch(args, FOREGROUND_PORTS)
         proc = subprocess.Popen(
-            args=('dapr', 'run', *shlex.split(args)),
+            args=('dapr', 'run', *tokens),
             cwd=self._cwd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -114,7 +154,7 @@ class DaprRunner:
 
         return ''.join(lines)
 
-    def start(self, args: str, *, wait: int = 30, port_bind_retries: int = 3) -> None:
+    def start(self, args: str, *, wait: int = 30) -> None:
         """Start a long-lived background service.
 
         Use this for servers/subscribers that must stay alive while a second
@@ -122,41 +162,25 @@ class DaprRunner:
         output. Stdout is written to a temp file to avoid pipe-buffer deadlocks.
 
         Args:
-            args: Arguments passed to ``dapr run``.
+            args: Arguments passed to ``dapr run``. Listener ports not set
+                here are pinned from ``BACKGROUND_PORTS``.
             wait: Maximum seconds to poll for sidecar readiness before
                 proceeding anyway.
-            port_bind_retries: Retry count for Dapr sidecar startup failures
-                caused by a transient random-port collision.
         """
-        attempts = max(1, port_bind_retries + 1)
-        for attempt in range(attempts):
-            output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log')
-            proc = subprocess.Popen(
-                args=('dapr', 'run', *shlex.split(args)),
-                cwd=self._cwd,
-                stdout=output_file,
-                stderr=subprocess.STDOUT,
-                text=True,
-                **get_kwargs_for_process_group(),
-            )
-            self._wait_until_ready(proc, output_file, timeout=wait)
+        tokens = self._prepare_launch(args, BACKGROUND_PORTS)
+        output_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log')
+        proc = subprocess.Popen(
+            args=('dapr', 'run', *tokens),
+            cwd=self._cwd,
+            stdout=output_file,
+            stderr=subprocess.STDOUT,
+            text=True,
+            **get_kwargs_for_process_group(),
+        )
+        self._wait_until_ready(proc, output_file, timeout=wait)
 
-            can_retry = attempt < attempts - 1
-            if can_retry and self._started_with_port_bind_failure(proc, output_file):
-                self._terminate(proc)
-                output_file.close()
-                print(
-                    'Dapr background sidecar failed to bind a random port; '
-                    f'retrying startup after {2**attempt}s '
-                    f'(attempt {attempt + 1}/{attempts})',
-                    flush=True,
-                )
-                time.sleep(2**attempt)
-                continue
-
-            self._bg_process = proc
-            self._bg_output_file = output_file
-            return
+        self._bg_process = proc
+        self._bg_output_file = output_file
 
     @staticmethod
     def _wait_until_ready(
@@ -164,9 +188,8 @@ class DaprRunner:
     ) -> None:
         """Polls the sidecar log every second until `dapr run` reports readiness.
 
-        Returns early when the process exits (``start`` then inspects the
-        output for a port-bind failure) and gives up after ``timeout`` seconds,
-        at which point the caller proceeds as if ready.
+        Returns early when the process exits and gives up after ``timeout``
+        seconds, at which point the caller proceeds as if ready.
 
         The log is re-opened by name for each read: the ``output_file`` handle
         shares its offset with the child process, so seeking it directly would
@@ -180,19 +203,6 @@ class DaprRunner:
             if DAPR_SIDECAR_READY_MARKER in log_path.read_text(errors='replace'):
                 return
             time.sleep(1)
-
-    def _started_with_port_bind_failure(
-        self, proc: subprocess.Popen[str], output_file: IO[str]
-    ) -> bool:
-        """Whether a background sidecar already exited from a random-port collision.
-
-        Reads the log only once the process has exited; seeking the temp file
-        while daprd is still writing would corrupt its shared append offset.
-        """
-        if proc.poll() is None:
-            return False
-        output_file.seek(0)
-        return self._is_dapr_port_bind_failure(output_file.read())
 
     def stop(self) -> str:
         """Stop the background service and return its captured output."""

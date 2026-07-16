@@ -24,8 +24,8 @@ def _fetch_received(client: DaprClient, key: str) -> bytes | None:
 def client(dapr_env, apps_dir, flush_redis):
     return dapr_env.start_sidecar(
         app_id='test-subscriber',
-        grpc_port=50001,
-        app_port=50051,
+        grpc_port=13501,
+        app_port=13503,
         app_cmd=f'python3 {apps_dir / "pubsub_subscriber.py"}',
     )
 

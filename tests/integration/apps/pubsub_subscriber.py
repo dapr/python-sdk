@@ -19,4 +19,4 @@ def handle_topic_a(event: SubscriptionMessage) -> TopicEventResponse:
     return TopicEventResponse('success')
 
 
-app.run(50051)
+app.run(13503)

@@ -20,7 +20,7 @@ from dapr.clients.grpc._request import TransactionalStateOperation
 from tests.naming_utils import unique_name
 
 STORE = 'statestore'
-GRPC_ADDRESS = '127.0.0.1:50001'
+GRPC_ADDRESS = '127.0.0.1:13501'
 
 
 @pytest.fixture(scope='module')

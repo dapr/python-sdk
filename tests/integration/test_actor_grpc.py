@@ -33,7 +33,7 @@ import pytest
 from dapr.actor import ActorId, ActorProxy
 from tests.actor_grpc_utils import actor_stream_supported
 
-GRPC_PORT = 50031
+GRPC_PORT = 13531
 HTTP_PORT = 3531
 APP_PORT = 9131
 
