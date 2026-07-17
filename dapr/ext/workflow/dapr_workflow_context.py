@@ -172,8 +172,8 @@ class DaprWorkflowContext(WorkflowContext):
 
 
 def when_all(tasks: List[task.Task[T]]) -> task.WhenAllTask[T]:
-    """Returns a task that completes when all of the provided tasks complete or when one of the
-    tasks fail."""
+    """Returns a task that completes once all of the provided tasks complete,
+    surfacing the first failure (if any) only after every task has finished."""
     return task.when_all(tasks)
 
 
