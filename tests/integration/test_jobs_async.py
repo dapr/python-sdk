@@ -22,7 +22,7 @@ from dapr.clients import Job
 from dapr.clients.exceptions import DaprGrpcError
 from tests.naming_utils import unique_name
 
-GRPC_ADDRESS = '127.0.0.1:50001'
+GRPC_ADDRESS = '127.0.0.1:13501'
 
 # The jobs API re-emits the alpha warnings on every test run.
 pytestmark = pytest.mark.filterwarnings('ignore::UserWarning')

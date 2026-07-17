@@ -17,7 +17,7 @@ import pytest
 
 from tests.actor_grpc_utils import actor_stream_supported
 
-DAPR_GRPC_PORT = 50061
+DAPR_GRPC_PORT = 13561
 
 EXPECTED_SERVICE = [
     'DemoActor is hosted over the Dapr gRPC actor stream',

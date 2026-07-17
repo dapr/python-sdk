@@ -76,7 +76,7 @@ Run the following command in a terminal/command-prompt:
 name: Run complete workflow example
 expected_stdout_lines:
   - "Dapr Jobs Example"
-  - "Starting gRPC server on port 50051..."
+  - "Starting gRPC server on port 13551..."
   - "Scheduling jobs..."
   - "✓ hello-job scheduled"
   - "✓ data-job scheduled"
@@ -94,7 +94,7 @@ sleep: 15
 
 ```bash
 # Start the complete workflow example (schedules jobs and handles job events)
-dapr run --app-id jobs-workflow --app-protocol grpc --app-port 50051 -- python3 job_processing.py
+dapr run --app-id jobs-workflow --app-protocol grpc --app-port 13551 -- python3 job_processing.py
 ```
 
 <!-- END_STEP -->
@@ -239,13 +239,13 @@ def handle_my_job(job_event: JobEvent) -> None:
     print(f"Job data: {data_str}")
     # Process the job...
 
-app.run(50051)
+app.run(13551)
 ```
 
 The callback service must:
 - Use the `@app.job_event('job-name')` decorator to register handlers
 - Accept a `JobEvent` object parameter containing job execution data
-- Run on a gRPC port (default 50051) that Dapr can reach
+- Run on a gRPC port (default 13551) that Dapr can reach
 
 ## Additional Information
 

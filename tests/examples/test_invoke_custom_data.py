@@ -14,7 +14,7 @@ EXPECTED_CALLER = [
 @pytest.mark.example_dir('invoke-custom-data')
 def test_invoke_custom_data(dapr):
     dapr.start(
-        '--app-id invoke-receiver --app-protocol grpc --app-port 50051 -- python3 invoke-receiver.py',
+        '--app-id invoke-receiver --app-protocol grpc --app-port 13551 -- python3 invoke-receiver.py',
     )
     caller_output = dapr.run(
         '--app-id invoke-caller --app-protocol grpc -- python3 invoke-caller.py',

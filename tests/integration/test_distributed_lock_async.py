@@ -19,7 +19,7 @@ from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients.grpc._response import UnlockResponseStatus
 
 STORE = 'lockstore'
-GRPC_ADDRESS = '127.0.0.1:50001'
+GRPC_ADDRESS = '127.0.0.1:13501'
 
 # The distributed lock API re-emits the alpha warnings on every test run.
 pytestmark = pytest.mark.filterwarnings('ignore::UserWarning')

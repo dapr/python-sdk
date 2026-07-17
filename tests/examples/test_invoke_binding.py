@@ -92,7 +92,7 @@ def kafka():
 @pytest.mark.example_dir('invoke-binding')
 def test_invoke_binding(dapr, kafka):
     dapr.start(
-        '--app-id receiver --app-protocol grpc --app-port 50051 '
+        '--app-id receiver --app-protocol grpc --app-port 13551 '
         '--dapr-http-port 3500 --resources-path ./components -- python3 invoke-input-binding.py',
     )
 

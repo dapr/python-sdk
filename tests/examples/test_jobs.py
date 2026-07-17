@@ -22,7 +22,7 @@ EXPECTED_MANAGEMENT = [
 
 EXPECTED_PROCESSING = [
     'Dapr Jobs Example',
-    'Starting gRPC server on port 50051...',
+    'Starting gRPC server on port 13551...',
     'Scheduling jobs...',
     'hello-job scheduled',
     'data-job scheduled',
@@ -45,7 +45,7 @@ def test_job_processing(dapr):
     # times, so run until every expected line has appeared instead of
     # stopping right after sidecar readiness.
     output = dapr.run(
-        '--app-id jobs-workflow --app-protocol grpc --app-port 50051 -- python3 job_processing.py',
+        '--app-id jobs-workflow --app-protocol grpc --app-port 13551 -- python3 job_processing.py',
         timeout=60,
         until=EXPECTED_PROCESSING,
     )

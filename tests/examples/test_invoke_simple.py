@@ -9,7 +9,7 @@ EXPECTED_RECEIVER = [
 @pytest.mark.example_dir('invoke-simple')
 def test_invoke_simple(dapr):
     dapr.start(
-        '--app-id invoke-receiver --app-protocol grpc --app-port 50051 '
+        '--app-id invoke-receiver --app-protocol grpc --app-port 13551 '
         '--dapr-http-port 3500 -- python3 invoke-receiver.py',
     )
 

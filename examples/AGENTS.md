@@ -8,6 +8,7 @@ The `examples/` directory serves as the **user-facing documentation**. Each exam
 2. Tests use a `DaprRunner` helper (defined in `tests/examples/conftest.py`) that wraps `dapr run` commands
 3. `DaprRunner.run()` executes a command and captures stdout; `DaprRunner.start()`/`stop()` manage background services
 4. Tests assert that expected output lines appear in the captured output
+5. The runner pins every sidecar listener port the test didn't set itself and blocks until those ports are bindable before launching. Test-pinned ports must stay below 32768 — see the "Port allocation" section in `tests/integration/AGENTS.md` for the full rationale.
 
 Run examples locally (requires a running Dapr runtime via `dapr init`):
 
