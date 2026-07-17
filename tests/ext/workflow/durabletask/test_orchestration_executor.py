@@ -155,6 +155,66 @@ def test_timer_fired_completion():
     assert complete_action.result.value == '"done"'  # results are JSON-encoded
 
 
+def test_create_timer_with_timezone_aware_datetime():
+    """A timezone-aware fire_at must schedule the timer at the same absolute
+    instant as its naive-UTC equivalent."""
+
+    fire_at_aware = datetime(2030, 6, 1, 9, 0, 0, tzinfo=timezone(timedelta(hours=9)))
+    fire_at_utc = datetime(2030, 6, 1, 0, 0, 0)
+
+    def delay_orchestrator(ctx: task.OrchestrationContext, _):
+        yield ctx.create_timer(fire_at_aware)
+        return 'done'
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(delay_orchestrator)
+
+    start_time = datetime(2030, 1, 1, 12, 0, 0)
+    new_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, [], new_events)
+    actions = result.actions
+
+    assert actions is not None
+    assert len(actions) == 1
+    assert actions[0].HasField('createTimer')
+    assert actions[0].createTimer.fireAt.ToDatetime() == fire_at_utc
+
+
+def test_timer_fired_completion_with_timezone_aware_datetime():
+    """A timer created from a timezone-aware datetime must replay cleanly
+    against history recorded in naive UTC (as the sidecar stores it)."""
+
+    fire_at_aware = datetime(2030, 6, 1, 9, 0, 0, tzinfo=timezone(timedelta(hours=9)))
+    fire_at_utc = datetime(2030, 6, 1, 0, 0, 0)
+
+    def delay_orchestrator(ctx: task.OrchestrationContext, _):
+        yield ctx.create_timer(fire_at_aware)
+        return 'done'
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(delay_orchestrator)
+
+    start_time = datetime(2030, 1, 1, 12, 0, 0)
+    old_events = [
+        helpers.new_workflow_started_event(start_time),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+        helpers.new_timer_created_event(1, fire_at_utc),
+    ]
+    new_events = [helpers.new_timer_fired_event(1, fire_at_utc)]
+
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+    actions = result.actions
+
+    complete_action = get_and_validate_single_complete_workflow_action(actions)
+    assert complete_action.workflowStatus == pb.ORCHESTRATION_STATUS_COMPLETED
+    assert complete_action.result.value == '"done"'  # results are JSON-encoded
+
+
 def test_schedule_activity_actions():
     """Test the actions output for the call_activity orchestrator method"""
 

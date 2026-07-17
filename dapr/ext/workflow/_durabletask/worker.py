@@ -18,7 +18,7 @@ import random
 import threading
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from threading import Event, Thread
 from types import GeneratorType
 from typing import Any, Generator, Iterator, Optional, Sequence, TypeVar, Union
@@ -1399,6 +1399,12 @@ class _RuntimeOrchestrationContext(
         id = self.next_sequence_number()
         if isinstance(fire_at, timedelta):
             fire_at = self.current_utc_datetime + fire_at
+        # Normalize timezone-aware datetimes to naive UTC so they can be safely
+        # compared with current_utc_datetime (which is always naive UTC). A
+        # tzinfo whose utcoffset() is None is still naive and must be left as-is
+        # (calling astimezone() on it would raise ValueError).
+        if isinstance(fire_at, datetime) and fire_at.utcoffset() is not None:
+            fire_at = fire_at.astimezone(timezone.utc).replace(tzinfo=None)
         action = ph.new_create_timer_action(id, fire_at, origin=origin)
         self._pending_actions[id] = action
 
