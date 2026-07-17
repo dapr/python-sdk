@@ -268,26 +268,67 @@ def test_when_all_failure_after_success_still_reports_failure():
         all_task.get_result()
 
 
-def test_when_all_failure_before_success_still_reports_failure():
-    """When a child fails before the other children succeed,
-    the WhenAllTask must complete with the failure immediately."""
+def test_when_all_defers_failure_until_all_children_complete():
+    """After a child failure the WhenAllTask keeps waiting for the remaining
+    children; the first failure is surfaced once every child has completed."""
+    c1 = task.CompletableTask()
+    c2 = task.CompletableTask()
+    c3 = task.CompletableTask()
+
+    all_task = task.when_all([c1, c2, c3])
+
+    c1.fail('activity failed', _make_failure_details('activity failed'))
+
+    assert not all_task.is_complete
+    assert not all_task.is_failed
+    assert all_task.get_completed_tasks() == 1
+
+    c2.complete('two')
+
+    assert not all_task.is_complete
+    assert not all_task.is_failed
+    assert all_task.get_completed_tasks() == 2
+
+    c3.complete('three')
+
+    assert all_task.is_complete
+    assert all_task.is_failed
+    assert all_task.get_completed_tasks() == 3
+    with pytest.raises(task.TaskFailedError):
+        all_task.get_result()
+
+
+def test_when_all_surfaces_first_failure_when_multiple_children_fail():
+    """When several children fail, the WhenAllTask reports the first failure."""
     c1 = task.CompletableTask()
     c2 = task.CompletableTask()
 
     all_task = task.when_all([c1, c2])
 
-    # c1 fails first
-    c1.fail('activity failed', _make_failure_details('activity failed'))
+    c1.fail('first error', _make_failure_details('first error'))
+    c2.fail('second error', _make_failure_details('second error'))
 
     assert all_task.is_complete
     assert all_task.is_failed
-    with pytest.raises(task.TaskFailedError):
+    with pytest.raises(task.TaskFailedError, match='first error'):
         all_task.get_result()
 
-    # c2 succeeds after — must not raise ValueError
-    c2.complete('two')
 
-    # WhenAllTask should still be in the same failed state
+def test_when_all_with_pre_failed_child_waits_for_remaining():
+    """A child that already failed before construction is staged, not surfaced,
+    until the remaining children complete."""
+    failed_child = task.CompletableTask()
+    failed_child.fail('activity failed', _make_failure_details('activity failed'))
+    pending_child = task.CompletableTask()
+
+    all_task = task.when_all([failed_child, pending_child])
+
+    assert not all_task.is_complete
+    assert not all_task.is_failed
+    assert all_task.get_completed_tasks() == 1
+
+    pending_child.complete('ok')
+
     assert all_task.is_complete
     assert all_task.is_failed
     with pytest.raises(task.TaskFailedError):
@@ -295,7 +336,7 @@ def test_when_all_failure_before_success_still_reports_failure():
 
 
 def test_when_all_failure_propagates_to_parent():
-    """When a WhenAllTask fails due to a child failure,
+    """When a WhenAllTask fails after all children complete,
     it should notify its parent composite task."""
     c1 = task.CompletableTask()
     c2 = task.CompletableTask()
@@ -306,6 +347,12 @@ def test_when_all_failure_propagates_to_parent():
     assert not any_task.is_complete
 
     c1.fail('activity failed', _make_failure_details('activity failed'))
+
+    # The failure is staged until c2 completes, so neither composite is done yet
+    assert not all_task.is_complete
+    assert not any_task.is_complete
+
+    c2.complete('two')
 
     assert all_task.is_complete
     assert all_task.is_failed

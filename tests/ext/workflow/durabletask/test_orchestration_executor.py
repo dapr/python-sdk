@@ -1205,16 +1205,29 @@ def test_fan_in_with_single_failure():
         )
 
     # 5 of the tasks complete successfully, 1 fails, and 4 are still running.
-    # The expectation is that the orchestration will fail immediately.
-    new_events = []
+    # when_all waits for every child task to complete before surfacing the
+    # failure, so the orchestration is expected to still be running with zero
+    # new actions.
+    ex = Exception('Kah-BOOOOM!!!')
+    partial_events = []
     for i in range(5):
+        partial_events.append(
+            helpers.new_task_completed_event(i + 1, encoded_output=print_int(None, i))
+        )
+    partial_events.append(helpers.new_task_failed_event(6, ex))
+
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    result = executor.execute(TEST_INSTANCE_ID, old_events, partial_events)
+    assert len(result.actions) == 0
+
+    # Once the remaining 4 tasks also complete, the orchestration fails and
+    # surfaces the first task failure.
+    new_events = list(partial_events)
+    for i in range(6, 10):
         new_events.append(
             helpers.new_task_completed_event(i + 1, encoded_output=print_int(None, i))
         )
-    ex = Exception('Kah-BOOOOM!!!')
-    new_events.append(helpers.new_task_failed_event(6, ex))
 
-    # Now test with the full set of new events. We expect the orchestration to complete.
     executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
     result = executor.execute(TEST_INSTANCE_ID, old_events, new_events)
     actions = result.actions
@@ -1278,13 +1291,8 @@ def test_when_all_failure_after_success_bubbles_to_orchestrator():
 
 
 def test_when_all_success_after_failure_does_not_crash():
-    """Tests that task completions arriving after when_all already failed
-    do not crash the orchestration.
-
-    This is a regression test: previously a ValueError was raised when
-    a successful task completed after the WhenAllTask was already marked
-    complete due to a prior child failure.
-    """
+    """Tests that a success arriving after a failure completes the set and
+    surfaces the failure to the orchestrator where it can be caught."""
 
     def dummy_activity(ctx, _):
         pass
