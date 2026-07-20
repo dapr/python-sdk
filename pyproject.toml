@@ -96,7 +96,7 @@ dev = [
     # in the dev env. `dapr` here resolves to this workspace project itself,
     # so `dapr[all]` activates every extras list declared above.
     "dapr[all]",
-    "mypy==2.2.0",
+    "mypy==2.3.0",
     "mypy-extensions~=1.1.0",
     "mypy-protobuf==5.0.0",
     "grpcio-tools==1.81.1",
