@@ -1170,6 +1170,7 @@ class _RuntimeOrchestrationContext(
         self._pending_actions: dict[int, pb.WorkflowAction] = {}
         self._pending_tasks: dict[int, task.CompletableTask] = {}
         self._sequence_number = 0
+        self._detached_counter = 0
         self._current_utc_datetime = datetime(1000, 1, 1)
         self._instance_id = instance_id
         self._app_id = None
@@ -1241,7 +1242,14 @@ class _RuntimeOrchestrationContext(
 
         self._is_complete = True
         self._completion_status = status
-        self._pending_actions.clear()  # Cancel any pending actions
+        # Cancel any pending actions except detached-workflow spawns, which are
+        # fire-and-forget: the action is effective the moment schedule_new_workflow
+        # returns, so it must survive the caller's completion.
+        self._pending_actions = {
+            id_: a
+            for id_, a in self._pending_actions.items()
+            if a.HasField('createDetachedWorkflow')
+        }
 
         self._result = result
         result_json: Optional[str] = None
@@ -1464,6 +1472,49 @@ class _RuntimeOrchestrationContext(
             propagation=propagation,
         )
         return self._pending_tasks.get(id, task.CompletableTask())
+
+    def schedule_new_workflow(
+        self,
+        workflow: Union[task.Orchestrator[TInput, TOutput], str],
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        start_at: Optional[datetime] = None,
+        app_id: Optional[str] = None,
+        app_namespace: Optional[str] = None,
+    ) -> str:
+        id = self.next_sequence_number()
+        workflow_name = workflow if isinstance(workflow, str) else task.get_name(workflow)
+        if instance_id is None:
+            self._detached_counter += 1
+            instance_id = f'{self.instance_id}-{self._detached_counter}'
+
+        router: Optional[pb.TaskRouter] = None
+        if self._app_id is not None or app_id is not None or app_namespace is not None:
+            router = pb.TaskRouter()
+            if self._app_id is not None:
+                router.sourceAppID = self._app_id
+            if app_id is not None:
+                router.targetAppID = app_id
+            if app_namespace is not None:
+                router.targetAppNamespace = app_namespace
+
+        scheduled_start: Optional[timestamp_pb2.Timestamp] = None
+        if start_at is not None:
+            scheduled_start = timestamp_pb2.Timestamp()
+            scheduled_start.FromDatetime(start_at)
+
+        encoded_input = shared.to_json(input) if input is not None else None
+        action = ph.new_create_detached_workflow_action(
+            id,
+            workflow_name,
+            instance_id,
+            encoded_input,
+            router,
+            scheduled_start_timestamp=scheduled_start,
+        )
+        self._pending_actions[id] = action
+        return instance_id
 
     def call_activity_function_helper(
         self,
@@ -1972,6 +2023,30 @@ class _OrchestrationExecutor:
                         expected_task_name=event.childWorkflowInstanceCreated.name,
                         actual_task_name=action.createChildWorkflow.name,
                     )
+            elif event.HasField('detachedWorkflowInstanceCreated'):
+                task_id = event.eventId
+                if task_id in ctx._pending_actions and ph.is_optional_timer_action(
+                    ctx._pending_actions[task_id]
+                ):
+                    ctx._drop_optional_pending_at(task_id)
+                action = ctx._pending_actions.pop(task_id, None)
+                if not action:
+                    raise _get_non_determinism_error(
+                        task_id, task.get_name(ctx.schedule_new_workflow)
+                    )
+                elif not action.HasField('createDetachedWorkflow'):
+                    expected_method_name = task.get_name(ctx.schedule_new_workflow)
+                    raise _get_wrong_action_type_error(task_id, expected_method_name, action)
+                elif (
+                    action.createDetachedWorkflow.instanceId
+                    != event.detachedWorkflowInstanceCreated.instanceId
+                ):
+                    raise _get_wrong_action_name_error(
+                        task_id,
+                        method_name=task.get_name(ctx.schedule_new_workflow),
+                        expected_task_name=event.detachedWorkflowInstanceCreated.instanceId,
+                        actual_task_name=action.createDetachedWorkflow.instanceId,
+                    )
             elif event.HasField('childWorkflowInstanceCompleted'):
                 task_id = event.childWorkflowInstanceCompleted.taskScheduledId
                 sub_orch_task = ctx._pending_tasks.pop(task_id, None)
@@ -2239,6 +2314,8 @@ def _get_method_name_for_action(action: pb.WorkflowAction) -> str:
         return task.get_name(task.OrchestrationContext.create_timer)
     elif action_type == 'createChildWorkflow':
         return task.get_name(task.OrchestrationContext.call_sub_orchestrator)
+    elif action_type == 'createDetachedWorkflow':
+        return task.get_name(task.OrchestrationContext.schedule_new_workflow)
     # elif action_type == "sendEvent":
     #    return task.get_name(task.OrchestrationContext.send_event)
     else:
