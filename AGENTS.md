@@ -221,6 +221,7 @@ When completing any task on this project, work through this checklist. Not every
 
 - **Namespace packages**: `dapr.ext` is a PEP 420 implicit namespace package. Do **not** create `dapr/ext/__init__.py`; that would block any future externally-published `dapr.ext.*` distribution from coexisting with the core wheel on install.
 - **Proto files**: Never manually edit anything under `dapr/proto/`. These are generated.
+- **Do not bump `grpcio-tools` like a normal dev dependency**: its pin must stay the version that generated the committed files under `dapr/proto/` — regenerating with a newer one raises the minimum `grpcio`/`protobuf` that SDK users can install, while leaving it alone is always safe. Dependabot is configured to ignore it; the comment in `.github/dependabot.yml` lists when a bump is justified and the 3-step recipe (pin + regen + floors, in one PR, enforced by `tests/test_proto_gencode_floor.py`).
 - **Bundled extensions**: live under `dapr/ext/<name>/`, opted in via extras (`dapr[fastapi]`, etc.). The legacy `dapr-ext-*` and `flask-dapr` distributions are no longer published; legacy installs must be uninstalled before upgrading or `import dapr` will emit a `FutureWarning`.
 - **DCO signoff**: PRs will be blocked by the DCO bot if commits lack `Signed-off-by`. Always use `git commit -s`.
 - **Ruff version pinned**: `pyproject.toml` pins `ruff==0.14.1` in `[dependency-groups].dev`. Use `uv sync --all-packages --group dev` to get the exact version.

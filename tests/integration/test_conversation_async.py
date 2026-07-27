@@ -23,7 +23,7 @@ from dapr.clients.grpc.conversation import (
 )
 
 COMPONENT = 'echo'
-GRPC_ADDRESS = '127.0.0.1:50001'
+GRPC_ADDRESS = '127.0.0.1:13501'
 
 
 @pytest.fixture(scope='module')

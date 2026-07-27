@@ -10,6 +10,7 @@ import pytest
 from dapr.clients import DaprClient
 from dapr.conf import settings
 from tests.crypto_utils import remove_test_keys, write_test_keys
+from tests.port_utils import wait_for_ports_free
 from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
 from tests.wait_utils import wait_until
 
@@ -37,18 +38,27 @@ class DaprTestEnvironment:
         self,
         app_id: str,
         *,
-        grpc_port: int = 50001,
+        grpc_port: int = 13501,
         http_port: int = 3500,
+        internal_grpc_port: int = 13502,
+        metrics_port: int = 9091,
         app_port: int | None = None,
         app_cmd: str | None = None,
         resources: Path | None = None,
     ) -> DaprClient:
         """Start a Dapr sidecar and return a connected DaprClient.
 
+        Every listener port is pinned and startup blocks until each one is
+        bindable. See the "Port allocation" section in AGENTS.md for the full
+        rationale (CLI random-port picker bug, ephemeral-range port theft,
+        teardown races).
+
         Args:
             app_id: Dapr application ID.
             grpc_port: Sidecar gRPC port.
             http_port: Sidecar HTTP port (also used for the SDK health check).
+            internal_grpc_port: Sidecar-to-sidecar gRPC port.
+            metrics_port: Sidecar metrics port.
             app_port: Port the app listens on (implies ``--app-protocol grpc``).
             app_cmd: Shell command to start alongside the sidecar.
             resources: Path to resources YAML directory.  Defaults to
@@ -67,12 +77,19 @@ class DaprTestEnvironment:
             str(grpc_port),
             '--dapr-http-port',
             str(http_port),
+            '--dapr-internal-grpc-port',
+            str(internal_grpc_port),
+            '--metrics-port',
+            str(metrics_port),
         ]
+        gated_ports = [grpc_port, http_port, internal_grpc_port, metrics_port]
         if app_port is not None:
             cmd.extend(['--app-port', str(app_port), '--app-protocol', 'grpc'])
+            gated_ports.append(app_port)
         if app_cmd is not None:
             cmd.extend(['--', *shlex.split(app_cmd)])
 
+        wait_for_ports_free(gated_ports)
         proc = subprocess.Popen(
             cmd,
             cwd=INTEGRATION_DIR,
@@ -100,6 +117,13 @@ class DaprTestEnvironment:
         return client
 
     def cleanup(self) -> None:
+        """Closes clients and takes down every sidecar process group.
+
+        Each group is force-killed even after a clean CLI exit: daprd shuts
+        down gracefully after the CLI and there is no value in waiting for
+        it in tests — the port gate in ``start_sidecar`` protects the next
+        sidecar against anything the sweep misses.
+        """
         for client in self.clients:
             client.close()
         self.clients.clear()
@@ -110,8 +134,9 @@ class DaprTestEnvironment:
                 try:
                     proc.wait(timeout=10)
                 except subprocess.TimeoutExpired:
-                    terminate_process_group(proc, force=True)
-                    proc.wait()
+                    pass
+            terminate_process_group(proc, force=True)
+            proc.wait()
         self.processes.clear()
 
 

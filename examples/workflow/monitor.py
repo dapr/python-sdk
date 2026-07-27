@@ -71,7 +71,8 @@ if __name__ == '__main__':
         pass
 
     if not status or status.runtime_status.name != 'RUNNING':
-        # TODO update to use reuse_id_policy
+        # Scheduling over a RUNNING instance fails; reuse of the ID is only allowed once the
+        # existing instance has reached a terminal state, hence the pre-check above.
         instance_id = wf_client.schedule_new_workflow(
             workflow=status_monitor_workflow,
             input=JobStatus(job_id=job_id, is_healthy=True),

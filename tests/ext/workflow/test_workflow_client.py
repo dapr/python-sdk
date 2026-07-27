@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import unittest
+import warnings
 from datetime import datetime
 from typing import Any, Union
 from unittest import mock
@@ -197,6 +198,33 @@ class WorkflowClientTest(unittest.TestCase):
             result = wfClient.schedule_new_workflow(workflow='my_registered_workflow', input='data')
             assert result == mock_schedule_result
             assert fake_client.last_scheduled_workflow_name == 'my_registered_workflow'
+
+    def test_schedule_workflow_reuse_id_policy_is_deprecated(self):
+        fake_client = FakeTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient', return_value=fake_client
+        ):
+            wfClient = DaprWorkflowClient()
+            reuse_id_policy = client.WorkflowIdReusePolicy(
+                action=client.OrchestrationIdReuseAction.TERMINATE,
+                operation_status=[client.OrchestrationStatus.RUNNING],
+            )
+            with self.assertWarns(DeprecationWarning):
+                result = wfClient.schedule_new_workflow(
+                    workflow='my_registered_workflow', reuse_id_policy=reuse_id_policy
+                )
+            assert result == mock_schedule_result
+
+    def test_schedule_workflow_without_reuse_id_policy_does_not_warn(self):
+        fake_client = FakeTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient', return_value=fake_client
+        ):
+            wfClient = DaprWorkflowClient()
+            with warnings.catch_warnings():
+                warnings.simplefilter('error', DeprecationWarning)
+                result = wfClient.schedule_new_workflow(workflow='my_registered_workflow')
+            assert result == mock_schedule_result
 
     def test_client_functions(self):
         with mock.patch(

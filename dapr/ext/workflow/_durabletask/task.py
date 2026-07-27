@@ -364,10 +364,33 @@ class CompositeTask(Task[T]):
     _tasks: list[Task]
 
     def __init__(self, tasks: list[Task]):
+        """Adopts the child tasks and replays completions for any already-complete child.
+
+        Invokes the subclass's ``on_child_completed`` during construction, so
+        subclasses must set every attribute that override reads before calling
+        ``super().__init__()``, and must not reset counting state after it.
+
+        Raises:
+            ValueError: If the same task instance appears more than once in ``tasks``,
+                or if a still-pending task already belongs to another pending composite.
+        """
         super().__init__()
+        unique_task_count = len({id(task) for task in tasks})
+        if unique_task_count != len(tasks):
+            raise ValueError(
+                'the same task instance was passed to when_all/when_any more than once; '
+                'a task notifies its parent composite only once, so duplicates would hang'
+            )
+        for task in tasks:
+            has_live_parent = task._parent is not None and not task._parent.is_complete
+            if has_live_parent and not task.is_complete:
+                raise ValueError(
+                    'a pending task passed to when_all/when_any already belongs to another '
+                    'pending composite; a task notifies only its latest composite, so the '
+                    'earlier one would hang'
+                )
         self._tasks = tasks
         self._completed_tasks = 0
-        self._failed_tasks = 0
         for task in tasks:
             task._parent = self
             if task.is_complete:
@@ -382,12 +405,18 @@ class CompositeTask(Task[T]):
 
 
 class WhenAllTask(CompositeTask[list[T]]):
-    """A task that completes when all of its child tasks complete."""
+    """A task that completes once all of its child tasks complete.
+
+    If any child fails, the composite still waits for every child to finish
+    and then fails with the first failure.
+    """
 
     def __init__(self, tasks: list[Task[T]]):
+        # CompositeTask.__init__ replays pre-completed children into on_child_completed,
+        # so _pending_exception must exist before it runs; likewise do not reset
+        # _completed_tasks after it, or a deferred when_all over them hangs forever.
+        self._pending_exception: Optional[Exception] = None
         super().__init__(tasks)
-        self._completed_tasks = 0
-        self._failed_tasks = 0
         # If there are no child tasks, this composite should complete immediately
         if len(self._tasks) == 0:
             self._result = []  # type: ignore[assignment]
@@ -400,20 +429,22 @@ class WhenAllTask(CompositeTask[list[T]]):
 
     def on_child_completed(self, task: Task[T]):
         if self.is_complete:
-            # Already completed (e.g. a previous child failed), ignore late arrivals
             return
         self._completed_tasks += 1
-        if task.is_failed and self._exception is None:
-            self._exception = task.get_exception()
-            self._is_complete = True
-            if self._parent is not None:
-                self._parent.on_child_completed(self)
-        elif self._completed_tasks == len(self._tasks):
+        if task.is_failed and self._pending_exception is None:
+            # Stage the first failure without exposing it via _exception yet:
+            # that would make is_failed True while is_complete is still False.
+            self._pending_exception = task.get_exception()
+        if self._completed_tasks < len(self._tasks):
+            return
+        self._is_complete = True
+        if self._pending_exception is not None:
+            self._exception = self._pending_exception
+        else:
             # The order of the result MUST match the order of the tasks provided to the constructor.
             self._result = [task.get_result() for task in self._tasks]
-            self._is_complete = True
-            if self._parent is not None:
-                self._parent.on_child_completed(self)
+        if self._parent is not None:
+            self._parent.on_child_completed(self)
 
     def get_completed_tasks(self) -> int:
         return self._completed_tasks
@@ -576,6 +607,7 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
         timeout: Optional[Union[datetime, timedelta]] = None,
         on_timeout: Optional[Callable[[], None]] = None,
     ):
+        # Set before super().__init__(), which may replay completions into on_child_completed.
         self._event_task = event_task
         self._timer_task = timer_task
         self._event_name = event_name
@@ -605,7 +637,8 @@ class ExternalEventWithTimeoutTask(CompositeTask[T]):
 
 
 def when_all(tasks: list[Task[T]]) -> WhenAllTask[T]:
-    """Returns a task that completes when all of the provided tasks complete or when one of the tasks fail."""
+    """Returns a task that completes once all of the provided tasks complete,
+    surfacing the first failure (if any) only after every task has finished."""
     return WhenAllTask(tasks)
 
 

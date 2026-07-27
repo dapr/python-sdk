@@ -28,7 +28,7 @@ spec:
         dapr.io/enabled: "true"
         dapr.io/app-id: "invoke-receiver"
         dapr.io/app-protocol: "grpc"
-        dapr.io/app-port: "50051"
+        dapr.io/app-port: "13551"
     spec:
       containers:
       - name: invokereceiver
@@ -36,5 +36,5 @@ spec:
         command: ["python"]
         args: ["/app/invoke-receiver.py"]
         ports:
-        - containerPort: 50051
+        - containerPort: 13551
         imagePullPolicy: Always

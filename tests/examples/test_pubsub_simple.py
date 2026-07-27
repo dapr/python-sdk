@@ -24,7 +24,7 @@ EXPECTED_PUBLISHER = [
 @pytest.mark.example_dir('pubsub-simple')
 def test_pubsub_simple(dapr):
     dapr.start(
-        '--app-id python-subscriber --app-protocol grpc --app-port 50051 -- python3 subscriber.py',
+        '--app-id python-subscriber --app-protocol grpc --app-port 13551 -- python3 subscriber.py',
     )
     publisher_output = dapr.run(
         '--app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 '

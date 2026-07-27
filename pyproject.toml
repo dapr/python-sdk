@@ -96,7 +96,7 @@ dev = [
     # in the dev env. `dapr` here resolves to this workspace project itself,
     # so `dapr[all]` activates every extras list declared above.
     "dapr[all]",
-    "mypy==1.20.2",
+    "mypy==2.3.0",
     "mypy-extensions~=1.1.0",
     "mypy-protobuf==5.0.0",
     "grpcio-tools==1.81.1",
@@ -104,7 +104,7 @@ dev = [
     "types-grpcio-status~=1.0.0",
     "coverage>=7.13.4,<7.16.0",
     "wheel~=0.46.3",
-    "opentelemetry-sdk>=1.40,<1.44",
+    "opentelemetry-sdk>=1.40,<1.45",
     "opentelemetry-instrumentation-grpc~=0.61b0",
     "opentelemetry-exporter-zipkin~=1.11.1",
     "httpx~=0.28.1",

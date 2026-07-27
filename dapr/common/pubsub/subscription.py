@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Union
+from typing import Mapping, Optional, Union
 
 from google.protobuf.json_format import MessageToDict
 
@@ -7,7 +7,15 @@ from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 
 
 class SubscriptionMessage:
-    def __init__(self, msg: TopicEventRequest):
+    """Message delivered to Dapr pub/sub subscribers.
+
+    Delivered by both the streaming subscription API (``DaprClient.subscribe``) and the
+    App callback API (``@app.subscribe``). ``metadata`` carries delivery metadata (gRPC
+    invocation metadata and, for bulk deliveries, per-entry publish metadata); it is only
+    populated for App callback deliveries.
+    """
+
+    def __init__(self, msg: TopicEventRequest, metadata: Optional[Mapping[str, str]] = None):
         self._id: str = msg.id
         self._source: str = msg.source
         self._type: str = msg.type
@@ -17,6 +25,7 @@ class SubscriptionMessage:
         self._pubsub_name: str = msg.pubsub_name
         self._raw_data: bytes = msg.data
         self._data: Optional[Union[dict, str]] = None
+        self._metadata: dict[str, str] = dict(metadata) if metadata else {}
 
         try:
             self._extensions = MessageToDict(msg.extensions)
@@ -57,6 +66,9 @@ class SubscriptionMessage:
 
     def data(self):
         return self._data
+
+    def metadata(self) -> dict[str, str]:
+        return self._metadata
 
     def _parse_data_content(self):
         try:

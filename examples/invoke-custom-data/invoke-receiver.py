@@ -15,4 +15,4 @@ def mymethod(request: InvokeMethodRequest):
     )
 
 
-app.run(50051)
+app.run(13551)
