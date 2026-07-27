@@ -134,5 +134,5 @@ if __name__ == '__main__':
     # Schedule jobs in a background thread after server starts
     threading.Thread(target=schedule_jobs, daemon=True).start()
 
-    print('Starting gRPC server on port 50051...', flush=True)
-    app.run(50051)
+    print('Starting gRPC server on port 13551...', flush=True)
+    app.run(13551)

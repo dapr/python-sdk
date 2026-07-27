@@ -28,7 +28,7 @@ To run this example, the following steps should be followed:
    python3 -m grpc_tools.protoc --proto_path=./proto/ --python_out=./proto/    --grpc_python_out=./proto/ ./proto/response.proto
    ```
 
-2. Start Receiver (expose gRPC server receiver on port 50051)
+2. Start Receiver (expose gRPC server receiver on port 13551)
 
 <!-- STEP
 name: Run receiver
@@ -39,7 +39,7 @@ sleep: 5
 -->
 
    ```bash
-   dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 -- python3 invoke-receiver.py
+   dapr run --app-id invoke-receiver --app-protocol grpc --app-port 13551 -- python3 invoke-receiver.py
    ```
 
 <!-- END_STEP -->

@@ -109,11 +109,17 @@ Async counterparts exercise `dapr.aio.clients.DaprClient` (the gRPC async client
 | `test_crypto_async.py` | `encrypt`, `decrypt` |
 | `test_conversation_async.py` | `converse_alpha1`, `converse_alpha2` |
 
-Async tests use `pytest-asyncio` in auto mode (configured in `pyproject.toml`). Any `async def test_*` is run as a coroutine — no decorator required. The sidecar fixture stays sync (it just starts `dapr run`); each test creates a short-lived `async with AsyncDaprClient(address='127.0.0.1:50001') as d:` block.
+Async tests use `pytest-asyncio` in auto mode (configured in `pyproject.toml`). Any `async def test_*` is run as a coroutine — no decorator required. The sidecar fixture stays sync (it just starts `dapr run`); each test creates a short-lived `async with AsyncDaprClient(address='127.0.0.1:13501') as d:` block.
 
 ## Port allocation
 
-All sidecars default to gRPC port 50001 and HTTP port 3500. Since fixtures are module-scoped and tests run sequentially, only one sidecar is active at a time. If parallel execution is needed in the future, sidecars will need dynamic port allocation.
+All sidecars default to gRPC port 13501, HTTP port 3500, internal gRPC port 13502, and metrics port 9091. Since fixtures are module-scoped and tests run sequentially, only one sidecar is active at a time. If parallel execution is needed in the future, sidecars will need dynamic port allocation.
+
+Every listener port is pinned deliberately: when one is left unset, the Dapr CLI picks a random free port, and its picker can assign the same port to two listeners of the same daprd — observed in CI across several pairs (metrics vs. internal gRPC, HTTP vs. gRPC, metrics vs. HTTP). Usually that kills the sidecar at startup with `bind: address already in use`; in the metrics-vs-HTTP case the sidecar even passes the CLI readiness check while serving Prometheus text on the API port, so the failure is silent.
+
+All pinned ports (sidecar and app alike) must sit **below the OS ephemeral source-port range** — Linux hands out 32768–60999 for outbound connections, macOS and Windows 49152+. Any process's outbound localhost socket can land on a port in that range and block daprd from binding it (observed in CI when the internal gRPC port was pinned to 50002: an unrelated established socket held it for over a minute). This is why the suite uses the 135xx block instead of Dapr's conventional 500xx ports. (The examples suite pins the same way via `DaprRunner`, using 136xx blocks.)
+
+`start_sidecar()` additionally waits until every pinned port is bindable (`tests/port_utils.py`) before launching `dapr run`, so a previous sidecar draining past its teardown costs a short wait instead of a startup bind failure.
 
 ## Helper apps
 
@@ -140,6 +146,6 @@ Some building blocks (invoke, pubsub) require an app process running alongside t
 - **`localsecretstore.yaml` uses a relative path** (`secrets.json`) resolved against `cwd=INTEGRATION_DIR`. Same pattern applies to `localbinding.yaml` (`./.binding-data`) and `cryptostore.yaml` (`./keys`).
 - **`bindings.localstorage` refuses to initialize if `rootPath` does not exist** — `conftest.py` creates `.binding-data/` at import time so every sidecar can load the component.
 - **`statestore.yaml` has `actorStateStore: "true"`** because workflow uses the actor runtime. The flag is additive — regular state tests are unaffected.
-- **Workflow tests run the `WorkflowRuntime` in-process** and connect to the sidecar's gRPC port (default 50001). No external app is needed.
+- **Workflow tests run the `WorkflowRuntime` in-process** and connect to the sidecar's gRPC port (default 13501). No external app is needed.
 - **Dapr may normalize response fields** — e.g., `content_type` may lose charset parameters when proxied through gRPC. Assert on the media type prefix, not the full string.
 - **Error shapes vary** — `invoke_binding` surfaces sidecar errors as raw `grpc.RpcError`, while other APIs (jobs, state) wrap them in `DaprGrpcError`. Match what the method actually raises.

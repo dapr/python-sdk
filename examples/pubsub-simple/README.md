@@ -52,8 +52,8 @@ sleep: 3
 -->
 
 ```bash
-# 1. Start Subscriber (expose gRPC server receiver on port 50051)
-dapr run --app-id python-subscriber --app-protocol grpc --app-port 50051 -- python3 subscriber.py
+# 1. Start Subscriber (expose gRPC server receiver on port 13551)
+dapr run --app-id python-subscriber --app-protocol grpc --app-port 13551 -- python3 subscriber.py
 ```
 
 <!-- END_STEP -->

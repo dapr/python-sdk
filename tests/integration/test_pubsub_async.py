@@ -24,7 +24,7 @@ from tests.wait_utils import wait_until_async
 STORE = 'statestore'
 PUBSUB = 'pubsub'
 TOPIC = 'TOPIC_A'
-GRPC_ADDRESS = '127.0.0.1:50001'
+GRPC_ADDRESS = '127.0.0.1:13501'
 
 
 async def _fetch_received(d: AsyncDaprClient, key: str) -> bytes | None:
@@ -36,7 +36,7 @@ async def _fetch_received(d: AsyncDaprClient, key: str) -> bytes | None:
 def sidecar(dapr_env, apps_dir, flush_redis):
     dapr_env.start_sidecar(
         app_id='test-subscriber-async',
-        app_port=50051,
+        app_port=13503,
         app_cmd=f'python3 {apps_dir / "pubsub_subscriber.py"}',
     )
 
