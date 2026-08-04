@@ -791,9 +791,9 @@ requires-dist = [
     { name = "msgpack", marker = "extra == 'strands'", specifier = ">=1.0,<2.0" },
     { name = "protobuf", specifier = ">=6.33.5,<8.0.0" },
     { name = "python-dateutil", specifier = ">=2.8.1,<3.0.0" },
-    { name = "python-ulid", marker = "extra == 'all'", specifier = ">=3.0.0,<4.0.0" },
-    { name = "python-ulid", marker = "extra == 'langgraph'", specifier = ">=3.0.0,<4.0.0" },
-    { name = "python-ulid", marker = "extra == 'strands'", specifier = ">=3.0.0,<4.0.0" },
+    { name = "python-ulid", marker = "extra == 'all'", specifier = ">=3.0.0,<5.0.0" },
+    { name = "python-ulid", marker = "extra == 'langgraph'", specifier = ">=3.0.0,<5.0.0" },
+    { name = "python-ulid", marker = "extra == 'strands'", specifier = ">=3.0.0,<5.0.0" },
     { name = "strands-agents", marker = "extra == 'all'", specifier = ">=1.30.0,<2.0.0" },
     { name = "strands-agents", marker = "extra == 'strands'", specifier = ">=1.30.0,<2.0.0" },
     { name = "typing-extensions", specifier = ">=4.4.0,<5.0.0" },
@@ -880,7 +880,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -2666,13 +2666,14 @@ wheels = [
 
 [[package]]
 name = "python-ulid"
-version = "3.2.0"
+version = "4.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/d6/41/65079023c81491a21799c0120bce5925366b6913596bf797806f19973290/python_ulid-4.0.1.tar.gz", hash = "sha256:bbeec02556190bb9dc3401faa7268696acbfbe7b6db9908c155dc3548629f20c", size = 101683, upload-time = "2026-07-20T15:21:41.256Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/7e/b912a91fe0800585ec29ff695a6a5c4098a32c89732cba550c6fc9343380/python_ulid-3.2.0-py3-none-any.whl", hash = "sha256:7adfc206cbee3124e176b02b73e0fd19d1c9759e119fd8af7ba264d7d29c6fc0", size = 12945, upload-time = "2026-07-17T12:46:36.967Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/15/8b39b36f55b6618ec4ca9b55134dcfd9c04cecbc72709f5d8e6bdebed9cd/python_ulid-4.0.1-py3-none-any.whl", hash = "sha256:6f1d69ceb97e99fe542df8476ebcd7a668284bf53ee14b3106bcc6a341a95ed9", size = 14609, upload-time = "2026-07-20T15:21:40.214Z" },
 ]
 
 [[package]]

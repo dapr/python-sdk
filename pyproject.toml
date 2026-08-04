@@ -41,12 +41,12 @@ grpc = [
 langgraph = [
     "langgraph>=0.3.6,<2.0.0",
     "langchain>=0.1.17,<2.0.0",
-    "python-ulid>=3.0.0,<4.0.0",
+    "python-ulid>=3.0.0,<5.0.0",
     "msgpack>=1.0,<2.0",
 ]
 strands = [
     "strands-agents>=1.30.0,<2.0.0",
-    "python-ulid>=3.0.0,<4.0.0",
+    "python-ulid>=3.0.0,<5.0.0",
     "msgpack>=1.0,<2.0",
 ]
 # workflow has no third-party runtime deps beyond core dapr. The empty extra
