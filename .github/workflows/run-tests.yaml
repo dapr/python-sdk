@@ -119,3 +119,19 @@ jobs:
       - name: Validate examples
         run: |
           uv run pytest tests/examples/
+
+  # Single stable check name to mark as required in branch protection, so the
+  # required-checks list doesn't go stale when the Python version matrix
+  # changes. Skipped required checks count as passing, hence `if: always()`
+  # plus an explicit result check instead of relying on `needs` alone.
+  validate-complete:
+    needs: validate
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail unless the whole validate matrix succeeded
+        run: |
+          if [ "${{ needs.validate.result }}" != "success" ]; then
+            echo "validate matrix result: ${{ needs.validate.result }}"
+            exit 1
+          fi

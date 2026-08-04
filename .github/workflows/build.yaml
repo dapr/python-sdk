@@ -37,6 +37,8 @@ jobs:
             echo "Source files are not formatted correctly. Run 'uv run ruff check --fix && uv run ruff format'."
             exit 1
         fi
+    - name: Check Typing
+      run: uv run mypy
     - name: Verify main is on a .dev version
       if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
       run: |
@@ -95,8 +97,6 @@ jobs:
       uses: astral-sh/setup-uv@v8.3.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
-    - name: Check Typing
-      run: uv run mypy
     - name: Run unit-tests
       run: |
         uv run coverage run -m pytest tests -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
@@ -113,3 +113,19 @@ jobs:
         # can't silently go stale again, without letting codecov outages
         # block PRs or the merge queue.
         fail_ci_if_error: ${{ github.event_name == 'push' }}
+
+  # Single stable check name to mark as required in branch protection, so the
+  # required-checks list doesn't go stale when the build matrix changes.
+  # Skipped required checks count as passing, hence `if: always()` plus an
+  # explicit result check instead of relying on `needs` alone.
+  build-complete:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Fail unless the whole build matrix succeeded
+      run: |
+        if [ "${{ needs.build.result }}" != "success" ]; then
+          echo "build matrix result: ${{ needs.build.result }}"
+          exit 1
+        fi
