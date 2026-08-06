@@ -197,6 +197,7 @@ def test_cancelled_after_deadline_surfaces_as_timeout():
     code. Observed in CI against daprd from master; see
     test_orchestration_e2e_async.py::test_suspend_and_resume.
     """
+
     def cancel_after_budget_spent(*args, **kwargs):
         time.sleep(0.05)  # outlast the caller's budget, as a real expiry would
         raise _make_rpc_error(grpc.StatusCode.CANCELLED)
