@@ -683,22 +683,7 @@ class TaskHubGrpcWorker:
                 except Exception:
                     raise
 
-                work_item_stream = self._response_stream
-
-                def teardown_stream():
-                    """Cancels this specific work-item stream, forcing a reconnect.
-
-                    Bound to the stream the work item arrived on, so a late failure from a
-                    superseded connection is a no-op instead of killing the current one.
-                    Cancelling (rather than calling invalidate_connection, which mutates
-                    listener-loop-local state) is safe from a worker thread: the reader
-                    thread observes CANCELLED and the existing reconnect path runs, cache
-                    reset included.
-                    """
-                    try:
-                        work_item_stream.cancel()
-                    except Exception as cancel_error:
-                        self._logger.debug(f'Failed to cancel work-item stream: {cancel_error}')
+                teardown_stream = self._make_stream_teardown(self._response_stream)
 
                 # Use a thread to read from the blocking gRPC stream and forward to asyncio
                 import queue
@@ -1054,6 +1039,25 @@ class TaskHubGrpcWorker:
             )
         else:
             self._logger.exception(f'Failed to deliver {request_type} result: {rpc_error}')
+
+    def _make_stream_teardown(self, stream) -> Callable[[], None]:
+        """Builds a callable that cancels one work-item stream, forcing a reconnect.
+
+        Bound to the stream a work item arrived on, so a late failure from a superseded
+        connection is a no-op instead of killing the current one. Cancelling (rather than
+        invalidating the connection, which mutates listener-loop-local state) is safe from
+        a worker thread: the reader thread observes CANCELLED and the existing reconnect
+        path runs, history-cache reset included. Cancelling an already-dead stream is
+        expected and must not propagate.
+        """
+
+        def teardown_stream() -> None:
+            try:
+                stream.cancel()
+            except Exception as cancel_error:
+                self._logger.debug(f'Failed to cancel work-item stream: {cancel_error}')
+
+        return teardown_stream
 
     def _sweep_history_cache_loop(self):
         """Periodically reclaims TTL-expired history cache entries until shutdown."""

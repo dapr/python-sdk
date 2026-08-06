@@ -9,7 +9,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import patch
+import asyncio
+from unittest.mock import Mock, patch
+
+import grpc
+import pytest
 
 from dapr.ext.workflow._durabletask.aio.client import AsyncTaskHubGrpcClient
 from dapr.ext.workflow._durabletask.aio.internal.grpc_interceptor import (
@@ -21,6 +25,13 @@ from dapr.ext.workflow._durabletask.internal.shared import get_default_host_addr
 HOST_ADDRESS = 'localhost:50051'
 METADATA = [('key1', 'value1'), ('key2', 'value2')]
 INTERCEPTORS_AIO = [DefaultClientInterceptorImpl(METADATA)]
+
+
+def _make_async_rpc_error(code: grpc.StatusCode) -> grpc.RpcError:
+    err = grpc.RpcError()
+    err.code = lambda: code  # type: ignore[method-assign]
+    err.details = lambda: f'simulated {code.name}'  # type: ignore[method-assign]
+    return err
 
 
 def test_get_grpc_aio_channel_insecure():
@@ -211,3 +222,39 @@ def test_aio_channel_passes_base_options_and_max_lengths():
         assert ('grpc.max_send_message_length', 4321) in opts
         assert ('grpc.max_receive_message_length', 8765) in opts
         assert ('grpc.primary_user_agent', 'durabletask-aio-tests') in opts
+
+
+async def test_cancelled_after_deadline_surfaces_as_timeout():
+    """Async mirror of the sync deadline-cancellation mapping.
+
+    This is the path that actually failed in CI against daprd from master
+    (test_orchestration_e2e_async.py::test_suspend_and_resume): the bounded wait
+    expired as CANCELLED rather than DEADLINE_EXCEEDED and escaped as a raw
+    AioRpcError instead of TimeoutError.
+    """
+
+    async def cancel_after_budget_spent(*args, **kwargs):
+        await asyncio.sleep(0.05)  # outlast the caller's budget, as a real expiry would
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+
+    client = AsyncTaskHubGrpcClient()
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = cancel_after_budget_spent
+
+    with pytest.raises(TimeoutError):
+        await client.wait_for_orchestration_completion('test-instance', timeout=0.01)
+
+
+async def test_cancelled_within_deadline_still_propagates():
+    """A CANCELLED with budget remaining is a real cancellation, not a timeout."""
+
+    async def cancel_immediately(*args, **kwargs):
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+
+    client = AsyncTaskHubGrpcClient()
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = cancel_immediately
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        await client.wait_for_orchestration_completion('test-instance', timeout=300)
+    assert not isinstance(exc_info.value, TimeoutError)

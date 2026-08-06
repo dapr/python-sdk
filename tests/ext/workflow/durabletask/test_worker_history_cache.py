@@ -279,3 +279,45 @@ def test_disabled_worker_does_not_cache_and_passes_full_history():
     resolved = _resolve(worker, req, stub)
     assert len(resolved) == 4
     assert stub.get_instance_history_calls == 0
+
+
+class _RecordingStream:
+    """A work-item stream that records cancellation, optionally failing it."""
+
+    def __init__(self, raises: bool = False) -> None:
+        self.cancelled = 0
+        self._raises = raises
+
+    def cancel(self) -> None:
+        self.cancelled += 1
+        if self._raises:
+            raise RuntimeError('stream already dead')
+
+
+def test_stream_teardown_cancels_its_own_stream():
+    worker = _worker()
+    stream = _RecordingStream()
+
+    worker._make_stream_teardown(stream)()
+
+    assert stream.cancelled == 1
+
+
+def test_stream_teardown_swallows_cancel_failure():
+    """Cancelling an already-dead stream is expected and must not propagate."""
+    worker = _worker()
+    stream = _RecordingStream(raises=True)
+
+    worker._make_stream_teardown(stream)()  # must not raise
+
+    assert stream.cancelled == 1
+
+
+def test_sweep_loop_exits_on_shutdown():
+    worker = _worker()
+    worker._history_cache.put('a', _events(2))
+    worker._shutdown.set()
+
+    worker._sweep_history_cache_loop()  # returns immediately rather than sleeping
+
+    assert worker._history_cache.get('a') is not None

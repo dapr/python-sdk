@@ -187,3 +187,45 @@ def test_wait_for_orchestration_start_unbounded_transient_gives_up_with_rpc_erro
     # Retried at least once before giving up (proves it didn't fail-fast like the
     # non-transient path, and didn't loop forever).
     assert c._stub.WaitForInstanceStart.call_count >= 2
+
+
+def test_cancelled_after_deadline_surfaces_as_timeout():
+    """A bounded wait must raise TimeoutError even if expiry arrives as CANCELLED.
+
+    The sidecar can reset the stream (RST_STREAM CANCEL) just before gRPC raises
+    DEADLINE_EXCEEDED locally, so the same expiry reaches the client under either
+    code. Observed in CI against daprd from master; see
+    test_orchestration_e2e_async.py::test_suspend_and_resume.
+    """
+    def cancel_after_budget_spent(*args, **kwargs):
+        time.sleep(0.05)  # outlast the caller's budget, as a real expiry would
+        raise _make_rpc_error(grpc.StatusCode.CANCELLED)
+
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = cancel_after_budget_spent
+
+    with pytest.raises(TimeoutError):
+        c.wait_for_orchestration_completion('test-instance', timeout=0.01)
+
+
+def test_cancelled_within_deadline_still_propagates():
+    """A CANCELLED with budget remaining is a real cancellation, not a timeout."""
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = _make_rpc_error(grpc.StatusCode.CANCELLED)
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        c.wait_for_orchestration_completion('test-instance', timeout=300)
+    assert not isinstance(exc_info.value, TimeoutError)
+
+
+def test_cancelled_unbounded_wait_still_propagates():
+    """With no caller deadline there is nothing to attribute a CANCELLED to."""
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = _make_rpc_error(grpc.StatusCode.CANCELLED)
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        c.wait_for_orchestration_completion('test-instance', timeout=0)
+    assert not isinstance(exc_info.value, TimeoutError)
