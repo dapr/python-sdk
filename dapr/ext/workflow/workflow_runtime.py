@@ -119,6 +119,10 @@ class WorkflowRuntime:
         maximum_thread_pool_workers: Optional[int] = None,
         worker_ready_timeout: Optional[float] = None,
         max_grpc_message_length: Optional[int] = None,
+        disable_stateful_history: bool = False,
+        history_cache_ttl: Optional[float] = None,
+        history_cache_max_instances: Optional[int] = None,
+        history_cache_max_bytes: Optional[int] = None,
     ):
         """Initializes the workflow runtime.
 
@@ -146,6 +150,18 @@ class WorkflowRuntime:
                 ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` env var (if non-zero),
                 then the gRPC default (4 MiB). ``0`` in either source means
                 "no opinion" and falls through to the next source.
+            disable_stateful_history: Stop advertising
+                ``WORKER_CAPABILITY_STATEFUL_HISTORY`` to the sidecar, so every
+                work item carries the instance's full committed history and no
+                history is cached. Defaults to False (the optimization is on).
+            history_cache_ttl: Seconds an idle instance's cached history is kept
+                before the janitor reclaims it. ``None`` uses the worker default
+                (1 hour).
+            history_cache_max_instances: Maximum number of instances to keep
+                cached histories for, LRU-evicted beyond that. ``None`` uses the
+                worker default (100,000).
+            history_cache_max_bytes: Total byte budget across cached histories,
+                LRU-evicted beyond that. ``None`` or ``0`` means unbounded.
         """
         self._logger = Logger('WorkflowRuntime', logger_options)
         self._worker_ready_timeout = 30.0 if worker_ready_timeout is None else worker_ready_timeout
@@ -166,6 +182,11 @@ class WorkflowRuntime:
             all_interceptors.extend(interceptors)
         all_interceptors.append(DaprClientTimeoutInterceptor())
         channel_options = get_grpc_channel_options(max_grpc_message_length)
+        concurrency_options = worker.ConcurrencyOptions(
+            maximum_concurrent_activity_work_items=maximum_concurrent_activity_work_items,
+            maximum_concurrent_orchestration_work_items=maximum_concurrent_orchestration_work_items,
+            maximum_thread_pool_workers=maximum_thread_pool_workers,
+        )
         self.__worker = worker.TaskHubGrpcWorker(
             host_address=uri.endpoint,
             metadata=metadata,
@@ -174,11 +195,13 @@ class WorkflowRuntime:
             log_formatter=options.log_formatter,
             interceptors=all_interceptors,
             channel_options=channel_options,
-            concurrency_options=worker.ConcurrencyOptions(
-                maximum_concurrent_activity_work_items=maximum_concurrent_activity_work_items,
-                maximum_concurrent_orchestration_work_items=maximum_concurrent_orchestration_work_items,
-                maximum_thread_pool_workers=maximum_thread_pool_workers,
-            ),
+            concurrency_options=concurrency_options,
+            disable_stateful_history=disable_stateful_history,
+            # The history cache reads a non-positive bound as "use my default",
+            # so None collapses to 0 rather than duplicating the defaults here.
+            history_cache_ttl=history_cache_ttl or 0,
+            history_cache_max_instances=history_cache_max_instances or 0,
+            history_cache_max_bytes=history_cache_max_bytes or 0,
         )
 
     def register_workflow(self, fn: Workflow, *, name: Optional[str] = None):

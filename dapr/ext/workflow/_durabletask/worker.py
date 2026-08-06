@@ -229,6 +229,14 @@ _DEFAULT_HISTORY_CACHE_MAX_INSTANCES = 100_000
 _HISTORY_CACHE_SWEEP_INTERVAL = 60.0
 
 
+class _HistoryResolutionError(Exception):
+    """Raised when a delta work item's committed history could not be recovered.
+
+    Distinct from an orchestrator failure: the workflow itself is healthy, we just could
+    not reconstruct what to replay, so the item must be re-dispatched rather than failed.
+    """
+
+
 class _CachedHistory:
     """One instance's cached committed history on a work-item stream."""
 
@@ -675,6 +683,23 @@ class TaskHubGrpcWorker:
                 except Exception:
                     raise
 
+                work_item_stream = self._response_stream
+
+                def teardown_stream():
+                    """Cancels this specific work-item stream, forcing a reconnect.
+
+                    Bound to the stream the work item arrived on, so a late failure from a
+                    superseded connection is a no-op instead of killing the current one.
+                    Cancelling (rather than calling invalidate_connection, which mutates
+                    listener-loop-local state) is safe from a worker thread: the reader
+                    thread observes CANCELLED and the existing reconnect path runs, cache
+                    reset included.
+                    """
+                    try:
+                        work_item_stream.cancel()
+                    except Exception as cancel_error:
+                        self._logger.debug(f'Failed to cancel work-item stream: {cancel_error}')
+
                 # Use a thread to read from the blocking gRPC stream and forward to asyncio
                 import queue
 
@@ -805,6 +830,7 @@ class TaskHubGrpcWorker:
                                 work_item.workflowRequest,
                                 stub,
                                 work_item.completionToken,
+                                teardown_stream,
                             )
                         elif work_item.HasField('activityRequest'):
                             # Async user activities run on the event loop. Sync ones fall through
@@ -1042,6 +1068,9 @@ class TaskHubGrpcWorker:
         For a full send it is the request's pastEvents. For a delta send (cachedHistory) it
         is the cached prefix plus the delta, recovered via GetInstanceHistory on any cache
         miss (cold stream, eviction, or a prefix-length mismatch).
+
+        Raises:
+            _HistoryResolutionError: If the cache-miss fetch failed.
         """
         if not req.HasField('cachedHistory'):
             return list(req.pastEvents)
@@ -1050,7 +1079,13 @@ class TaskHubGrpcWorker:
         if cached is not None and len(cached) == req.cachedHistory.eventCount:
             return cached + list(req.pastEvents)
 
-        response = stub.GetInstanceHistory(pb.GetInstanceHistoryRequest(instanceId=req.instanceId))
+        history_request = pb.GetInstanceHistoryRequest(instanceId=req.instanceId)
+        try:
+            response = stub.GetInstanceHistory(history_request)
+        except Exception as ex:
+            raise _HistoryResolutionError(
+                f"Failed to fetch the committed history for '{req.instanceId}': {ex}"
+            ) from ex
         return list(response.events)
 
     def _update_history_cache(
@@ -1077,6 +1112,7 @@ class TaskHubGrpcWorker:
         req: pb.WorkflowRequest,
         stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
+        teardown_stream: Optional[Callable[[], None]] = None,
     ):
         try:
             executor = _OrchestrationExecutor(self._registry, self._logger)
@@ -1106,6 +1142,15 @@ class TaskHubGrpcWorker:
                 completionToken=completionToken,
                 version=version,
             )
+        except _HistoryResolutionError as ex:
+            # The instance is healthy, we just cannot tell what to replay. Dropping the
+            # stream makes the sidecar cancel and re-dispatch its pending items, and the
+            # next (cold) stream sends a full history. Responding with a failure here
+            # would terminally kill the workflow over a transient fetch error.
+            self._logger.error(f'{ex}. Resetting the work-item stream to force a re-dispatch.')
+            if teardown_stream is not None:
+                teardown_stream()
+            return
         except Exception as ex:
             self._logger.exception(
                 f"An error occurred while trying to execute instance '{req.instanceId}': {ex}"

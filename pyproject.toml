@@ -207,6 +207,8 @@ ignore_errors = true
 markers = [
     'example_dir(name): set the example directory for the dapr fixture',
     'perf: timing-sensitive dispatch regression tests',
+    'e2e: tests requiring a running Dapr sidecar',
+    'dapr_head: tests requiring a daprd built from dapr/dapr master, not a release',
 ]
 pythonpath = ["."]
 asyncio_mode = "auto"

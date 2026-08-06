@@ -18,9 +18,15 @@ of full vs delta work items with a GetInstanceHistory fallback on a cache miss.
 
 from typing import cast
 
+import pytest
+
 import dapr.ext.workflow._durabletask.internal.orchestrator_service_pb2_grpc as stubs
 import dapr.ext.workflow._durabletask.internal.protos as pb
-from dapr.ext.workflow._durabletask.worker import TaskHubGrpcWorker, _WorkflowHistoryCache
+from dapr.ext.workflow._durabletask.worker import (
+    TaskHubGrpcWorker,
+    _HistoryResolutionError,
+    _WorkflowHistoryCache,
+)
 
 
 class _Clock:
@@ -48,6 +54,19 @@ class _FakeStub:
     def GetInstanceHistory(self, request: pb.GetInstanceHistoryRequest):
         self.get_instance_history_calls += 1
         return pb.GetInstanceHistoryResponse(events=self._events)
+
+
+class _FailingHistoryStub:
+    """A stub whose GetInstanceHistory always fails, recording any delivered response."""
+
+    def __init__(self) -> None:
+        self.responses: list[pb.WorkflowResponse] = []
+
+    def GetInstanceHistory(self, request: pb.GetInstanceHistoryRequest):
+        raise RuntimeError('sidecar unavailable')
+
+    def CompleteOrchestratorTask(self, response: pb.WorkflowResponse) -> None:
+        self.responses.append(response)
 
 
 # --- cache bounds -----------------------------------------------------------------
@@ -215,6 +234,39 @@ def test_update_cache_stores_then_evicts_on_complete():
     completed = [pb.WorkflowAction(completeWorkflow=pb.CompleteWorkflowAction())]
     worker._update_history_cache('a', _events(6), completed)
     assert worker._history_cache.get('a') is None
+
+
+def test_resolve_fetch_failure_raises_history_resolution_error():
+    worker = _worker()
+    stub = _FailingHistoryStub()
+    req = pb.WorkflowRequest(instanceId='a', pastEvents=_events(3))
+    req.cachedHistory.eventCount = 5
+
+    with pytest.raises(_HistoryResolutionError):
+        worker._resolve_history(req, cast(stubs.TaskHubSidecarServiceStub, stub))
+
+
+def test_fetch_failure_tears_down_stream_instead_of_failing_the_workflow():
+    """A transient fetch error must re-dispatch the item, not terminally fail the instance."""
+    worker = _worker()
+    stub = _FailingHistoryStub()
+    req = pb.WorkflowRequest(instanceId='a', pastEvents=_events(3))
+    req.cachedHistory.eventCount = 5
+    teardown_calls = 0
+
+    def teardown_stream() -> None:
+        nonlocal teardown_calls
+        teardown_calls += 1
+
+    worker._execute_orchestrator(
+        req,
+        cast(stubs.TaskHubSidecarServiceStub, stub),
+        'completion-token',
+        teardown_stream,
+    )
+
+    assert teardown_calls == 1
+    assert stub.responses == []  # no response at all, so the sidecar re-dispatches
 
 
 def test_disabled_worker_does_not_cache_and_passes_full_history():
