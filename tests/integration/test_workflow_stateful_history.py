@@ -21,19 +21,17 @@ sidecar that never sends deltas produce identical results. The counts come from 
 interceptor watching the real work-item stream.
 """
 
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING
 
 import pytest
 
-from dapr.ext.workflow import (
-    DaprWorkflowContext,
-    WorkflowActivityContext,
-    WorkflowRuntime,
-    WorkflowState,
-    WorkflowStatus,
-)
-from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from tests.integration.workflow_observer import DeliveryCounts, WorkItemObserver
+
+if TYPE_CHECKING:
+    from dapr.ext.workflow import WorkflowState
 
 # The released sidecar the default `validate` job installs predates the feature and would
 # fail the delta assertions below, so only the dapr-head job runs this module.
@@ -65,6 +63,12 @@ def _run_accumulate(
     per run because ``register_workflow`` stamps the function object, so the same callable
     cannot be registered against a second runtime.
     """
+    from dapr.ext.workflow import (
+        DaprWorkflowContext,
+        WorkflowActivityContext,
+        WorkflowRuntime,
+    )
+    from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 
     def plus_one(ctx: WorkflowActivityContext, value: int) -> int:
         return value + 1
@@ -104,6 +108,8 @@ def _run_accumulate(
 
 
 def _assert_completed(state: WorkflowState) -> None:
+    from dapr.ext.workflow import WorkflowStatus
+
     assert state.runtime_status == WorkflowStatus.COMPLETED
     assert state.serialized_output == json.dumps(WORKFLOW_TURNS)
 
