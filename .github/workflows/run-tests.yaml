@@ -39,10 +39,14 @@ jobs:
     steps:
       - name: Parse repository_dispatch payload
         if: github.event_name == 'repository_dispatch'
+        env:
+          COMMAND: ${{ github.event.client_payload.command }}
+          PULL_HEAD_REPO: ${{ github.event.client_payload.pull_head_repo }}
+          PULL_HEAD_REF: ${{ github.event.client_payload.pull_head_ref }}
         run: |
-          if [ ${{ github.event.client_payload.command }} = "ok-to-test" ]; then
-            echo "CHECKOUT_REPO=${{ github.event.client_payload.pull_head_repo }}" >> $GITHUB_ENV
-            echo "CHECKOUT_REF=${{ github.event.client_payload.pull_head_ref }}" >> $GITHUB_ENV
+          if [ "$COMMAND" = "ok-to-test" ]; then
+            echo "CHECKOUT_REPO=$PULL_HEAD_REPO" >> "$GITHUB_ENV"
+            echo "CHECKOUT_REF=$PULL_HEAD_REF" >> "$GITHUB_ENV"
           fi
 
       - name: Check out code onto GOPATH
@@ -142,10 +146,14 @@ jobs:
     steps:
       - name: Parse repository_dispatch payload
         if: github.event_name == 'repository_dispatch'
+        env:
+          COMMAND: ${{ github.event.client_payload.command }}
+          PULL_HEAD_REPO: ${{ github.event.client_payload.pull_head_repo }}
+          PULL_HEAD_REF: ${{ github.event.client_payload.pull_head_ref }}
         run: |
-          if [ ${{ github.event.client_payload.command }} = "ok-to-test" ]; then
-            echo "CHECKOUT_REPO=${{ github.event.client_payload.pull_head_repo }}" >> $GITHUB_ENV
-            echo "CHECKOUT_REF=${{ github.event.client_payload.pull_head_ref }}" >> $GITHUB_ENV
+          if [ "$COMMAND" = "ok-to-test" ]; then
+            echo "CHECKOUT_REPO=$PULL_HEAD_REPO" >> "$GITHUB_ENV"
+            echo "CHECKOUT_REF=$PULL_HEAD_REF" >> "$GITHUB_ENV"
           fi
 
       - name: Check out code
@@ -192,13 +200,20 @@ jobs:
         env:
           DAPR_GRPC_ENDPOINT: 127.0.0.1:${{ env.E2E_GRPC_PORT }}
         run: |
-          dapr run --app-id dt-e2e \
-            --dapr-grpc-port ${{ env.E2E_GRPC_PORT }} \
-            --dapr-http-port ${{ env.E2E_HTTP_PORT }} \
+          nohup dapr run --app-id dt-e2e \
+            --dapr-grpc-port "$E2E_GRPC_PORT" \
+            --dapr-http-port "$E2E_HTTP_PORT" \
             --dapr-internal-grpc-port 13702 \
-            --metrics-port 13703 &
-          timeout 90 bash -c 'until curl -fsS http://127.0.0.1:${{ env.E2E_HTTP_PORT }}/v1.0/healthz/outbound > /dev/null; do sleep 1; done'
+            --metrics-port 13703 > "$RUNNER_TEMP/dt-e2e-sidecar.log" 2>&1 &
+          timeout 90 bash -c \
+            'until curl -fsS "http://127.0.0.1:$E2E_HTTP_PORT/v1.0/healthz/outbound" > /dev/null; do sleep 1; done' \
+            || { echo 'sidecar failed to become healthy'; cat "$RUNNER_TEMP/dt-e2e-sidecar.log"; exit 1; }
           uv run pytest tests/ext/workflow/durabletask -m e2e -v
+      # A workflow test failing usually says more about the sidecar than the SDK,
+      # and the log is otherwise lost with the runner.
+      - name: Dump sidecar log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/dt-e2e-sidecar.log" || true
 
   # Single stable check name to mark as required in branch protection, so the
   # required-checks list doesn't go stale when the Python version matrix

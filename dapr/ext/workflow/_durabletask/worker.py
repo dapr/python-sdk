@@ -1116,7 +1116,7 @@ class TaskHubGrpcWorker:
         req: pb.WorkflowRequest,
         stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
-        teardown_stream: Optional[Callable[[], None]] = None,
+        teardown_stream: Callable[[], None],
     ):
         try:
             executor = _OrchestrationExecutor(self._registry, self._logger)
@@ -1152,8 +1152,7 @@ class TaskHubGrpcWorker:
             # next (cold) stream sends a full history. Responding with a failure here
             # would terminally kill the workflow over a transient fetch error.
             self._logger.error(f'{ex}. Resetting the work-item stream to force a re-dispatch.')
-            if teardown_stream is not None:
-                teardown_stream()
+            teardown_stream()
             return
         except Exception as ex:
             self._logger.exception(

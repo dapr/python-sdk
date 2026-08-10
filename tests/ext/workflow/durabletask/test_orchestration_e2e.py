@@ -155,7 +155,11 @@ def test_stateful_history_multi_turn():
 
     Deltas are exercised because the worker advertises WORKER_CAPABILITY_STATEFUL_HISTORY by
     default; the reconstructed history must yield the same result a full-history run would.
-    Wire-level delta verification lives in the durabletask-go and dapr integration suites.
+
+    This covers correctness only. That deltas are actually sent, and that the cache is hit
+    rather than recovered via GetInstanceHistory, is asserted on the wire in
+    tests/integration/test_workflow_stateful_history.py, which counts work items through a
+    gRPC interceptor.
     """
     state = _run_accumulate(disable_stateful_history=False)
     assert state is not None
