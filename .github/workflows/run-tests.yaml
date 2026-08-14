@@ -175,16 +175,20 @@ jobs:
       # Go from auto-downloading a newer toolchain when dapr bumps the directive
       # (observed: go.mod required 1.26.6 while a '1.26' pin resolved to 1.26.5).
       # Read the exact requirement from the ref being built instead.
+      # The file must be named exactly `go.mod`: setup-go's parseGoVersionFile
+      # switches on `path.basename(...) === 'go.mod'` and otherwise treats the
+      # whole file as a literal version string.
       - name: Fetch go.mod of the dapr ref under test
         env:
           DAPR_REF: ${{ github.event.inputs.daprdapr_commit || 'master' }}
         run: |
+          mkdir -p "$RUNNER_TEMP/dapr-mod"
           curl -fsSL "https://raw.githubusercontent.com/dapr/dapr/$DAPR_REF/go.mod" \
-            -o "$RUNNER_TEMP/dapr-go.mod"
+            -o "$RUNNER_TEMP/dapr-mod/go.mod"
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version-file: ${{ runner.temp }}/dapr-go.mod
+          go-version-file: ${{ runner.temp }}/dapr-mod/go.mod
           # The Go build happens in the composite action's own clone; this repo
           # has no go.sum for setup-go's cache to key on.
           cache: false
