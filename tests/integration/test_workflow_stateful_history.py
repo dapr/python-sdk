@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.integration.workflow_observer import DeliveryCounts, WorkItemObserver
+from tests.workflow_observer import DeliveryCounts, WorkItemObserver
 
 if TYPE_CHECKING:
     from dapr.ext.workflow import WorkflowState
