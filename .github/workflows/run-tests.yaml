@@ -39,10 +39,14 @@ jobs:
     steps:
       - name: Parse repository_dispatch payload
         if: github.event_name == 'repository_dispatch'
+        env:
+          COMMAND: ${{ github.event.client_payload.command }}
+          PULL_HEAD_REPO: ${{ github.event.client_payload.pull_head_repo }}
+          PULL_HEAD_REF: ${{ github.event.client_payload.pull_head_ref }}
         run: |
-          if [ ${{ github.event.client_payload.command }} = "ok-to-test" ]; then
-            echo "CHECKOUT_REPO=${{ github.event.client_payload.pull_head_repo }}" >> $GITHUB_ENV
-            echo "CHECKOUT_REF=${{ github.event.client_payload.pull_head_ref }}" >> $GITHUB_ENV
+          if [ "$COMMAND" = "ok-to-test" ]; then
+            echo "CHECKOUT_REPO=$PULL_HEAD_REPO" >> "$GITHUB_ENV"
+            echo "CHECKOUT_REF=$PULL_HEAD_REF" >> "$GITHUB_ENV"
           fi
 
       - name: Check out code onto GOPATH
@@ -113,19 +117,125 @@ jobs:
           nohup ollama serve > "$RUNNER_TEMP/ollama-serve.log" 2>&1 &
           timeout 60 bash -c 'until curl -fsS http://127.0.0.1:11434/api/tags > /dev/null; do sleep 1; done'
           ollama pull llama3.2:latest
+      # `dapr_head` covers behavior that only exists in daprd built from master;
+      # this job installs the latest release, so those tests run in
+      # validate-dapr-head instead.
       - name: Run integration tests
         run: |
-          uv run pytest tests/integration/
+          uv run pytest tests/integration/ -m "not dapr_head"
       - name: Validate examples
         run: |
           uv run pytest tests/examples/
+
+  # The stateful-history delta path (dapr/durabletask-go#110, reaching dapr via
+  # dapr/dapr#10142) is not in any release yet, so the matrix above cannot
+  # exercise it. This job builds daprd from master and runs the workflow suites
+  # against it. It also runs the vendored durabletask e2e tests, which nothing
+  # else does: build.yaml deselects `-m e2e`, and the validate job above only
+  # covers tests/integration and tests/examples.
+  validate-dapr-head:
+    runs-on: ubuntu-latest
+    env:
+      CHECKOUT_REPO: ${{ github.repository }}
+      CHECKOUT_REF: ${{ github.ref }}
+      # Distinct from the integration suite's 135xx block and the examples
+      # suite's 136xx block, and below the OS ephemeral range. See the "Port
+      # allocation" section in tests/integration/AGENTS.md.
+      E2E_HTTP_PORT: 13700
+      E2E_GRPC_PORT: 13701
+    steps:
+      - name: Parse repository_dispatch payload
+        if: github.event_name == 'repository_dispatch'
+        env:
+          COMMAND: ${{ github.event.client_payload.command }}
+          PULL_HEAD_REPO: ${{ github.event.client_payload.pull_head_repo }}
+          PULL_HEAD_REF: ${{ github.event.client_payload.pull_head_ref }}
+        run: |
+          if [ "$COMMAND" = "ok-to-test" ]; then
+            echo "CHECKOUT_REPO=$PULL_HEAD_REPO" >> "$GITHUB_ENV"
+            echo "CHECKOUT_REF=$PULL_HEAD_REF" >> "$GITHUB_ENV"
+          fi
+
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.CHECKOUT_REPO }}
+          ref: ${{ env.CHECKOUT_REF }}
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+      - name: Install dependencies
+        run: uv sync --frozen --all-packages --group tests
+      # setup-dapr-runtime builds daprd inside its own clone of dapr/dapr, so the
+      # toolchain has to satisfy that repo's `go` directive, not this one's. A
+      # static pin is not enough: setup-go exports GOTOOLCHAIN=local, which stops
+      # Go from auto-downloading a newer toolchain when dapr bumps the directive
+      # (observed: go.mod required 1.26.6 while a '1.26' pin resolved to 1.26.5).
+      # Read the exact requirement from the ref being built instead.
+      # The file must be named exactly `go.mod`: setup-go's parseGoVersionFile
+      # switches on `path.basename(...) === 'go.mod'` and otherwise treats the
+      # whole file as a literal version string.
+      - name: Fetch go.mod of the dapr ref under test
+        env:
+          DAPR_REF: ${{ github.event.inputs.daprdapr_commit || 'master' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/dapr-mod"
+          curl -fsSL "https://raw.githubusercontent.com/dapr/dapr/$DAPR_REF/go.mod" \
+            -o "$RUNNER_TEMP/dapr-mod/go.mod"
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: ${{ runner.temp }}/dapr-mod/go.mod
+          # The Go build happens in the composite action's own clone; this repo
+          # has no go.sum for setup-go's cache to key on.
+          cache: false
+      - name: Set up Dapr CLI
+        uses: dapr/.github/.github/actions/setup-dapr-cli@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # `dapr init` lays down the latest release, then the action overwrites
+      # ~/.dapr/bin/daprd with a build of `commit`. Placement and scheduler stay
+      # on release images, which is fine here: the whole server side of this
+      # feature lives in daprd's embedded durabletask-go grpcExecutor.
+      - name: Set up Dapr runtime from master
+        uses: dapr/.github/.github/actions/setup-dapr-runtime@main
+        with:
+          commit: ${{ github.event.inputs.daprdapr_commit || 'master' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run stateful-history integration tests
+        run: |
+          uv run pytest tests/integration/ -m dapr_head -v
+      # These drive a bare TaskHubGrpcWorker rather than the DaprTestEnvironment
+      # fixture, so they need a sidecar of their own and take its address from
+      # DAPR_GRPC_ENDPOINT.
+      - name: Run vendored durabletask e2e tests
+        env:
+          DAPR_GRPC_ENDPOINT: 127.0.0.1:${{ env.E2E_GRPC_PORT }}
+        run: |
+          nohup dapr run --app-id dt-e2e \
+            --dapr-grpc-port "$E2E_GRPC_PORT" \
+            --dapr-http-port "$E2E_HTTP_PORT" \
+            --dapr-internal-grpc-port 13702 \
+            --metrics-port 13703 > "$RUNNER_TEMP/dt-e2e-sidecar.log" 2>&1 &
+          timeout 90 bash -c \
+            'until curl -fsS "http://127.0.0.1:$E2E_HTTP_PORT/v1.0/healthz/outbound" > /dev/null; do sleep 1; done' \
+            || { echo 'sidecar failed to become healthy'; cat "$RUNNER_TEMP/dt-e2e-sidecar.log"; exit 1; }
+          uv run pytest tests/ext/workflow/durabletask -m e2e -v
+      # A workflow test failing usually says more about the sidecar than the SDK,
+      # and the log is otherwise lost with the runner.
+      - name: Dump sidecar log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/dt-e2e-sidecar.log" || true
 
   # Single stable check name to mark as required in branch protection, so the
   # required-checks list doesn't go stale when the Python version matrix
   # changes. Skipped required checks count as passing, hence `if: always()`
   # plus an explicit result check instead of relying on `needs` alone.
   validate-complete:
-    needs: validate
+    needs: [validate, validate-dapr-head]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -133,5 +243,11 @@ jobs:
         run: |
           if [ "${{ needs.validate.result }}" != "success" ]; then
             echo "validate matrix result: ${{ needs.validate.result }}"
+            exit 1
+          fi
+      - name: Fail unless the dapr-head job succeeded
+        run: |
+          if [ "${{ needs.validate-dapr-head.result }}" != "success" ]; then
+            echo "validate-dapr-head result: ${{ needs.validate-dapr-head.result }}"
             exit 1
           fi

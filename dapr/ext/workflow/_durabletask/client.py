@@ -307,6 +307,20 @@ class TaskHubGrpcClient:
     # the long-poll), so its indefinite wait is preserved.
     _MAX_TRANSIENT_RETRY_SECONDS = 30.0
 
+    @staticmethod
+    def _is_deadline_cancellation(code, deadline: Optional[float]) -> bool:
+        """Reports whether a CANCELLED status is really the caller's deadline expiring.
+
+        As a bounded wait times out, the sidecar can reset the stream (RST_STREAM
+        CANCEL) marginally before gRPC raises DEADLINE_EXCEEDED locally, so the same
+        expiry surfaces as CANCELLED. Callers asked for a timeout and must see
+        TimeoutError either way. Requiring the budget to be spent keeps a genuine
+        cancellation, or a reset with time still on the clock, propagating as-is.
+        """
+        if code != grpc.StatusCode.CANCELLED or deadline is None:
+            return False
+        return time.monotonic() >= deadline
+
     def _call_with_transient_retry(self, instance_id, timeout, call_fn):
         """Run a gRPC wait call, retrying transient errors until the user
         timeout deadline. Re-raises non-transient errors immediately.
@@ -333,6 +347,8 @@ class TaskHubGrpcClient:
             except grpc.RpcError as rpc_error:
                 code = rpc_error.code()  # type: ignore
                 if code == grpc.StatusCode.DEADLINE_EXCEEDED:
+                    raise _TransientTimeout()
+                if self._is_deadline_cancellation(code, deadline):
                     raise _TransientTimeout()
                 if code not in self._TRANSIENT_RPC_CODES:
                     raise
