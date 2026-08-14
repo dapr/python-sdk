@@ -170,13 +170,24 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --all-packages --group tests
       # setup-dapr-runtime builds daprd inside its own clone of dapr/dapr, so the
-      # toolchain has to satisfy that repo's `go` directive, not this one's. The
-      # action installs Go itself only when none is on PATH, and the runner ships
-      # one that may be older than dapr master requires, so pin it here instead.
+      # toolchain has to satisfy that repo's `go` directive, not this one's. A
+      # static pin is not enough: setup-go exports GOTOOLCHAIN=local, which stops
+      # Go from auto-downloading a newer toolchain when dapr bumps the directive
+      # (observed: go.mod required 1.26.6 while a '1.26' pin resolved to 1.26.5).
+      # Read the exact requirement from the ref being built instead.
+      - name: Fetch go.mod of the dapr ref under test
+        env:
+          DAPR_REF: ${{ github.event.inputs.daprdapr_commit || 'master' }}
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/dapr/dapr/$DAPR_REF/go.mod" \
+            -o "$RUNNER_TEMP/dapr-go.mod"
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: '1.26'
+          go-version-file: ${{ runner.temp }}/dapr-go.mod
+          # The Go build happens in the composite action's own clone; this repo
+          # has no go.sum for setup-go's cache to key on.
+          cache: false
       - name: Set up Dapr CLI
         uses: dapr/.github/.github/actions/setup-dapr-cli@main
         with:
