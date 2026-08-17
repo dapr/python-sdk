@@ -244,6 +244,48 @@ def new_create_child_workflow_action(
     )
 
 
+def new_create_detached_workflow_action(
+    id: int,
+    name: str,
+    instance_id: str,
+    encoded_input: Optional[str],
+    router: Optional[pb.TaskRouter] = None,
+    scheduled_start_timestamp: Optional[timestamp_pb2.Timestamp] = None,
+) -> pb.WorkflowAction:
+    """Build a WorkflowAction that spawns a detached workflow.
+
+    The detached workflow is fully decoupled from the caller: no parent
+    linkage is recorded on the new instance and no completion or failure
+    flows back. Detached spawns intentionally do not propagate the caller's
+    history, so no historyPropagationScope is exposed here.
+    """
+    detached = pb.CreateDetachedWorkflowAction(
+        instanceId=instance_id,
+        name=name,
+        input=get_string_value(encoded_input),
+        router=router,
+    )
+    if scheduled_start_timestamp is not None:
+        detached.scheduledStartTimestamp.CopyFrom(scheduled_start_timestamp)
+    return pb.WorkflowAction(
+        id=id,
+        createDetachedWorkflow=detached,
+        router=router,
+    )
+
+
+def new_detached_workflow_instance_created_event(
+    event_id: int, instance_id: str
+) -> pb.HistoryEvent:
+    return pb.HistoryEvent(
+        eventId=event_id,
+        timestamp=timestamp_pb2.Timestamp(),
+        detachedWorkflowInstanceCreated=pb.DetachedWorkflowInstanceCreatedEvent(
+            instanceId=instance_id,
+        ),
+    )
+
+
 def is_empty(v: wrappers_pb2.StringValue):
     return v is None or v.value == ''
 
