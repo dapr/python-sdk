@@ -86,6 +86,7 @@ from dapr.clients.grpc._state import StateItem, StateOptions
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
 from dapr.clients.grpc.subscription import StreamInactiveError, Subscription
 from dapr.clients.health import DaprHealth
+from dapr.clients.analytics import report_analytics
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
@@ -144,6 +145,8 @@ class DaprGrpcClient:
                 receive limit (matches the Java SDK property of the same name).
             retry_policy (RetryPolicy optional): Specifies retry behaviour
         """
+        report_analytics()
+
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 

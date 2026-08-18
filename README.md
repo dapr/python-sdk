@@ -179,6 +179,24 @@ export DAPR_BRANCH=release-1.18 # Optional, defaults to master
 uv run ./tools/regen_grpcclient.sh
 ```
 
+## Usage Analytics
+
+The Python SDK reports an anonymous usage event the first time a Dapr client is created in a process. PyPI publishes only aggregate download counts, so this is the main signal maintainers have about how the SDK is actually used.
+
+**What is sent:** SDK version, operating system, architecture, and Python version — sent once per process, on a background daemon thread. No application data, configuration, app IDs, or hostnames are collected. The receiving service ([Scarf](https://scarf.sh)) uses the request IP to derive coarse company and location information and does not retain the raw IP.
+
+**Failure is silent by design:** the request has a 2 second timeout and every error is swallowed, so blocked egress and air-gapped clusters are unaffected and nothing is ever logged to your application's output.
+
+To opt out, set any of the following environment variables before starting your application:
+
+```bash
+export DO_NOT_TRACK=1
+# or
+export SCARF_NO_ANALYTICS=1
+# or
+export DAPR_DISABLE_ANALYTICS=1
+```
+
 ## Help & Feedback
 
 Need help or have feedback on the SDK? Please open a GitHub issue or come chat with us in the `#python-sdk` channel of our Discord server ([click here to join](https://discord.gg/MySdVxrH)).
