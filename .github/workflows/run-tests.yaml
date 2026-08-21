@@ -88,7 +88,7 @@ jobs:
         with:
           python-version: ${{ matrix.python_ver }}
       - name: Install uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.0.1
       - name: Install dependencies
         run: uv sync --frozen --all-packages --group tests
       - name: Set up Dapr CLI
@@ -166,7 +166,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.0.1
       - name: Install dependencies
         run: uv sync --frozen --all-packages --group tests
       # setup-dapr-runtime builds daprd inside its own clone of dapr/dapr, so the
