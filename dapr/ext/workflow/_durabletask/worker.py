@@ -17,6 +17,7 @@ import os
 import random
 import threading
 import time
+import uuid
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -1608,6 +1609,9 @@ class _RuntimeOrchestrationContext(
     @property
     def is_replaying(self) -> bool:
         return self._is_replaying
+
+    def new_guid(self) -> uuid.UUID:
+        return self.uuid4()
 
     def set_custom_status(self, custom_status: str) -> None:
         if custom_status is not None and not isinstance(custom_status, str):
