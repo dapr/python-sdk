@@ -70,6 +70,16 @@ class UtilTests(unittest.TestCase):
         self.assertEqual(duration, '0h0m1s500ms0μs')
         self.assertEqual(convert_from_dapr_duration(duration), timedelta(milliseconds=1500))
 
+        # A fraction just under a second must not round up to the next whole second.
+        duration = convert_to_dapr_duration(timedelta(milliseconds=1999))
+        self.assertEqual(duration, '0h0m1s999ms0μs')
+        self.assertEqual(convert_from_dapr_duration(duration), timedelta(milliseconds=1999))
+
+        # A tiny fraction must not be dropped from the ms field.
+        duration = convert_to_dapr_duration(timedelta(milliseconds=1001))
+        self.assertEqual(duration, '0h0m1s1ms0μs')
+        self.assertEqual(convert_from_dapr_duration(duration), timedelta(milliseconds=1001))
+
     def test_convert_invalid_duration_string(self):
         TESTSTRING = '4h15m40s123ms35μshello'
         with self.assertRaises(ValueError) as exeception_context:
