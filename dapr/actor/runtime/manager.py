@@ -67,9 +67,10 @@ class ActorManager:
                 f'{self._runtime_ctx.actor_type_info.type_name} does not implment Remindable.'
             )
         request_obj = self._message_serializer.deserialize(request_body, object)
-        if isinstance(request_obj, dict):
-            reminder_data = ActorReminderData.from_dict(reminder_name, request_obj)
-        # ignore if request_obj is not dict
+        if not isinstance(request_obj, dict):
+            # ignore if request_obj is not dict
+            return
+        reminder_data = ActorReminderData.from_dict(reminder_name, request_obj)
 
         async def invoke_reminder(actor: Actor) -> Optional[bytes]:
             reminder = getattr(actor, REMINDER_METHOD_NAME)
