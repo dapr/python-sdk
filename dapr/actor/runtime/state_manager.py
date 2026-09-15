@@ -225,13 +225,11 @@ class ActorStateManager(Generic[T]):
         # TODO: Get all state names from Dapr once implemented.
         def append_names_sync():
             state_change_tracker = self._get_contextual_state_tracker()
-            state_names = []
-            for key, value in state_change_tracker.items():
-                if value.change_kind == StateChangeKind.add:
-                    state_names.append(key)
-                elif value.change_kind == StateChangeKind.remove:
-                    state_names.append(key)
-            return state_names
+            return [
+                key
+                for key, value in state_change_tracker.items()
+                if value.change_kind != StateChangeKind.remove
+            ]
 
         default_loop = asyncio.get_running_loop()
         return await default_loop.run_in_executor(None, append_names_sync)
