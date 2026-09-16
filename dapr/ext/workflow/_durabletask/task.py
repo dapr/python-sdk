@@ -180,6 +180,55 @@ class OrchestrationContext(ABC):
         pass
 
     @abstractmethod
+    def schedule_new_workflow(
+        self,
+        workflow: Union[Orchestrator[TInput, TOutput], str],
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        start_at: Optional[datetime] = None,
+        app_id: Optional[str] = None,
+        app_namespace: Optional[str] = None,
+    ) -> str:
+        """Spawn a detached workflow instance and return its ID synchronously.
+
+        Unlike ``call_sub_orchestrator``, the spawned workflow is fully
+        decoupled from the caller: no parent linkage is recorded on the new
+        instance and no completion or failure flows back. There is no
+        awaitable task — the call resolves as soon as the runtime accepts the
+        action.
+
+        Parameters
+        ----------
+        workflow: Orchestrator[TInput, TOutput] | str
+            A reference to the workflow function to spawn, or its registered
+            name (string form is required for cross-app spawns).
+        input: TInput | None
+            Optional JSON-serializable input to pass to the spawned workflow.
+        instance_id: str | None
+            A unique instance ID for the spawned workflow. If not specified,
+            a deterministic ID derived from the caller's instance ID and a
+            dedicated detached counter is used so replay resolves to the
+            same record in history.
+        start_at: datetime | None
+            Wall-clock time at which the spawned workflow should begin
+            executing. If not specified or in the past, the workflow starts
+            immediately.
+        app_id: str | None
+            The app ID that will execute the spawned workflow. If not
+            specified, the same app as the caller is used.
+        app_namespace: str | None
+            The Dapr namespace of the target app. Only meaningful with
+            ``app_id``.
+
+        Returns
+        -------
+        str
+            The instance ID of the spawned workflow.
+        """
+        pass
+
+    @abstractmethod
     def wait_for_external_event(
         self, name: str, *, timeout: Optional[Union[datetime, timedelta]] = None
     ) -> Task:
