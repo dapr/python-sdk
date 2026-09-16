@@ -4,6 +4,10 @@ This example utilizes a publisher and a subscriber to show the bidirectional pub
 It creates a publisher and calls the `publish_event` method in the `DaprClient`.
 In the s`subscriber.py` file it creates a subscriber object that can call the `next_message` method to get new messages from the stream. After processing the new message, it returns a status to the stream.
 
+This is the client-side streaming subscription API, where your code pulls messages. For the
+server-side callback model — where Dapr delivers messages to `@app.subscribe` handlers on an
+asyncio gRPC app — see [`pubsub-simple-async`](../pubsub-simple-async).
+
 
 > **Note:** Make sure to use the latest proto bindings
 
