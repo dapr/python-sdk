@@ -117,6 +117,17 @@ class ActorManagerReminderTests(unittest.TestCase):
         _run(manager.activate_actor(test_actor_id))
         _run(manager.fire_reminder(test_actor_id, 'test_reminder', self._test_reminder_req))
 
+    def test_fire_reminder_non_dict_payload_is_ignored(self):
+        test_actor_id = ActorId('testid')
+        test_type_info = ActorTypeInformation.create(FakeSimpleReminderActor)
+        ctx = ActorRuntimeContext(
+            test_type_info, self._serializer, self._serializer, self._fake_client
+        )
+        manager = ActorManager(ctx)
+        _run(manager.activate_actor(test_actor_id))
+        # A non-dict payload (e.g. JSON null) should be ignored, not raise.
+        _run(manager.fire_reminder(test_actor_id, 'test_reminder', b'null'))
+
 
 class ActorManagerTimerTests(unittest.TestCase):
     def setUp(self):
