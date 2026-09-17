@@ -33,6 +33,20 @@ class _TransientTimeout(Exception):
     budget. Callers convert this to a public ``TimeoutError``."""
 
 
+class _Unset:
+    """Sentinel for an argument that was not supplied.
+
+    Distinct from ``None``, which is a meaningful value for the rerun input:
+    omitting ``input`` keeps the original, passing ``None`` clears it.
+    """
+
+    def __repr__(self) -> str:
+        return '<unset>'
+
+
+UNSET = _Unset()
+
+
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
@@ -157,6 +171,34 @@ def new_orchestration_state(
         state.output.value if not helpers.is_empty(state.output) else None,
         state.customStatus.value if not helpers.is_empty(state.customStatus) else None,
         failure_details,
+    )
+
+
+def _new_rerun_request(
+    instance_id: str,
+    event_id: int,
+    *,
+    new_instance_id: Optional[str],
+    input: Union[Any, _Unset],
+    new_child_instance_id: Optional[str],
+) -> pb.RerunWorkflowFromEventRequest:
+    """Build a RerunWorkflowFromEvent request, resolving the input sentinel.
+
+    The wire format carries the replacement input in a non-optional
+    ``StringValue`` plus an ``overwriteInput`` flag, so "leave the input alone"
+    and "replace it with null" are only distinguishable through the flag. The
+    sentinel collapses that pair into a single argument.
+    """
+    overwrite_input = not isinstance(input, _Unset)
+    return pb.RerunWorkflowFromEventRequest(
+        sourceInstanceID=instance_id,
+        eventID=event_id,
+        newInstanceID=new_instance_id,
+        input=wrappers_pb2.StringValue(value=shared.to_json(input))
+        if overwrite_input and input is not None
+        else None,
+        overwriteInput=overwrite_input,
+        newChildWorkflowInstanceID=new_child_instance_id,
     )
 
 
@@ -506,3 +548,34 @@ class TaskHubGrpcClient:
         )
         self._logger.info(f"Purging instance '{instance_id}'.")
         self._stub.PurgeInstances(req)
+
+    def list_instance_ids(
+        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+    ) -> pb.ListInstanceIDsResponse:
+        req = pb.ListInstanceIDsRequest(pageSize=page_size, continuationToken=continuation_token)
+        return self._stub.ListInstanceIDs(req)
+
+    def get_instance_history(self, instance_id: str) -> list[pb.HistoryEvent]:
+        req = pb.GetInstanceHistoryRequest(instanceId=instance_id)
+        res: pb.GetInstanceHistoryResponse = self._stub.GetInstanceHistory(req)
+        return list(res.events)
+
+    def rerun_orchestration_from_event(
+        self,
+        instance_id: str,
+        event_id: int,
+        *,
+        new_instance_id: Optional[str] = None,
+        input: Union[Any, _Unset] = UNSET,
+        new_child_instance_id: Optional[str] = None,
+    ) -> str:
+        req = _new_rerun_request(
+            instance_id,
+            event_id,
+            new_instance_id=new_instance_id,
+            input=input,
+            new_child_instance_id=new_child_instance_id,
+        )
+        self._logger.info(f"Rerunning instance '{instance_id}' from event {event_id}.")
+        res: pb.RerunWorkflowFromEventResponse = self._stub.RerunWorkflowFromEvent(req)
+        return res.newInstanceID

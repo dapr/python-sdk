@@ -82,3 +82,30 @@ def test_async_activities(dapr):
     )
     for line in EXPECTED_ASYNC_ACTIVITIES:
         assert line in output, f'Missing in output: {line}'
+
+
+EXPECTED_WORKFLOW_MANAGEMENT = [
+    '*** first run finished: status=FAILED',
+    '*** list: instance present=True',
+    '*** history: #1 TASK_SCHEDULED name=validate_order [rerunnable]',
+    '*** history: #2 TASK_SCHEDULED name=charge_order [rerunnable]',
+    '*** history: #-1 TASK_FAILED name=None closes=#2 error=amount must be positive, got 0',
+    '*** rerun started from event #2',
+    '*** charge_order: charged 25',
+    '*** rerun finished: status=COMPLETED result="charged 25"',
+]
+
+
+@pytest.mark.example_dir('workflow')
+def test_workflow_management(dapr):
+    output = dapr.run(
+        '--app-id workflow-management -- python3 workflow_management.py',
+        timeout=90,
+    )
+    for line in EXPECTED_WORKFLOW_MANAGEMENT:
+        assert line in output, f'Missing in output: {line}'
+    # The rerun replays the completed validate_order instead of calling it again.
+    assert output.count('*** validate_order: order of 0 accepted') == 1
+    # The [rerunnable] marker renders at end of line, so the TASK_FAILED expectation
+    # above stays a substring even if that event were wrongly marked rerunnable.
+    assert 'got 0 [rerunnable]' not in output
