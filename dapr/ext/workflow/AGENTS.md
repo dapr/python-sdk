@@ -14,6 +14,7 @@ dapr/ext/workflow/
 ├── workflow_context.py                # WorkflowContext ABC
 ├── workflow_activity_context.py       # WorkflowActivityContext wrapper
 ├── workflow_state.py                  # WorkflowState, WorkflowStatus enum
+├── workflow_management.py             # WorkflowHistoryEvent(Type), WorkflowInstanceIdPage
 ├── retry_policy.py                    # RetryPolicy wrapper
 ├── util.py                            # gRPC address resolution
 ├── logger/options.py                  # LoggerOptions
@@ -24,6 +25,7 @@ tests/ext/workflow/
 ├── test_dapr_workflow_context.py      # Context method proxying
 ├── test_workflow_activity_context.py  # Activity context properties
 ├── test_workflow_client.py            # Sync client (mock gRPC)
+├── test_workflow_management.py        # list/history/rerun on both clients
 ├── test_workflow_client_aio.py        # Async client (IsolatedAsyncioTestCase)
 ├── test_workflow_runtime.py           # Registration, decorators, worker readiness
 ├── test_workflow_util.py              # Address resolution
@@ -139,6 +141,10 @@ Client for workflow lifecycle management:
 - `terminate_workflow(instance_id, *, output, recursive)`
 - `pause_workflow(instance_id)` / `resume_workflow(instance_id)`
 - `purge_workflow(instance_id, *, recursive)`
+- `list_workflow_instances(*, page_size, continuation_token)` → `WorkflowInstanceIdPage`
+- `iter_workflow_instances(*, page_size=1024)` → iterator over instance IDs, paging internally (`async for` on the async client)
+- `get_workflow_history(instance_id)` → `list[WorkflowHistoryEvent]`
+- `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is one `overwriteInput` flag on the wire; the sentinel default (`client.UNSET`) is what keeps it a single argument.
 - `close()` — close gRPC connection
 
 Converts gRPC "no such instance exists" errors to `None` returns. The async variant in `aio/` has the same API with `async` methods.
