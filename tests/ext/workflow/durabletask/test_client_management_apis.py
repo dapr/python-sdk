@@ -37,6 +37,12 @@ def _async_client() -> AsyncTaskHubGrpcClient:
     return client
 
 
+def test_the_input_sentinel_reads_as_unset():
+    """UNSET is the documented default of a public argument, so its repr shows up
+    in help() output, IDE hovers and tracebacks."""
+    assert repr(UNSET) == '<unset>'
+
+
 def test_list_instance_ids_omits_unset_pagination_fields():
     client = _sync_client()
     client._stub.ListInstanceIDs.return_value = pb.ListInstanceIDsResponse()

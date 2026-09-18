@@ -147,7 +147,7 @@ Client for workflow lifecycle management:
 - `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is one `overwriteInput` flag on the wire; the sentinel default (`client.UNSET`) is what keeps it a single argument.
 - `close()` — close gRPC connection
 
-Converts gRPC "no such instance exists" errors to `None` returns. The async variant in `aio/` has the same API with `async` methods.
+`get_workflow_state` converts gRPC "no such instance exists" errors to a `None` return. The other methods let the error propagate, including `get_workflow_history`, which raises NOT_FOUND for a missing or purged instance. The async variant in `aio/` has the same API with `async` methods.
 
 ### DaprWorkflowContext (`dapr_workflow_context.py`)
 
