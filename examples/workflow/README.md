@@ -560,6 +560,62 @@ It shows:
 dapr run --app-id workflow-history-propagation -- python3 history_propagation.py
 ```
 
+### Workflow Management (list, history, rerun)
+
+This example demonstrates the three workflow management APIs on
+`DaprWorkflowClient`, using them to recover a failed order without changing the
+workflow code:
+
+- `iter_workflow_instances()` walks every instance ID for this app, paging
+  behind the scenes. `list_workflow_instances()` returns a single page plus a
+  continuation token when you want to drive the paging yourself.
+- `get_workflow_history()` returns the instance's events as
+  `WorkflowHistoryEvent` records, carrying the event ID, type, name, the
+  scheduling event a completion closes out, and the failure details.
+- `rerun_workflow_from_event()` starts a *new* instance that replays the
+  history up to a chosen event, then resumes from there. Passing `input=`
+  replaces the input of that event; omitting it keeps the original.
+
+As of runtime 1.18 three event types can be rerun from — a scheduled activity,
+a created timer, and a created child workflow. `WorkflowHistoryEvent.is_rerunnable`
+carries this SDK's snapshot of that rule so you do not have to hard-code it, but
+the sidecar has the final say and one on a different version may disagree.
+
+Both clients expose all three, `await`-able on
+`dapr.ext.workflow.aio.DaprWorkflowClient`, where `iter_workflow_instances()`
+is an `async for`.
+
+```sh
+dapr run --app-id workflow-management -- python3 workflow_management.py
+```
+
+The output should look like this:
+
+```
+*** validate_order: order of 0 accepted
+*** charge_order: refusing to charge 0
+*** first run finished: status=FAILED
+*** list: instance present=True
+*** history: #-1 WORKFLOW_STARTED name=None
+*** history: #-1 EXECUTION_STARTED name=order_workflow
+*** history: #1 TASK_SCHEDULED name=validate_order [rerunnable]
+*** history: #-1 WORKFLOW_STARTED name=None
+*** history: #-1 TASK_COMPLETED name=None closes=#1
+*** history: #2 TASK_SCHEDULED name=charge_order [rerunnable]
+*** history: #-1 WORKFLOW_STARTED name=None
+*** history: #-1 TASK_FAILED name=None closes=#2 error=amount must be positive, got 0
+*** history: #3 EXECUTION_COMPLETED name=None error=workflow-management-example: Activity task #2 failed: amount must be positive, got 0
+*** rerun started from event #2
+*** charge_order: charged 25
+*** rerun finished: status=COMPLETED result="charged 25"
+```
+
+`validate_order` prints once across both runs: it had already completed before
+the target event, so the rerun replays its recorded result instead of calling it
+again. That does not generalise to every activity — one still in flight at the
+target event is re-dispatched, so a rerun can execute it a second time. The
+runtime reports `event_id` as `-1` for events it assigns no ID to.
+
 ### Async Activities
 
 This example fans out several `async def` activities, then aggregates their

@@ -32,13 +32,16 @@ from dapr.ext.workflow._durabletask.aio.internal.shared import (
     get_grpc_aio_channel,
 )
 from dapr.ext.workflow._durabletask.client import (
+    UNSET,
     OrchestrationStatus,
     TaskHubGrpcClient,
     TInput,
     TOutput,
     WorkflowIdReusePolicy,
     WorkflowState,
+    _new_rerun_request,
     _TransientTimeout,
+    _Unset,
     new_orchestration_state,
 )
 
@@ -307,3 +310,34 @@ class AsyncTaskHubGrpcClient:
         req = pb.PurgeInstancesRequest(instanceId=instance_id, recursive=recursive)
         self._logger.info(f"Purging instance '{instance_id}'.")
         await self._get_stub().PurgeInstances(req)
+
+    async def list_instance_ids(
+        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+    ) -> pb.ListInstanceIDsResponse:
+        req = pb.ListInstanceIDsRequest(pageSize=page_size, continuationToken=continuation_token)
+        return await self._get_stub().ListInstanceIDs(req)
+
+    async def get_instance_history(self, instance_id: str) -> list[pb.HistoryEvent]:
+        req = pb.GetInstanceHistoryRequest(instanceId=instance_id)
+        res: pb.GetInstanceHistoryResponse = await self._get_stub().GetInstanceHistory(req)
+        return list(res.events)
+
+    async def rerun_orchestration_from_event(
+        self,
+        instance_id: str,
+        event_id: int,
+        *,
+        new_instance_id: Optional[str] = None,
+        input: Union[Any, _Unset] = UNSET,
+        new_child_instance_id: Optional[str] = None,
+    ) -> str:
+        req = _new_rerun_request(
+            instance_id,
+            event_id,
+            new_instance_id=new_instance_id,
+            input=input,
+            new_child_instance_id=new_child_instance_id,
+        )
+        self._logger.info(f"Rerunning instance '{instance_id}' from event {event_id}.")
+        res: pb.RerunWorkflowFromEventResponse = await self._get_stub().RerunWorkflowFromEvent(req)
+        return res.newInstanceID
