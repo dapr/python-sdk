@@ -26,6 +26,7 @@ This includes the following packages:
 
 And the following extensions, installed as extras on the core `dapr` package:
 
+* [dapr.ext.databricks](./dapr/ext/databricks): Databricks Lakeflow streaming sink for Dapr Workflow — `pip install "dapr[databricks]"`
 * [dapr.ext.fastapi](./dapr/ext/fastapi): FastAPI integration (actors, pub/sub) — `pip install "dapr[fastapi]"`
 * [dapr.ext.flask](./dapr/ext/flask): Flask integration (actors, pub/sub) — `pip install "dapr[flask]"`
 * [dapr.ext.grpc](./dapr/ext/grpc): gRPC AppCallback server — `pip install "dapr[grpc]"`

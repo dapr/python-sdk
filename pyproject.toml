@@ -53,7 +53,15 @@ strands = [
 # exists so users get a consistent `pip install dapr[<ext>]` shape and so the
 # extra is reserved if workflow ever grows external deps.
 workflow = []
-all = ["dapr[fastapi,flask,grpc,langgraph,strands,workflow]"]
+# databricks is also empty on purpose: it schedules Dapr Workflow executions
+# (via dapr.ext.workflow, already in core) from inside a Databricks Lakeflow
+# pipeline. pyspark.pipelines is provided by that Databricks runtime itself —
+# depending on a pip-installable "pyspark" here would be both unnecessary for
+# real usage and insufficient for local imports, since pyspark.pipelines is
+# not part of the open-source PyPI pyspark package. dapr.ext.databricks
+# imports it lazily and raises a clear error if it's unavailable.
+databricks = []
+all = ["dapr[fastapi,flask,grpc,langgraph,strands,workflow,databricks]"]
 
 [project.urls]
 Documentation = "https://github.com/dapr/docs"
@@ -187,6 +195,14 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["langgraph.*", "langchain.*", "strands.*", "strands_agents.*"]
+ignore_missing_imports = true
+
+# pyspark (and pyspark.pipelines specifically) is provided by the Databricks
+# Lakeflow runtime, not a project dependency — see the `databricks` extra
+# above. dapr.ext.databricks imports it lazily at call time; this override
+# only lets mypy check the TYPE_CHECKING-only references to it.
+[[tool.mypy.overrides]]
+module = ["pyspark.*"]
 ignore_missing_imports = true
 
 # Bundling the extensions into the core wheel brings their source under mypy's
