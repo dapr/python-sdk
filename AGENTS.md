@@ -24,6 +24,7 @@ dapr/                        # Core SDK package (single PyPI dist: `pip install 
 ├── serializers/             # JSON and pluggable serializers
 ├── version/                 # Version metadata
 └── ext/                     # Extensions, installable as extras to the base package
+    ├── databricks/          #   Databricks Lakeflow sink    ← see dapr/ext/databricks/AGENTS.md (`pip install dapr[databricks]`)
     ├── fastapi/             #   FastAPI integration         ← see dapr/ext/fastapi/AGENTS.md   (`pip install dapr[fastapi]`)
     ├── flask/               #   Flask integration           ← see dapr/ext/flask/AGENTS.md     (`pip install dapr[flask]`)
     ├── grpc/                #   gRPC App extension          ← see dapr/ext/grpc/AGENTS.md      (`pip install dapr[grpc]`)
@@ -62,6 +63,7 @@ Extensions are bundled into the core `dapr` wheel and exposed as installable ext
 | `dapr[flask]` | `dapr.ext.flask` | Flask integration for pub/sub and actors (legacy `flask_dapr` import path is a deprecated shim) | Low |
 | `dapr[langgraph]` | `dapr.ext.langgraph` | LangGraph checkpoint persistence to Dapr state store | Moderate |
 | `dapr[strands]` | `dapr.ext.strands` | Strands agent session management via Dapr state store | New |
+| `dapr[databricks]` | `dapr.ext.databricks` | Databricks Lakeflow streaming sink -> Dapr Workflow | New |
 
 The previously-separate distributions (`dapr-ext-*`, `flask-dapr`) are no longer published. `dapr/__init__.py` emits a `FutureWarning` if it detects a legacy install at import time; see `RELEASE.md` for the migration recipe.
 
@@ -109,6 +111,7 @@ uv run python -m unittest discover -v ./tests/ext/grpc
 uv run python -m unittest discover -v ./tests/ext/fastapi
 uv run python -m unittest discover -v ./tests/ext/langgraph
 uv run python -m unittest discover -v ./tests/ext/strands
+uv run python -m unittest discover -v ./tests/ext/databricks
 
 # pytest-style suites:
 uv run pytest -m "not e2e" ./tests/ext/workflow/durabletask/
