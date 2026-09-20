@@ -70,6 +70,8 @@ class FakeTaskHubGrpcClient:
             return self._inner_get_orchestration_state(
                 instance_id, client.OrchestrationStatus.PENDING
             )
+        elif wf_status == 'no-details':
+            raise SimulatedRpcError(code='UNAVAILABLE', details=None)
         else:
             raise SimulatedRpcError(code='UNKNOWN', details='unknown error')
 
@@ -249,6 +251,10 @@ class WorkflowClientTest(unittest.TestCase):
                 wfClient.get_workflow_state(instance_id=mock_instance_id, fetch_payloads=True)
 
             assert actual_get_result is None
+
+            wf_status = 'no-details'
+            with self.assertRaises(RpcError):
+                wfClient.get_workflow_state(instance_id=mock_instance_id, fetch_payloads=True)
 
             wf_status = 'found'
             actual_get_result = wfClient.get_workflow_state(
