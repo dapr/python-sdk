@@ -55,6 +55,11 @@ class GrpcEndpoint:
         return self._scheme
 
     def _set_hostname(self):
+        if self._is_unix_socket_path():
+            # netloc + path keeps the filesystem path's case; parsed_url.hostname lowercases it.
+            self._hostname = f'{self._parsed_url.netloc}{self._parsed_url.path}'
+            return
+
         if self._parsed_url.hostname is None:
             self._hostname = URIParseConfig.DEFAULT_HOSTNAME
             return
@@ -171,8 +176,12 @@ class GrpcEndpoint:
     def tls(self) -> bool:
         return self._tls
 
+    def _is_unix_socket_path(self) -> bool:
+        """Whether this is a unix socket whose file path urlparse put in ``path``."""
+        return self._parsed_url.scheme == 'unix' and bool(self._parsed_url.path)
+
     def _validate_path_and_query(self) -> None:
-        if self._parsed_url.path:
+        if self._parsed_url.path and not self._is_unix_socket_path():
             raise ValueError(
                 f"paths are not supported for gRPC endpoints: '{self._parsed_url.path}'"
             )
