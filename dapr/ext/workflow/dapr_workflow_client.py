@@ -506,8 +506,9 @@ class DaprWorkflowClient:
             the runtime accepts '' and creates an instance whose ID is empty,
             which it then cannot schedule reminders for.
             input: Replacement input for the event being rerun. Omit it to keep
-            the original input; pass None to clear it. Forwarding code that has
-            to express "not supplied" can pass
+            the original input; pass None to clear it, in which case the rerun
+            activity receives None where it previously received its recorded
+            input. Forwarding code that has to express "not supplied" can pass
             :data:`dapr.ext.workflow.UNSET` explicitly. Supplying it at all is
             rejected when event_id names a timer, which accepts no input.
             new_child_workflow_instance_id: The ID to give the new child
