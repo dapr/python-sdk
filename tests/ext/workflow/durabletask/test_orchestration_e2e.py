@@ -18,6 +18,7 @@ from typing import Optional
 import pytest
 
 from dapr.ext.workflow._durabletask import client, task, worker
+from tests.workflow_observer import DeliveryCounts, WorkItemObserver
 
 # NOTE: These tests assume a sidecar process is running. Example command:
 #       dapr init || true
@@ -119,6 +120,74 @@ def test_activity_sequence():
     assert state.serialized_input == json.dumps(1)
     assert state.serialized_output == json.dumps([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
     assert state.serialized_custom_status is None
+
+
+def _run_accumulate(
+    disable_stateful_history: bool,
+) -> tuple[DeliveryCounts, Optional[client.WorkflowState]]:
+    """Runs a 20-turn activity sequence, returning its delivery counts and terminal state.
+
+    Each sequential activity is a distinct turn with a longer committed history, so a
+    stateful worker receives most turns as cached-history deltas. Requires a sidecar built
+    with the durabletask-go stateful-history change. The interceptor counts how each work
+    item actually arrived, since the workflow's output is identical either way.
+    """
+
+    def plus_one(_: task.ActivityContext, value: int) -> int:
+        return value + 1
+
+    def accumulate(ctx: task.OrchestrationContext, start: int):
+        current = start
+        for _ in range(20):
+            current = yield ctx.call_activity(plus_one, input=current)
+        return current
+
+    observer = WorkItemObserver()
+    with worker.TaskHubGrpcWorker(
+        stop_timeout=2.0,
+        disable_stateful_history=disable_stateful_history,
+        interceptors=[observer],
+    ) as w:
+        w.add_orchestrator(accumulate)
+        w.add_activity(plus_one)
+        w.start()
+
+        with client.TaskHubGrpcClient() as task_hub_client:
+            instance_id = task_hub_client.schedule_new_orchestration(accumulate, input=0)
+            state = task_hub_client.wait_for_orchestration_completion(instance_id, timeout=30)
+            return observer.counts_for(instance_id), state
+
+
+def test_stateful_history_multi_turn():
+    """A multi-turn workflow completes correctly with the stateful-history delta path on.
+
+    Deltas are exercised because the worker advertises WORKER_CAPABILITY_STATEFUL_HISTORY by
+    default; the reconstructed history must yield the same result a full-history run would.
+
+    The counts come off the wire, so this fails against a sidecar that ignores the
+    capability rather than silently passing on identical output. The first two turns are
+    always full sends: the sidecar records how much history a stream holds only *after*
+    rewriting a work item, so turn 1 (empty past) leaves the watermark at zero and turn 2
+    still fails its "worker holds something" check.
+    """
+    counts, state = _run_accumulate(disable_stateful_history=False)
+    assert state is not None
+    assert state.runtime_status == client.OrchestrationStatus.COMPLETED
+    assert state.serialized_output == json.dumps(20)
+
+    assert counts.deltas > 0, f'sidecar never sent a delta: {counts}'
+    assert counts.full_sends <= 2, f'too many full sends: {counts}'
+    # Every delta was rebuilt from the cache; a miss would have cost a GetInstanceHistory.
+    assert counts.history_fetches == 0, f'unexpected GetInstanceHistory recovery: {counts}'
+
+
+def test_stateful_history_disabled_matches():
+    """With the optimization disabled (full history every turn) the result is identical."""
+    counts, state = _run_accumulate(disable_stateful_history=True)
+    assert state is not None
+    assert state.runtime_status == client.OrchestrationStatus.COMPLETED
+    assert state.serialized_output == json.dumps(20)
+    assert counts.deltas == 0, f'delta sent to a worker that never advertised support: {counts}'
 
 
 def test_activity_error_handling():

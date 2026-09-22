@@ -33,6 +33,7 @@ from dapr.ext.workflow._durabletask.aio.internal.shared import (
 )
 from dapr.ext.workflow._durabletask.client import (
     OrchestrationStatus,
+    TaskHubGrpcClient,
     TInput,
     TOutput,
     WorkflowIdReusePolicy,
@@ -228,6 +229,8 @@ class AsyncTaskHubGrpcClient:
             except grpc.RpcError as rpc_error:
                 code = rpc_error.code()  # type: ignore
                 if code == grpc.StatusCode.DEADLINE_EXCEEDED:
+                    raise _TransientTimeout()
+                if TaskHubGrpcClient._is_deadline_cancellation(code, deadline):
                     raise _TransientTimeout()
                 if code not in self._TRANSIENT_RPC_CODES:
                     raise

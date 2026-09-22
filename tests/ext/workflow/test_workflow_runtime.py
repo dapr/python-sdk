@@ -106,6 +106,52 @@ class WorkflowRuntimeTimeoutInterceptorTest(unittest.TestCase):
             self.assertIsInstance(interceptors[2], DaprClientTimeoutInterceptor)
 
 
+class WorkflowRuntimeStatefulHistoryTest(unittest.TestCase):
+    """The stateful-history options must reach the worker, not stop at the public API."""
+
+    def setUp(self):
+        listActivities.clear()
+        listOrchestrators.clear()
+        self._registry_patch = mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry',
+            return_value=FakeTaskHubGrpcWorker(),
+        )
+        self._registry_patch.start()
+
+    def tearDown(self):
+        mock.patch.stopall()
+
+    def test_stateful_history_defaults_to_enabled_and_unconfigured(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
+            WorkflowRuntime()
+            call_kwargs = mock_worker_cls.call_args[1]
+
+            self.assertFalse(call_kwargs['disable_stateful_history'])
+            # 0 is the worker's "use your own default" sentinel for every bound.
+            self.assertEqual(call_kwargs['history_cache_ttl'], 0)
+            self.assertEqual(call_kwargs['history_cache_max_instances'], 0)
+            self.assertEqual(call_kwargs['history_cache_max_bytes'], 0)
+
+    def test_stateful_history_options_are_forwarded(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+        ) as mock_worker_cls:
+            WorkflowRuntime(
+                disable_stateful_history=True,
+                history_cache_ttl=120.0,
+                history_cache_max_instances=50,
+                history_cache_max_bytes=4096,
+            )
+            call_kwargs = mock_worker_cls.call_args[1]
+
+            self.assertTrue(call_kwargs['disable_stateful_history'])
+            self.assertEqual(call_kwargs['history_cache_ttl'], 120.0)
+            self.assertEqual(call_kwargs['history_cache_max_instances'], 50)
+            self.assertEqual(call_kwargs['history_cache_max_bytes'], 4096)
+
+
 class WorkflowRuntimeTest(unittest.TestCase):
     def setUp(self):
         listActivities.clear()
