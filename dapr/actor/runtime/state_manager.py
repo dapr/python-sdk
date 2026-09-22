@@ -267,6 +267,17 @@ class ActorStateManager(Generic[T]):
             )
         for state_name in states_to_remove:
             state_change_tracker.pop(state_name, None)
+        if state_change_tracker is not self._default_state_change_tracker:
+            self._invalidate_default_tracker(state_changes)
+
+    def _invalidate_default_tracker(self, state_changes: List[ActorStateChange]) -> None:
+        # Writes made through a reentrancy-scoped tracker are invisible to the default
+        # tracker, which activation, reminders and timers read from. Drop its clean copies
+        # of the written keys so the next read reloads them instead of serving stale data.
+        for change in state_changes:
+            metadata = self._default_state_change_tracker.get(change.state_name)
+            if metadata is not None and metadata.change_kind == StateChangeKind.none:
+                self._default_state_change_tracker.pop(change.state_name)
 
     def is_state_marked_for_remove(self, state_name: str) -> bool:
         state_change_tracker = self._get_contextual_state_tracker()
