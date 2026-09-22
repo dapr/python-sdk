@@ -12,7 +12,7 @@
 
 """Return types for the workflow management APIs.
 
-These back :meth:`DaprWorkflowClient.list_workflow_instances` and
+These back :meth:`DaprWorkflowClient.list_workflow_instance_ids` and
 :meth:`DaprWorkflowClient.get_workflow_history`, on both the sync and the async
 client.
 """
@@ -29,15 +29,42 @@ import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.task import FailureDetails
 
 
+class _Unset:
+    """Type of :data:`UNSET`. Not instantiated anywhere else."""
+
+    def __repr__(self) -> str:
+        return '<unset>'
+
+
+UNSET = _Unset()
+"""Default for an argument whose absence means something other than ``None``.
+
+:meth:`DaprWorkflowClient.rerun_workflow_from_event` needs three answers from
+one ``input`` argument: leave the original input alone, replace it with a value,
+or clear it. ``None`` already means the third, so the default has to be a fourth
+thing, and that is this object.
+
+Pass it explicitly when forwarding an optional input through your own function,
+so "the caller gave me nothing" stays distinct from "the caller gave me None"::
+
+    def retry_charge(instance_id, event_id, amount=UNSET):
+        return client.rerun_workflow_from_event(instance_id, event_id, input=amount)
+"""
+
+
 @dataclass(frozen=True)
 class WorkflowInstanceIdPage:
     """One page of workflow instance IDs.
 
     Attributes:
         instance_ids: The instance IDs in this page, which may be empty.
-        continuation_token: Token to pass to the next
-            :meth:`DaprWorkflowClient.list_workflow_instances` call, or None
-            when this is the last page.
+        continuation_token: An opaque cursor marking where this page ended.
+            Pass it back unchanged as the next call's continuation_token to get
+            the following page; None means this was the last page. The runtime
+            forwards it to the state store, so its contents depend on the
+            component behind the task hub — never parse or construct one, and
+            do not expect one to survive a component change. Callers using
+            :meth:`DaprWorkflowClient.iter_workflow_instance_ids` never see it.
     """
 
     instance_ids: list[str]
@@ -153,8 +180,11 @@ class WorkflowHistoryEvent:
             timer, and the workflow itself on EXECUTION_STARTED.
         task_scheduled_id: For activity and child workflow completion and
             failure events, the event_id of the scheduling event they close out.
-            TIMER_FIRED does not carry it; the wire puts that correlation in a
-            different field this type does not surface.
+            None means the event type carries no such field at all — TIMER_FIRED
+            is the notable one, since the wire keeps its correlation elsewhere.
+            The field has no presence on the wire, so a 0 is equally a real event
+            ID or one the runtime never set; unlike event_id, there is no
+            sentinel value to test for.
         failure_details: The error, for the failure event types and for an
             EXECUTION_COMPLETED that completed a failed workflow.
     """

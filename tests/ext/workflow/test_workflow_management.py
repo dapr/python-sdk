@@ -19,11 +19,12 @@ from unittest import mock
 from google.protobuf import timestamp_pb2, wrappers_pb2
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
-from dapr.ext.workflow._durabletask.client import UNSET
+from dapr.ext.workflow._durabletask.client import _new_rerun_request
 from dapr.ext.workflow.aio.dapr_workflow_client import DaprWorkflowClient as AsyncWorkflowClient
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.workflow_management import (
     _RERUNNABLE_EVENT_TYPES,
+    UNSET,
     WorkflowHistoryEvent,
     WorkflowHistoryEventType,
     WorkflowInstanceIdPage,
@@ -58,15 +59,26 @@ class FakeTaskHubGrpcClient:
         event_id,
         *,
         new_instance_id=None,
-        input=UNSET,
+        input=None,
+        overwrite_input=False,
         new_child_instance_id=None,
     ):
+        # Build the real request so the fake rejects what the engine would reject.
+        _new_rerun_request(
+            instance_id,
+            event_id,
+            new_instance_id=new_instance_id,
+            input=input,
+            overwrite_input=overwrite_input,
+            new_child_instance_id=new_child_instance_id,
+        )
         self.rerun_calls.append(
             {
                 'instance_id': instance_id,
                 'event_id': event_id,
                 'new_instance_id': new_instance_id,
                 'input': input,
+                'overwrite_input': overwrite_input,
                 'new_child_instance_id': new_child_instance_id,
             }
         )
@@ -240,12 +252,12 @@ class WorkflowInstanceIdPageTest(unittest.TestCase):
         self.assertEqual('', WorkflowInstanceIdPage._from_proto(res).continuation_token)
 
 
-class ListWorkflowInstancesTest(unittest.TestCase):
+class ListWorkflowInstanceIdsTest(unittest.TestCase):
     def test_passes_pagination_arguments_through(self):
         fake = FakeTaskHubGrpcClient()
         client = new_client(fake)
 
-        client.list_workflow_instances(page_size=25, continuation_token='token1')
+        client.list_workflow_instance_ids(page_size=25, continuation_token='token1')
 
         self.assertEqual([(25, 'token1')], fake.list_calls)
 
@@ -253,7 +265,7 @@ class ListWorkflowInstancesTest(unittest.TestCase):
         fake = FakeTaskHubGrpcClient()
         client = new_client(fake)
 
-        client.list_workflow_instances()
+        client.list_workflow_instance_ids()
 
         self.assertEqual([(None, None)], fake.list_calls)
 
@@ -262,14 +274,14 @@ class ListWorkflowInstancesTest(unittest.TestCase):
         fake.pages = [pb.ListInstanceIDsResponse(instanceIds=['a'], continuationToken='next')]
         client = new_client(fake)
 
-        page = client.list_workflow_instances()
+        page = client.list_workflow_instance_ids()
 
         self.assertEqual(
             WorkflowInstanceIdPage(instance_ids=['a'], continuation_token='next'), page
         )
 
 
-class IterWorkflowInstancesTest(unittest.TestCase):
+class IterWorkflowInstanceIdsTest(unittest.TestCase):
     def test_follows_the_continuation_token_across_pages(self):
         fake = FakeTaskHubGrpcClient()
         fake.pages = [
@@ -279,7 +291,7 @@ class IterWorkflowInstancesTest(unittest.TestCase):
         ]
         client = new_client(fake)
 
-        self.assertEqual(['a', 'b', 'c', 'd'], list(client.iter_workflow_instances()))
+        self.assertEqual(['a', 'b', 'c', 'd'], list(client.iter_workflow_instance_ids()))
         self.assertEqual(
             [(1024, None), (1024, 'page2'), (1024, 'page3')],
             fake.list_calls,
@@ -290,14 +302,14 @@ class IterWorkflowInstancesTest(unittest.TestCase):
         fake.pages = [pb.ListInstanceIDsResponse(instanceIds=['a'])]
         client = new_client(fake)
 
-        self.assertEqual(['a'], list(client.iter_workflow_instances()))
+        self.assertEqual(['a'], list(client.iter_workflow_instance_ids()))
         self.assertEqual(1, len(fake.list_calls))
 
     def test_yields_nothing_when_the_app_has_no_instances(self):
         fake = FakeTaskHubGrpcClient()
         client = new_client(fake)
 
-        self.assertEqual([], list(client.iter_workflow_instances()))
+        self.assertEqual([], list(client.iter_workflow_instance_ids()))
 
     def test_keeps_paging_through_an_empty_page_that_carries_a_token(self):
         fake = FakeTaskHubGrpcClient()
@@ -307,7 +319,7 @@ class IterWorkflowInstancesTest(unittest.TestCase):
         ]
         client = new_client(fake)
 
-        self.assertEqual(['a'], list(client.iter_workflow_instances()))
+        self.assertEqual(['a'], list(client.iter_workflow_instance_ids()))
 
     def test_stops_on_an_empty_token_instead_of_looping_forever(self):
         """An empty token is not a usable cursor: stores that emit one read it as
@@ -316,7 +328,7 @@ class IterWorkflowInstancesTest(unittest.TestCase):
         fake.pages = [pb.ListInstanceIDsResponse(instanceIds=['a'], continuationToken='')]
         client = new_client(fake)
 
-        self.assertEqual(['a'], list(client.iter_workflow_instances()))
+        self.assertEqual(['a'], list(client.iter_workflow_instance_ids()))
         self.assertEqual(1, len(fake.list_calls))
 
     def test_fetches_lazily(self):
@@ -327,7 +339,7 @@ class IterWorkflowInstancesTest(unittest.TestCase):
         ]
         client = new_client(fake)
 
-        instances = client.iter_workflow_instances()
+        instances = client.iter_workflow_instance_ids()
         next(instances)
 
         self.assertEqual(1, len(fake.list_calls))
@@ -336,7 +348,7 @@ class IterWorkflowInstancesTest(unittest.TestCase):
         fake = FakeTaskHubGrpcClient()
         client = new_client(fake)
 
-        list(client.iter_workflow_instances(page_size=10))
+        list(client.iter_workflow_instance_ids(page_size=10))
 
         self.assertEqual([(10, None)], fake.list_calls)
 
@@ -373,22 +385,51 @@ class RerunWorkflowFromEventTest(unittest.TestCase):
 
         self.assertEqual('rerun1', client.rerun_workflow_from_event('instance1', 4))
 
-    def test_omitting_input_reaches_the_engine_as_the_sentinel(self):
-        """None must not leak in as a default, or the runtime clears the input."""
+    def test_omitting_input_does_not_ask_the_engine_to_overwrite(self):
+        """Otherwise the runtime would clear an input the caller never mentioned."""
         fake = FakeTaskHubGrpcClient()
         client = new_client(fake)
 
         client.rerun_workflow_from_event('instance1', 4)
 
-        self.assertIs(UNSET, fake.rerun_calls[0]['input'])
+        self.assertFalse(fake.rerun_calls[0]['overwrite_input'])
 
-    def test_an_explicit_none_input_reaches_the_engine_as_none(self):
+    def test_passing_the_sentinel_explicitly_matches_omitting_it(self):
+        """Forwarding code needs UNSET to mean exactly "not supplied"."""
+        fake = FakeTaskHubGrpcClient()
+        client = new_client(fake)
+
+        client.rerun_workflow_from_event('instance1', 4, input=UNSET)
+
+        self.assertFalse(fake.rerun_calls[0]['overwrite_input'])
+
+    def test_the_sentinel_is_exported_for_forwarding_code(self):
+        import dapr.ext.workflow as wf
+
+        self.assertIs(UNSET, wf.UNSET)
+        self.assertEqual('<unset>', repr(wf.UNSET))
+
+    def test_an_explicit_none_input_asks_the_engine_to_overwrite(self):
+        """None is a value, not an omission: it clears the input."""
         fake = FakeTaskHubGrpcClient()
         client = new_client(fake)
 
         client.rerun_workflow_from_event('instance1', 4, input=None)
 
         self.assertIsNone(fake.rerun_calls[0]['input'])
+        self.assertTrue(fake.rerun_calls[0]['overwrite_input'])
+
+    def test_rejects_a_negative_event_id(self):
+        """WorkflowHistoryEvent.event_id is -1 for events the runtime gives no ID,
+        so passing one straight back is a reachable mistake."""
+        fake = FakeTaskHubGrpcClient()
+        client = new_client(fake)
+
+        with self.assertRaises(ValueError) as caught:
+            client.rerun_workflow_from_event('instance1', -1)
+
+        self.assertIn('event_id must be non-negative', str(caught.exception))
+        self.assertEqual([], fake.rerun_calls)
 
     def test_forwards_every_argument(self):
         fake = FakeTaskHubGrpcClient()
@@ -408,6 +449,7 @@ class RerunWorkflowFromEventTest(unittest.TestCase):
                 'event_id': 4,
                 'new_instance_id': 'new1',
                 'input': {'amount': 10},
+                'overwrite_input': True,
                 'new_child_instance_id': 'child1',
             },
             fake.rerun_calls[0],
@@ -420,7 +462,7 @@ class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
         fake.pages = [pb.ListInstanceIDsResponse(instanceIds=['a'], continuationToken='next')]
         client = new_async_client(fake)
 
-        page = await client.list_workflow_instances(page_size=25)
+        page = await client.list_workflow_instance_ids(page_size=25)
 
         self.assertEqual(
             WorkflowInstanceIdPage(instance_ids=['a'], continuation_token='next'), page
@@ -436,7 +478,7 @@ class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
         client = new_async_client(fake)
 
         self.assertEqual(
-            ['a', 'b'], [instance_id async for instance_id in client.iter_workflow_instances()]
+            ['a', 'b'], [instance_id async for instance_id in client.iter_workflow_instance_ids()]
         )
         self.assertEqual([(1024, None), (1024, 'page2')], fake.list_calls)
 
@@ -445,9 +487,25 @@ class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
         fake.pages = [pb.ListInstanceIDsResponse(instanceIds=['a'], continuationToken='')]
         client = new_async_client(fake)
 
-        collected = [instance_id async for instance_id in client.iter_workflow_instances()]
+        collected = [instance_id async for instance_id in client.iter_workflow_instance_ids()]
 
         self.assertEqual(['a'], collected)
+        self.assertEqual(1, len(fake.list_calls))
+
+    async def test_iter_fetches_lazily(self):
+        """An async generator body does not start until the first __anext__, so
+        laziness here is a different mechanism from the sync generator's."""
+        fake = AsyncFakeTaskHubGrpcClient()
+        fake.pages = [
+            pb.ListInstanceIDsResponse(instanceIds=['a'], continuationToken='page2'),
+            pb.ListInstanceIDsResponse(instanceIds=['b']),
+        ]
+        client = new_async_client(fake)
+
+        instances = client.iter_workflow_instance_ids()
+        self.assertEqual([], fake.list_calls)
+
+        self.assertEqual('a', await anext(instances))
         self.assertEqual(1, len(fake.list_calls))
 
     async def test_get_history_converts_every_event(self):
@@ -459,14 +517,14 @@ class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual([(2, 'c')], [(e.event_id, e.name) for e in history])
 
-    async def test_rerun_omitting_input_reaches_the_engine_as_the_sentinel(self):
+    async def test_rerun_omitting_input_does_not_ask_the_engine_to_overwrite(self):
         fake = AsyncFakeTaskHubGrpcClient()
         client = new_async_client(fake)
 
         result = await client.rerun_workflow_from_event('instance1', 4)
 
         self.assertEqual('rerun1', result)
-        self.assertIs(UNSET, fake.rerun_calls[0]['input'])
+        self.assertFalse(fake.rerun_calls[0]['overwrite_input'])
 
     async def test_rerun_forwards_every_argument(self):
         fake = AsyncFakeTaskHubGrpcClient()
@@ -486,6 +544,7 @@ class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
                 'event_id': 4,
                 'new_instance_id': 'new1',
                 'input': None,
+                'overwrite_input': True,
                 'new_child_instance_id': 'child1',
             },
             fake.rerun_calls[0],

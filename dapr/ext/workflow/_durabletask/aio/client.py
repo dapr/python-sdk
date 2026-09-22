@@ -32,7 +32,6 @@ from dapr.ext.workflow._durabletask.aio.internal.shared import (
     get_grpc_aio_channel,
 )
 from dapr.ext.workflow._durabletask.client import (
-    UNSET,
     OrchestrationStatus,
     TaskHubGrpcClient,
     TInput,
@@ -41,7 +40,6 @@ from dapr.ext.workflow._durabletask.client import (
     WorkflowState,
     _new_rerun_request,
     _TransientTimeout,
-    _Unset,
     new_orchestration_state,
     new_task_router,
 )
@@ -395,7 +393,8 @@ class AsyncTaskHubGrpcClient:
         event_id: int,
         *,
         new_instance_id: Optional[str] = None,
-        input: Union[Any, _Unset] = UNSET,
+        input: Optional[Any] = None,
+        overwrite_input: bool = False,
         new_child_instance_id: Optional[str] = None,
     ) -> str:
         req = _new_rerun_request(
@@ -403,6 +402,7 @@ class AsyncTaskHubGrpcClient:
             event_id,
             new_instance_id=new_instance_id,
             input=input,
+            overwrite_input=overwrite_input,
             new_child_instance_id=new_child_instance_id,
         )
         self._logger.info(f"Rerunning instance '{instance_id}' from event {event_id}.")

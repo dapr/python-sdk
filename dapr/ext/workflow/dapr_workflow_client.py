@@ -31,6 +31,7 @@ from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import get_grpc_channel_options, getAddress
 from dapr.ext.workflow.workflow_context import Workflow
 from dapr.ext.workflow.workflow_management import (
+    UNSET,
     WorkflowHistoryEvent,
     WorkflowInstanceIdPage,
 )
@@ -412,13 +413,13 @@ class DaprWorkflowClient:
         """
         return self.__obj.purge_orchestration(instance_id, recursive, app_id=app_id)
 
-    def list_workflow_instances(
+    def list_workflow_instance_ids(
         self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
     ) -> WorkflowInstanceIdPage:
         """Fetches one page of workflow instance IDs for this app.
 
         The listing is scoped to the app and namespace of the sidecar this
-        client is connected to. Use iter_workflow_instances instead unless you
+        client is connected to. Use iter_workflow_instance_ids instead unless you
         need to hold on to the continuation token yourself, for example to
         resume paging in a later request.
 
@@ -437,7 +438,7 @@ class DaprWorkflowClient:
         )
         return WorkflowInstanceIdPage._from_proto(res)
 
-    def iter_workflow_instances(self, *, page_size: int = 1024) -> Iterator[str]:
+    def iter_workflow_instance_ids(self, *, page_size: int = 1024) -> Iterator[str]:
         """Iterates over every workflow instance ID for this app, paging as it goes.
 
         Pages are fetched lazily, so abandoning the iterator early stops the
@@ -452,7 +453,7 @@ class DaprWorkflowClient:
         """
         continuation_token = None
         while True:
-            page = self.list_workflow_instances(
+            page = self.list_workflow_instance_ids(
                 page_size=page_size, continuation_token=continuation_token
             )
             yield from page.instance_ids
@@ -482,7 +483,7 @@ class DaprWorkflowClient:
         event_id: int,
         *,
         new_instance_id: Optional[str] = None,
-        input: Any = client.UNSET,
+        input: Any = UNSET,
         new_child_workflow_instance_id: Optional[str] = None,
     ) -> str:
         """Starts a new workflow instance that replays a completed one up to an event.
@@ -505,7 +506,9 @@ class DaprWorkflowClient:
             the runtime accepts '' and creates an instance whose ID is empty,
             which it then cannot schedule reminders for.
             input: Replacement input for the event being rerun. Omit it to keep
-            the original input; pass None to clear it. Supplying it at all is
+            the original input; pass None to clear it. Forwarding code that has
+            to express "not supplied" can pass
+            :data:`dapr.ext.workflow.UNSET` explicitly. Supplying it at all is
             rejected when event_id names a timer, which accepts no input.
             new_child_workflow_instance_id: The ID to give the new child
             workflow instance. Only accepted when event_id names a child
@@ -515,6 +518,8 @@ class DaprWorkflowClient:
             The ID of the new workflow instance.
 
         Raises:
+            ValueError: If event_id is negative, which includes the -1 the
+            runtime reports for history events it assigns no ID to.
             grpc.RpcError: With code INVALID_ARGUMENT if the source instance
             is a child workflow, has not finished, or if event_id names an event
             that rejects these arguments — a timer given an input, or a detached
@@ -522,11 +527,13 @@ class DaprWorkflowClient:
             other event that cannot be rerun from, and ALREADY_EXISTS if
             new_instance_id is already in use.
         """
+        input_supplied = input is not UNSET
         return self.__obj.rerun_orchestration_from_event(
             instance_id,
             event_id,
             new_instance_id=new_instance_id,
-            input=input,
+            input=input if input_supplied else None,
+            overwrite_input=input_supplied,
             new_child_instance_id=new_child_workflow_instance_id,
         )
 

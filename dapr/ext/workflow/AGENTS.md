@@ -88,6 +88,11 @@ from dapr.ext.workflow import (
     when_any,                 # Race combinator — wait for first task
     alternate_name,           # Decorator to set a custom registration name
     RetryPolicy,              # Retry config for activities/child workflows
+    WorkflowHistoryEvent,     # One event from an instance's execution history
+    WorkflowHistoryEventType, # Enum of history event kinds; unknown ones map to UNKNOWN
+    WorkflowInstanceIdPage,   # One page of instance IDs plus the continuation token
+    FailureDetails,           # Error carried by WorkflowHistoryEvent / TaskFailedError
+    UNSET,                    # Sentinel default for rerun_workflow_from_event's input
 )
 
 # Async client:
@@ -141,10 +146,10 @@ Client for workflow lifecycle management:
 - `terminate_workflow(instance_id, *, output, recursive)`
 - `pause_workflow(instance_id)` / `resume_workflow(instance_id)`
 - `purge_workflow(instance_id, *, recursive)`
-- `list_workflow_instances(*, page_size, continuation_token)` → `WorkflowInstanceIdPage`
-- `iter_workflow_instances(*, page_size=1024)` → iterator over instance IDs, paging internally (`async for` on the async client)
+- `list_workflow_instance_ids(*, page_size, continuation_token)` → `WorkflowInstanceIdPage`
+- `iter_workflow_instance_ids(*, page_size=1024)` → iterator over instance IDs, paging internally (`async for` on the async client)
 - `get_workflow_history(instance_id)` → `list[WorkflowHistoryEvent]`
-- `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is one `overwriteInput` flag on the wire; the sentinel default (`client.UNSET`) is what keeps it a single argument.
+- `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is an `input` + `overwriteInput` pair on the wire, which the engine layer takes as-is; the public method collapses it into one argument via the exported `UNSET` sentinel.
 - `close()` — close gRPC connection
 
 `get_workflow_state` converts gRPC "no such instance exists" errors to a `None` return. The other methods let the error propagate, including `get_workflow_history`, which raises NOT_FOUND for a missing or purged instance. The async variant in `aio/` has the same API with `async` methods.

@@ -33,20 +33,6 @@ class _TransientTimeout(Exception):
     budget. Callers convert this to a public ``TimeoutError``."""
 
 
-class _Unset:
-    """Sentinel for an argument that was not supplied.
-
-    Distinct from ``None``, which is a meaningful value for the rerun input:
-    omitting ``input`` keeps the original, passing ``None`` clears it.
-    """
-
-    def __repr__(self) -> str:
-        return '<unset>'
-
-
-UNSET = _Unset()
-
-
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
@@ -179,17 +165,29 @@ def _new_rerun_request(
     event_id: int,
     *,
     new_instance_id: Optional[str],
-    input: Union[Any, _Unset],
+    input: Optional[Any],
+    overwrite_input: bool,
     new_child_instance_id: Optional[str],
 ) -> pb.RerunWorkflowFromEventRequest:
-    """Build a RerunWorkflowFromEvent request, resolving the input sentinel.
+    """Build a RerunWorkflowFromEvent request.
 
-    The wire format carries the replacement input in a non-optional
-    ``StringValue`` plus an ``overwriteInput`` flag, so "leave the input alone"
-    and "replace it with null" are only distinguishable through the flag. The
-    sentinel collapses that pair into a single argument.
+    ``input`` and ``overwrite_input`` mirror the wire, which needs both: the
+    replacement input rides in a non-optional ``StringValue``, so "leave the
+    input alone" and "replace it with null" are only distinguishable through the
+    flag. Callers of the public client express that as one argument; see
+    :data:`dapr.ext.workflow.UNSET`.
+
+    Raises:
+        ValueError: If event_id is negative. The field is uint32 on the wire, so
+        protobuf would otherwise reject it with a message naming neither the
+        argument nor the reason.
     """
-    overwrite_input = not isinstance(input, _Unset)
+    if event_id < 0:
+        raise ValueError(
+            f'event_id must be non-negative, got {event_id}. The runtime reports -1 for '
+            'history events it assigns no ID to, and those cannot be rerun from.'
+        )
+
     return pb.RerunWorkflowFromEventRequest(
         sourceInstanceID=instance_id,
         eventID=event_id,
@@ -566,7 +564,8 @@ class TaskHubGrpcClient:
         event_id: int,
         *,
         new_instance_id: Optional[str] = None,
-        input: Union[Any, _Unset] = UNSET,
+        input: Optional[Any] = None,
+        overwrite_input: bool = False,
         new_child_instance_id: Optional[str] = None,
     ) -> str:
         req = _new_rerun_request(
@@ -574,6 +573,7 @@ class TaskHubGrpcClient:
             event_id,
             new_instance_id=new_instance_id,
             input=input,
+            overwrite_input=overwrite_input,
             new_child_instance_id=new_child_instance_id,
         )
         self._logger.info(f"Rerunning instance '{instance_id}' from event {event_id}.")

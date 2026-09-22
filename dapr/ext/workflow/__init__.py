@@ -29,6 +29,7 @@ from dapr.ext.workflow.propagation import (
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
 from dapr.ext.workflow.workflow_management import (
+    UNSET,
     WorkflowHistoryEvent,
     WorkflowHistoryEventType,
     WorkflowInstanceIdPage,
@@ -46,6 +47,7 @@ __all__ = [
     'WorkflowHistoryEvent',
     'WorkflowHistoryEventType',
     'WorkflowInstanceIdPage',
+    'UNSET',
     'when_all',
     'when_any',
     'alternate_name',

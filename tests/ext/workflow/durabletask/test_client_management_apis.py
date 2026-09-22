@@ -19,7 +19,7 @@ from google.protobuf import timestamp_pb2, wrappers_pb2
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.aio.client import AsyncTaskHubGrpcClient
-from dapr.ext.workflow._durabletask.client import UNSET, TaskHubGrpcClient
+from dapr.ext.workflow._durabletask.client import TaskHubGrpcClient
 
 
 def _sync_client() -> TaskHubGrpcClient:
@@ -35,12 +35,6 @@ def _async_client() -> AsyncTaskHubGrpcClient:
     stub = MagicMock()
     client._get_stub = lambda: stub
     return client
-
-
-def test_the_input_sentinel_reads_as_unset():
-    """UNSET is the documented default of a public argument, so its repr shows up
-    in help() output, IDE hovers and tracebacks."""
-    assert repr(UNSET) == '<unset>'
 
 
 def test_list_instance_ids_omits_unset_pagination_fields():
@@ -111,8 +105,8 @@ def test_rerun_sends_source_instance_and_event_id():
     assert req.eventID == 4
 
 
-def test_rerun_without_input_leaves_the_original_input_alone():
-    """Omitting input must not set overwriteInput, or the runtime nulls the input."""
+def test_rerun_without_overwrite_leaves_the_original_input_alone():
+    """overwriteInput must stay false, or the runtime nulls the input."""
     client = _sync_client()
     client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
 
@@ -123,12 +117,12 @@ def test_rerun_without_input_leaves_the_original_input_alone():
     assert not req.HasField('input')
 
 
-def test_rerun_with_none_input_clears_the_input():
-    """None is a value, not an omission: it overwrites the input with null."""
+def test_rerun_with_overwrite_and_no_input_clears_the_input():
+    """The flag without a value is how the wire says "set the input to null"."""
     client = _sync_client()
     client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
 
-    client.rerun_orchestration_from_event('instance1', 4, input=None)
+    client.rerun_orchestration_from_event('instance1', 4, input=None, overwrite_input=True)
 
     req = client._stub.RerunWorkflowFromEvent.call_args[0][0]
     assert req.overwriteInput is True
@@ -139,7 +133,9 @@ def test_rerun_with_an_input_serializes_it_to_json():
     client = _sync_client()
     client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
 
-    client.rerun_orchestration_from_event('instance1', 4, input={'amount': 10})
+    client.rerun_orchestration_from_event(
+        'instance1', 4, input={'amount': 10}, overwrite_input=True
+    )
 
     req = client._stub.RerunWorkflowFromEvent.call_args[0][0]
     assert req.overwriteInput is True
@@ -151,21 +147,33 @@ def test_rerun_with_a_falsy_input_still_overwrites():
     client = _sync_client()
     client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
 
-    client.rerun_orchestration_from_event('instance1', 4, input=0)
+    client.rerun_orchestration_from_event('instance1', 4, input=0, overwrite_input=True)
 
     req = client._stub.RerunWorkflowFromEvent.call_args[0][0]
     assert req.overwriteInput is True
     assert req.input == wrappers_pb2.StringValue(value='0')
 
 
-def test_rerun_explicit_unset_matches_omitting_input():
+def test_rerun_rejects_a_negative_event_id_before_calling_the_stub():
+    """eventID is uint32 on the wire, so protobuf would reject -1 with a message
+    naming neither the argument nor the reason. -1 is reachable: it is what the
+    runtime reports for history events it assigns no ID to."""
+    client = _sync_client()
+
+    with pytest.raises(ValueError, match='event_id must be non-negative, got -1'):
+        client.rerun_orchestration_from_event('instance1', -1)
+
+    client._stub.RerunWorkflowFromEvent.assert_not_called()
+
+
+def test_rerun_accepts_event_id_zero():
+    """Zero is a valid event id, so the guard must not key off falsiness."""
     client = _sync_client()
     client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
 
-    client.rerun_orchestration_from_event('instance1', 4, input=UNSET)
+    client.rerun_orchestration_from_event('instance1', 0)
 
-    req = client._stub.RerunWorkflowFromEvent.call_args[0][0]
-    assert req.overwriteInput is False
+    assert client._stub.RerunWorkflowFromEvent.call_args[0][0].eventID == 0
 
 
 def test_rerun_omits_unset_instance_ids():
@@ -229,7 +237,7 @@ async def test_async_get_instance_history_unwraps_events():
 
 
 @pytest.mark.asyncio
-async def test_async_rerun_resolves_the_input_sentinel_like_the_sync_client():
+async def test_async_rerun_builds_the_same_request_as_the_sync_client():
     client = _async_client()
     client._get_stub().RerunWorkflowFromEvent = AsyncMock(
         return_value=pb.RerunWorkflowFromEventResponse(newInstanceID='rerun1')
@@ -238,7 +246,7 @@ async def test_async_rerun_resolves_the_input_sentinel_like_the_sync_client():
     omitted = await client.rerun_orchestration_from_event('instance1', 4)
     req_omitted = client._get_stub().RerunWorkflowFromEvent.call_args[0][0]
 
-    await client.rerun_orchestration_from_event('instance1', 4, input=None)
+    await client.rerun_orchestration_from_event('instance1', 4, input=None, overwrite_input=True)
     req_none = client._get_stub().RerunWorkflowFromEvent.call_args[0][0]
 
     assert omitted == 'rerun1'

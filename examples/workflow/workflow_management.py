@@ -16,7 +16,7 @@ An order workflow is scheduled with an amount its charge activity rejects, so
 the instance fails. The three management APIs then recover it without touching
 the workflow code:
 
-1. ``iter_workflow_instances()`` finds the instance among this app's instances.
+1. ``iter_workflow_instance_ids()`` finds the instance among this app's instance IDs.
 2. ``get_workflow_history()`` reads what the instance did and where it stopped.
 3. ``rerun_workflow_from_event()`` starts a new instance that replays the
    history up to the failed charge, then re-runs that charge with a corrected
@@ -27,8 +27,6 @@ replays its recorded result rather than calling it again: it prints once across
 both instances. That does not generalise to every activity — an activity still
 in flight at the target event is re-dispatched.
 """
-
-from time import sleep
 
 import dapr.ext.workflow as wf
 
@@ -84,20 +82,23 @@ def find_charge_event_id(client: wf.DaprWorkflowClient, workflow_instance_id: st
 def main():
     client = wf.DaprWorkflowClient()
     wfr.start()
-    sleep(5)
 
     client.schedule_new_workflow(order_workflow, input=0, instance_id=instance_id)
     state = client.wait_for_workflow_completion(instance_id, timeout_in_seconds=30)
     print(f'*** first run finished: status={state.runtime_status.name}', flush=True)
 
-    listed = list(client.iter_workflow_instances())
+    listed = list(client.iter_workflow_instance_ids())
     print(f'*** list: instance present={instance_id in listed}', flush=True)
 
     print_history(client, instance_id)
 
     charge_event_id = find_charge_event_id(client, instance_id)
     rerun_instance_id = client.rerun_workflow_from_event(instance_id, charge_event_id, input=25)
-    print(f'*** rerun started from event #{charge_event_id}', flush=True)
+    print(
+        f'*** rerun started from event #{charge_event_id} '
+        f'(the runtime calls this activity task #{charge_event_id})',
+        flush=True,
+    )
 
     rerun_state = client.wait_for_workflow_completion(rerun_instance_id, timeout_in_seconds=30)
     print(

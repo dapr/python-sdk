@@ -598,8 +598,8 @@ This example demonstrates the three workflow management APIs on
 `DaprWorkflowClient`, using them to recover a failed order without changing the
 workflow code:
 
-- `iter_workflow_instances()` walks every instance ID for this app, paging
-  behind the scenes. `list_workflow_instances()` returns a single page plus a
+- `iter_workflow_instance_ids()` walks every instance ID for this app, paging
+  behind the scenes. `list_workflow_instance_ids()` returns a single page plus a
   continuation token when you want to drive the paging yourself.
 - `get_workflow_history()` returns the instance's events as
   `WorkflowHistoryEvent` records, carrying the event ID, type, name, the
@@ -614,7 +614,7 @@ carries this SDK's snapshot of that rule so you do not have to hard-code it, but
 the sidecar has the final say and one on a different version may disagree.
 
 Both clients expose all three, `await`-able on
-`dapr.ext.workflow.aio.DaprWorkflowClient`, where `iter_workflow_instances()`
+`dapr.ext.workflow.aio.DaprWorkflowClient`, where `iter_workflow_instance_ids()`
 is an `async for`.
 
 ```sh
@@ -637,10 +637,16 @@ The output should look like this:
 *** history: #-1 WORKFLOW_STARTED name=None
 *** history: #-1 TASK_FAILED name=None closes=#2 error=amount must be positive, got 0
 *** history: #3 EXECUTION_COMPLETED name=None error=workflow-management-example: Activity task #2 failed: amount must be positive, got 0
-*** rerun started from event #2
+*** rerun started from event #2 (the runtime calls this activity task #2)
 *** charge_order: charged 25
 *** rerun finished: status=COMPLETED result="charged 25"
 ```
+
+One entity, two names: the ID you pass to `rerun_workflow_from_event` is the
+history event's `event_id`, and the runtime's own error strings call that same
+number an activity *task* (`Activity task #2 failed` above). Both spellings come
+from durabletask — `RerunWorkflowFromEvent` and `HistoryEvent` on one side,
+`taskScheduledId` and the error text on the other.
 
 `validate_order` prints once across both runs: it had already completed before
 the target event, so the rerun replays its recorded result instead of calling it
