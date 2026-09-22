@@ -200,10 +200,11 @@ def new_schedule_task_action(
     task_execution_id: str = '',
     propagation_scope: Optional[int] = None,
 ) -> pb.WorkflowAction:
+    # Routing is carried by the enclosing WorkflowAction.router; the inner
+    # ScheduleTaskAction router field is reserved in the protos.
     schedule = pb.ScheduleTaskAction(
         name=name,
         input=get_string_value(encoded_input),
-        router=router,
         taskExecutionId=task_execution_id,
     )
     if propagation_scope is not None:
@@ -229,11 +230,12 @@ def new_create_child_workflow_action(
     router: Optional[pb.TaskRouter] = None,
     propagation_scope: Optional[int] = None,
 ) -> pb.WorkflowAction:
+    # Routing is carried by the enclosing WorkflowAction.router; the inner
+    # CreateChildWorkflowAction router field is reserved in the protos.
     child = pb.CreateChildWorkflowAction(
         name=name,
         instanceId=instance_id,
         input=get_string_value(encoded_input),
-        router=router,
     )
     if propagation_scope is not None:
         child.historyPropagationScope = propagation_scope
