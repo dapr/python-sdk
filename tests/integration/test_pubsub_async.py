@@ -18,6 +18,7 @@ import json
 import pytest
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
+from dapr.clients import BulkPublishEntry
 from tests.naming_utils import unique_name
 from tests.wait_utils import wait_until_async
 
@@ -79,3 +80,26 @@ async def test_publish_events_bulk_delivery(sidecar):
             data = await wait_until_async(lambda: _fetch_received(d, key), timeout=10)
             msg = json.loads(data)
             assert msg['message'] == f'bulk-async-{n}'
+
+
+async def test_publish_events_entry_with_metadata_is_delivered(sidecar):
+    run_id = unique_name()
+
+    async with AsyncDaprClient(address=GRPC_ADDRESS) as d:
+        response = await d.publish_events(
+            pubsub_name=PUBSUB,
+            topic_name=TOPIC,
+            data=[
+                BulkPublishEntry(
+                    event=json.dumps({'run_id': run_id, 'id': 1, 'message': 'bulk-async-meta'}),
+                    metadata={'partitionKey': 'tenant-a'},
+                ),
+            ],
+            data_content_type='application/json',
+            publish_metadata={'ttlInSeconds': '300'},
+        )
+        assert response.failed_entries == []
+
+        key = f'received-{run_id}-1'
+        data = await wait_until_async(lambda: _fetch_received(d, key), timeout=10)
+        assert json.loads(data)['message'] == 'bulk-async-meta'

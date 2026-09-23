@@ -14,8 +14,9 @@ limitations under the License.
 """
 
 import io
+import uuid
 from enum import Enum
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
@@ -452,3 +453,102 @@ class JobEvent:
             str: The job data as a string, or empty string if no data.
         """
         return self.data.decode(encoding) if self.data else ''
+
+
+class BulkPublishEntry:
+    """One event in a publish_events (bulk publish) request.
+
+    Use this instead of a plain ``bytes`` or ``str`` event when the event needs its own
+    metadata, content type, or entry ID. Plain events are wrapped in this class by
+    :meth:`DaprClient.publish_events`.
+
+    Attributes:
+        event (Union[bytes, str]): the event payload. A str is encoded as UTF-8.
+        metadata (Dict[str, str]): metadata for this entry only, for example ``partitionKey``.
+            Keys set here override the request-level ``publish_metadata``.
+        content_type (Optional[str]): content type of the event. When None, the request-level
+            ``data_content_type`` applies, then the default for the event type.
+        entry_id (str): unique ID of the entry within the request. Generated when omitted.
+    """
+
+    def __init__(
+        self,
+        event: Union[bytes, str],
+        metadata: Optional[Dict[str, str]] = None,
+        content_type: Optional[str] = None,
+        entry_id: Optional[str] = None,
+    ):
+        """Inits BulkPublishEntry.
+
+        Args:
+            event (Union[bytes, str]): the event payload.
+            metadata (Dict[str, str], optional): metadata for this entry only.
+            content_type (str, optional): content type of the event.
+            entry_id (str, optional): unique ID of the entry. Generated when omitted.
+
+        Raises:
+            ValueError: event is not bytes or str.
+        """
+        if not isinstance(event, (bytes, str)):
+            raise ValueError(f'invalid type for event {type(event)}')
+        self.event = event
+        self.metadata: Dict[str, str] = dict(metadata) if metadata else {}
+        self.content_type = content_type
+        self.entry_id = entry_id or str(uuid.uuid4())
+
+    def to_proto(
+        self,
+        publish_metadata: Optional[Dict[str, str]] = None,
+        data_content_type: Optional[str] = None,
+    ) -> api_v1.BulkPublishRequestEntry:
+        """Builds the proto entry for this event.
+
+        Request-level ``publish_metadata`` is copied onto the entry so that the runtime applies
+        it to this event. Entry metadata keys override request-level keys.
+
+        Args:
+            publish_metadata (Dict[str, str], optional): request-level metadata.
+            data_content_type (str, optional): request-level content type.
+
+        Returns:
+            :obj:`runtime_v1.BulkPublishRequestEntry`
+        """
+        default_content_type = (
+            'application/octet-stream' if isinstance(self.event, bytes) else 'text/plain'
+        )
+        metadata = dict(publish_metadata or {})
+        metadata.update(self.metadata)
+        return api_v1.BulkPublishRequestEntry(
+            entry_id=self.entry_id,
+            event=to_bytes(self.event),
+            content_type=self.content_type or data_content_type or default_content_type,
+            metadata=metadata,
+        )
+
+
+def to_bulk_publish_entries(
+    data: Sequence[Union[bytes, str, BulkPublishEntry]],
+    publish_metadata: Optional[Dict[str, str]] = None,
+    data_content_type: Optional[str] = None,
+) -> List[api_v1.BulkPublishRequestEntry]:
+    """Converts publish_events input into proto entries.
+
+    Plain ``bytes`` and ``str`` events are wrapped in :class:`BulkPublishEntry` first.
+
+    Args:
+        data (Sequence[Union[bytes, str, BulkPublishEntry]]): the events to publish.
+        publish_metadata (Dict[str, str], optional): request-level metadata, copied onto
+            every entry.
+        data_content_type (str, optional): request-level content type.
+
+    Returns:
+        List[:obj:`runtime_v1.BulkPublishRequestEntry`]
+
+    Raises:
+        ValueError: an event is not bytes, str, or BulkPublishEntry.
+    """
+    entries = []
+    for event in data:
+        entry = event if isinstance(event, BulkPublishEntry) else BulkPublishEntry(event)
+        entries.append(entry.to_proto(publish_metadata, data_content_type))
+    return entries
