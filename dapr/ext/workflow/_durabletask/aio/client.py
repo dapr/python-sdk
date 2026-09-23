@@ -396,6 +396,7 @@ class AsyncTaskHubGrpcClient:
         input: Optional[Any] = None,
         overwrite_input: bool = False,
         new_child_instance_id: Optional[str] = None,
+        app_id: Optional[str] = None,
     ) -> str:
         req = _new_rerun_request(
             instance_id,
@@ -404,6 +405,7 @@ class AsyncTaskHubGrpcClient:
             input=input,
             overwrite_input=overwrite_input,
             new_child_instance_id=new_child_instance_id,
+            app_id=app_id,
         )
         self._logger.info(f"Rerunning instance '{instance_id}' from event {event_id}.")
         res: pb.RerunWorkflowFromEventResponse = await self._get_stub().RerunWorkflowFromEvent(req)

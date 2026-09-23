@@ -516,6 +516,7 @@ class DaprWorkflowClient:
         new_instance_id: Optional[str] = None,
         input: Any = UNSET,
         new_child_workflow_instance_id: Optional[str] = None,
+        app_id: Optional[str] = None,
     ) -> str:
         """Starts a new workflow instance that replays a completed one up to an event.
 
@@ -545,6 +546,13 @@ class DaprWorkflowClient:
             new_child_workflow_instance_id: The ID to give the new child
             workflow instance. Only accepted when event_id names a child
             workflow creation event.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
+            The listing and history APIs take no app_id: their requests carry no
+            router, and the runtime scopes both to the calling app.
 
         Returns:
             The ID of the new workflow instance.
@@ -567,4 +575,5 @@ class DaprWorkflowClient:
             input=input if input_supplied else None,
             overwrite_input=input_supplied,
             new_child_instance_id=new_child_workflow_instance_id,
+            app_id=app_id,
         )

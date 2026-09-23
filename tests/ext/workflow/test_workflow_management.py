@@ -75,6 +75,7 @@ class FakeTaskHubGrpcClient:
         input=None,
         overwrite_input=False,
         new_child_instance_id=None,
+        app_id=None,
     ):
         # Build the real request so the fake rejects what the engine would reject.
         _new_rerun_request(
@@ -84,6 +85,7 @@ class FakeTaskHubGrpcClient:
             input=input,
             overwrite_input=overwrite_input,
             new_child_instance_id=new_child_instance_id,
+            app_id=app_id,
         )
         self.rerun_calls.append(
             {
@@ -93,6 +95,7 @@ class FakeTaskHubGrpcClient:
                 'input': input,
                 'overwrite_input': overwrite_input,
                 'new_child_instance_id': new_child_instance_id,
+                'app_id': app_id,
             }
         )
         return self.rerun_result
@@ -475,6 +478,14 @@ class RerunWorkflowFromEventTest(unittest.TestCase):
         self.assertIsNone(fake.rerun_calls[0]['input'])
         self.assertTrue(fake.rerun_calls[0]['overwrite_input'])
 
+    def test_forwards_app_id_for_a_cross_app_rerun(self):
+        fake = FakeTaskHubGrpcClient()
+        client = new_client(fake)
+
+        client.rerun_workflow_from_event('instance1', 4, app_id='other-app')
+
+        self.assertEqual('other-app', fake.rerun_calls[0]['app_id'])
+
     def test_rejects_a_negative_event_id(self):
         """WorkflowHistoryEvent.event_id is -1 for events the runtime gives no ID,
         so passing one straight back is a reachable mistake."""
@@ -507,6 +518,7 @@ class RerunWorkflowFromEventTest(unittest.TestCase):
                 'input': {'amount': 10},
                 'overwrite_input': True,
                 'new_child_instance_id': 'child1',
+                'app_id': None,
             },
             fake.rerun_calls[0],
         )
@@ -602,6 +614,7 @@ class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
                 'input': None,
                 'overwrite_input': True,
                 'new_child_instance_id': 'child1',
+                'app_id': None,
             },
             fake.rerun_calls[0],
         )

@@ -173,6 +173,7 @@ def _new_rerun_request(
     input: Optional[Any],
     overwrite_input: bool,
     new_child_instance_id: Optional[str],
+    app_id: Optional[str],
 ) -> pb.RerunWorkflowFromEventRequest:
     """Build a RerunWorkflowFromEvent request.
 
@@ -221,6 +222,7 @@ def _new_rerun_request(
         else None,
         overwriteInput=overwrite_input,
         newChildWorkflowInstanceID=new_child_instance_id,
+        router=new_task_router(app_id),
     )
 
 
@@ -591,6 +593,7 @@ class TaskHubGrpcClient:
         input: Optional[Any] = None,
         overwrite_input: bool = False,
         new_child_instance_id: Optional[str] = None,
+        app_id: Optional[str] = None,
     ) -> str:
         req = _new_rerun_request(
             instance_id,
@@ -599,6 +602,7 @@ class TaskHubGrpcClient:
             input=input,
             overwrite_input=overwrite_input,
             new_child_instance_id=new_child_instance_id,
+            app_id=app_id,
         )
         self._logger.info(f"Rerunning instance '{instance_id}' from event {event_id}.")
         res: pb.RerunWorkflowFromEventResponse = self._stub.RerunWorkflowFromEvent(req)

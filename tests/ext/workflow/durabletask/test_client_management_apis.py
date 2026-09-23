@@ -239,6 +239,35 @@ def test_rerun_forwards_both_new_instance_ids():
     assert req.newChildWorkflowInstanceID == 'child1'
 
 
+def test_rerun_omits_the_router_when_no_app_id_is_given():
+    client = _sync_client()
+    client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
+
+    client.rerun_orchestration_from_event('instance1', 4)
+
+    assert not client._stub.RerunWorkflowFromEvent.call_args[0][0].HasField('router')
+
+
+def test_rerun_routes_to_another_app():
+    """Rerun is the only one of the three management RPCs whose request carries a
+    router; list and history are scoped to the calling app by the runtime."""
+    client = _sync_client()
+    client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
+
+    client.rerun_orchestration_from_event('instance1', 4, app_id='other-app')
+
+    req = client._stub.RerunWorkflowFromEvent.call_args[0][0]
+    assert req.router.targetAppID == 'other-app'
+
+
+def test_only_rerun_of_the_three_can_be_routed():
+    """A guard on the proto: if list or history ever gains a router, this fails and
+    the SDK should grow an app_id there too."""
+    assert not pb.ListInstanceIDsRequest.DESCRIPTOR.fields_by_name.get('router')
+    assert not pb.GetInstanceHistoryRequest.DESCRIPTOR.fields_by_name.get('router')
+    assert pb.RerunWorkflowFromEventRequest.DESCRIPTOR.fields_by_name.get('router')
+
+
 def test_history_timestamps_survive_the_round_trip():
     client = _sync_client()
     event = pb.HistoryEvent(
