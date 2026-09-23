@@ -42,6 +42,28 @@ TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
 
 
+# `list.ListInstanceIDs` in the runtime returns bare errors for both configuration
+# failures, so they arrive as UNKNOWN with the message in the details.
+_NO_KEY_LISTING = 'does not support listing keys'
+_NO_ACTOR_STORE = 'no state store with actor support found'
+
+
+def _listing_unsupported_message(details: str) -> Optional[str]:
+    """Turns the runtime's configuration errors into advice, or None if unrelated."""
+    if _NO_KEY_LISTING in details:
+        return (
+            'Listing workflow instances requires an actor state store that supports '
+            'key listing, and the configured one does not. Sidecar reported: '
+            f'{details}'
+        )
+    if _NO_ACTOR_STORE in details:
+        return (
+            'Listing workflow instances requires a state store with actorStateStore '
+            f'enabled, and the sidecar has none configured. Sidecar reported: {details}'
+        )
+    return None
+
+
 class DaprWorkflowClient:
     """Defines client operations for managing Dapr Workflow instances.
 
@@ -432,10 +454,20 @@ class DaprWorkflowClient:
 
         Returns:
             A page of instance IDs, and the token for the next page if there is one.
+
+        Raises:
+            NotImplementedError: If the sidecar has no actor state store, or its
+            store cannot list keys, which this API needs and many stores lack.
         """
-        res = self.__obj.list_instance_ids(
-            page_size=page_size, continuation_token=continuation_token
-        )
+        try:
+            res = self.__obj.list_instance_ids(
+                page_size=page_size, continuation_token=continuation_token
+            )
+        except RpcError as error:
+            advice = _listing_unsupported_message(error.details() or '')
+            if advice is None:
+                raise
+            raise NotImplementedError(advice) from error
         return WorkflowInstanceIdPage._from_proto(res)
 
     def iter_workflow_instance_ids(self, *, page_size: int = 1024) -> Iterator[str]:

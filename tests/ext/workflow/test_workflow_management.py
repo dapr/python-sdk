@@ -17,6 +17,7 @@ import unittest
 from unittest import mock
 
 from google.protobuf import timestamp_pb2, wrappers_pb2
+from grpc import RpcError
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.client import _new_rerun_request
@@ -29,6 +30,18 @@ from dapr.ext.workflow.workflow_management import (
     WorkflowHistoryEventType,
     WorkflowInstanceIdPage,
 )
+
+
+class SimulatedRpcError(RpcError):
+    def __init__(self, code, details):
+        self._code = code
+        self._details = details
+
+    def code(self):
+        return self._code
+
+    def details(self):
+        return self._details
 
 
 def new_history_event(**kwargs) -> pb.HistoryEvent:
@@ -281,6 +294,49 @@ class ListWorkflowInstanceIdsTest(unittest.TestCase):
         )
 
 
+class ListingUnsupportedTest(unittest.TestCase):
+    """The runtime returns bare errors for both listing misconfigurations, so they
+    arrive as UNKNOWN with the message buried in the details."""
+
+    def _client_raising(self, details):
+        fake = FakeTaskHubGrpcClient()
+
+        def boom(**kwargs):
+            raise SimulatedRpcError(code='UNKNOWN', details=details)
+
+        fake.list_instance_ids = boom
+        return new_client(fake)
+
+    def test_a_store_that_cannot_list_keys_gets_advice(self):
+        client = self._client_raising('state store *inmemory.Store does not support listing keys')
+
+        with self.assertRaises(NotImplementedError) as caught:
+            client.list_workflow_instance_ids()
+
+        self.assertIn('supports key listing', str(caught.exception))
+        self.assertIsInstance(caught.exception.__cause__, SimulatedRpcError)
+
+    def test_a_missing_actor_store_gets_advice(self):
+        client = self._client_raising('no state store with actor support found')
+
+        with self.assertRaises(NotImplementedError) as caught:
+            client.list_workflow_instance_ids()
+
+        self.assertIn('actorStateStore', str(caught.exception))
+
+    def test_an_unrelated_rpc_error_is_left_alone(self):
+        client = self._client_raising('connection refused')
+
+        with self.assertRaises(SimulatedRpcError):
+            client.list_workflow_instance_ids()
+
+    def test_the_iterator_surfaces_the_same_advice(self):
+        client = self._client_raising('state store *inmemory.Store does not support listing keys')
+
+        with self.assertRaises(NotImplementedError):
+            list(client.iter_workflow_instance_ids())
+
+
 class IterWorkflowInstanceIdsTest(unittest.TestCase):
     def test_follows_the_continuation_token_across_pages(self):
         fake = FakeTaskHubGrpcClient()
@@ -428,7 +484,7 @@ class RerunWorkflowFromEventTest(unittest.TestCase):
         with self.assertRaises(ValueError) as caught:
             client.rerun_workflow_from_event('instance1', -1)
 
-        self.assertIn('event_id must be non-negative', str(caught.exception))
+        self.assertIn('event_id must be between 0 and', str(caught.exception))
         self.assertEqual([], fake.rerun_calls)
 
     def test_forwards_every_argument(self):

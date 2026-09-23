@@ -19,7 +19,7 @@ from google.protobuf import timestamp_pb2, wrappers_pb2
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.aio.client import AsyncTaskHubGrpcClient
-from dapr.ext.workflow._durabletask.client import TaskHubGrpcClient
+from dapr.ext.workflow._durabletask.client import _MAX_EVENT_ID, TaskHubGrpcClient
 
 
 def _sync_client() -> TaskHubGrpcClient:
@@ -160,10 +160,29 @@ def test_rerun_rejects_a_negative_event_id_before_calling_the_stub():
     runtime reports for history events it assigns no ID to."""
     client = _sync_client()
 
-    with pytest.raises(ValueError, match='event_id must be non-negative, got -1'):
+    with pytest.raises(ValueError, match='event_id must be between 0 and'):
         client.rerun_orchestration_from_event('instance1', -1)
 
     client._stub.RerunWorkflowFromEvent.assert_not_called()
+
+
+def test_rerun_rejects_an_event_id_above_the_uint32_range():
+    """The upper end fails the same opaque way as a negative one."""
+    client = _sync_client()
+
+    with pytest.raises(ValueError, match='event_id must be between 0 and'):
+        client.rerun_orchestration_from_event('instance1', _MAX_EVENT_ID + 1)
+
+    client._stub.RerunWorkflowFromEvent.assert_not_called()
+
+
+def test_rerun_accepts_the_largest_valid_event_id():
+    client = _sync_client()
+    client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
+
+    client.rerun_orchestration_from_event('instance1', _MAX_EVENT_ID)
+
+    assert client._stub.RerunWorkflowFromEvent.call_args[0][0].eventID == _MAX_EVENT_ID
 
 
 def test_rerun_accepts_event_id_zero():
@@ -185,6 +204,26 @@ def test_rerun_omits_unset_instance_ids():
     req = client._stub.RerunWorkflowFromEvent.call_args[0][0]
     assert not req.HasField('newInstanceID')
     assert not req.HasField('newChildWorkflowInstanceID')
+
+
+def test_rerun_rejects_an_empty_new_instance_id():
+    """None asks the runtime to generate an ID; '' is taken literally and yields an
+    instance the runtime cannot schedule reminders for."""
+    client = _sync_client()
+
+    with pytest.raises(ValueError, match='new_instance_id must be a non-empty ID'):
+        client.rerun_orchestration_from_event('instance1', 4, new_instance_id='')
+
+    client._stub.RerunWorkflowFromEvent.assert_not_called()
+
+
+def test_rerun_rejects_an_empty_new_child_instance_id():
+    client = _sync_client()
+
+    with pytest.raises(ValueError, match='new_child_instance_id must be a non-empty ID'):
+        client.rerun_orchestration_from_event('instance1', 4, new_child_instance_id='')
+
+    client._stub.RerunWorkflowFromEvent.assert_not_called()
 
 
 def test_rerun_forwards_both_new_instance_ids():

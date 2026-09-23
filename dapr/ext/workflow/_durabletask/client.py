@@ -160,6 +160,11 @@ def new_orchestration_state(
     )
 
 
+# eventID is uint32 on the wire; protobuf rejects anything outside this with a
+# message naming neither the argument nor the reason, at either end.
+_MAX_EVENT_ID = 2**32 - 1
+
+
 def _new_rerun_request(
     instance_id: str,
     event_id: int,
@@ -178,15 +183,34 @@ def _new_rerun_request(
     :data:`dapr.ext.workflow.UNSET`.
 
     Raises:
-        ValueError: If event_id is negative. The field is uint32 on the wire, so
-        protobuf would otherwise reject it with a message naming neither the
-        argument nor the reason.
+        ValueError: If event_id falls outside the uint32 range the wire allows,
+        or if either instance ID is an empty string. The runtime validates
+        neither: protobuf rejects an out-of-range event_id with a message naming
+        neither the argument nor the reason, and an empty ID is taken literally.
     """
-    if event_id < 0:
-        raise ValueError(
-            f'event_id must be non-negative, got {event_id}. The runtime reports -1 for '
-            'history events it assigns no ID to, and those cannot be rerun from.'
+    if not 0 <= event_id <= _MAX_EVENT_ID:
+        negative_hint = (
+            ' The runtime reports -1 for history events it assigns no ID to, and those '
+            'cannot be rerun from.'
+            if event_id < 0
+            else ''
         )
+        raise ValueError(
+            f'event_id must be between 0 and {_MAX_EVENT_ID}, got {event_id}.{negative_hint}'
+        )
+
+    # Both ID fields have explicit presence: None leaves them unset and the runtime
+    # generates an ID, while '' sets them to empty and the runtime takes it literally,
+    # producing an instance it cannot schedule reminders for.
+    for name, value in (
+        ('new_instance_id', new_instance_id),
+        ('new_child_instance_id', new_child_instance_id),
+    ):
+        if value == '':
+            raise ValueError(
+                f'{name} must be a non-empty ID or None, got an empty string. None asks '
+                'the runtime to generate one; an empty string is used as the ID itself.'
+            )
 
     return pb.RerunWorkflowFromEventRequest(
         sourceInstanceID=instance_id,
