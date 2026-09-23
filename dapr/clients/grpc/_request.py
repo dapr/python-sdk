@@ -469,6 +469,8 @@ class BulkPublishEntry:
         content_type (Optional[str]): content type of the event. When None, the request-level
             ``data_content_type`` applies, then the default for the event type.
         entry_id (str): unique ID of the entry within the request. Generated when omitted.
+            The ID is fixed when the entry is created, so do not place one instance twice in
+            the same ``data`` sequence: the runtime rejects duplicate entry IDs.
     """
 
     def __init__(

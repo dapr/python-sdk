@@ -390,6 +390,28 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         entry = self._fake_dapr_server.bulk_publish_requests[-1].entries[0]
         self.assertEqual({'partitionKey': 'tenant-b', 'ttlInSeconds': '60'}, dict(entry.metadata))
 
+    async def test_publish_events_plain_entries_send_no_metadata(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=['plain', BulkPublishEntry(event='wrapped')],
+        )
+        request = self._fake_dapr_server.bulk_publish_requests[-1]
+        for entry in request.entries:
+            self.assertEqual({}, dict(entry.metadata))
+
+    async def test_publish_events_entry_without_content_type_uses_type_default(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event=b'raw'), BulkPublishEntry(event='text')],
+        )
+        entries = self._fake_dapr_server.bulk_publish_requests[-1].entries
+        self.assertEqual('application/octet-stream', entries[0].content_type)
+        self.assertEqual('text/plain', entries[1].content_type)
+
     async def test_publish_events_keeps_caller_entry_id(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
         await dapr.publish_events(
