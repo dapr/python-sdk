@@ -92,7 +92,11 @@ def _next_message(subscription, timeout: float):
 
     def read() -> None:
         try:
-            future.set_result(subscription.next_message())
+            # next_message() returns None after a transient reconnect; keep reading.
+            message = subscription.next_message()
+            while message is None:
+                message = subscription.next_message()
+            future.set_result(message)
         except Exception as exc:
             future.set_exception(exc)
 
