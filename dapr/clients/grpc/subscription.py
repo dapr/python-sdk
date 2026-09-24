@@ -16,6 +16,8 @@ from dapr.proto import api_v1, appcallback_v1
 
 logger = logging.getLogger(__name__)
 
+MAX_RECONNECT_ATTEMPTS = 5
+
 
 class Subscription:
     def __init__(self, stub, pubsub_name, topic, metadata=None, dead_letter_topic=None):
@@ -28,9 +30,12 @@ class Subscription:
         self._response_thread: Optional[threading.Thread] = None
         self._send_queue: queue.Queue = queue.Queue()
         self._stream_active: bool = False
-        self._stream_lock = threading.Lock()  # Protects _stream_active
+        self._closed: bool = False
+        self._stream_lock = threading.Lock()  # Protects _stream_active and _closed
 
     def start(self):
+        send_queue: queue.Queue = queue.Queue()
+
         def outgoing_request_iterator():
             """
             Generator function to create the request iterator for the stream.
@@ -52,63 +57,88 @@ class Subscription:
                 while self._is_stream_active():
                     try:
                         # Wait for responses/acknowledgements to send from the send queue.
-                        response = self._send_queue.get()
+                        response = send_queue.get()
+                        if response is None:
+                            return
                         yield response
                     except queue.Empty:
                         continue
             except Exception as e:
                 raise Exception(f'Error while writing to stream: {e}')
 
-        # Create the bidirectional stream
-        self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
-        self._set_stream_active()
+        # Create the bidirectional stream. It gets its own send queue, so the request iterator of
+        # a stream that already failed can't take its acks.
+        with self._stream_lock:
+            if self._closed:
+                raise StreamInactiveError('Stream is not active')
+            self._send_queue = send_queue
+            self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
+            self._stream_active = True
         try:
             next(self._stream)  # type: ignore[arg-type]  # discard the initial message
         except Exception as e:
+            if self._closed:
+                raise StreamInactiveError('Stream is not active')
             raise Exception(f'Error while initializing stream: {e}')
 
     def reconnect_stream(self):
-        self.close()
+        self._close_stream()
         DaprHealth.wait_for_sidecar()
         logger.info('Subscription stream reconnecting...')
         self.start()
 
     def next_message(self):
-        """
-        Get the next message from the receive queue.
-        @return: The next message from the queue,
-                 or None if no message is received within the timeout.
-        """
-        if not self._is_stream_active() or self._stream is None:
-            raise StreamInactiveError('Stream is not active')
+        """Get the next message from the stream.
 
-        try:
-            # Read the next message from the stream directly
-            message = next(self._stream)  # type: ignore[call-overload]
-            return SubscriptionMessage(message.event_message)
-        except RpcError as e:
-            # If Dapr can't be reached, wait until it's ready and reconnect the stream.
-            # INTERNAL covers RST_STREAM from cloud proxies (e.g. Diagrid Cloud).
-            if e.code() in (
-                StatusCode.UNAVAILABLE,
-                StatusCode.UNKNOWN,
-                StatusCode.INTERNAL,
-            ):
-                logger.warning(
-                    'Subscription stream error (%s): %s — reconnecting',
-                    e.code(),
-                    e.details(),
-                )
-                self.reconnect_stream()
-            elif e.code() == StatusCode.CANCELLED:
-                raise StreamCancelledError('Stream has been cancelled')
-            else:
-                raise Exception(
-                    f'gRPC error while reading from subscription stream: {e.details()} '
-                    f'Status Code: {e.code()}'
-                )
-        except Exception as e:
-            raise Exception(f'Error while fetching message: {e}')
+        On a transient stream error the stream is reconnected and read again, up to
+        MAX_RECONNECT_ATTEMPTS times per call.
+
+        Returns:
+            SubscriptionMessage: The next message.
+
+        Raises:
+            StreamInactiveError: If the subscription is closed.
+            StreamCancelledError: If the stream was cancelled.
+            Exception: On any other error, or if the stream still fails after the reconnects.
+        """
+        reconnect_attempts = 0
+        while True:
+            if not self._is_stream_active() or self._stream is None:
+                raise StreamInactiveError('Stream is not active')
+
+            try:
+                # Read the next message from the stream directly
+                message = next(self._stream)  # type: ignore[call-overload]
+                return SubscriptionMessage(message.event_message)
+            except RpcError as e:
+                # If Dapr can't be reached, wait until it's ready and reconnect the stream.
+                # INTERNAL covers RST_STREAM from cloud proxies (e.g. Diagrid Cloud).
+                if e.code() in (
+                    StatusCode.UNAVAILABLE,
+                    StatusCode.UNKNOWN,
+                    StatusCode.INTERNAL,
+                ):
+                    if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
+                        raise Exception(
+                            f'Subscription stream still failing after {reconnect_attempts} '
+                            f'reconnect attempts: {e.details()} Status Code: {e.code()}'
+                        )
+                    reconnect_attempts += 1
+                    logger.warning(
+                        'Subscription stream error (%s): %s — reconnecting',
+                        e.code(),
+                        e.details(),
+                    )
+                    self.reconnect_stream()
+                elif e.code() == StatusCode.CANCELLED:
+                    raise StreamCancelledError('Stream has been cancelled')
+                else:
+                    raise Exception(
+                        f'gRPC error while reading from subscription stream: {e.details()} '
+                        f'Status Code: {e.code()}'
+                    )
+            except Exception as e:
+                raise Exception(f'Error while fetching message: {e}')
 
     def respond(self, message, status):
         try:
@@ -132,10 +162,6 @@ class Subscription:
     def respond_drop(self, message):
         self.respond(message, TopicEventResponse('drop').status)
 
-    def _set_stream_active(self):
-        with self._stream_lock:
-            self._stream_active = True
-
     def _set_stream_inactive(self):
         with self._stream_lock:
             self._stream_active = False
@@ -145,7 +171,13 @@ class Subscription:
             return self._stream_active
 
     def close(self):
+        with self._stream_lock:
+            self._closed = True
+        self._close_stream()
+
+    def _close_stream(self):
         self._set_stream_inactive()
+        self._send_queue.put(None)
         if self._stream:
             try:
                 self._stream.cancel()

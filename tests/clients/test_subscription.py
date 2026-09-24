@@ -1,8 +1,10 @@
 import unittest
+from unittest.mock import MagicMock
 
 from google.protobuf.struct_pb2 import Struct
 
-from dapr.clients.grpc.subscription import SubscriptionMessage
+from dapr.aio.clients.grpc.subscription import Subscription as SubscriptionAsync
+from dapr.clients.grpc.subscription import StreamInactiveError, Subscription, SubscriptionMessage
 from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 
 
@@ -108,3 +110,41 @@ class SubscriptionMessageTests(unittest.TestCase):
 
         self.assertEqual(b'{"a": 1}', subscription_message.raw_data())
         self.assertIsNone(subscription_message.data())
+
+
+class _StreamClosedDuringInitialRead:
+    def __init__(self, subscription: Subscription):
+        self._subscription = subscription
+
+    def __next__(self):
+        self._subscription.close()
+        raise RuntimeError('stream cancelled')
+
+    def cancel(self):
+        pass
+
+
+class SubscriptionCloseTests(unittest.TestCase):
+    def test_start_after_close_raises_stream_inactive(self):
+        subscription = Subscription(MagicMock(), 'pubsub', 'topic')
+        subscription.close()
+
+        with self.assertRaises(StreamInactiveError):
+            subscription.start()
+
+    def test_close_during_initial_read_raises_stream_inactive(self):
+        stub = MagicMock()
+        subscription = Subscription(stub, 'pubsub', 'topic')
+        stub.SubscribeTopicEventsAlpha1.return_value = _StreamClosedDuringInitialRead(subscription)
+
+        with self.assertRaises(StreamInactiveError):
+            subscription.start()
+
+
+class SubscriptionAsyncCloseTests(unittest.IsolatedAsyncioTestCase):
+    async def test_start_after_close_raises_stream_inactive(self):
+        subscription = SubscriptionAsync(MagicMock(), 'pubsub', 'topic')
+        await subscription.close()
+
+        with self.assertRaises(StreamInactiveError):
+            await subscription.start()

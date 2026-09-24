@@ -93,6 +93,8 @@ from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.version import __version__
 
+SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
+
 
 class DaprGrpcClient:
     """The convenient layer implementation of Dapr gRPC APIs.
@@ -622,6 +624,10 @@ class DaprGrpcClient:
             handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+
+        Returns:
+            Callable: Closes the subscription and waits up to SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS
+                for the handler thread to stop.
         """
         subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
 
@@ -638,9 +644,7 @@ class DaprGrpcClient:
                             # No message received
                             continue
 
-                except StreamInactiveError:
-                    break
-                except StreamCancelledError:
+                except (StreamInactiveError, StreamCancelledError):
                     break
                 except Exception:
                     # Stream died — reconnect via the subscription's own
@@ -655,6 +659,8 @@ class DaprGrpcClient:
 
         def close_subscription():
             subscription.close()
+            if threading.current_thread() is not streaming_thread:
+                streaming_thread.join(timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS)
 
         streaming_thread = threading.Thread(target=stream_messages, args=(subscription,))
         streaming_thread.start()
