@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
 import socket
 import threading
 import time
@@ -92,6 +93,8 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.version import __version__
+
+logger = logging.getLogger(__name__)
 
 SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
 
@@ -661,6 +664,11 @@ class DaprGrpcClient:
             subscription.close()
             if threading.current_thread() is not streaming_thread:
                 streaming_thread.join(timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS)
+                if streaming_thread.is_alive():
+                    logger.warning(
+                        'Subscription handler thread still running %ss after close',
+                        SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS,
+                    )
 
         streaming_thread = threading.Thread(target=stream_messages, args=(subscription,))
         streaming_thread.start()

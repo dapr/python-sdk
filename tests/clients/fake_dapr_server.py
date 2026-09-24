@@ -65,7 +65,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.actor_stream_initials: List[api_v1.SubscribeActorEventsRequestInitialAlpha1] = []
         self.actor_stream_replies: List[api_v1.SubscribeActorEventsRequestAlpha1] = []
         # SubscribeTopicEventsAlpha1: one status code is popped per stream connection, which then
-        # fails right after the initial response. IDs of acked events are recorded in order.
+        # fails right after the initial response (OK ends it cleanly). IDs of acked events are
+        # recorded in order.
         self.topic_stream_failures: List[grpc.StatusCode] = []
         self.topic_stream_acks: List[str] = []
 
@@ -251,6 +252,8 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         if self.topic_stream_failures:
             failure_code = self.topic_stream_failures.pop(0)
+            if failure_code == grpc.StatusCode.OK:
+                return
             context.abort(failure_code, 'Simulated stream failure')
 
         extensions = struct_pb2.Struct()

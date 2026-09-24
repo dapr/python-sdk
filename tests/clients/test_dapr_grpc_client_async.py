@@ -27,6 +27,7 @@ from google.rpc import code_pb2, status_pb2
 from grpc import StatusCode
 
 from dapr.aio.clients import DaprClient
+from dapr.aio.clients.grpc import subscription as subscription_module
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.aio.clients.grpc.subscription import MAX_RECONNECT_ATTEMPTS
 from dapr.clients.exceptions import DaprGrpcError
@@ -44,7 +45,7 @@ from dapr.clients.grpc._response import (
 )
 from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
 from dapr.common.logging import GrpcAioPollerNoiseFilter
-from dapr.common.pubsub.subscription import StreamInactiveError
+from dapr.common.pubsub.subscription import StreamInactiveError, StreamReconnectError
 from dapr.conf import settings
 from dapr.proto import common_v1
 
@@ -448,15 +449,63 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                     await subscription.close()
                     await dapr.close()
 
-    async def test_subscribe_topic_raises_when_reconnects_keep_failing(self):
-        self._fake_dapr_server.topic_stream_failures = [StatusCode.UNKNOWN] * 20
+    async def test_subscribe_topic_reconnects_after_server_ends_stream(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.OK]
+        self._fake_dapr_server.topic_stream_acks = []
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
         subscription = await dapr.subscribe(pubsub_name='pubsub', topic='example')
         try:
-            with self.assertRaisesRegex(Exception, 'reconnect attempts'):
-                await subscription.next_message()
-            streams_opened = 1 + MAX_RECONNECT_ATTEMPTS
-            self.assertEqual(20 - streams_opened, len(self._fake_dapr_server.topic_stream_failures))
+            message = await subscription.next_message()
+            self.assertEqual('111', message.id())
+
+            await subscription.respond_success(message)
+            self.assertTrue(await self._wait_for_topic_stream_ack('111'))
+        finally:
+            self._fake_dapr_server.topic_stream_failures = []
+            await subscription.close()
+            await dapr.close()
+
+    async def test_subscribe_topic_raises_when_reconnects_keep_failing(self):
+        for status_code in (StatusCode.UNKNOWN, StatusCode.OK):
+            with self.subTest(status_code=status_code):
+                self._fake_dapr_server.topic_stream_failures = [status_code] * 20
+                dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+                subscription = await dapr.subscribe(pubsub_name='pubsub', topic='example')
+                try:
+                    with patch.object(
+                        subscription_module, '_reconnect_backoff_seconds', return_value=0
+                    ) as backoff:
+                        with self.assertRaisesRegex(StreamReconnectError, 'reconnect attempts'):
+                            await subscription.next_message()
+                    streams_opened = 1 + MAX_RECONNECT_ATTEMPTS
+                    failures_left = len(self._fake_dapr_server.topic_stream_failures)
+                    self.assertEqual(20 - streams_opened, failures_left)
+                    backoff_attempts = [call.args[0] for call in backoff.call_args_list]
+                    self.assertEqual(list(range(1, MAX_RECONNECT_ATTEMPTS)), backoff_attempts)
+                finally:
+                    self._fake_dapr_server.topic_stream_failures = []
+                    await subscription.close()
+                    await dapr.close()
+
+    async def test_subscribe_topic_close_interrupts_reconnect_backoff(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.UNKNOWN] * 20
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        subscription = await dapr.subscribe(pubsub_name='pubsub', topic='example')
+        backoff_started = asyncio.Event()
+
+        def start_backoff(reconnect_attempts):
+            backoff_started.set()
+            return 30
+
+        try:
+            with patch.object(
+                subscription_module, '_reconnect_backoff_seconds', side_effect=start_backoff
+            ):
+                reader = asyncio.create_task(subscription.next_message())
+                await asyncio.wait_for(backoff_started.wait(), timeout=5)
+                await subscription.close()
+                with self.assertRaises(StreamInactiveError):
+                    await asyncio.wait_for(reader, timeout=5)
         finally:
             self._fake_dapr_server.topic_stream_failures = []
             await subscription.close()

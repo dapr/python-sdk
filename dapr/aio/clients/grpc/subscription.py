@@ -1,19 +1,33 @@
 import asyncio
+import contextlib
+import logging
+import random
 from typing import Optional
 
 from grpc import StatusCode  # type: ignore[attr-defined]
-from grpc.aio import AioRpcError
+from grpc.aio import EOF, AioRpcError  # type: ignore[attr-defined]
 
 from dapr.aio.clients.health import DaprHealth
 from dapr.clients.grpc._response import TopicEventResponse
 from dapr.common.pubsub.subscription import (
     StreamCancelledError,
     StreamInactiveError,
+    StreamReconnectError,
     SubscriptionMessage,
 )
 from dapr.proto import api_v1, appcallback_v1
 
+logger = logging.getLogger(__name__)
+
 MAX_RECONNECT_ATTEMPTS = 5
+RECONNECT_BACKOFF_INITIAL_SECONDS = 0.2
+RECONNECT_BACKOFF_MAX_SECONDS = 5.0
+
+
+def _reconnect_backoff_seconds(reconnect_attempts: int) -> float:
+    backoff_exponential = RECONNECT_BACKOFF_INITIAL_SECONDS * 2 ** (reconnect_attempts - 1)
+    backoff_capped = min(RECONNECT_BACKOFF_MAX_SECONDS, backoff_exponential)
+    return random.uniform(backoff_capped / 2, backoff_capped)
 
 
 class Subscription:
@@ -28,10 +42,10 @@ class Subscription:
             asyncio.Queue()
         )
         self._stream_active = asyncio.Event()
-        self._closed = False
+        self._closed = asyncio.Event()
 
     async def start(self):
-        if self._closed:
+        if self._closed.is_set():
             raise StreamInactiveError('Stream is not active')
         send_queue: asyncio.Queue[Optional[api_v1.SubscribeTopicEventsRequestAlpha1]] = (
             asyncio.Queue()
@@ -65,58 +79,73 @@ class Subscription:
         self._send_queue = send_queue
         self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
         self._stream_active.set()
-        await self._stream.read()  # discard the initial message
+        try:
+            await self._stream.read()  # discard the initial message
+        except (Exception, asyncio.CancelledError):
+            if self._closed.is_set():
+                raise StreamInactiveError('Stream is not active')
+            raise
 
     async def reconnect_stream(self):
         await self._close_stream()
         await DaprHealth.wait_for_sidecar()
-        print('Attempting to reconnect...')
+        logger.info('Subscription stream reconnecting...')
         await self.start()
 
     async def next_message(self):
         """Get the next message from the stream.
 
-        On a transient stream error the stream is reconnected and read again, up to
-        MAX_RECONNECT_ATTEMPTS times per call.
+        If the stream fails with a transient error or the server ends it, the stream is
+        reconnected and read again, up to MAX_RECONNECT_ATTEMPTS times per call, with a jittered
+        exponential backoff between reconnects.
 
         Returns:
-            Optional[SubscriptionMessage]: The next message, or None if the stream ended.
+            SubscriptionMessage: The next message.
 
         Raises:
             StreamInactiveError: If the subscription is closed.
             StreamCancelledError: If the stream was cancelled.
-            Exception: On any other error, or if the stream still fails after the reconnects.
+            StreamReconnectError: If the stream still fails after the reconnects.
+            Exception: On any other error.
         """
         reconnect_attempts = 0
         while True:
             if not self._stream_active.is_set() or self._stream is None:
                 raise StreamInactiveError('Stream is not active')
 
+            send_queue = self._send_queue
             try:
                 message = await self._stream.read()
-                if message is None:
-                    return None
-                return SubscriptionMessage(message.event_message)
+                if message is EOF:
+                    stream_error = 'Stream ended by the server'
+                else:
+                    subscription_message = SubscriptionMessage(message.event_message)
+                    subscription_message._origin_send_queue = send_queue
+                    return subscription_message
             except AioRpcError as e:
                 if e.code() in (StatusCode.UNAVAILABLE, StatusCode.UNKNOWN, StatusCode.INTERNAL):
-                    if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
-                        raise Exception(
-                            f'Subscription stream still failing after {reconnect_attempts} '
-                            f'reconnect attempts: {e.details()} Status Code: {e.code()}'
-                        )
-                    reconnect_attempts += 1
-                    print(
-                        f'gRPC error while reading from stream: {e.details()}, '
-                        f'Status Code: {e.code()}. '
-                        f'Attempting to reconnect...'
-                    )
-                    await self.reconnect_stream()
+                    stream_error = f'{e.details()} Status Code: {e.code()}'
                 elif e.code() == StatusCode.CANCELLED:
                     raise StreamCancelledError('Stream has been cancelled')
                 else:
                     raise Exception(f'gRPC error while reading from subscription stream: {e} ')
             except Exception as e:
                 raise Exception(f'Error while fetching message: {e}')
+
+            if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
+                raise StreamReconnectError(
+                    f'Subscription stream still failing after {reconnect_attempts} '
+                    f'reconnect attempts: {stream_error}'
+                )
+            if reconnect_attempts > 0:
+                backoff_seconds = _reconnect_backoff_seconds(reconnect_attempts)
+                with contextlib.suppress(asyncio.TimeoutError):
+                    await asyncio.wait_for(self._closed.wait(), timeout=backoff_seconds)
+                if self._closed.is_set():
+                    raise StreamInactiveError('Stream is not active')
+            reconnect_attempts += 1
+            logger.warning('Subscription stream error: %s — reconnecting', stream_error)
+            await self.reconnect_stream()
 
     async def respond(self, message, status):
         try:
@@ -127,9 +156,14 @@ class Subscription:
             msg = api_v1.SubscribeTopicEventsRequestAlpha1(event_processed=response)
             if not self._stream_active.is_set():
                 raise StreamInactiveError('Stream is not active')
-            await self._send_queue.put(msg)
+            send_queue = self._send_queue
+            origin_send_queue = message._origin_send_queue
+            if origin_send_queue is not None and origin_send_queue is not send_queue:
+                logger.debug('Dropping response to message %s from a replaced stream', message.id())
+                return
+            await send_queue.put(msg)
         except Exception as e:
-            print(f"Can't send message: {e}")
+            logger.warning(f"Can't send message on inactive stream: {e}")
 
     async def respond_success(self, message):
         await self.respond(message, TopicEventResponse('success').status)
@@ -141,7 +175,7 @@ class Subscription:
         await self.respond(message, TopicEventResponse('drop').status)
 
     async def close(self):
-        self._closed = True
+        self._closed.set()
         await self._close_stream()
 
     async def _close_stream(self):

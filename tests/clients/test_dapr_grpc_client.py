@@ -29,6 +29,7 @@ from grpc import StatusCode
 from dapr.clients import DaprClient
 from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc import conversation
+from dapr.clients.grpc import subscription as subscription_module
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._jobs import Job
@@ -46,7 +47,11 @@ from dapr.clients.grpc._response import (
 )
 from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
 from dapr.clients.grpc.client import DaprGrpcClient
-from dapr.clients.grpc.subscription import MAX_RECONNECT_ATTEMPTS, StreamInactiveError
+from dapr.clients.grpc.subscription import (
+    MAX_RECONNECT_ATTEMPTS,
+    StreamInactiveError,
+    StreamReconnectError,
+)
 from dapr.conf import settings
 from dapr.proto import common_v1
 
@@ -432,18 +437,76 @@ class DaprGrpcClientTests(unittest.TestCase):
                     self._fake_dapr_server.topic_stream_failures = []
                     subscription.close()
 
-    def test_subscribe_topic_raises_when_reconnects_keep_failing(self):
-        self._fake_dapr_server.topic_stream_failures = [StatusCode.UNKNOWN] * 20
+    def test_subscribe_topic_reconnects_after_server_ends_stream(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.OK]
+        self._fake_dapr_server.topic_stream_acks = []
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
         try:
-            with self.assertRaisesRegex(Exception, 'reconnect attempts'):
-                subscription.next_message()
-            streams_opened = 1 + MAX_RECONNECT_ATTEMPTS
-            self.assertEqual(20 - streams_opened, len(self._fake_dapr_server.topic_stream_failures))
+            message = subscription.next_message()
+            self.assertEqual('111', message.id())
+
+            subscription.respond_success(message)
+            self.assertTrue(self._wait_for_topic_stream_ack('111'))
         finally:
             self._fake_dapr_server.topic_stream_failures = []
             subscription.close()
+
+    def test_subscribe_topic_raises_when_reconnects_keep_failing(self):
+        for status_code in (StatusCode.UNKNOWN, StatusCode.OK):
+            with self.subTest(status_code=status_code):
+                self._fake_dapr_server.topic_stream_failures = [status_code] * 20
+                dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+                subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
+                try:
+                    with patch.object(
+                        subscription_module, '_reconnect_backoff_seconds', return_value=0
+                    ) as backoff:
+                        with self.assertRaisesRegex(StreamReconnectError, 'reconnect attempts'):
+                            subscription.next_message()
+                    streams_opened = 1 + MAX_RECONNECT_ATTEMPTS
+                    failures_left = len(self._fake_dapr_server.topic_stream_failures)
+                    self.assertEqual(20 - streams_opened, failures_left)
+                    backoff_attempts = [call.args[0] for call in backoff.call_args_list]
+                    self.assertEqual(list(range(1, MAX_RECONNECT_ATTEMPTS)), backoff_attempts)
+                finally:
+                    self._fake_dapr_server.topic_stream_failures = []
+                    subscription.close()
+
+    def test_subscribe_topic_close_interrupts_reconnect_backoff(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.UNKNOWN] * 20
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        subscription = dapr.subscribe(pubsub_name='pubsub', topic='example')
+        backoff_started = threading.Event()
+        errors = []
+
+        def start_backoff(reconnect_attempts):
+            backoff_started.set()
+            return 30
+
+        def read_message():
+            try:
+                subscription.next_message()
+            except Exception as e:
+                errors.append(e)
+
+        reader = threading.Thread(target=read_message)
+        try:
+            with patch.object(
+                subscription_module, '_reconnect_backoff_seconds', side_effect=start_backoff
+            ):
+                reader.start()
+                self.assertTrue(backoff_started.wait(timeout=5))
+                subscription.close()
+                reader.join(timeout=5)
+            self.assertFalse(reader.is_alive())
+            self.assertEqual(1, len(errors))
+            self.assertIsInstance(errors[0], StreamInactiveError)
+        finally:
+            self._fake_dapr_server.topic_stream_failures = []
+            subscription.close()
+            if reader.is_alive():
+                reader.join(timeout=5)
 
     def test_subscribe_topic_with_handler(self):
         # The fake server we're using sends two messages and then closes the stream
@@ -505,7 +568,8 @@ class DaprGrpcClientTests(unittest.TestCase):
             time.sleep(0.1)  # Use sleep to prevent a busy-wait loop
         close_fn()
 
-    def test_subscribe_topic_with_handler_reconnects_after_handler_error(self):
+    def test_subscribe_topic_with_handler_currently_reconnects_after_handler_error(self):
+        """Documents the current behaviour, which #1233 changes."""
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         handled_ids = []
         close_fn_ready = threading.Event()
@@ -536,6 +600,37 @@ class DaprGrpcClientTests(unittest.TestCase):
         close_fn()
 
         self.assertEqual(['111', '111'], handled_ids)
+        self.assertFalse(any(t.is_alive() for t in streaming_threads))
+
+    @patch('dapr.clients.grpc.client.SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS', 0.1)
+    def test_subscribe_topic_with_handler_close_warns_when_thread_outlives_timeout(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        handler_started = threading.Event()
+        handler_release = threading.Event()
+
+        def handler(message):
+            handler_started.set()
+            handler_release.wait(timeout=5)
+            return TopicEventResponse('success')
+
+        threads_before = set(threading.enumerate())
+        close_fn = dapr.subscribe_with_handler(
+            pubsub_name='pubsub', topic='example', handler_fn=handler
+        )
+        streaming_threads = [
+            t
+            for t in threading.enumerate()
+            if t not in threads_before and 'stream_messages' in t.name
+        ]
+        try:
+            self.assertTrue(handler_started.wait(timeout=5))
+            with self.assertLogs('dapr.clients.grpc.client', level='WARNING') as logs:
+                close_fn()
+            self.assertIn('still running', logs.output[0])
+        finally:
+            handler_release.set()
+            for streaming_thread in streaming_threads:
+                streaming_thread.join(timeout=5)
         self.assertFalse(any(t.is_alive() for t in streaming_threads))
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')

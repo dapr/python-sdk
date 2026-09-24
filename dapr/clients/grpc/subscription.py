@@ -1,5 +1,6 @@
 import logging
 import queue
+import random
 import threading
 from typing import Optional
 
@@ -10,6 +11,7 @@ from dapr.clients.health import DaprHealth
 from dapr.common.pubsub.subscription import (
     StreamCancelledError,
     StreamInactiveError,
+    StreamReconnectError,
     SubscriptionMessage,
 )
 from dapr.proto import api_v1, appcallback_v1
@@ -17,6 +19,14 @@ from dapr.proto import api_v1, appcallback_v1
 logger = logging.getLogger(__name__)
 
 MAX_RECONNECT_ATTEMPTS = 5
+RECONNECT_BACKOFF_INITIAL_SECONDS = 0.2
+RECONNECT_BACKOFF_MAX_SECONDS = 5.0
+
+
+def _reconnect_backoff_seconds(reconnect_attempts: int) -> float:
+    backoff_exponential = RECONNECT_BACKOFF_INITIAL_SECONDS * 2 ** (reconnect_attempts - 1)
+    backoff_capped = min(RECONNECT_BACKOFF_MAX_SECONDS, backoff_exponential)
+    return random.uniform(backoff_capped / 2, backoff_capped)
 
 
 class Subscription:
@@ -30,7 +40,7 @@ class Subscription:
         self._response_thread: Optional[threading.Thread] = None
         self._send_queue: queue.Queue = queue.Queue()
         self._stream_active: bool = False
-        self._closed: bool = False
+        self._closed = threading.Event()
         self._stream_lock = threading.Lock()  # Protects _stream_active and _closed
 
     def start(self):
@@ -55,21 +65,18 @@ class Subscription:
 
                 # Start sending back acknowledgement messages from the send queue
                 while self._is_stream_active():
-                    try:
-                        # Wait for responses/acknowledgements to send from the send queue.
-                        response = send_queue.get()
-                        if response is None:
-                            return
-                        yield response
-                    except queue.Empty:
-                        continue
+                    # Wait for responses/acknowledgements to send from the send queue.
+                    response = send_queue.get()
+                    if response is None:
+                        return
+                    yield response
             except Exception as e:
                 raise Exception(f'Error while writing to stream: {e}')
 
         # Create the bidirectional stream. It gets its own send queue, so the request iterator of
         # a stream that already failed can't take its acks.
         with self._stream_lock:
-            if self._closed:
+            if self._closed.is_set():
                 raise StreamInactiveError('Stream is not active')
             self._send_queue = send_queue
             self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
@@ -77,7 +84,7 @@ class Subscription:
         try:
             next(self._stream)  # type: ignore[arg-type]  # discard the initial message
         except Exception as e:
-            if self._closed:
+            if self._closed.is_set():
                 raise StreamInactiveError('Stream is not active')
             raise Exception(f'Error while initializing stream: {e}')
 
@@ -90,8 +97,9 @@ class Subscription:
     def next_message(self):
         """Get the next message from the stream.
 
-        On a transient stream error the stream is reconnected and read again, up to
-        MAX_RECONNECT_ATTEMPTS times per call.
+        If the stream fails with a transient error or the server ends it, the stream is
+        reconnected and read again, up to MAX_RECONNECT_ATTEMPTS times per call, with a jittered
+        exponential backoff between reconnects.
 
         Returns:
             SubscriptionMessage: The next message.
@@ -99,17 +107,23 @@ class Subscription:
         Raises:
             StreamInactiveError: If the subscription is closed.
             StreamCancelledError: If the stream was cancelled.
-            Exception: On any other error, or if the stream still fails after the reconnects.
+            StreamReconnectError: If the stream still fails after the reconnects.
+            Exception: On any other error.
         """
         reconnect_attempts = 0
         while True:
             if not self._is_stream_active() or self._stream is None:
                 raise StreamInactiveError('Stream is not active')
 
+            send_queue = self._send_queue
             try:
                 # Read the next message from the stream directly
                 message = next(self._stream)  # type: ignore[call-overload]
-                return SubscriptionMessage(message.event_message)
+                subscription_message = SubscriptionMessage(message.event_message)
+                subscription_message._origin_send_queue = send_queue
+                return subscription_message
+            except StopIteration:
+                stream_error = 'Stream ended by the server'
             except RpcError as e:
                 # If Dapr can't be reached, wait until it's ready and reconnect the stream.
                 # INTERNAL covers RST_STREAM from cloud proxies (e.g. Diagrid Cloud).
@@ -118,18 +132,7 @@ class Subscription:
                     StatusCode.UNKNOWN,
                     StatusCode.INTERNAL,
                 ):
-                    if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
-                        raise Exception(
-                            f'Subscription stream still failing after {reconnect_attempts} '
-                            f'reconnect attempts: {e.details()} Status Code: {e.code()}'
-                        )
-                    reconnect_attempts += 1
-                    logger.warning(
-                        'Subscription stream error (%s): %s — reconnecting',
-                        e.code(),
-                        e.details(),
-                    )
-                    self.reconnect_stream()
+                    stream_error = f'{e.details()} Status Code: {e.code()}'
                 elif e.code() == StatusCode.CANCELLED:
                     raise StreamCancelledError('Stream has been cancelled')
                 else:
@@ -140,6 +143,19 @@ class Subscription:
             except Exception as e:
                 raise Exception(f'Error while fetching message: {e}')
 
+            if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
+                raise StreamReconnectError(
+                    f'Subscription stream still failing after {reconnect_attempts} '
+                    f'reconnect attempts: {stream_error}'
+                )
+            if reconnect_attempts > 0:
+                backoff_seconds = _reconnect_backoff_seconds(reconnect_attempts)
+                if self._closed.wait(backoff_seconds):
+                    raise StreamInactiveError('Stream is not active')
+            reconnect_attempts += 1
+            logger.warning('Subscription stream error: %s — reconnecting', stream_error)
+            self.reconnect_stream()
+
     def respond(self, message, status):
         try:
             status = appcallback_v1.TopicEventResponse(status=status.value)
@@ -149,7 +165,12 @@ class Subscription:
             msg = api_v1.SubscribeTopicEventsRequestAlpha1(event_processed=response)
             if not self._is_stream_active():
                 raise StreamInactiveError('Stream is not active')
-            self._send_queue.put(msg)
+            send_queue = self._send_queue
+            origin_send_queue = message._origin_send_queue
+            if origin_send_queue is not None and origin_send_queue is not send_queue:
+                logger.debug('Dropping response to message %s from a replaced stream', message.id())
+                return
+            send_queue.put(msg)
         except Exception as e:
             logger.warning(f"Can't send message on inactive stream: {e}")
 
@@ -172,7 +193,7 @@ class Subscription:
 
     def close(self):
         with self._stream_lock:
-            self._closed = True
+            self._closed.set()
         self._close_stream()
 
     def _close_stream(self):
