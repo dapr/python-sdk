@@ -26,6 +26,8 @@ class SubscriptionMessage:
         self._raw_data: bytes = msg.data
         self._data: Optional[Union[dict, str]] = None
         self._metadata: dict[str, str] = dict(metadata) if metadata else {}
+        # Set by a streaming subscription, which drops responses to messages from a replaced stream.
+        self._origin_send_queue: Optional[object] = None
 
         try:
             self._extensions = MessageToDict(msg.extensions)
@@ -103,4 +105,8 @@ class StreamInactiveError(Exception):
 
 
 class StreamCancelledError(Exception):
+    pass
+
+
+class StreamReconnectError(Exception):
     pass
