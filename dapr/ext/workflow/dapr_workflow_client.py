@@ -180,7 +180,7 @@ class DaprWorkflowClient:
             )
             return WorkflowState(state) if state else None
         except RpcError as error:
-            if 'no such instance exists' in error.details():
+            if error.details() and 'no such instance exists' in error.details():
                 self._logger.warning(f'Workflow instance not found: {instance_id}')
                 return None
             self._logger.error(
