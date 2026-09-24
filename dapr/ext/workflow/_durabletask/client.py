@@ -160,6 +160,72 @@ def new_orchestration_state(
     )
 
 
+# eventID is uint32 on the wire; protobuf rejects anything outside this with a
+# message naming neither the argument nor the reason, at either end.
+_MAX_EVENT_ID = 2**32 - 1
+
+
+def _new_rerun_request(
+    instance_id: str,
+    event_id: int,
+    *,
+    new_instance_id: Optional[str],
+    input: Optional[Any],
+    overwrite_input: bool,
+    new_child_instance_id: Optional[str],
+    app_id: Optional[str],
+) -> pb.RerunWorkflowFromEventRequest:
+    """Build a RerunWorkflowFromEvent request.
+
+    ``input`` and ``overwrite_input`` mirror the wire, which needs both: the
+    replacement input rides in a non-optional ``StringValue``, so "leave the
+    input alone" and "replace it with null" are only distinguishable through the
+    flag. Callers of the public client express that as one argument; see
+    :data:`dapr.ext.workflow.UNSET`.
+
+    Raises:
+        ValueError: If event_id falls outside the uint32 range the wire allows,
+        or if either instance ID is an empty string. The runtime validates
+        neither: protobuf rejects an out-of-range event_id with a message naming
+        neither the argument nor the reason, and an empty ID is taken literally.
+    """
+    if not 0 <= event_id <= _MAX_EVENT_ID:
+        negative_hint = (
+            ' The runtime reports -1 for history events it assigns no ID to, and those '
+            'cannot be rerun from.'
+            if event_id < 0
+            else ''
+        )
+        raise ValueError(
+            f'event_id must be between 0 and {_MAX_EVENT_ID}, got {event_id}.{negative_hint}'
+        )
+
+    # Both ID fields have explicit presence: None leaves them unset and the runtime
+    # generates an ID, while '' sets them to empty and the runtime takes it literally,
+    # producing an instance it cannot schedule reminders for.
+    for name, value in (
+        ('new_instance_id', new_instance_id),
+        ('new_child_instance_id', new_child_instance_id),
+    ):
+        if value == '':
+            raise ValueError(
+                f'{name} must be a non-empty ID or None, got an empty string. None asks '
+                'the runtime to generate one; an empty string is used as the ID itself.'
+            )
+
+    return pb.RerunWorkflowFromEventRequest(
+        sourceInstanceID=instance_id,
+        eventID=event_id,
+        newInstanceID=new_instance_id,
+        input=wrappers_pb2.StringValue(value=shared.to_json(input))
+        if overwrite_input and input is not None
+        else None,
+        overwriteInput=overwrite_input,
+        newChildWorkflowInstanceID=new_child_instance_id,
+        router=new_task_router(app_id),
+    )
+
+
 class TaskHubGrpcClient:
     def __init__(
         self,
@@ -506,3 +572,38 @@ class TaskHubGrpcClient:
         )
         self._logger.info(f"Purging instance '{instance_id}'.")
         self._stub.PurgeInstances(req)
+
+    def list_instance_ids(
+        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+    ) -> pb.ListInstanceIDsResponse:
+        req = pb.ListInstanceIDsRequest(pageSize=page_size, continuationToken=continuation_token)
+        return self._stub.ListInstanceIDs(req)
+
+    def get_instance_history(self, instance_id: str) -> list[pb.HistoryEvent]:
+        req = pb.GetInstanceHistoryRequest(instanceId=instance_id)
+        res: pb.GetInstanceHistoryResponse = self._stub.GetInstanceHistory(req)
+        return list(res.events)
+
+    def rerun_orchestration_from_event(
+        self,
+        instance_id: str,
+        event_id: int,
+        *,
+        new_instance_id: Optional[str] = None,
+        input: Optional[Any] = None,
+        overwrite_input: bool = False,
+        new_child_instance_id: Optional[str] = None,
+        app_id: Optional[str] = None,
+    ) -> str:
+        req = _new_rerun_request(
+            instance_id,
+            event_id,
+            new_instance_id=new_instance_id,
+            input=input,
+            overwrite_input=overwrite_input,
+            new_child_instance_id=new_child_instance_id,
+            app_id=app_id,
+        )
+        self._logger.info(f"Rerunning instance '{instance_id}' from event {event_id}.")
+        res: pb.RerunWorkflowFromEventResponse = self._stub.RerunWorkflowFromEvent(req)
+        return res.newInstanceID
