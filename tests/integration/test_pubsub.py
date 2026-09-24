@@ -101,7 +101,11 @@ def test_streaming_subscribe_receives_published_message(client):
 
         def read_next_message() -> None:
             try:
-                next_message_future.set_result(subscription.next_message())
+                # next_message() returns None after a transient reconnect; keep reading.
+                message = subscription.next_message()
+                while message is None:
+                    message = subscription.next_message()
+                next_message_future.set_result(message)
             except Exception as exc:
                 next_message_future.set_exception(exc)
 
