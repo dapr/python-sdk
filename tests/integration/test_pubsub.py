@@ -4,7 +4,7 @@ from concurrent.futures import Future
 
 import pytest
 
-from dapr.clients import DaprClient
+from dapr.clients import BulkPublishEntry, DaprClient
 from dapr.clients.grpc._response import TopicEventResponse
 from tests.naming_utils import unique_name
 from tests.wait_utils import wait_until
@@ -13,6 +13,7 @@ STORE = 'statestore'
 PUBSUB = 'pubsub'
 TOPIC = 'TOPIC_A'
 TOPIC_STREAM = 'TOPIC_STREAM'
+TOPIC_BULK_STREAM = 'TOPIC_BULK_STREAM'
 TOPIC_HANDLER = 'TOPIC_HANDLER'
 
 
@@ -86,6 +87,64 @@ def test_bulk_publish_delivers_all_messages(client):
         assert msg['message'] == f'bulk-{n}'
 
 
+def _next_message(subscription, timeout: float):
+    future: Future = Future()
+
+    def read() -> None:
+        try:
+            # next_message() returns None after a transient reconnect; keep reading.
+            message = subscription.next_message()
+            while message is None:
+                message = subscription.next_message()
+            future.set_result(message)
+        except Exception as exc:
+            future.set_exception(exc)
+
+    threading.Thread(target=read, daemon=True).start()
+    return future.result(timeout=timeout)
+
+
+def test_bulk_publish_metadata_reaches_each_event(client):
+    """publish_metadata applies to every event, with or without entry metadata of its own.
+
+    Redis pub/sub has no native TTL, so the runtime turns ``ttlInSeconds`` into the
+    ``expiration`` cloud event extension. The runtime only merges request metadata into
+    entries that already carry metadata, so for the plain entry ``expiration`` appears only
+    when the SDK copies ``publish_metadata`` onto it.
+    """
+    subscription = client.subscribe(pubsub_name=PUBSUB, topic=TOPIC_BULK_STREAM)
+    run_id = unique_name()
+    try:
+        response = client.publish_events(
+            pubsub_name=PUBSUB,
+            topic_name=TOPIC_BULK_STREAM,
+            data=[
+                json.dumps({'run_id': run_id, 'id': 'plain'}),
+                BulkPublishEntry(
+                    event=json.dumps({'run_id': run_id, 'id': 'with-metadata'}),
+                    metadata={'partitionKey': 'tenant-a'},
+                ),
+            ],
+            data_content_type='application/json',
+            publish_metadata={'ttlInSeconds': '300'},
+        )
+        assert response.failed_entries == []
+
+        received: dict[str, dict] = {}
+        for _ in range(2):
+            message = _next_message(subscription, timeout=10)
+            subscription.respond_success(message)
+            payload = message.data()
+            assert payload['run_id'] == run_id
+            received[payload['id']] = message.extensions()
+
+        assert received.keys() == {'plain', 'with-metadata'}
+        for entry, extensions in received.items():
+            assert 'expiration' in extensions, f'{entry}: {extensions}'
+    finally:
+        subscription.close()
+
+
 def test_streaming_subscribe_receives_published_message(client):
     subscription = client.subscribe(pubsub_name=PUBSUB, topic=TOPIC_STREAM)
     run_id = unique_name()
@@ -97,21 +156,7 @@ def test_streaming_subscribe_receives_published_message(client):
             data_content_type='application/json',
         )
 
-        next_message_future: Future = Future()
-
-        def read_next_message() -> None:
-            try:
-                # next_message() returns None after a transient reconnect; keep reading.
-                message = subscription.next_message()
-                while message is None:
-                    message = subscription.next_message()
-                next_message_future.set_result(message)
-            except Exception as exc:
-                next_message_future.set_exception(exc)
-
-        threading.Thread(target=read_next_message, daemon=True).start()
-
-        message = next_message_future.result(timeout=10)
+        message = _next_message(subscription, timeout=10)
         subscription.respond_success(message)
 
         payload = message.data()
