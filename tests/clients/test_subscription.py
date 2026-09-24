@@ -1,6 +1,8 @@
 import asyncio
 import queue
+import threading
 import unittest
+from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from google.protobuf.struct_pb2 import Struct
@@ -296,3 +298,82 @@ class ReconnectBackoffTests(unittest.TestCase):
                 self.assertTrue(initial / 2 <= backoff_first <= initial)
                 self.assertTrue(initial <= backoff_second <= initial * 2)
                 self.assertTrue(maximum / 2 <= backoff_late <= maximum)
+
+
+class _EagerStreamCall:
+    """Fake bidi call that yields the initial response and records cancellation."""
+
+    def __init__(self) -> None:
+        self.cancelled = False
+        self._responses = iter([api_v1.SubscribeTopicEventsResponseAlpha1()])
+
+    def __iter__(self) -> '_EagerStreamCall':
+        return self
+
+    def __next__(self) -> api_v1.SubscribeTopicEventsResponseAlpha1:
+        return next(self._responses)
+
+    def cancel(self) -> bool:
+        self.cancelled = True
+        return True
+
+
+class _EagerStub:
+    """Fake stub that drains the request iterator on a background thread before returning.
+
+    This mimics gRPC's request-consumer thread pulling from the iterator before
+    ``SubscribeTopicEventsAlpha1`` hands the call back to the caller.
+    """
+
+    def __init__(self) -> None:
+        self.requests: queue.Queue = queue.Queue()
+        self.iterator_exhausted = threading.Event()
+
+    def SubscribeTopicEventsAlpha1(self, request_iterator: Iterator) -> _EagerStreamCall:
+        first_request_pulled = threading.Event()
+
+        def consume() -> None:
+            for request in request_iterator:
+                self.requests.put(request)
+                first_request_pulled.set()
+            self.iterator_exhausted.set()
+
+        threading.Thread(target=consume, daemon=True).start()
+        first_request_pulled.wait(timeout=_TEST_TIMEOUT_SECONDS)
+        # Give the consumer a chance to re-check the stream state before we return.
+        self.iterator_exhausted.wait(timeout=0.2)
+        return _EagerStreamCall()
+
+
+_TEST_TIMEOUT_SECONDS = 5
+
+
+class SubscriptionStreamTests(unittest.TestCase):
+    def test_request_stream_stays_open_when_consumer_runs_before_start_returns(self):
+        stub = _EagerStub()
+        subscription = Subscription(stub, 'pubsub', 'topic')
+        subscription.start()
+        try:
+            self.assertFalse(
+                stub.iterator_exhausted.is_set(),
+                'request iterator ended right after the initial request, half-closing the stream',
+            )
+
+            initial_request = stub.requests.get(timeout=_TEST_TIMEOUT_SECONDS)
+            self.assertTrue(initial_request.HasField('initial_request'))
+
+            event_message = SubscriptionMessage(TopicEventRequest(id='msg-1'))
+            subscription.respond_success(event_message)
+
+            ack_request = stub.requests.get(timeout=_TEST_TIMEOUT_SECONDS)
+            self.assertEqual('msg-1', ack_request.event_processed.id)
+        finally:
+            subscription.close()
+
+    def test_request_iterator_exits_after_close(self):
+        stub = _EagerStub()
+        subscription = Subscription(stub, 'pubsub', 'topic')
+        subscription.start()
+        subscription.close()
+
+        self.assertTrue(stub.iterator_exhausted.wait(timeout=_TEST_TIMEOUT_SECONDS))

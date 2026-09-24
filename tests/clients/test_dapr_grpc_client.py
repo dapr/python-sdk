@@ -34,6 +34,7 @@ from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._request import (
+    BulkPublishEntry,
     TransactionalStateOperation,
     TransactionOperationType,
 )
@@ -300,7 +301,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_publish_events_invalid_event_type(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
-        with self.assertRaisesRegex(ValueError, "invalid type for event <class 'dict'>"):
+        with self.assertRaisesRegex(TypeError, "invalid type for event <class 'dict'>"):
             dapr.publish_events(
                 pubsub_name='pubsub',
                 topic_name='example',
@@ -347,6 +348,111 @@ class DaprGrpcClientTests(unittest.TestCase):
                 topic_name='example',
                 data=[b'msg'],
             )
+
+    def test_publish_events_entry_metadata_is_sent(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event='{"n": 1}', metadata={'partitionKey': 'tenant-a'})],
+        )
+        entry = self._fake_dapr_server.bulk_publish_requests[-1].entries[0]
+        self.assertEqual({'partitionKey': 'tenant-a'}, dict(entry.metadata))
+        self.assertEqual(b'{"n": 1}', entry.event)
+
+    def test_publish_events_copies_publish_metadata_to_every_entry(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=['plain', b'raw', BulkPublishEntry(event='wrapped')],
+            publish_metadata={'ttlInSeconds': '60'},
+        )
+        request = self._fake_dapr_server.bulk_publish_requests[-1]
+        self.assertEqual({'ttlInSeconds': '60'}, dict(request.metadata))
+        self.assertEqual(3, len(request.entries))
+        for entry in request.entries:
+            self.assertEqual({'ttlInSeconds': '60'}, dict(entry.metadata))
+
+    def test_publish_events_entry_metadata_overrides_publish_metadata(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event='x', metadata={'partitionKey': 'tenant-b'})],
+            publish_metadata={'partitionKey': 'default', 'ttlInSeconds': '60'},
+        )
+        entry = self._fake_dapr_server.bulk_publish_requests[-1].entries[0]
+        self.assertEqual({'partitionKey': 'tenant-b', 'ttlInSeconds': '60'}, dict(entry.metadata))
+
+    def test_publish_events_plain_entries_send_no_metadata(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=['plain', BulkPublishEntry(event='wrapped')],
+        )
+        request = self._fake_dapr_server.bulk_publish_requests[-1]
+        for entry in request.entries:
+            self.assertEqual({}, dict(entry.metadata))
+
+    def test_publish_events_keeps_caller_entry_id(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event='x', entry_id='my-entry'), BulkPublishEntry(event='y')],
+        )
+        entries = self._fake_dapr_server.bulk_publish_requests[-1].entries
+        self.assertEqual('my-entry', entries[0].entry_id)
+        self.assertTrue(entries[1].entry_id)
+        self.assertNotEqual('my-entry', entries[1].entry_id)
+
+    def test_publish_events_entry_content_type_overrides_data_content_type(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event='{}', content_type='application/json'), 'plain'],
+            data_content_type='text/plain',
+        )
+        entries = self._fake_dapr_server.bulk_publish_requests[-1].entries
+        self.assertEqual('application/json', entries[0].content_type)
+        self.assertEqual('text/plain', entries[1].content_type)
+
+    def test_publish_events_entry_without_content_type_uses_type_default(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event=b'raw'), BulkPublishEntry(event='text')],
+        )
+        entries = self._fake_dapr_server.bulk_publish_requests[-1].entries
+        self.assertEqual('application/octet-stream', entries[0].content_type)
+        self.assertEqual('text/plain', entries[1].content_type)
+
+    def test_bulk_publish_entry_rejects_invalid_event_type(self):
+        with self.assertRaisesRegex(TypeError, "invalid type for event <class 'int'>"):
+            BulkPublishEntry(event=123)
+
+    def test_bulk_publish_entry_equality_and_repr(self):
+        entry = BulkPublishEntry(
+            event='x', metadata={'k': 'v'}, content_type='text/plain', entry_id='e1'
+        )
+        same = BulkPublishEntry(
+            event='x', metadata={'k': 'v'}, content_type='text/plain', entry_id='e1'
+        )
+        other_id = BulkPublishEntry(
+            event='x', metadata={'k': 'v'}, content_type='text/plain', entry_id='e2'
+        )
+        self.assertEqual(entry, same)
+        self.assertNotEqual(entry, other_id)
+        self.assertNotEqual(entry, 'x')
+        self.assertEqual(
+            "BulkPublishEntry(event='x', metadata={'k': 'v'}, "
+            "content_type='text/plain', entry_id='e1')",
+            repr(entry),
+        )
 
     def test_subscribe_topic(self):
         # The fake server we're using sends two messages and then closes the stream

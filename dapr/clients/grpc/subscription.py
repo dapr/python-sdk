@@ -74,16 +74,20 @@ class Subscription:
                 raise Exception(f'Error while writing to stream: {e}')
 
         # Create the bidirectional stream. It gets its own send queue, so the request iterator of
-        # a stream that already failed can't take its acks.
+        # a stream that already failed can't take its acks. gRPC starts consuming the request
+        # iterator before SubscribeTopicEventsAlpha1 returns, so the stream is marked active
+        # first; otherwise the iterator can end after the initial request and the sidecar drops
+        # the subscription with EOF.
         with self._stream_lock:
             if self._closed.is_set():
                 raise StreamInactiveError('Stream is not active')
             self._send_queue = send_queue
-            self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
             self._stream_active = True
+            self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
         try:
             next(self._stream)  # type: ignore[arg-type]  # discard the initial message
         except Exception as e:
+            self._set_stream_inactive()
             if self._closed.is_set():
                 raise StreamInactiveError('Stream is not active')
             raise Exception(f'Error while initializing stream: {e}')
