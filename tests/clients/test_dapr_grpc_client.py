@@ -764,9 +764,10 @@ class DaprGrpcClientTests(unittest.TestCase):
                 dapr, lambda message: TopicEventResponse('success')
             )
             deadline = time.monotonic() + 5
-            while wait_for_sidecar.call_count < 2 and time.monotonic() < deadline:
+            while wait_for_sidecar.call_count < 1 and time.monotonic() < deadline:
                 time.sleep(0.01)
-            self.assertGreaterEqual(wait_for_sidecar.call_count, 2)
+            self.assertGreaterEqual(wait_for_sidecar.call_count, 1)
+            time.sleep(0.2)
 
             started = time.monotonic()
             close_fn()
@@ -786,7 +787,10 @@ class DaprGrpcClientTests(unittest.TestCase):
                     message_handled.set()
                     return TopicEventResponse('success')
 
-                with patch.object(DaprHealth, 'wait_for_sidecar'):
+                with (
+                    patch.object(DaprHealth, 'wait_for_sidecar'),
+                    patch.object(grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 0.01),
+                ):
                     close_fn, streaming_thread = self._start_handler_thread(dapr, handler)
                     try:
                         self.assertTrue(message_handled.wait(timeout=5))
@@ -795,6 +799,31 @@ class DaprGrpcClientTests(unittest.TestCase):
                         close_fn()
 
                 self.assertFalse(streaming_thread.is_alive())
+
+    def test_subscribe_topic_with_handler_backs_off_after_stream_error(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.NOT_FOUND]
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        message_handled = threading.Event()
+
+        def handler(message):
+            message_handled.set()
+            return TopicEventResponse('success')
+
+        with (
+            patch.object(DaprHealth, 'wait_for_sidecar'),
+            patch.object(grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 30),
+        ):
+            close_fn, streaming_thread = self._start_handler_thread(dapr, handler)
+            try:
+                self.assertFalse(message_handled.wait(timeout=0.5))
+            finally:
+                self._fake_dapr_server.topic_stream_failures = []
+                started = time.monotonic()
+                close_fn()
+                elapsed = time.monotonic() - started
+
+        self.assertLess(elapsed, 1)
+        self.assertFalse(streaming_thread.is_alive())
 
     @patch('dapr.clients.grpc.client.SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS', 0.1)
     def test_subscribe_topic_with_handler_close_warns_when_thread_outlives_timeout(self):

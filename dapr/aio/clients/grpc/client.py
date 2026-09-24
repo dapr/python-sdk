@@ -615,7 +615,17 @@ class DaprGrpcClientAsync:
                     if not closed.is_set():
                         raise
                 except Exception:
-                    logger.warning('Subscription stream failed, reconnecting', exc_info=True)
+                    logger.warning(
+                        'Subscription stream failed, reconnecting in %s seconds',
+                        SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS,
+                        exc_info=True,
+                    )
+                    try:
+                        await asyncio.wait_for(
+                            closed.wait(), timeout=SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS
+                        )
+                    except asyncio.TimeoutError:
+                        pass
                 if closed.is_set():
                     break
                 try:

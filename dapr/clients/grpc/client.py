@@ -661,7 +661,12 @@ class DaprGrpcClient:
                 except (StreamInactiveError, StreamCancelledError):
                     pass
                 except Exception:
-                    logger.warning('Subscription stream failed, reconnecting', exc_info=True)
+                    logger.warning(
+                        'Subscription stream failed, reconnecting in %s seconds',
+                        SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS,
+                        exc_info=True,
+                    )
+                    closed.wait(SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS)
                 if closed.is_set():
                     break
                 # Reconnect via the subscription's own reconnect logic (which waits for the

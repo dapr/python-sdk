@@ -771,7 +771,8 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             patch.object(aio_grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 30),
         ):
             close_fn, streaming_task = await self._start_handler_task(dapr, handler)
-            self.assertTrue(await self._wait_until(lambda: wait_for_sidecar.call_count >= 2))
+            self.assertTrue(await self._wait_until(lambda: wait_for_sidecar.call_count >= 1))
+            await asyncio.sleep(0.2)
 
             started = time.monotonic()
             await close_fn()
@@ -793,7 +794,10 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                     handled_ids.append(message.id())
                     return TopicEventResponse('success')
 
-                with patch.object(DaprHealthAsync, 'wait_for_sidecar'):
+                with (
+                    patch.object(DaprHealthAsync, 'wait_for_sidecar'),
+                    patch.object(aio_grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 0.01),
+                ):
                     close_fn, streaming_task = await self._start_handler_task(dapr, handler)
                     try:
                         self.assertTrue(await self._wait_until(lambda: len(handled_ids) >= 1))
@@ -804,6 +808,34 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue(streaming_task.done())
                 self.assertIsNone(streaming_task.exception())
                 await dapr.close()
+
+    async def test_subscribe_topic_with_handler_backs_off_after_stream_error(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.NOT_FOUND]
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        handled_ids = []
+
+        async def handler(message):
+            handled_ids.append(message.id())
+            return TopicEventResponse('success')
+
+        with (
+            patch.object(DaprHealthAsync, 'wait_for_sidecar'),
+            patch.object(aio_grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 30),
+        ):
+            close_fn, streaming_task = await self._start_handler_task(dapr, handler)
+            try:
+                await asyncio.sleep(0.5)
+                self.assertEqual([], handled_ids)
+            finally:
+                self._fake_dapr_server.topic_stream_failures = []
+                started = time.monotonic()
+                await close_fn()
+                elapsed = time.monotonic() - started
+
+        self.assertLess(elapsed, 1)
+        self.assertTrue(streaming_task.done())
+        self.assertIsNone(streaming_task.exception())
+        await dapr.close()
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     async def test_dapr_api_token_insertion(self):
