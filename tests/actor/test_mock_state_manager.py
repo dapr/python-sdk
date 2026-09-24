@@ -85,6 +85,17 @@ class ActorMockActorTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertCountEqual(names, ['state'])
 
+    async def test_get_state_names_includes_untouched_initstate(self):
+        """A state seeded via initstate but never read or written this turn
+        never enters the change tracker, so get_state_names must still
+        report it since contains_state already does."""
+        mock_actor = create_mock_actor(MockTestActor, 'test', {'state': 5, 'other': 6})
+        state_manager = mock_actor._state_manager
+
+        names = await state_manager.get_state_names()
+
+        self.assertCountEqual(names, ['state', 'other'])
+
     async def test_readd_after_remove_updates_mock_state(self):
         """try_add_state on a state removed earlier this turn must make the
         new value visible in _mock_state, matching add_or_update_state's
