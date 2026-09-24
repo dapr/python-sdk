@@ -306,7 +306,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_publish_events_invalid_event_type(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
-        with self.assertRaisesRegex(ValueError, "invalid type for event <class 'dict'>"):
+        with self.assertRaisesRegex(TypeError, "invalid type for event <class 'dict'>"):
             await dapr.publish_events(
                 pubsub_name='pubsub',
                 topic_name='example',

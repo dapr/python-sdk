@@ -489,14 +489,30 @@ class BulkPublishEntry:
             entry_id (str, optional): unique ID of the entry. Generated when omitted.
 
         Raises:
-            ValueError: event is not bytes or str.
+            TypeError: event is not bytes or str.
         """
         if not isinstance(event, (bytes, str)):
-            raise ValueError(f'invalid type for event {type(event)}')
+            raise TypeError(f'invalid type for event {type(event)}')
         self.event = event
         self.metadata: Dict[str, str] = dict(metadata) if metadata else {}
         self.content_type = content_type
         self.entry_id = entry_id or str(uuid.uuid4())
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BulkPublishEntry):
+            return NotImplemented
+        return (
+            self.event == other.event
+            and self.metadata == other.metadata
+            and self.content_type == other.content_type
+            and self.entry_id == other.entry_id
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f'BulkPublishEntry(event={self.event!r}, metadata={self.metadata!r}, '
+            f'content_type={self.content_type!r}, entry_id={self.entry_id!r})'
+        )
 
     def to_proto(
         self,
@@ -547,7 +563,7 @@ def to_bulk_publish_entries(
         List[:obj:`runtime_v1.BulkPublishRequestEntry`]
 
     Raises:
-        ValueError: an event is not bytes, str, or BulkPublishEntry.
+        TypeError: an event is not bytes, str, or BulkPublishEntry.
     """
     entries = []
     for event in data:

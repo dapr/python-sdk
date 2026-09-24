@@ -294,7 +294,7 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_publish_events_invalid_event_type(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
-        with self.assertRaisesRegex(ValueError, "invalid type for event <class 'dict'>"):
+        with self.assertRaisesRegex(TypeError, "invalid type for event <class 'dict'>"):
             dapr.publish_events(
                 pubsub_name='pubsub',
                 topic_name='example',
@@ -425,8 +425,27 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual('text/plain', entries[1].content_type)
 
     def test_bulk_publish_entry_rejects_invalid_event_type(self):
-        with self.assertRaisesRegex(ValueError, "invalid type for event <class 'int'>"):
+        with self.assertRaisesRegex(TypeError, "invalid type for event <class 'int'>"):
             BulkPublishEntry(event=123)
+
+    def test_bulk_publish_entry_equality_and_repr(self):
+        entry = BulkPublishEntry(
+            event='x', metadata={'k': 'v'}, content_type='text/plain', entry_id='e1'
+        )
+        same = BulkPublishEntry(
+            event='x', metadata={'k': 'v'}, content_type='text/plain', entry_id='e1'
+        )
+        other_id = BulkPublishEntry(
+            event='x', metadata={'k': 'v'}, content_type='text/plain', entry_id='e2'
+        )
+        self.assertEqual(entry, same)
+        self.assertNotEqual(entry, other_id)
+        self.assertNotEqual(entry, 'x')
+        self.assertEqual(
+            "BulkPublishEntry(event='x', metadata={'k': 'v'}, "
+            "content_type='text/plain', entry_id='e1')",
+            repr(entry),
+        )
 
     def test_subscribe_topic(self):
         # The fake server we're using sends two messages and then closes the stream
