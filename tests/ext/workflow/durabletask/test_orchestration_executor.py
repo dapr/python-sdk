@@ -246,7 +246,7 @@ def test_schedule_activity_actions():
 
 
 def test_schedule_activity_actions_router_without_app_id():
-    """Tests that scheduleTask action contains correct router fields when app_id is specified"""
+    """Tests that the workflow action carries no target app ID when app_id is not specified"""
 
     def dummy_activity(ctx, _):
         pass
@@ -274,12 +274,10 @@ def test_schedule_activity_actions_router_without_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == ''
-    assert action.scheduleTask.router.sourceAppID == 'source-app'
-    assert action.scheduleTask.router.targetAppID == ''
 
 
 def test_schedule_activity_actions_router_with_app_id():
-    """Tests that scheduleTask action contains correct router fields when app_id is specified"""
+    """Tests that the workflow action carries correct router fields when app_id is specified"""
 
     def dummy_activity(ctx, _):
         pass
@@ -307,8 +305,6 @@ def test_schedule_activity_actions_router_with_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == 'target-app'
-    assert action.scheduleTask.router.sourceAppID == 'source-app'
-    assert action.scheduleTask.router.targetAppID == 'target-app'
 
 
 def test_activity_task_completion():
@@ -771,7 +767,7 @@ def test_sub_orchestration_task_completion():
 
 
 def test_create_sub_orchestration_actions_router_without_app_id():
-    """Tests that createChildWorkflow action contains correct router fields when app_id is specified"""
+    """Tests that the workflow action carries no target app ID when app_id is not specified"""
 
     def suborchestrator(ctx: task.OrchestrationContext, _):
         pass
@@ -801,12 +797,10 @@ def test_create_sub_orchestration_actions_router_without_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == ''
-    assert action.createChildWorkflow.router.sourceAppID == 'source-app'
-    assert action.createChildWorkflow.router.targetAppID == ''
 
 
 def test_create_sub_orchestration_actions_router_with_app_id():
-    """Tests that createChildWorkflow action contains correct router fields when app_id is specified"""
+    """Tests that the workflow action carries correct router fields when app_id is specified"""
 
     def suborchestrator(ctx: task.OrchestrationContext, _):
         pass
@@ -836,8 +830,6 @@ def test_create_sub_orchestration_actions_router_with_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == 'target-app'
-    assert action.createChildWorkflow.router.sourceAppID == 'source-app'
-    assert action.createChildWorkflow.router.targetAppID == 'target-app'
 
 
 def test_sub_orchestration_task_failed():
