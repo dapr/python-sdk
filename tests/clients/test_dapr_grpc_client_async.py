@@ -13,18 +13,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
+import gc
 import json
 import logging
 import socket
 import tempfile
+import time
 import unittest
 import uuid
+import weakref
 from unittest.mock import MagicMock, patch
 
 from google.rpc import code_pb2, status_pb2
+from grpc import StatusCode
 
 from dapr.aio.clients import DaprClient
+from dapr.aio.clients.grpc import client as aio_grpc_client
+from dapr.aio.clients.grpc import subscription as subscription_module
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
+from dapr.aio.clients.grpc.subscription import MAX_RECONNECT_ATTEMPTS
+from dapr.aio.clients.health import DaprHealth as DaprHealthAsync
 from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc import conversation
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
@@ -36,11 +45,12 @@ from dapr.clients.grpc._response import (
     ConfigurationResponse,
     ConfigurationWatcher,
     DaprResponse,
+    TopicEventResponse,
     UnlockResponseStatus,
 )
 from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
 from dapr.common.logging import GrpcAioPollerNoiseFilter
-from dapr.common.pubsub.subscription import StreamInactiveError
+from dapr.common.pubsub.subscription import StreamInactiveError, StreamReconnectError
 from dapr.conf import settings
 from dapr.proto import common_v1
 
@@ -473,25 +483,21 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('application/json', message2.data_content_type())
         self.assertEqual({'a': 1}, message2.data())
 
-        # On this call the stream will be closed and return an error, so the message will be none
-        # but the client will try to reconnect
+        # On this call the stream is closed with an error. The client reconnects and reads the
+        # next message from the new stream. Since we're working with a fake server, the messages
+        # will be the same
         message3 = await subscription.next_message()
-        self.assertIsNone(message3)
-
-        # # The client already reconnected and will start reading the messages again
-        # # Since we're working with a fake server, the messages will be the same
-        message4 = await subscription.next_message()
-        await subscription.respond_success(message4)
-        self.assertEqual('111', message4.id())
-        self.assertEqual('app1', message4.source())
-        self.assertEqual('com.example.type2', message4.type())
-        self.assertEqual('1.0', message4.spec_version())
-        self.assertEqual('text/plain', message4.data_content_type())
-        self.assertEqual('TOPIC_A', message4.topic())
-        self.assertEqual('pubsub', message4.pubsub_name())
-        self.assertEqual(b'hello2', message4.raw_data())
-        self.assertEqual('text/plain', message4.data_content_type())
-        self.assertEqual('hello2', message4.data())
+        await subscription.respond_success(message3)
+        self.assertEqual('111', message3.id())
+        self.assertEqual('app1', message3.source())
+        self.assertEqual('com.example.type2', message3.type())
+        self.assertEqual('1.0', message3.spec_version())
+        self.assertEqual('text/plain', message3.data_content_type())
+        self.assertEqual('TOPIC_A', message3.topic())
+        self.assertEqual('pubsub', message3.pubsub_name())
+        self.assertEqual(b'hello2', message3.raw_data())
+        self.assertEqual('text/plain', message3.data_content_type())
+        self.assertEqual('hello2', message3.data())
 
         await subscription.close()
 
@@ -503,60 +509,333 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(StreamInactiveError):
             await subscription.next_message()
 
-    # async def test_subscribe_topic_with_handler(self):
-    #     # The fake server we're using sends two messages and then closes the stream
-    #     # The client should be able to read both messages, handle the stream closure and reconnect
-    #     # which will result in reading the same two messages again.
-    #     # That's why message 3 should be the same as message 1
-    #     dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
-    #     counter = 0
-    #
-    #     async def handler(message):
-    #         nonlocal counter
-    #         if counter == 0:
-    #             self.assertEqual('111', message.id())
-    #             self.assertEqual('app1', message.source())
-    #             self.assertEqual('com.example.type2', message.type())
-    #             self.assertEqual('1.0', message.spec_version())
-    #             self.assertEqual('text/plain', message.data_content_type())
-    #             self.assertEqual('TOPIC_A', message.topic())
-    #             self.assertEqual('pubsub', message.pubsub_name())
-    #             self.assertEqual(b'hello2', message.raw_data())
-    #             self.assertEqual('text/plain', message.data_content_type())
-    #             self.assertEqual('hello2', message.data())
-    #         elif counter == 1:
-    #             self.assertEqual('222', message.id())
-    #             self.assertEqual('app1', message.source())
-    #             self.assertEqual('com.example.type2', message.type())
-    #             self.assertEqual('1.0', message.spec_version())
-    #             self.assertEqual('TOPIC_A', message.topic())
-    #             self.assertEqual('pubsub', message.pubsub_name())
-    #             self.assertEqual(b'{"a": 1}', message.raw_data())
-    #             self.assertEqual('application/json', message.data_content_type())
-    #             self.assertEqual({'a': 1}, message.data())
-    #         elif counter == 2:
-    #             self.assertEqual('111', message.id())
-    #             self.assertEqual('app1', message.source())
-    #             self.assertEqual('com.example.type2', message.type())
-    #             self.assertEqual('1.0', message.spec_version())
-    #             self.assertEqual('text/plain', message.data_content_type())
-    #             self.assertEqual('TOPIC_A', message.topic())
-    #             self.assertEqual('pubsub', message.pubsub_name())
-    #             self.assertEqual(b'hello2', message.raw_data())
-    #             self.assertEqual('text/plain', message.data_content_type())
-    #             self.assertEqual('hello2', message.data())
-    #
-    #         counter += 1
-    #
-    #         return TopicEventResponse("success")
-    #
-    #     close_fn = await dapr.subscribe_with_handler(
-    #         pubsub_name='pubsub', topic='example', handler_fn=handler
-    #     )
-    #
-    #     while counter < 3:
-    #         await asyncio.sleep(0.1)  # sleep to prevent a busy loop
-    #     await close_fn()
+    async def _wait_for_topic_stream_ack(self, event_id: str, timeout: float = 5.0) -> bool:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if event_id in self._fake_dapr_server.topic_stream_acks:
+                return True
+            await asyncio.sleep(0.05)
+        return False
+
+    async def test_subscribe_topic_reads_new_stream_after_transient_error(self):
+        for status_code in (StatusCode.UNKNOWN, StatusCode.INTERNAL):
+            with self.subTest(status_code=status_code):
+                self._fake_dapr_server.topic_stream_failures = [status_code]
+                self._fake_dapr_server.topic_stream_acks = []
+                dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+                subscription = await dapr.subscribe(pubsub_name='pubsub', topic='example')
+                try:
+                    message = await subscription.next_message()
+                    self.assertIsNotNone(message)
+                    self.assertEqual('111', message.id())
+
+                    await subscription.respond_success(message)
+                    self.assertTrue(await self._wait_for_topic_stream_ack('111'))
+                finally:
+                    self._fake_dapr_server.topic_stream_failures = []
+                    await subscription.close()
+                    await dapr.close()
+
+    async def test_subscribe_topic_reconnects_after_server_ends_stream(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.OK]
+        self._fake_dapr_server.topic_stream_acks = []
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        subscription = await dapr.subscribe(pubsub_name='pubsub', topic='example')
+        try:
+            message = await subscription.next_message()
+            self.assertEqual('111', message.id())
+
+            await subscription.respond_success(message)
+            self.assertTrue(await self._wait_for_topic_stream_ack('111'))
+        finally:
+            self._fake_dapr_server.topic_stream_failures = []
+            await subscription.close()
+            await dapr.close()
+
+    async def test_subscribe_topic_raises_when_reconnects_keep_failing(self):
+        for status_code in (StatusCode.UNKNOWN, StatusCode.OK):
+            with self.subTest(status_code=status_code):
+                self._fake_dapr_server.topic_stream_failures = [status_code] * 20
+                dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+                subscription = await dapr.subscribe(pubsub_name='pubsub', topic='example')
+                try:
+                    with patch.object(
+                        subscription_module, '_reconnect_backoff_seconds', return_value=0
+                    ) as backoff:
+                        with self.assertRaisesRegex(StreamReconnectError, 'reconnect attempts'):
+                            await subscription.next_message()
+                    streams_opened = 1 + MAX_RECONNECT_ATTEMPTS
+                    failures_left = len(self._fake_dapr_server.topic_stream_failures)
+                    self.assertEqual(20 - streams_opened, failures_left)
+                    backoff_attempts = [call.args[0] for call in backoff.call_args_list]
+                    self.assertEqual(list(range(1, MAX_RECONNECT_ATTEMPTS)), backoff_attempts)
+                finally:
+                    self._fake_dapr_server.topic_stream_failures = []
+                    await subscription.close()
+                    await dapr.close()
+
+    async def test_subscribe_topic_close_interrupts_reconnect_backoff(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.UNKNOWN] * 20
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        subscription = await dapr.subscribe(pubsub_name='pubsub', topic='example')
+        backoff_started = asyncio.Event()
+
+        def start_backoff(reconnect_attempts):
+            backoff_started.set()
+            return 30
+
+        try:
+            with patch.object(
+                subscription_module, '_reconnect_backoff_seconds', side_effect=start_backoff
+            ):
+                reader = asyncio.create_task(subscription.next_message())
+                await asyncio.wait_for(backoff_started.wait(), timeout=5)
+                await subscription.close()
+                with self.assertRaises(StreamInactiveError):
+                    await asyncio.wait_for(reader, timeout=5)
+        finally:
+            self._fake_dapr_server.topic_stream_failures = []
+            await subscription.close()
+            await dapr.close()
+
+    async def _start_handler_task(self, dapr, handler):
+        tasks_before = asyncio.all_tasks()
+        close_fn = await dapr.subscribe_with_handler(
+            pubsub_name='pubsub', topic='example', handler_fn=handler
+        )
+        streaming_tasks = [
+            t
+            for t in asyncio.all_tasks() - tasks_before
+            if t.get_coro().__name__ == 'stream_messages'
+        ]
+        self.assertEqual(1, len(streaming_tasks))
+        return close_fn, streaming_tasks[0]
+
+    async def _wait_until(self, condition, timeout: float = 5.0) -> bool:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if condition():
+                return True
+            await asyncio.sleep(0.01)
+        return False
+
+    async def test_subscribe_topic_with_handler(self):
+        # The fake server we're using sends two messages and then closes the stream
+        # The client should be able to read both messages, handle the stream closure and reconnect
+        # which will result in reading the same two messages again.
+        # That's why message 3 should be the same as message 1
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        counter = 0
+
+        async def handler(message):
+            nonlocal counter
+            if counter == 0:
+                self.assertEqual('111', message.id())
+                self.assertEqual('app1', message.source())
+                self.assertEqual('com.example.type2', message.type())
+                self.assertEqual('1.0', message.spec_version())
+                self.assertEqual('text/plain', message.data_content_type())
+                self.assertEqual('TOPIC_A', message.topic())
+                self.assertEqual('pubsub', message.pubsub_name())
+                self.assertEqual(b'hello2', message.raw_data())
+                self.assertEqual('text/plain', message.data_content_type())
+                self.assertEqual('hello2', message.data())
+            elif counter == 1:
+                self.assertEqual('222', message.id())
+                self.assertEqual('app1', message.source())
+                self.assertEqual('com.example.type2', message.type())
+                self.assertEqual('1.0', message.spec_version())
+                self.assertEqual('TOPIC_A', message.topic())
+                self.assertEqual('pubsub', message.pubsub_name())
+                self.assertEqual(b'{"a": 1}', message.raw_data())
+                self.assertEqual('application/json', message.data_content_type())
+                self.assertEqual({'a': 1}, message.data())
+            elif counter == 2:
+                self.assertEqual('111', message.id())
+                self.assertEqual('app1', message.source())
+                self.assertEqual('com.example.type2', message.type())
+                self.assertEqual('1.0', message.spec_version())
+                self.assertEqual('text/plain', message.data_content_type())
+                self.assertEqual('TOPIC_A', message.topic())
+                self.assertEqual('pubsub', message.pubsub_name())
+                self.assertEqual(b'hello2', message.raw_data())
+                self.assertEqual('text/plain', message.data_content_type())
+                self.assertEqual('hello2', message.data())
+
+            counter += 1
+
+            return TopicEventResponse('success')
+
+        close_fn, streaming_task = await self._start_handler_task(dapr, handler)
+
+        self.assertTrue(await self._wait_until(lambda: counter >= 3))
+        await close_fn()
+
+        self.assertTrue(streaming_task.done())
+        self.assertIsNone(streaming_task.exception())
+        await dapr.close()
+
+    async def test_subscribe_topic_with_handler_keeps_task_referenced(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        handler_waiting = []
+
+        async def handler(message):
+            # Only the handler task references this event, so nothing else keeps the task alive
+            never_set = asyncio.Event()
+            handler_waiting.append(message.id())
+            await never_set.wait()
+
+        close_fn, streaming_task = await self._start_handler_task(dapr, handler)
+        task_ref = weakref.ref(streaming_task)
+        del close_fn, streaming_task
+        self.assertTrue(await self._wait_until(lambda: handler_waiting))
+        gc.collect()
+
+        streaming_task = task_ref()
+        self.assertIsNotNone(streaming_task)
+        streaming_task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await streaming_task
+        await dapr.close()
+
+    async def test_subscribe_topic_with_handler_retries_message_after_handler_error(self):
+        self._fake_dapr_server.topic_stream_responses = []
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        handled_ids = []
+        close_seconds = []
+
+        async def handler(message):
+            handled_ids.append(message.id())
+            if len(handled_ids) == 1:
+                raise RuntimeError('handler failure')
+            started = time.monotonic()
+            await close_fn()
+            close_seconds.append(time.monotonic() - started)
+            return TopicEventResponse('success')
+
+        with self.assertLogs('dapr.aio.clients.grpc.client', level='ERROR') as logs:
+            close_fn, streaming_task = await self._start_handler_task(dapr, handler)
+            self.assertTrue(await self._wait_until(streaming_task.done))
+
+        self.assertEqual(['111', '222'], handled_ids)
+        self.assertEqual(
+            [('111', TopicEventResponse('retry').status.value)],
+            self._fake_dapr_server.topic_stream_responses,
+        )
+        self.assertIsNotNone(logs.records[0].exc_info)
+        self.assertLess(close_seconds[0], 1)
+        self.assertIsNone(streaming_task.exception())
+        await dapr.close()
+
+    async def test_subscribe_topic_with_handler_keeps_retrying_failed_reconnect(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        handled_ids = []
+        health_checks = 0
+
+        async def wait_for_sidecar():
+            nonlocal health_checks
+            health_checks += 1
+            if health_checks <= 2:
+                raise TimeoutError('sidecar unavailable')
+
+        async def handler(message):
+            handled_ids.append(message.id())
+            return TopicEventResponse('success')
+
+        with (
+            patch.object(DaprHealthAsync, 'wait_for_sidecar', side_effect=wait_for_sidecar),
+            patch.object(aio_grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 0.01),
+        ):
+            close_fn, streaming_task = await self._start_handler_task(dapr, handler)
+            try:
+                self.assertTrue(await self._wait_until(lambda: len(handled_ids) >= 3))
+            finally:
+                await close_fn()
+
+        self.assertEqual(['111', '222', '111'], handled_ids[:3])
+        self.assertGreaterEqual(health_checks, 3)
+        self.assertTrue(streaming_task.done())
+        self.assertIsNone(streaming_task.exception())
+        await dapr.close()
+
+    async def test_subscribe_topic_with_handler_close_stops_reconnect_backoff(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+
+        async def handler(message):
+            return TopicEventResponse('success')
+
+        with (
+            patch.object(
+                DaprHealthAsync, 'wait_for_sidecar', side_effect=TimeoutError('sidecar unavailable')
+            ) as wait_for_sidecar,
+            patch.object(aio_grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 30),
+        ):
+            close_fn, streaming_task = await self._start_handler_task(dapr, handler)
+            self.assertTrue(await self._wait_until(lambda: wait_for_sidecar.call_count >= 1))
+            await asyncio.sleep(0.2)
+
+            started = time.monotonic()
+            await close_fn()
+            elapsed = time.monotonic() - started
+
+        self.assertLess(elapsed, 1)
+        self.assertTrue(streaming_task.done())
+        self.assertIsNone(streaming_task.exception())
+        await dapr.close()
+
+    async def test_subscribe_topic_with_handler_reconnects_after_stream_error(self):
+        for status_code in (StatusCode.CANCELLED, StatusCode.NOT_FOUND):
+            with self.subTest(status_code=status_code):
+                self._fake_dapr_server.topic_stream_failures = [status_code]
+                dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+                handled_ids = []
+
+                async def handler(message):
+                    handled_ids.append(message.id())
+                    return TopicEventResponse('success')
+
+                with (
+                    patch.object(DaprHealthAsync, 'wait_for_sidecar'),
+                    patch.object(aio_grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 0.01),
+                ):
+                    close_fn, streaming_task = await self._start_handler_task(dapr, handler)
+                    try:
+                        self.assertTrue(await self._wait_until(lambda: len(handled_ids) >= 1))
+                    finally:
+                        self._fake_dapr_server.topic_stream_failures = []
+                        await close_fn()
+
+                self.assertTrue(streaming_task.done())
+                self.assertIsNone(streaming_task.exception())
+                await dapr.close()
+
+    async def test_subscribe_topic_with_handler_backs_off_after_stream_error(self):
+        self._fake_dapr_server.topic_stream_failures = [StatusCode.NOT_FOUND]
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        handled_ids = []
+
+        async def handler(message):
+            handled_ids.append(message.id())
+            return TopicEventResponse('success')
+
+        with (
+            patch.object(DaprHealthAsync, 'wait_for_sidecar'),
+            patch.object(aio_grpc_client, 'SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS', 30),
+        ):
+            close_fn, streaming_task = await self._start_handler_task(dapr, handler)
+            try:
+                await asyncio.sleep(0.5)
+                self.assertEqual([], handled_ids)
+            finally:
+                self._fake_dapr_server.topic_stream_failures = []
+                started = time.monotonic()
+                await close_fn()
+                elapsed = time.monotonic() - started
+
+        self.assertLess(elapsed, 1)
+        self.assertTrue(streaming_task.done())
+        self.assertIsNone(streaming_task.exception())
+        await dapr.close()
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     async def test_dapr_api_token_insertion(self):
