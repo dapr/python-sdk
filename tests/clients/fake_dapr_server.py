@@ -69,9 +69,10 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.actor_stream_replies: List[api_v1.SubscribeActorEventsRequestAlpha1] = []
         # SubscribeTopicEventsAlpha1: one status code is popped per stream connection, which then
         # fails right after the initial response (OK ends it cleanly). IDs of acked events are
-        # recorded in order.
+        # recorded in order, and with the response status in topic_stream_responses.
         self.topic_stream_failures: List[grpc.StatusCode] = []
         self.topic_stream_acks: List[str] = []
+        self.topic_stream_responses: List[Tuple[str, int]] = []
 
     def set_bulk_publish_unimplemented_on_stable_next(self) -> None:
         """Make the next BulkPublishEvent (stable) call return UNIMPLEMENTED.
@@ -279,6 +280,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         for request in request_iterator:
             if request.HasField('event_processed'):
                 self.topic_stream_acks.append(request.event_processed.id)
+                self.topic_stream_responses.append(
+                    (request.event_processed.id, request.event_processed.status.status)
+                )
                 break
 
         msg2 = appcallback_v1.TopicEventRequest(
@@ -297,6 +301,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         for request in request_iterator:
             if request.HasField('event_processed'):
                 self.topic_stream_acks.append(request.event_processed.id)
+                self.topic_stream_responses.append(
+                    (request.event_processed.id, request.event_processed.status.status)
+                )
                 break
 
         # On the third message simulate a disconnection

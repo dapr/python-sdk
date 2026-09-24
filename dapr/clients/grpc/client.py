@@ -98,6 +98,9 @@ from dapr.version import __version__
 logger = logging.getLogger(__name__)
 
 SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
+SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS = 5
+
+logger = logging.getLogger(__name__)
 
 
 class DaprGrpcClient:
@@ -635,6 +638,7 @@ class DaprGrpcClient:
                 for the handler thread to stop.
         """
         subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
+        closed = threading.Event()
 
         def stream_messages(sub):
             while True:
@@ -642,7 +646,12 @@ class DaprGrpcClient:
                     for message in sub:
                         if message:
                             # Process the message
-                            response = handler_fn(message)
+                            try:
+                                response = handler_fn(message)
+                            except Exception:
+                                logger.exception('Subscription handler failed, retrying message')
+                                subscription.respond_retry(message)
+                                continue
                             if response:
                                 subscription.respond(message, response.status)
                         else:
@@ -650,19 +659,26 @@ class DaprGrpcClient:
                             continue
 
                 except (StreamInactiveError, StreamCancelledError):
-                    break
+                    pass
                 except Exception:
-                    # Stream died — reconnect via the subscription's own
-                    # reconnect logic (which waits for the sidecar to be healthy).
-                    try:
-                        sub.reconnect_stream()
-                    except Exception:
-                        # Sidecar still unavailable — back off before retrying
-                        # TODO: Make this configurable
-                        time.sleep(5)
-                    continue
+                    logger.warning('Subscription stream failed, reconnecting', exc_info=True)
+                if closed.is_set():
+                    break
+                # Reconnect via the subscription's own reconnect logic (which waits for the
+                # sidecar to be healthy).
+                try:
+                    sub.reconnect_stream()
+                except Exception:
+                    # Sidecar still unavailable — back off before retrying
+                    logger.warning(
+                        'Subscription reconnect failed, retrying in %s seconds',
+                        SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS,
+                        exc_info=True,
+                    )
+                    closed.wait(SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS)
 
         def close_subscription():
+            closed.set()
             subscription.close()
             if threading.current_thread() is not streaming_thread:
                 streaming_thread.join(timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS)

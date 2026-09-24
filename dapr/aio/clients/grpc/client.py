@@ -14,9 +14,10 @@ limitations under the License.
 """
 
 import asyncio
+import logging
 import socket
 import time
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Set, Text, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -89,10 +90,19 @@ from dapr.clients.grpc._response import (
     UnlockResponseStatus,
 )
 from dapr.clients.grpc._state import StateItem, StateOptions
+from dapr.clients.grpc.client import (
+    SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS,
+    SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS,
+)
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
-from dapr.common.pubsub.subscription import StreamInactiveError
+from dapr.common.pubsub.subscription import StreamCancelledError, StreamInactiveError
 from dapr.proto import api_service_v1, api_v1, common_v1
+
+logger = logging.getLogger(__name__)
+
+# The event loop only keeps weak references to tasks, so running handler tasks are kept here.
+_subscription_tasks: Set[asyncio.Task] = set()
 
 
 class DaprGrpcClientAsync:
@@ -576,28 +586,62 @@ class DaprGrpcClientAsync:
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
 
         Returns:
-            Callable[[], Awaitable[None]]: An async function to close the subscription.
+            Callable[[], Awaitable[None]]: An async function that closes the subscription and
+                waits up to SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS for the handler task to stop.
         """
         subscription = await self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
+        closed = asyncio.Event()
 
         async def stream_messages(sub: Subscription):
             while True:
                 try:
                     async for message in subscription:
                         if message:
-                            response = await handler_fn(message)
+                            try:
+                                response = await handler_fn(message)
+                            except Exception:
+                                logger.exception('Subscription handler failed, retrying message')
+                                await subscription.respond_retry(message)
+                                continue
                             if response:
                                 await subscription.respond(message, response.status)
                         else:
                             continue
 
-                except StreamInactiveError:
+                except (StreamInactiveError, StreamCancelledError):
+                    pass
+                except asyncio.CancelledError:
+                    # grpc.aio raises this from a read on a stream that close() cancelled
+                    if not closed.is_set():
+                        raise
+                except Exception:
+                    logger.warning('Subscription stream failed, reconnecting', exc_info=True)
+                if closed.is_set():
                     break
+                try:
+                    await sub.reconnect_stream()
+                except Exception:
+                    logger.warning(
+                        'Subscription reconnect failed, retrying in %s seconds',
+                        SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS,
+                        exc_info=True,
+                    )
+                    try:
+                        await asyncio.wait_for(
+                            closed.wait(), timeout=SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS
+                        )
+                    except asyncio.TimeoutError:
+                        pass
 
         async def close_subscription():
+            closed.set()
             await subscription.close()
+            if asyncio.current_task() is not task:
+                await asyncio.wait({task}, timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS)
 
-        asyncio.create_task(stream_messages(subscription))
+        task = asyncio.create_task(stream_messages(subscription))
+        _subscription_tasks.add(task)
+        task.add_done_callback(_subscription_tasks.discard)
 
         return close_subscription
 
