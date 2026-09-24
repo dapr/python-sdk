@@ -126,6 +126,17 @@ The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_i
 | `conversation` | Standalone client | `dapr` (base, uses sidecar) | No (uses config/) |
 | `langgraph-checkpointer` | Standalone gRPC server | `dapr[langgraph]`, LangGraph, LangChain | Yes |
 
+### Data pipelines
+| Example | Pattern | SDK packages | Has components |
+|---------|---------|-------------|----------------|
+| `databricks` | Workflow app runnable locally + illustrative Lakeflow pipeline file | `dapr[workflow,databricks]` | No |
+
+`databricks/fraud_remediation_workflow.py` is the runnable half (workflow + activities,
+simulates a Lakeflow micro-batch in-process so it needs no pyspark/Databricks). Its counterpart
+`databricks/fraud_remediation_pipeline.py` shows the real `pyspark.pipelines` wiring but is
+illustrative only — it is not executed by `tests/examples/` since it requires an actual
+Databricks Lakeflow runtime.
+
 ## Adding a new example
 
 1. Create a directory under `examples/` with a descriptive kebab-case name
