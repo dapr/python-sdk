@@ -18,6 +18,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, Optional, TypeVar, Union
+from uuid import UUID
 
 from dapr.ext.workflow._durabletask import task
 from dapr.ext.workflow.propagation import PropagatedHistory, PropagationScope
@@ -88,6 +89,22 @@ class WorkflowContext(ABC):
     @abstractmethod
     def set_custom_status(self, custom_status: str) -> None:
         """Set the custom status."""
+        pass
+
+    @abstractmethod
+    def new_guid(self) -> UUID:
+        """Create a new GUID that is safe for replay within a workflow.
+
+        The GUID is deterministically derived from the workflow instance ID,
+        the current replay-safe time, and a counter that increments on each
+        call, so calling this repeatedly returns different values within a
+        single execution while remaining stable across replays.
+
+        Returns
+        -------
+        uuid.UUID
+            A replay-safe, deterministically generated GUID.
+        """
         pass
 
     @abstractmethod
