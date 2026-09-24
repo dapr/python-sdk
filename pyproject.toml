@@ -53,7 +53,73 @@ strands = [
 # exists so users get a consistent `pip install dapr[<ext>]` shape and so the
 # extra is reserved if workflow ever grows external deps.
 workflow = []
-all = ["dapr[fastapi,flask,grpc,langgraph,strands,workflow]"]
+# rag bundles only the embedder (the one adapter every rag pipeline needs);
+# every cloud source, vector store, and parser is its own extra below so
+# installing `dapr[rag]` never pulls in boto3/azure/pinecone/psycopg/
+# unstructured a given user doesn't need. `pip install "dapr[rag,rag-s3,
+# rag-pgvector]"` mirrors the S3 + pgvector example in dapr/ext/rag/AGENTS.md.
+rag = [
+    "openai>=1.50.0,<2.0.0",
+]
+rag-langchain = [
+    "langchain-core>=0.3.0,<2.0.0",
+]
+rag-unstructured = [
+    "unstructured[md,pdf,docx]>=0.15.0,<1.0.0",
+]
+rag-s3 = [
+    "boto3>=1.34.0,<2.0.0",
+]
+rag-azure = [
+    "azure-storage-blob>=12.19.0,<13.0.0",
+    "azure-identity>=1.15.0,<2.0.0",
+]
+rag-pgvector = [
+    "psycopg[binary]>=3.1.0,<4.0.0",
+]
+rag-pinecone = [
+    "pinecone>=5.0.0,<8.0.0",
+]
+# Separate from rag-azure (azure-storage-blob/-identity): a different SDK
+# package (azure-search-documents) for a different Azure service, needed only
+# by AzureAISearchVectorStore. AzureOpenAIEmbedder/AzureOpenAIChatClient reuse
+# `openai` (already in `rag`) and `azure-identity` (already in `rag-azure`),
+# so they need no extra of their own.
+# httpx is needed here specifically: Azure AI Search index aliases were
+# briefly in the SDK as a beta feature (11.4.0b1) but removed before the
+# stable 11.4.0 release and have not been restored in any version since
+# (verified against the SDK's own CHANGELOG.md) -- alias management is
+# implemented as direct REST calls (see vector_stores/azure_ai_search.py)
+# since the typed client has no equivalent method.
+rag-azure-search = [
+    "azure-search-documents>=11.5.0,<12.0.0",
+    "httpx>=0.27.0,<1.0.0",
+]
+all = [
+    "dapr[fastapi,flask,grpc,langgraph,strands,workflow]",
+    "dapr[rag,rag-langchain,rag-s3,rag-azure,rag-azure-search,rag-pgvector,rag-pinecone]",
+    # rag-unstructured pulls in unstructured -> python-magic, which needs a
+    # real libmagic for file-type sniffing. Windows has no system libmagic,
+    # and python-magic's own compat shim (magic/compat.py) crashes the whole
+    # process with a native access violation -- not a catchable ImportError
+    # -- instead of failing cleanly when it can't find one. The standard
+    # Windows workaround, python-magic-bin, isn't a fix here: it installs its
+    # own `magic/__init__.py` at the same path as python-magic's, predates
+    # (and lacks) compat.py entirely, and hasn't been released since 2017 --
+    # pairing it with python-magic risks an install-order-dependent file
+    # collision rather than a working combination. So `all` (this SDK's own
+    # dev/test bundle) simply excludes rag-unstructured on Windows;
+    # dapr/ext/rag/parsing/unstructured.py already handles unstructured
+    # being absent via UnstructuredParser raising OptionalDependencyError
+    # (see its own ImportError guard). Windows users who've separately sorted
+    # out libmagic (e.g. via conda; see unstructured's own install docs) can
+    # still `pip install dapr[rag-unstructured]` directly -- this exclusion
+    # is scoped to `all` only. (Inlined rather than `dapr[rag-unstructured];
+    # sys_platform != 'win32'`: uv silently drops a marker attached to a
+    # self-referential extra like that -- verified against this exact case,
+    # not assumed -- so it must go on the concrete requirement instead.)
+    "unstructured[md,pdf,docx]>=0.15.0,<1.0.0; sys_platform != 'win32'",
+]
 
 [project.urls]
 Documentation = "https://github.com/dapr/docs"
@@ -89,6 +155,17 @@ exclude = [
 # `dapr` package and is opt-in via [project.optional-dependencies].
 [tool.uv.workspace]
 members = []
+
+[tool.uv]
+constraint-dependencies = [
+    # onnxruntime (pulled in transitively via rag-unstructured's unstructured[pdf]
+    # -> unstructured-inference, for PDF parsing) dropped cp310 wheels starting at
+    # 1.24.1 -- verified against PyPI's actual file listing, not just metadata.
+    # Pin to the last cp310-compatible release so `uv lock`/`uv sync` doesn't pick
+    # a version with no installable wheel for this project's Python 3.10 floor.
+    # python_version >= 3.11 is unaffected and resolves onnxruntime normally.
+    "onnxruntime<1.24; python_version < '3.11'",
+]
 
 [dependency-groups]
 dev = [
@@ -187,6 +264,47 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["langgraph.*", "langchain.*", "strands.*", "strands_agents.*"]
+ignore_missing_imports = true
+
+# dapr.ext.rag's optional adapters: some of these (boto3, langchain_core) are
+# installed in CI/dev without inline type stubs or only via a transitive
+# extra; others (azure-*, psycopg, pinecone, unstructured) may not be
+# installed at all, since every dapr.ext.rag adapter guards its own optional
+# import (see dapr/ext/rag/AGENTS.md) rather than requiring the full `rag-*`
+# extra set. Unlike the fastapi/langgraph/strands/workflow modules below,
+# dapr.ext.rag is new code and is NOT in the ignore_errors bucket -- it is
+# expected to pass mypy cleanly.
+[[tool.mypy.overrides]]
+module = [
+    "boto3",
+    "boto3.*",
+    "botocore.*",
+    "azure.*",
+    "psycopg.*",
+]
+ignore_missing_imports = true
+
+# unstructured (pdf/docx extras), openai, pinecone, and langchain-core all
+# transitively pull in numpy -- openai, pinecone, and langchain-core each
+# reference numpy array/vector types directly from their own inline stubs,
+# and unstructured's pdf/docx extras drag in a large ML stack (pandas, spacy,
+# transformers, onnx, ...) that does the same. dapr.ext.rag never imports
+# numpy itself. Recent numpy versions bundle stubs/source using PEP 695
+# generic syntax that mypy cannot parse under this project's python_version =
+# "3.10" target, and unlike a normal type error, a syntax error aborts the
+# *entire* mypy run, not just dapr.ext.rag. follow_imports = "skip" keeps
+# mypy from following past the one place dapr.ext.rag actually imports each
+# of these (parsing/unstructured.py, embedding/_openai_common.py,
+# generation.py, vector_stores/pinecone.py, parsing/langchain.py) into that
+# graph, so numpy's own files are never opened; ignore_missing_imports covers
+# environments where a given package isn't installed at all (each is an
+# optional dependency here). Verified (see the completion report) that a
+# plain `import numpy` reached this way still crashes mypy even when numpy
+# itself is separately skipped or stub-shadowed -- skipping has to happen at
+# the direct import site, not at the transitively-reached destination.
+[[tool.mypy.overrides]]
+module = ["unstructured.*", "openai.*", "pinecone.*", "langchain_core.*"]
+follow_imports = "skip"
 ignore_missing_imports = true
 
 # Bundling the extensions into the core wheel brings their source under mypy's
