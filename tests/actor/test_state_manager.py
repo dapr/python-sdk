@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import base64
 import unittest
 from unittest import mock
@@ -20,6 +21,7 @@ from unittest import mock
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.actor.runtime.state_change import StateChangeKind
 from dapr.actor.runtime.state_manager import ActorStateManager, StateMetadata
 from dapr.serializers import DefaultJSONSerializer
@@ -117,6 +119,322 @@ class ActorStateManagerTests(unittest.TestCase):
         has_value, val = _run(state_manager.try_get_state('state1'))
         self.assertFalse(has_value)
         self.assertIsNone(val)
+
+    def _run_reentrant(self, state_manager, coro_fn):
+        # Runs coro_fn inside a reentrancy-scoped call, then saves its tracker.
+        token = reentrancy_ctx.set('reentrancy-id')
+        try:
+            state_manager.set_state_context('ctx1')
+            try:
+                _run(coro_fn())
+                _run(state_manager.save_state())
+            finally:
+                state_manager.set_state_context(None)
+        finally:
+            reentrancy_ctx.reset(token)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_update_refreshes_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.try_get_state('state1'))
+
+        self._run_reentrant(state_manager, lambda: state_manager.set_state_ttl('state1', 'v2', 60))
+
+        # The default read is served from the refreshed entry, not the state store.
+        calls = self._fake_client.get_state.mock.call_count
+        has_value, val = _run(state_manager.try_get_state('state1'))
+        self.assertTrue(has_value)
+        self.assertEqual('v2', val)
+        self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
+        state = state_manager._default_state_change_tracker['state1']
+        self.assertEqual(StateChangeKind.none, state.change_kind)
+        self.assertEqual(60, state.ttl_in_seconds)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_remove_evicts_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.try_get_state('state1'))
+
+        self._run_reentrant(state_manager, lambda: state_manager.remove_state('state1'))
+
+        self.assertNotIn('state1', state_manager._default_state_change_tracker)
+        self._fake_client.get_state.mock.return_value = None
+        has_value, val = _run(state_manager.try_get_state('state1'))
+        self.assertFalse(has_value)
+        self.assertIsNone(val)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_save_keeps_dirty_default_entry(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.set_state('state1', 'pending'))
+
+        self._run_reentrant(state_manager, lambda: state_manager.set_state('state1', 'v2'))
+
+        state = state_manager._default_state_change_tracker['state1']
+        self.assertEqual('pending', state.value)
+        self.assertEqual(StateChangeKind.update, state.change_kind)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'[1, 2]'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_refresh_matches_fresh_read(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.try_get_state('state1'))
+
+        self._run_reentrant(state_manager, lambda: state_manager.set_state('state1', (3, 4)))
+
+        _, refreshed = _run(state_manager.try_get_state('state1'))
+        self._fake_client.get_state.mock.return_value = self._serializer.serialize((3, 4))
+        _, fresh = _run(ActorStateManager(self._fake_actor).try_get_state('state1'))
+        self.assertEqual([3, 4], fresh)
+        self.assertEqual(fresh, refreshed)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_save_of_none_evicts_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.try_get_state('state1'))
+
+        self._run_reentrant(state_manager, lambda: state_manager.set_state('state1', None))
+
+        self.assertNotIn('state1', state_manager._default_state_change_tracker)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_refresh_failure_evicts_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.try_get_state('state1'))
+        _run(state_manager.try_get_state('state2'))
+
+        async def set_both():
+            await state_manager.set_state('state1', 'v2')
+            await state_manager.set_state('state2', 'v2')
+
+        # The save must not raise after the write has committed, and every key is handled.
+        with mock.patch.object(
+            self._runtime_ctx.state_provider,
+            'round_trip_state_value',
+            side_effect=ValueError('cannot decode'),
+        ):
+            self._run_reentrant(state_manager, set_both)
+
+        self.assertNotIn('state1', state_manager._default_state_change_tracker)
+        self.assertNotIn('state2', state_manager._default_state_change_tracker)
+
+    def _cache_miss(self, state_manager, state_name='state1'):
+        # Reads an absent key so the tracker caches the miss; returns the store read count.
+        has_value, _ = _run(state_manager.try_get_state(state_name))
+        self.assertFalse(has_value)
+        return self._fake_client.get_state.mock.call_count
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    def test_missing_state_is_cached_as_absent(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        calls = self._cache_miss(state_manager)
+
+        self.assertEqual((False, None), _run(state_manager.try_get_state('state1')))
+        with self.assertRaises(KeyError):
+            _run(state_manager.get_state('state1'))
+        self.assertFalse(_run(state_manager.contains_state('state1')))
+        self.assertFalse(state_manager.is_state_marked_for_remove('state1'))
+        self.assertEqual([], _run(state_manager.get_state_names()))
+        self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    def test_try_add_state_after_cached_miss(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        calls = self._cache_miss(state_manager)
+
+        self.assertTrue(_run(state_manager.try_add_state('state1', 'value1')))
+        self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
+        state = state_manager._default_state_change_tracker['state1']
+        self.assertEqual(StateChangeKind.add, state.change_kind)
+        self.assertEqual('value1', state.value)
+        self.assertEqual((True, 'value1'), _run(state_manager.try_get_state('state1')))
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    def test_set_state_after_cached_miss(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        self._cache_miss(state_manager, 'state1')
+        calls = self._cache_miss(state_manager, 'state2')
+
+        _run(state_manager.set_state('state1', 'value1'))
+        _run(state_manager.set_state_ttl('state2', 'value2', 60))
+        self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
+        tracker = state_manager._default_state_change_tracker
+        self.assertEqual(StateChangeKind.add, tracker['state1'].change_kind)
+        self.assertEqual('value1', tracker['state1'].value)
+        self.assertIsNone(tracker['state1'].ttl_in_seconds)
+        self.assertEqual(StateChangeKind.add, tracker['state2'].change_kind)
+        self.assertEqual('value2', tracker['state2'].value)
+        self.assertEqual(60, tracker['state2'].ttl_in_seconds)
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    def test_remove_state_after_cached_miss(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        calls = self._cache_miss(state_manager)
+
+        self.assertFalse(_run(state_manager.try_remove_state('state1')))
+        with self.assertRaises(KeyError):
+            _run(state_manager.remove_state('state1'))
+        self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
+        self.assertFalse(state_manager.is_state_marked_for_remove('state1'))
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    def test_get_or_add_state_after_cached_miss(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        calls = self._cache_miss(state_manager)
+
+        self.assertEqual('value1', _run(state_manager.get_or_add_state('state1', 'value1')))
+        self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
+        state = state_manager._default_state_change_tracker['state1']
+        self.assertEqual(StateChangeKind.add, state.change_kind)
+        self.assertEqual('value1', state.value)
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    def test_add_or_update_state_after_cached_miss(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        calls = self._cache_miss(state_manager)
+        update_value = mock.MagicMock(return_value='updated')
+
+        val = _run(state_manager.add_or_update_state('state1', 'value1', update_value))
+        self.assertEqual('value1', val)
+        update_value.assert_not_called()
+        self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
+        state = state_manager._default_state_change_tracker['state1']
+        self.assertEqual(StateChangeKind.add, state.change_kind)
+        self.assertEqual('value1', state.value)
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_save_state_skips_cached_miss(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        self._cache_miss(state_manager, 'state1')
+        save = self._fake_client.save_state_transactionally.mock
+        save.reset_mock()
+
+        _run(state_manager.save_state())
+        save.assert_not_called()
+
+        self._cache_miss(state_manager, 'state2')
+        _run(state_manager.set_state('state2', 'value2'))
+        _run(state_manager.save_state())
+        save.assert_called_once()
+        self.assertEqual(
+            b'[{"operation":"upsert","request":{"key":"state2","value":"value2"}}]',
+            save.call_args.args[2],
+        )
+        self.assertEqual((False, None), _run(state_manager.try_get_state('state1')))
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_write_replaces_cached_miss_in_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        self._cache_miss(state_manager)
+
+        # A reentrant call reads the absent key in its own tracker, then creates it.
+        async def create():
+            self.assertFalse(await state_manager.contains_state('state1'))
+            await state_manager.set_state('state1', 'value2')
+
+        self._run_reentrant(state_manager, create)
+
+        # The reminder-facing default tracker must not keep reporting the key as absent.
+        calls = self._fake_client.get_state.mock.call_count
+        self.assertEqual((True, 'value2'), _run(state_manager.try_get_state('state1')))
+        self.assertTrue(_run(state_manager.contains_state('state1')))
+        self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_remove_evicts_cached_miss_from_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        self._cache_miss(state_manager)
+
+        # The key is created elsewhere, then removed by a reentrant call.
+        self._fake_client.get_state.mock.return_value = b'"value1"'
+        self._run_reentrant(state_manager, lambda: state_manager.remove_state('state1'))
+
+        self.assertNotIn('state1', state_manager._default_state_change_tracker)
+
+    @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_nested_reentrant_write_is_seen_by_outer_call(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        get_state = self._fake_client.get_state.mock
+        save = self._fake_client.save_state_transactionally.mock
+        save.reset_mock()
+
+        async def inner():
+            state_manager.set_state_context('inner')
+            await state_manager.set_state('state1', 'from-inner')
+            await state_manager.save_state()
+            get_state.return_value = b'"from-inner"'
+
+        async def outer():
+            state_manager.set_state_context('outer')
+            self.assertFalse(await state_manager.contains_state('state1'))
+            self.assertEqual((False, None), await state_manager.try_get_state('state1'))
+            # A nested reentrant call (A -> B -> A) creates the key in its own tracker.
+            await asyncio.create_task(inner())
+            self.assertTrue(await state_manager.contains_state('state1'))
+            self.assertEqual(
+                'from-inner', await state_manager.get_or_add_state('state1', 'default')
+            )
+            await state_manager.save_state()
+
+        token = reentrancy_ctx.set('reentrancy-id')
+        try:
+            _run(outer())
+        finally:
+            state_manager.set_state_context(None)
+            reentrancy_ctx.reset(token)
+
+        save.assert_called_once()
+        self.assertEqual(
+            b'[{"operation":"upsert","request":{"key":"state1","value":"from-inner"}}]',
+            save.call_args.args[2],
+        )
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_set_state_for_new_state(self):

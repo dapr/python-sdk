@@ -60,6 +60,21 @@ class StateMetadata(Generic[T]):
         self._ttl_in_seconds = new_ttl_in_seconds
 
 
+class _NotFoundStateMetadata(StateMetadata[None]):
+    # A cached miss: the key is known to be absent from the state store. It reports the
+    # public 'none' change kind, so it is never saved, and is told apart by its type.
+    def __init__(self) -> None:
+        super().__init__(None, StateChangeKind.none)
+
+
+def _is_not_found(state_metadata: StateMetadata) -> bool:
+    return isinstance(state_metadata, _NotFoundStateMetadata)
+
+
+def _is_absent(state_metadata: StateMetadata) -> bool:
+    return _is_not_found(state_metadata) or state_metadata.change_kind == StateChangeKind.remove
+
+
 class ActorStateManager(Generic[T]):
     def __init__(self, actor: 'Actor'):
         self._actor = actor
@@ -77,6 +92,9 @@ class ActorStateManager(Generic[T]):
         state_change_tracker = self._get_contextual_state_tracker()
         if state_name in state_change_tracker:
             state_metadata = state_change_tracker[state_name]
+            if _is_not_found(state_metadata):
+                state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
+                return True
             if state_metadata.change_kind == StateChangeKind.remove:
                 state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
                 return True
@@ -102,7 +120,7 @@ class ActorStateManager(Generic[T]):
         state_change_tracker = self._get_contextual_state_tracker()
         if state_name in state_change_tracker:
             state_metadata = state_change_tracker[state_name]
-            if state_metadata.change_kind == StateChangeKind.remove:
+            if _is_absent(state_metadata):
                 return False, None
             return True, state_metadata.value
         has_value, val = await self._actor.runtime_ctx.state_provider.try_load_state(
@@ -110,6 +128,10 @@ class ActorStateManager(Generic[T]):
         )
         if has_value:
             state_change_tracker[state_name] = StateMetadata(val, StateChangeKind.none)
+        elif state_change_tracker is self._default_state_change_tracker:
+            # Only the default tracker is refreshed by reentrant saves, so a miss cached
+            # in a reentrant tracker could hide a nested call's write and overwrite it.
+            state_change_tracker[state_name] = _NotFoundStateMetadata()
         return has_value, val
 
     async def set_state(self, state_name: str, value: T) -> None:
@@ -122,6 +144,11 @@ class ActorStateManager(Generic[T]):
         state_change_tracker = self._get_contextual_state_tracker()
         if state_name in state_change_tracker:
             state_metadata = state_change_tracker[state_name]
+            if _is_not_found(state_metadata):
+                state_change_tracker[state_name] = StateMetadata(
+                    value, StateChangeKind.add, ttl_in_seconds
+                )
+                return
             state_metadata.value = value
             state_metadata.ttl_in_seconds = ttl_in_seconds
 
@@ -153,7 +180,7 @@ class ActorStateManager(Generic[T]):
         state_change_tracker = self._get_contextual_state_tracker()
         if state_name in state_change_tracker:
             state_metadata = state_change_tracker[state_name]
-            if state_metadata.change_kind == StateChangeKind.remove:
+            if _is_absent(state_metadata):
                 return False
             elif state_metadata.change_kind == StateChangeKind.add:
                 state_change_tracker.pop(state_name, None)
@@ -172,8 +199,7 @@ class ActorStateManager(Generic[T]):
     async def contains_state(self, state_name: str) -> bool:
         state_change_tracker = self._get_contextual_state_tracker()
         if state_name in state_change_tracker:
-            state_metadata = state_change_tracker[state_name]
-            return state_metadata.change_kind != StateChangeKind.remove
+            return not _is_absent(state_change_tracker[state_name])
         return await self._actor.runtime_ctx.state_provider.contains_state(
             self._type_name, self._actor.id.id, state_name
         )
@@ -200,6 +226,9 @@ class ActorStateManager(Generic[T]):
         state_change_tracker = self._get_contextual_state_tracker()
         if state_name in state_change_tracker:
             state_metadata = state_change_tracker[state_name]
+            if _is_not_found(state_metadata):
+                state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.add)
+                return value
             if state_metadata.change_kind == StateChangeKind.remove:
                 state_change_tracker[state_name] = StateMetadata(value, StateChangeKind.update)
                 return value
@@ -225,11 +254,7 @@ class ActorStateManager(Generic[T]):
         # TODO: Get all state names from Dapr once implemented.
         def append_names_sync():
             state_change_tracker = self._get_contextual_state_tracker()
-            return [
-                key
-                for key, value in state_change_tracker.items()
-                if value.change_kind != StateChangeKind.remove
-            ]
+            return [key for key, value in state_change_tracker.items() if not _is_absent(value)]
 
         default_loop = asyncio.get_running_loop()
         return await default_loop.run_in_executor(None, append_names_sync)
@@ -267,6 +292,32 @@ class ActorStateManager(Generic[T]):
             )
         for state_name in states_to_remove:
             state_change_tracker.pop(state_name, None)
+        if state_change_tracker is not self._default_state_change_tracker:
+            self._refresh_default_tracker(state_changes)
+
+    def _refresh_default_tracker(self, state_changes: List[ActorStateChange]) -> None:
+        # Writes made through a reentrancy-scoped tracker are invisible to the default
+        # tracker, which activation, reminders and timers read from. Refresh its clean
+        # copies of the written keys, cached misses included, in the shape a fresh read
+        # would return, and drop removed keys. Entries with pending changes are left alone.
+        state_provider = self._actor.runtime_ctx.state_provider
+        for change in state_changes:
+            metadata = self._default_state_change_tracker.get(change.state_name)
+            if metadata is None or metadata.change_kind != StateChangeKind.none:
+                continue
+            # A None value is not written to the store, so let the next read reload it.
+            if change.change_kind == StateChangeKind.remove or change.value is None:
+                self._default_state_change_tracker.pop(change.state_name)
+                continue
+            try:
+                value = state_provider.round_trip_state_value(change.value)
+            except Exception:
+                # The save has already committed; fall back to reloading on the next read.
+                self._default_state_change_tracker.pop(change.state_name)
+                continue
+            self._default_state_change_tracker[change.state_name] = StateMetadata(
+                value, StateChangeKind.none, change.ttl_in_seconds
+            )
 
     def is_state_marked_for_remove(self, state_name: str) -> bool:
         state_change_tracker = self._get_contextual_state_tracker()
