@@ -15,7 +15,6 @@ limitations under the License.
 
 import asyncio
 import base64
-import contextvars
 import unittest
 from unittest import mock
 
@@ -417,7 +416,7 @@ class ActorStateManagerTests(unittest.TestCase):
             self.assertFalse(await state_manager.contains_state('state1'))
             self.assertEqual((False, None), await state_manager.try_get_state('state1'))
             # A nested reentrant call (A -> B -> A) creates the key in its own tracker.
-            await asyncio.create_task(inner(), context=contextvars.copy_context())
+            await asyncio.create_task(inner())
             self.assertTrue(await state_manager.contains_state('state1'))
             self.assertEqual(
                 'from-inner', await state_manager.get_or_add_state('state1', 'default')
