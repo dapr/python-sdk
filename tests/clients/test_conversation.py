@@ -62,8 +62,8 @@ from dapr.clients.grpc.conversation import (
 from dapr.clients.grpc.conversation import (
     tool as tool_decorator,
 )
-from dapr.conf import settings
 from tests.clients.fake_dapr_server import FakeDaprSidecar
+from tests.clients.fake_http_server import point_settings_at_http_port
 
 """
 Comprehensive tests for Dapr conversation API functionality.
@@ -127,21 +127,19 @@ def create_calculate_tool():
 class ConversationTestBase:
     """Base class for conversation tests with common setup."""
 
-    grpc_port = 50011
-    http_port = 3510
+    grpc_port: int  # set in setUpClass from the port the fake sidecar bound
+    http_port: int
     scheme = ''
 
     @classmethod
     def setUpClass(cls):
-        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls.grpc_port, http_port=cls.http_port)
+        cls._fake_dapr_server = FakeDaprSidecar()
+        cls.addClassCleanup(cls._fake_dapr_server.stop)
         cls._fake_dapr_server.start()
+        cls.grpc_port = cls._fake_dapr_server.grpc_port
+        cls.http_port = cls._fake_dapr_server.http_port
         # Configure health check to use fake server's HTTP port
-        settings.DAPR_HTTP_PORT = cls.http_port
-        settings.DAPR_HTTP_ENDPOINT = f'http://127.0.0.1:{cls.http_port}'
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._fake_dapr_server.stop()
+        point_settings_at_http_port(cls, cls.http_port)
 
 
 class ConversationTestBaseSync(ConversationTestBase, unittest.TestCase):
