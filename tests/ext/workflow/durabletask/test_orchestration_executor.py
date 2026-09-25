@@ -2722,3 +2722,34 @@ def get_and_validate_single_complete_workflow_action(
     assert type(actions[0]) is pb.WorkflowAction
     assert actions[0].HasField('completeWorkflow')
     return actions[0].completeWorkflow
+
+
+def test_unexpected_timer_fired_is_logged_once_per_id(caplog):
+    """Tests that a repeated unexpected timerFired event is only reported once"""
+
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        yield ctx.wait_for_external_event('never_arrives')
+        return 'done'
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(orchestrator)
+
+    old_events = [
+        helpers.new_workflow_started_event(),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+    ]
+    fire_at = datetime.now()
+    new_events = [
+        helpers.new_timer_fired_event(timer_id=5, fire_at=fire_at),
+        helpers.new_timer_fired_event(timer_id=5, fire_at=fire_at),
+        helpers.new_timer_fired_event(timer_id=7, fire_at=fire_at),
+    ]
+
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
+        executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+
+    assert [r.getMessage() for r in caplog.records] == [
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected timerFired event with ID = 5.',
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected timerFired event with ID = 7.',
+    ]
