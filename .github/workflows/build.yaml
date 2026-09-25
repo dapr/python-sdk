@@ -17,13 +17,13 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python 3.10
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.10'
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v9.0.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Run Autoformatter
@@ -37,6 +37,8 @@ jobs:
             echo "Source files are not formatted correctly. Run 'uv run ruff check --fix && uv run ruff format'."
             exit 1
         fi
+    - name: Check Typing
+      run: uv run mypy
     - name: Verify main is on a .dev version
       if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
       run: |
@@ -51,6 +53,9 @@ jobs:
   build:
     needs: lint
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write  # codecov OIDC upload auth
     strategy:
       fail-fast: false
       matrix:
@@ -83,20 +88,44 @@ jobs:
             python_version: "3.13"
             tox_env: py313
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python_version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python_version }}
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v9.0.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
-    - name: Check Typing
-      run: uv run mypy
     - name: Run unit-tests
       run: |
-        uv run coverage run -m pytest tests ext -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
+        uv run coverage run -m pytest tests -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
         uv run coverage xml
     - name: Upload test coverage
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
+      with:
+        # Tokenless uploads are rejected on the protected main branch ("Token
+        # required because branch is protected"), which left codecov comparing
+        # PRs against a stale base. OIDC authenticates uploads from this repo;
+        # fork PRs still fall back to tokenless.
+        use_oidc: true
+        # Surface upload failures on branch pushes so the main base report
+        # can't silently go stale again, without letting codecov outages
+        # block PRs or the merge queue.
+        fail_ci_if_error: ${{ github.event_name == 'push' }}
+
+  # Single stable check name to mark as required in branch protection, so the
+  # required-checks list doesn't go stale when the build matrix changes.
+  # Skipped required checks count as passing, hence `if: always()` plus an
+  # explicit result check instead of relying on `needs` alone.
+  build-complete:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Fail unless the whole build matrix succeeded
+      run: |
+        if [ "${{ needs.build.result }}" != "success" ]; then
+          echo "build matrix result: ${{ needs.build.result }}"
+          exit 1
+        fi

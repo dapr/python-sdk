@@ -13,6 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
+import os
+import sys
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
@@ -32,6 +35,27 @@ from google.protobuf.wrappers_pb2 import (
 
 MetadataDict = Dict[str, List[Union[bytes, str]]]
 MetadataTuple = Tuple[Tuple[str, Union[bytes, str]], ...]
+
+_logger = logging.getLogger(__name__)
+
+_GRPC_DNS_RESOLVER_ENV = 'GRPC_DNS_RESOLVER'
+_GRPC_DNS_RESOLVER_NATIVE = 'native'
+
+
+def set_default_grpc_dns_resolver() -> None:
+    """Default gRPC to the OS-native DNS resolver on macOS.
+
+    grpcio's bundled c-ares resolver often ignores macOS DNS config and fails
+    with "DNS query cancelled" for endpoints that resolve fine system-wide.
+    Resolver choice is process-wide with no per-channel override, so it is set
+    only on Darwin and only when unset, leaving an explicit value untouched.
+    """
+    if sys.platform != 'darwin':
+        return
+    if _GRPC_DNS_RESOLVER_ENV in os.environ:
+        return
+    os.environ[_GRPC_DNS_RESOLVER_ENV] = _GRPC_DNS_RESOLVER_NATIVE
+    _logger.debug('Defaulted %s=%s on macOS', _GRPC_DNS_RESOLVER_ENV, _GRPC_DNS_RESOLVER_NATIVE)
 
 
 def tuple_to_dict(tupledata: MetadataTuple) -> MetadataDict:

@@ -17,7 +17,6 @@ def test_configuration(dapr, redis_set_config):
 
     dapr.start(
         '--app-id configexample --resources-path components/ -- python3 configuration.py',
-        wait=5,
     )
     # Update Redis to trigger the subscription notification
     redis_set_config('orderId2', '210', version=2)

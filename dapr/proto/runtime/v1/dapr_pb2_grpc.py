@@ -20,7 +20,7 @@ from dapr.proto.runtime.v1 import state_pb2 as dapr_dot_proto_dot_runtime_dot_v1
 from dapr.proto.runtime.v1 import workflow_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_workflow__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
-GRPC_GENERATED_VERSION = '1.76.0'
+GRPC_GENERATED_VERSION = '1.81.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -40,7 +40,7 @@ if _version_not_supported:
     )
 
 
-class DaprStub(object):
+class DaprStub:
     """Dapr service provides APIs to user application to access Dapr building blocks.
     """
 
@@ -412,7 +412,7 @@ class DaprStub(object):
                 _registered_method=True)
 
 
-class DaprServicer(object):
+class DaprServicer:
     """Dapr service provides APIs to user application to access Dapr building blocks.
     """
 
@@ -1296,7 +1296,7 @@ def add_DaprServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class Dapr(object):
+class Dapr:
     """Dapr service provides APIs to user application to access Dapr building blocks.
     """
 

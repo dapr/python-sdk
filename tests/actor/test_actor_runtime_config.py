@@ -177,6 +177,61 @@ class ActorRuntimeConfigTests(unittest.TestCase):
         self.assertEqual(config._drain_ongoing_call_timeout, timedelta(seconds=10))
         self.assertEqual(config.as_dict()['drainOngoingCallTimeout'], timedelta(seconds=10))
 
+    def test_read_only_properties(self):
+        reentrancy = ActorReentrancyConfig(enabled=True, maxStackDepth=8)
+        type_config = ActorTypeConfig(
+            'testactor',
+            actor_idle_timeout=timedelta(minutes=5),
+            actor_scan_interval=timedelta(seconds=10),
+            drain_ongoing_call_timeout=timedelta(seconds=15),
+            drain_rebalanced_actors=False,
+            reentrancy=reentrancy,
+            reminders_storage_partitions=10,
+        )
+        config = ActorRuntimeConfig(
+            actor_idle_timeout=timedelta(minutes=30),
+            actor_scan_interval=timedelta(seconds=20),
+            drain_ongoing_call_timeout=timedelta(seconds=30),
+            drain_rebalanced_actors=True,
+            reentrancy=reentrancy,
+            reminders_storage_partitions=12,
+            actor_type_configs=[type_config],
+        )
+        config.update_entities(['actortype1'])
+
+        self.assertTrue(reentrancy.enabled)
+        self.assertEqual(reentrancy.max_stack_depth, 8)
+
+        self.assertEqual(type_config.actor_type, 'testactor')
+        self.assertEqual(type_config.actor_idle_timeout, timedelta(minutes=5))
+        self.assertEqual(type_config.actor_scan_interval, timedelta(seconds=10))
+        self.assertEqual(type_config.drain_ongoing_call_timeout, timedelta(seconds=15))
+        self.assertEqual(type_config.drain_rebalanced_actors, False)
+        self.assertIs(type_config.reentrancy, reentrancy)
+        self.assertEqual(type_config.reminders_storage_partitions, 10)
+
+        self.assertEqual(config.entities, frozenset({'actortype1'}))
+        self.assertEqual(config.actor_idle_timeout, timedelta(minutes=30))
+        self.assertEqual(config.actor_scan_interval, timedelta(seconds=20))
+        self.assertEqual(config.drain_ongoing_call_timeout, timedelta(seconds=30))
+        self.assertEqual(config.drain_rebalanced_actors, True)
+        self.assertIs(config.reentrancy, reentrancy)
+        self.assertEqual(config.reminders_storage_partitions, 12)
+        self.assertEqual(config.actor_type_configs, [type_config])
+
+    def test_collection_properties_return_snapshots(self):
+        config = ActorRuntimeConfig()
+        config.update_entities(['actortype1'])
+
+        entities_snapshot = config.entities
+        type_configs_snapshot = config.actor_type_configs
+
+        config.update_entities(['actortype2'])
+        type_configs_snapshot.append(ActorTypeConfig('mutated'))
+
+        self.assertEqual(entities_snapshot, frozenset({'actortype1'}))
+        self.assertEqual(config.actor_type_configs, [])
+
 
 if __name__ == '__main__':
     unittest.main()

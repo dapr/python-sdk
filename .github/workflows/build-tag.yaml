@@ -10,13 +10,13 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python 3.10
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.10'
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v9.0.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Verify tag matches a stable VERSION
@@ -50,28 +50,36 @@ jobs:
   build:
     needs: lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # codecov OIDC upload auth
     strategy:
       fail-fast: false
       matrix:
         python_ver: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python_ver }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python_ver }}
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v9.0.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Check Typing
       run: uv run mypy
     - name: Run unit-tests
       run: |
-        uv run coverage run -m pytest tests ext -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
+        uv run coverage run -m pytest tests -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
         uv run coverage xml
     - name: Upload test coverage
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
+      with:
+        # Tokenless uploads are rejected outside fork PRs; OIDC authenticates
+        # tag builds. fail_ci_if_error stays off here: a codecov outage must
+        # not block a release (publish depends on this job).
+        use_oidc: true
   publish:
     needs: build
     if: github.event_name != 'pull_request'
@@ -79,9 +87,9 @@ jobs:
     env:
       TWINE_USERNAME: "__token__"
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python 3.10
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -93,46 +101,30 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
       run: |
         python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-workflow
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-workflow
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish Dapr Flask Extension
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/flask_dapr
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-grpc
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-grpc
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-fastapi
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-fastapi
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-langgraph
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-langgraph
-        python -m build --wheel
-        twine upload dist/*
-    - name: Build and publish dapr-ext-strands
-      env:
-        TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_PASS }}
-      run: |
-        cd ext/dapr-ext-strands
-        python -m build --wheel
-        twine upload dist/*
+        # --skip-existing makes re-runs retry-safe. PyPI does not allow
+        # overwriting an existing release; replacing a tagged version's
+        # contents requires bumping VERSION and re-tagging.
+        twine upload --skip-existing dist/*
+    # TODO: remove in 1.22.
+    # The previously-separate distributions (dapr-ext-fastapi, dapr-ext-grpc,
+    # dapr-ext-langgraph, dapr-ext-strands, dapr-ext-workflow, flask-dapr)
+    # are intentionally NOT republished. Bundling the extension code into
+    # the `dapr` wheel means publishing a forwarding stub would leave files
+    # under `dapr/ext/<name>/` claimed by both distributions, and `pip
+    # uninstall <legacy>` would delete files that core dapr now provides.
+    # See RELEASE.md and the runtime warning in dapr/__init__.py.
+
+  # Opens (or comments on) a tracking issue only when the publish job (PyPI
+  # upload) fails. Lint/build failures skip publish, so failure() stays false
+  # and CI flakes don't open issues.
+  notify-on-failure:
+    needs: [publish]
+    if: failure() && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      issues: write
+      actions: read
+    uses: dapr/.github/.github/workflows/open-issue-on-failure.yml@main
+    with:
+      title: "Release workflow failed: ${{ github.workflow }} (${{ github.ref_name }})"
+      labels: "release,ci/release-failure"
+      mention: "@dapr/maintainers-python-sdk @dapr/approvers-python-sdk"

@@ -17,13 +17,14 @@ as plain JSON so the wire format stays interop-friendly with non-Python Dapr
 apps.
 """
 
+from pydantic import BaseModel
+
 from dapr.ext.workflow import (
     DaprWorkflowClient,
     DaprWorkflowContext,
     WorkflowActivityContext,
     WorkflowRuntime,
 )
-from pydantic import BaseModel
 
 
 class OrderRequest(BaseModel):

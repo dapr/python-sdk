@@ -17,14 +17,14 @@ import pytest
 
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 
-GRPC_ADDRESS = '127.0.0.1:50001'
+GRPC_ADDRESS = '127.0.0.1:13501'
 
 
 @pytest.fixture(scope='module')
 def sidecar(dapr_env, apps_dir):
     dapr_env.start_sidecar(
         app_id='invoke-receiver-async',
-        app_port=50051,
+        app_port=13503,
         app_cmd=f'python3 {apps_dir / "invoke_receiver.py"}',
     )
 

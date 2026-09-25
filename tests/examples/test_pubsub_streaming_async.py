@@ -31,7 +31,6 @@ EXPECTED_PUBLISHER = [
 def test_pubsub_streaming_async(dapr):
     dapr.start(
         '--app-id python-subscriber --app-protocol grpc -- python3 -u subscriber.py --topic=TOPIC_B1',
-        wait=5,
     )
     publisher_output = dapr.run(
         '--app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 '
@@ -50,7 +49,6 @@ def test_pubsub_streaming_async(dapr):
 def test_pubsub_streaming_async_handler(dapr):
     dapr.start(
         '--app-id python-subscriber --app-protocol grpc -- python3 -u subscriber-handler.py --topic=TOPIC_B2',
-        wait=5,
     )
     publisher_output = dapr.run(
         '--app-id python-publisher --app-protocol grpc --dapr-grpc-port=3500 '

@@ -15,51 +15,87 @@
 
 # Regenerate Python protobuf/gRPC stubs for the vendored durabletask package.
 #
-# Proto source files are fetched from the durabletask-protobuf repository.
-# Generated output goes to ext/dapr-ext-workflow/dapr/ext/workflow/_durabletask/internal/
+# Proto source files are fetched from the durabletask-protobuf repository, or
+# taken from a local checkout when DURABLETASK_PROTOBUF_DIR is set.
+# Generated output goes to dapr/ext/workflow/_durabletask/internal/
 #
-# Prerequisites: uv sync --all-packages --group dev
+# Prerequisites: uv sync --all-extras --group dev
 #
 # Usage:
 #   ./tools/regen_durabletask_protos.sh
 #   DURABLETASK_PROTOBUF_BRANCH=v1.2.3 ./tools/regen_durabletask_protos.sh
+#   DURABLETASK_PROTOBUF_DIR=/path/to/durabletask-protobuf ./tools/regen_durabletask_protos.sh
 
 set -euo pipefail
 
 DURABLETASK_PROTOBUF_BRANCH=${DURABLETASK_PROTOBUF_BRANCH:-main}
+DURABLETASK_PROTOBUF_DIR=${DURABLETASK_PROTOBUF_DIR:-}
+proto_source_commit=""
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUTPUT_DIR="${REPO_ROOT}/ext/dapr-ext-workflow/dapr/ext/workflow/_durabletask/internal"
+OUTPUT_DIR="${REPO_ROOT}/dapr/ext/workflow/_durabletask/internal"
 PYTHON_PACKAGE="dapr.ext.workflow._durabletask.internal"
 
-if type "curl" > /dev/null 2>&1; then
-    HTTP_REQUEST_CLI=curl
-elif type "wget" > /dev/null 2>&1; then
-    HTTP_REQUEST_CLI=wget
+if [ -n "$DURABLETASK_PROTOBUF_DIR" ]; then
+    if [ ! -d "${DURABLETASK_PROTOBUF_DIR}/protos" ]; then
+        echo "Error: ${DURABLETASK_PROTOBUF_DIR}/protos does not exist"
+        exit 1
+    fi
+    echo "Using local durabletask-protobuf checkout at ${DURABLETASK_PROTOBUF_DIR}"
+    proto_dir="${DURABLETASK_PROTOBUF_DIR}/protos"
+
+    # The recorded commit is only meaningful if the protos it names are the ones
+    # actually fed to protoc. Uncommitted or untracked proto changes would be
+    # baked into the stubs while PROTO_SOURCE_COMMIT_HASH pointed at HEAD, so the
+    # provenance would be a lie. Refuse instead: commit the proto change (or push
+    # it upstream) and rerun.
+    if [ -n "$(git -C "${DURABLETASK_PROTOBUF_DIR}" status --porcelain -- protos 2>/dev/null)" ]; then
+        echo "Error: ${DURABLETASK_PROTOBUF_DIR}/protos has uncommitted or untracked changes."
+        echo "The generated stubs would not match the commit recorded in PROTO_SOURCE_COMMIT_HASH."
+        git -C "${DURABLETASK_PROTOBUF_DIR}" status --short -- protos
+        exit 1
+    fi
+
+    proto_source_commit="$(git -C "${DURABLETASK_PROTOBUF_DIR}" rev-parse HEAD 2>/dev/null || true)"
 else
-    echo "Either curl or wget is required"
-    exit 1
+    if type "curl" > /dev/null 2>&1; then
+        HTTP_REQUEST_CLI=curl
+    elif type "wget" > /dev/null 2>&1; then
+        HTTP_REQUEST_CLI=wget
+    else
+        echo "Either curl or wget is required"
+        exit 1
+    fi
+
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+
+    url="https://github.com/dapr/durabletask-protobuf/archive/refs/heads/${DURABLETASK_PROTOBUF_BRANCH}.tar.gz"
+
+    echo "Downloading durabletask-protobuf from ${url}..."
+    pushd "$tmp" > /dev/null
+    if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
+        curl -SsL "$url" -o - | tar --strip-components=1 -xzf -
+    else
+        wget -q -O - "$url" | tar --strip-components=1 -xzf -
+    fi
+    popd > /dev/null
+
+    proto_dir="${tmp}/protos"
+
+    # The tarball carries no git metadata, so resolve the branch head via the API.
+    api_url="https://api.github.com/repos/dapr/durabletask-protobuf/commits/${DURABLETASK_PROTOBUF_BRANCH}"
+    if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
+        proto_source_commit="$(curl -SsL -H 'Accept: application/vnd.github.sha' "$api_url" 2>/dev/null || true)"
+    else
+        proto_source_commit="$(wget -q -O - --header='Accept: application/vnd.github.sha' "$api_url" 2>/dev/null || true)"
+    fi
 fi
-
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
-
-url="https://github.com/dapr/durabletask-protobuf/archive/refs/heads/${DURABLETASK_PROTOBUF_BRANCH}.tar.gz"
-
-echo "Downloading durabletask-protobuf from ${url}..."
-pushd "$tmp" > /dev/null
-if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
-    curl -SsL "$url" -o - | tar --strip-components=1 -xzf -
-else
-    wget -q -O - "$url" | tar --strip-components=1 -xzf -
-fi
-popd > /dev/null
 
 # The .proto files live under protos/ in durabletask-protobuf and use bare
 # imports like: import "orchestration.proto"
 #
 # We use the protos directory as the single --proto_path so that bare imports
 # resolve correctly. Generated files land directly in the output directory.
-proto_dir="${tmp}/protos"
 
 proto_files=()
 while IFS= read -r -d '' file; do
@@ -128,6 +164,16 @@ for f in "${OUTPUT_DIR}"/*_pb2.py; do
             "$f"
     fi
 done
+
+# Record which durabletask-protobuf commit produced these stubs. Without this
+# the file is edited by hand and silently drifts from the generated code.
+if [ -n "$proto_source_commit" ]; then
+    echo "$proto_source_commit" > "${OUTPUT_DIR}/PROTO_SOURCE_COMMIT_HASH"
+    echo "Recorded source commit ${proto_source_commit}"
+else
+    echo "Warning: could not resolve the durabletask-protobuf commit;" \
+         "update ${OUTPUT_DIR}/PROTO_SOURCE_COMMIT_HASH by hand"
+fi
 
 echo -e "\nDurableTask protobuf/gRPC stubs regenerated successfully!"
 echo "Output: ${OUTPUT_DIR}"

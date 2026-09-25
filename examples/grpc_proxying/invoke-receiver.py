@@ -2,8 +2,9 @@ import logging
 
 import grpc
 import helloworld_service_pb2_grpc
-from dapr.ext.grpc import App
 from helloworld_service_pb2 import HelloReply, HelloRequest
+
+from dapr.ext.grpc import App
 
 
 class HelloWorldService(helloworld_service_pb2_grpc.HelloWorldService):
@@ -20,4 +21,4 @@ if __name__ == '__main__':
     app.add_external_service(
         helloworld_service_pb2_grpc.add_HelloWorldServiceServicer_to_server, HelloWorldService()
     )
-    app.run(50051)
+    app.run(13551)

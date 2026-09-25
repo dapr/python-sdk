@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 from datetime import timedelta
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, FrozenSet, List, Optional, Set
 
 
 class ActorReentrancyConfig:
@@ -30,6 +30,16 @@ class ActorReentrancyConfig:
 
         self._enabled = enabled
         self._maxStackDepth = maxStackDepth
+
+    @property
+    def enabled(self) -> bool:
+        """Returns whether reentrancy is enabled."""
+        return self._enabled
+
+    @property
+    def max_stack_depth(self) -> int:
+        """Returns the limit for concurrent reentrant requests to an actor."""
+        return self._maxStackDepth
 
     def as_dict(self) -> Dict[str, Any]:
         """Returns ActorReentrancyConfig as a dict."""
@@ -80,6 +90,41 @@ class ActorTypeConfig:
         self._drain_rebalanced_actors = drain_rebalanced_actors
         self._reentrancy = reentrancy
         self._reminders_storage_partitions = reminders_storage_partitions
+
+    @property
+    def actor_type(self) -> str:
+        """Returns the actor type this configuration applies to."""
+        return self._actor_type
+
+    @property
+    def actor_idle_timeout(self) -> Optional[timedelta]:
+        """Returns the timeout before deactivating an idle actor."""
+        return self._actor_idle_timeout
+
+    @property
+    def actor_scan_interval(self) -> Optional[timedelta]:
+        """Returns how often to scan for idle actors to deactivate."""
+        return self._actor_scan_interval
+
+    @property
+    def drain_ongoing_call_timeout(self) -> Optional[timedelta]:
+        """Returns the timeout for ongoing calls before actor deactivation."""
+        return self._drain_ongoing_call_timeout
+
+    @property
+    def drain_rebalanced_actors(self) -> Optional[bool]:
+        """Returns whether rebalanced actors are drained."""
+        return self._drain_rebalanced_actors
+
+    @property
+    def reentrancy(self) -> Optional[ActorReentrancyConfig]:
+        """Returns the reentrancy configuration for this actor type."""
+        return self._reentrancy
+
+    @property
+    def reminders_storage_partitions(self) -> Optional[int]:
+        """Returns the number of partitions for reminders storage."""
+        return self._reminders_storage_partitions
 
     def as_dict(self) -> Dict[str, Any]:
         """Returns ActorTypeConfig as a dict."""
@@ -154,6 +199,46 @@ class ActorRuntimeConfig:
         self._reentrancy = reentrancy
         self._reminders_storage_partitions = reminders_storage_partitions
         self._entitiesConfig: List[ActorTypeConfig] = actor_type_configs
+
+    @property
+    def entities(self) -> FrozenSet[str]:
+        """Returns a snapshot of the registered actor type names."""
+        return frozenset(self._entities)
+
+    @property
+    def actor_idle_timeout(self) -> Optional[timedelta]:
+        """Returns the default timeout before deactivating an idle actor."""
+        return self._actor_idle_timeout
+
+    @property
+    def actor_scan_interval(self) -> Optional[timedelta]:
+        """Returns how often to scan for idle actors to deactivate."""
+        return self._actor_scan_interval
+
+    @property
+    def drain_ongoing_call_timeout(self) -> Optional[timedelta]:
+        """Returns the timeout for ongoing calls before actor deactivation."""
+        return self._drain_ongoing_call_timeout
+
+    @property
+    def drain_rebalanced_actors(self) -> Optional[bool]:
+        """Returns whether rebalanced actors are drained."""
+        return self._drain_rebalanced_actors
+
+    @property
+    def reentrancy(self) -> Optional[ActorReentrancyConfig]:
+        """Returns the default reentrancy configuration."""
+        return self._reentrancy
+
+    @property
+    def reminders_storage_partitions(self) -> Optional[int]:
+        """Returns the number of partitions for reminders storage."""
+        return self._reminders_storage_partitions
+
+    @property
+    def actor_type_configs(self) -> List[ActorTypeConfig]:
+        """Returns a snapshot of the per-actor-type configurations."""
+        return list(self._entitiesConfig)
 
     def update_entities(self, entities: List[str]) -> None:
         """Updates actor types in entities property.

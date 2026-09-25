@@ -15,9 +15,8 @@ import json
 import threading
 import time
 
-from dapr.ext.grpc import App, JobEvent
-
 from dapr.clients import ConstantFailurePolicy, DaprClient, Job
+from dapr.ext.grpc import App, JobEvent
 
 try:
     from google.protobuf.any_pb2 import Any as GrpcAny
@@ -135,5 +134,5 @@ if __name__ == '__main__':
     # Schedule jobs in a background thread after server starts
     threading.Thread(target=schedule_jobs, daemon=True).start()
 
-    print('Starting gRPC server on port 50051...', flush=True)
-    app.run(50051)
+    print('Starting gRPC server on port 13551...', flush=True)
+    app.run(13551)

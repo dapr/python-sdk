@@ -15,6 +15,7 @@ limitations under the License.
 
 from typing import Any, Dict, List
 
+from dapr.actor.error import ActorMethodNotFoundError
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime._type_utils import get_dispatchable_attrs
 from dapr.actor.runtime.actor import Actor
@@ -42,4 +43,6 @@ class ActorMethodDispatcher:
 
     def _check_name_exist(self, name: str):
         if name not in self._dispatch_mapping:
-            raise AttributeError(f'type object {self.__class__.__name__} has no method {name}')
+            raise ActorMethodNotFoundError(
+                f'type object {self.__class__.__name__} has no method {name}'
+            )

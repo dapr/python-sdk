@@ -8,6 +8,5 @@ coverage:
 
 ignore:
   - dapr/proto                  # - Generated GRPC client
-  - tests                       # - tests
+  - tests                       # - tests (includes tests/ext/<name>/ for all extensions)
   - .venv                       # - environment
-  - ext/dapr-ext-fastapi/tests  # - fastapi extention tests

@@ -12,11 +12,11 @@
 
 from demo_actor import DemoActor
 from flask import Flask, jsonify
-from flask_dapr.actor import DaprActor
 
 from dapr.actor.runtime.config import ActorReentrancyConfig, ActorRuntimeConfig, ActorTypeConfig
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.conf import settings
+from dapr.ext.flask.actor import DaprActor
 
 app = Flask(f'{DemoActor.__name__}Service')
 

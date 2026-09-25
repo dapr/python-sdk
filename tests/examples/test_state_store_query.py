@@ -41,7 +41,7 @@ def import_data(mongodb, dapr):
     reads these back through the same component. Writing raw documents with
     pymongo would skip that encoding and the query would return nothing.
     """
-    dapr.start('--app-id demo --dapr-http-port 3500 --resources-path components', wait=5)
+    dapr.start('--app-id demo --dapr-http-port 3500 --resources-path components')
     dataset = (EXAMPLES_DIR / 'state_store_query' / 'dataset.json').read_text()
     httpx.post(
         'http://localhost:3500/v1.0/state/statestore',

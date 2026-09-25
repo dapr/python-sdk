@@ -1,0 +1,508 @@
+# Copyright 2026 The Dapr Authors
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import logging
+import time
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any, Optional, Sequence, TypeVar, Union
+
+import grpc
+from google.protobuf import wrappers_pb2
+
+import dapr.ext.workflow._durabletask.internal.helpers as helpers
+import dapr.ext.workflow._durabletask.internal.orchestrator_service_pb2_grpc as stubs
+import dapr.ext.workflow._durabletask.internal.protos as pb
+import dapr.ext.workflow._durabletask.internal.shared as shared
+from dapr.ext.workflow._durabletask import task
+from dapr.ext.workflow._durabletask.internal.grpc_interceptor import DefaultClientInterceptorImpl
+
+
+class _TransientTimeout(Exception):
+    """Internal sentinel: the retry loop exhausted the user-provided timeout
+    budget. Callers convert this to a public ``TimeoutError``."""
+
+
+TInput = TypeVar('TInput')
+TOutput = TypeVar('TOutput')
+
+# If `opentelemetry-instrumentation-grpc` is available, enable the gRPC client interceptor
+try:
+    from opentelemetry.instrumentation.grpc import GrpcInstrumentorClient
+
+    GrpcInstrumentorClient().instrument()
+except ImportError:
+    pass
+
+
+class OrchestrationStatus(Enum):
+    """The status of an orchestration instance."""
+
+    RUNNING = pb.ORCHESTRATION_STATUS_RUNNING
+    COMPLETED = pb.ORCHESTRATION_STATUS_COMPLETED
+    FAILED = pb.ORCHESTRATION_STATUS_FAILED
+    TERMINATED = pb.ORCHESTRATION_STATUS_TERMINATED
+    CONTINUED_AS_NEW = pb.ORCHESTRATION_STATUS_CONTINUED_AS_NEW
+    PENDING = pb.ORCHESTRATION_STATUS_PENDING
+    SUSPENDED = pb.ORCHESTRATION_STATUS_SUSPENDED
+    CANCELED = pb.ORCHESTRATION_STATUS_CANCELED
+    STALLED = pb.ORCHESTRATION_STATUS_STALLED
+
+    def __str__(self):
+        return helpers.get_orchestration_status_str(self.value)
+
+
+# TODO(v1.21): remove OrchestrationIdReuseAction, WorkflowIdReusePolicy, and the reuse_id_policy
+# parameter on schedule_new_orchestration (sync and aio) — deprecated in 1.18, kept for the
+# 3-version policy.
+class OrchestrationIdReuseAction(Enum):
+    """Action to take when scheduling an orchestration whose ID already exists.
+
+    Deprecated: has no effect and will be removed in a future release. An orchestration ID
+    can always be reused once the existing instance has reached a terminal state.
+    """
+
+    ERROR = 0
+    IGNORE = 1
+    TERMINATE = 2
+
+
+@dataclass
+class WorkflowIdReusePolicy:
+    """Policy controlling what happens when a new orchestration is scheduled with an ID that already exists.
+
+    Deprecated: has no effect and will be removed in a future release. An orchestration ID
+    can always be reused once the existing instance has reached a terminal state.
+    """
+
+    action: OrchestrationIdReuseAction
+    operation_status: list[OrchestrationStatus]
+
+
+@dataclass
+class WorkflowState:
+    instance_id: str
+    name: str
+    runtime_status: OrchestrationStatus
+    created_at: datetime
+    last_updated_at: datetime
+    serialized_input: Optional[str]
+    serialized_output: Optional[str]
+    serialized_custom_status: Optional[str]
+    failure_details: Optional[task.FailureDetails]
+
+    def raise_if_failed(self):
+        if self.failure_details is not None:
+            raise OrchestrationFailedError(
+                f"Orchestration '{self.instance_id}' failed: {self.failure_details.message}",
+                self.failure_details,
+            )
+
+
+def new_task_router(app_id: Optional[str]) -> Optional[pb.TaskRouter]:
+    """Builds a TaskRouter targeting another app, or None when no routing is requested.
+
+    Only the target app ID is set; the sidecar stamps sourceAppID.
+    """
+    if app_id is None:
+        return None
+    return pb.TaskRouter(targetAppID=app_id)
+
+
+class OrchestrationFailedError(Exception):
+    def __init__(self, message: str, failure_details: task.FailureDetails):
+        super().__init__(message)
+        self._failure_details = failure_details
+
+    @property
+    def failure_details(self):
+        return self._failure_details
+
+
+def new_orchestration_state(
+    instance_id: str, res: pb.GetInstanceResponse
+) -> Optional[WorkflowState]:
+    if not res.exists:
+        return None
+
+    state = res.workflowState
+
+    failure_details = None
+    if state.failureDetails.errorMessage != '' or state.failureDetails.errorType != '':
+        failure_details = task.FailureDetails(
+            state.failureDetails.errorMessage,
+            state.failureDetails.errorType,
+            state.failureDetails.stackTrace.value
+            if not helpers.is_empty(state.failureDetails.stackTrace)
+            else None,
+        )
+
+    return WorkflowState(
+        instance_id,
+        state.name,
+        OrchestrationStatus(state.workflowStatus),
+        state.createdTimestamp.ToDatetime(),
+        state.lastUpdatedTimestamp.ToDatetime(),
+        state.input.value if not helpers.is_empty(state.input) else None,
+        state.output.value if not helpers.is_empty(state.output) else None,
+        state.customStatus.value if not helpers.is_empty(state.customStatus) else None,
+        failure_details,
+    )
+
+
+class TaskHubGrpcClient:
+    def __init__(
+        self,
+        *,
+        host_address: Optional[str] = None,
+        metadata: Optional[list[tuple[str, str]]] = None,
+        log_handler: Optional[logging.Handler] = None,
+        log_formatter: Optional[logging.Formatter] = None,
+        secure_channel: bool = False,
+        interceptors: Optional[Sequence[shared.ClientInterceptor]] = None,
+        channel_options: Optional[Sequence[tuple[str, Any]]] = None,
+    ):
+        # If the caller provided metadata, we need to create a new interceptor for it and
+        # add it to the list of interceptors.
+        if interceptors is not None:
+            interceptors = list(interceptors)
+            if metadata is not None:
+                interceptors.append(DefaultClientInterceptorImpl(metadata))
+        elif metadata is not None:
+            interceptors = [DefaultClientInterceptorImpl(metadata)]
+        else:
+            interceptors = None
+
+        channel = shared.get_grpc_channel(
+            host_address=host_address,
+            secure_channel=secure_channel,
+            interceptors=interceptors,
+            options=channel_options,
+        )
+        self._channel = channel
+        self._stub = stubs.TaskHubSidecarServiceStub(channel)
+        self._logger = shared.get_logger('client', log_handler, log_formatter)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        # close() is best-effort and swallows its own errors, so a plain call is safe here.
+        # Returning False (i.e., not suppressing the original exception) is the same behavior
+        # as the previous try/finally, without the `return in finally` SyntaxWarning on Python 3.14+.
+        self.close()
+        return False
+
+    def close(self) -> None:
+        """Close the underlying gRPC channel."""
+        try:
+            # grpc.Channel.close() is idempotent
+            self._channel.close()
+        except Exception:
+            # Best-effort cleanup
+            pass
+
+    def schedule_new_orchestration(
+        self,
+        orchestrator: Union[task.Orchestrator[TInput, TOutput], str],
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        start_at: Optional[datetime] = None,
+        reuse_id_policy: Optional[WorkflowIdReusePolicy] = None,
+        app_id: Optional[str] = None,
+    ) -> str:
+        name = orchestrator if isinstance(orchestrator, str) else task.get_name(orchestrator)
+
+        input_pb = (
+            wrappers_pb2.StringValue(value=shared.to_json(input)) if input is not None else None
+        )
+
+        req = pb.CreateInstanceRequest(
+            name=name,
+            instanceId=instance_id if instance_id else uuid.uuid4().hex,
+            input=input_pb,
+            scheduledStartTimestamp=helpers.new_timestamp(start_at) if start_at else None,
+            version=wrappers_pb2.StringValue(value=''),
+            router=new_task_router(app_id),
+        )
+
+        self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")
+        res: pb.CreateInstanceResponse = self._stub.StartInstance(req)
+        return res.instanceId
+
+    def get_orchestration_state(
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = True,
+        app_id: Optional[str] = None,
+    ) -> Optional[WorkflowState]:
+        req = pb.GetInstanceRequest(
+            instanceId=instance_id,
+            getInputsAndOutputs=fetch_payloads,
+            router=new_task_router(app_id),
+        )
+        res: pb.GetInstanceResponse = self._stub.GetInstance(req)
+        return new_orchestration_state(req.instanceId, res)
+
+    def wait_for_orchestration_start(
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = False,
+        timeout: Optional[int] = 0,
+        app_id: Optional[str] = None,
+    ) -> Optional[WorkflowState]:
+        req = pb.GetInstanceRequest(
+            instanceId=instance_id,
+            getInputsAndOutputs=fetch_payloads,
+            router=new_task_router(app_id),
+        )
+        self._logger.info(
+            f"Waiting {'indefinitely' if timeout in (0, None) else f'up to {timeout}s'} for instance '{instance_id}' to start."
+        )
+
+        def _call(grpc_timeout):
+            res: pb.GetInstanceResponse = self._stub.WaitForInstanceStart(req, timeout=grpc_timeout)
+            return new_orchestration_state(req.instanceId, res)
+
+        try:
+            return self._call_with_transient_retry(instance_id, timeout, _call)
+        except _TransientTimeout:
+            raise TimeoutError('Timed-out waiting for the orchestration to start')
+
+    def wait_for_orchestration_completion(
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = True,
+        timeout: Optional[int] = 0,
+        app_id: Optional[str] = None,
+    ) -> Optional[WorkflowState]:
+        req = pb.GetInstanceRequest(
+            instanceId=instance_id,
+            getInputsAndOutputs=fetch_payloads,
+            router=new_task_router(app_id),
+        )
+        self._logger.info(
+            f"Waiting {'indefinitely' if timeout in (0, None) else f'up to {timeout}s'} for instance '{instance_id}' to complete."
+        )
+
+        def _call(grpc_timeout):
+            res: pb.GetInstanceResponse = self._stub.WaitForInstanceCompletion(
+                req, timeout=grpc_timeout
+            )
+            state = new_orchestration_state(req.instanceId, res)
+            if not state:
+                return None
+
+            if (
+                state.runtime_status == OrchestrationStatus.FAILED
+                and state.failure_details is not None
+            ):
+                details = state.failure_details
+                self._logger.info(
+                    f"Instance '{instance_id}' failed: [{details.error_type}] {details.message}"
+                )
+            elif state.runtime_status == OrchestrationStatus.TERMINATED:
+                self._logger.info(f"Instance '{instance_id}' was terminated.")
+            elif state.runtime_status == OrchestrationStatus.COMPLETED:
+                self._logger.info(f"Instance '{instance_id}' completed.")
+            return state
+
+        try:
+            return self._call_with_transient_retry(instance_id, timeout, _call)
+        except _TransientTimeout:
+            raise TimeoutError('Timed-out waiting for the orchestration to complete')
+
+    # Transient gRPC codes that indicate the workflow runtime is temporarily
+    # unable to locate the workflow actor — typically immediately after a Dapr
+    # sidecar restart (e.g. recovery from chaos). The placement service has the
+    # actor registration, but local daprd hasn't received the dissemination yet.
+    # Without retry, every poll fails permanently with FAILED_PRECONDITION even
+    # though the workflow runtime state is intact.
+    _TRANSIENT_RPC_CODES = (
+        grpc.StatusCode.FAILED_PRECONDITION,
+        grpc.StatusCode.UNAVAILABLE,
+    )
+
+    # When the caller sets no timeout (timeout=0), bound how long we keep
+    # retrying *consecutive* transient errors so a permanently-unavailable
+    # sidecar surfaces the original error instead of hanging forever. This
+    # window comfortably covers placement re-dissemination after a restart;
+    # a slow-but-healthy workflow never enters this path (it just blocks in
+    # the long-poll), so its indefinite wait is preserved.
+    _MAX_TRANSIENT_RETRY_SECONDS = 30.0
+
+    @staticmethod
+    def _is_deadline_cancellation(code, deadline: Optional[float]) -> bool:
+        """Reports whether a CANCELLED status is really the caller's deadline expiring.
+
+        As a bounded wait times out, the sidecar can reset the stream (RST_STREAM
+        CANCEL) marginally before gRPC raises DEADLINE_EXCEEDED locally, so the same
+        expiry surfaces as CANCELLED. Callers asked for a timeout and must see
+        TimeoutError either way. Requiring the budget to be spent keeps a genuine
+        cancellation, or a reset with time still on the clock, propagating as-is.
+        """
+        if code != grpc.StatusCode.CANCELLED or deadline is None:
+            return False
+        return time.monotonic() >= deadline
+
+    def _call_with_transient_retry(self, instance_id, timeout, call_fn):
+        """Run a gRPC wait call, retrying transient errors until the user
+        timeout deadline. Re-raises non-transient errors immediately.
+        timeout in (0, None) means unbounded; transients are still retried,
+        but only for up to ``_MAX_TRANSIENT_RETRY_SECONDS`` of continuous
+        failures, after which the original transient error propagates.
+
+        The first call passes the caller's ``grpc_timeout`` (``None`` when
+        unbounded) to ``call_fn`` so callers observe identical behavior to a
+        non-retrying client when no transient occurs (preserves prior public
+        behavior). On a retry, both the sleep
+        and the per-call gRPC deadline are clamped to the remaining budget so
+        the helper never sleeps past ``timeout`` or starts a gRPC call with
+        no time left.
+        """
+        unbounded = timeout in (0, None)
+        deadline = None if unbounded else time.monotonic() + timeout
+        grpc_timeout = None if unbounded else timeout
+        backoff = 0.5
+        transient_deadline = None  # unbounded mode only; anchored on first transient
+        while True:
+            try:
+                return call_fn(grpc_timeout)
+            except grpc.RpcError as rpc_error:
+                code = rpc_error.code()  # type: ignore
+                if code == grpc.StatusCode.DEADLINE_EXCEEDED:
+                    raise _TransientTimeout()
+                if self._is_deadline_cancellation(code, deadline):
+                    raise _TransientTimeout()
+                if code not in self._TRANSIENT_RPC_CODES:
+                    raise
+
+                now = time.monotonic()
+
+                # In unbounded mode the user budget can't end the loop, so cap
+                # continuous transient retries and re-raise the original error
+                # (matching pre-retry behavior) once the grace window elapses.
+                if unbounded:
+                    if transient_deadline is None:
+                        transient_deadline = now + self._MAX_TRANSIENT_RETRY_SECONDS
+                    elif now >= transient_deadline:
+                        raise
+
+                # Compute remaining budget once and reuse so the sleep and the
+                # next per-call grpc_timeout agree on "how much time is left".
+                if deadline is None:
+                    remaining = None
+                else:
+                    remaining = deadline - now
+                    if remaining <= 0:
+                        raise _TransientTimeout()
+
+                sleep_for = min(backoff, 5.0)
+                if remaining is not None:
+                    sleep_for = min(sleep_for, remaining)
+                if transient_deadline is not None:
+                    sleep_for = min(sleep_for, transient_deadline - now)
+                self._logger.warning(
+                    f"Transient gRPC error {code.name} waiting on instance '{instance_id}'; "
+                    f'retrying in {sleep_for:.2f}s'
+                )
+                time.sleep(sleep_for)
+                backoff = min(backoff * 2, 5.0)
+
+                if deadline is None:
+                    grpc_timeout = None
+                else:
+                    grpc_timeout = deadline - time.monotonic()
+                    if grpc_timeout <= 0:
+                        raise _TransientTimeout()
+
+    def raise_orchestration_event(
+        self,
+        instance_id: str,
+        event_name: str,
+        *,
+        data: Optional[Any] = None,
+        app_id: Optional[str] = None,
+    ):
+        req = pb.RaiseEventRequest(
+            instanceId=instance_id,
+            name=event_name,
+            input=wrappers_pb2.StringValue(value=shared.to_json(data)) if data else None,
+            router=new_task_router(app_id),
+        )
+
+        self._logger.info(f"Raising event '{event_name}' for instance '{instance_id}'.")
+        self._stub.RaiseEvent(req)
+
+    def terminate_orchestration(
+        self,
+        instance_id: str,
+        *,
+        output: Optional[Any] = None,
+        recursive: bool = True,
+        app_id: Optional[str] = None,
+    ):
+        req = pb.TerminateRequest(
+            instanceId=instance_id,
+            output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output else None,
+            recursive=recursive,
+            router=new_task_router(app_id),
+        )
+
+        self._logger.info(f"Terminating instance '{instance_id}'.")
+        self._stub.TerminateInstance(req)
+
+    def suspend_orchestration(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ):
+        req = pb.SuspendRequest(
+            instanceId=instance_id,
+            router=new_task_router(app_id),
+        )
+        self._logger.info(f"Suspending instance '{instance_id}'.")
+        self._stub.SuspendInstance(req)
+
+    def resume_orchestration(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ):
+        req = pb.ResumeRequest(
+            instanceId=instance_id,
+            router=new_task_router(app_id),
+        )
+        self._logger.info(f"Resuming instance '{instance_id}'.")
+        self._stub.ResumeInstance(req)
+
+    def purge_orchestration(
+        self,
+        instance_id: str,
+        recursive: bool = True,
+        *,
+        app_id: Optional[str] = None,
+    ):
+        req = pb.PurgeInstancesRequest(
+            instanceId=instance_id,
+            recursive=recursive,
+            router=new_task_router(app_id),
+        )
+        self._logger.info(f"Purging instance '{instance_id}'.")
+        self._stub.PurgeInstances(req)

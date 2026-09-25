@@ -5,8 +5,8 @@ import pytest
 def client(dapr_env, apps_dir):
     return dapr_env.start_sidecar(
         app_id='invoke-receiver',
-        grpc_port=50001,
-        app_port=50051,
+        grpc_port=13501,
+        app_port=13503,
         app_cmd=f'python3 {apps_dir / "invoke_receiver.py"}',
     )
 

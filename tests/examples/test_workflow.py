@@ -63,3 +63,22 @@ def test_history_propagation(dapr):
     )
     for line in EXPECTED_HISTORY_PROPAGATION:
         assert line in output, f'Missing in output: {line}'
+
+
+# Defaults: 5 async activities, 2048B in / 1024B out each, so 5 * 1024 = 5120 bytes aggregated.
+EXPECTED_ASYNC_ACTIVITIES = [
+    '[async] payload 0: 2048B in -> 1024B out',
+    '[sync] 5 results, 5120 bytes',
+    'Workflow completed! Status: COMPLETED',
+    'Workflow result: 5 results, 5120 bytes',
+]
+
+
+@pytest.mark.example_dir('workflow')
+def test_async_activities(dapr):
+    output = dapr.run(
+        '--app-id workflow-async-activities -- python3 async_activities.py',
+        timeout=60,
+    )
+    for line in EXPECTED_ASYNC_ACTIVITIES:
+        assert line in output, f'Missing in output: {line}'

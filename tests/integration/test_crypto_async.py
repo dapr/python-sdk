@@ -18,7 +18,7 @@ import pytest
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 
-GRPC_ADDRESS = '127.0.0.1:50001'
+GRPC_ADDRESS = '127.0.0.1:13501'
 CRYPTO_COMPONENT = 'cryptostore'
 RSA_KEY = 'rsa-private-key.pem'
 SYMMETRIC_KEY = 'symmetric-key-256'

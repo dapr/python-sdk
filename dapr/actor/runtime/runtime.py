@@ -22,8 +22,9 @@ from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.manager import ActorManager
-from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
+from dapr.clients.base import DaprActorClientBase
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
+from dapr.common.reentrancy_context import reentrancy_ctx
 from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer, Serializer
 
@@ -46,6 +47,7 @@ class ActorRuntime:
         state_serializer: Serializer = DefaultJSONSerializer(),
         http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
         actor_factory: Optional[Callable[['ActorRuntimeContext', ActorId], 'Actor']] = None,
+        actor_client: Optional[DaprActorClientBase] = None,
     ) -> None:
         """Registers an :class:`Actor` object with the runtime.
 
@@ -55,10 +57,14 @@ class ActorRuntime:
                 between actors.
             state_serializer (:class:`Serializer`): Serializer that serializes state values.
             http_timeout_seconds (:int:): a configurable timeout value
+            actor_factory (Callable, optional): factory to create Actor objects.
+            actor_client (:class:`DaprActorClientBase`, optional): the client used for the
+                actor's outbound operations (state, reminders, timers, invocations).
+                Defaults to the HTTP client; :class:`ActorGrpcHost` supplies a gRPC one.
         """
         type_info = ActorTypeInformation.create(actor)
-        # TODO: We will allow to use gRPC client later.
-        actor_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
+        if actor_client is None:
+            actor_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
         ctx = ActorRuntimeContext(
             type_info, message_serializer, state_serializer, actor_client, actor_factory
         )

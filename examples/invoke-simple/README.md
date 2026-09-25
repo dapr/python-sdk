@@ -14,7 +14,7 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 <!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 
 ```bash
-pip3 install dapr dapr-ext-grpc
+pip3 install "dapr[grpc]"
 ```
 
 ## Running in self-hosted mode
@@ -31,8 +31,8 @@ sleep: 5
 -->
 
 ```bash
-# 1. Start Receiver (expose gRPC server receiver on port 50051)
-dapr run --app-id invoke-receiver --app-protocol grpc --app-port 50051 -- python3 invoke-receiver.py
+# 1. Start Receiver (expose gRPC server receiver on port 13551)
+dapr run --app-id invoke-receiver --app-protocol grpc --app-port 13551 -- python3 invoke-receiver.py
 ```
 
 <!-- END_STEP -->

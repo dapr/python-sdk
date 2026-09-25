@@ -31,7 +31,6 @@ EXPECTED_CLIENT = [
 def test_demo_actor(dapr):
     dapr.start(
         '--app-id demo-actor --app-port 3000 -- uvicorn --port 3000 demo_actor_service:app',
-        wait=10,
     )
     client_output = dapr.run(
         '--app-id demo-client -- python3 demo_actor_client.py',

@@ -1,4 +1,5 @@
 import proto.response_pb2 as response_messages
+
 from dapr.ext.grpc import App, InvokeMethodRequest
 
 app = App()
@@ -14,4 +15,4 @@ def mymethod(request: InvokeMethodRequest):
     )
 
 
-app.run(50051)
+app.run(13551)

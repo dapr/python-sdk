@@ -2,6 +2,7 @@
 
 This example utilizes a publisher and a subscriber to show the pubsub pattern, it also shows `PublishEvent`, `PublishEvents` (bulk), `OnTopicEvent`, `GetTopicSubscriptions`, and `TopicEventResponse` functionality.
 It creates a publisher and calls the `publish_event` and `publish_events` methods in the `DaprClient`.
+One of the bulk events is wrapped in `BulkPublishEntry` to set metadata on that event only.
 It will create a gRPC subscriber and bind the `OnTopicEvent` method, which gets triggered after a message is published to the subscribed topic.
 The subscriber will tell dapr to retry delivery of the first message it receives, logging that the message will be retried, and printing it at least once to standard output.
 
@@ -17,7 +18,7 @@ The subscriber will tell dapr to retry delivery of the first message it receives
 <!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 
 ```bash
-pip3 install dapr dapr-ext-grpc
+pip3 install "dapr[grpc]"
 ```
 
 ## Run the example
@@ -52,8 +53,8 @@ sleep: 3
 -->
 
 ```bash
-# 1. Start Subscriber (expose gRPC server receiver on port 50051)
-dapr run --app-id python-subscriber --app-protocol grpc --app-port 50051 -- python3 subscriber.py
+# 1. Start Subscriber (expose gRPC server receiver on port 13551)
+dapr run --app-id python-subscriber --app-protocol grpc --app-port 13551 -- python3 subscriber.py
 ```
 
 <!-- END_STEP -->

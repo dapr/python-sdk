@@ -16,8 +16,7 @@ limitations under the License.
 import asyncio
 import socket
 import time
-import uuid
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -45,13 +44,10 @@ from dapr.aio.clients.grpc._response import (
     DecryptResponse,
     EncryptResponse,
 )
-from dapr.aio.clients.grpc.interceptors import (
-    DaprClientInterceptorAsync,
-    DaprClientTimeoutInterceptorAsync,
-)
 from dapr.aio.clients.grpc.subscription import Subscription
 from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
 from dapr.clients.grpc import conversation
+from dapr.clients.grpc._channel import create_aio_channel, resolve_grpc_endpoint
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataTuple,
@@ -64,8 +60,10 @@ from dapr.clients.grpc._helpers import (
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._request import (
     BindingRequest,
+    BulkPublishEntry,
     InvokeMethodRequest,
     TransactionalStateOperation,
+    to_bulk_publish_entries,
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
@@ -94,10 +92,7 @@ from dapr.clients.grpc._state import StateItem, StateOptions
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamInactiveError
-from dapr.conf import settings
-from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
-from dapr.version import __version__
 
 
 class DaprGrpcClientAsync:
@@ -152,55 +147,14 @@ class DaprGrpcClientAsync:
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
-        useragent = f'dapr-sdk-python/{__version__}'
-        options: List[Tuple[str, Any]] = [('grpc.primary_user_agent', useragent)]
-        if max_grpc_message_length:
-            options.append(('grpc.max_send_message_length', max_grpc_message_length))
-            options.append(('grpc.max_receive_message_length', max_grpc_message_length))
-        elif settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES:
-            options.append(
-                (
-                    'grpc.max_receive_message_length',
-                    settings.DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES,
-                )
-            )
-
-        if not address:
-            address = settings.DAPR_GRPC_ENDPOINT or (
-                f'{settings.DAPR_RUNTIME_HOST}:{settings.DAPR_GRPC_PORT}'
-            )
-
-        try:
-            self._uri = GrpcEndpoint(address)
-        except ValueError as error:
-            raise DaprInternalError(f'{error}') from error
-
-        # Prepare interceptors
-        if interceptors is None:
-            interceptors = [DaprClientTimeoutInterceptorAsync()]
-        else:
-            interceptors.append(DaprClientTimeoutInterceptorAsync())
-
-        if settings.DAPR_API_TOKEN:
-            api_token_interceptor = DaprClientInterceptorAsync(
-                [
-                    ('dapr-api-token', settings.DAPR_API_TOKEN),
-                ]
-            )
-            interceptors.append(api_token_interceptor)
-
-        # Create gRPC channel
-        if self._uri.tls:
-            self._channel = grpc.aio.secure_channel(
-                self._uri.endpoint,
-                credentials=self.get_credentials(),
-                options=options,
-                interceptors=interceptors,
-            )  # type: ignore
-        else:
-            self._channel = grpc.aio.insecure_channel(
-                self._uri.endpoint, options, interceptors=interceptors
-            )  # type: ignore
+        self._uri = resolve_grpc_endpoint(address)
+        credentials = self.get_credentials() if self._uri.tls else None
+        self._channel = create_aio_channel(
+            address,
+            interceptors=interceptors,
+            max_grpc_message_length=max_grpc_message_length,
+            credentials=credentials,
+        )
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
@@ -492,14 +446,18 @@ class DaprGrpcClientAsync:
         self,
         pubsub_name: str,
         topic_name: str,
-        data: Sequence[Union[bytes, str]],
+        data: Sequence[Union[bytes, str, BulkPublishEntry]],
         publish_metadata: Dict[str, str] = {},
         data_content_type: Optional[str] = None,
     ) -> BulkPublishResponse:
         """Bulk publish multiple events to a given topic.
         This publishes multiple events to a specified topic and pubsub component.
-        Each event can be bytes or str. The str data is encoded into bytes with
-        default charset of utf-8.
+        Each event can be bytes, str, or a :class:`BulkPublishEntry`. The str data is
+        encoded into bytes with default charset of utf-8. Use :class:`BulkPublishEntry`
+        to set metadata, a content type, or an entry ID on a single event.
+
+        ``publish_metadata`` is sent with the request and also copied onto every entry, so
+        keys such as ``ttlInSeconds`` apply to each event. Entry metadata overrides it.
 
         The example publishes multiple string events to a topic:
 
@@ -513,37 +471,35 @@ class DaprGrpcClientAsync:
                 )
                 # resp.failed_entries includes any entries that failed to publish.
 
+        The example sets a partition key on each event:
+
+            from dapr.aio.clients import DaprClient
+            from dapr.clients import BulkPublishEntry
+            async with DaprClient() as d:
+                resp = await d.publish_events(
+                    pubsub_name='pubsub_1',
+                    topic_name='TOPIC_A',
+                    data=[
+                        BulkPublishEntry(event='{"n": 1}', metadata={'partitionKey': 'a'}),
+                        BulkPublishEntry(event='{"n": 2}', metadata={'partitionKey': 'b'}),
+                    ],
+                    data_content_type='application/json',
+                )
+
         Args:
             pubsub_name (str): the name of the pubsub component
             topic_name (str): the topic name to publish to
-            data (Sequence[Union[bytes, str]]): sequence of events to publish;
-                each event must be bytes or str
+            data (Sequence[Union[bytes, str, BulkPublishEntry]]): sequence of events to
+                publish; each event must be bytes, str, or BulkPublishEntry
             publish_metadata (Dict[str, str], optional): Dapr metadata for the
-                bulk publish request
-            data_content_type (str, optional): content type of the event data
+                bulk publish request, applied to every entry
+            data_content_type (str, optional): content type of the event data, used for
+                entries that set no content type of their own
 
         Returns:
             :class:`BulkPublishResponse` with any failed entries
         """
-        entries = []
-        for event in data:
-            entry_id = str(uuid.uuid4())
-            if isinstance(event, bytes):
-                event_data = event
-                content_type = data_content_type or 'application/octet-stream'
-            elif isinstance(event, str):
-                event_data = event.encode('utf-8')
-                content_type = data_content_type or 'text/plain'
-            else:
-                raise ValueError(f'invalid type for event {type(event)}')
-
-            entries.append(
-                api_v1.BulkPublishRequestEntry(
-                    entry_id=entry_id,
-                    event=event_data,
-                    content_type=content_type,
-                )
-            )
+        entries = to_bulk_publish_entries(data, publish_metadata, data_content_type)
 
         req = api_v1.BulkPublishRequest(
             pubsub_name=pubsub_name,
@@ -1023,6 +979,7 @@ class DaprGrpcClientAsync:
                     key=o.key,
                     value=to_bytes(o.data) if o.data is not None else to_bytes(''),
                     etag=common_v1.Etag(value=o.etag) if o.etag is not None else None,
+                    metadata=o.metadata,
                 ),
             )
             for o in operations

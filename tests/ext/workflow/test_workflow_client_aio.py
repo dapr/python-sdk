@@ -1,0 +1,384 @@
+# -*- coding: utf-8 -*-
+
+"""
+Copyright 2025 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+import unittest
+import warnings
+from datetime import datetime
+from typing import Any, Union
+from unittest import mock
+
+from grpc.aio import AioRpcError
+
+from dapr.conf import settings
+from dapr.ext.workflow._durabletask import client
+from dapr.ext.workflow.aio import DaprWorkflowClient
+from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
+
+mock_schedule_result = 'workflow001'
+mock_raise_event_result = 'event001'
+mock_terminate_result = 'terminate001'
+mock_suspend_result = 'suspend001'
+mock_resume_result = 'resume001'
+mock_purge_result = 'purge001'
+mock_instance_id = 'instance001'
+wf_status = 'not-found'
+
+
+class SimulatedAioRpcError(AioRpcError):
+    def __init__(self, code, details):
+        self._code = code
+        self._details = details
+
+    def code(self):
+        return self._code
+
+    def details(self):
+        return self._details
+
+
+class FakeAsyncTaskHubGrpcClient:
+    def __init__(self):
+        self.last_scheduled_workflow_name = None
+        self.last_app_id = None
+
+    def _record_router(self, app_id):
+        self.last_app_id = app_id
+
+    async def schedule_new_orchestration(
+        self,
+        workflow,
+        *,
+        input,
+        instance_id,
+        start_at,
+        reuse_id_policy: Union[client.WorkflowIdReusePolicy, None] = None,
+        app_id=None,
+    ):
+        self.last_scheduled_workflow_name = workflow
+        self._record_router(app_id)
+        return mock_schedule_result
+
+    async def get_orchestration_state(self, instance_id, *, fetch_payloads, app_id=None):
+        self._record_router(app_id)
+        if wf_status == 'not-found':
+            raise SimulatedAioRpcError(code='UNKNOWN', details='no such instance exists')
+        elif wf_status == 'found':
+            return self._inner_get_orchestration_state(
+                instance_id, client.OrchestrationStatus.PENDING
+            )
+        else:
+            raise SimulatedAioRpcError(code='UNKNOWN', details='unknown error')
+
+    async def wait_for_orchestration_start(
+        self, instance_id, *, fetch_payloads, timeout, app_id=None
+    ):
+        self._record_router(app_id)
+        return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.RUNNING)
+
+    async def wait_for_orchestration_completion(
+        self, instance_id, *, fetch_payloads, timeout, app_id=None
+    ):
+        self._record_router(app_id)
+        return self._inner_get_orchestration_state(
+            instance_id, client.OrchestrationStatus.COMPLETED
+        )
+
+    async def raise_orchestration_event(
+        self,
+        instance_id: str,
+        event_name: str,
+        *,
+        data: Union[Any, None] = None,
+        app_id=None,
+    ):
+        self._record_router(app_id)
+        return mock_raise_event_result
+
+    async def terminate_orchestration(
+        self,
+        instance_id: str,
+        *,
+        output: Union[Any, None] = None,
+        recursive: bool = True,
+        app_id=None,
+    ):
+        self._record_router(app_id)
+        return mock_terminate_result
+
+    async def suspend_orchestration(self, instance_id: str, *, app_id=None):
+        self._record_router(app_id)
+        return mock_suspend_result
+
+    async def resume_orchestration(self, instance_id: str, *, app_id=None):
+        self._record_router(app_id)
+        return mock_resume_result
+
+    async def purge_orchestration(self, instance_id: str, recursive: bool = True, *, app_id=None):
+        self._record_router(app_id)
+        return mock_purge_result
+
+    def _inner_get_orchestration_state(self, instance_id, state: client.OrchestrationStatus):
+        return client.WorkflowState(
+            instance_id=instance_id,
+            name='',
+            runtime_status=state,
+            created_at=datetime.now(),
+            last_updated_at=datetime.now(),
+            serialized_input=None,
+            serialized_output=None,
+            serialized_custom_status=None,
+            failure_details=None,
+        )
+
+
+class WorkflowClientAioTimeoutInterceptorTest(unittest.IsolatedAsyncioTestCase):
+    async def test_timeout_interceptor_is_passed_to_client(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient()
+            mock_client_cls.assert_called_once()
+            call_kwargs = mock_client_cls.call_args[1]
+            interceptors = call_kwargs['interceptors']
+            self.assertEqual(len(interceptors), 1)
+            from dapr.aio.clients.grpc.interceptors import DaprClientTimeoutInterceptorAsync
+
+            self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptorAsync)
+
+
+class WorkflowClientAioChannelOptionsTest(unittest.TestCase):
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 0)
+    def test_explicit_kwarg_sets_symmetric_channel_options(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient(max_grpc_message_length=8 * 1024 * 1024)
+            channel_options = mock_client_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 8 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 8 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 16 * 1024 * 1024)
+    def test_env_var_sets_symmetric_channel_options(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient()
+            channel_options = mock_client_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 16 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 16 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 16 * 1024 * 1024)
+    def test_kwarg_takes_precedence_over_env_var(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient(max_grpc_message_length=8 * 1024 * 1024)
+            channel_options = mock_client_cls.call_args[1]['channel_options']
+            self.assertEqual(
+                [
+                    ('grpc.max_send_message_length', 8 * 1024 * 1024),
+                    ('grpc.max_receive_message_length', 8 * 1024 * 1024),
+                ],
+                channel_options,
+            )
+
+    @mock.patch.object(settings, 'DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES', 0)
+    def test_neither_set_passes_none(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient()
+            channel_options = mock_client_cls.call_args[1]['channel_options']
+            self.assertIsNone(channel_options)
+
+
+class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
+    def mock_client_wf(ctx: DaprWorkflowContext, input):
+        print(f'{input}')
+
+    async def test_schedule_workflow_by_name_string(self):
+        fake_client = FakeAsyncTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
+            return_value=fake_client,
+        ):
+            wfClient = DaprWorkflowClient()
+            result = await wfClient.schedule_new_workflow(
+                workflow='my_registered_workflow', input='data'
+            )
+            assert result == mock_schedule_result
+            assert fake_client.last_scheduled_workflow_name == 'my_registered_workflow'
+
+    async def test_schedule_workflow_reuse_id_policy_is_deprecated(self):
+        fake_client = FakeAsyncTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
+            return_value=fake_client,
+        ):
+            wfClient = DaprWorkflowClient()
+            reuse_id_policy = client.WorkflowIdReusePolicy(
+                action=client.OrchestrationIdReuseAction.TERMINATE,
+                operation_status=[client.OrchestrationStatus.RUNNING],
+            )
+            with self.assertWarns(DeprecationWarning):
+                result = await wfClient.schedule_new_workflow(
+                    workflow='my_registered_workflow', reuse_id_policy=reuse_id_policy
+                )
+            assert result == mock_schedule_result
+
+    async def test_schedule_workflow_without_reuse_id_policy_does_not_warn(self):
+        fake_client = FakeAsyncTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
+            return_value=fake_client,
+        ):
+            wfClient = DaprWorkflowClient()
+            with warnings.catch_warnings():
+                warnings.simplefilter('error', DeprecationWarning)
+                result = await wfClient.schedule_new_workflow(workflow='my_registered_workflow')
+            assert result == mock_schedule_result
+
+    async def test_client_functions(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
+            return_value=FakeAsyncTaskHubGrpcClient(),
+        ):
+            wfClient = DaprWorkflowClient()
+            actual_schedule_result = await wfClient.schedule_new_workflow(
+                workflow=self.mock_client_wf, input='Hi Chef!'
+            )
+            assert actual_schedule_result == mock_schedule_result
+
+            global wf_status
+            wf_status = 'not-found'
+            actual_get_result = await wfClient.get_workflow_state(
+                instance_id=mock_instance_id, fetch_payloads=True
+            )
+            assert actual_get_result is None
+
+            wf_status = 'error'
+            with self.assertRaises(AioRpcError):
+                await wfClient.get_workflow_state(instance_id=mock_instance_id, fetch_payloads=True)
+
+            assert actual_get_result is None
+
+            wf_status = 'found'
+            actual_get_result = await wfClient.get_workflow_state(
+                instance_id=mock_instance_id, fetch_payloads=True
+            )
+            assert actual_get_result.runtime_status.name == 'PENDING'
+            assert actual_get_result.instance_id == mock_instance_id
+
+            actual_wait_start_result = await wfClient.wait_for_workflow_start(
+                instance_id=mock_instance_id, timeout_in_seconds=30
+            )
+            assert actual_wait_start_result.runtime_status.name == 'RUNNING'
+            assert actual_wait_start_result.instance_id == mock_instance_id
+
+            actual_wait_completion_result = await wfClient.wait_for_workflow_completion(
+                instance_id=mock_instance_id, timeout_in_seconds=30
+            )
+            assert actual_wait_completion_result.runtime_status.name == 'COMPLETED'
+            assert actual_wait_completion_result.instance_id == mock_instance_id
+
+            actual_raise_event_result = await wfClient.raise_workflow_event(
+                instance_id=mock_instance_id, event_name='test_event', data='test_data'
+            )
+            assert actual_raise_event_result == mock_raise_event_result
+
+            actual_terminate_result = await wfClient.terminate_workflow(
+                instance_id=mock_instance_id, output='test_output'
+            )
+            assert actual_terminate_result == mock_terminate_result
+
+            actual_suspend_result = await wfClient.pause_workflow(instance_id=mock_instance_id)
+            assert actual_suspend_result == mock_suspend_result
+
+            actual_resume_result = await wfClient.resume_workflow(instance_id=mock_instance_id)
+            assert actual_resume_result == mock_resume_result
+
+            actual_purge_result = await wfClient.purge_workflow(instance_id=mock_instance_id)
+            assert actual_purge_result == mock_purge_result
+            actual_purge_result = await wfClient.purge_workflow(instance_id=mock_instance_id)
+            assert actual_purge_result == mock_purge_result
+
+
+class WorkflowClientAioCrossAppTest(unittest.IsolatedAsyncioTestCase):
+    """Verifies app_id is forwarded to the underlying async task hub client."""
+
+    target_app_id = 'appB'
+
+    def _assert_forwarded(self, fake_client):
+        assert fake_client.last_app_id == self.target_app_id
+
+    async def test_cross_app_kwargs_are_forwarded(self):
+        fake_client = FakeAsyncTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
+            return_value=fake_client,
+        ):
+            wfClient = DaprWorkflowClient()
+            routing = {'app_id': self.target_app_id}
+
+            await wfClient.schedule_new_workflow(workflow='my_registered_workflow', **routing)
+            self._assert_forwarded(fake_client)
+
+            global wf_status
+            wf_status = 'found'
+            await wfClient.get_workflow_state(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            await wfClient.wait_for_workflow_start(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            await wfClient.wait_for_workflow_completion(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            await wfClient.raise_workflow_event(
+                instance_id=mock_instance_id, event_name='test_event', **routing
+            )
+            self._assert_forwarded(fake_client)
+
+            await wfClient.terminate_workflow(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            await wfClient.pause_workflow(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            await wfClient.resume_workflow(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            await wfClient.purge_workflow(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+    async def test_cross_app_kwargs_default_to_none(self):
+        fake_client = FakeAsyncTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient',
+            return_value=fake_client,
+        ):
+            wfClient = DaprWorkflowClient()
+            await wfClient.terminate_workflow(instance_id=mock_instance_id)
+            assert fake_client.last_app_id is None

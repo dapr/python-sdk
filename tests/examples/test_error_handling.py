@@ -16,7 +16,6 @@ EXPECTED_LINES = [
 def test_error_handling(dapr):
     output = dapr.run(
         '--resources-path components -- python3 error_handling.py',
-        timeout=10,
     )
     for line in EXPECTED_LINES:
         assert line in output, f'Missing in output: {line}'

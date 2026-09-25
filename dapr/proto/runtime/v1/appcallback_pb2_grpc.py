@@ -7,7 +7,7 @@ from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_
 from dapr.proto.runtime.v1 import appcallback_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_appcallback__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
-GRPC_GENERATED_VERSION = '1.76.0'
+GRPC_GENERATED_VERSION = '1.81.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -27,7 +27,7 @@ if _version_not_supported:
     )
 
 
-class AppCallbackStub(object):
+class AppCallbackStub:
     """AppCallback V1 allows user application to interact with Dapr runtime.
     User application needs to implement AppCallback service if it needs to
     receive message from dapr runtime.
@@ -76,7 +76,7 @@ class AppCallbackStub(object):
                 _registered_method=True)
 
 
-class AppCallbackServicer(object):
+class AppCallbackServicer:
     """AppCallback V1 allows user application to interact with Dapr runtime.
     User application needs to implement AppCallback service if it needs to
     receive message from dapr runtime.
@@ -180,7 +180,7 @@ def add_AppCallbackServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class AppCallback(object):
+class AppCallback:
     """AppCallback V1 allows user application to interact with Dapr runtime.
     User application needs to implement AppCallback service if it needs to
     receive message from dapr runtime.
@@ -376,7 +376,7 @@ class AppCallback(object):
             _registered_method=True)
 
 
-class AppCallbackHealthCheckStub(object):
+class AppCallbackHealthCheckStub:
     """AppCallbackHealthCheck V1 is an optional extension to AppCallback V1 to implement
     the HealthCheck method.
     """
@@ -394,7 +394,7 @@ class AppCallbackHealthCheckStub(object):
                 _registered_method=True)
 
 
-class AppCallbackHealthCheckServicer(object):
+class AppCallbackHealthCheckServicer:
     """AppCallbackHealthCheck V1 is an optional extension to AppCallback V1 to implement
     the HealthCheck method.
     """
@@ -422,7 +422,7 @@ def add_AppCallbackHealthCheckServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class AppCallbackHealthCheck(object):
+class AppCallbackHealthCheck:
     """AppCallbackHealthCheck V1 is an optional extension to AppCallback V1 to implement
     the HealthCheck method.
     """
@@ -455,7 +455,7 @@ class AppCallbackHealthCheck(object):
             _registered_method=True)
 
 
-class AppCallbackAlphaStub(object):
+class AppCallbackAlphaStub:
     """AppCallbackAlpha V1 is an optional extension to AppCallback V1 to opt
     for Alpha RPCs.
     """
@@ -478,7 +478,7 @@ class AppCallbackAlphaStub(object):
                 _registered_method=True)
 
 
-class AppCallbackAlphaServicer(object):
+class AppCallbackAlphaServicer:
     """AppCallbackAlpha V1 is an optional extension to AppCallback V1 to opt
     for Alpha RPCs.
     """
@@ -518,7 +518,7 @@ def add_AppCallbackAlphaServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class AppCallbackAlpha(object):
+class AppCallbackAlpha:
     """AppCallbackAlpha V1 is an optional extension to AppCallback V1 to opt
     for Alpha RPCs.
     """

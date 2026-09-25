@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import json
+import logging
 import socket
 import tempfile
 import unittest
@@ -29,7 +30,7 @@ from dapr.clients.grpc import conversation
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import to_bytes
 from dapr.clients.grpc._jobs import Job
-from dapr.clients.grpc._request import TransactionalStateOperation
+from dapr.clients.grpc._request import BulkPublishEntry, TransactionalStateOperation
 from dapr.clients.grpc._response import (
     ConfigurationItem,
     ConfigurationResponse,
@@ -38,6 +39,7 @@ from dapr.clients.grpc._response import (
     UnlockResponseStatus,
 )
 from dapr.clients.grpc._state import Concurrency, Consistency, StateItem, StateOptions
+from dapr.common.logging import GrpcAioPollerNoiseFilter
 from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.conf import settings
 from dapr.proto import common_v1
@@ -61,6 +63,18 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     @classmethod
     def tearDownClass(cls):
         cls._fake_dapr_server.stop()
+
+    async def test_client_installs_grpc_aio_poller_noise_filter(self):
+        asyncio_logger = logging.getLogger('asyncio')
+        for existing in list(asyncio_logger.filters):
+            if isinstance(existing, GrpcAioPollerNoiseFilter):
+                asyncio_logger.removeFilter(existing)
+
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.close()
+
+        installed = [f for f in asyncio_logger.filters if isinstance(f, GrpcAioPollerNoiseFilter)]
+        self.assertEqual(len(installed), 1)
 
     async def test_http_extension(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
@@ -292,7 +306,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_publish_events_invalid_event_type(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
-        with self.assertRaisesRegex(ValueError, "invalid type for event <class 'dict'>"):
+        with self.assertRaisesRegex(TypeError, "invalid type for event <class 'dict'>"):
             await dapr.publish_events(
                 pubsub_name='pubsub',
                 topic_name='example',
@@ -339,6 +353,88 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
                 topic_name='example',
                 data=[b'msg'],
             )
+
+    async def test_publish_events_entry_metadata_is_sent(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event='{"n": 1}', metadata={'partitionKey': 'tenant-a'})],
+        )
+        entry = self._fake_dapr_server.bulk_publish_requests[-1].entries[0]
+        self.assertEqual({'partitionKey': 'tenant-a'}, dict(entry.metadata))
+        self.assertEqual(b'{"n": 1}', entry.event)
+
+    async def test_publish_events_copies_publish_metadata_to_every_entry(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=['plain', b'raw', BulkPublishEntry(event='wrapped')],
+            publish_metadata={'ttlInSeconds': '60'},
+        )
+        request = self._fake_dapr_server.bulk_publish_requests[-1]
+        self.assertEqual({'ttlInSeconds': '60'}, dict(request.metadata))
+        self.assertEqual(3, len(request.entries))
+        for entry in request.entries:
+            self.assertEqual({'ttlInSeconds': '60'}, dict(entry.metadata))
+
+    async def test_publish_events_entry_metadata_overrides_publish_metadata(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event='x', metadata={'partitionKey': 'tenant-b'})],
+            publish_metadata={'partitionKey': 'default', 'ttlInSeconds': '60'},
+        )
+        entry = self._fake_dapr_server.bulk_publish_requests[-1].entries[0]
+        self.assertEqual({'partitionKey': 'tenant-b', 'ttlInSeconds': '60'}, dict(entry.metadata))
+
+    async def test_publish_events_plain_entries_send_no_metadata(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=['plain', BulkPublishEntry(event='wrapped')],
+        )
+        request = self._fake_dapr_server.bulk_publish_requests[-1]
+        for entry in request.entries:
+            self.assertEqual({}, dict(entry.metadata))
+
+    async def test_publish_events_entry_without_content_type_uses_type_default(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event=b'raw'), BulkPublishEntry(event='text')],
+        )
+        entries = self._fake_dapr_server.bulk_publish_requests[-1].entries
+        self.assertEqual('application/octet-stream', entries[0].content_type)
+        self.assertEqual('text/plain', entries[1].content_type)
+
+    async def test_publish_events_keeps_caller_entry_id(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event='x', entry_id='my-entry'), BulkPublishEntry(event='y')],
+        )
+        entries = self._fake_dapr_server.bulk_publish_requests[-1].entries
+        self.assertEqual('my-entry', entries[0].entry_id)
+        self.assertTrue(entries[1].entry_id)
+        self.assertNotEqual('my-entry', entries[1].entry_id)
+
+    async def test_publish_events_entry_content_type_overrides_data_content_type(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.publish_events(
+            pubsub_name='pubsub',
+            topic_name='example',
+            data=[BulkPublishEntry(event='{}', content_type='application/json'), 'plain'],
+            data_content_type='text/plain',
+        )
+        entries = self._fake_dapr_server.bulk_publish_requests[-1].entries
+        self.assertEqual('application/json', entries[0].content_type)
+        self.assertEqual('text/plain', entries[1].content_type)
 
     async def test_subscribe_topic(self):
         # The fake server we're using sends two messages and then closes the stream
@@ -563,11 +659,19 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         await dapr.execute_state_transaction(
             store_name='statestore',
             operations=[
-                TransactionalStateOperation(key=key, data=value, etag='foo'),
+                TransactionalStateOperation(
+                    key=key, data=value, etag='foo', metadata={'outbox.projection': 'true'}
+                ),
                 TransactionalStateOperation(key=another_key, data=another_value),
             ],
             transactional_metadata={'metakey': 'metavalue'},
         )
+
+        self.assertEqual(
+            self._fake_dapr_server.transaction_operation_metadata[key],
+            {'outbox.projection': 'true'},
+        )
+        self.assertEqual(self._fake_dapr_server.transaction_operation_metadata[another_key], {})
 
         resp = await dapr.get_bulk_state(store_name='statestore', keys=[key, another_key])
         self.assertEqual(resp.items[0].key, key)

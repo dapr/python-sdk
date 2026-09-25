@@ -20,7 +20,6 @@ def test_invoke_http(dapr):
     dapr.start(
         '--app-id invoke-receiver --app-port 8088 --app-protocol http '
         '-- python3 invoke-receiver.py',
-        wait=5,
     )
     caller_output = dapr.run(
         '--app-id invoke-caller -- python3 invoke-caller.py',

@@ -2,17 +2,54 @@
 
 This document describes the release process for the Dapr Python SDK.
 
-A single tag (`v*`) triggers the release of **all packages** published from this repository:
+A single tag (`v*`) triggers the release of the core SDK only:
 
-| PyPI package |
-|---|
-| `dapr` (core SDK) |
-| `dapr-ext-workflow` |
-| `dapr-ext-grpc` |
-| `dapr-ext-fastapi` |
-| `flask_dapr` |
-| `dapr-ext-langgraph` |
-| `dapr-ext-strands` |
+| PyPI package | Notes |
+|---|---|
+| `dapr` (core SDK) | Includes every extension under `dapr.ext.*`. Users opt in to per-extension third-party deps via extras: `pip install "dapr[fastapi]"`, etc. The legacy top-level `flask_dapr` import path remains available as a thin shim inside this wheel and emits `FutureWarning`. |
+
+**As of 1.19, the previously-separate distributions** — `dapr-ext-fastapi`, `dapr-ext-grpc`,
+`dapr-ext-langgraph`, `dapr-ext-strands`, `dapr-ext-workflow`, `flask-dapr` —
+are **no longer published**. Backport branches that predate 1.19 (`release-1.18`,
+`release-1.17`) still build and publish them for fixes shipped to those releases.
+
+The design constraint was keeping `from dapr.ext.X import ...` stable across
+the upgrade, so the cost lands once in pip during migration rather than
+forever in every existing codebase that already imports those paths.
+
+The price: legacy dists on disk now claim the same files core `dapr` ships,
+and pip has no cross-dist ownership awareness. `pip uninstall <legacy>` walks
+the legacy RECORD and deletes `dapr/ext/<name>/*.py` from disk, leaving a
+silently broken install: `pip show dapr` reports 1.19 installed, but
+`from dapr.ext.<name> import ...` raises `ModuleNotFoundError`. The recipe
+below uses `--force-reinstall --no-deps dapr` to rewrite those files after
+the legacy uninstall removes them.
+
+Republishing the legacy distributions as `dapr-ext-name` shims depending on
+`dapr[name]` was considered and rejected: any shim that doesn't ship the
+actual files leaves the legacy version's RECORD on disk in existing
+environments, so the same uninstall failure mode remains. They would also
+add a per-extension release artifact to maintain in perpetuity.
+
+Existing installs must migrate explicitly:
+
+```sh
+pip uninstall -y dapr-ext-fastapi dapr-ext-grpc dapr-ext-langgraph dapr-ext-strands dapr-ext-workflow flask-dapr
+pip install --force-reinstall --no-deps dapr
+pip install "dapr[<extras>]"
+```
+
+`--force-reinstall --no-deps dapr` rewrites the `dapr/ext/<name>/` files the
+legacy uninstall removed; keeping it separate from the extras install avoids
+churning user-pinned versions of fastapi, uvicorn, langchain, etc.
+`dapr/__init__.py` detects both the legacy-installed and post-uninstall
+states at import time and prints the recovery command as a `FutureWarning`.
+Suppress with `DAPR_SKIP_LEGACY_CHECK=1`.
+
+The warning and the `flask_dapr` shim are kept through 1.21 and removed in
+1.22. 1.18 is the last release to ship the standalone distributions, and N-2
+support keeps it alive until 1.21, so this window covers every user who could
+still be migrating.
 
 You can also create the tag via a **GitHub Release**, which auto-creates the tag and provides
 a changelog UI.

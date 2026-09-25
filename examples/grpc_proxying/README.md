@@ -14,7 +14,7 @@ This example creates a gRPC service using the protobuf file and adds it to the P
 <!-- Our CI/CD pipeline automatically installs the correct version, so we can skip this step in the automation -->
 
 ```bash
-pip3 install dapr dapr-ext-grpc
+pip3 install "dapr[grpc]"
 ```
 
 ## Running in self-hosted mode
@@ -31,8 +31,8 @@ sleep: 5
 -->
 
 ```bash
-# 1. Start Receiver (expose gRPC server receiver on port 50051)
-dapr run --app-id  invoke-receiver --app-protocol grpc --app-port 50051 --config config.yaml -- python  invoke-receiver.py
+# 1. Start Receiver (expose gRPC server receiver on port 13551)
+dapr run --app-id  invoke-receiver --app-protocol grpc --app-port 13551 --config config.yaml -- python  invoke-receiver.py
 ```
 
 <!-- END_STEP -->
@@ -51,7 +51,7 @@ sleep: 5
 
 ```bash
 # 2. Start Caller
-dapr run --app-id  invoke-caller --dapr-grpc-port 50007 --config config.yaml -- python  invoke-caller.py
+dapr run --app-id  invoke-caller --dapr-grpc-port 13507 --config config.yaml -- python  invoke-caller.py
 ```
 
 <!-- END_STEP -->
