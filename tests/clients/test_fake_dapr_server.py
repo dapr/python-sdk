@@ -169,6 +169,26 @@ class FakeDaprSidecarLifecycleTests(unittest.TestCase):
         self.assertTrue(_can_bind_http(http_port))
         wait_until(lambda: _can_bind_grpc(grpc_port), timeout=5)
 
+    def test_second_stop_does_not_release_again(self):
+        sidecar = FakeDaprSidecar()
+        sidecar.start()
+        http_server = sidecar._http_server
+        assert http_server is not None
+
+        with (
+            mock.patch.object(
+                sidecar._grpc_server, 'stop', wraps=sidecar._grpc_server.stop
+            ) as grpc_stop,
+            mock.patch.object(
+                http_server, 'shutdown_server', wraps=http_server.shutdown_server
+            ) as http_shutdown,
+        ):
+            sidecar.stop()
+            sidecar.stop_secure()
+
+        grpc_stop.assert_called_once_with(None)
+        http_shutdown.assert_called_once_with()
+
     def test_stop_without_start_returns_promptly(self):
         self.assertTrue(_returns_within(5, FakeDaprSidecar().stop))
 
@@ -183,8 +203,27 @@ class FakeHttpServerTests(unittest.TestCase):
 
         self.assertTrue(_can_bind_http(port))
 
+    def test_second_shutdown_does_not_close_again(self):
+        server = FakeHttpServer()
+        server.start()
+
+        with (
+            mock.patch.object(server.server, 'shutdown', wraps=server.server.shutdown) as shutdown,
+            mock.patch.object(
+                server.server, 'server_close', wraps=server.server.server_close
+            ) as server_close,
+        ):
+            server.shutdown_server()
+            server.shutdown_server()
+
+        shutdown.assert_called_once_with()
+        server_close.assert_called_once_with()
+
     def test_second_server_cannot_share_a_listening_port(self):
-        # HTTPServer's SO_REUSEADDR would let this bind succeed on Windows.
+        # Only Windows can catch a regression here. HTTPServer's SO_REUSEADDR lets a
+        # second socket bind a listening port on Windows, which is the bug this guards.
+        # Linux and macOS refuse that bind even with SO_REUSEADDR, so this test passes
+        # there whether or not allow_reuse_address is off. The Windows CI job runs it.
         server = FakeHttpServer()
         self.addCleanup(server.shutdown_server)
         server.start()
