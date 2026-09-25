@@ -20,6 +20,7 @@ from unittest import mock
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.context import ActorRuntimeContext
+from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.actor.runtime.state_change import StateChangeKind
 from dapr.actor.runtime.state_manager import ActorStateManager, StateMetadata
 from dapr.serializers import DefaultJSONSerializer
@@ -117,6 +118,35 @@ class ActorStateManagerTests(unittest.TestCase):
         has_value, val = _run(state_manager.try_get_state('state1'))
         self.assertFalse(has_value)
         self.assertIsNone(val)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_save_invalidates_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+
+        # A read outside any reentrancy context caches the value in the default tracker.
+        has_value, val = _run(state_manager.try_get_state('state1'))
+        self.assertTrue(has_value)
+        self.assertEqual('value1', val)
+
+        # A reentrancy-scoped call writes the same key through its own tracker.
+        reentrancy_ctx.set('reentrancy-id')
+        state_manager.set_state_context('ctx1')
+        _run(state_manager.set_state('state1', 'value2'))
+        _run(state_manager.save_state())
+        state_manager.set_state_context(None)
+        reentrancy_ctx.set(None)
+
+        # The default tracker must reload the key instead of serving its stale copy.
+        self._fake_client.get_state.mock.return_value = b'"value2"'
+        has_value, val = _run(state_manager.try_get_state('state1'))
+        self.assertTrue(has_value)
+        self.assertEqual('value2', val)
 
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_set_state_for_new_state(self):
