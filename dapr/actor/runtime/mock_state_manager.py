@@ -48,6 +48,7 @@ class MockStateManager(ActorStateManager):
                 self._default_state_change_tracker[state_name] = StateMetadata(
                     value, StateChangeKind.update
                 )
+                self._mock_state[state_name] = value
                 return True
             return False
         existed = state_name in self._mock_state
@@ -193,13 +194,11 @@ class MockStateManager(ActorStateManager):
     async def get_state_names(self) -> List[str]:
         # TODO: Get all state names from Dapr once implemented.
         def append_names_sync():
-            state_names = []
-            for key, value in self._default_state_change_tracker.items():
-                if value.change_kind == StateChangeKind.add:
-                    state_names.append(key)
-                elif value.change_kind == StateChangeKind.remove:
-                    state_names.append(key)
-            return state_names
+            return [
+                key
+                for key, value in self._default_state_change_tracker.items()
+                if value.change_kind != StateChangeKind.remove
+            ]
 
         default_loop = asyncio.get_running_loop()
         return await default_loop.run_in_executor(None, append_names_sync)
