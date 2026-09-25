@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import socket
 import subprocess
 from typing import Callable, Iterator
 
@@ -23,6 +24,37 @@ from tests.process_utils import get_kwargs_for_process_group, terminate_process_
 from tests.wait_utils import wait_until
 
 REDIS_CONTAINER = 'dapr_redis'
+
+# Throwaway experiment: occupy every port the fake test servers used to hard-code, so any
+# test that still depends on one of them fails or hangs instead of silently passing.
+_HELD_PORTS = (
+    (socket.AF_INET, '127.0.0.1', 3500),
+    (socket.AF_INET, '127.0.0.1', 3510),
+    (socket.AF_INET, '127.0.0.1', 4443),
+    (socket.AF_INET6, '::', 50001),
+    (socket.AF_INET6, '::', 50010),
+    (socket.AF_INET6, '::', 50011),
+)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def hold_old_fixed_ports() -> Iterator[None]:
+    """Bind and listen on the old fixed test ports for the whole session."""
+    held: list[socket.socket] = []
+    for family, host, port in _HELD_PORTS:
+        sock = socket.socket(family, socket.SOCK_STREAM)
+        exclusive = getattr(socket, 'SO_EXCLUSIVEADDRUSE', None)
+        if exclusive is not None:
+            sock.setsockopt(socket.SOL_SOCKET, exclusive, 1)
+        sock.bind((host, port))
+        sock.listen()
+        print(f'holding {host}:{port} exclusive={exclusive is not None}')
+        held.append(sock)
+    try:
+        yield
+    finally:
+        for sock in held:
+            sock.close()
 
 
 @pytest.fixture(scope='session')
