@@ -267,6 +267,32 @@ class ActorStateManager(Generic[T]):
             )
         for state_name in states_to_remove:
             state_change_tracker.pop(state_name, None)
+        if state_change_tracker is not self._default_state_change_tracker:
+            self._refresh_default_tracker(state_changes)
+
+    def _refresh_default_tracker(self, state_changes: List[ActorStateChange]) -> None:
+        # Writes made through a reentrancy-scoped tracker are invisible to the default
+        # tracker, which activation, reminders and timers read from. Refresh its clean
+        # copies of the written keys in place, in the shape a fresh read would return,
+        # and drop removed keys. Entries with pending changes are left alone.
+        state_provider = self._actor.runtime_ctx.state_provider
+        for change in state_changes:
+            metadata = self._default_state_change_tracker.get(change.state_name)
+            if metadata is None or metadata.change_kind != StateChangeKind.none:
+                continue
+            # A None value is not written to the store, so let the next read reload it.
+            if change.change_kind == StateChangeKind.remove or change.value is None:
+                self._default_state_change_tracker.pop(change.state_name)
+                continue
+            try:
+                value = state_provider.round_trip_state_value(change.value)
+            except Exception:
+                # The save has already committed; fall back to reloading on the next read.
+                self._default_state_change_tracker.pop(change.state_name)
+                continue
+            self._default_state_change_tracker[change.state_name] = StateMetadata(
+                value, StateChangeKind.none, change.ttl_in_seconds
+            )
 
     def is_state_marked_for_remove(self, state_name: str) -> bool:
         state_change_tracker = self._get_contextual_state_tracker()
