@@ -198,7 +198,10 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
         port = listen_without_replying(self)
         hang_limit_seconds = 15  # well above DAPR_HEALTH_TIMEOUT, for slow CI machines
 
-        with patch.object(settings, 'DAPR_HTTP_ENDPOINT', f'http://127.0.0.1:{port}'):
+        with (
+            patch.object(settings, 'DAPR_HTTP_ENDPOINT', f'http://127.0.0.1:{port}'),
+            patch('builtins.print') as mock_print,
+        ):
             task = asyncio.ensure_future(DaprHealth.wait_for_sidecar())
             done, _ = await asyncio.wait({task}, timeout=hang_limit_seconds)
             if not done:
@@ -208,6 +211,8 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
         error = task.exception()
         self.assertIsInstance(error, TimeoutError)
         self.assertIn('Dapr health check timed out', str(error))
+        logged = [str(call.args[0]) for call in mock_print.call_args_list if call.args]
+        self.assertTrue(any(line.endswith('failed: timed out') for line in logged), logged)
 
 
 if __name__ == '__main__':

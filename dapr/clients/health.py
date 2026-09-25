@@ -56,7 +56,10 @@ class DaprHealth:
             try:
                 req = urllib.request.Request(health_url, headers=headers)
                 # Without a timeout, a sidecar that accepts the connection but never
-                # answers would block here forever, past DAPR_HEALTH_TIMEOUT.
+                # answers would block here forever, past DAPR_HEALTH_TIMEOUT. urllib
+                # applies this per socket operation (connect, each read), not to the
+                # whole request, so a probe can overrun the budget somewhat, but it
+                # can no longer block forever.
                 with urllib.request.urlopen(
                     req,
                     timeout=_attempt_timeout(start + timeout),

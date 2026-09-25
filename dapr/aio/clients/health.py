@@ -49,6 +49,9 @@ class DaprHealth:
                     ) as response:
                         if 200 <= response.status < 300:
                             break
+                except asyncio.TimeoutError:
+                    # aiohttp's timeout error has an empty message; say what happened.
+                    print(f'Health check on {health_url} failed: timed out')
                 except aiohttp.ClientError as e:
                     print(f'Health check on {health_url} failed: {e}')
                 except Exception as e:
