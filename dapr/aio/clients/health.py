@@ -18,6 +18,7 @@ import time
 
 import aiohttp
 
+from dapr.clients.health import _attempt_timeout
 from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, DAPR_USER_AGENT, USER_AGENT_HEADER
 from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings
@@ -39,7 +40,13 @@ class DaprHealth:
         async with aiohttp.ClientSession(connector=connector) as session:
             while True:
                 try:
-                    async with session.get(health_url, headers=headers) as response:
+                    # Cap each probe at the remaining budget instead of aiohttp's
+                    # 300 s default, so a sidecar that never answers cannot block
+                    # past DAPR_HEALTH_TIMEOUT.
+                    probe_timeout = aiohttp.ClientTimeout(total=_attempt_timeout(start + timeout))
+                    async with session.get(
+                        health_url, headers=headers, timeout=probe_timeout
+                    ) as response:
                         if 200 <= response.status < 300:
                             break
                 except aiohttp.ClientError as e:

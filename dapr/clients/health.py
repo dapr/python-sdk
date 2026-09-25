@@ -22,6 +22,16 @@ from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, DAPR_USER_AGENT, USER_
 from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings
 
+# Shortest time one health probe may wait for the sidecar. Each probe is otherwise capped
+# at what is left of DAPR_HEALTH_TIMEOUT; the floor lets the last probe still get a reply.
+_MIN_ATTEMPT_TIMEOUT_SECONDS = 0.5
+
+
+def _attempt_timeout(deadline: float) -> float:
+    """Seconds one health probe may take: what is left until ``deadline`` (a
+    ``time.time()`` value), but never less than _MIN_ATTEMPT_TIMEOUT_SECONDS."""
+    return max(deadline - time.time(), _MIN_ATTEMPT_TIMEOUT_SECONDS)
+
 
 class DaprHealth:
     @staticmethod
@@ -45,7 +55,13 @@ class DaprHealth:
         while True:
             try:
                 req = urllib.request.Request(health_url, headers=headers)
-                with urllib.request.urlopen(req, context=DaprHealth.get_ssl_context()) as response:
+                # Without a timeout, a sidecar that accepts the connection but never
+                # answers would block here forever, past DAPR_HEALTH_TIMEOUT.
+                with urllib.request.urlopen(
+                    req,
+                    timeout=_attempt_timeout(start + timeout),
+                    context=DaprHealth.get_ssl_context(),
+                ) as response:
                     if 200 <= response.status < 300:
                         break
             except urllib.error.URLError as e:
