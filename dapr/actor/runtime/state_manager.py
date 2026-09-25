@@ -280,14 +280,19 @@ class ActorStateManager(Generic[T]):
             metadata = self._default_state_change_tracker.get(change.state_name)
             if metadata is None or metadata.change_kind != StateChangeKind.none:
                 continue
-            if change.change_kind == StateChangeKind.remove:
+            # A None value is not written to the store, so let the next read reload it.
+            if change.change_kind == StateChangeKind.remove or change.value is None:
                 self._default_state_change_tracker.pop(change.state_name)
-            else:
-                self._default_state_change_tracker[change.state_name] = StateMetadata(
-                    state_provider.round_trip_state_value(change.value),
-                    StateChangeKind.none,
-                    change.ttl_in_seconds,
-                )
+                continue
+            try:
+                value = state_provider.round_trip_state_value(change.value)
+            except Exception:
+                # The save has already committed; fall back to reloading on the next read.
+                self._default_state_change_tracker.pop(change.state_name)
+                continue
+            self._default_state_change_tracker[change.state_name] = StateMetadata(
+                value, StateChangeKind.none, change.ttl_in_seconds
+            )
 
     def is_state_marked_for_remove(self, state_name: str) -> bool:
         state_change_tracker = self._get_contextual_state_tracker()

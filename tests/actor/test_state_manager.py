@@ -210,6 +210,48 @@ class ActorStateManagerTests(unittest.TestCase):
         self.assertEqual([3, 4], fresh)
         self.assertEqual(fresh, refreshed)
 
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_save_of_none_evicts_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.try_get_state('state1'))
+
+        self._run_reentrant(state_manager, lambda: state_manager.set_state('state1', None))
+
+        self.assertNotIn('state1', state_manager._default_state_change_tracker)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_refresh_failure_evicts_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.try_get_state('state1'))
+        _run(state_manager.try_get_state('state2'))
+
+        async def set_both():
+            await state_manager.set_state('state1', 'v2')
+            await state_manager.set_state('state2', 'v2')
+
+        # The save must not raise after the write has committed, and every key is handled.
+        with mock.patch.object(
+            self._runtime_ctx.state_provider,
+            'round_trip_state_value',
+            side_effect=ValueError('cannot decode'),
+        ):
+            self._run_reentrant(state_manager, set_both)
+
+        self.assertNotIn('state1', state_manager._default_state_change_tracker)
+        self.assertNotIn('state2', state_manager._default_state_change_tracker)
+
     @mock.patch('tests.actor.fake_client.FakeDaprActorClient.get_state', new=_async_mock())
     def test_set_state_for_new_state(self):
         state_manager = ActorStateManager(self._fake_actor)
