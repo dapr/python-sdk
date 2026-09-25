@@ -23,7 +23,6 @@ from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.failure_policy import ActorReminderFailurePolicy
 from dapr.actor.runtime.runtime import ActorRuntime
-from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
@@ -33,19 +32,16 @@ from tests.actor.fake_actor_classes import (
 )
 from tests.actor.fake_client import FakeDaprActorClient
 from tests.actor.utils import _async_mock, _run
-from tests.clients.fake_http_server import FakeHttpServer
+from tests.clients.fake_http_server import FakeHttpServer, point_settings_at_http_port
 
 
 class ActorTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.server = FakeHttpServer(3500)
+        cls.server = FakeHttpServer()
+        cls.addClassCleanup(cls.server.shutdown_server)
         cls.server.start()
-        settings.DAPR_HTTP_PORT = 3500
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.server.shutdown_server()
+        point_settings_at_http_port(cls, cls.server.get_port())
 
     def setUp(self):
         ActorRuntime._actor_managers = {}

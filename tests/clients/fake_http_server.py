@@ -3,7 +3,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from ssl import PROTOCOL_TLS_SERVER, SSLContext
 from threading import Thread
 
+from dapr.conf import settings
 from tests.clients.certs import HttpCerts
+
+LOCALHOST = '127.0.0.1'
 
 
 class DaprHandler(BaseHTTPRequestHandler):
@@ -51,14 +54,25 @@ class DaprHandler(BaseHTTPRequestHandler):
         self.do_request('DELETE')
 
 
+class _TestHTTPServer(HTTPServer):
+    # HTTPServer turns on SO_REUSEADDR. On Windows that lets a second socket bind a port
+    # another socket is still listening on, so a new test server can end up sharing a
+    # port with an abandoned one and connections land on the socket nobody serves. On
+    # POSIX the flag only affects TIME_WAIT reuse, which does not matter with port 0.
+    allow_reuse_address = False
+
+
 class FakeHttpServer(Thread):
     secure = False
 
-    def __init__(self, port: int = 8080):
-        super().__init__()
+    def __init__(self, port: int = 0):
+        """Bind a local HTTP server. Port 0 (the default) lets the OS pick a free port;
+        read it back with get_port()."""
+        super().__init__(daemon=True)
 
-        self.port = port
-        self.server = HTTPServer(('localhost', self.port), DaprHandler)
+        self.server = _TestHTTPServer((LOCALHOST, port), DaprHandler)
+        self.port = self.get_port()
+        self._closed = False
 
         self.server.response_body = b''
         self.server.response_code = 200
@@ -76,11 +90,22 @@ class FakeHttpServer(Thread):
         return self.server.request_headers
 
     def shutdown_server(self):
-        self.server.shutdown()
-        self.server.socket.close()
-        self.join()
-        if self.secure:
-            HttpCerts.delete_certificates()
+        """Stop serving and close the socket. Safe to call more than once, and safe to
+        call when the server thread was never started."""
+        if self._closed:
+            return
+        self._closed = True
+        try:
+            # shutdown() waits for serve_forever() to return, so only call it when the
+            # thread is running. If serve_forever() has not been entered yet it sees the
+            # shutdown request and returns straight away.
+            if self.is_alive():
+                self.server.shutdown()
+                self.join()
+        finally:
+            self.server.server_close()
+            if self.secure:
+                HttpCerts.delete_certificates()
 
     def request_path(self):
         return self.server.path
@@ -98,12 +123,16 @@ class FakeHttpServer(Thread):
     def start_secure(self):
         self.secure = True
 
-        HttpCerts.create_certificates()
-        ssl_context = SSLContext(PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(HttpCerts.get_cert_path(), HttpCerts.get_pk_path())
-        self.server.socket = ssl_context.wrap_socket(self.server.socket, server_side=True)
+        try:
+            HttpCerts.create_certificates()
+            ssl_context = SSLContext(PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(HttpCerts.get_cert_path(), HttpCerts.get_pk_path())
+            self.server.socket = ssl_context.wrap_socket(self.server.socket, server_side=True)
 
-        self.start()
+            self.start()
+        except BaseException:
+            self.shutdown_server()
+            raise
 
     def run(self):
         self.server.serve_forever()
@@ -114,3 +143,16 @@ class FakeHttpServer(Thread):
         self.server.response_header_list = []
         self.server.request_body = b''
         self.server.sleep_time = None
+
+
+def point_settings_at_http_port(cls, port: int, scheme: str = 'http') -> None:
+    """Point settings.DAPR_HTTP_PORT and DAPR_HTTP_ENDPOINT at a fake server for the
+    duration of a test class, restoring the previous values when the class finishes."""
+    saved = (settings.DAPR_HTTP_PORT, settings.DAPR_HTTP_ENDPOINT)
+
+    def restore() -> None:
+        settings.DAPR_HTTP_PORT, settings.DAPR_HTTP_ENDPOINT = saved
+
+    cls.addClassCleanup(restore)
+    settings.DAPR_HTTP_PORT = port
+    settings.DAPR_HTTP_ENDPOINT = f'{scheme}://{LOCALHOST}:{port}'
