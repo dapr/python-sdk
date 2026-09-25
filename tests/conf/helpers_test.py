@@ -217,24 +217,28 @@ class DaprClientHelpersTests(unittest.TestCase):
                 'port': '',
                 'endpoint': 'unix:my.sock',
             },
-            # Unix sockets with absolute path
+            # gRPC needs an absolute path after unix://, so an authority can never connect
+            {'url': 'unix://my.sock', 'error': True},
+            {'url': 'unix://my.sock?tls=true', 'error': True},
+            {'url': 'unix://relative/dir/x.sock', 'error': True},
+            # Relative socket names keep their case
             {
-                'url': 'unix://my.sock',
+                'url': 'unix:My.sock',
                 'error': False,
                 'secure': False,
                 'scheme': 'unix',
-                'host': 'my.sock',
+                'host': 'My.sock',
                 'port': '',
-                'endpoint': 'unix://my.sock',
+                'endpoint': 'unix:My.sock',
             },
             {
-                'url': 'unix://my.sock?tls=true',
+                'url': 'unix:run/My.sock',
                 'error': False,
-                'secure': True,
+                'secure': False,
                 'scheme': 'unix',
-                'host': 'my.sock',
+                'host': 'run/My.sock',
                 'port': '',
-                'endpoint': 'unix://my.sock',
+                'endpoint': 'unix:run/My.sock',
             },
             # Unix sockets with a filesystem path, which urlparse puts in the path component
             {

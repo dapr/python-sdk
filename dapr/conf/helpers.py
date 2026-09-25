@@ -55,7 +55,7 @@ class GrpcEndpoint:
         return self._scheme
 
     def _set_hostname(self):
-        if self._is_unix_socket_path():
+        if self._parsed_url.scheme == 'unix':
             # netloc + path keeps the filesystem path's case; parsed_url.hostname lowercases it.
             self._hostname = f'{self._parsed_url.netloc}{self._parsed_url.path}'
             return
@@ -181,6 +181,11 @@ class GrpcEndpoint:
         return self._parsed_url.scheme == 'unix' and bool(self._parsed_url.path)
 
     def _validate_path_and_query(self) -> None:
+        if self._url.startswith('unix://') and self._parsed_url.netloc:
+            raise ValueError(
+                f"unix:// endpoints require an absolute path: '{self._url}'; "
+                'use unix:relative or unix:///absolute'
+            )
         if self._parsed_url.path and not self._is_unix_socket_path():
             raise ValueError(
                 f"paths are not supported for gRPC endpoints: '{self._parsed_url.path}'"
