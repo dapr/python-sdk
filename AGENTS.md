@@ -57,7 +57,7 @@ Extensions are bundled into the core `dapr` wheel and exposed as installable ext
 | Extra | Import path | Purpose | Active development |
 |-------|-------------|---------|--------------------|
 | `dapr[workflow]` | `dapr.ext.workflow` | Durable workflow orchestration (durabletask vendored internally) | **High**, major focus area |
-| `dapr[grpc]` | `dapr.ext.grpc` | gRPC server for Dapr callbacks (methods, pub/sub, bindings, jobs) | Moderate |
+| `dapr[grpc]` | `dapr.ext.grpc`, `dapr.ext.grpc.aio` | gRPC server for Dapr callbacks (methods, pub/sub, bindings, jobs), sync and asyncio | Moderate |
 | `dapr[fastapi]` | `dapr.ext.fastapi` | FastAPI integration for pub/sub and actors | Moderate |
 | `dapr[flask]` | `dapr.ext.flask` | Flask integration for pub/sub and actors (legacy `flask_dapr` import path is a deprecated shim) | Low |
 | `dapr[langgraph]` | `dapr.ext.langgraph` | LangGraph checkpoint persistence to Dapr state store | Moderate |
