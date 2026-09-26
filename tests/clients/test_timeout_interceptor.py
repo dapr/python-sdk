@@ -91,3 +91,45 @@ class DaprClientTimeoutInterceptorTests(unittest.TestCase):
             continuation, client_call_details, request
         )
         continuation.assert_called_once_with(client_call_details, request)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_workflow_waits_are_not_given_the_global_timeout(self):
+        # A wait with no timeout must block until the workflow finishes, however long.
+        for method in (
+            '/TaskHubSidecarService/WaitForInstanceStart',
+            '/TaskHubSidecarService/WaitForInstanceCompletion',
+            b'/TaskHubSidecarService/WaitForInstanceCompletion',
+        ):
+            with self.subTest(method=method):
+                continuation = Mock()
+                request = Mock()
+                client_call_details = Mock()
+                client_call_details.method = method
+                client_call_details.timeout = None
+                client_call_details.metadata = 'metadata'
+                client_call_details.credentials = 'credentials'
+                client_call_details.wait_for_ready = 'wait_for_ready'
+                client_call_details.compression = 'compression'
+
+                DaprClientTimeoutInterceptor().intercept_unary_unary(
+                    continuation, client_call_details, request
+                )
+                continuation.assert_called_once_with(client_call_details, request)
+                self.assertIsNone(continuation.call_args[0][0].timeout)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_other_workflow_calls_still_get_the_global_timeout(self):
+        continuation = Mock()
+        request = Mock()
+        client_call_details = Mock()
+        client_call_details.method = '/TaskHubSidecarService/GetInstance'
+        client_call_details.timeout = None
+        client_call_details.metadata = 'metadata'
+        client_call_details.credentials = 'credentials'
+        client_call_details.wait_for_ready = 'wait_for_ready'
+        client_call_details.compression = 'compression'
+
+        DaprClientTimeoutInterceptor().intercept_unary_unary(
+            continuation, client_call_details, request
+        )
+        self.assertEqual(7, continuation.call_args[0][0].timeout)
