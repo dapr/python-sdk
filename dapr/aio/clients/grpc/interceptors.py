@@ -22,6 +22,7 @@ from grpc.aio import (  # type: ignore
     UnaryUnaryClientInterceptor,
 )
 
+from dapr.clients.grpc.interceptors import _is_unbounded_wait
 from dapr.conf import settings
 
 
@@ -45,7 +46,11 @@ class DaprClientTimeoutInterceptorAsync(UnaryUnaryClientInterceptor):
         # Without an explicit setting there is no SDK-level default deadline: Dapr's own
         # resiliency policies and component timeouts act as the authoritative bounds for
         # long-running operations such as LLM calls and workflow activities.
-        if settings.DAPR_API_TIMEOUT_SECONDS is not None and client_call_details.timeout is None:
+        if (
+            settings.DAPR_API_TIMEOUT_SECONDS is not None
+            and client_call_details.timeout is None
+            and not _is_unbounded_wait(client_call_details.method)
+        ):
             new_client_call_details = _ClientCallDetailsAsync(
                 client_call_details.method,
                 float(settings.DAPR_API_TIMEOUT_SECONDS),
