@@ -16,7 +16,7 @@ limitations under the License.
 import asyncio
 import socket
 import time
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -41,6 +41,7 @@ from dapr.aio.clients.grpc._request import (
     EncryptRequestIterator,
 )
 from dapr.aio.clients.grpc._response import (
+    AsyncConfigurationWatcher,
     DecryptResponse,
     EncryptResponse,
 )
@@ -72,7 +73,6 @@ from dapr.clients.grpc._response import (
     BulkStateItem,
     BulkStatesResponse,
     ConfigurationResponse,
-    ConfigurationWatcher,
     DaprResponse,
     GetBulkSecretResponse,
     GetMetadataResponse,
@@ -144,6 +144,8 @@ class DaprGrpcClientAsync:
                 ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` is consulted to set the
                 receive limit (matches the Java SDK property of the same name).
         """
+        # Active configuration subscriptions, keyed by (store_name, id returned to the caller).
+        self._config_watchers: Dict[Tuple[str, str], AsyncConfigurationWatcher] = {}
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
@@ -164,6 +166,10 @@ class DaprGrpcClientAsync:
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
+        watchers = list(getattr(self, '_config_watchers', {}).values())
+        self._config_watchers = {}
+        for watcher in watchers:
+            await watcher.stop()
         if hasattr(self, '_channel') and self._channel:
             await self._channel.close()
 
@@ -1239,14 +1245,20 @@ class DaprGrpcClientAsync:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('Config store name cannot be empty to get the configuration')
 
-        configWatcher = ConfigurationWatcher()
-        id = configWatcher.watch_configuration(
+        configWatcher = AsyncConfigurationWatcher()
+        id = await configWatcher.watch_configuration(
             self._stub, store_name, keys, handler, config_metadata
         )
+        if id:
+            self._config_watchers[(store_name, id)] = configWatcher
         return id
 
     async def unsubscribe_configuration(self, store_name: str, id: str) -> bool:
         """Unsubscribes from configuration changes.
+
+        If the subscription was re-established after the stream broke (for example after a
+        sidecar restart), the sidecar knows it under a new id; that id is used here, so the id
+        returned by subscribe_configuration stays valid.
 
         Args:
             store_name (str): the state store name to unsubscribe from
@@ -1255,10 +1267,19 @@ class DaprGrpcClientAsync:
         Returns:
             bool: True if unsubscribed successfully, False otherwise
         """
-        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
-        response: api_v1.UnsubscribeConfigurationResponse = (
-            await self._stub.UnsubscribeConfiguration(req)
-        )
+        watcher = self._config_watchers.pop((store_name, id), None)
+        server_id = id
+        if watcher is not None:
+            watcher.request_stop()
+            server_id = watcher.id or id
+        try:
+            req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=server_id)
+            response: api_v1.UnsubscribeConfigurationResponse = (
+                await self._stub.UnsubscribeConfiguration(req)
+            )
+        finally:
+            if watcher is not None:
+                await watcher.stop()
         return response.ok
 
     async def try_lock(

@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
+import random
 import threading
 from enum import Enum
 from typing import (
@@ -37,6 +39,7 @@ from typing import (
 
 from google.protobuf.any_pb2 import Any as GrpcAny
 from google.protobuf.message import Message as GrpcMessage
+from grpc import RpcError, StatusCode  # type: ignore
 
 from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.grpc._helpers import (
@@ -54,6 +57,7 @@ from dapr.proto import api_service_v1, api_v1, appcallback_v1, common_v1
 if TYPE_CHECKING:
     from dapr.clients.grpc.client import DaprGrpcClient
 
+logger = logging.getLogger(__name__)
 
 TCryptoResponse = TypeVar(
     'TCryptoResponse', bound=Union[api_v1.EncryptResponse, api_v1.DecryptResponse]
@@ -669,12 +673,69 @@ class ConfigurationResponse(DaprResponse):
         return self._items
 
 
+# How long subscribe_configuration waits for the first response (which carries the id).
+CONFIG_SUBSCRIBE_TIMEOUT_SECONDS = 5.0
+# Reconnect backoff for configuration subscription streams: starts at the initial delay and
+# doubles on each consecutive failure, up to the max, plus up to 20% random jitter.
+CONFIG_RECONNECT_INITIAL_BACKOFF_SECONDS = 0.5
+CONFIG_RECONNECT_MAX_BACKOFF_SECONDS = 8.0
+_CONFIG_RECONNECT_JITTER_RATIO = 0.2
+# How long stop() waits for the watcher thread to exit after cancelling the stream.
+_CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS = 2.0
+# Errors that will not go away by resubscribing (bad request, missing store, auth).
+_CONFIG_NON_RETRYABLE_CODES = frozenset(
+    {
+        StatusCode.INVALID_ARGUMENT,
+        StatusCode.NOT_FOUND,
+        StatusCode.PERMISSION_DENIED,
+        StatusCode.UNAUTHENTICATED,
+        StatusCode.UNIMPLEMENTED,
+    }
+)
+
+
+def config_reconnect_delay(attempt: int) -> float:
+    """Returns the backoff delay in seconds before reconnect attempt ``attempt`` (0-based)."""
+    base = min(
+        CONFIG_RECONNECT_INITIAL_BACKOFF_SECONDS * (2**attempt),
+        CONFIG_RECONNECT_MAX_BACKOFF_SECONDS,
+    )
+    return base + random.uniform(0, base * _CONFIG_RECONNECT_JITTER_RATIO)
+
+
+def is_retryable_config_error(error: BaseException) -> bool:
+    """Returns True if a configuration subscription stream should be re-established after
+    ``error``. Only gRPC errors are retried, except the ones in _CONFIG_NON_RETRYABLE_CODES."""
+    if not isinstance(error, RpcError):
+        return False
+    code = error.code() if callable(getattr(error, 'code', None)) else None
+    return code not in _CONFIG_NON_RETRYABLE_CODES
+
+
 class ConfigurationWatcher:
+    """Reads a SubscribeConfigurationAlpha1 stream on a daemon thread and calls the handler
+    for every update.
+
+    If the stream fails with a retryable error or is closed by the sidecar (for example when
+    daprd restarts), the watcher subscribes again with the same request, with exponential
+    backoff, until stop() is called or a non-retryable error is returned.
+
+    Each new stream gets a new id from the sidecar. ``subscription_id`` is the id of the first
+    stream and stays the same; ``id`` is the id of the current stream and is the one to pass to
+    UnsubscribeConfiguration.
+    """
+
     def __init__(self):
         self.store_name = None
         self.keys = None
         self.event: threading.Event = threading.Event()
         self.id: str = ''
+        self.subscription_id: str = ''
+        self._stop_event = threading.Event()
+        self._lock = threading.Lock()
+        self._call = None
+        self._thread: Optional[threading.Thread] = None
+        self._stream_established = False
 
     def watch_configuration(
         self,
@@ -687,38 +748,158 @@ class ConfigurationWatcher:
         req = api_v1.SubscribeConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata
         )
-        thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req, handler))
-        thread.daemon = True
-        thread.start()
         self.keys = keys
         self.store_name = store_name
-        check = self.event.wait(timeout=5)
-        if not check:
-            print(f'Unable to get configuration id for keys {self.keys}')
+        self._thread = threading.Thread(
+            target=self._read_subscribe_config,
+            args=(stub, req, handler),
+            name=f'dapr-configuration-watcher-{store_name}',
+            daemon=True,
+        )
+        self._thread.start()
+        check = self.event.wait(timeout=CONFIG_SUBSCRIBE_TIMEOUT_SECONDS)
+        if not check or not self.subscription_id:
+            if not check:
+                logger.warning(
+                    'Unable to get configuration subscription id for keys %s on store %s',
+                    self.keys,
+                    self.store_name,
+                )
+            self.stop()
             return None
-        return self.id
+        return self.subscription_id
+
+    @property
+    def stopped(self) -> bool:
+        return self._stop_event.is_set()
+
+    def request_stop(self) -> None:
+        """Marks the watcher as stopping so it does not reconnect when the stream ends."""
+        self._stop_event.set()
+
+    def stop(self) -> None:
+        """Stops reconnecting, cancels the current stream and waits briefly for the thread."""
+        self._stop_event.set()
+        with self._lock:
+            call = self._call
+        cancel = getattr(call, 'cancel', None)
+        if callable(cancel):
+            cancel()
+        thread = self._thread
+        if thread is not None and thread is not threading.current_thread():
+            thread.join(timeout=_CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS)
 
     def _read_subscribe_config(
         self,
         stub: api_service_v1.DaprStub,
         req: api_v1.SubscribeConfigurationRequest,
         handler: Callable[[Text, ConfigurationResponse], None],
-    ):
+    ) -> None:
+        attempt = 0
         try:
-            responses: List[api_v1.SubscribeConfigurationResponse] = (
-                stub.SubscribeConfigurationAlpha1(req)
+            while not self._stop_event.is_set():
+                self._stream_established = False
+                try:
+                    self._consume_stream(stub, req, handler)
+                    if not self._stop_event.is_set():
+                        logger.info(
+                            'Configuration subscription stream for keys %s on store %s was '
+                            'closed by the sidecar, reconnecting',
+                            self.keys,
+                            self.store_name,
+                        )
+                except Exception as error:
+                    if self._stop_event.is_set():
+                        break
+                    if not is_retryable_config_error(error):
+                        logger.error(
+                            'Configuration subscription for keys %s on store %s stopped: %s',
+                            self.keys,
+                            self.store_name,
+                            error,
+                        )
+                        break
+                    logger.warning(
+                        'Configuration subscription stream for keys %s on store %s failed, '
+                        'reconnecting: %s',
+                        self.keys,
+                        self.store_name,
+                        error,
+                    )
+                finally:
+                    with self._lock:
+                        self._call = None
+                if self._stop_event.is_set():
+                    break
+                if self._stream_established:
+                    attempt = 0
+                delay = config_reconnect_delay(attempt)
+                attempt += 1
+                if self._wait_before_retry(delay):
+                    break
+        finally:
+            # Unblock watch_configuration if the first stream never delivered an id.
+            self.event.set()
+            logger.debug(
+                'Configuration watcher for keys %s on store %s exited', self.keys, self.store_name
             )
-            isFirst = True
-            for response in responses:
-                if isFirst:
-                    self.id = response.id
-                    self.event.set()
-                    isFirst = False
-                if len(response.items) > 0:
-                    handler(response.id, ConfigurationResponse(response.items))
+
+    def _consume_stream(
+        self,
+        stub: api_service_v1.DaprStub,
+        req: api_v1.SubscribeConfigurationRequest,
+        handler: Callable[[Text, ConfigurationResponse], None],
+    ) -> None:
+        call = stub.SubscribeConfigurationAlpha1(req)
+        with self._lock:
+            if self._stop_event.is_set():
+                cancel = getattr(call, 'cancel', None)
+                if callable(cancel):
+                    cancel()
+                return
+            self._call = call
+        for response in call:
+            if not self._stream_established:
+                self._on_stream_established(response.id)
+            if self._stop_event.is_set():
+                return
+            if len(response.items) > 0:
+                self._deliver(handler, ConfigurationResponse(response.items))
+
+    def _on_stream_established(self, server_id: str) -> None:
+        with self._lock:
+            self.id = server_id
+            if not self.subscription_id:
+                self.subscription_id = server_id
+            else:
+                logger.info(
+                    'Configuration subscription %s for keys %s on store %s reconnected '
+                    'with new id %s',
+                    self.subscription_id,
+                    self.keys,
+                    self.store_name,
+                    server_id,
+                )
+        self._stream_established = True
+        self.event.set()
+
+    def _deliver(
+        self,
+        handler: Callable[[Text, ConfigurationResponse], None],
+        response: ConfigurationResponse,
+    ) -> None:
+        try:
+            handler(self.subscription_id, response)
         except Exception:
-            print(f'{self.store_name} configuration watcher for keys {self.keys} stopped.')
-            pass
+            logger.exception(
+                'Configuration handler for keys %s on store %s raised an exception',
+                self.keys,
+                self.store_name,
+            )
+
+    def _wait_before_retry(self, delay: float) -> bool:
+        """Sleeps for ``delay`` seconds. Returns True if the watcher was stopped meanwhile."""
+        return self._stop_event.wait(delay)
 
 
 class BulkPublishResponseFailedEntry:

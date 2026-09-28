@@ -24,6 +24,7 @@ from unittest.mock import MagicMock, patch
 from google.rpc import code_pb2, status_pb2
 
 from dapr.aio.clients import DaprClient
+from dapr.aio.clients.grpc._response import AsyncConfigurationWatcher
 from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc import conversation
@@ -34,7 +35,6 @@ from dapr.clients.grpc._request import BulkPublishEntry, TransactionalStateOpera
 from dapr.clients.grpc._response import (
     ConfigurationItem,
     ConfigurationResponse,
-    ConfigurationWatcher,
     DaprResponse,
     UnlockResponseStatus,
 )
@@ -836,7 +836,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
     async def test_subscribe_configuration(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
 
-        def mock_watch(self, stub, store_name, keys, handler, config_metadata):
+        async def mock_watch(self, stub, store_name, keys, handler, config_metadata):
             handler(
                 'id',
                 ConfigurationResponse(
@@ -849,7 +849,7 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp.items['k'].value, 'test')
             self.assertEqual(resp.items['k'].version, '1.7.0')
 
-        with patch.object(ConfigurationWatcher, 'watch_configuration', mock_watch):
+        with patch.object(AsyncConfigurationWatcher, 'watch_configuration', mock_watch):
             await dapr.subscribe_configuration(
                 store_name='configurationstore', keys=['k'], handler=handler
             )

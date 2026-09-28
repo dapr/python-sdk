@@ -13,10 +13,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import AsyncGenerator, Generic
+import asyncio
+import contextlib
+import logging
+from typing import AsyncGenerator, Callable, Dict, Generic, List, Optional, Text
 
-from dapr.clients.grpc._response import DaprResponse, TCryptoResponse
-from dapr.proto import api_v1
+from dapr.clients.grpc._response import (
+    CONFIG_SUBSCRIBE_TIMEOUT_SECONDS,
+    ConfigurationResponse,
+    DaprResponse,
+    TCryptoResponse,
+    config_reconnect_delay,
+    is_retryable_config_error,
+)
+from dapr.proto import api_service_v1, api_v1
+
+logger = logging.getLogger(__name__)
 
 
 class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):
@@ -87,3 +99,182 @@ class EncryptResponse(CryptoResponse[api_v1.EncryptResponse]): ...
 
 
 class DecryptResponse(CryptoResponse[api_v1.DecryptResponse]): ...
+
+
+class AsyncConfigurationWatcher:
+    """Reads a SubscribeConfigurationAlpha1 stream in an asyncio task and calls the handler
+    for every update.
+
+    This is the asyncio counterpart of ConfigurationWatcher: it re-subscribes with exponential
+    backoff when the stream fails with a retryable error or is closed by the sidecar, until
+    stop() is called or a non-retryable error is returned. ``subscription_id`` is the id of the
+    first stream; ``id`` is the id of the current stream.
+    """
+
+    def __init__(self) -> None:
+        self.store_name: Optional[str] = None
+        self.keys: Optional[List[str]] = None
+        self.id: str = ''
+        self.subscription_id: str = ''
+        self._ready = asyncio.Event()
+        self._stopping = False
+        self._call = None
+        self._task: Optional[asyncio.Task] = None
+        self._stream_established = False
+
+    async def watch_configuration(
+        self,
+        stub: api_service_v1.DaprStub,
+        store_name: str,
+        keys: List[str],
+        handler: Callable[[Text, ConfigurationResponse], None],
+        config_metadata: Optional[Dict[str, str]] = None,
+    ):
+        """Starts the watcher task and returns the subscription id, or None if the sidecar did
+        not return one within CONFIG_SUBSCRIBE_TIMEOUT_SECONDS or rejected the subscription."""
+        req = api_v1.SubscribeConfigurationRequest(
+            store_name=store_name, keys=keys, metadata=config_metadata or {}
+        )
+        self.keys = keys
+        self.store_name = store_name
+        self._task = asyncio.create_task(
+            self._read_subscribe_config(stub, req, handler),
+            name=f'dapr-configuration-watcher-{store_name}',
+        )
+        try:
+            await asyncio.wait_for(self._ready.wait(), timeout=CONFIG_SUBSCRIBE_TIMEOUT_SECONDS)
+        except asyncio.TimeoutError:
+            logger.warning(
+                'Unable to get configuration subscription id for keys %s on store %s',
+                self.keys,
+                self.store_name,
+            )
+        if not self.subscription_id:
+            await self.stop()
+            return None
+        return self.subscription_id
+
+    @property
+    def stopped(self) -> bool:
+        return self._stopping
+
+    def request_stop(self) -> None:
+        """Marks the watcher as stopping so it does not reconnect when the stream ends."""
+        self._stopping = True
+
+    async def stop(self) -> None:
+        """Stops reconnecting, cancels the current stream and waits for the task to exit."""
+        self._stopping = True
+        call = self._call
+        cancel = getattr(call, 'cancel', None)
+        if callable(cancel):
+            cancel()
+        task = self._task
+        if task is None or task.done() or task is asyncio.current_task():
+            return
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    async def _read_subscribe_config(
+        self,
+        stub: api_service_v1.DaprStub,
+        req: api_v1.SubscribeConfigurationRequest,
+        handler: Callable[[Text, ConfigurationResponse], None],
+    ) -> None:
+        attempt = 0
+        try:
+            while not self._stopping:
+                self._stream_established = False
+                try:
+                    await self._consume_stream(stub, req, handler)
+                    if not self._stopping:
+                        logger.info(
+                            'Configuration subscription stream for keys %s on store %s was '
+                            'closed by the sidecar, reconnecting',
+                            self.keys,
+                            self.store_name,
+                        )
+                except asyncio.CancelledError:
+                    raise
+                except Exception as error:
+                    if self._stopping:
+                        break
+                    if not is_retryable_config_error(error):
+                        logger.error(
+                            'Configuration subscription for keys %s on store %s stopped: %s',
+                            self.keys,
+                            self.store_name,
+                            error,
+                        )
+                        break
+                    logger.warning(
+                        'Configuration subscription stream for keys %s on store %s failed, '
+                        'reconnecting: %s',
+                        self.keys,
+                        self.store_name,
+                        error,
+                    )
+                finally:
+                    self._call = None
+                if self._stopping:
+                    break
+                if self._stream_established:
+                    attempt = 0
+                delay = config_reconnect_delay(attempt)
+                attempt += 1
+                await self._wait_before_retry(delay)
+        finally:
+            # Unblock watch_configuration if the first stream never delivered an id.
+            self._ready.set()
+            logger.debug(
+                'Configuration watcher for keys %s on store %s exited', self.keys, self.store_name
+            )
+
+    async def _consume_stream(
+        self,
+        stub: api_service_v1.DaprStub,
+        req: api_v1.SubscribeConfigurationRequest,
+        handler: Callable[[Text, ConfigurationResponse], None],
+    ) -> None:
+        call = stub.SubscribeConfigurationAlpha1(req)
+        self._call = call
+        async for response in call:
+            if not self._stream_established:
+                self._on_stream_established(response.id)
+            if self._stopping:
+                return
+            if len(response.items) > 0:
+                self._deliver(handler, ConfigurationResponse(response.items))
+
+    def _on_stream_established(self, server_id: str) -> None:
+        self.id = server_id
+        if not self.subscription_id:
+            self.subscription_id = server_id
+        else:
+            logger.info(
+                'Configuration subscription %s for keys %s on store %s reconnected with new id %s',
+                self.subscription_id,
+                self.keys,
+                self.store_name,
+                server_id,
+            )
+        self._stream_established = True
+        self._ready.set()
+
+    def _deliver(
+        self,
+        handler: Callable[[Text, ConfigurationResponse], None],
+        response: ConfigurationResponse,
+    ) -> None:
+        try:
+            handler(self.subscription_id, response)
+        except Exception:
+            logger.exception(
+                'Configuration handler for keys %s on store %s raised an exception',
+                self.keys,
+                self.store_name,
+            )
+
+    async def _wait_before_retry(self, delay: float) -> None:
+        await asyncio.sleep(delay)

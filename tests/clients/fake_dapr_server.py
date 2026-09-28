@@ -14,6 +14,8 @@ limitations under the License.
 """
 
 import json
+import threading
+import time
 from concurrent import futures
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -67,6 +69,17 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.actor_stream_plans: List[Dict[str, Any]] = []
         self.actor_stream_initials: List[api_v1.SubscribeActorEventsRequestInitialAlpha1] = []
         self.actor_stream_replies: List[api_v1.SubscribeActorEventsRequestAlpha1] = []
+        # SubscribeConfigurationAlpha1: one plan is consumed per stream connection. Each plan is a
+        # dict with 'id' (subscription id sent in the first response), 'updates' (list of
+        # {key: value} dicts pushed after the first response), and 'end' ('abort' fails the
+        # stream with 'code' (default UNAVAILABLE), 'eof' closes cleanly, 'hold' keeps the stream
+        # open until the id is unsubscribed or the client goes away). 'reject' fails the call with
+        # that status code before any response is sent.
+        self.config_stream_plans: List[Dict[str, Any]] = []
+        self.config_subscribe_requests: List[api_v1.SubscribeConfigurationRequest] = []
+        self.config_unsubscribe_requests: List[api_v1.UnsubscribeConfigurationRequest] = []
+        self._config_unsubscribed: set = set()
+        self._config_lock = threading.Lock()
 
     def set_bulk_publish_unimplemented_on_stable_next(self) -> None:
         """Make the next BulkPublishEvent (stable) call return UNIMPLEMENTED.
@@ -498,7 +511,34 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         responses.append(response)
         return api_v1.SubscribeConfigurationResponse(responses=responses)
 
+    def SubscribeConfigurationAlpha1(self, request, context):
+        with self._config_lock:
+            self.config_subscribe_requests.append(request)
+            plan = self.config_stream_plans.pop(0) if self.config_stream_plans else {}
+        if plan.get('reject') is not None:
+            context.abort(plan['reject'], 'rejected by test plan')
+        sub_id = plan.get('id', 'sub-id')
+        yield api_v1.SubscribeConfigurationResponse(id=sub_id)
+        for update in plan.get('updates', []):
+            items = {
+                key: ConfigurationItem(value=value, version='1') for key, value in update.items()
+            }
+            yield api_v1.SubscribeConfigurationResponse(id=sub_id, items=items)
+
+        end_behavior = plan.get('end', 'hold')
+        if end_behavior == 'abort':
+            context.abort(plan.get('code', grpc.StatusCode.UNAVAILABLE), 'simulated disconnection')
+        elif end_behavior == 'hold':
+            while context.is_active():
+                with self._config_lock:
+                    if sub_id in self._config_unsubscribed:
+                        return
+                time.sleep(0.01)
+
     def UnsubscribeConfiguration(self, request, context):
+        with self._config_lock:
+            self.config_unsubscribe_requests.append(request)
+            self._config_unsubscribed.add(request.id)
         return api_v1.UnsubscribeConfigurationResponse(ok=True)
 
     def QueryStateAlpha1(self, request, context):

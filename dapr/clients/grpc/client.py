@@ -16,7 +16,7 @@ limitations under the License.
 import socket
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -145,6 +145,9 @@ class DaprGrpcClient:
                 receive limit (matches the Java SDK property of the same name).
             retry_policy (RetryPolicy optional): Specifies retry behaviour
         """
+        # Active configuration subscriptions, keyed by (store_name, id returned to the caller).
+        self._config_watchers: Dict[Tuple[str, str], ConfigurationWatcher] = {}
+        self._config_watchers_lock = threading.Lock()
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
@@ -211,8 +214,19 @@ class DaprGrpcClient:
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
+        self._stop_config_watchers()
         if hasattr(self, '_channel') and self._channel:
             self._channel.close()
+
+    def _stop_config_watchers(self) -> None:
+        lock = getattr(self, '_config_watchers_lock', None)
+        if lock is None:
+            return
+        with lock:
+            watchers = list(self._config_watchers.values())
+            self._config_watchers = {}
+        for watcher in watchers:
+            watcher.stop()
 
     def __del__(self):
         self.close()
@@ -1304,10 +1318,17 @@ class DaprGrpcClient:
         id = configWatcher.watch_configuration(
             self._stub, store_name, keys, handler, config_metadata
         )
+        if id:
+            with self._config_watchers_lock:
+                self._config_watchers[(store_name, id)] = configWatcher
         return id
 
     def unsubscribe_configuration(self, store_name: str, id: str) -> bool:
         """Unsubscribes from configuration changes.
+
+        If the subscription was re-established after the stream broke (for example after a
+        sidecar restart), the sidecar knows it under a new id; that id is used here, so the id
+        returned by subscribe_configuration stays valid.
 
         Args:
             store_name (str): the state store name to unsubscribe from
@@ -1316,8 +1337,20 @@ class DaprGrpcClient:
         Returns:
             bool: True if unsubscribed successfully, False otherwise
         """
-        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
-        response: api_v1.UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfiguration(req)
+        with self._config_watchers_lock:
+            watcher = self._config_watchers.pop((store_name, id), None)
+        server_id = id
+        if watcher is not None:
+            watcher.request_stop()
+            server_id = watcher.id or id
+        try:
+            req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=server_id)
+            response: api_v1.UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfiguration(
+                req
+            )
+        finally:
+            if watcher is not None:
+                watcher.stop()
         return response.ok
 
     def try_lock(
