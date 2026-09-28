@@ -36,10 +36,12 @@ from dapr.clients.grpc._response import (
     DaprResponse,
     TCryptoResponse,
     cancel_config_call,
+    config_catch_up_metadata,
     config_reconnect_delay,
     config_stream_was_stable,
     describe_config_error,
     is_retryable_config_error,
+    log_config_stream_failure,
 )
 from dapr.proto import api_service_v1, api_v1
 
@@ -132,7 +134,20 @@ class AsyncConfigurationWatcher:
     After each reconnect (not after the first subscribe) the watcher reads the current values
     of the keys with GetConfiguration and passes them to the handler, if there are any, so
     changes made while the stream was down are delivered. This may repeat values that did not
-    change. If the read fails, a warning is logged and the subscription carries on.
+    change. If the read fails, a warning is logged and the subscription carries on. The read
+    leaves out subscribe-only metadata (see config_catch_up_metadata).
+
+    Right after a reconnect, values may repeat and may briefly arrive out of order: an update
+    that reached the new stream before the read is delivered after the read's result, which
+    can already hold a newer value. So until the next update to a key, the last value
+    delivered for it is not guaranteed to be the newest.
+
+    ``async def`` handlers are awaited on the event loop; plain functions run in a worker
+    thread (asyncio.to_thread) so they cannot block the loop. Either way, one handler call
+    finishes before the next starts, in the order the updates arrived.
+
+    Failed reconnect attempts are logged like ConfigurationWatcher does (see
+    CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES).
 
     ``on_exit`` is called with the watcher when its task exits, whether it was stopped or gave
     up on its own.
@@ -224,12 +239,16 @@ class AsyncConfigurationWatcher:
         handler: AsyncConfigurationHandler,
     ) -> None:
         attempt = 0
-        outage_reported = False
+        # Consecutive failed attempts since the last stream that delivered an id.
+        failures = 0
+        outage_started_at = 0.0
         try:
             while not self._stopping:
                 self._stream_established = False
                 try:
                     await self._consume_stream(stub, req, handler)
+                    if self._stream_established:
+                        failures = 0
                     if not self._stopping:
                         logger.info(
                             'Configuration subscription stream for keys %s on store %s was '
@@ -250,18 +269,14 @@ class AsyncConfigurationWatcher:
                             describe_config_error(error),
                         )
                         break
-                    # Warn once per outage; the retries after that go to DEBUG until a new
-                    # stream is up, which is logged at INFO.
-                    first_failure = self._stream_established or not outage_reported
-                    logger.log(
-                        logging.WARNING if first_failure else logging.DEBUG,
-                        'Configuration subscription stream for keys %s on store %s failed, '
-                        'reconnecting: %s',
-                        self.keys,
-                        self.store_name,
-                        describe_config_error(error),
+                    if self._stream_established:
+                        failures = 0
+                    if failures == 0:
+                        outage_started_at = time.monotonic()
+                    failures += 1
+                    log_config_stream_failure(
+                        logger, self.keys, self.store_name, error, failures, outage_started_at
                     )
-                    outage_reported = True
                 finally:
                     self._call = None
                 if self._stopping:
@@ -334,7 +349,9 @@ class AsyncConfigurationWatcher:
         """Reads the current values of the subscribed keys and passes them to the handler, so
         changes made while the stream was down are not lost."""
         get_req = api_v1.GetConfigurationRequest(
-            store_name=req.store_name, keys=req.keys, metadata=req.metadata
+            store_name=req.store_name,
+            keys=req.keys,
+            metadata=config_catch_up_metadata(req.metadata),
         )
         try:
             response = await stub.GetConfiguration(
@@ -360,11 +377,15 @@ class AsyncConfigurationWatcher:
         handler: AsyncConfigurationHandler,
         response: ConfigurationResponse,
     ) -> None:
-        # Accept both plain functions and ``async def`` handlers.
+        # ``async def`` handlers run on the loop; plain functions run in a worker thread so a
+        # blocking handler does not stall the loop. Awaiting each call keeps delivery in order.
         try:
-            result = handler(self.subscription_id, response)
-            if inspect.isawaitable(result):
-                await result
+            if inspect.iscoroutinefunction(handler):
+                await handler(self.subscription_id, response)
+            else:
+                result = await asyncio.to_thread(handler, self.subscription_id, response)
+                if inspect.isawaitable(result):
+                    await result
         except Exception:
             logger.exception(
                 'Configuration handler for keys %s on store %s raised an exception',

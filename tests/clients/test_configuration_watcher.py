@@ -22,6 +22,7 @@ from unittest.mock import patch
 import grpc
 
 from dapr.clients.grpc._response import (
+    CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES,
     CONFIG_RECONNECT_INITIAL_BACKOFF_SECONDS,
     CONFIG_RECONNECT_MAX_BACKOFF_SECONDS,
     ConfigurationResponse,
@@ -99,6 +100,7 @@ class ConfigurationRetryHelpersTests(unittest.TestCase):
         for code in (
             grpc.StatusCode.INVALID_ARGUMENT,
             grpc.StatusCode.NOT_FOUND,
+            grpc.StatusCode.FAILED_PRECONDITION,
             grpc.StatusCode.PERMISSION_DENIED,
             grpc.StatusCode.UNAUTHENTICATED,
             grpc.StatusCode.UNIMPLEMENTED,
@@ -572,6 +574,148 @@ class ConfigurationWatcherReconnectTests(unittest.TestCase):
         for delay, base in zip(self.delays, [0.5, 1.0]):
             self.assertGreaterEqual(delay, base)
             self.assertLessEqual(delay, base * 1.2)
+
+    def test_catch_up_read_leaves_out_subscribe_only_metadata(self):
+        # The PostgreSQL store filters GetConfiguration rows by every metadata entry, so its
+        # subscribe-only notify channel must not be sent with the read after a reconnect.
+        server = self._fake_dapr_server
+        server.config_values = {'k': 'changed-while-down'}
+        server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'end': 'abort'},
+                {'id': 'second', 'end': 'hold'},
+            ]
+        )
+        metadata = {'pgNotifyChannel': 'config', 'label': 'x'}
+
+        self.client.subscribe_configuration(
+            store_name=STORE, keys=['k'], handler=self.handler, config_metadata=metadata
+        )
+
+        self.assertTrue(wait_until(lambda: len(self.updates) == 1), self.updates)
+        self.assertEqual(len(server.config_get_requests), 1)
+        self.assertEqual(dict(server.config_get_requests[0].metadata), {'label': 'x'})
+        for request in server.config_subscribe_requests:
+            self.assertEqual(dict(request.metadata), metadata)
+
+    def test_long_outage_warns_again_every_n_failures(self):
+        # A store removed from the sidecar fails every resubscribe with INVALID_ARGUMENT; that
+        # keeps being retried, and must keep showing up at WARNING level.
+        failing_attempts = 2 * CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES + 1
+        server = self._fake_dapr_server
+        server.config_stream_plans.append({'id': 'first', 'end': 'abort'})
+        server.config_stream_plans.extend(
+            [{'reject': grpc.StatusCode.INVALID_ARGUMENT}] * (failing_attempts - 1)
+        )
+        server.config_stream_plans.append({'id': 'second', 'updates': [{'k': 'v2'}], 'end': 'hold'})
+
+        with self.assertLogs('dapr.clients.grpc._response', level='DEBUG') as logs:
+            self.subscribe()
+            self.assertTrue(wait_until(lambda: len(self.updates) == 1), self.updates)
+
+        failures = [r for r in logs.records if 'failed, reconnecting' in r.getMessage()]
+        self.assertEqual(len(failures), failing_attempts, logs.output)
+        warnings = [r.getMessage() for r in failures if r.levelname == 'WARNING']
+        self.assertEqual(len(warnings), 3, warnings)
+        self.assertIn(
+            f'still failing after {CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES} attempts', warnings[1]
+        )
+        self.assertIn(
+            f'still failing after {2 * CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES} attempts',
+            warnings[2],
+        )
+
+    def test_no_configuration_stores_on_first_subscribe_returns_none_quickly(self):
+        server = self._fake_dapr_server
+        server.config_stream_plans.extend(
+            [{'reject': grpc.StatusCode.FAILED_PRECONDITION}, {'id': 'unused', 'end': 'hold'}]
+        )
+        started = time.monotonic()
+
+        self.assertIsNone(self.subscribe())
+
+        self.assertLess(time.monotonic() - started, 2.0)
+        self.assertEqual(len(server.config_subscribe_requests), 1)
+        self.assertEqual(self.client._config_watchers, {})
+
+    def test_unsubscribe_before_the_reconnect_stream_sent_its_id_stops_locally(self):
+        server = self._fake_dapr_server
+        id_gate = threading.Event()
+        self.addCleanup(id_gate.set)
+        server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'end': 'abort'},
+                {'id': 'second', 'end': 'hold', 'wait_before_id': id_gate},
+            ]
+        )
+        subscription_id = self.subscribe()
+        watcher = self.watcher(subscription_id)
+        # The reconnect stream is open, but the sidecar has not sent its id yet.
+        self.assertTrue(
+            wait_until(
+                lambda: len(server.config_subscribe_requests) == 2 and watcher._call is not None
+            )
+        )
+        self.assertIsNone(watcher.live_stream_id())
+
+        self.assertTrue(self.client.unsubscribe_configuration(STORE, subscription_id))
+
+        # The first stream's id is dead (the sidecar would answer ok=False) and the new one is
+        # not known yet, so nothing is sent.
+        self.assertEqual(server.config_unsubscribe_requests, [])
+        self.assertTrue(watcher.stopped)
+        self.assertNotIn((STORE, subscription_id), self.client._config_watchers)
+        # A stream wrapped by gRPC instrumentation cannot be cancelled, so the thread may still
+        # be waiting for the id; once it arrives the watcher exits without reconnecting.
+        id_gate.set()
+        thread = watcher._thread
+        assert thread is not None
+        thread.join(WAIT_TIMEOUT_SECONDS)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(server.config_unsubscribe_requests, [])
+        self.assertEqual(len(server.config_subscribe_requests), 2)
+
+    def test_watcher_that_exited_before_registration_is_not_tracked(self):
+        def watch_and_exit(watcher: ConfigurationWatcher, *args, **kwargs) -> str:
+            # The watcher delivered an id and gave up before the client could register it.
+            watcher.store_name = STORE
+            watcher.subscription_id = 'gone'
+            watcher._exited = True
+            return 'gone'
+
+        with patch.object(ConfigurationWatcher, 'watch_configuration', watch_and_exit):
+            self.assertEqual(self.subscribe(), 'gone')
+
+        self.assertEqual(self.client._config_watchers, {})
+
+    def test_each_outage_starts_with_a_warning(self):
+        # A stream that delivered its id ends the outage, whether it then fails or closes
+        # cleanly, so the next failure is the first of a new outage.
+        self._fake_dapr_server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'end': 'abort'},
+                {'reject': grpc.StatusCode.UNAVAILABLE},
+                {'id': 'second', 'end': 'abort'},
+                {'reject': grpc.StatusCode.UNAVAILABLE},
+                {'id': 'third', 'end': 'eof'},
+                {'reject': grpc.StatusCode.UNAVAILABLE},
+                {'id': 'fourth', 'updates': [{'k': 'v4'}], 'end': 'hold'},
+            ]
+        )
+
+        with self.assertLogs('dapr.clients.grpc._response', level='DEBUG') as logs:
+            self.subscribe()
+            self.assertTrue(wait_until(lambda: len(self.updates) == 1), self.updates)
+
+        failures = [r for r in logs.records if 'failed, reconnecting' in r.getMessage()]
+        self.assertEqual(
+            [r.levelname for r in failures],
+            ['WARNING', 'DEBUG', 'WARNING', 'DEBUG', 'WARNING'],
+            logs.output,
+        )
+        self.assertFalse(
+            any('still failing' in r.getMessage() for r in failures if r.levelname == 'WARNING')
+        )
 
 
 if __name__ == '__main__':

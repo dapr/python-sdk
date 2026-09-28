@@ -75,7 +75,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         # stream with 'code' (default UNAVAILABLE), 'eof' closes cleanly, 'hold' keeps the stream
         # open until the id is unsubscribed or the client goes away). 'reject' fails the call with
         # that status code before any response is sent. 'wait' (a threading.Event) delays the
-        # 'end' behaviour until the event is set.
+        # 'end' behaviour until the event is set. 'wait_before_id' (a threading.Event) keeps the
+        # stream open without sending anything, not even the id, until the event is set or the
+        # client goes away.
         self.config_stream_plans: List[Dict[str, Any]] = []
         self.config_subscribe_requests: List[api_v1.SubscribeConfigurationRequest] = []
         self.config_unsubscribe_requests: List[api_v1.UnsubscribeConfigurationRequest] = []
@@ -539,6 +541,12 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         if plan.get('reject') is not None:
             context.abort(plan['reject'], 'rejected by test plan')
         sub_id = plan.get('id', 'sub-id')
+        id_gate = plan.get('wait_before_id')
+        if id_gate is not None:
+            while not id_gate.is_set():
+                if not context.is_active():
+                    return
+                id_gate.wait(0.01)
         with self._config_lock:
             self._config_active_ids.add(sub_id)
         try:

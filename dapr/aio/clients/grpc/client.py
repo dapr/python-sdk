@@ -1240,6 +1240,19 @@ class DaprGrpcClientAsync:
             handler(func (key, ConfigurationResponse)): the callback function to be called
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
+        If the stream breaks or the sidecar closes it (for example when daprd restarts), the
+        client subscribes again with backoff until the subscription is unsubscribed through
+        this client, or this client is closed. The handler keeps receiving the id returned
+        here. Only unsubscribe through the client that subscribed (or close that client): if
+        an UnsubscribeConfiguration for the id is sent any other way, for example through a
+        different client, the stream ends as if the sidecar had restarted and this client
+        subscribes again.
+
+        The handler may be a plain function or an ``async def`` function. Async handlers run
+        on the event loop. Plain functions run in a worker thread (asyncio.to_thread), so a
+        slow handler does not block the event loop. Handler calls run one at a time, in the
+        order the updates arrive.
+
         Returns:
             id (str): subscription id, which can be used to unsubscribe later
         """
@@ -1269,6 +1282,11 @@ class DaprGrpcClientAsync:
         returned by subscribe_configuration stays valid. If the watcher is between streams
         (waiting to reconnect), there is nothing to remove on the sidecar: the watcher is
         stopped locally and True is returned without calling the sidecar.
+
+        Unsubscribe through the client that subscribed. The subscription is re-established
+        whenever its stream ends without this client having unsubscribed, so an
+        UnsubscribeConfiguration sent through another client only ends the current stream
+        and this client subscribes again.
 
         Args:
             store_name (str): the state store name to unsubscribe from

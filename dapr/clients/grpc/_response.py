@@ -693,6 +693,7 @@ _CONFIG_FIRST_SUBSCRIBE_NON_RETRYABLE_CODES = frozenset(
     {
         StatusCode.INVALID_ARGUMENT,
         StatusCode.NOT_FOUND,
+        StatusCode.FAILED_PRECONDITION,
         StatusCode.PERMISSION_DENIED,
         StatusCode.UNAUTHENTICATED,
         StatusCode.UNIMPLEMENTED,
@@ -710,6 +711,60 @@ _CONFIG_RESUBSCRIBE_NON_RETRYABLE_CODES = frozenset(
         StatusCode.UNIMPLEMENTED,
     }
 )
+
+# While reconnecting keeps failing, the failure is logged at WARNING on the first attempt and
+# on every Nth consecutive failed attempt after it, and at DEBUG in between, so an outage that
+# does not end (for example a store removed from the sidecar) stays visible in the logs.
+CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES = 10
+# Request metadata keys (compared case-insensitively) that only apply to subscribing and are
+# left out of the GetConfiguration read after a reconnect. The PostgreSQL store turns every
+# GetConfiguration metadata entry into a column filter, so passing its notify channel there
+# would match no rows.
+_CONFIG_SUBSCRIBE_ONLY_METADATA_KEYS = frozenset({'pgnotifychannel'})
+
+
+def config_catch_up_metadata(subscribe_metadata: Mapping[str, str]) -> Dict[str, str]:
+    """Returns the metadata for the GetConfiguration read after a reconnect: the subscribe
+    metadata without the subscribe-only keys."""
+    return {
+        key: value
+        for key, value in subscribe_metadata.items()
+        if key.lower() not in _CONFIG_SUBSCRIBE_ONLY_METADATA_KEYS
+    }
+
+
+def log_config_stream_failure(
+    log: logging.Logger,
+    keys: Optional[List[str]],
+    store_name: Optional[str],
+    error: BaseException,
+    failures: int,
+    outage_started_at: float,
+) -> None:
+    """Logs failed reconnect attempt number ``failures`` (1-based) of the current outage, which
+    started at ``outage_started_at`` (time.monotonic()). See
+    CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES for the log level."""
+    warn = failures == 1 or failures % CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES == 0
+    level = logging.WARNING if warn else logging.DEBUG
+    if failures == 1:
+        log.log(
+            level,
+            'Configuration subscription stream for keys %s on store %s failed, reconnecting: %s',
+            keys,
+            store_name,
+            describe_config_error(error),
+        )
+        return
+    log.log(
+        level,
+        'Configuration subscription stream for keys %s on store %s failed, reconnecting: %s '
+        '(still failing after %d attempts over %.0f s)',
+        keys,
+        store_name,
+        describe_config_error(error),
+        failures,
+        time.monotonic() - outage_started_at,
+    )
 
 
 def config_reconnect_delay(attempt: int) -> float:
@@ -770,7 +825,17 @@ class ConfigurationWatcher:
     (not after the first subscribe) the watcher reads the current values of the keys with
     GetConfiguration and passes them to the handler, if there are any. That delivers values
     that changed while the stream was down, and may repeat values that did not change. If the
-    read fails, a warning is logged and the subscription carries on.
+    read fails, a warning is logged and the subscription carries on. The read leaves out
+    subscribe-only metadata (see config_catch_up_metadata).
+
+    Right after a reconnect, values may repeat and may briefly arrive out of order: an update
+    that reached the new stream before the read is delivered after the read's result, which
+    can already hold a newer value. So until the next update to a key, the last value
+    delivered for it is not guaranteed to be the newest.
+
+    Every failed reconnect attempt is logged (see CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES for
+    which ones are warnings). The watcher keeps retrying errors that may clear up, including a
+    store that is missing on the sidecar, for as long as the subscription is not stopped.
 
     ``on_exit`` is called with the watcher when its thread exits, whether it was stopped or
     gave up on its own.
@@ -876,13 +941,17 @@ class ConfigurationWatcher:
         handler: Callable[[Text, ConfigurationResponse], None],
     ) -> None:
         attempt = 0
-        outage_reported = False
+        # Consecutive failed attempts since the last stream that delivered an id.
+        failures = 0
+        outage_started_at = 0.0
         try:
             while not self._stop_event.is_set():
                 with self._lock:
                     self._stream_established = False
                 try:
                     self._consume_stream(stub, req, handler)
+                    if self._stream_established:
+                        failures = 0
                     if not self._stop_event.is_set():
                         logger.info(
                             'Configuration subscription stream for keys %s on store %s was '
@@ -901,18 +970,14 @@ class ConfigurationWatcher:
                             describe_config_error(error),
                         )
                         break
-                    # Warn once per outage; the retries after that go to DEBUG until a new
-                    # stream is up, which is logged at INFO.
-                    first_failure = self._stream_established or not outage_reported
-                    logger.log(
-                        logging.WARNING if first_failure else logging.DEBUG,
-                        'Configuration subscription stream for keys %s on store %s failed, '
-                        'reconnecting: %s',
-                        self.keys,
-                        self.store_name,
-                        describe_config_error(error),
+                    if self._stream_established:
+                        failures = 0
+                    if failures == 0:
+                        outage_started_at = time.monotonic()
+                    failures += 1
+                    log_config_stream_failure(
+                        logger, self.keys, self.store_name, error, failures, outage_started_at
                     )
-                    outage_reported = True
                 finally:
                     with self._lock:
                         self._call = None
@@ -988,7 +1053,9 @@ class ConfigurationWatcher:
         """Reads the current values of the subscribed keys and passes them to the handler, so
         changes made while the stream was down are not lost."""
         get_req = api_v1.GetConfigurationRequest(
-            store_name=req.store_name, keys=req.keys, metadata=req.metadata
+            store_name=req.store_name,
+            keys=req.keys,
+            metadata=config_catch_up_metadata(req.metadata),
         )
         try:
             response = stub.GetConfiguration(get_req, timeout=CONFIG_SUBSCRIBE_TIMEOUT_SECONDS)
