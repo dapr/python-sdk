@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from grpc import (  # type: ignore
     ClientCallDetails,
@@ -34,7 +34,7 @@ _UNBOUNDED_WAIT_METHODS = (
 )
 
 
-def _is_unbounded_wait(method) -> bool:
+def _is_unbounded_wait(method: Union[str, bytes]) -> bool:
     if isinstance(method, bytes):
         method = method.decode('utf-8', errors='replace')
     return method in _UNBOUNDED_WAIT_METHODS

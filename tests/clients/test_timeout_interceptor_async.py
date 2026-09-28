@@ -76,6 +76,7 @@ class DaprClientTimeoutInterceptorAsyncTests(unittest.TestCase):
             '/TaskHubSidecarService/WaitForInstanceStart',
             '/TaskHubSidecarService/WaitForInstanceCompletion',
             b'/TaskHubSidecarService/WaitForInstanceCompletion',
+            b'/TaskHubSidecarService/WaitForInstanceStart',
         ):
             with self.subTest(method=method):
                 continuation = Mock()
@@ -108,3 +109,21 @@ class DaprClientTimeoutInterceptorAsyncTests(unittest.TestCase):
             continuation, client_call_details, request
         )
         self.assertEqual(7, continuation.call_args[0][0].timeout)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_workflow_waits_keep_an_explicit_timeout(self):
+        # A wait with a caller timeout must stay bounded by it.
+        continuation = Mock()
+        request = Mock()
+        client_call_details = Mock()
+        client_call_details.method = b'/TaskHubSidecarService/WaitForInstanceCompletion'
+        client_call_details.timeout = 5
+        client_call_details.metadata = 'metadata'
+        client_call_details.credentials = 'credentials'
+        client_call_details.wait_for_ready = 'wait_for_ready'
+
+        DaprClientTimeoutInterceptorAsync().intercept_unary_unary(
+            continuation, client_call_details, request
+        )
+        continuation.assert_called_once_with(client_call_details, request)
+        self.assertEqual(5, continuation.call_args[0][0].timeout)
