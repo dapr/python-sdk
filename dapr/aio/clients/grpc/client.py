@@ -92,6 +92,9 @@ from dapr.clients.grpc._state import StateItem, StateOptions
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamInactiveError
+from dapr.credentials._grpc import build_async_channel_credentials
+from dapr.credentials._settings import resolve_default_credential_provider
+from dapr.credentials.manager import AsyncCredentialManager
 from dapr.proto import api_service_v1, api_v1, common_v1
 
 
@@ -130,6 +133,7 @@ class DaprGrpcClientAsync:
         ] = None,
         max_grpc_message_length: Optional[int] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        credential_manager: Optional[AsyncCredentialManager] = None,
     ):
         """Connects to Dapr Runtime and initialize gRPC client stub.
 
@@ -143,19 +147,61 @@ class DaprGrpcClientAsync:
                 message length in bytes. When omitted, the env var
                 ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` is consulted to set the
                 receive limit (matches the Java SDK property of the same name).
+            credential_manager (AsyncCredentialManager, optional): workload identity
+                credentials, sent instead of ``DAPR_API_TOKEN`` over a TLS channel. Defaults to
+                one built from the ``DAPR_WORKLOAD_IDENTITY_*`` settings, if set. Requires a
+                running event loop.
         """
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
         self._uri = resolve_grpc_endpoint(address)
-        credentials = self.get_credentials() if self._uri.tls else None
+        self._background_start_task: Optional['asyncio.Task'] = None
+        self._credential_manager, self._owns_credential_manager = self._resolve_credential_manager(
+            credential_manager
+        )
+
+        if self._credential_manager is not None:
+            self._credential_manager.ensure_current_loop()
+            self._init_with_credential_manager(address, interceptors, max_grpc_message_length)
+            self._background_start_task = asyncio.ensure_future(self._credential_manager.start())
+        else:
+            credentials = self.get_credentials() if self._uri.tls else None
+            self._channel = create_aio_channel(
+                address,
+                interceptors=interceptors,
+                max_grpc_message_length=max_grpc_message_length,
+                credentials=credentials,
+            )
+            self._stub = api_service_v1.DaprStub(self._channel)
+
+    @staticmethod
+    def _resolve_credential_manager(
+        explicit: Optional[AsyncCredentialManager],
+    ) -> 'tuple[Optional[AsyncCredentialManager], bool]':
+        if explicit is not None:
+            return explicit, False
+        provider = resolve_default_credential_provider()
+        if provider is None:
+            return None, False
+        return AsyncCredentialManager(provider), True
+
+    def _init_with_credential_manager(
+        self,
+        address: Optional[str],
+        interceptors: Optional[Sequence[grpc.aio.ClientInterceptor]],
+        max_grpc_message_length: Optional[int],
+    ) -> None:
+        manager = self._credential_manager
+        assert manager is not None
+        channel_credentials = build_async_channel_credentials(manager, self.get_credentials())
         self._channel = create_aio_channel(
             address,
             interceptors=interceptors,
             max_grpc_message_length=max_grpc_message_length,
-            credentials=credentials,
+            credentials=channel_credentials,
+            suppress_api_token_interceptor=True,
         )
-
         self._stub = api_service_v1.DaprStub(self._channel)
 
     @staticmethod
@@ -164,8 +210,12 @@ class DaprGrpcClientAsync:
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
+        if self._background_start_task is not None:
+            self._background_start_task.cancel()
         if hasattr(self, '_channel') and self._channel:
             await self._channel.close()
+        if self._credential_manager is not None and self._owns_credential_manager:
+            await self._credential_manager.close()
 
     async def __aenter__(self) -> Self:  # type: ignore
         return self

@@ -24,6 +24,7 @@ from dapr.clients.grpc._jobs import ConstantFailurePolicy, DropFailurePolicy, Fa
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClient
 from dapr.conf import settings
+from dapr.credentials.manager import AsyncCredentialManager
 
 __all__ = [
     'DaprClient',
@@ -67,6 +68,7 @@ class DaprClient(DaprGrpcClientAsync):
         ] = None,
         http_timeout_seconds: Optional[int] = None,
         max_grpc_message_length: Optional[int] = None,
+        credential_manager: Optional[AsyncCredentialManager] = None,
     ):
         """Connects to Dapr Runtime and via gRPC and HTTP.
 
@@ -80,8 +82,13 @@ class DaprClient(DaprGrpcClientAsync):
             http_timeout_seconds (int): specify a timeout for http connections
             max_grpc_messsage_length (int, optional): The maximum grpc send and receive
                 message length in bytes.
+            credential_manager (AsyncCredentialManager, optional): workload identity
+                credentials, sent instead of ``DAPR_API_TOKEN`` by both gRPC and HTTP
+                invocation.
         """
-        super().__init__(address, interceptors, max_grpc_message_length)
+        super().__init__(
+            address, interceptors, max_grpc_message_length, credential_manager=credential_manager
+        )
         self.invocation_client = None
 
         invocation_protocol = settings.DAPR_API_METHOD_INVOCATION_PROTOCOL.upper()
@@ -90,7 +97,9 @@ class DaprClient(DaprGrpcClientAsync):
             if http_timeout_seconds is None:
                 http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
             self.invocation_client = DaprInvocationHttpClient(
-                headers_callback=headers_callback, timeout=http_timeout_seconds
+                headers_callback=headers_callback,
+                timeout=http_timeout_seconds,
+                credential_manager=self._credential_manager,
             )
         elif invocation_protocol == 'GRPC':
             pass

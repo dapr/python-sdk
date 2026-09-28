@@ -53,7 +53,11 @@ strands = [
 # exists so users get a consistent `pip install dapr[<ext>]` shape and so the
 # extra is reserved if workflow ever grows external deps.
 workflow = []
-all = ["dapr[fastapi,flask,grpc,langgraph,strands,workflow]"]
+# RFC 8693 token exchange workload identity credentials.
+workload-identity = [
+    "httpx>=0.27.0,<1.0.0",
+]
+all = ["dapr[fastapi,flask,grpc,langgraph,strands,workflow,workload-identity]"]
 
 [project.urls]
 Documentation = "https://github.com/dapr/docs"

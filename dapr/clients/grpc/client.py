@@ -91,6 +91,9 @@ from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
+from dapr.credentials._grpc import build_channel_credentials
+from dapr.credentials._settings import resolve_default_credential_provider
+from dapr.credentials.manager import CredentialManager
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.version import __version__
 
@@ -130,6 +133,7 @@ class DaprGrpcClient:
         ] = None,
         max_grpc_message_length: Optional[int] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        credential_manager: Optional[CredentialManager] = None,
     ):
         """Connects to Dapr Runtime and initializes gRPC client stub.
 
@@ -144,6 +148,9 @@ class DaprGrpcClient:
                 ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` is consulted to set the
                 receive limit (matches the Java SDK property of the same name).
             retry_policy (RetryPolicy optional): Specifies retry behaviour
+            credential_manager (CredentialManager, optional): workload identity credentials,
+                sent instead of ``DAPR_API_TOKEN`` over a TLS channel. Defaults to one built
+                from the ``DAPR_WORKLOAD_IDENTITY_*`` settings, if set.
         """
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
@@ -172,6 +179,15 @@ class DaprGrpcClient:
             raise DaprInternalError(f'{error}') from error
 
         set_default_grpc_dns_resolver()
+
+        self._credential_manager, self._owns_credential_manager = self._resolve_credential_manager(
+            credential_manager
+        )
+
+        if self._credential_manager is not None:
+            self._credential_manager.start()
+            self._init_with_credential_manager(options, interceptors)
+            return
 
         if self._uri.tls:
             self._channel = grpc.secure_channel(  # type: ignore
@@ -204,6 +220,32 @@ class DaprGrpcClient:
         self._stub = api_service_v1.DaprStub(self._channel)
 
     @staticmethod
+    def _resolve_credential_manager(
+        explicit: Optional[CredentialManager],
+    ) -> 'tuple[Optional[CredentialManager], bool]':
+        if explicit is not None:
+            return explicit, False
+        provider = resolve_default_credential_provider()
+        if provider is None:
+            return None, False
+        return CredentialManager(provider), True
+
+    def _init_with_credential_manager(
+        self,
+        options: List[Any],
+        interceptors: Optional[Sequence[Any]],
+    ) -> None:
+        manager = self._credential_manager
+        assert manager is not None
+        channel_credentials = build_channel_credentials(manager, self.get_credentials())
+        channel = grpc.secure_channel(self._uri.endpoint, channel_credentials, options=options)  # type: ignore
+        channel = grpc.intercept_channel(channel, DaprClientTimeoutInterceptor())  # type: ignore
+        if interceptors:
+            channel = grpc.intercept_channel(channel, *interceptors)  # type: ignore
+        self._channel = channel
+        self._stub = api_service_v1.DaprStub(self._channel)
+
+    @staticmethod
     def get_credentials():
         # This method is used (overwritten) from tests
         # to return credentials for self-signed certificates
@@ -213,6 +255,10 @@ class DaprGrpcClient:
         """Closes Dapr runtime gRPC channel."""
         if hasattr(self, '_channel') and self._channel:
             self._channel.close()
+        if getattr(self, '_credential_manager', None) is not None and getattr(
+            self, '_owns_credential_manager', False
+        ):
+            self._credential_manager.close()  # type: ignore[union-attr]
 
     def __del__(self):
         self.close()
