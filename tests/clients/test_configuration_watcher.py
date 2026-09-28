@@ -16,7 +16,7 @@ limitations under the License.
 import threading
 import time
 import unittest
-from typing import Callable, List, Tuple
+from typing import Callable, Iterator, List, Tuple
 from unittest.mock import patch
 
 import grpc
@@ -27,6 +27,7 @@ from dapr.clients.grpc._response import (
     ConfigurationResponse,
     ConfigurationWatcher,
     config_reconnect_delay,
+    describe_config_error,
     is_retryable_config_error,
 )
 from dapr.clients.grpc.client import DaprGrpcClient
@@ -48,11 +49,33 @@ def wait_until(condition: Callable[[], bool], timeout: float = WAIT_TIMEOUT_SECO
 
 
 class _FakeRpcError(grpc.RpcError):
-    def __init__(self, code: grpc.StatusCode):
+    def __init__(self, code: grpc.StatusCode, details: str = ''):
         self._code = code
+        self._details = details
 
     def code(self) -> grpc.StatusCode:
         return self._code
+
+    def details(self) -> str:
+        return self._details
+
+
+class _CancelRecordingCall:
+    """Wraps a stream call and records cancel(). The call may be a plain generator when
+    OpenTelemetry grpc instrumentation is active, so it is not asked whether it was cancelled."""
+
+    def __init__(self, call: Iterator):
+        self._call = call
+        self.cancel_called = False
+
+    def cancel(self) -> None:
+        self.cancel_called = True
+        cancel = getattr(self._call, 'cancel', None)
+        if callable(cancel):
+            cancel()
+
+    def __iter__(self) -> Iterator:
+        return iter(self._call)
 
 
 class ConfigurationRetryHelpersTests(unittest.TestCase):
@@ -83,6 +106,33 @@ class ConfigurationRetryHelpersTests(unittest.TestCase):
             self.assertFalse(is_retryable_config_error(_FakeRpcError(code)), code)
         self.assertFalse(is_retryable_config_error(ValueError('closed channel')))
 
+    def test_retryable_classification_after_the_subscription_was_established(self):
+        # daprd reports a failed store Subscribe (e.g. backend unreachable) and a store that
+        # is not loaded as INVALID_ARGUMENT; once a subscription existed those are retried.
+        for code in (
+            grpc.StatusCode.INVALID_ARGUMENT,
+            grpc.StatusCode.NOT_FOUND,
+            grpc.StatusCode.FAILED_PRECONDITION,
+            grpc.StatusCode.UNAVAILABLE,
+            grpc.StatusCode.INTERNAL,
+        ):
+            self.assertTrue(is_retryable_config_error(_FakeRpcError(code), established=True), code)
+        for code in (
+            grpc.StatusCode.UNIMPLEMENTED,
+            grpc.StatusCode.PERMISSION_DENIED,
+            grpc.StatusCode.UNAUTHENTICATED,
+        ):
+            self.assertFalse(is_retryable_config_error(_FakeRpcError(code), established=True), code)
+        self.assertFalse(is_retryable_config_error(ValueError('closed'), established=True))
+
+    def test_describe_config_error_is_one_line(self):
+        self.assertEqual(
+            describe_config_error(_FakeRpcError(grpc.StatusCode.UNAVAILABLE, 'sidecar down')),
+            'UNAVAILABLE: sidecar down',
+        )
+        self.assertEqual(describe_config_error(_FakeRpcError(grpc.StatusCode.INTERNAL)), 'INTERNAL')
+        self.assertEqual(describe_config_error(ValueError('closed')), 'ValueError: closed')
+
 
 class ConfigurationWatcherReconnectTests(unittest.TestCase):
     grpc_port = 50021
@@ -104,6 +154,10 @@ class ConfigurationWatcherReconnectTests(unittest.TestCase):
         server.config_stream_plans.clear()
         server.config_subscribe_requests.clear()
         server.config_unsubscribe_requests.clear()
+        server.config_get_requests.clear()
+        # No current values unless a test sets them, so reconnects add no handler calls.
+        server.config_values = {}
+        server.config_get_error = None
         self.delays: List[float] = []
         self.updates: List[Tuple[str, str]] = []
 
@@ -184,9 +238,199 @@ class ConfigurationWatcherReconnectTests(unittest.TestCase):
         self.assertEqual(len(server.config_subscribe_requests), 2)
 
     def test_unsubscribe_unknown_id_is_sent_as_is(self):
-        self.assertTrue(self.client.unsubscribe_configuration(STORE, 'not-tracked'))
+        # The client does not track this id, so it goes to the sidecar unchanged and the
+        # sidecar's answer (ok=False: no such subscription) is returned.
+        self.assertFalse(self.client.unsubscribe_configuration(STORE, 'not-tracked'))
         self.assertEqual(
             [r.id for r in self._fake_dapr_server.config_unsubscribe_requests], ['not-tracked']
+        )
+
+    def test_unsubscribe_while_reconnecting_stops_locally(self):
+        server = self._fake_dapr_server
+        server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'end': 'abort'},
+                {'id': 'second', 'updates': [{'k': 'v2'}], 'end': 'hold'},
+            ]
+        )
+        waiting = threading.Event()
+
+        def wait_until_stopped(watcher: ConfigurationWatcher, delay: float) -> bool:
+            waiting.set()
+            return watcher._stop_event.wait(WAIT_TIMEOUT_SECONDS)
+
+        with patch.object(ConfigurationWatcher, '_wait_before_retry', wait_until_stopped):
+            subscription_id = self.subscribe()
+            watcher = self.watcher(subscription_id)
+            self.assertTrue(waiting.wait(WAIT_TIMEOUT_SECONDS))
+            self.assertIsNone(watcher.live_stream_id())
+
+            self.assertTrue(self.client.unsubscribe_configuration(STORE, subscription_id))
+
+        # The dead stream's id would get ok=False from the sidecar, so nothing is sent.
+        self.assertEqual(server.config_unsubscribe_requests, [])
+        thread = watcher._thread
+        assert thread is not None
+        self.assertFalse(thread.is_alive())
+        self.assertNotIn((STORE, subscription_id), self.client._config_watchers)
+        self.assertEqual(len(server.config_subscribe_requests), 1)
+
+    def test_invalid_argument_after_the_subscription_was_established_is_retried(self):
+        # daprd answers INVALID_ARGUMENT when the store's Subscribe fails, for example while
+        # its backend is unreachable during the same outage that broke the stream.
+        self._fake_dapr_server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'updates': [{'k': 'v1'}], 'end': 'abort'},
+                {'reject': grpc.StatusCode.INVALID_ARGUMENT},
+                {'id': 'third', 'updates': [{'k': 'v3'}], 'end': 'hold'},
+            ]
+        )
+
+        self.assertEqual(self.subscribe(), 'first')
+
+        self.assertTrue(wait_until(lambda: len(self.updates) == 2), self.updates)
+        self.assertEqual(self.updates, [('first', 'v1'), ('first', 'v3')])
+        self.assertEqual(len(self._fake_dapr_server.config_subscribe_requests), 3)
+        self.assertEqual(self.watcher('first').live_stream_id(), 'third')
+
+    def test_reconnect_delivers_current_values(self):
+        server = self._fake_dapr_server
+        server.config_values = {'k': 'changed-while-down', 'other': 'x'}
+        server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'updates': [{'k': 'v1'}], 'end': 'abort'},
+                {'id': 'second', 'end': 'hold'},
+            ]
+        )
+
+        subscription_id = self.client.subscribe_configuration(
+            store_name=STORE, keys=['k'], handler=self.handler, config_metadata={'m': '1'}
+        )
+
+        self.assertTrue(wait_until(lambda: len(self.updates) == 2), self.updates)
+        self.assertEqual(self.updates, [('first', 'v1'), ('first', 'changed-while-down')])
+        self.assertEqual(subscription_id, 'first')
+        self.assertEqual(len(server.config_get_requests), 1)
+        get_request = server.config_get_requests[0]
+        self.assertEqual(get_request.store_name, STORE)
+        self.assertEqual(list(get_request.keys), ['k'])
+        self.assertEqual(dict(get_request.metadata), {'m': '1'})
+
+    def test_first_subscribe_does_not_read_current_values(self):
+        server = self._fake_dapr_server
+        server.config_values = {'k': 'current'}
+        server.config_stream_plans.append({'id': 'first', 'updates': [{'k': 'v1'}], 'end': 'hold'})
+
+        self.subscribe()
+
+        self.assertTrue(wait_until(lambda: len(self.updates) == 1), self.updates)
+        time.sleep(0.2)
+        self.assertEqual(self.updates, [('first', 'v1')])
+        self.assertEqual(server.config_get_requests, [])
+
+    def test_failed_current_values_read_keeps_the_subscription(self):
+        server = self._fake_dapr_server
+        server.config_get_error = grpc.StatusCode.INTERNAL
+        server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'updates': [{'k': 'v1'}], 'end': 'abort'},
+                {'id': 'second', 'updates': [{'k': 'v2'}], 'end': 'hold'},
+            ]
+        )
+
+        with self.assertLogs('dapr.clients.grpc._response', level='WARNING') as logs:
+            self.subscribe()
+            self.assertTrue(wait_until(lambda: len(self.updates) == 2), self.updates)
+
+        self.assertEqual(self.updates, [('first', 'v1'), ('first', 'v2')])
+        self.assertEqual(len(server.config_get_requests), 1)
+        self.assertEqual(len(server.config_subscribe_requests), 2)
+        self.assertTrue(
+            any('Could not read the current configuration' in line for line in logs.output),
+            logs.output,
+        )
+
+    def test_watcher_that_gives_up_is_removed_from_the_client(self):
+        release = threading.Event()
+        self._fake_dapr_server.config_stream_plans.append(
+            {
+                'id': 'first',
+                'end': 'abort',
+                'code': grpc.StatusCode.PERMISSION_DENIED,
+                'wait': release,
+            }
+        )
+        subscription_id = self.subscribe()
+        self.assertIn((STORE, subscription_id), self.client._config_watchers)
+
+        release.set()
+
+        self.assertTrue(
+            wait_until(lambda: (STORE, subscription_id) not in self.client._config_watchers)
+        )
+
+    @patch('dapr.clients.grpc._response._CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS', 30.0)
+    def test_stop_requested_while_opening_a_stream_cancels_it(self):
+        release = threading.Event()
+        self._fake_dapr_server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'end': 'abort', 'wait': release},
+                {'id': 'second', 'end': 'hold'},
+            ]
+        )
+        subscription_id = self.subscribe()
+        watcher = self.watcher(subscription_id)
+        stub = self.client._stub
+        real_subscribe = stub.SubscribeConfigurationAlpha1
+        opened: List[_CancelRecordingCall] = []
+
+        def subscribe_and_stop(req):
+            call = _CancelRecordingCall(real_subscribe(req))
+            opened.append(call)
+            # stop() arrives while the watcher is opening the reconnect stream.
+            watcher.request_stop()
+            return call
+
+        stub.SubscribeConfigurationAlpha1 = subscribe_and_stop
+        release.set()
+
+        self.assertTrue(wait_until(lambda: watcher.exited))
+        self.assertEqual(len(opened), 1)
+        self.assertTrue(opened[0].cancel_called)
+        self.assertIsNone(watcher._call)
+        started = time.monotonic()
+        self.client.close()
+        self.assertLess(time.monotonic() - started, 5.0)
+
+    def test_reconnect_failures_are_logged_concisely_and_once_per_outage(self):
+        self._fake_dapr_server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'end': 'abort'},
+                {'reject': grpc.StatusCode.UNAVAILABLE},
+                {'reject': grpc.StatusCode.UNAVAILABLE},
+                {'id': 'second', 'updates': [{'k': 'v2'}], 'end': 'hold'},
+            ]
+        )
+
+        with self.assertLogs('dapr.clients.grpc._response', level='DEBUG') as logs:
+            self.subscribe()
+            self.assertTrue(wait_until(lambda: len(self.updates) == 1), self.updates)
+
+        failures = [r for r in logs.records if 'failed, reconnecting' in r.getMessage()]
+        self.assertEqual(
+            [r.levelname for r in failures], ['WARNING', 'DEBUG', 'DEBUG'], logs.output
+        )
+        for record in failures:
+            message = record.getMessage()
+            self.assertNotIn('\n', message)
+            self.assertNotIn('Rendezvous', message)
+            self.assertIn(': UNAVAILABLE: ', message)
+        self.assertTrue(
+            any(
+                r.levelname == 'INFO' and 'reconnected with new id second' in r.getMessage()
+                for r in logs.records
+            ),
+            logs.output,
         )
 
     def test_non_retryable_error_stops_without_reconnecting(self):

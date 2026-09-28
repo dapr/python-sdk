@@ -74,12 +74,22 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         # {key: value} dicts pushed after the first response), and 'end' ('abort' fails the
         # stream with 'code' (default UNAVAILABLE), 'eof' closes cleanly, 'hold' keeps the stream
         # open until the id is unsubscribed or the client goes away). 'reject' fails the call with
-        # that status code before any response is sent.
+        # that status code before any response is sent. 'wait' (a threading.Event) delays the
+        # 'end' behaviour until the event is set.
         self.config_stream_plans: List[Dict[str, Any]] = []
         self.config_subscribe_requests: List[api_v1.SubscribeConfigurationRequest] = []
         self.config_unsubscribe_requests: List[api_v1.UnsubscribeConfigurationRequest] = []
         self._config_unsubscribed: set = set()
+        # Ids of SubscribeConfigurationAlpha1 streams that are open; like daprd,
+        # UnsubscribeConfiguration returns ok=False for any other id.
+        self._config_active_ids: set = set()
         self._config_lock = threading.Lock()
+        # GetConfiguration: when config_values is set, it returns those values (for the
+        # requested keys, or all of them if no keys are given) instead of the default
+        # 'value' for every key; config_get_error makes it fail with that status code.
+        self.config_values: Optional[Dict[str, str]] = None
+        self.config_get_error: Optional[grpc.StatusCode] = None
+        self.config_get_requests: List[api_v1.GetConfigurationRequest] = []
 
     def set_bulk_publish_unimplemented_on_stable_next(self) -> None:
         """Make the next BulkPublishEvent (stable) call return UNIMPLEMENTED.
@@ -496,7 +506,18 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return api_v1.GetBulkSecretResponse(data=resp)
 
     def GetConfiguration(self, request, context):
+        with self._config_lock:
+            self.config_get_requests.append(request)
+            values = None if self.config_values is None else dict(self.config_values)
+            get_error = self.config_get_error
+        if get_error is not None:
+            context.abort(get_error, 'GetConfiguration failed by test setting')
         items = dict()
+        if values is not None:
+            for key, value in values.items():
+                if not request.keys or key in request.keys:
+                    items[key] = ConfigurationItem(value=value, version='2')
+            return api_v1.GetConfigurationResponse(items=items)
         for key in request.keys:
             items[str(key)] = ConfigurationItem(value='value', version='1.5.0')
         return api_v1.GetConfigurationResponse(items=items)
@@ -518,26 +539,44 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         if plan.get('reject') is not None:
             context.abort(plan['reject'], 'rejected by test plan')
         sub_id = plan.get('id', 'sub-id')
-        yield api_v1.SubscribeConfigurationResponse(id=sub_id)
-        for update in plan.get('updates', []):
-            items = {
-                key: ConfigurationItem(value=value, version='1') for key, value in update.items()
-            }
-            yield api_v1.SubscribeConfigurationResponse(id=sub_id, items=items)
+        with self._config_lock:
+            self._config_active_ids.add(sub_id)
+        try:
+            yield api_v1.SubscribeConfigurationResponse(id=sub_id)
+            for update in plan.get('updates', []):
+                items = {
+                    key: ConfigurationItem(value=value, version='1')
+                    for key, value in update.items()
+                }
+                yield api_v1.SubscribeConfigurationResponse(id=sub_id, items=items)
 
-        end_behavior = plan.get('end', 'hold')
-        if end_behavior == 'abort':
-            context.abort(plan.get('code', grpc.StatusCode.UNAVAILABLE), 'simulated disconnection')
-        elif end_behavior == 'hold':
-            while context.is_active():
-                with self._config_lock:
-                    if sub_id in self._config_unsubscribed:
-                        return
-                time.sleep(0.01)
+            gate = plan.get('wait')
+            if gate is not None:
+                # Hold the stream open until the test sets this threading.Event.
+                gate.wait(timeout=10)
+            end_behavior = plan.get('end', 'hold')
+            if end_behavior == 'abort':
+                context.abort(
+                    plan.get('code', grpc.StatusCode.UNAVAILABLE), 'simulated disconnection'
+                )
+            elif end_behavior == 'hold':
+                while context.is_active():
+                    with self._config_lock:
+                        if sub_id in self._config_unsubscribed:
+                            return
+                    time.sleep(0.01)
+        finally:
+            with self._config_lock:
+                self._config_active_ids.discard(sub_id)
 
     def UnsubscribeConfiguration(self, request, context):
         with self._config_lock:
             self.config_unsubscribe_requests.append(request)
+            if request.id not in self._config_active_ids:
+                return api_v1.UnsubscribeConfigurationResponse(
+                    ok=False, message=f'subscription {request.id} does not exist'
+                )
+            self._config_active_ids.discard(request.id)
             self._config_unsubscribed.add(request.id)
         return api_v1.UnsubscribeConfigurationResponse(ok=True)
 

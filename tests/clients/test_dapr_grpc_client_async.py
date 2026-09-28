@@ -856,8 +856,9 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_unsubscribe_configuration(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        # Like daprd, the fake sidecar answers ok=False for an id it has no subscription for.
         res = await dapr.unsubscribe_configuration(store_name='configurationstore', id='k')
-        self.assertTrue(res)
+        self.assertFalse(res)
 
     async def test_query_state(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')

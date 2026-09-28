@@ -16,6 +16,7 @@ limitations under the License.
 import socket
 import threading
 import time
+import weakref
 from typing import Any, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
 from urllib.parse import urlencode
 from warnings import warn
@@ -1319,21 +1320,43 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('Config store name cannot be empty to get the configuration')
 
-        configWatcher = ConfigurationWatcher()
+        configWatcher = ConfigurationWatcher(on_exit=self._config_watcher_exit_callback())
         id = configWatcher.watch_configuration(
             self._stub, store_name, keys, handler, config_metadata
         )
         if id:
             with self._config_watchers_lock:
-                self._config_watchers[(store_name, id)] = configWatcher
+                # A watcher that already gave up has nothing left to unsubscribe.
+                if not configWatcher.exited:
+                    self._config_watchers[(store_name, id)] = configWatcher
         return id
+
+    def _config_watcher_exit_callback(self) -> Callable[[ConfigurationWatcher], None]:
+        # Hold the client weakly so a running watcher does not keep an unclosed client alive.
+        client_ref = weakref.ref(self)
+
+        def on_exit(watcher: ConfigurationWatcher) -> None:
+            client = client_ref()
+            if client is not None:
+                client._forget_config_watcher(watcher)
+
+        return on_exit
+
+    def _forget_config_watcher(self, watcher: ConfigurationWatcher) -> None:
+        """Drops a watcher from _config_watchers once its thread has exited."""
+        key = (watcher.store_name or '', watcher.subscription_id)
+        with self._config_watchers_lock:
+            if self._config_watchers.get(key) is watcher:
+                del self._config_watchers[key]
 
     def unsubscribe_configuration(self, store_name: str, id: str) -> bool:
         """Unsubscribes from configuration changes.
 
         If the subscription was re-established after the stream broke (for example after a
         sidecar restart), the sidecar knows it under a new id; that id is used here, so the id
-        returned by subscribe_configuration stays valid.
+        returned by subscribe_configuration stays valid. If the watcher is between streams
+        (waiting to reconnect), there is nothing to remove on the sidecar: the watcher is
+        stopped locally and True is returned without calling the sidecar.
 
         Args:
             store_name (str): the state store name to unsubscribe from
@@ -1344,18 +1367,22 @@ class DaprGrpcClient:
         """
         with self._config_watchers_lock:
             watcher = self._config_watchers.pop((store_name, id), None)
-        server_id = id
-        if watcher is not None:
-            watcher.request_stop()
-            server_id = watcher.id or id
+        if watcher is None:
+            return self._send_unsubscribe_configuration(store_name, id)
+        watcher.request_stop()
+        server_id = watcher.live_stream_id()
         try:
-            req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=server_id)
-            response: api_v1.UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfiguration(
-                req
-            )
+            if server_id is None:
+                # Between streams (waiting to reconnect) the sidecar has no subscription to
+                # remove, so stopping the watcher is all there is to do.
+                return True
+            return self._send_unsubscribe_configuration(store_name, server_id)
         finally:
-            if watcher is not None:
-                watcher.stop()
+            watcher.stop()
+
+    def _send_unsubscribe_configuration(self, store_name: str, id: str) -> bool:
+        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
+        response: api_v1.UnsubscribeConfigurationResponse = self._stub.UnsubscribeConfiguration(req)
         return response.ok
 
     def try_lock(

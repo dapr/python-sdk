@@ -1246,20 +1246,29 @@ class DaprGrpcClientAsync:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('Config store name cannot be empty to get the configuration')
 
-        configWatcher = AsyncConfigurationWatcher()
+        configWatcher = AsyncConfigurationWatcher(on_exit=self._forget_config_watcher)
         id = await configWatcher.watch_configuration(
             self._stub, store_name, keys, handler, config_metadata
         )
-        if id:
+        # A watcher that already gave up has nothing left to unsubscribe.
+        if id and not configWatcher.exited:
             self._config_watchers[(store_name, id)] = configWatcher
         return id
+
+    def _forget_config_watcher(self, watcher: AsyncConfigurationWatcher) -> None:
+        """Drops a watcher from _config_watchers once its task has exited."""
+        key = (watcher.store_name or '', watcher.subscription_id)
+        if self._config_watchers.get(key) is watcher:
+            del self._config_watchers[key]
 
     async def unsubscribe_configuration(self, store_name: str, id: str) -> bool:
         """Unsubscribes from configuration changes.
 
         If the subscription was re-established after the stream broke (for example after a
         sidecar restart), the sidecar knows it under a new id; that id is used here, so the id
-        returned by subscribe_configuration stays valid.
+        returned by subscribe_configuration stays valid. If the watcher is between streams
+        (waiting to reconnect), there is nothing to remove on the sidecar: the watcher is
+        stopped locally and True is returned without calling the sidecar.
 
         Args:
             store_name (str): the state store name to unsubscribe from
@@ -1269,18 +1278,24 @@ class DaprGrpcClientAsync:
             bool: True if unsubscribed successfully, False otherwise
         """
         watcher = self._config_watchers.pop((store_name, id), None)
-        server_id = id
-        if watcher is not None:
-            watcher.request_stop()
-            server_id = watcher.id or id
+        if watcher is None:
+            return await self._send_unsubscribe_configuration(store_name, id)
+        watcher.request_stop()
+        server_id = watcher.live_stream_id()
         try:
-            req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=server_id)
-            response: api_v1.UnsubscribeConfigurationResponse = (
-                await self._stub.UnsubscribeConfiguration(req)
-            )
+            if server_id is None:
+                # Between streams (waiting to reconnect) the sidecar has no subscription to
+                # remove, so stopping the watcher is all there is to do.
+                return True
+            return await self._send_unsubscribe_configuration(store_name, server_id)
         finally:
-            if watcher is not None:
-                await watcher.stop()
+            await watcher.stop()
+
+    async def _send_unsubscribe_configuration(self, store_name: str, id: str) -> bool:
+        req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
+        response: api_v1.UnsubscribeConfigurationResponse = (
+            await self._stub.UnsubscribeConfiguration(req)
+        )
         return response.ok
 
     async def try_lock(

@@ -24,6 +24,7 @@ import time
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     Generator,
@@ -686,11 +687,24 @@ _CONFIG_RECONNECT_JITTER_RATIO = 0.2
 CONFIG_STABLE_STREAM_SECONDS = 10.0
 # How long stop() waits for the watcher thread to exit after cancelling the stream.
 _CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS = 2.0
-# Errors that will not go away by resubscribing (bad request, missing store, auth).
-_CONFIG_NON_RETRYABLE_CODES = frozenset(
+# Errors that stop a subscription that was never established: subscribe_configuration then
+# returns None straight away instead of retrying a request the sidecar rejected.
+_CONFIG_FIRST_SUBSCRIBE_NON_RETRYABLE_CODES = frozenset(
     {
         StatusCode.INVALID_ARGUMENT,
         StatusCode.NOT_FOUND,
+        StatusCode.PERMISSION_DENIED,
+        StatusCode.UNAUTHENTICATED,
+        StatusCode.UNIMPLEMENTED,
+    }
+)
+# Errors that stop a subscription that was established before. daprd reports any failure of
+# the store's Subscribe call, including a backend that is briefly unreachable, as
+# INVALID_ARGUMENT, and a store that is not loaded yet after a restart as INVALID_ARGUMENT
+# too, so those are retried. Only errors a retry with the same request and credentials cannot
+# fix stop the subscription: the API is missing, or the sidecar rejects the caller.
+_CONFIG_RESUBSCRIBE_NON_RETRYABLE_CODES = frozenset(
+    {
         StatusCode.PERMISSION_DENIED,
         StatusCode.UNAUTHENTICATED,
         StatusCode.UNIMPLEMENTED,
@@ -713,31 +727,58 @@ def config_stream_was_stable(established_at: float) -> bool:
     return time.monotonic() - established_at >= CONFIG_STABLE_STREAM_SECONDS
 
 
-def is_retryable_config_error(error: BaseException) -> bool:
+def is_retryable_config_error(error: BaseException, established: bool = False) -> bool:
     """Returns True if a configuration subscription stream should be re-established after
-    ``error``. Only gRPC errors are retried, except the ones in _CONFIG_NON_RETRYABLE_CODES."""
+    ``error``.
+
+    Only gRPC errors are retried. ``established`` tells whether the subscription has had a
+    stream before: until then the codes in _CONFIG_FIRST_SUBSCRIBE_NON_RETRYABLE_CODES stop it,
+    afterwards only the codes in _CONFIG_RESUBSCRIBE_NON_RETRYABLE_CODES do.
+    """
     if not isinstance(error, RpcError):
         return False
     code = error.code() if callable(getattr(error, 'code', None)) else None
-    return code not in _CONFIG_NON_RETRYABLE_CODES
+    if established:
+        return code not in _CONFIG_RESUBSCRIBE_NON_RETRYABLE_CODES
+    return code not in _CONFIG_FIRST_SUBSCRIBE_NON_RETRYABLE_CODES
+
+
+def describe_config_error(error: BaseException) -> str:
+    """Returns a one-line description of ``error`` for log messages: the status code and
+    details for gRPC errors, instead of the multi-line repr of the call object."""
+    if isinstance(error, RpcError):
+        code = error.code() if callable(getattr(error, 'code', None)) else None
+        details = error.details() if callable(getattr(error, 'details', None)) else None
+        name = getattr(code, 'name', None) or 'UNKNOWN'
+        return f'{name}: {details}' if details else name
+    return f'{type(error).__name__}: {error}'
 
 
 class ConfigurationWatcher:
     """Reads a SubscribeConfigurationAlpha1 stream on a daemon thread and calls the handler
     for every update.
 
-    If the stream fails with a retryable error or is closed by the sidecar (for example when
-    daprd restarts), the watcher subscribes again with the same request, with exponential
-    backoff, until stop() is called or a non-retryable error is returned.
+    If the stream fails or is closed by the sidecar (for example when daprd restarts), the
+    watcher subscribes again with the same request, with exponential backoff, until stop() is
+    called or a non-retryable error is returned (see is_retryable_config_error).
 
     Each new stream gets a new id from the sidecar. ``subscription_id`` is the id of the first
     stream and stays the same; ``id`` is the id of the current stream and is the one to pass to
-    UnsubscribeConfiguration.
+    UnsubscribeConfiguration. The handler always receives ``subscription_id``.
+
+    A new stream only sends items for changes made after it opened. So after each reconnect
+    (not after the first subscribe) the watcher reads the current values of the keys with
+    GetConfiguration and passes them to the handler, if there are any. That delivers values
+    that changed while the stream was down, and may repeat values that did not change. If the
+    read fails, a warning is logged and the subscription carries on.
+
+    ``on_exit`` is called with the watcher when its thread exits, whether it was stopped or
+    gave up on its own.
     """
 
-    def __init__(self):
-        self.store_name = None
-        self.keys = None
+    def __init__(self, on_exit: Optional[Callable[['ConfigurationWatcher'], None]] = None):
+        self.store_name: Optional[str] = None
+        self.keys: Optional[List[str]] = None
         self.event: threading.Event = threading.Event()
         self.id: str = ''
         self.subscription_id: str = ''
@@ -747,6 +788,8 @@ class ConfigurationWatcher:
         self._thread: Optional[threading.Thread] = None
         self._stream_established = False
         self._established_at = 0.0
+        self._on_exit = on_exit
+        self._exited = False
 
     def watch_configuration(
         self,
@@ -784,6 +827,19 @@ class ConfigurationWatcher:
     def stopped(self) -> bool:
         return self._stop_event.is_set()
 
+    @property
+    def exited(self) -> bool:
+        """True once the watcher thread has finished (stopped or gave up)."""
+        return self._exited
+
+    def live_stream_id(self) -> Optional[str]:
+        """Returns the id of the current stream if one is open and the sidecar has sent its id,
+        or None while the watcher is between streams (for example waiting to reconnect)."""
+        with self._lock:
+            if self._call is not None and self._stream_established:
+                return self.id
+            return None
+
     def request_stop(self) -> None:
         """Marks the watcher as stopping so it does not reconnect when the stream ends."""
         self._stop_event.set()
@@ -802,9 +858,7 @@ class ConfigurationWatcher:
         """
         with self._lock:
             call = self._call
-        cancel = getattr(call, 'cancel', None)
-        if callable(cancel):
-            cancel()
+        cancel_config_call(call)
 
     def join(self, timeout: Optional[float] = None) -> None:
         """Waits up to ``timeout`` seconds (default _CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS) for the
@@ -822,9 +876,11 @@ class ConfigurationWatcher:
         handler: Callable[[Text, ConfigurationResponse], None],
     ) -> None:
         attempt = 0
+        outage_reported = False
         try:
             while not self._stop_event.is_set():
-                self._stream_established = False
+                with self._lock:
+                    self._stream_established = False
                 try:
                     self._consume_stream(stub, req, handler)
                     if not self._stop_event.is_set():
@@ -837,21 +893,26 @@ class ConfigurationWatcher:
                 except Exception as error:
                     if self._stop_event.is_set():
                         break
-                    if not is_retryable_config_error(error):
+                    if not is_retryable_config_error(error, established=bool(self.subscription_id)):
                         logger.error(
                             'Configuration subscription for keys %s on store %s stopped: %s',
                             self.keys,
                             self.store_name,
-                            error,
+                            describe_config_error(error),
                         )
                         break
-                    logger.warning(
+                    # Warn once per outage; the retries after that go to DEBUG until a new
+                    # stream is up, which is logged at INFO.
+                    first_failure = self._stream_established or not outage_reported
+                    logger.log(
+                        logging.WARNING if first_failure else logging.DEBUG,
                         'Configuration subscription stream for keys %s on store %s failed, '
                         'reconnecting: %s',
                         self.keys,
                         self.store_name,
-                        error,
+                        describe_config_error(error),
                     )
+                    outage_reported = True
                 finally:
                     with self._lock:
                         self._call = None
@@ -864,11 +925,17 @@ class ConfigurationWatcher:
                 if self._wait_before_retry(delay):
                     break
         finally:
+            self._exited = True
             # Unblock watch_configuration if the first stream never delivered an id.
             self.event.set()
             logger.debug(
                 'Configuration watcher for keys %s on store %s exited', self.keys, self.store_name
             )
+            if self._on_exit is not None:
+                try:
+                    self._on_exit(self)
+                except Exception:
+                    logger.exception('Configuration watcher exit callback raised an exception')
 
     def _consume_stream(
         self,
@@ -879,36 +946,64 @@ class ConfigurationWatcher:
         call = stub.SubscribeConfigurationAlpha1(req)
         with self._lock:
             if self._stop_event.is_set():
-                cancel = getattr(call, 'cancel', None)
-                if callable(cancel):
-                    cancel()
+                cancel_config_call(call)
                 return
             self._call = call
         for response in call:
             if not self._stream_established:
-                self._on_stream_established(response.id)
+                reconnected = self._on_stream_established(response.id)
+                if reconnected and not self._stop_event.is_set():
+                    self._deliver_current_values(stub, req, handler)
             if self._stop_event.is_set():
                 return
             if len(response.items) > 0:
                 self._deliver(handler, ConfigurationResponse(response.items))
 
-    def _on_stream_established(self, server_id: str) -> None:
+    def _on_stream_established(self, server_id: str) -> bool:
+        """Records the id of a new stream. Returns True if it replaces an earlier stream."""
         with self._lock:
             self.id = server_id
-            if not self.subscription_id:
+            reconnected = bool(self.subscription_id)
+            if not reconnected:
                 self.subscription_id = server_id
-            else:
-                logger.info(
-                    'Configuration subscription %s for keys %s on store %s reconnected '
-                    'with new id %s',
-                    self.subscription_id,
+            self._established_at = time.monotonic()
+            self._stream_established = True
+        if reconnected:
+            logger.info(
+                'Configuration subscription %s for keys %s on store %s reconnected with new id %s',
+                self.subscription_id,
+                self.keys,
+                self.store_name,
+                server_id,
+            )
+        self.event.set()
+        return reconnected
+
+    def _deliver_current_values(
+        self,
+        stub: api_service_v1.DaprStub,
+        req: api_v1.SubscribeConfigurationRequest,
+        handler: Callable[[Text, ConfigurationResponse], None],
+    ) -> None:
+        """Reads the current values of the subscribed keys and passes them to the handler, so
+        changes made while the stream was down are not lost."""
+        get_req = api_v1.GetConfigurationRequest(
+            store_name=req.store_name, keys=req.keys, metadata=req.metadata
+        )
+        try:
+            response = stub.GetConfiguration(get_req, timeout=CONFIG_SUBSCRIBE_TIMEOUT_SECONDS)
+        except Exception as error:
+            if not self._stop_event.is_set():
+                logger.warning(
+                    'Could not read the current configuration for keys %s on store %s after '
+                    'reconnecting; changes made while the stream was down may be missed: %s',
                     self.keys,
                     self.store_name,
-                    server_id,
+                    describe_config_error(error),
                 )
-        self._established_at = time.monotonic()
-        self._stream_established = True
-        self.event.set()
+            return
+        if len(response.items) > 0 and not self._stop_event.is_set():
+            self._deliver(handler, ConfigurationResponse(response.items))
 
     def _deliver(
         self,
@@ -927,6 +1022,13 @@ class ConfigurationWatcher:
     def _wait_before_retry(self, delay: float) -> bool:
         """Sleeps for ``delay`` seconds. Returns True if the watcher was stopped meanwhile."""
         return self._stop_event.wait(delay)
+
+
+def cancel_config_call(call: Any) -> None:
+    """Cancels a gRPC call if the object supports it (instrumentation wrappers may not)."""
+    cancel = getattr(call, 'cancel', None)
+    if callable(cancel):
+        cancel()
 
 
 class BulkPublishResponseFailedEntry:
