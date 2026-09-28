@@ -643,6 +643,8 @@ class DaprGrpcClientAsync:
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
+        if consistency is not None and not isinstance(consistency, Consistency):
+            raise ValueError('consistency must be a Consistency value, e.g. Consistency.strong')
 
         req = api_v1.GetStateRequest(
             store_name=store_name,

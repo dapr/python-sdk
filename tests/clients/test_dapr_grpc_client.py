@@ -596,6 +596,9 @@ class DaprGrpcClientTests(unittest.TestCase):
             Consistency.unspecified.value, self._fake_dapr_server.last_get_state_consistency
         )
 
+        with self.assertRaises(ValueError):
+            dapr.get_state(store_name='statestore', key='key_1', consistency='strong')
+
         for consistency in (Consistency.strong, Consistency.eventual):
             with self.subTest(consistency=consistency):
                 dapr.get_state(store_name='statestore', key='key_1', consistency=consistency)

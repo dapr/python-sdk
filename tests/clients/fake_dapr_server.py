@@ -39,6 +39,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._http_server = FakeHttpServer(self.http_port)  # Needed for the healthcheck endpoint
         api_service_v1.add_DaprServicer_to_server(self, self._grpc_server)
         self.store = {}
+        self.last_get_state_consistency = None
         self.transaction_operation_metadata: Dict[str, Dict[str, str]] = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
