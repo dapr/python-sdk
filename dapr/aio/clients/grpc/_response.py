@@ -15,8 +15,20 @@ limitations under the License.
 
 import asyncio
 import contextlib
+import inspect
 import logging
-from typing import AsyncGenerator, Callable, Dict, Generic, List, Optional, Text
+import time
+from typing import (
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Text,
+    Union,
+)
 
 from dapr.clients.grpc._response import (
     CONFIG_SUBSCRIBE_TIMEOUT_SECONDS,
@@ -24,11 +36,15 @@ from dapr.clients.grpc._response import (
     DaprResponse,
     TCryptoResponse,
     config_reconnect_delay,
+    config_stream_was_stable,
     is_retryable_config_error,
 )
 from dapr.proto import api_service_v1, api_v1
 
 logger = logging.getLogger(__name__)
+
+# A configuration handler for the async client: a plain function or an ``async def``.
+AsyncConfigurationHandler = Callable[[Text, ConfigurationResponse], Union[None, Awaitable[None]]]
 
 
 class CryptoResponse(DaprResponse, Generic[TCryptoResponse]):
@@ -121,13 +137,14 @@ class AsyncConfigurationWatcher:
         self._call = None
         self._task: Optional[asyncio.Task] = None
         self._stream_established = False
+        self._established_at = 0.0
 
     async def watch_configuration(
         self,
         stub: api_service_v1.DaprStub,
         store_name: str,
         keys: List[str],
-        handler: Callable[[Text, ConfigurationResponse], None],
+        handler: AsyncConfigurationHandler,
         config_metadata: Optional[Dict[str, str]] = None,
     ):
         """Starts the watcher task and returns the subscription id, or None if the sidecar did
@@ -180,7 +197,7 @@ class AsyncConfigurationWatcher:
         self,
         stub: api_service_v1.DaprStub,
         req: api_v1.SubscribeConfigurationRequest,
-        handler: Callable[[Text, ConfigurationResponse], None],
+        handler: AsyncConfigurationHandler,
     ) -> None:
         attempt = 0
         try:
@@ -219,7 +236,7 @@ class AsyncConfigurationWatcher:
                     self._call = None
                 if self._stopping:
                     break
-                if self._stream_established:
+                if self._stream_established and config_stream_was_stable(self._established_at):
                     attempt = 0
                 delay = config_reconnect_delay(attempt)
                 attempt += 1
@@ -235,7 +252,7 @@ class AsyncConfigurationWatcher:
         self,
         stub: api_service_v1.DaprStub,
         req: api_v1.SubscribeConfigurationRequest,
-        handler: Callable[[Text, ConfigurationResponse], None],
+        handler: AsyncConfigurationHandler,
     ) -> None:
         call = stub.SubscribeConfigurationAlpha1(req)
         self._call = call
@@ -245,7 +262,7 @@ class AsyncConfigurationWatcher:
             if self._stopping:
                 return
             if len(response.items) > 0:
-                self._deliver(handler, ConfigurationResponse(response.items))
+                await self._deliver(handler, ConfigurationResponse(response.items))
 
     def _on_stream_established(self, server_id: str) -> None:
         self.id = server_id
@@ -259,16 +276,20 @@ class AsyncConfigurationWatcher:
                 self.store_name,
                 server_id,
             )
+        self._established_at = time.monotonic()
         self._stream_established = True
         self._ready.set()
 
-    def _deliver(
+    async def _deliver(
         self,
-        handler: Callable[[Text, ConfigurationResponse], None],
+        handler: AsyncConfigurationHandler,
         response: ConfigurationResponse,
     ) -> None:
+        # Accept both plain functions and ``async def`` handlers.
         try:
-            handler(self.subscription_id, response)
+            result = handler(self.subscription_id, response)
+            if inspect.isawaitable(result):
+                await result
         except Exception:
             logger.exception(
                 'Configuration handler for keys %s on store %s raised an exception',

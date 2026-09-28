@@ -41,6 +41,7 @@ from dapr.aio.clients.grpc._request import (
     EncryptRequestIterator,
 )
 from dapr.aio.clients.grpc._response import (
+    AsyncConfigurationHandler,
     AsyncConfigurationWatcher,
     DecryptResponse,
     EncryptResponse,
@@ -1218,7 +1219,7 @@ class DaprGrpcClientAsync:
         self,
         store_name: str,
         keys: List[str],
-        handler: Callable[[Text, ConfigurationResponse], None],
+        handler: AsyncConfigurationHandler,
         config_metadata: Optional[Dict[str, str]] = dict(),
     ) -> Text:
         """Gets changed value from a config store with a key

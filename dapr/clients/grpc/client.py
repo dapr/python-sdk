@@ -214,19 +214,24 @@ class DaprGrpcClient:
 
     def close(self):
         """Closes Dapr runtime gRPC channel."""
-        self._stop_config_watchers()
+        watchers = self._take_config_watchers()
+        for watcher in watchers:
+            watcher.request_stop()
+            watcher.cancel_stream()
+        # Closing the channel ends any stream the watchers could not cancel themselves.
         if hasattr(self, '_channel') and self._channel:
             self._channel.close()
+        for watcher in watchers:
+            watcher.join()
 
-    def _stop_config_watchers(self) -> None:
+    def _take_config_watchers(self) -> List[ConfigurationWatcher]:
         lock = getattr(self, '_config_watchers_lock', None)
         if lock is None:
-            return
+            return []
         with lock:
             watchers = list(self._config_watchers.values())
             self._config_watchers = {}
-        for watcher in watchers:
-            watcher.stop()
+        return watchers
 
     def __del__(self):
         self.close()

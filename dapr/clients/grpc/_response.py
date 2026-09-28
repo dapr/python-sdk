@@ -20,6 +20,7 @@ import json
 import logging
 import random
 import threading
+import time
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -680,6 +681,9 @@ CONFIG_SUBSCRIBE_TIMEOUT_SECONDS = 5.0
 CONFIG_RECONNECT_INITIAL_BACKOFF_SECONDS = 0.5
 CONFIG_RECONNECT_MAX_BACKOFF_SECONDS = 8.0
 _CONFIG_RECONNECT_JITTER_RATIO = 0.2
+# A stream must stay up this long before the reconnect backoff starts over; a sidecar that
+# accepts the subscription and closes it straight away keeps backing off instead of looping.
+CONFIG_STABLE_STREAM_SECONDS = 10.0
 # How long stop() waits for the watcher thread to exit after cancelling the stream.
 _CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS = 2.0
 # Errors that will not go away by resubscribing (bad request, missing store, auth).
@@ -701,6 +705,12 @@ def config_reconnect_delay(attempt: int) -> float:
         CONFIG_RECONNECT_MAX_BACKOFF_SECONDS,
     )
     return base + random.uniform(0, base * _CONFIG_RECONNECT_JITTER_RATIO)
+
+
+def config_stream_was_stable(established_at: float) -> bool:
+    """Returns True if a stream established at ``established_at`` (time.monotonic()) stayed up
+    long enough for the reconnect backoff to start over."""
+    return time.monotonic() - established_at >= CONFIG_STABLE_STREAM_SECONDS
 
 
 def is_retryable_config_error(error: BaseException) -> bool:
@@ -736,6 +746,7 @@ class ConfigurationWatcher:
         self._call = None
         self._thread: Optional[threading.Thread] = None
         self._stream_established = False
+        self._established_at = 0.0
 
     def watch_configuration(
         self,
@@ -779,15 +790,30 @@ class ConfigurationWatcher:
 
     def stop(self) -> None:
         """Stops reconnecting, cancels the current stream and waits briefly for the thread."""
-        self._stop_event.set()
+        self.request_stop()
+        self.cancel_stream()
+        self.join()
+
+    def cancel_stream(self) -> None:
+        """Cancels the current stream, if the call object supports it.
+
+        Some wrappers (for example gRPC client instrumentation) hand back a plain iterator
+        without cancel(); closing the channel ends those streams instead.
+        """
         with self._lock:
             call = self._call
         cancel = getattr(call, 'cancel', None)
         if callable(cancel):
             cancel()
+
+    def join(self, timeout: Optional[float] = None) -> None:
+        """Waits up to ``timeout`` seconds (default _CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS) for the
+        watcher thread to exit."""
         thread = self._thread
         if thread is not None and thread is not threading.current_thread():
-            thread.join(timeout=_CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS)
+            thread.join(
+                timeout=_CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS if timeout is None else timeout
+            )
 
     def _read_subscribe_config(
         self,
@@ -831,7 +857,7 @@ class ConfigurationWatcher:
                         self._call = None
                 if self._stop_event.is_set():
                     break
-                if self._stream_established:
+                if self._stream_established and config_stream_was_stable(self._established_at):
                     attempt = 0
                 delay = config_reconnect_delay(attempt)
                 attempt += 1
@@ -880,6 +906,7 @@ class ConfigurationWatcher:
                     self.store_name,
                     server_id,
                 )
+        self._established_at = time.monotonic()
         self._stream_established = True
         self.event.set()
 

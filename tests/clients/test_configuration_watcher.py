@@ -218,8 +218,6 @@ class ConfigurationWatcherReconnectTests(unittest.TestCase):
         server.config_stream_plans.extend(
             [{'reject': grpc.StatusCode.INVALID_ARGUMENT}, {'id': 'unused', 'end': 'hold'}]
         )
-        threads_before = threading.active_count()
-
         started = time.monotonic()
         subscription_id = self.subscribe()
 
@@ -227,8 +225,19 @@ class ConfigurationWatcherReconnectTests(unittest.TestCase):
         self.assertLess(time.monotonic() - started, 2.0)
         self.assertEqual(len(server.config_subscribe_requests), 1)
         self.assertEqual(self.client._config_watchers, {})
-        self.assertTrue(wait_until(lambda: threading.active_count() <= threads_before))
+        # The watcher's own thread must exit; other tests' threads don't matter here.
+        self.assertTrue(
+            wait_until(
+                lambda: (
+                    not any(
+                        t.name == f'dapr-configuration-watcher-{STORE}' and t.is_alive()
+                        for t in threading.enumerate()
+                    )
+                )
+            )
+        )
 
+    @patch('dapr.clients.grpc._response.CONFIG_STABLE_STREAM_SECONDS', 0)
     def test_backoff_grows_on_consecutive_failures_and_resets_after_success(self):
         server = self._fake_dapr_server
         server.config_stream_plans.extend(
@@ -279,6 +288,46 @@ class ConfigurationWatcherReconnectTests(unittest.TestCase):
         self.assertFalse(thread.is_alive())
         self.assertTrue(watcher.stopped)
         self.assertEqual(self.client._config_watchers, {})
+
+    @patch('dapr.clients.grpc._response._CONFIG_WATCHER_JOIN_TIMEOUT_SECONDS', 30.0)
+    def test_close_stops_watchers_whose_stream_cannot_be_cancelled(self):
+        # gRPC client instrumentation (e.g. OpenTelemetry) wraps server streams in a plain
+        # generator without cancel(); close() must still end the watcher via the channel.
+        self._fake_dapr_server.config_stream_plans.append({'id': 'first', 'end': 'hold'})
+        subscribe = self.client._stub.SubscribeConfigurationAlpha1
+        self.client._stub.SubscribeConfigurationAlpha1 = lambda req: (r for r in subscribe(req))
+        subscription_id = self.subscribe()
+        watcher = self.watcher(subscription_id)
+        self.assertFalse(hasattr(watcher._call, 'cancel'))
+        thread = watcher._thread
+        assert thread is not None
+
+        started = time.monotonic()
+        self.client.close()
+
+        # The channel is closed before waiting on the thread, so close() doesn't sit out the
+        # join timeout.
+        self.assertLess(time.monotonic() - started, 10.0)
+        self.assertFalse(thread.is_alive())
+
+    def test_backoff_keeps_growing_when_streams_close_right_after_the_id(self):
+        # A sidecar that accepts the subscription and closes it at once must not be
+        # reconnected every CONFIG_RECONNECT_INITIAL_BACKOFF_SECONDS.
+        self._fake_dapr_server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'end': 'abort'},
+                {'id': 'second', 'end': 'abort'},
+                {'id': 'third', 'updates': [{'k': 'v1'}], 'end': 'hold'},
+            ]
+        )
+
+        self.assertEqual(self.subscribe(), 'first')
+
+        self.assertTrue(wait_until(lambda: len(self.updates) == 1), self.updates)
+        self.assertEqual(len(self.delays), 2, self.delays)
+        for delay, base in zip(self.delays, [0.5, 1.0]):
+            self.assertGreaterEqual(delay, base)
+            self.assertLessEqual(delay, base * 1.2)
 
 
 if __name__ == '__main__':

@@ -180,6 +180,7 @@ class AsyncConfigurationWatcherReconnectTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self._fake_dapr_server.config_subscribe_requests), 1)
         self.assertEqual(self.client._config_watchers, {})
 
+    @patch('dapr.clients.grpc._response.CONFIG_STABLE_STREAM_SECONDS', 0)
     async def test_backoff_grows_on_consecutive_failures_and_resets_after_success(self):
         self._fake_dapr_server.config_stream_plans.extend(
             [
@@ -208,6 +209,41 @@ class AsyncConfigurationWatcherReconnectTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(task.done())
         self.assertEqual(self.client._config_watchers, {})
+
+    async def test_backoff_keeps_growing_when_streams_close_right_after_the_id(self):
+        self._fake_dapr_server.config_stream_plans.extend(
+            [
+                {'id': 'first', 'end': 'abort'},
+                {'id': 'second', 'end': 'abort'},
+                {'id': 'third', 'updates': [{'k': 'v1'}], 'end': 'hold'},
+            ]
+        )
+
+        self.assertEqual(await self.subscribe(), 'first')
+
+        self.assertTrue(await wait_until(lambda: len(self.updates) == 1), self.updates)
+        self.assertEqual(len(self.delays), 2, self.delays)
+        for delay, base in zip(self.delays, [0.5, 1.0]):
+            self.assertGreaterEqual(delay, base)
+            self.assertLessEqual(delay, base * 1.2)
+
+    async def test_async_handler_is_awaited(self):
+        self._fake_dapr_server.config_stream_plans.append(
+            {'id': 'first', 'updates': [{'k': 'v1'}], 'end': 'hold'}
+        )
+        received: List[Tuple[str, str]] = []
+
+        async def async_handler(subscription_id: str, response: ConfigurationResponse) -> None:
+            await asyncio.sleep(0)
+            received.append((subscription_id, response.items['k'].value))
+
+        subscription_id = await self.client.subscribe_configuration(
+            store_name=STORE, keys=['k'], handler=async_handler
+        )
+
+        self.assertEqual(subscription_id, 'first')
+        self.assertTrue(await wait_until(lambda: len(received) == 1), received)
+        self.assertEqual(received, [('first', 'v1')])
 
 
 if __name__ == '__main__':
