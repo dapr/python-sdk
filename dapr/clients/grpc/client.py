@@ -694,6 +694,9 @@ class DaprGrpcClient:
         Returns:
             :class:`StateResponse` gRPC metadata returned from callee
             and value obtained from the state store
+
+        Raises:
+            ValueError: if store_name is empty or consistency is not a Consistency value.
         """
         if metadata is not None:
             warn(

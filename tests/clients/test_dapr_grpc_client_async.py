@@ -588,7 +588,8 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             await dapr.get_state(store_name='statestore', key='key_1', consistency='strong')
 
-        for consistency in (Consistency.strong, Consistency.eventual):
+        # unspecified comes last so the recorded value changes back to it.
+        for consistency in (Consistency.strong, Consistency.eventual, Consistency.unspecified):
             with self.subTest(consistency=consistency):
                 await dapr.get_state(store_name='statestore', key='key_1', consistency=consistency)
                 self.assertEqual(
