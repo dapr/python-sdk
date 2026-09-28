@@ -17,7 +17,8 @@ import unittest
 from unittest import mock
 
 from google.protobuf import timestamp_pb2, wrappers_pb2
-from grpc import RpcError
+from grpc import RpcError, StatusCode
+from grpc.aio import AioRpcError
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.client import _new_rerun_request
@@ -33,6 +34,21 @@ from dapr.ext.workflow.workflow_management import (
 
 
 class SimulatedRpcError(RpcError):
+    def __init__(self, code, details):
+        self._code = code
+        self._details = details
+
+    def code(self):
+        return self._code
+
+    def details(self):
+        return self._details
+
+
+class SimulatedAioRpcError(AioRpcError):
+    """SimulatedRpcError is not an AioRpcError, so the async client's except never
+    saw it and the async translation went untested."""
+
     def __init__(self, code, details):
         self._code = code
         self._details = details
@@ -340,6 +356,70 @@ class ListingUnsupportedTest(unittest.TestCase):
             list(client.iter_workflow_instance_ids())
 
 
+class OldRuntimeTest(unittest.TestCase):
+    """A sidecar older than 1.17 has no ListInstanceIDs/GetInstanceHistory at all
+    and answers UNIMPLEMENTED, which says nothing about why."""
+
+    def _client_raising(self, method, code):
+        fake = FakeTaskHubGrpcClient()
+
+        def boom(*args, **kwargs):
+            raise SimulatedRpcError(code=code, details='unknown method')
+
+        setattr(fake, method, boom)
+        return new_client(fake)
+
+    def test_listing_on_an_old_runtime_names_the_version(self):
+        client = self._client_raising('list_instance_ids', StatusCode.UNIMPLEMENTED)
+
+        with self.assertRaises(NotImplementedError) as caught:
+            client.list_workflow_instance_ids()
+
+        self.assertIn('1.17 or newer', str(caught.exception))
+
+    def test_history_on_an_old_runtime_names_the_version(self):
+        client = self._client_raising('get_instance_history', StatusCode.UNIMPLEMENTED)
+
+        with self.assertRaises(NotImplementedError) as caught:
+            client.get_workflow_history('instance1')
+
+        self.assertIn('1.17 or newer', str(caught.exception))
+
+    def test_history_lets_other_rpc_errors_through(self):
+        """NOT_FOUND for a purged instance must stay an RpcError."""
+        client = self._client_raising('get_instance_history', StatusCode.NOT_FOUND)
+
+        with self.assertRaises(SimulatedRpcError):
+            client.get_workflow_history('instance1')
+
+
+class AsyncOldRuntimeTest(unittest.IsolatedAsyncioTestCase):
+    def _client_raising(self, method, code):
+        fake = AsyncFakeTaskHubGrpcClient()
+
+        async def boom(*args, **kwargs):
+            raise SimulatedAioRpcError(code=code, details='unknown method')
+
+        setattr(fake, method, boom)
+        return new_async_client(fake)
+
+    async def test_listing_on_an_old_runtime_names_the_version(self):
+        client = self._client_raising('list_instance_ids', StatusCode.UNIMPLEMENTED)
+
+        with self.assertRaises(NotImplementedError) as caught:
+            await client.list_workflow_instance_ids()
+
+        self.assertIn('1.17 or newer', str(caught.exception))
+
+    async def test_history_on_an_old_runtime_names_the_version(self):
+        client = self._client_raising('get_instance_history', StatusCode.UNIMPLEMENTED)
+
+        with self.assertRaises(NotImplementedError) as caught:
+            await client.get_workflow_history('instance1')
+
+        self.assertIn('1.17 or newer', str(caught.exception))
+
+
 class IterWorkflowInstanceIdsTest(unittest.TestCase):
     def test_follows_the_continuation_token_across_pages(self):
         fake = FakeTaskHubGrpcClient()
@@ -524,6 +604,46 @@ class RerunWorkflowFromEventTest(unittest.TestCase):
         )
 
 
+class AsyncListingUnsupportedTest(unittest.IsolatedAsyncioTestCase):
+    def _client_raising(self, details):
+        fake = AsyncFakeTaskHubGrpcClient()
+
+        async def boom(**kwargs):
+            raise SimulatedAioRpcError(code='UNKNOWN', details=details)
+
+        fake.list_instance_ids = boom
+        return new_async_client(fake)
+
+    async def test_a_store_that_cannot_list_keys_gets_advice(self):
+        client = self._client_raising('state store *inmemory.Store does not support listing keys')
+
+        with self.assertRaises(NotImplementedError) as caught:
+            await client.list_workflow_instance_ids()
+
+        self.assertIn('supports key listing', str(caught.exception))
+        self.assertIsInstance(caught.exception.__cause__, SimulatedAioRpcError)
+
+    async def test_a_missing_actor_store_gets_advice(self):
+        client = self._client_raising('no state store with actor support found')
+
+        with self.assertRaises(NotImplementedError) as caught:
+            await client.list_workflow_instance_ids()
+
+        self.assertIn('actorStateStore', str(caught.exception))
+
+    async def test_an_unrelated_rpc_error_is_left_alone(self):
+        client = self._client_raising('connection refused')
+
+        with self.assertRaises(SimulatedAioRpcError):
+            await client.list_workflow_instance_ids()
+
+    async def test_the_iterator_surfaces_the_same_advice(self):
+        client = self._client_raising('state store *inmemory.Store does not support listing keys')
+
+        with self.assertRaises(NotImplementedError):
+            [instance_id async for instance_id in client.iter_workflow_instance_ids()]
+
+
 class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
     async def test_list_returns_the_converted_page(self):
         fake = AsyncFakeTaskHubGrpcClient()
@@ -604,6 +724,7 @@ class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
             new_instance_id='new1',
             input=None,
             new_child_workflow_instance_id='child1',
+            app_id='other-app',
         )
 
         self.assertEqual(
@@ -614,7 +735,7 @@ class AsyncWorkflowManagementTest(unittest.IsolatedAsyncioTestCase):
                 'input': None,
                 'overwrite_input': True,
                 'new_child_instance_id': 'child1',
-                'app_id': None,
+                'app_id': 'other-app',
             },
             fake.rerun_calls[0],
         )

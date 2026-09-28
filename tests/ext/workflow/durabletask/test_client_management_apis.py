@@ -19,7 +19,7 @@ from google.protobuf import timestamp_pb2, wrappers_pb2
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.aio.client import AsyncTaskHubGrpcClient
-from dapr.ext.workflow._durabletask.client import _MAX_EVENT_ID, TaskHubGrpcClient
+from dapr.ext.workflow._durabletask.client import _MAX_UINT32, TaskHubGrpcClient
 
 
 def _sync_client() -> TaskHubGrpcClient:
@@ -57,6 +57,40 @@ def test_list_instance_ids_forwards_pagination_fields():
     req = client._stub.ListInstanceIDs.call_args[0][0]
     assert req.pageSize == 50
     assert req.continuationToken == 'token1'
+
+
+@pytest.mark.parametrize('page_size', [0, -1, _MAX_UINT32 + 1])
+def test_list_rejects_page_sizes_the_stores_mishandle(page_size):
+    """0 is not "no limit": in-memory returns an endless page for it and sqlite
+    indexes out of range. Negative and over-range fail opaquely in protobuf."""
+    client = _sync_client()
+
+    with pytest.raises(ValueError, match='page_size must be between 1 and'):
+        client.list_instance_ids(page_size=page_size)
+
+    client._stub.ListInstanceIDs.assert_not_called()
+
+
+@pytest.mark.parametrize('page_size', [1, 1024, _MAX_UINT32])
+def test_list_accepts_valid_page_sizes(page_size):
+    client = _sync_client()
+    client._stub.ListInstanceIDs.return_value = pb.ListInstanceIDsResponse()
+
+    client.list_instance_ids(page_size=page_size)
+
+    assert client._stub.ListInstanceIDs.call_args[0][0].pageSize == page_size
+
+
+@pytest.mark.asyncio
+async def test_async_list_rejects_a_zero_page_size():
+    """Both engines share the builder, so the async path must reject it too."""
+    client = _async_client()
+    client._get_stub().ListInstanceIDs = AsyncMock(return_value=pb.ListInstanceIDsResponse())
+
+    with pytest.raises(ValueError, match='page_size must be between 1 and'):
+        await client.list_instance_ids(page_size=0)
+
+    client._get_stub().ListInstanceIDs.assert_not_called()
 
 
 def test_list_instance_ids_returns_the_raw_response():
@@ -171,7 +205,7 @@ def test_rerun_rejects_an_event_id_above_the_uint32_range():
     client = _sync_client()
 
     with pytest.raises(ValueError, match='event_id must be between 0 and'):
-        client.rerun_orchestration_from_event('instance1', _MAX_EVENT_ID + 1)
+        client.rerun_orchestration_from_event('instance1', _MAX_UINT32 + 1)
 
     client._stub.RerunWorkflowFromEvent.assert_not_called()
 
@@ -180,9 +214,9 @@ def test_rerun_accepts_the_largest_valid_event_id():
     client = _sync_client()
     client._stub.RerunWorkflowFromEvent.return_value = pb.RerunWorkflowFromEventResponse()
 
-    client.rerun_orchestration_from_event('instance1', _MAX_EVENT_ID)
+    client.rerun_orchestration_from_event('instance1', _MAX_UINT32)
 
-    assert client._stub.RerunWorkflowFromEvent.call_args[0][0].eventID == _MAX_EVENT_ID
+    assert client._stub.RerunWorkflowFromEvent.call_args[0][0].eventID == _MAX_UINT32
 
 
 def test_rerun_accepts_event_id_zero():

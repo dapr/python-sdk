@@ -38,6 +38,7 @@ from dapr.ext.workflow._durabletask.client import (
     TOutput,
     WorkflowIdReusePolicy,
     WorkflowState,
+    _new_list_request,
     _new_rerun_request,
     _TransientTimeout,
     new_orchestration_state,
@@ -379,7 +380,7 @@ class AsyncTaskHubGrpcClient:
     async def list_instance_ids(
         self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
     ) -> pb.ListInstanceIDsResponse:
-        req = pb.ListInstanceIDsRequest(pageSize=page_size, continuationToken=continuation_token)
+        req = _new_list_request(page_size, continuation_token)
         return await self._get_stub().ListInstanceIDs(req)
 
     async def get_instance_history(self, instance_id: str) -> list[pb.HistoryEvent]:

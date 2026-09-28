@@ -28,6 +28,40 @@ import dapr.ext.workflow._durabletask.internal.helpers as pbh
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.task import FailureDetails
 
+# `list.ListInstanceIDs` in the runtime returns bare errors for both configuration
+# failures, so they arrive as UNKNOWN with the message in the details.
+_NO_KEY_LISTING = 'does not support listing keys'
+_NO_ACTOR_STORE = 'no state store with actor support found'
+
+
+# ListInstanceIDs and GetInstanceHistory landed in dapr/dapr#9170, milestone v1.17.
+# An older sidecar answers UNIMPLEMENTED, which says nothing about why.
+_MIN_RUNTIME_FOR_MANAGEMENT = '1.17'
+
+
+def _unimplemented_message(operation: str) -> str:
+    """Advice for a sidecar too old to carry the RPC at all."""
+    return (
+        f'{operation} needs a Dapr runtime of {_MIN_RUNTIME_FOR_MANAGEMENT} or newer. '
+        'This sidecar does not implement the call.'
+    )
+
+
+def _listing_unsupported_message(details: str) -> Optional[str]:
+    """Turns the runtime's configuration errors into advice, or None if unrelated."""
+    if _NO_KEY_LISTING in details:
+        return (
+            'Listing workflow instances requires an actor state store that supports '
+            'key listing, and the configured one does not. Sidecar reported: '
+            f'{details}'
+        )
+    if _NO_ACTOR_STORE in details:
+        return (
+            'Listing workflow instances requires a state store with actorStateStore '
+            f'enabled, and the sidecar has none configured. Sidecar reported: {details}'
+        )
+    return None
+
 
 class _Unset:
     """Type of :data:`UNSET`. Not instantiated anywhere else."""

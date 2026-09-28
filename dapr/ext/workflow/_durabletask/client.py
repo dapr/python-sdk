@@ -160,9 +160,29 @@ def new_orchestration_state(
     )
 
 
-# eventID is uint32 on the wire; protobuf rejects anything outside this with a
-# message naming neither the argument nor the reason, at either end.
-_MAX_EVENT_ID = 2**32 - 1
+# eventID and pageSize are both uint32 on the wire; protobuf rejects anything
+# outside this with a message naming neither the argument nor the reason.
+_MAX_UINT32 = 2**32 - 1
+
+
+def _new_list_request(
+    page_size: Optional[int], continuation_token: Optional[str]
+) -> pb.ListInstanceIDsRequest:
+    """Build a ListInstanceIDs request, rejecting page sizes the stores mishandle.
+
+    Raises:
+        ValueError: If page_size is given and is not between 1 and the uint32 the
+        wire allows. Zero is not "no limit": state stores disagree on it, and at
+        least one loops forever while another indexes out of range on it.
+    """
+    if page_size is not None and not 1 <= page_size <= _MAX_UINT32:
+        raise ValueError(
+            f'page_size must be between 1 and {_MAX_UINT32}, got {page_size}. '
+            'Pass None rather than 0 to leave the limit to the runtime; a 0 reaches '
+            'the state store, which may return an endless page or fail on it.'
+        )
+
+    return pb.ListInstanceIDsRequest(pageSize=page_size, continuationToken=continuation_token)
 
 
 def _new_rerun_request(
@@ -189,7 +209,7 @@ def _new_rerun_request(
         neither: protobuf rejects an out-of-range event_id with a message naming
         neither the argument nor the reason, and an empty ID is taken literally.
     """
-    if not 0 <= event_id <= _MAX_EVENT_ID:
+    if not 0 <= event_id <= _MAX_UINT32:
         negative_hint = (
             ' The runtime reports -1 for history events it assigns no ID to, and those '
             'cannot be rerun from.'
@@ -197,7 +217,7 @@ def _new_rerun_request(
             else ''
         )
         raise ValueError(
-            f'event_id must be between 0 and {_MAX_EVENT_ID}, got {event_id}.{negative_hint}'
+            f'event_id must be between 0 and {_MAX_UINT32}, got {event_id}.{negative_hint}'
         )
 
     # Both ID fields have explicit presence: None leaves them unset and the runtime
@@ -576,7 +596,7 @@ class TaskHubGrpcClient:
     def list_instance_ids(
         self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
     ) -> pb.ListInstanceIDsResponse:
-        req = pb.ListInstanceIDsRequest(pageSize=page_size, continuationToken=continuation_token)
+        req = _new_list_request(page_size, continuation_token)
         return self._stub.ListInstanceIDs(req)
 
     def get_instance_history(self, instance_id: str) -> list[pb.HistoryEvent]:

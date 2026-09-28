@@ -19,6 +19,7 @@ from datetime import datetime
 from typing import Any, AsyncIterator, Optional, TypeVar, Union
 from warnings import warn
 
+from grpc import StatusCode
 from grpc.aio import AioRpcError
 
 from dapr.aio.clients.grpc.interceptors import DaprClientTimeoutInterceptorAsync
@@ -35,34 +36,14 @@ from dapr.ext.workflow.workflow_management import (
     UNSET,
     WorkflowHistoryEvent,
     WorkflowInstanceIdPage,
+    _listing_unsupported_message,
+    _unimplemented_message,
 )
 from dapr.ext.workflow.workflow_state import WorkflowState
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
 TOutput = TypeVar('TOutput')
-
-
-# `list.ListInstanceIDs` in the runtime returns bare errors for both configuration
-# failures, so they arrive as UNKNOWN with the message in the details.
-_NO_KEY_LISTING = 'does not support listing keys'
-_NO_ACTOR_STORE = 'no state store with actor support found'
-
-
-def _listing_unsupported_message(details: str) -> Optional[str]:
-    """Turns the runtime's configuration errors into advice, or None if unrelated."""
-    if _NO_KEY_LISTING in details:
-        return (
-            'Listing workflow instances requires an actor state store that supports '
-            'key listing, and the configured one does not. Sidecar reported: '
-            f'{details}'
-        )
-    if _NO_ACTOR_STORE in details:
-        return (
-            'Listing workflow instances requires a state store with actorStateStore '
-            f'enabled, and the sidecar has none configured. Sidecar reported: {details}'
-        )
-    return None
 
 
 class DaprWorkflowClient:
@@ -189,8 +170,10 @@ class DaprWorkflowClient:
             app_id: The optional ID of the app hosting the workflow instance, when it is
             hosted by a different app. The target app's WorkflowAccessPolicy governs whether
             this operation is permitted.
-            Requires a Dapr runtime with cross-app workflow support; older runtimes
-            ignore app_id and apply the operation to the local app.
+            Requires a Dapr runtime with cross-app workflow support. An older runtime
+            drops the routing rather than refusing it, so the rerun targets a local
+            instance carrying the same ID if one exists, and fails as not found if
+            not. Check the runtime version before relying on this argument.
 
         Returns:
             The current state of the workflow instance, or None if the workflow instance does not
@@ -439,14 +422,17 @@ class DaprWorkflowClient:
         """Fetches one page of workflow instance IDs for this app.
 
         The listing is scoped to the app and namespace of the sidecar this
-        client is connected to. Use iter_workflow_instance_ids instead unless you
+        client is connected to. Needs a Dapr runtime of 1.17 or newer, which is
+        where the RPC landed. Use iter_workflow_instance_ids instead unless you
         need to hold on to the continuation token yourself, for example to
         resume paging in a later request.
 
         Args:
-            page_size: The maximum number of instance IDs to return. Defaults
-            to leaving the limit unset, in which case how many come back is up
-            to the runtime and the state store behind it.
+            page_size: The maximum number of instance IDs to return, between 1
+            and 4294967295. Defaults to leaving the limit unset, in which case
+            how many come back is up to the runtime and the state store behind
+            it. Pass None rather than 0 for that: a 0 reaches the store, which
+            may answer with an endless page or fail on it.
             continuation_token: The token from a previous page, to start this
             page where that one ended. Defaults to starting from the first page.
 
@@ -454,6 +440,7 @@ class DaprWorkflowClient:
             A page of instance IDs, and the token for the next page if there is one.
 
         Raises:
+            ValueError: If page_size is given and is not between 1 and 4294967295.
             NotImplementedError: If the sidecar has no actor state store, or its
             store cannot list keys, which this API needs and many stores lack.
         """
@@ -462,6 +449,10 @@ class DaprWorkflowClient:
                 page_size=page_size, continuation_token=continuation_token
             )
         except AioRpcError as error:
+            if error.code() == StatusCode.UNIMPLEMENTED:
+                raise NotImplementedError(
+                    _unimplemented_message('Listing workflow instances')
+                ) from error
             advice = _listing_unsupported_message(error.details() or '')
             if advice is None:
                 raise
@@ -495,6 +486,8 @@ class DaprWorkflowClient:
     async def get_workflow_history(self, instance_id: str) -> list[WorkflowHistoryEvent]:
         """Fetches the full execution history of a workflow instance.
 
+        Needs a Dapr runtime of 1.17 or newer, which is where the RPC landed.
+
         Args:
             instance_id: The unique ID of the workflow instance to read.
 
@@ -502,10 +495,16 @@ class DaprWorkflowClient:
             The instance's history events, oldest first.
 
         Raises:
+            NotImplementedError: If the sidecar predates 1.17 and has no such RPC.
             grpc.aio.AioRpcError: With code NOT_FOUND if no such instance exists,
             or if it has been purged.
         """
-        events = await self.__obj.get_instance_history(instance_id)
+        try:
+            events = await self.__obj.get_instance_history(instance_id)
+        except AioRpcError as error:
+            if error.code() != StatusCode.UNIMPLEMENTED:
+                raise
+            raise NotImplementedError(_unimplemented_message('Reading workflow history')) from error
         return [WorkflowHistoryEvent._from_proto(event) for event in events]
 
     async def rerun_workflow_from_event(
@@ -558,8 +557,10 @@ class DaprWorkflowClient:
             The ID of the new workflow instance.
 
         Raises:
-            ValueError: If event_id is negative, which includes the -1 the
-            runtime reports for history events it assigns no ID to.
+            ValueError: If event_id falls outside 0 to 4294967295, which
+            includes the -1 the runtime reports for history events it assigns no
+            ID to, or if new_instance_id or new_child_workflow_instance_id is an
+            empty string rather than None.
             grpc.aio.AioRpcError: With code INVALID_ARGUMENT if the source instance
             is a child workflow, has not finished, or if event_id names an event
             that rejects these arguments — a timer given an input, or a detached

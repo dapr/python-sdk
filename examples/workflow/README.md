@@ -608,6 +608,13 @@ workflow code:
   history up to a chosen event, then resumes from there. Passing `input=`
   replaces the input of that event; omitting it keeps the original.
 
+Listing and reading history need a Dapr runtime of **1.17 or newer**, which is
+where those RPCs landed; an older sidecar answers `UNIMPLEMENTED` and the SDK
+turns that into a `NotImplementedError` naming the version. Rerun itself works
+from 1.16, but its `app_id` argument needs a runtime with cross-app workflow
+support: an older one drops the routing rather than refusing it, so the rerun
+targets a *local* instance with that ID if one exists.
+
 As of runtime 1.18 three event types can be rerun from — a scheduled activity,
 a created timer, and a created child workflow. `WorkflowHistoryEvent.is_rerunnable`
 carries this SDK's snapshot of that rule so you do not have to hard-code it, but
