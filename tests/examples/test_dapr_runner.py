@@ -218,3 +218,76 @@ def test_start_gives_up_polling_after_wait_seconds(monkeypatch, tmp_path: Path) 
     DaprRunner(tmp_path).start('--app-id demo-actor -- uvicorn demo:app', wait=3)
 
     assert sleeps == [1, 1, 1]
+
+
+def _start_background(monkeypatch, tmp_path: Path, returncode: int | None = None):
+    """Starts a DaprRunner on a fake ready sidecar; returns it and its log file."""
+    stdout_files: list[IO[str]] = []
+
+    def fake_popen(*args, **kwargs) -> FakeBackgroundProcess:
+        stdout_files.append(kwargs['stdout'])
+        return FakeBackgroundProcess(SIDECAR_READY_OUTPUT, returncode, kwargs['stdout'])
+
+    monkeypatch.setattr(subprocess, 'Popen', fake_popen)
+    runner = DaprRunner(tmp_path)
+    runner.start('--app-id receiver -- python3 app.py', wait=30)
+    return runner, stdout_files[0]
+
+
+def test_wait_for_output_returns_without_sleeping_when_output_is_present(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner, log = _start_background(monkeypatch, tmp_path)
+    log.write('message 1\nmessage 2\n')
+    log.flush()
+    sleeps: list[int] = []
+    monkeypatch.setattr(time, 'sleep', sleeps.append)
+
+    assert runner.wait_for_output(['message 1', 'message 2'])
+    assert sleeps == []
+
+
+def test_wait_for_output_polls_every_second_until_all_lines_appear(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner, log = _start_background(monkeypatch, tmp_path)
+    sleeps: list[int] = []
+
+    def sleep_then_write(seconds: int) -> None:
+        sleeps.append(seconds)
+        log.write(f'message {len(sleeps)}\n')
+        log.flush()
+
+    monkeypatch.setattr(time, 'sleep', sleep_then_write)
+
+    assert runner.wait_for_output(['message 1', 'message 2'])
+    assert sleeps == [1, 1]
+
+
+def test_wait_for_output_gives_up_when_the_process_exits(monkeypatch, tmp_path: Path) -> None:
+    runner, _ = _start_background(monkeypatch, tmp_path, returncode=1)
+    sleeps: list[int] = []
+    monkeypatch.setattr(time, 'sleep', sleeps.append)
+
+    assert not runner.wait_for_output(['message 1'])
+    assert sleeps == []
+
+
+def test_wait_for_output_gives_up_after_timeout(monkeypatch, tmp_path: Path) -> None:
+    runner, _ = _start_background(monkeypatch, tmp_path)
+    clock = {'now': 0.0}
+    sleeps: list[int] = []
+
+    def fake_sleep(seconds: int) -> None:
+        sleeps.append(seconds)
+        clock['now'] += seconds
+
+    monkeypatch.setattr(time, 'monotonic', lambda: clock['now'])
+    monkeypatch.setattr(time, 'sleep', fake_sleep)
+
+    assert not runner.wait_for_output(['message 1'], timeout=3)
+    assert sleeps == [1, 1, 1]
+
+
+def test_wait_for_output_is_false_without_a_background_process(tmp_path: Path) -> None:
+    assert not DaprRunner(tmp_path).wait_for_output(['message 1'])
