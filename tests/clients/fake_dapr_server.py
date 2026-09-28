@@ -412,6 +412,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
     def GetState(self, request, context):
         self.check_for_exception(context)
+        self.last_get_state_consistency = request.consistency
 
         key = request.key
         if key not in self.store:

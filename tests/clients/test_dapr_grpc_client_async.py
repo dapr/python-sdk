@@ -578,6 +578,21 @@ class DaprGrpcClientAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
 
+    async def test_get_state_sends_read_consistency(self):
+        dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
+        await dapr.get_state(store_name='statestore', key='key_1')
+        self.assertEqual(
+            Consistency.unspecified.value, self._fake_dapr_server.last_get_state_consistency
+        )
+
+        for consistency in (Consistency.strong, Consistency.eventual):
+            with self.subTest(consistency=consistency):
+                await dapr.get_state(store_name='statestore', key='key_1', consistency=consistency)
+                self.assertEqual(
+                    consistency.value, self._fake_dapr_server.last_get_state_consistency
+                )
+        await dapr.close()
+
     async def test_get_save_delete_state(self):
         dapr = DaprGrpcClientAsync(f'{self.scheme}localhost:{self.grpc_port}')
         key = 'key_1'

@@ -88,7 +88,7 @@ from dapr.clients.grpc._response import (
     UnlockResponse,
     UnlockResponseStatus,
 )
-from dapr.clients.grpc._state import StateItem, StateOptions
+from dapr.clients.grpc._state import Consistency, StateItem, StateOptions
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamInactiveError
@@ -607,6 +607,7 @@ class DaprGrpcClientAsync:
         key: str,
         state_metadata: Optional[Dict[str, str]] = dict(),
         metadata: Optional[MetadataTuple] = None,
+        consistency: Optional[Consistency] = None,
     ) -> StateResponse:
         """Gets value from a statestore with a key
 
@@ -625,6 +626,8 @@ class DaprGrpcClientAsync:
             key (str): the key of the key-value pair to be gotten
             state_metadata (Dict[str, str], optional): Dapr metadata for state request
             metadata (tuple, optional, DEPRECATED): gRPC custom metadata
+            consistency (Consistency, optional): read consistency to request from the
+                state store. Defaults to the store's own default.
 
         Returns:
             :class:`StateResponse` gRPC metadata returned from callee
@@ -641,7 +644,12 @@ class DaprGrpcClientAsync:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
 
-        req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
+        req = api_v1.GetStateRequest(
+            store_name=store_name,
+            key=key,
+            metadata=state_metadata,
+            consistency=(consistency or Consistency.unspecified).value,
+        )
 
         try:
             call = self._stub.GetState(req, metadata=metadata)
