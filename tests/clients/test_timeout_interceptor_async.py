@@ -96,19 +96,25 @@ class DaprClientTimeoutInterceptorAsyncTests(unittest.TestCase):
 
     @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
     def test_other_workflow_calls_still_get_the_global_timeout(self):
-        continuation = Mock()
-        request = Mock()
-        client_call_details = Mock()
-        client_call_details.method = '/TaskHubSidecarService/GetInstance'
-        client_call_details.timeout = None
-        client_call_details.metadata = 'metadata'
-        client_call_details.credentials = 'credentials'
-        client_call_details.wait_for_ready = 'wait_for_ready'
+        # grpc.aio passes method names as bytes, so check both forms.
+        for method in (
+            '/TaskHubSidecarService/GetInstance',
+            b'/TaskHubSidecarService/GetInstance',
+        ):
+            with self.subTest(method=method):
+                continuation = Mock()
+                request = Mock()
+                client_call_details = Mock()
+                client_call_details.method = method
+                client_call_details.timeout = None
+                client_call_details.metadata = 'metadata'
+                client_call_details.credentials = 'credentials'
+                client_call_details.wait_for_ready = 'wait_for_ready'
 
-        DaprClientTimeoutInterceptorAsync().intercept_unary_unary(
-            continuation, client_call_details, request
-        )
-        self.assertEqual(7, continuation.call_args[0][0].timeout)
+                DaprClientTimeoutInterceptorAsync().intercept_unary_unary(
+                    continuation, client_call_details, request
+                )
+                self.assertEqual(7, continuation.call_args[0][0].timeout)
 
     @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
     def test_workflow_waits_keep_an_explicit_timeout(self):
