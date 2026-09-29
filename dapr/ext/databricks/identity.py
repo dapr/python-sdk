@@ -21,6 +21,7 @@ can recognize "already handled" via a plain lookup instead of guessing.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from typing import Optional, Sequence
 
@@ -117,7 +118,15 @@ def extract_business_key(
         return _extract_single_field(row, id_field)
     if id_fields:
         key_components = [_extract_single_field(row, field) for field in id_fields]
-        return '_'.join(key_components)
+        # A plain '_'.join would let two different composite keys collide,
+        # e.g. ('x_y', 'z') and ('x', 'y_z') both joining to 'x_y_z' -- the
+        # second record would then find the first record's instance and be
+        # silently treated as already-handled. JSON-encoding the parts makes
+        # the key unambiguous regardless of what characters they contain;
+        # the tradeoff is that composite keys are no longer human-readable
+        # in the final instance ID (sanitize_segment hashes them, since `[`
+        # `]` `"` `,` aren't in the allowed instance-ID character set).
+        return json.dumps(key_components, separators=(',', ':'))
     return None
 
 

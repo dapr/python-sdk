@@ -87,7 +87,17 @@ register_workflow_sink(
 
 `instance_id_factory` computes the business-key *component* — the result is still namespaced by
 `namespace`/`name`/`generation` and sanitized like any other key, so it can't accidentally
-disable the full-refresh safety net described below.
+disable the full-refresh safety net described below. Composite `id_fields` are combined via a
+JSON array, not a naive string join — joining `('x_y', 'z')` and `('x', 'y_z')` with `_` would
+produce the identical `'x_y_z'` for both, silently colliding two different business keys onto
+one instance ID.
+
+One of `id_field`, `id_fields`, or `instance_id_factory` is required. Without a business key,
+identity would have to fall back to `<namespace>-<sink>-<generation>-<batch_id>-<record_index>`,
+which is only safe if your source redelivers rows in the same order on every retry — most Spark
+sources don't guarantee that, and a reordered retry can silently skip one record while
+re-running another under its old identity. If you've verified stable ordering for your specific
+source and want this anyway, opt in explicitly: `register_workflow_sink(..., allow_batch_position_identity=True)`.
 
 ### Optional lower-level API
 
@@ -134,6 +144,12 @@ longer tell that its business key was already handled; scheduling it again would
 execution. Plan your workflow-history retention accordingly if you need this guarantee to hold
 indefinitely.
 
+`max_records_per_batch`, if set, fails the batch outright once exceeded rather than silently
+dropping records — but note this makes an over-limit batch fail identically on every retry
+(the same rows re-schedule instantly as already-existing, then the same cap trips again) until
+you raise the limit or reduce the source volume; it is not a transient condition a retry alone
+resolves.
+
 ### Full refresh
 
 Lakeflow's `batch_id` restarts at `0` both for a brand-new stream and after a full pipeline
@@ -172,6 +188,7 @@ register_workflow_sink(
     max_records_per_batch=None,                 # optional hard cap; fails the batch, never truncates silently
 
     host=None, port=None,                         # Dapr endpoint; defaults to the standard SDK env/settings
+    allow_batch_position_identity=False,            # required opt-in to run without any id_field/id_fields/instance_id_factory
 )
 ```
 

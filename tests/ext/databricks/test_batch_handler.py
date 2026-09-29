@@ -23,6 +23,8 @@ from dapr.ext.databricks.batch_handler import DaprWorkflowBatchHandler
 from dapr.ext.databricks.config import WorkflowSinkConfig
 from dapr.ext.databricks.exceptions import DaprDatabricksSinkError
 from tests.ext.databricks._fakes import (
+    BlockingWorkflowClient,
+    CountingDataFrame,
     FakeDataFrame,
     FakeRow,
     FakeWorkflowClient,
@@ -322,6 +324,76 @@ class ToLocalIteratorFallbackTests(unittest.TestCase):
             handler.process(batch, batch_id=1)
 
         self.assertEqual(client.scheduled, [])
+
+    def test_falls_back_when_failure_surfaces_lazily_on_first_next(self):
+        # Simulates a Spark Connect-style toLocalIterator(): the call itself
+        # succeeds and returns a generator, but pulling the first row raises
+        # the "not supported" error instead. _iter_rows must catch this too,
+        # not just a failure at the toLocalIterator() call itself.
+        client = FakeWorkflowClient()
+        config = WorkflowSinkConfig(name='orders', workflow='process_order', id_field='order_id')
+        handler = DaprWorkflowBatchHandler(config, workflow_client=client)
+        batch = FakeDataFrame(
+            [_order_row(1), _order_row(2)],
+            to_local_iterator_lazy_error=_TO_LOCAL_ITERATOR_UNSUPPORTED,
+        )
+
+        handler.process(batch, batch_id=1)
+
+        self.assertEqual(len(client.scheduled), 2)
+
+    def test_empty_batch_processes_no_rows(self):
+        client = FakeWorkflowClient()
+        config = WorkflowSinkConfig(name='orders', workflow='process_order', id_field='order_id')
+        handler = DaprWorkflowBatchHandler(config, workflow_client=client)
+
+        handler.process(FakeDataFrame([]), batch_id=1)
+
+        self.assertEqual(client.scheduled, [])
+
+
+class MemoryBoundedIterationTests(unittest.TestCase):
+    """Regression coverage: max_in_flight must bound how far the row source
+    is read ahead of completed work, not just how many schedule_new_workflow
+    calls run concurrently. ThreadPoolExecutor.submit() never blocks on its
+    own (its internal queue is unbounded), so without an explicit permit the
+    handler would pull the whole iterator into memory before the first row
+    finished -- exactly what toLocalIterator() over collect() is meant to
+    avoid."""
+
+    def test_does_not_pull_more_rows_than_max_in_flight_ahead_of_completion(self):
+        max_in_flight = 2
+        release_event = threading.Event()
+        client = BlockingWorkflowClient(release_event, block_count=max_in_flight)
+        config = WorkflowSinkConfig(
+            name='orders',
+            workflow='process_order',
+            id_field='order_id',
+            max_in_flight=max_in_flight,
+        )
+        handler = DaprWorkflowBatchHandler(config, workflow_client=client)
+        batch = CountingDataFrame([_order_row(i) for i in range(10)])
+
+        worker = threading.Thread(target=handler.process, args=(batch, 1))
+        worker.start()
+        try:
+            deadline = time.monotonic() + 5.0
+            while client.entered_count < max_in_flight and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertEqual(client.entered_count, max_in_flight)
+
+            # Give a buggy (unbounded) implementation a chance to race ahead
+            # and drain the iterator before asserting it did not.
+            time.sleep(0.2)
+
+            # +1 slack: the next row is pulled before its submitter blocks
+            # trying to acquire the (currently exhausted) semaphore permit.
+            self.assertLessEqual(batch.pulled, max_in_flight + 1)
+        finally:
+            release_event.set()
+            worker.join(timeout=10)
+
+        self.assertEqual(len(client.scheduled), 10)
 
 
 if __name__ == '__main__':

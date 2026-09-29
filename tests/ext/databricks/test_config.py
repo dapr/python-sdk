@@ -69,14 +69,21 @@ class WorkflowSinkConfigTests(unittest.TestCase):
 
     def test_max_in_flight_must_be_positive(self):
         with self.assertRaises(SinkConfigurationError):
-            WorkflowSinkConfig(name='orders', workflow='process_order', max_in_flight=0)
+            WorkflowSinkConfig(
+                name='orders', workflow='process_order', id_field='order_id', max_in_flight=0
+            )
 
     def test_max_records_per_batch_must_be_positive_when_set(self):
         with self.assertRaises(SinkConfigurationError):
-            WorkflowSinkConfig(name='orders', workflow='process_order', max_records_per_batch=0)
+            WorkflowSinkConfig(
+                name='orders',
+                workflow='process_order',
+                id_field='order_id',
+                max_records_per_batch=0,
+            )
 
     def test_row_mapper_defaults_to_default_row_mapper(self):
-        config = WorkflowSinkConfig(name='orders', workflow='process_order')
+        config = WorkflowSinkConfig(name='orders', workflow='process_order', id_field='order_id')
         self.assertIs(config.row_mapper, default_row_mapper)
 
     def test_row_mapper_uses_configured_input_mapper(self):
@@ -84,14 +91,35 @@ class WorkflowSinkConfigTests(unittest.TestCase):
             return {'x': 1}
 
         config = WorkflowSinkConfig(
-            name='orders', workflow='process_order', input_mapper=custom_mapper
+            name='orders',
+            workflow='process_order',
+            id_field='order_id',
+            input_mapper=custom_mapper,
         )
         self.assertIs(config.row_mapper, custom_mapper)
 
     def test_config_is_immutable(self):
-        config = WorkflowSinkConfig(name='orders', workflow='process_order')
+        config = WorkflowSinkConfig(name='orders', workflow='process_order', id_field='order_id')
         with self.assertRaises(Exception):
             config.name = 'other'  # type: ignore[misc]
+
+    def test_no_key_strategy_without_opt_in_rejected(self):
+        with self.assertRaises(SinkConfigurationError):
+            WorkflowSinkConfig(name='orders', workflow='process_order')
+
+    def test_no_key_strategy_allowed_with_explicit_opt_in(self):
+        config = WorkflowSinkConfig(
+            name='orders',
+            workflow='process_order',
+            allow_batch_position_identity=True,
+        )
+        self.assertTrue(config.allow_batch_position_identity)
+
+    def test_id_fields_as_bare_string_rejected(self):
+        # str is itself a Sequence[str] (of its characters) -- a common typo
+        # when the caller meant id_field, not id_fields.
+        with self.assertRaises(SinkConfigurationError):
+            WorkflowSinkConfig(name='orders', workflow='process_order', id_fields='order_id')
 
 
 if __name__ == '__main__':

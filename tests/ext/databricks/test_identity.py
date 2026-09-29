@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import json
 import unittest
 
 from dapr.ext.databricks.exceptions import MissingBusinessKeyError
@@ -84,7 +85,40 @@ class ExtractBusinessKeyTests(unittest.TestCase):
             id_fields=['account_id', 'transaction_id'],
             instance_id_factory=None,
         )
-        self.assertEqual(key, 'A1_T9')
+        # Not asserting the exact serialized form (an implementation detail);
+        # what matters is the parts are recoverable, in order.
+        self.assertEqual(json.loads(key), ['A1', 'T9'])
+
+    def test_composite_keys_differing_only_in_separator_placement_do_not_collide(self):
+        # A naive '_'.join would let ('x_y', 'z') and ('x', 'y_z') both
+        # produce 'x_y_z': the second record would then find the first
+        # record's instance and be silently treated as already-handled,
+        # and its workflow would never run.
+        row_one = FakeRow(a='x_y', b='z')
+        row_two = FakeRow(a='x', b='y_z')
+        kwargs = dict(batch_id=1, id_field=None, id_fields=['a', 'b'], instance_id_factory=None)
+
+        key_one = extract_business_key(row_one, **kwargs)
+        key_two = extract_business_key(row_two, **kwargs)
+
+        self.assertNotEqual(key_one, key_two)
+        instance_one = derive_instance_id(
+            namespace='orders',
+            sink_name='s',
+            generation='v1',
+            business_key=key_one,
+            batch_id=1,
+            record_index=0,
+        )
+        instance_two = derive_instance_id(
+            namespace='orders',
+            sink_name='s',
+            generation='v1',
+            business_key=key_two,
+            batch_id=1,
+            record_index=0,
+        )
+        self.assertNotEqual(instance_one, instance_two)
 
     def test_instance_id_factory_takes_priority_and_receives_batch_id(self):
         seen_args = []

@@ -13,7 +13,9 @@ limitations under the License.
 
 from __future__ import annotations
 
+import itertools
 import logging
+import threading
 import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from typing import Any, Dict, Iterable, List, Optional
@@ -91,9 +93,14 @@ class DaprWorkflowBatchHandler:
     def process(self, df: BatchDataFrameLike, batch_id: int) -> None:
         """Schedules one Dapr Workflow execution per row in this micro-batch.
 
-        Bounded by ``max_in_flight`` concurrent scheduling calls, iterating
-        ``df`` via ``toLocalIterator()`` rather than ``collect()`` so a
-        micro-batch never has to fit entirely in driver memory at once.
+        Bounded by ``max_in_flight``: at most that many rows are ever read
+        off ``df`` (via ``toLocalIterator()``, or the ``collect()`` fallback)
+        ahead of being fully processed, and at most that many scheduling
+        calls run concurrently. Both bounds are enforced by the same
+        ``threading.Semaphore`` — ``ThreadPoolExecutor.submit()`` alone does
+        not block when its internal queue is saturated, so relying on the
+        pool's ``max_workers`` alone would let this loop race ahead and pull
+        the entire iterator into memory before the first row finishes.
 
         If any record's outcome cannot be established as either newly
         scheduled or already durably present, this raises so the
@@ -118,6 +125,10 @@ class DaprWorkflowBatchHandler:
         limit = self._config.max_records_per_batch
         record_count = 0
         failures: List[Exception] = []
+        in_flight = threading.Semaphore(self._config.max_in_flight)
+
+        def _release(_future: 'Future[None]') -> None:
+            in_flight.release()
 
         with ThreadPoolExecutor(max_workers=self._config.max_in_flight) as pool:
             futures: Dict[Future, int] = {}
@@ -132,7 +143,9 @@ class DaprWorkflowBatchHandler:
                         'max_records_per_batch if this volume is intentional.'
                     )
                 record_count += 1
+                in_flight.acquire()
                 future = pool.submit(self._process_row, row, batch_id, record_index)
+                future.add_done_callback(_release)
                 futures[future] = record_index
 
             for future in as_completed(futures):
@@ -152,21 +165,35 @@ class DaprWorkflowBatchHandler:
         """Iterates ``df`` memory-safely, falling back to a bounded ``collect()``
         where ``toLocalIterator`` itself is unavailable.
 
-        Some compute (observed on Databricks serverless / Spark Connect-backed
-        execution) raises directly from the ``toLocalIterator()`` call itself
-        — before any row is read — with "not supported when using file-based
-        collect". Nothing has been processed yet at that point, so falling
-        back is safe. The fallback still respects ``max_records_per_batch``
-        as a hard cap via ``limit()`` when configured; without that cap it
-        logs a warning and collects the whole batch, since there is no other
-        memory-safe primitive to fall back to on such compute.
+        Classic PySpark's ``toLocalIterator()`` has been observed (on
+        Databricks serverless compute, during live end-to-end testing — see
+        AGENTS.md) to raise directly from the call itself, before any row is
+        read, with "not supported when using file-based collect". A
+        Spark Connect-backed ``DataFrame`` returns a real generator from that
+        call, so the same failure there could instead surface lazily, on the
+        first ``next()``. Pulling one row here, inside the same guard, covers
+        both: nothing has been handed to a caller yet either way, so falling
+        back is safe in both cases.
         """
         try:
-            return df.toLocalIterator(prefetchPartitions=True)
+            iterator = df.toLocalIterator(prefetchPartitions=True)
+            first_row = next(iterator)
+        except StopIteration:
+            return iter(())  # an empty micro-batch, not a failure
         except Exception as error:
             if _TO_LOCAL_ITERATOR_UNSUPPORTED_MARKER not in str(error):
                 raise
+            return self._collect_fallback(df)
+        return itertools.chain([first_row], iterator)
 
+    def _collect_fallback(self, df: BatchDataFrameLike) -> Iterable[RowLike]:
+        """The ``collect()``-based fallback used by ``_iter_rows`` when
+        ``toLocalIterator`` is unavailable. Still respects
+        ``max_records_per_batch`` as a hard cap via ``limit()`` when
+        configured; without that cap it logs a warning and collects the
+        whole batch, since there is no other memory-safe primitive to fall
+        back to on such compute.
+        """
         limit = self._config.max_records_per_batch
         if limit is None:
             _logger.warning(

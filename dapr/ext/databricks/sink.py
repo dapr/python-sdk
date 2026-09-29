@@ -55,6 +55,7 @@ def register_workflow_sink(
     max_records_per_batch: Optional[int] = None,
     host: Optional[str] = None,
     port: Optional[str] = None,
+    allow_batch_position_identity: bool = False,
 ) -> DaprWorkflowBatchHandler:
     """Registers a Lakeflow sink that schedules a Dapr Workflow for each streaming record.
 
@@ -135,6 +136,15 @@ def register_workflow_sink(
             Databricks compute running the pipeline.
         port: Dapr sidecar/endpoint gRPC port. Defaults to
             ``DAPR_GRPC_PORT``.
+        allow_batch_position_identity: Must be set to ``True`` to run without
+            any of ``id_field``/``id_fields``/``instance_id_factory``. Without
+            a business key, identity falls back to
+            ``<namespace>-<sink>-<generation>-<batch_id>-<record_index>``,
+            which is only safe when the source delivers rows in the same
+            order on every retry — most Spark sources do not guarantee that,
+            and a reordered retry can silently skip one record while
+            re-running another under its old identity. Defaults to ``False``
+            so this weaker guarantee is never used by accident.
 
     Returns:
         The ``DaprWorkflowBatchHandler`` backing the registered sink, for
@@ -142,7 +152,8 @@ def register_workflow_sink(
 
     Raises:
         SinkConfigurationError: Invalid configuration (e.g. more than one of
-            ``id_field``/``id_fields``/``instance_id_factory`` given).
+            ``id_field``/``id_fields``/``instance_id_factory`` given, or none
+            given without ``allow_batch_position_identity=True``).
         ImportError: Called outside a Databricks Lakeflow pipeline.
     """
     pipelines = _pipelines_module()
@@ -161,6 +172,7 @@ def register_workflow_sink(
         max_records_per_batch=max_records_per_batch,
         host=host,
         port=port,
+        allow_batch_position_identity=allow_batch_position_identity,
     )
     handler = DaprWorkflowBatchHandler(config)
 

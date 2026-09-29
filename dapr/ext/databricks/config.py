@@ -43,6 +43,7 @@ class WorkflowSinkConfig:
     max_records_per_batch: Optional[int] = None
     host: Optional[str] = None
     port: Optional[str] = None
+    allow_batch_position_identity: bool = False
 
     def __post_init__(self) -> None:
         if not self.name:
@@ -54,6 +55,13 @@ class WorkflowSinkConfig:
         if not self.generation:
             raise SinkConfigurationError('generation must be a non-empty string')
 
+        if isinstance(self.id_fields, str):
+            raise SinkConfigurationError(
+                'id_fields must be a list/tuple of column names, not a single string '
+                '(a bare string is itself a Sequence[str] of its characters -- did you '
+                'mean id_field instead?)'
+            )
+
         key_strategies_given = sum(
             strategy is not None
             for strategy in (self.id_field, self.id_fields, self.instance_id_factory)
@@ -64,6 +72,16 @@ class WorkflowSinkConfig:
             )
         if self.id_fields is not None and len(self.id_fields) == 0:
             raise SinkConfigurationError('id_fields must not be empty')
+        if key_strategies_given == 0 and not self.allow_batch_position_identity:
+            raise SinkConfigurationError(
+                'one of id_field, id_fields, or instance_id_factory is required to derive a '
+                'stable business-key identity. Position-based identity '
+                '(<namespace>-<sink>-<generation>-<batch_id>-<record_index>) is only safe when '
+                'the source delivers rows in the same order on every retry, which most Spark '
+                'sources do not guarantee -- a reordered retry can silently skip one record and '
+                're-run another under its old identity. If you have verified stable ordering for '
+                'your specific source, opt in explicitly with allow_batch_position_identity=True.'
+            )
 
         if self.max_in_flight < 1:
             raise SinkConfigurationError('max_in_flight must be >= 1')

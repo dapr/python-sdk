@@ -69,11 +69,14 @@ class FakeDataFrame:
     """A minimal stand-in for ``pyspark.sql.DataFrame``, backed by a plain list of rows.
 
     ``to_local_iterator_error``, when set, is raised by ``toLocalIterator``
-    instead of iterating — used to simulate the real "toLocalIterator() is
-    not supported when using file-based collect" failure observed on
-    Databricks serverless / Spark Connect-backed compute, so the
-    ``collect()``-based fallback path (see ``DaprWorkflowBatchHandler._iter_rows``)
-    has real test coverage instead of only a local/classic-compute code path.
+    itself instead of iterating — simulates classic PySpark's observed
+    "toLocalIterator() is not supported when using file-based collect"
+    failure (raised eagerly, at the call). ``to_local_iterator_lazy_error``
+    instead makes ``toLocalIterator`` return a real generator that raises on
+    its first ``next()`` — simulates a Spark Connect-style implementation
+    where the same failure might only surface lazily. Both exercise the
+    ``collect()``-based fallback path (see
+    ``DaprWorkflowBatchHandler._iter_rows``), which must catch either shape.
     """
 
     def __init__(
@@ -81,20 +84,49 @@ class FakeDataFrame:
         rows: Iterable[FakeRow],
         *,
         to_local_iterator_error: Optional[BaseException] = None,
+        to_local_iterator_lazy_error: Optional[BaseException] = None,
     ) -> None:
         self._rows = list(rows)
         self._to_local_iterator_error = to_local_iterator_error
+        self._to_local_iterator_lazy_error = to_local_iterator_lazy_error
 
     def toLocalIterator(self, prefetchPartitions: bool = False):
         if self._to_local_iterator_error is not None:
             raise self._to_local_iterator_error
+        if self._to_local_iterator_lazy_error is not None:
+            return self._lazily_failing_iterator()
         return iter(self._rows)
+
+    def _lazily_failing_iterator(self):
+        raise self._to_local_iterator_lazy_error
+        yield  # pragma: no cover - unreachable; makes this a generator function
 
     def limit(self, num: int) -> 'FakeDataFrame':
         return FakeDataFrame(self._rows[:num])
 
     def collect(self) -> List[FakeRow]:
         return list(self._rows)
+
+
+class CountingDataFrame(FakeDataFrame):
+    """A ``FakeDataFrame`` that counts how many rows have been pulled (via
+    ``next()``) at any point in time, via ``self.pulled`` — used to prove a
+    consumer doesn't read further ahead of completed work than its
+    concurrency bound allows."""
+
+    def __init__(self, rows: Iterable[FakeRow]) -> None:
+        super().__init__(rows)
+        self.pulled = 0
+        self._lock = threading.Lock()
+
+    def toLocalIterator(self, prefetchPartitions: bool = False):
+        def _gen():
+            for row in self._rows:
+                with self._lock:
+                    self.pulled += 1
+                yield row
+
+        return _gen()
 
 
 class FakeWorkflowClient:
@@ -175,4 +207,30 @@ class BarrierSyncedWorkflowClient(FakeWorkflowClient):
 
     def schedule_new_workflow(self, workflow: str, **kwargs: Any) -> str:
         self._barrier.wait(timeout=5.0)
+        return super().schedule_new_workflow(workflow, **kwargs)
+
+
+class BlockingWorkflowClient(FakeWorkflowClient):
+    """A ``FakeWorkflowClient`` whose first ``block_count`` calls to
+    ``schedule_new_workflow`` block on a shared ``threading.Event`` until it
+    is set, tracking how many calls have entered via ``entered_count``.
+
+    Used to hold a known number of scheduling calls open so a test can
+    inspect state (e.g. how far ahead an iterator has been drained) while
+    they are deliberately still pending, then release them explicitly.
+    """
+
+    def __init__(self, release_event: threading.Event, block_count: int) -> None:
+        super().__init__()
+        self._release_event = release_event
+        self._block_count = block_count
+        self._entered_lock = threading.Lock()
+        self.entered_count = 0
+
+    def schedule_new_workflow(self, workflow: str, **kwargs: Any) -> str:
+        with self._entered_lock:
+            self.entered_count += 1
+            should_block = self.entered_count <= self._block_count
+        if should_block:
+            self._release_event.wait(timeout=5.0)
         return super().schedule_new_workflow(workflow, **kwargs)

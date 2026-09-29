@@ -91,9 +91,9 @@ from dapr.ext.databricks import (
 
 `register_workflow_sink(name, workflow, *, id_field=None, id_fields=None, namespace='default',
 generation='v1', input_mapper=None, instance_id_factory=None, metadata=True, max_in_flight=8,
-max_records_per_batch=None, host=None, port=None)` is the primary entry point. See its
-docstring in `sink.py` for the full parameter reference — kept there rather than duplicated here
-so it can't drift out of sync.
+max_records_per_batch=None, host=None, port=None, allow_batch_position_identity=False)` is the
+primary entry point. See its docstring in `sink.py` for the full parameter reference — kept
+there rather than duplicated here so it can't drift out of sync.
 
 ## Delivery semantics (read this before changing `identity.py` or `scheduling.py`)
 
@@ -179,14 +179,24 @@ checkpoint.
 
 Template: `<namespace>-<sink>-<generation>-<business_key>`, or
 `<namespace>-<sink>-<generation>-<batch_id>-<record_index>` when no business-key strategy is
-configured (weaker guarantee — see its docstring caveat about relying on stable row ordering
-across retries).
+configured. The latter is weaker (see "Known limitations") and requires
+`allow_batch_position_identity=True` — `WorkflowSinkConfig` raises `SinkConfigurationError` if
+none of `id_field`/`id_fields`/`instance_id_factory` is set and this flag isn't explicitly
+opted into, so the weaker guarantee is never used by accident.
 
 Business key source, in priority order (mutually exclusive; `WorkflowSinkConfig` rejects
-configuring more than one): `instance_id_factory(row, batch_id)` > `id_field` > `id_fields`
-(joined with `_`). All three still get namespaced by `namespace`/sink/`generation` and run
-through the same sanitizer — `instance_id_factory` is an escape hatch for *how the business key
-is computed*, not a bypass of the identity/generation safety net.
+configuring more than one): `instance_id_factory(row, batch_id)` > `id_field` > `id_fields`.
+All three still get namespaced by `namespace`/sink/`generation` and run through the same
+sanitizer — `instance_id_factory` is an escape hatch for *how the business key is computed*,
+not a bypass of the identity/generation safety net.
+
+`id_fields` composites are JSON-array-encoded (`json.dumps(parts, separators=(',', ':'))`), not
+naively `'_'.join`-ed. A plain join is ambiguous: `('x_y', 'z')` and `('x', 'y_z')` both join to
+`'x_y_z'`, so the second record would silently find the first record's instance and never get
+its own workflow. JSON-encoding makes the key unambiguous regardless of what characters the
+parts contain; the tradeoff is that composite keys are essentially always hashed by
+`sanitize_segment` (JSON's `[`, `]`, `"`, `,` aren't in the allowed instance-ID charset), so they
+are no longer human-readable in the final instance ID the way a clean single `id_field` value is.
 
 Sanitization (`sanitize_segment`): a segment that is already short (<= 80 chars) and matches
 `[A-Za-z0-9_-]+` (Dapr's documented allowed instance-ID characters) passes through unchanged,
@@ -205,11 +215,19 @@ prefix onto the same ID — see the comment in `derive_instance_id`).
 
 `DaprWorkflowBatchHandler.process` iterates `df.toLocalIterator(prefetchPartitions=True)`,
 never `df.collect()` — a micro-batch is never required to fit entirely in driver memory at
-once. Concurrency is bounded by `max_in_flight` (a plain `ThreadPoolExecutor`, sized to that
-many workers — no unbounded fan-out of scheduling calls). `max_records_per_batch`, when set, is
-a hard fail-fast cap, not a silent truncation: exceeding it raises immediately (already-submitted
-records finish first) so an operator notices a business-action sink got pointed at a bulk/
-analytical stream, rather than quietly scheduling millions of workflows.
+once. Concurrency **and** how far ahead the row source is read are both bounded by
+`max_in_flight`, via a `threading.Semaphore` acquired before each `pool.submit()` and released
+from a `future.add_done_callback`. This is deliberately not left to `ThreadPoolExecutor` alone:
+`submit()` never blocks, even when every worker is busy (its internal queue is unbounded), so
+without the semaphore the for-loop would race ahead and pull the *entire* iterator into memory
+before the first row finished processing — silently defeating the whole reason to use
+`toLocalIterator()` over `collect()`. `max_records_per_batch`, when set, is a hard fail-fast
+cap, not a silent truncation: exceeding it raises immediately (already-submitted records finish
+first) so an operator notices a business-action sink got pointed at a bulk/analytical stream,
+rather than quietly scheduling millions of workflows. Note that this makes an over-limit source
+fail every retry identically (the same first N rows re-schedule instantly as already-existing,
+then the same raise happens again) until the config changes or the source shrinks — a deliberate
+fail-loud choice, not a transient error a retry can fix on its own.
 
 Everything in `process()` runs on the Spark **driver** (this is inherent to
 `foreach_batch_sink`/`toLocalIterator`, not a choice this extension makes) — appropriate for
@@ -219,11 +237,16 @@ business-action streams (the intended use case), not bulk data replication.
 against real Databricks serverless Lakeflow compute: `df.toLocalIterator(prefetchPartitions=True)`
 itself raised `Exception: toLocalIterator() is not supported when using file-based collect`
 (a Spark Connect-backed-compute limitation, not anything this extension controls) —
-synchronously, before any row was read. `DaprWorkflowBatchHandler._iter_rows` catches exactly
-that message and falls back to a `collect()`, bounded by `max_records_per_batch` (via
-`df.limit(max_records_per_batch + 1)`) when configured, and logs a warning either way — this
-is a degraded-safety fallback, not a silent one. Any other exception from `toLocalIterator`
-(a corrupt source table, an expired storage token, etc.) is not this fallback's concern and
+synchronously, before any row was read. `DaprWorkflowBatchHandler._iter_rows` handles this by
+pulling exactly one row inside the same `try`/`except` that wraps the `toLocalIterator()` call
+itself, covering both shapes this failure could take: classic PySpark raised it eagerly, at the
+call, in the case actually observed; a Spark Connect-backed `DataFrame` returns a real generator
+from that call, so the same failure there could instead surface lazily, on the first `next()`.
+Either way, falling back is safe (nothing has been handed to a caller yet), landing in
+`_collect_fallback`: a `collect()` bounded by `max_records_per_batch` (via
+`df.limit(max_records_per_batch + 1)`) when configured, and a logged warning either way — this
+is a degraded-safety fallback, not a silent one. Any other exception from `toLocalIterator` (a
+corrupt source table, an expired storage token, etc.) is not this fallback's concern and
 propagates normally. **Set `max_records_per_batch` when running on compute where
 `toLocalIterator` is unavailable** — without it, the fallback has no bound and behaves like a
 plain `collect()`.
@@ -279,13 +302,17 @@ rather than depending on incidental thread-scheduling timing.
 ## Known limitations
 
 - Not exactly-once to arbitrary downstream systems — see "Delivery semantics" above.
-- The batch/record-index fallback identity (no business key configured) depends on Lakeflow
-  redelivering the same rows in the same order on retry; this is generally true for a
-  straightforward read-then-sink pipeline but is a materially weaker guarantee than a business
-  key, and is documented as such rather than presented as equivalent.
+- The batch/record-index fallback identity (`allow_batch_position_identity=True`, no business
+  key configured) depends on Lakeflow redelivering the same rows in the same order on retry —
+  Spark does not guarantee this for most sources, and a reordered retry can silently skip one
+  record while re-running another under its old identity. This is materially weaker than a
+  business key, which is why it now requires explicit opt-in rather than being the silent
+  default when no key strategy is given.
 - `max_records_per_batch` protects against runaway fan-out but does not itself rate-limit the
   Lakeflow source; pair it with upstream rate limiting (e.g. `maxFilesPerTrigger`/
-  `maxBytesPerTrigger` on the source `readStream`) for real protection.
+  `maxBytesPerTrigger` on the source `readStream`) for real protection. It also does not make an
+  over-limit batch retryable: every retry re-fails at the same cap until the config or source
+  changes (see "Spark execution model").
 - Purging a workflow instance's history removes Dapr's record of "already handled" for that
   instance ID; retention/purge policy is the operator's responsibility, same as for any other
   Dapr Workflow usage.
