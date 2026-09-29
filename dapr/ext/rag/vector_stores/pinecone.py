@@ -33,15 +33,16 @@ try:
 except ImportError:  # pragma: no cover - exercised only without pinecone installed
     Pinecone = None  # type: ignore[assignment]
 
-_TRANSIENT_EXCEPTION_NAMES = frozenset(
-    {
-        'ServiceException',
-        'UnauthorizedException',
-        'PineconeApiException',
-        'MaxRetryError',
-        'TimeoutError',
-    }
-)
+# Exceptions with no meaningful HTTP status code of their own (pure
+# connection/network-level failures) -- classified as transient by name
+# alone. Deliberately does NOT include PineconeApiException or
+# UnauthorizedException: both are HTTP-API-backed and carry a real status
+# code (see _classify), which decides transience correctly on its own -- a
+# 400 Bad Request (e.g. this store's own None-metadata bug, now fixed in
+# _to_pinecone_vector) and a 401 from a bad API key are not transient, and
+# blanket-including these two by name previously retried both until the
+# activity's retry budget ran out instead of failing fast.
+_TRANSIENT_EXCEPTION_NAMES = frozenset({'ServiceException', 'MaxRetryError', 'TimeoutError'})
 T = TypeVar('T')
 
 
@@ -165,10 +166,18 @@ class PineconeVectorStore(VectorIndex):
 
     @staticmethod
     def _classify(exc: Exception) -> RagError:
-        if type(exc).__name__ in _TRANSIENT_EXCEPTION_NAMES:
-            return TransientVectorStoreError(str(exc))
+        # Status code first, deliberately: an exception class like
+        # PineconeApiException covers every HTTP status the API can return,
+        # so classifying by class name alone can't distinguish a genuinely
+        # transient 503 from a non-transient 400/401. Only exceptions with no
+        # status code at all (pure connection-level failures) fall through to
+        # the name-based check below.
         status_code = getattr(exc, 'status', None) or getattr(exc, 'status_code', None)
-        if isinstance(status_code, int) and (status_code == 429 or status_code >= 500):
+        if isinstance(status_code, int):
+            if status_code == 429 or status_code >= 500:
+                return TransientVectorStoreError(str(exc))
+            return VectorStoreError(str(exc))
+        if type(exc).__name__ in _TRANSIENT_EXCEPTION_NAMES:
             return TransientVectorStoreError(str(exc))
         return VectorStoreError(str(exc))
 
@@ -198,7 +207,13 @@ def _to_pinecone_vector(record: VectorRecord) -> dict[str, Any]:
     # 'document_id': ..., 'content': ...}` literal: mypy infers a dict literal's
     # value type from *all* its keys, including the two str-typed ones, and then
     # rejects the unpacked dict[str, Any] as incompatible with that narrowed type.
-    metadata: dict[str, Any] = dict(record.metadata)
+    #
+    # None values are dropped, not just passed through: ProvenanceRecord fields
+    # like source_version_id/source_content_type/embedding_deployment are
+    # legitimately None for many sources/embedders, and Pinecone rejects a
+    # null metadata value outright (the upsert fails with a 400 for every
+    # record carrying one, which is most records in practice).
+    metadata: dict[str, Any] = {k: v for k, v in record.metadata.items() if v is not None}
     metadata['document_id'] = record.document_id
     metadata['content'] = record.content
     return {'id': record.chunk_id, 'values': list(record.embedding), 'metadata': metadata}

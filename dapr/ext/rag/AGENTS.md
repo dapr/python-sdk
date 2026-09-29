@@ -433,6 +433,12 @@ invocation. Building and running these surfaced two genuine bugs:
   of the underlying pub/sub system's own delivery guarantees -- both systems document at-least-once
   delivery, so a duplicate/redelivered notification must not start a second workflow instance or
   re-ingest a document. `pubsub_trigger_servicebus.py`/`pubsub_trigger.py` check
-  `already_seen(event_id)` before scheduling a workflow and `mark_seen(event_id)` after, backed by a
+  `already_seen(event_id)` in the pub/sub handler and skip a known duplicate immediately, backed by a
   Dapr state key with a TTL (not workflow state -- this check happens *before* a workflow instance
-  exists).
+  exists). `mark_seen(event_id)` is deliberately called later, from inside
+  `reconciliation_workflow.ReconciliationTrigger._reconcile()`, only once `pipeline.start()` for the
+  debounced batch containing that event has actually returned -- not synchronously in the handler.
+  Marking an event seen before its debounce window even elapses would let a crash in that window
+  (or an in-flight run whose manifest predates the change -- see `is_ingestion_in_flight()`) drop the
+  change forever: a later redelivery of the same event would then be skipped by `already_seen()`
+  without the change ever having been picked up by any run.

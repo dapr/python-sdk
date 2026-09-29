@@ -325,12 +325,15 @@ pub/sub subscribers):
   component -> `parse_azure_blob_event` (handles both Event Grid and CloudEvents schema).
 
 Both paths normalize into the same `SourceChangeEvent`. Because delivery is at-least-once and can
-arrive out of order, `EventDeduplicator` records each event's ID in Dapr state before acting on it,
-and `reconciliation_workflow.ReconciliationTrigger` debounces a burst of events into a single,
+arrive out of order, `EventDeduplicator` checks each event's ID against Dapr state before acting on
+it, and `reconciliation_workflow.ReconciliationTrigger` debounces a burst of events into a single,
 prefix-level reconciliation run shortly after the burst goes quiet -- discovery against the real
-source (not the event stream) remains the source of truth for what actually needs indexing. See
-that module's docstring for the single-process limitation of its `threading.Timer`-based debounce
-and the Dapr-Workflow-based alternative for a multi-replica subscriber deployment.
+source (not the event stream) remains the source of truth for what actually needs indexing. An
+event's ID is only recorded as seen once that reconciliation run has been durably scheduled, not
+when the event first arrives, so a crash mid-debounce can't cause a redelivered event to be
+silently skipped without ever being acted on. See that module's docstring for the single-process
+limitation of its `threading.Timer`-based debounce and the Dapr-Workflow-based alternative for a
+multi-replica subscriber deployment.
 
 ## Running the failure/recovery demo
 

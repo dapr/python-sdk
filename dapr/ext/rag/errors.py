@@ -75,12 +75,20 @@ class SourceAccessDeniedError(NonRetryableError):
     """The source rejected the request as unauthorized or forbidden."""
 
 
-class DocumentChangedError(RetryableError):
+class DocumentChangedError(NonRetryableError):
     """The document's ETag/version changed between discovery and download.
 
-    Retryable because the correct recovery is to pick up the new version on a
-    later run, not to index content that no longer matches the manifest's
-    recorded ETag/version under stale metadata.
+    Non-retryable *within this run*: the manifest's recorded ETag was fixed
+    at discovery time and never changes for the lifetime of this workflow
+    instance, so every retry of the same activity call would see the exact
+    same mismatch and fail identically -- wasting the whole retry budget
+    (with backoff delays) on a condition retrying provably cannot fix here.
+    The correct recovery is to pick up the new version on a *later* run (a
+    fresh `discover_and_manifest`), not to index content that no longer
+    matches this run's stale manifest metadata. `_activity_process_document`
+    already turns a `NonRetryableError` into a failed `DocumentOutcome`
+    without raising, which is exactly "fail this document fast, let a later
+    run pick it up" rather than "block this run's retries on it".
     """
 
 
@@ -109,7 +117,14 @@ class InvalidGenerationRequestError(NonRetryableError):
 
 
 class TransientVectorStoreError(RetryableError):
-    """The vector store failed transiently (connection reset, deadline exceeded)."""
+    """The vector store failed transiently (connection reset, deadline exceeded).
+
+    Also raised by `pipeline.py`'s validation activity when every document
+    completed but the store reports fewer chunks than expected: a store can
+    only ever be behind its own just-completed writes, never ahead of them,
+    so an undercount there is read-path eventual consistency, not a genuine
+    failure -- letting the activity's own RetryPolicy poll again is the fix.
+    """
 
 
 class VectorStoreError(RagError):

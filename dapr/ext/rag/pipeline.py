@@ -54,7 +54,9 @@ from dapr.ext.rag.embedding.base import Embedder
 from dapr.ext.rag.errors import (
     DocumentChangedError,
     NonRetryableError,
+    RagError,
     RetryableError,
+    TransientVectorStoreError,
     VersionValidationError,
 )
 from dapr.ext.rag.fingerprints import (
@@ -358,10 +360,23 @@ class DurableRAGPipeline:
 
         Returns:
             The workflow instance ID (whether newly scheduled, or already running).
+
+        Raises:
+            ValueError: `version` is the pipeline's currently active version.
         """
+        active_version = self.resolve_active_version()
+        if version == active_version:
+            raise ValueError(
+                f'Refusing to start an ingestion run for version {version!r}: it is the '
+                f'currently active version for pipeline {self._pipeline_id!r}. Rebuilding '
+                "the active version in place would let this run's in-progress writes land "
+                'in the exact index/namespace queries are currently being served from, '
+                'defeating the reason versions exist at all -- see AGENTS.md. Build under '
+                'a new version string and activate it once it validates instead.'
+            )
+
         resolved_instance_id = instance_id or self._stable_instance_id(version)
-        existing = self._workflow_client.get_workflow_state(resolved_instance_id)
-        if existing is not None and existing.runtime_status in _NON_TERMINAL_STATUSES:
+        if self._is_run_in_flight(resolved_instance_id):
             logger.info(
                 'Ingestion for pipeline=%s version=%s is already running as %s; not starting '
                 'a second run.',
@@ -399,8 +414,7 @@ class DurableRAGPipeline:
         rebuilding it.
         """
         resolved_instance_id = instance_id or f'rag-activate-{self._pipeline_id}-{version}'
-        existing = self._workflow_client.get_workflow_state(resolved_instance_id)
-        if existing is not None and existing.runtime_status in _NON_TERMINAL_STATUSES:
+        if self._is_run_in_flight(resolved_instance_id):
             return resolved_instance_id
         payload = _ActivationState(pipeline_id=self._pipeline_id, version=version)
         return self._workflow_client.schedule_new_workflow(
@@ -421,6 +435,24 @@ class DurableRAGPipeline:
         """Returns this pipeline's currently-active version, or `None` if never activated."""
         record, _etag = self._state.read_activation(self._pipeline_id)
         return record.active_version if record is not None else None
+
+    def is_ingestion_in_flight(self, version: str, *, instance_id: Optional[str] = None) -> bool:
+        """Returns whether an ingestion run for `version` is currently in flight.
+
+        `start()` reuses an in-flight run's existing instance rather than
+        starting a second one (see its docstring), which means a change
+        discovered after that run's manifest was already captured won't be
+        reflected in it. A caller reacting to individual change events (see
+        `examples/rag/reconciliation_workflow.py`) can check this before
+        calling `start()` to decide whether to defer those changes until the
+        in-flight run finishes, rather than silently losing them.
+        """
+        resolved_instance_id = instance_id or self._stable_instance_id(version)
+        return self._is_run_in_flight(resolved_instance_id)
+
+    def _is_run_in_flight(self, instance_id: str) -> bool:
+        existing = self._workflow_client.get_workflow_state(instance_id)
+        return existing is not None and existing.runtime_status in _NON_TERMINAL_STATUSES
 
     def _stable_instance_id(self, version: str) -> str:
         return f'rag-ingest-{self._pipeline_id}-{version}'
@@ -532,6 +564,23 @@ class DurableRAGPipeline:
                 retry_policy=retry_policy,
             )
             batch_items: list[dict] = batch_raw['items']
+            if not batch_items:
+                # cursor only ever advances by len(batch_items) (below), so an
+                # empty page here would advance it by 0 -- continue_as_new
+                # would then re-enter with the exact same cursor, re-derive
+                # this same page_index, and repeat forever. write_manifest's
+                # own paging can't produce this (every document is paged, so
+                # total_documents always equals the sum of every page's
+                # length), so reaching it means the manifest was left
+                # inconsistent with its own total_documents by something
+                # outside this normal path -- fail loudly instead of
+                # silently spinning.
+                raise RagError(
+                    f'Manifest page {page_index} for pipeline={state.pipeline_id!r} '
+                    f'version={state.version!r} is empty, but cursor ({state.cursor}) is '
+                    f'still below total_documents ({state.total_documents}); refusing to '
+                    'continue_as_new on an unchanged cursor.'
+                )
 
             # Every item is scheduled up front -- this *is* the fan-out, bounded to
             # at most `page_size` (== max_concurrent_documents) in-flight activities
@@ -709,6 +758,9 @@ class DurableRAGPipeline:
             DocumentWorkItem.from_source_document(doc)
             for doc in self._source.list_documents(raw.get('prefix'))
         ]
+        self._delete_documents_dropped_from_manifest(
+            pipeline_id=pipeline_id, version=version, new_documents=documents
+        )
         summary = self._state.write_manifest(
             pipeline_id=pipeline_id,
             version=version,
@@ -718,6 +770,46 @@ class DurableRAGPipeline:
             created_at=_utcnow_iso(),
         )
         return to_wire(summary)
+
+    def _delete_documents_dropped_from_manifest(
+        self, *, pipeline_id: str, version: str, new_documents: list[DocumentWorkItem]
+    ) -> None:
+        """Cleans up a document once it disappears from a re-run version's manifest.
+
+        Discovery runs once per *workflow instance* (guarded by
+        `_IngestionState.manifest_ready`), but the same version string can
+        still be re-run in a later instance -- `start()`'s docstring
+        describes calling it again for a version whose prior run already
+        reached a terminal state as the normal way a fresh run begins. A
+        document present in an earlier run's manifest but missing from this
+        run's freshly-discovered one (deleted at the source, or excluded by
+        a changed `prefix`) shares this same version's namespace/index with
+        everything else, so nothing else ever revisits it: without this,
+        its chunks and completion/progress records would linger forever,
+        inflating the vector store's count above what this run's own
+        manifest expects and permanently failing validation's equality
+        check (see `_activity_validate_version`).
+        """
+        old_meta = self._state.read_manifest_meta(pipeline_id=pipeline_id, version=version)
+        if old_meta is None:
+            return  # first run of this version -- nothing to diff against
+
+        new_document_ids = {doc.document_id for doc in new_documents}
+        old_page_count = old_meta.get('page_count', 0)
+        for page_index in range(old_page_count):
+            old_page = self._state.read_manifest_page(
+                pipeline_id=pipeline_id, version=version, page_index=page_index
+            )
+            for item in old_page:
+                if item.document_id in new_document_ids:
+                    continue
+                self._vector_store.delete_document(item.document_id, version)
+                self._state.delete_completion(
+                    pipeline_id=pipeline_id, version=version, document_id=item.document_id
+                )
+                self._state.delete_embed_progress(
+                    pipeline_id=pipeline_id, version=version, document_id=item.document_id
+                )
 
     def _activity_get_manifest_batch(self, ctx: WorkflowActivityContext, raw: dict) -> dict:
         items = self._state.read_manifest_page(
@@ -809,7 +901,23 @@ class DurableRAGPipeline:
             metadata=current_metadata,
         )
         parsed_documents = self._parser.parse(content, source_document)
-        chunks = [chunk for doc in parsed_documents for chunk in self._splitter.split(doc)]
+        # DocumentSplitter.split() restarts chunk_ordinal at 0 for each parsed
+        # "document" (e.g. one page) it's given -- it has no visibility into
+        # how many other pages this source document produced. Renumbering
+        # globally, across every page, here (the one place that sees the
+        # whole flattened list) is what makes chunk_ordinal -- and therefore
+        # compute_chunk_id, which folds it in -- unique across the *document*,
+        # not just within one page. Without this, two pages with identical
+        # text (a blank page, a repeated boilerplate header) would each
+        # produce a chunk_ordinal=0 with an identical chunk_content_hash too,
+        # so both compute the exact same chunk_id and the second silently
+        # overwrites the first in the vector store.
+        chunks = [
+            dataclasses.replace(chunk, chunk_ordinal=ordinal)
+            for ordinal, chunk in enumerate(
+                chunk for doc in parsed_documents for chunk in self._splitter.split(doc)
+            )
+        ]
 
         parser_config_hash = self._parser.config_fingerprint()
         splitter_config_hash = self._splitter.config_fingerprint()
@@ -836,6 +944,26 @@ class DurableRAGPipeline:
             or progress.source_content_hash != content_hash
             or progress.pipeline_fingerprint != pipeline_fingerprint
         ):
+            if prior is not None and (
+                prior.source_content_hash != content_hash
+                or prior.pipeline_fingerprint != pipeline_fingerprint
+            ):
+                # This document was previously completed *in this version*
+                # under different content or a different parser/splitter/
+                # embedding config. Its old chunks were written under chunk
+                # IDs derived from that old content/config hash (see
+                # fingerprints.compute_chunk_id) -- a new hash means new
+                # chunk IDs, not an overwrite of the old ones, so the old
+                # chunks are now orphaned unless deleted here. Gated on
+                # `prior` (not `progress`) so this runs exactly once per
+                # genuine change: a retry that crashed before any batch's
+                # progress was persisted re-enters this branch and calls
+                # delete_document again (idempotent -- nothing new was
+                # written yet), but a retry that resumes after batch 0
+                # already persisted progress under the *new* hash no longer
+                # matches this condition and correctly skips deleting the
+                # new chunks it just wrote.
+                self._vector_store.delete_document(work_item.document_id, version)
             progress = EmbedProgressRecord(
                 document_id=work_item.document_id,
                 source_content_hash=content_hash,
@@ -967,14 +1095,40 @@ class DurableRAGPipeline:
                     completed_documents += 1
                     expected_chunk_count += record.chunk_count
 
+        all_documents_completed = completed_documents == expected_documents
+        if (
+            expected_documents > 0
+            and all_documents_completed
+            and store_result.actual_chunk_count < expected_chunk_count
+        ):
+            # Every document genuinely finished processing, but the store
+            # reports fewer chunks than expected. A store can only ever be
+            # *behind* its own just-completed writes, never ahead of them, so
+            # this is far more likely to be read-path eventual consistency
+            # (e.g. Pinecone's describe_index_stats, Azure AI Search's
+            # document count, both documented as not immediately reflecting
+            # recent upserts) than genuine data loss. Raising lets this
+            # activity's own RetryPolicy poll again with backoff, up to its
+            # normal attempt budget, instead of immediately marking a fully
+            # successful run FAILED because the store hadn't caught up yet.
+            raise TransientVectorStoreError(
+                f'Vector store reports {store_result.actual_chunk_count} chunk(s) for '
+                f'version {version!r}, fewer than the {expected_chunk_count} expected from '
+                f'{completed_documents} completed document(s); retrying to allow for '
+                'read-path eventual consistency.'
+            )
+
         # A version with zero expected documents is treated as invalid rather than
         # trivially valid: it's far more likely to be a misconfigured prefix/source
         # than an intentional empty index, and activating one would silently
-        # blank out query results for that pipeline.
+        # blank out query results for that pipeline. Equality (not >=) also
+        # catches stale chunks left behind by anything this pipeline failed to
+        # clean up (see _process_one_document's delete_document call) rather
+        # than an inflated count silently passing validation.
         valid = (
             expected_documents > 0
-            and completed_documents == expected_documents
-            and store_result.actual_chunk_count >= expected_chunk_count
+            and all_documents_completed
+            and store_result.actual_chunk_count == expected_chunk_count
         )
         result = dataclasses.replace(
             store_result,

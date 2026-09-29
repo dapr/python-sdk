@@ -189,20 +189,55 @@ class PineconeVectorStoreQueryTest(unittest.TestCase):
 
 
 class PineconeVectorStoreErrorClassificationTest(unittest.TestCase):
-    def test_named_transient_exception_is_transient(self):
-        index = _FakeIndex(describe_exception=_fake_error('PineconeApiException'))
-        store = PineconeVectorStore(index_name='idx', client=index)
-        with self.assertRaises(TransientVectorStoreError):
-            store.validate_version('v1')
-
     def test_5xx_status_is_transient(self):
         index = _FakeIndex(describe_exception=_fake_error('SomeError', status=503))
         store = PineconeVectorStore(index_name='idx', client=index)
         with self.assertRaises(TransientVectorStoreError):
             store.validate_version('v1')
 
+    def test_429_status_is_transient(self):
+        index = _FakeIndex(describe_exception=_fake_error('SomeError', status=429))
+        store = PineconeVectorStore(index_name='idx', client=index)
+        with self.assertRaises(TransientVectorStoreError):
+            store.validate_version('v1')
+
     def test_unrecognized_failure_is_a_plain_vector_store_error(self):
         index = _FakeIndex(describe_exception=_fake_error('SomeConfigError'))
+        store = PineconeVectorStore(index_name='idx', client=index)
+        with self.assertRaises(VectorStoreError):
+            store.validate_version('v1')
+
+    def test_codeless_named_transient_exceptions_are_still_transient(self):
+        # ServiceException/MaxRetryError/TimeoutError carry no HTTP status of
+        # their own (pure connection-level failures) -- these are classified
+        # transient by class name alone, unlike the two cases below.
+        for name in ('ServiceException', 'MaxRetryError', 'TimeoutError'):
+            with self.subTest(name=name):
+                index = _FakeIndex(describe_exception=_fake_error(name))
+                store = PineconeVectorStore(index_name='idx', client=index)
+                with self.assertRaises(TransientVectorStoreError):
+                    store.validate_version('v1')
+
+    def test_pinecone_api_exception_is_classified_by_status_not_blanket_transient(self):
+        # A 400 (e.g. this store's own now-fixed None-metadata bug) must not
+        # be retried until the activity's retry budget runs out just because
+        # the exception class name is PineconeApiException -- retrying a bad
+        # request can never succeed.
+        index = _FakeIndex(describe_exception=_fake_error('PineconeApiException', status=400))
+        store = PineconeVectorStore(index_name='idx', client=index)
+        with self.assertRaises(VectorStoreError):
+            store.validate_version('v1')
+
+        transient_index = _FakeIndex(
+            describe_exception=_fake_error('PineconeApiException', status=503)
+        )
+        transient_store = PineconeVectorStore(index_name='idx', client=transient_index)
+        with self.assertRaises(TransientVectorStoreError):
+            transient_store.validate_version('v1')
+
+    def test_unauthorized_exception_is_not_transient(self):
+        # A bad API key will not fix itself by retrying.
+        index = _FakeIndex(describe_exception=_fake_error('UnauthorizedException', status=401))
         store = PineconeVectorStore(index_name='idx', client=index)
         with self.assertRaises(VectorStoreError):
             store.validate_version('v1')

@@ -132,6 +132,22 @@ class PipelineStateStoreTest(unittest.TestCase):
             self.store.read_completion(pipeline_id='p1', version='v1', document_id='doc-1')
         )
 
+    def test_delete_completion_deletes_the_same_key_write_completion_writes(self, _):
+        record = CompletionRecord(
+            document_id='doc-1',
+            source_content_hash='h1',
+            pipeline_fingerprint='fp1',
+            chunk_count=3,
+            embedded_chunk_count=3,
+            completed_at='2026-09-10T00:00:00+00:00',
+        )
+        self.store.write_completion(pipeline_id='p1', version='v1', record=record)
+        written_key = self.mock_client.save_state.call_args.kwargs['key']
+
+        self.store.delete_completion(pipeline_id='p1', version='v1', document_id='doc-1')
+
+        self.assertEqual(self.mock_client.delete_state.call_args.kwargs['key'], written_key)
+
     # -- embed progress -----------------------------------------------------
 
     def test_write_then_read_embed_progress_round_trips(self, _):
@@ -149,6 +165,21 @@ class PipelineStateStoreTest(unittest.TestCase):
             pipeline_id='p1', version='v1', document_id='doc-1'
         )
         self.assertEqual(restored, record)
+
+    def test_delete_embed_progress_deletes_the_same_key_write_embed_progress_writes(self, _):
+        record = EmbedProgressRecord(
+            document_id='doc-1',
+            source_content_hash='h1',
+            pipeline_fingerprint='fp1',
+            total_batches=2,
+            completed_batch_indices=[0],
+        )
+        self.store.write_embed_progress(pipeline_id='p1', version='v1', record=record)
+        written_key = self.mock_client.save_state.call_args.kwargs['key']
+
+        self.store.delete_embed_progress(pipeline_id='p1', version='v1', document_id='doc-1')
+
+        self.assertEqual(self.mock_client.delete_state.call_args.kwargs['key'], written_key)
 
     # -- attempt counter -----------------------------------------------------
 

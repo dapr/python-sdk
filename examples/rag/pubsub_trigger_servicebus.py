@@ -48,7 +48,7 @@ logger = logging.getLogger('rag-azure-trigger')
 
 app = App()
 deduplicator = EventDeduplicator(state_store_name=build_state_store_name())
-reconciliation = ReconciliationTrigger(pipeline_id=build_pipeline_id())
+reconciliation = ReconciliationTrigger(pipeline_id=build_pipeline_id(), deduplicator=deduplicator)
 
 
 @app.subscribe(
@@ -66,7 +66,6 @@ def on_blob_event(message: SubscriptionMessage) -> TopicEventResponse:
         logger.info('Duplicate delivery of event_id=%s; skipping.', event.event_id)
         return TopicEventResponse('success')
 
-    deduplicator.mark_seen(event.event_id)
     logger.info(
         'source_document_id=%s event_type=%s -- scheduling a debounced reconciliation',
         event.source_document_id,

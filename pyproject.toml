@@ -98,27 +98,17 @@ rag-azure-search = [
 all = [
     "dapr[fastapi,flask,grpc,langgraph,strands,workflow]",
     "dapr[rag,rag-langchain,rag-s3,rag-azure,rag-azure-search,rag-pgvector,rag-pinecone]",
-    # rag-unstructured pulls in unstructured -> python-magic, which needs a
-    # real libmagic for file-type sniffing. Windows has no system libmagic,
-    # and python-magic's own compat shim (magic/compat.py) crashes the whole
-    # process with a native access violation -- not a catchable ImportError
-    # -- instead of failing cleanly when it can't find one. The standard
-    # Windows workaround, python-magic-bin, isn't a fix here: it installs its
-    # own `magic/__init__.py` at the same path as python-magic's, predates
-    # (and lacks) compat.py entirely, and hasn't been released since 2017 --
-    # pairing it with python-magic risks an install-order-dependent file
-    # collision rather than a working combination. So `all` (this SDK's own
-    # dev/test bundle) simply excludes rag-unstructured on Windows;
-    # dapr/ext/rag/parsing/unstructured.py already handles unstructured
-    # being absent via UnstructuredParser raising OptionalDependencyError
-    # (see its own ImportError guard). Windows users who've separately sorted
-    # out libmagic (e.g. via conda; see unstructured's own install docs) can
-    # still `pip install dapr[rag-unstructured]` directly -- this exclusion
-    # is scoped to `all` only. (Inlined rather than `dapr[rag-unstructured];
-    # sys_platform != 'win32'`: uv silently drops a marker attached to a
-    # self-referential extra like that -- verified against this exact case,
-    # not assumed -- so it must go on the concrete requirement instead.)
-    "unstructured[md,pdf,docx]>=0.15.0,<1.0.0; sys_platform != 'win32'",
+    # rag-unstructured is deliberately NOT included here, unlike every other
+    # rag-* extra above. unstructured[pdf] pulls in a full ML stack (PyTorch,
+    # onnx/onnxruntime, transformers, ...): on a Linux CI job this raises the
+    # `all` install from roughly 82 MB to roughly 3.5 GB downloaded (7-8 GB on
+    # disk), and macOS/Windows pick up PyTorch too. `dev`/`tests` (below) both
+    # resolve to `dapr[all]`, so that weight would land on every contributor's
+    # `uv sync` and every CI job, for a parser no unit test actually exercises
+    # against the real package (see dapr/ext/rag/AGENTS.md's Testing section:
+    # UnstructuredParser's own tests run its OptionalDependencyError fallback
+    # path, not real parsing). Anyone who wants real `unstructured`-based
+    # parsing installs it explicitly: `pip install "dapr[rag-unstructured]"`.
 ]
 
 [project.urls]

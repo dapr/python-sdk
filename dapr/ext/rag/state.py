@@ -131,6 +131,16 @@ class PipelineStateStore:
             self._completion_key(pipeline_id, version, record.document_id), record.to_dict()
         )
 
+    def delete_completion(self, *, pipeline_id: str, version: str, document_id: str) -> None:
+        """Removes a document's completion record once it drops out of a re-run manifest.
+
+        See `DurableRAGPipeline._delete_documents_dropped_from_manifest`.
+        """
+        self._client.delete_state(
+            store_name=self._state_store_name,
+            key=self._completion_key(pipeline_id, version, document_id),
+        )
+
     # -- per-document embedding progress (batch-level resumability) --------
 
     def read_embed_progress(
@@ -144,6 +154,16 @@ class PipelineStateStore:
     ) -> None:
         self._save_json(
             self._embed_progress_key(pipeline_id, version, record.document_id), record.to_dict()
+        )
+
+    def delete_embed_progress(self, *, pipeline_id: str, version: str, document_id: str) -> None:
+        """Removes a document's embedding progress once it drops out of a re-run manifest.
+
+        See `DurableRAGPipeline._delete_documents_dropped_from_manifest`.
+        """
+        self._client.delete_state(
+            store_name=self._state_store_name,
+            key=self._embed_progress_key(pipeline_id, version, document_id),
         )
 
     # -- per-document attempt counts (retry metric) -------------------------

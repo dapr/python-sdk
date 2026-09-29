@@ -34,7 +34,33 @@ prefix, restarting its timer on every new external event, matching
 `examples/workflow/human_approval.py`'s wait-with-timeout shape) so exactly
 one reconciliation fires regardless of replica count. Noted here rather than
 implemented, to keep this example's scope matched to its single-process
-demo.
+demo. For the same reason, a process crash between accumulating a pending
+event and this module successfully calling `pipeline.start()` drops that
+event from memory; it self-heals only if another event for the same prefix
+arrives later. A production deployment that needs to survive that gap would
+persist pending event IDs to Dapr state before attempting `start()`, which is
+exactly the kind of durable step the workflow-based redesign above would
+also give for free.
+
+`EventDeduplicator.mark_seen()` is deliberately called from *inside* this
+module's `_reconcile()`, only once `pipeline.start()` has returned
+successfully -- not from the pub/sub handler that first sees the event. Once
+`start()` returns, the ingestion run is durably scheduled in Dapr Workflow and
+will run to completion on its own even if this process dies immediately
+after. Marking an event seen any earlier (e.g. synchronously in the handler,
+before the debounce window even elapses) would let a crash in that window
+drop the change forever: a broker redelivery of the same event would then be
+skipped by `already_seen()` without ever re-arming the debounce timer that
+leads back here.
+
+A change can also be lost in a subtler way: `start()` reuses an in-flight
+run's existing instance rather than starting a second one, and that run's
+manifest was captured *before* this change was discovered, so it won't be
+reflected there. `_reconcile()` checks `pipeline.is_ingestion_in_flight()`
+before calling `start()` and, if a build for this version is already
+running, defers the pending batch (the "dirty flag") back onto the queue
+instead of calling `start()` and wrongly treating the change as handled --
+see `_defer()`.
 """
 
 from __future__ import annotations
@@ -47,6 +73,8 @@ from typing import Callable, Optional
 from config import build_pipeline
 
 from dapr.ext.rag.models import SourceChangeEvent
+from dapr.ext.rag.pipeline import DurableRAGPipeline
+from dapr.ext.rag.triggers import EventDeduplicator
 
 logger = logging.getLogger('rag-reconciliation')
 
@@ -63,50 +91,110 @@ class ReconciliationTrigger:
         self,
         *,
         pipeline_id: str,
+        deduplicator: EventDeduplicator,
         debounce_seconds: float = 30.0,
         version_fn: Callable[[], str] = _default_version_for_now,
     ) -> None:
         self._pipeline_id = pipeline_id
+        self._deduplicator = deduplicator
         self._debounce_seconds = debounce_seconds
         self._version_fn = version_fn
         self._lock = threading.Lock()
         self._pending_timer: Optional[threading.Timer] = None
         self._pending_prefix: Optional[str] = None
+        self._pending_event_ids: list[str] = []
 
     def notify_change(self, event: SourceChangeEvent) -> None:
         """Records a change and (re)starts the debounce window.
 
         Any change arriving before the window elapses cancels and restarts
         the timer, so a burst of events collapses into one reconciliation
-        shortly after the burst goes quiet.
+        shortly after the burst goes quiet. `event.event_id` is only queued
+        for `EventDeduplicator.mark_seen()` here, not marked immediately --
+        see the module docstring for why.
         """
         prefix = _prefix_of(event.source_document_id)
         with self._lock:
             if self._pending_timer is not None:
                 self._pending_timer.cancel()
             self._pending_prefix = prefix if prefix == self._pending_prefix else None
+            self._pending_event_ids.append(event.event_id)
             timer = threading.Timer(self._debounce_seconds, self._reconcile)
             timer.daemon = True
             self._pending_timer = timer
             timer.start()
 
     def _reconcile(self) -> None:
-        version = self._version_fn()
         with self._lock:
             prefix = self._pending_prefix
+            event_ids = self._pending_event_ids
             self._pending_timer = None
-        logger.info(
-            'Debounce window elapsed for pipeline_id=%s; starting reconciliation version=%s prefix=%s',
-            self._pipeline_id,
-            version,
-            prefix,
-        )
+            self._pending_prefix = None
+            self._pending_event_ids = []
         pipeline = build_pipeline()
         try:
+            version = self._next_version(pipeline)
+            if pipeline.is_ingestion_in_flight(version):
+                logger.info(
+                    'Ingestion for pipeline_id=%s version=%s is already in flight; its '
+                    'manifest predates %d pending change(s), so deferring them rather than '
+                    'losing them.',
+                    self._pipeline_id,
+                    version,
+                    len(event_ids),
+                )
+                self._defer(prefix, event_ids)
+                return
+            logger.info(
+                'Debounce window elapsed for pipeline_id=%s; starting reconciliation '
+                'version=%s prefix=%s',
+                self._pipeline_id,
+                version,
+                prefix,
+            )
             instance_id = pipeline.start(version=version, prefix=prefix)
-            logger.info('Reconciliation ingestion instance_id=%s', instance_id)
         finally:
             pipeline.close()
+        logger.info('Reconciliation ingestion instance_id=%s', instance_id)
+        for event_id in event_ids:
+            self._deduplicator.mark_seen(event_id)
+
+    def _defer(self, prefix: Optional[str], event_ids: list[str]) -> None:
+        """Puts a batch back on the queue after an in-flight-run collision.
+
+        Re-arms on the normal debounce cadence (rather than immediately) so a
+        long-running in-flight build doesn't turn this into a busy-poll loop.
+        Reuses `notify_change`'s own prefix-merge rule, so a deferred batch's
+        prefix hint is conservatively dropped to `None` (a full rescan, never
+        incorrect -- see `_prefix_of`) rather than precisely tracked through
+        multiple deferrals.
+        """
+        with self._lock:
+            self._pending_prefix = prefix if prefix == self._pending_prefix else None
+            self._pending_event_ids = event_ids + self._pending_event_ids
+            if self._pending_timer is None:
+                timer = threading.Timer(self._debounce_seconds, self._reconcile)
+                timer.daemon = True
+                self._pending_timer = timer
+                timer.start()
+
+    def _next_version(self, pipeline: DurableRAGPipeline) -> str:
+        """Picks a version distinct from whichever one is currently active.
+
+        `DurableRAGPipeline.start()` refuses to rebuild the active version in
+        place (see `dapr/ext/rag/AGENTS.md`): live queries are served from it,
+        so rebuilding it in place would let this run's in-progress writes land
+        exactly where queries are reading from. The default day-bucketed
+        policy collides with that check whenever a second reconciliation
+        lands on a day whose version an earlier run already built and
+        activated -- appending a same-instant time suffix keeps this trigger
+        self-healing instead of surfacing a `ValueError` to the caller.
+        """
+        base_version = self._version_fn()
+        active_version = pipeline.resolve_active_version()
+        if base_version != active_version:
+            return base_version
+        return f'{base_version}-{datetime.now(timezone.utc).strftime("%H%M%S")}'
 
 
 def _prefix_of(source_document_id: str) -> Optional[str]:

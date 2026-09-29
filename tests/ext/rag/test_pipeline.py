@@ -24,8 +24,13 @@ import grpc
 
 from dapr.ext.rag._wire import to_wire
 from dapr.ext.rag.embedding.base import Embedder
-from dapr.ext.rag.errors import DocumentParseError, TransientEmbeddingError
+from dapr.ext.rag.errors import (
+    DocumentParseError,
+    TransientEmbeddingError,
+    TransientVectorStoreError,
+)
 from dapr.ext.rag.models import (
+    ActivationRecord,
     Chunk,
     Document,
     DocumentOutcomeStatus,
@@ -39,6 +44,7 @@ from dapr.ext.rag.models import (
     SourceProvider,
     UpsertResult,
     ValidationResult,
+    VectorRecord,
 )
 from dapr.ext.rag.parsing.base import DocumentParser
 from dapr.ext.rag.pipeline import DurableRAGPipeline, _ActivationState, _IngestionState
@@ -260,6 +266,11 @@ class _FakeDaprClient:
         self._etag_counter += 1
         data = value.encode('utf-8') if isinstance(value, str) else value
         self._store[key] = (data, str(self._etag_counter))
+
+    def delete_state(
+        self, store_name, key, etag=None, options=None, state_metadata=None, metadata=None
+    ):
+        self._store.pop(key, None)
 
     def publish_event(self, pubsub_name, topic_name, data, data_content_type=None):
         self.published_events.append(
@@ -485,6 +496,91 @@ class DurableRAGPipelineStartTest(unittest.TestCase):
 
         workflow_client.schedule_new_workflow.assert_called_once()
 
+    def test_refuses_to_start_the_currently_active_version(self):
+        # Rebuilding the active version in place would let this run's
+        # in-progress writes land in the exact index/namespace queries are
+        # currently being served from -- defeating the reason versions exist.
+        workflow_client = mock.Mock()
+        pipeline = _pipeline(workflow_client=workflow_client)
+        pipeline._state.write_activation(
+            ActivationRecord(
+                pipeline_id='company-knowledge',
+                active_version='2026-09',
+                previous_version=None,
+                manifest_hash='hash-1',
+                activated_at='2026-09-10T00:00:00+00:00',
+                workflow_instance_id='wf-prior',
+            ),
+            etag=None,
+        )
+
+        with self.assertRaises(ValueError):
+            pipeline.start(version='2026-09')
+
+        workflow_client.schedule_new_workflow.assert_not_called()
+
+    def test_allows_starting_a_version_that_is_not_the_active_one(self):
+        workflow_client = mock.Mock()
+        workflow_client.get_workflow_state.return_value = None
+        pipeline = _pipeline(workflow_client=workflow_client)
+        pipeline._state.write_activation(
+            ActivationRecord(
+                pipeline_id='company-knowledge',
+                active_version='2026-08',
+                previous_version=None,
+                manifest_hash='hash-1',
+                activated_at='2026-08-10T00:00:00+00:00',
+                workflow_instance_id='wf-prior',
+            ),
+            etag=None,
+        )
+
+        pipeline.start(version='2026-09')
+
+        workflow_client.schedule_new_workflow.assert_called_once()
+
+
+class DurableRAGPipelineIsIngestionInFlightTest(unittest.TestCase):
+    def test_true_while_the_run_is_non_terminal(self):
+        from dapr.ext.workflow import WorkflowStatus
+
+        workflow_client = mock.Mock()
+        workflow_client.get_workflow_state.return_value = SimpleNamespace(
+            runtime_status=WorkflowStatus.RUNNING
+        )
+        pipeline = _pipeline(workflow_client=workflow_client)
+
+        self.assertTrue(pipeline.is_ingestion_in_flight('2026-09'))
+
+    def test_false_once_the_run_reaches_a_terminal_status(self):
+        from dapr.ext.workflow import WorkflowStatus
+
+        workflow_client = mock.Mock()
+        workflow_client.get_workflow_state.return_value = SimpleNamespace(
+            runtime_status=WorkflowStatus.COMPLETED
+        )
+        pipeline = _pipeline(workflow_client=workflow_client)
+
+        self.assertFalse(pipeline.is_ingestion_in_flight('2026-09'))
+
+    def test_false_when_no_run_has_ever_been_scheduled(self):
+        workflow_client = mock.Mock()
+        workflow_client.get_workflow_state.return_value = None
+        pipeline = _pipeline(workflow_client=workflow_client)
+
+        self.assertFalse(pipeline.is_ingestion_in_flight('2026-09'))
+
+    def test_checks_the_same_stable_instance_id_start_uses(self):
+        workflow_client = mock.Mock()
+        workflow_client.get_workflow_state.return_value = None
+        pipeline = _pipeline(workflow_client=workflow_client)
+
+        pipeline.is_ingestion_in_flight('2026-09')
+
+        workflow_client.get_workflow_state.assert_called_once_with(
+            'rag-ingest-company-knowledge-2026-09'
+        )
+
 
 class DurableRAGPipelineActivateVersionTest(unittest.TestCase):
     def test_schedules_the_standalone_activation_workflow(self):
@@ -606,6 +702,104 @@ class ActivityDiscoverAndManifestTest(unittest.TestCase):
         )
         self.assertEqual(len(page0['items']), 2)
 
+    def test_a_document_dropped_from_a_rerun_manifest_is_cleaned_up(self):
+        # Discovery only runs once per *workflow instance*, but the same
+        # version string can be legitimately re-run in a later instance (see
+        # DurableRAGPipeline.start()'s docstring) -- this simulates that:
+        # two separate _activity_discover_and_manifest calls for one version,
+        # with the source's contents changing in between.
+        doc_1 = SourceDocument(
+            document_id='s3://b/1.txt', provider=SourceProvider.S3, uri='s3://b/1.txt', name='1.txt'
+        )
+        doc_2 = SourceDocument(
+            document_id='s3://b/2.txt', provider=SourceProvider.S3, uri='s3://b/2.txt', name='2.txt'
+        )
+        source = _FakeSource(
+            documents=[doc_1, doc_2],
+            content_by_id={'s3://b/1.txt': b'one', 's3://b/2.txt': b'two'},
+        )
+        vector_store = _FakeVectorStore()
+        pipeline = _pipeline(source=source, vector_store=vector_store)
+        manifest_args = {
+            'pipeline_id': 'company-knowledge',
+            'version': '2026-09',
+            'page_size': 10,
+            'prefix': None,
+        }
+
+        pipeline._activity_discover_and_manifest(_activity_ctx(), manifest_args)
+        batch = pipeline._activity_get_manifest_batch(
+            _activity_ctx(),
+            {'pipeline_id': 'company-knowledge', 'version': '2026-09', 'page_index': 0},
+        )
+        for ordinal, item in enumerate(batch['items']):
+            pipeline._activity_process_document(
+                _activity_ctx(),
+                {
+                    'work_item': item,
+                    'pipeline_id': 'company-knowledge',
+                    'version': '2026-09',
+                    'pipeline_fingerprint': pipeline._pipeline_fingerprint,
+                    'document_ordinal': ordinal,
+                },
+            )
+        self.assertIsNotNone(
+            pipeline._state.read_completion(
+                pipeline_id='company-knowledge', version='2026-09', document_id='s3://b/2.txt'
+            )
+        )
+
+        # doc-2 is deleted at the source; a second discovery run for the
+        # *same* version no longer lists it.
+        source._documents = [doc_1]
+        pipeline._activity_discover_and_manifest(_activity_ctx(), manifest_args)
+
+        self.assertIn(('2026-09', 's3://b/2.txt'), vector_store.deleted)
+        self.assertIsNone(
+            pipeline._state.read_completion(
+                pipeline_id='company-knowledge', version='2026-09', document_id='s3://b/2.txt'
+            )
+        )
+        self.assertIsNone(
+            pipeline._state.read_embed_progress(
+                pipeline_id='company-knowledge', version='2026-09', document_id='s3://b/2.txt'
+            )
+        )
+        # doc-1 (still present) must be untouched by the cleanup.
+        self.assertNotIn(('2026-09', 's3://b/1.txt'), vector_store.deleted)
+        self.assertIsNotNone(
+            pipeline._state.read_completion(
+                pipeline_id='company-knowledge', version='2026-09', document_id='s3://b/1.txt'
+            )
+        )
+
+    def test_first_discovery_of_a_version_has_nothing_to_clean_up(self):
+        # No prior manifest exists yet -- _delete_documents_dropped_from_manifest
+        # must short-circuit rather than mistake "no old manifest" for "every
+        # document was dropped".
+        documents = [
+            SourceDocument(
+                document_id='s3://b/1.txt',
+                provider=SourceProvider.S3,
+                uri='s3://b/1.txt',
+                name='1.txt',
+            )
+        ]
+        vector_store = _FakeVectorStore()
+        pipeline = _pipeline(source=_FakeSource(documents=documents), vector_store=vector_store)
+
+        pipeline._activity_discover_and_manifest(
+            _activity_ctx(),
+            {
+                'pipeline_id': 'company-knowledge',
+                'version': '2026-09',
+                'page_size': 10,
+                'prefix': None,
+            },
+        )
+
+        self.assertEqual(vector_store.deleted, [])
+
 
 class ActivityProcessDocumentTest(unittest.TestCase):
     def _base_raw(self, work_item, pipeline_fingerprint='fp-1', document_ordinal=0):
@@ -630,6 +824,62 @@ class ActivityProcessDocumentTest(unittest.TestCase):
         self.assertEqual(outcome_raw['chunk_count'], 2)
         self.assertEqual(outcome_raw['embedded_chunk_count'], 2)
         self.assertEqual(len(vector_store.upserted), 2)
+
+    def test_chunk_ordinals_are_unique_across_pages_with_identical_content(self):
+        # '||' makes _FakeParser produce two parsed "pages"; each page's own
+        # '|'-splitting restarts chunk_ordinal at 0 (matching the real
+        # TextSplitter), so without cross-page renumbering, two pages with
+        # identical content collide onto the same chunk_ids and silently
+        # overwrite each other in the store.
+        work_item = _work_item('doc-1')
+        source = _FakeSource(content_by_id={'doc-1': b'dup|dup||dup|dup'})
+        vector_store = _FakeVectorStore()
+        pipeline = _pipeline(source=source, vector_store=vector_store)
+        raw = self._base_raw(work_item, pipeline_fingerprint=pipeline._pipeline_fingerprint)
+
+        outcome_raw = pipeline._activity_process_document(_activity_ctx(), raw)
+
+        self.assertEqual(outcome_raw['chunk_count'], 4)
+        self.assertEqual(len(vector_store.upserted), 4)
+        chunk_ids = {record.chunk_id for _, record in vector_store.upserted}
+        self.assertEqual(len(chunk_ids), 4)  # no two chunks collided onto the same ID
+
+    def test_content_change_deletes_stale_chunks_before_writing_new_ones(self):
+        work_item = _work_item('doc-1')
+        source = _FakeSource(content_by_id={'doc-1': b'v1 sentence one|v1 sentence two'})
+        vector_store = _FakeVectorStore()
+        pipeline = _pipeline(source=source, vector_store=vector_store)
+        raw = self._base_raw(work_item, pipeline_fingerprint=pipeline._pipeline_fingerprint)
+
+        first = pipeline._activity_process_document(_activity_ctx(), raw)
+        self.assertEqual(first['status'], DocumentOutcomeStatus.COMPLETED.value)
+        self.assertEqual(vector_store.deleted, [])  # nothing stale to clean up yet
+
+        # Same document_id, genuinely different content -> different chunk_ids
+        # (fingerprints.compute_chunk_id folds in the content hash), so the
+        # first run's chunks are now orphaned unless explicitly deleted.
+        source._content_by_id['doc-1'] = b'v2 sentence, totally rewritten'
+        second = pipeline._activity_process_document(_activity_ctx(), raw)
+
+        self.assertEqual(second['status'], DocumentOutcomeStatus.COMPLETED.value)
+        self.assertEqual(vector_store.deleted, [('2026-09', 'doc-1')])
+
+    def test_unchanged_content_reprocessing_does_not_delete_anything(self):
+        # A resumed retry (progress already reflects the current content
+        # hash) must not re-delete the chunks it just wrote -- see the
+        # comment in _process_one_document on why this is gated on `prior`,
+        # not on `progress` alone.
+        work_item = _work_item('doc-1')
+        source = _FakeSource(content_by_id={'doc-1': b'sentence one|sentence two'})
+        vector_store = _FakeVectorStore()
+        pipeline = _pipeline(source=source, vector_store=vector_store)
+        raw = self._base_raw(work_item, pipeline_fingerprint=pipeline._pipeline_fingerprint)
+
+        pipeline._activity_process_document(_activity_ctx(), raw)
+        second = pipeline._activity_process_document(_activity_ctx(), raw)
+
+        self.assertEqual(second['status'], DocumentOutcomeStatus.SKIPPED.value)
+        self.assertEqual(vector_store.deleted, [])
 
     def test_skips_an_already_completed_document_without_touching_the_embedder(self):
         work_item = _work_item('doc-1')
@@ -684,7 +934,12 @@ class ActivityProcessDocumentTest(unittest.TestCase):
             embedder.calls, [['first sentence'], ['second sentence'], ['second sentence']]
         )
 
-    def test_a_document_changed_since_discovery_raises_a_retryable_error(self):
+    def test_a_document_changed_since_discovery_becomes_a_failed_outcome_not_an_exception(self):
+        # DocumentChangedError is non-retryable: the manifest's recorded etag
+        # never changes for the lifetime of this run, so every retry of this
+        # same activity call would see the identical mismatch and fail
+        # identically -- the activity must fail this document fast rather
+        # than burn its retry budget on a condition retrying can't fix here.
         work_item = _work_item('doc-1', etag='etag-at-discovery')
         source = _FakeSource(
             content_by_id={'doc-1': b'hello'},
@@ -693,10 +948,11 @@ class ActivityProcessDocumentTest(unittest.TestCase):
         pipeline = _pipeline(source=source)
         raw = self._base_raw(work_item, pipeline_fingerprint=pipeline._pipeline_fingerprint)
 
-        from dapr.ext.rag.errors import DocumentChangedError
+        outcome_raw = pipeline._activity_process_document(_activity_ctx(), raw)
 
-        with self.assertRaises(DocumentChangedError):
-            pipeline._activity_process_document(_activity_ctx(), raw)
+        self.assertEqual(outcome_raw['status'], DocumentOutcomeStatus.FAILED.value)
+        self.assertFalse(outcome_raw['retryable'])
+        self.assertEqual(outcome_raw['error_type'], 'DocumentChangedError')
 
     def test_a_non_retryable_parser_failure_becomes_a_failed_outcome_not_an_exception(self):
         work_item = _work_item('doc-1')
@@ -797,6 +1053,106 @@ class ActivityValidateVersionTest(unittest.TestCase):
             _activity_ctx(), {'pipeline_id': 'company-knowledge', 'version': '2026-09'}
         )
         self.assertTrue(result_raw['valid'])
+
+    def test_undercount_after_full_completion_is_treated_as_transient(self):
+        documents = [
+            SourceDocument(
+                document_id='s3://b/a.txt',
+                provider=SourceProvider.S3,
+                uri='s3://b/a.txt',
+                name='a.txt',
+            )
+        ]
+        source = _FakeSource(documents=documents, content_by_id={'s3://b/a.txt': b'hello|world'})
+        vector_store = _FakeVectorStore()
+        pipeline = _pipeline(source=source, vector_store=vector_store)
+        pipeline._activity_discover_and_manifest(
+            _activity_ctx(),
+            {
+                'pipeline_id': 'company-knowledge',
+                'version': '2026-09',
+                'page_size': 10,
+                'prefix': None,
+            },
+        )
+        batch = pipeline._activity_get_manifest_batch(
+            _activity_ctx(),
+            {'pipeline_id': 'company-knowledge', 'version': '2026-09', 'page_index': 0},
+        )
+        [item] = batch['items']
+        pipeline._activity_process_document(
+            _activity_ctx(),
+            {
+                'work_item': item,
+                'pipeline_id': 'company-knowledge',
+                'version': '2026-09',
+                'pipeline_fingerprint': pipeline._pipeline_fingerprint,
+                'document_ordinal': 0,
+            },
+        )
+        self.assertEqual(len(vector_store.upserted), 2)  # 'hello', 'world'
+
+        # Simulate the store's read path lagging behind its own just-completed
+        # write (e.g. Pinecone describe_index_stats, Azure AI Search document
+        # count): every document completed, but one chunk isn't visible yet.
+        vector_store.upserted.pop()
+
+        with self.assertRaises(TransientVectorStoreError):
+            pipeline._activity_validate_version(
+                _activity_ctx(), {'pipeline_id': 'company-knowledge', 'version': '2026-09'}
+            )
+
+    def test_overcount_from_orphaned_chunks_is_not_masked_by_completion(self):
+        documents = [
+            SourceDocument(
+                document_id='s3://b/a.txt',
+                provider=SourceProvider.S3,
+                uri='s3://b/a.txt',
+                name='a.txt',
+            )
+        ]
+        source = _FakeSource(documents=documents, content_by_id={'s3://b/a.txt': b'hello'})
+        vector_store = _FakeVectorStore()
+        pipeline = _pipeline(source=source, vector_store=vector_store)
+        pipeline._activity_discover_and_manifest(
+            _activity_ctx(),
+            {
+                'pipeline_id': 'company-knowledge',
+                'version': '2026-09',
+                'page_size': 10,
+                'prefix': None,
+            },
+        )
+        batch = pipeline._activity_get_manifest_batch(
+            _activity_ctx(),
+            {'pipeline_id': 'company-knowledge', 'version': '2026-09', 'page_index': 0},
+        )
+        [item] = batch['items']
+        pipeline._activity_process_document(
+            _activity_ctx(),
+            {
+                'work_item': item,
+                'pipeline_id': 'company-knowledge',
+                'version': '2026-09',
+                'pipeline_fingerprint': pipeline._pipeline_fingerprint,
+                'document_ordinal': 0,
+            },
+        )
+
+        # An orphaned chunk left behind under this version (e.g. from a
+        # document that has since been dropped from the source, or a
+        # cleanup that failed) inflates the store's count above what the
+        # manifest's completed documents expect. A `>=` check would pass
+        # this as valid; only `==` catches it.
+        orphan = VectorRecord(
+            chunk_id='orphan', document_id='gone', content='leftover', embedding=[0.0]
+        )
+        vector_store.upserted.append(('2026-09', orphan))
+
+        result_raw = pipeline._activity_validate_version(
+            _activity_ctx(), {'pipeline_id': 'company-knowledge', 'version': '2026-09'}
+        )
+        self.assertFalse(result_raw['valid'])
 
 
 class ActivityActivateVersionTest(unittest.TestCase):
@@ -1198,6 +1554,54 @@ class OrchestratorIngestionEndToEndTest(unittest.TestCase):
         second_calls = [(c.activity_name, c.input) for c in second_ctx.calls]
 
         self.assertEqual(first_calls, second_calls)
+
+    def test_an_empty_manifest_page_fails_fast_instead_of_looping_forever(self):
+        # write_manifest's own paging can't produce an empty page while
+        # cursor < total_documents (every document ends up in exactly one
+        # page, so their lengths always sum to total_documents) -- so this
+        # feeds the orchestrator a state that disagrees with a real,
+        # consistently-written 1-item manifest, simulating whatever external
+        # inconsistency the guard in _orchestrate_ingestion defends against.
+        from dapr.ext.rag.errors import RagError
+
+        documents = self._documents(1)
+        content_by_id = {d.document_id: b'chunk one' for d in documents}
+        pipeline = _pipeline(source=_FakeSource(documents=documents, content_by_id=content_by_id))
+        pipeline._activity_discover_and_manifest(
+            _activity_ctx(),
+            {
+                'pipeline_id': 'company-knowledge',
+                'version': '2026-09',
+                'page_size': 10,
+                'prefix': None,
+            },
+        )
+        wf_input = to_wire(
+            _IngestionState(
+                pipeline_id='company-knowledge',
+                version='2026-09',
+                manifest_ready=True,
+                total_documents=15,  # the real manifest only has 1 document, in page 0
+                cursor=10,  # -> page_index 10 // 10 == 1, a page that was never written
+                activate_when_complete=True,
+                fail_fast=False,
+                page_size=10,
+                embedding_batch_size=64,
+                max_activity_attempts=5,
+                first_retry_interval_seconds=1.0,
+                backoff_coefficient=2.0,
+                max_retry_interval_seconds=30.0,
+            )
+        )
+
+        with self.assertRaises(RagError):
+            _drive_with_real_activities(
+                pipeline,
+                pipeline._orchestrate_ingestion,
+                _FakeWorkflowContext(),
+                wf_input,
+                _activity_ctx(),
+            )
 
 
 class OrchestratorActivationTest(unittest.TestCase):

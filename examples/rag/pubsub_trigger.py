@@ -45,7 +45,7 @@ logger = logging.getLogger('rag-s3-trigger')
 
 app = App()
 deduplicator = EventDeduplicator(state_store_name=build_state_store_name())
-reconciliation = ReconciliationTrigger(pipeline_id=build_pipeline_id())
+reconciliation = ReconciliationTrigger(pipeline_id=build_pipeline_id(), deduplicator=deduplicator)
 
 
 @app.subscribe(pubsub_name='rag-events-pubsub', topic='s3-object-events')
@@ -61,7 +61,6 @@ def on_s3_event(message: SubscriptionMessage) -> TopicEventResponse:
         if deduplicator.already_seen(event.event_id):
             logger.info('Duplicate delivery of event_id=%s; skipping.', event.event_id)
             continue
-        deduplicator.mark_seen(event.event_id)
         logger.info(
             'source_document_id=%s event_type=%s -- scheduling a debounced reconciliation',
             event.source_document_id,

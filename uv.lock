@@ -1277,8 +1277,6 @@ all = [
     { name = "psycopg", extra = ["binary"] },
     { name = "python-ulid" },
     { name = "strands-agents" },
-    { name = "unstructured", version = "0.18.32", source = { registry = "https://pypi.org/simple" }, extra = ["docx", "md", "pdf"], marker = "python_full_version < '3.11' and sys_platform != 'win32'" },
-    { name = "unstructured", version = "0.27.5", source = { registry = "https://pypi.org/simple" }, extra = ["docx", "md", "pdf"], marker = "python_full_version >= '3.11' and sys_platform != 'win32'" },
     { name = "uvicorn" },
 ]
 fastapi = [
@@ -1426,7 +1424,6 @@ requires-dist = [
     { name = "strands-agents", marker = "extra == 'all'", specifier = ">=1.30.0,<2.0.0" },
     { name = "strands-agents", marker = "extra == 'strands'", specifier = ">=1.30.0,<2.0.0" },
     { name = "typing-extensions", specifier = ">=4.4.0,<5.0.0" },
-    { name = "unstructured", extras = ["docx", "md", "pdf"], marker = "sys_platform != 'win32' and extra == 'all'", specifier = ">=0.15.0,<1.0.0" },
     { name = "unstructured", extras = ["docx", "md", "pdf"], marker = "extra == 'rag-unstructured'", specifier = ">=0.15.0,<1.0.0" },
     { name = "uvicorn", marker = "extra == 'all'", specifier = ">=0.11.6,<1.0.0" },
     { name = "uvicorn", marker = "extra == 'fastapi'", specifier = ">=0.11.6,<1.0.0" },
