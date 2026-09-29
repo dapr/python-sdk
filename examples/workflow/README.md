@@ -376,6 +376,38 @@ app2 - triggering app3 activity
 ```
 among others. This shows that the workflow calls are working as expected.
 
+#### Cross-app client operations
+
+The multi-app examples above call across apps from inside a workflow. Client
+operations can target another app too: pass `app_id` to
+`schedule_new_workflow` and to the operations that follow, and each one is
+applied to the instance owned by that app. The caller registers no workflow of
+its own. Whether it is permitted is governed by the target app's
+`WorkflowAccessPolicy`.
+
+<!-- STEP
+name: Run cross-app client
+expected_stdout_lines:
+  - 'client - scheduling a workflow on the host app'
+  - 'host - workflow started'
+  - 'client - remote workflow is RUNNING'
+  - 'client - paused the remote workflow'
+  - 'client - resumed the remote workflow'
+  - 'client - remote workflow is COMPLETED'
+  - 'client - purged the remote workflow'
+background: true
+sleep: 20
+-->
+
+```sh
+dapr run --app-id wfcrossapphost -- python3 cross-app-client-host.py &
+dapr run --app-id wfcrossappclient -- python3 cross-app-client.py
+```
+<!-- END_STEP -->
+
+Requires a Dapr runtime with cross-app workflow support. Against an older
+runtime the app ID is ignored and every operation applies to the caller's own
+app.
 
 #### Error handling on activity calls
 

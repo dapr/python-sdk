@@ -277,6 +277,12 @@ class CreateWorkflowInstanceRequest(_message.Message):
 
     STARTEVENT_FIELD_NUMBER: _builtins.int
     PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
+    ENFORCEUNIQUEINSTANCEID_FIELD_NUMBER: _builtins.int
+    enforceUniqueInstanceId: _builtins.bool
+    """When true, the request fails with an ALREADY_EXISTS error if a workflow
+    instance with the same instanceId already exists, whether active or
+    completed. When false, an existing completed instance is restarted.
+    """
     @_builtins.property
     def startEvent(self) -> _history_events_pb2.HistoryEvent: ...
     @_builtins.property
@@ -288,10 +294,11 @@ class CreateWorkflowInstanceRequest(_message.Message):
         *,
         startEvent: _history_events_pb2.HistoryEvent | None = ...,
         propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
+        enforceUniqueInstanceId: _builtins.bool = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "propagatedHistory", b"propagatedHistory", "startEvent", b"startEvent"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "propagatedHistory", b"propagatedHistory", "startEvent", b"startEvent"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "enforceUniqueInstanceId", b"enforceUniqueInstanceId", "propagatedHistory", b"propagatedHistory", "startEvent", b"startEvent"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
     _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015

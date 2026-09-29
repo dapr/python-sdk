@@ -322,8 +322,15 @@ class CreateInstanceRequest(_message.Message):
     EXECUTIONID_FIELD_NUMBER: _builtins.int
     TAGS_FIELD_NUMBER: _builtins.int
     PARENTTRACECONTEXT_FIELD_NUMBER: _builtins.int
+    ENFORCEUNIQUEINSTANCEID_FIELD_NUMBER: _builtins.int
+    ROUTER_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
+    enforceUniqueInstanceId: _builtins.bool
+    """When true, the request fails with an ALREADY_EXISTS error if a workflow
+    instance with the same instanceId already exists, whether active or
+    completed. When false, an existing completed instance is restarted.
+    """
     @_builtins.property
     def version(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
@@ -336,6 +343,15 @@ class CreateInstanceRequest(_message.Message):
     def tags(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]: ...
     @_builtins.property
     def parentTraceContext(self) -> _orchestration_pb2.TraceContext: ...
+    @_builtins.property
+    def router(self) -> _orchestration_pb2.TaskRouter:
+        """router optionally routes this operation to the workflow instance owned
+        by another app. When targetAppID names a different app, the operation is
+        executed against that app's instance (same namespace unless
+        targetAppNamespace is set). sourceAppID is stamped by the sidecar, not
+        the client.
+        """
+
     def __init__(
         self,
         *,
@@ -347,11 +363,16 @@ class CreateInstanceRequest(_message.Message):
         executionId: _wrappers_pb2.StringValue | None = ...,
         tags: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
         parentTraceContext: _orchestration_pb2.TraceContext | None = ...,
+        enforceUniqueInstanceId: _builtins.bool = ...,
+        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["executionId", b"executionId", "input", b"input", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "executionId", b"executionId", "input", b"input", "parentTraceContext", b"parentTraceContext", "router", b"router", "scheduledStartTimestamp", b"scheduledStartTimestamp", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["executionId", b"executionId", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "enforceUniqueInstanceId", b"enforceUniqueInstanceId", "executionId", b"executionId", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "router", b"router", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
+    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___CreateInstanceRequest: _TypeAlias = CreateInstanceRequest  # noqa: Y015
 
@@ -377,16 +398,29 @@ class GetInstanceRequest(_message.Message):
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
     GETINPUTSANDOUTPUTS_FIELD_NUMBER: _builtins.int
+    ROUTER_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     getInputsAndOutputs: _builtins.bool
+    @_builtins.property
+    def router(self) -> _orchestration_pb2.TaskRouter:
+        """router optionally routes this operation to the workflow instance owned
+        by another app. sourceAppID is stamped by the sidecar, not the client.
+        """
+
     def __init__(
         self,
         *,
         instanceId: _builtins.str = ...,
         getInputsAndOutputs: _builtins.bool = ...,
+        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["getInputsAndOutputs", b"getInputsAndOutputs", "instanceId", b"instanceId"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "router", b"router"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "getInputsAndOutputs", b"getInputsAndOutputs", "instanceId", b"instanceId", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
+    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___GetInstanceRequest: _TypeAlias = GetInstanceRequest  # noqa: Y015
 
@@ -419,21 +453,32 @@ class RaiseEventRequest(_message.Message):
     INSTANCEID_FIELD_NUMBER: _builtins.int
     NAME_FIELD_NUMBER: _builtins.int
     INPUT_FIELD_NUMBER: _builtins.int
+    ROUTER_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
     @_builtins.property
     def input(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def router(self) -> _orchestration_pb2.TaskRouter:
+        """router optionally routes this operation to the workflow instance owned
+        by another app. sourceAppID is stamped by the sidecar, not the client.
+        """
+
     def __init__(
         self,
         *,
         instanceId: _builtins.str = ...,
         name: _builtins.str = ...,
         input: _wrappers_pb2.StringValue | None = ...,
+        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["input", b"input"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "input", b"input", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "instanceId", b"instanceId", "name", b"name"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "input", b"input", "instanceId", b"instanceId", "name", b"name", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
+    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___RaiseEventRequest: _TypeAlias = RaiseEventRequest  # noqa: Y015
 
@@ -456,21 +501,32 @@ class TerminateRequest(_message.Message):
     INSTANCEID_FIELD_NUMBER: _builtins.int
     OUTPUT_FIELD_NUMBER: _builtins.int
     RECURSIVE_FIELD_NUMBER: _builtins.int
+    ROUTER_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     recursive: _builtins.bool
     @_builtins.property
     def output(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def router(self) -> _orchestration_pb2.TaskRouter:
+        """router optionally routes this operation to the workflow instance owned
+        by another app. sourceAppID is stamped by the sidecar, not the client.
+        """
+
     def __init__(
         self,
         *,
         instanceId: _builtins.str = ...,
         output: _wrappers_pb2.StringValue | None = ...,
         recursive: _builtins.bool = ...,
+        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["output", b"output"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "output", b"output", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId", "output", b"output", "recursive", b"recursive"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "instanceId", b"instanceId", "output", b"output", "recursive", b"recursive", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
+    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___TerminateRequest: _TypeAlias = TerminateRequest  # noqa: Y015
 
@@ -492,19 +548,30 @@ class SuspendRequest(_message.Message):
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
     REASON_FIELD_NUMBER: _builtins.int
+    ROUTER_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     @_builtins.property
     def reason(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def router(self) -> _orchestration_pb2.TaskRouter:
+        """router optionally routes this operation to the workflow instance owned
+        by another app. sourceAppID is stamped by the sidecar, not the client.
+        """
+
     def __init__(
         self,
         *,
         instanceId: _builtins.str = ...,
         reason: _wrappers_pb2.StringValue | None = ...,
+        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["reason", b"reason"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "reason", b"reason", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId", "reason", b"reason"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "instanceId", b"instanceId", "reason", b"reason", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
+    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___SuspendRequest: _TypeAlias = SuspendRequest  # noqa: Y015
 
@@ -526,19 +593,30 @@ class ResumeRequest(_message.Message):
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
     REASON_FIELD_NUMBER: _builtins.int
+    ROUTER_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     @_builtins.property
     def reason(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def router(self) -> _orchestration_pb2.TaskRouter:
+        """router optionally routes this operation to the workflow instance owned
+        by another app. sourceAppID is stamped by the sidecar, not the client.
+        """
+
     def __init__(
         self,
         *,
         instanceId: _builtins.str = ...,
         reason: _wrappers_pb2.StringValue | None = ...,
+        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["reason", b"reason"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "reason", b"reason", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId", "reason", b"reason"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "instanceId", b"instanceId", "reason", b"reason", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
+    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___ResumeRequest: _TypeAlias = ResumeRequest  # noqa: Y015
 
@@ -562,6 +640,7 @@ class PurgeInstancesRequest(_message.Message):
     PURGEINSTANCEFILTER_FIELD_NUMBER: _builtins.int
     RECURSIVE_FIELD_NUMBER: _builtins.int
     FORCE_FIELD_NUMBER: _builtins.int
+    ROUTER_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     recursive: _builtins.bool
     force: _builtins.bool
@@ -577,6 +656,14 @@ class PurgeInstancesRequest(_message.Message):
     """
     @_builtins.property
     def purgeInstanceFilter(self) -> Global___PurgeInstanceFilter: ...
+    @_builtins.property
+    def router(self) -> _orchestration_pb2.TaskRouter:
+        """router optionally routes this operation to the workflow instance owned
+        by another app. Cross-app purges are delegated to the target app in
+        full, so they are always recursive on the remote side. sourceAppID is
+        stamped by the sidecar, not the client.
+        """
+
     def __init__(
         self,
         *,
@@ -584,17 +671,22 @@ class PurgeInstancesRequest(_message.Message):
         purgeInstanceFilter: Global___PurgeInstanceFilter | None = ...,
         recursive: _builtins.bool = ...,
         force: _builtins.bool | None = ...,
+        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_force", b"_force", "force", b"force", "instanceId", b"instanceId", "purgeInstanceFilter", b"purgeInstanceFilter", "request", b"request"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_force", b"_force", "_router", b"_router", "force", b"force", "instanceId", b"instanceId", "purgeInstanceFilter", b"purgeInstanceFilter", "request", b"request", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_force", b"_force", "force", b"force", "instanceId", b"instanceId", "purgeInstanceFilter", b"purgeInstanceFilter", "recursive", b"recursive", "request", b"request"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_force", b"_force", "_router", b"_router", "force", b"force", "instanceId", b"instanceId", "purgeInstanceFilter", b"purgeInstanceFilter", "recursive", b"recursive", "request", b"request", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__force: _TypeAlias = _typing.Literal["force"]  # noqa: Y015
     _WhichOneofArgType__force: _TypeAlias = _typing.Literal["_force", b"_force"]  # noqa: Y015
+    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
+    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
     _WhichOneofReturnType_request: _TypeAlias = _typing.Literal["instanceId", "purgeInstanceFilter"]  # noqa: Y015
     _WhichOneofArgType_request: _TypeAlias = _typing.Literal["request", b"request"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__force) -> _WhichOneofReturnType__force | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType_request) -> _WhichOneofReturnType_request | None: ...
 
@@ -727,6 +819,7 @@ class RerunWorkflowFromEventRequest(_message.Message):
     INPUT_FIELD_NUMBER: _builtins.int
     OVERWRITEINPUT_FIELD_NUMBER: _builtins.int
     NEWCHILDWORKFLOWINSTANCEID_FIELD_NUMBER: _builtins.int
+    ROUTER_FIELD_NUMBER: _builtins.int
     sourceInstanceID: _builtins.str
     """sourceInstanceID is the workflow instance ID to rerun. Can be a top
     level instance, or child workflow instance.
@@ -754,6 +847,12 @@ class RerunWorkflowFromEventRequest(_message.Message):
         the next Activity event.
         """
 
+    @_builtins.property
+    def router(self) -> _orchestration_pb2.TaskRouter:
+        """router optionally routes this operation to the workflow instance owned
+        by another app. sourceAppID is stamped by the sidecar, not the client.
+        """
+
     def __init__(
         self,
         *,
@@ -763,19 +862,24 @@ class RerunWorkflowFromEventRequest(_message.Message):
         input: _wrappers_pb2.StringValue | None = ...,
         overwriteInput: _builtins.bool = ...,
         newChildWorkflowInstanceID: _builtins.str | None = ...,
+        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_newChildWorkflowInstanceID", b"_newChildWorkflowInstanceID", "_newInstanceID", b"_newInstanceID", "input", b"input", "newChildWorkflowInstanceID", b"newChildWorkflowInstanceID", "newInstanceID", b"newInstanceID"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_newChildWorkflowInstanceID", b"_newChildWorkflowInstanceID", "_newInstanceID", b"_newInstanceID", "_router", b"_router", "input", b"input", "newChildWorkflowInstanceID", b"newChildWorkflowInstanceID", "newInstanceID", b"newInstanceID", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_newChildWorkflowInstanceID", b"_newChildWorkflowInstanceID", "_newInstanceID", b"_newInstanceID", "eventID", b"eventID", "input", b"input", "newChildWorkflowInstanceID", b"newChildWorkflowInstanceID", "newInstanceID", b"newInstanceID", "overwriteInput", b"overwriteInput", "sourceInstanceID", b"sourceInstanceID"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_newChildWorkflowInstanceID", b"_newChildWorkflowInstanceID", "_newInstanceID", b"_newInstanceID", "_router", b"_router", "eventID", b"eventID", "input", b"input", "newChildWorkflowInstanceID", b"newChildWorkflowInstanceID", "newInstanceID", b"newInstanceID", "overwriteInput", b"overwriteInput", "router", b"router", "sourceInstanceID", b"sourceInstanceID"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__newChildWorkflowInstanceID: _TypeAlias = _typing.Literal["newChildWorkflowInstanceID"]  # noqa: Y015
     _WhichOneofArgType__newChildWorkflowInstanceID: _TypeAlias = _typing.Literal["_newChildWorkflowInstanceID", b"_newChildWorkflowInstanceID"]  # noqa: Y015
     _WhichOneofReturnType__newInstanceID: _TypeAlias = _typing.Literal["newInstanceID"]  # noqa: Y015
     _WhichOneofArgType__newInstanceID: _TypeAlias = _typing.Literal["_newInstanceID", b"_newInstanceID"]  # noqa: Y015
+    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
+    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__newChildWorkflowInstanceID) -> _WhichOneofReturnType__newChildWorkflowInstanceID | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__newInstanceID) -> _WhichOneofReturnType__newInstanceID | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___RerunWorkflowFromEventRequest: _TypeAlias = RerunWorkflowFromEventRequest  # noqa: Y015
 

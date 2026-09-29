@@ -109,6 +109,16 @@ class WorkflowState:
             )
 
 
+def new_task_router(app_id: Optional[str]) -> Optional[pb.TaskRouter]:
+    """Builds a TaskRouter targeting another app, or None when no routing is requested.
+
+    Only the target app ID is set; the sidecar stamps sourceAppID.
+    """
+    if app_id is None:
+        return None
+    return pb.TaskRouter(targetAppID=app_id)
+
+
 class OrchestrationFailedError(Exception):
     def __init__(self, message: str, failure_details: task.FailureDetails):
         super().__init__(message)
@@ -210,6 +220,7 @@ class TaskHubGrpcClient:
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
         reuse_id_policy: Optional[WorkflowIdReusePolicy] = None,
+        app_id: Optional[str] = None,
     ) -> str:
         name = orchestrator if isinstance(orchestrator, str) else task.get_name(orchestrator)
 
@@ -223,6 +234,7 @@ class TaskHubGrpcClient:
             input=input_pb,
             scheduledStartTimestamp=helpers.new_timestamp(start_at) if start_at else None,
             version=wrappers_pb2.StringValue(value=''),
+            router=new_task_router(app_id),
         )
 
         self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")
@@ -230,16 +242,33 @@ class TaskHubGrpcClient:
         return res.instanceId
 
     def get_orchestration_state(
-        self, instance_id: str, *, fetch_payloads: bool = True
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = True,
+        app_id: Optional[str] = None,
     ) -> Optional[WorkflowState]:
-        req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
+        req = pb.GetInstanceRequest(
+            instanceId=instance_id,
+            getInputsAndOutputs=fetch_payloads,
+            router=new_task_router(app_id),
+        )
         res: pb.GetInstanceResponse = self._stub.GetInstance(req)
         return new_orchestration_state(req.instanceId, res)
 
     def wait_for_orchestration_start(
-        self, instance_id: str, *, fetch_payloads: bool = False, timeout: Optional[int] = 0
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = False,
+        timeout: Optional[int] = 0,
+        app_id: Optional[str] = None,
     ) -> Optional[WorkflowState]:
-        req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
+        req = pb.GetInstanceRequest(
+            instanceId=instance_id,
+            getInputsAndOutputs=fetch_payloads,
+            router=new_task_router(app_id),
+        )
         self._logger.info(
             f"Waiting {'indefinitely' if timeout in (0, None) else f'up to {timeout}s'} for instance '{instance_id}' to start."
         )
@@ -254,9 +283,18 @@ class TaskHubGrpcClient:
             raise TimeoutError('Timed-out waiting for the orchestration to start')
 
     def wait_for_orchestration_completion(
-        self, instance_id: str, *, fetch_payloads: bool = True, timeout: Optional[int] = 0
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = True,
+        timeout: Optional[int] = 0,
+        app_id: Optional[str] = None,
     ) -> Optional[WorkflowState]:
-        req = pb.GetInstanceRequest(instanceId=instance_id, getInputsAndOutputs=fetch_payloads)
+        req = pb.GetInstanceRequest(
+            instanceId=instance_id,
+            getInputsAndOutputs=fetch_payloads,
+            router=new_task_router(app_id),
+        )
         self._logger.info(
             f"Waiting {'indefinitely' if timeout in (0, None) else f'up to {timeout}s'} for instance '{instance_id}' to complete."
         )
@@ -393,40 +431,78 @@ class TaskHubGrpcClient:
                         raise _TransientTimeout()
 
     def raise_orchestration_event(
-        self, instance_id: str, event_name: str, *, data: Optional[Any] = None
+        self,
+        instance_id: str,
+        event_name: str,
+        *,
+        data: Optional[Any] = None,
+        app_id: Optional[str] = None,
     ):
         req = pb.RaiseEventRequest(
             instanceId=instance_id,
             name=event_name,
             input=wrappers_pb2.StringValue(value=shared.to_json(data)) if data else None,
+            router=new_task_router(app_id),
         )
 
         self._logger.info(f"Raising event '{event_name}' for instance '{instance_id}'.")
         self._stub.RaiseEvent(req)
 
     def terminate_orchestration(
-        self, instance_id: str, *, output: Optional[Any] = None, recursive: bool = True
+        self,
+        instance_id: str,
+        *,
+        output: Optional[Any] = None,
+        recursive: bool = True,
+        app_id: Optional[str] = None,
     ):
         req = pb.TerminateRequest(
             instanceId=instance_id,
             output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output else None,
             recursive=recursive,
+            router=new_task_router(app_id),
         )
 
         self._logger.info(f"Terminating instance '{instance_id}'.")
         self._stub.TerminateInstance(req)
 
-    def suspend_orchestration(self, instance_id: str):
-        req = pb.SuspendRequest(instanceId=instance_id)
+    def suspend_orchestration(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ):
+        req = pb.SuspendRequest(
+            instanceId=instance_id,
+            router=new_task_router(app_id),
+        )
         self._logger.info(f"Suspending instance '{instance_id}'.")
         self._stub.SuspendInstance(req)
 
-    def resume_orchestration(self, instance_id: str):
-        req = pb.ResumeRequest(instanceId=instance_id)
+    def resume_orchestration(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ):
+        req = pb.ResumeRequest(
+            instanceId=instance_id,
+            router=new_task_router(app_id),
+        )
         self._logger.info(f"Resuming instance '{instance_id}'.")
         self._stub.ResumeInstance(req)
 
-    def purge_orchestration(self, instance_id: str, recursive: bool = True):
-        req = pb.PurgeInstancesRequest(instanceId=instance_id, recursive=recursive)
+    def purge_orchestration(
+        self,
+        instance_id: str,
+        recursive: bool = True,
+        *,
+        app_id: Optional[str] = None,
+    ):
+        req = pb.PurgeInstancesRequest(
+            instanceId=instance_id,
+            recursive=recursive,
+            router=new_task_router(app_id),
+        )
         self._logger.info(f"Purging instance '{instance_id}'.")
         self._stub.PurgeInstances(req)

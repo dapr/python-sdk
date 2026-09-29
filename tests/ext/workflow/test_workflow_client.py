@@ -51,6 +51,10 @@ class SimulatedRpcError(RpcError):
 class FakeTaskHubGrpcClient:
     def __init__(self):
         self.last_scheduled_workflow_name = None
+        self.last_app_id = None
+
+    def _record_router(self, app_id):
+        self.last_app_id = app_id
 
     def schedule_new_orchestration(
         self,
@@ -59,11 +63,14 @@ class FakeTaskHubGrpcClient:
         instance_id,
         start_at,
         reuse_id_policy: Union[client.WorkflowIdReusePolicy, None] = None,
+        app_id=None,
     ):
         self.last_scheduled_workflow_name = workflow
+        self._record_router(app_id)
         return mock_schedule_result
 
-    def get_orchestration_state(self, instance_id, fetch_payloads):
+    def get_orchestration_state(self, instance_id, fetch_payloads, app_id=None):
+        self._record_router(app_id)
         if wf_status == 'not-found':
             raise SimulatedRpcError(code='UNKNOWN', details='no such instance exists')
         elif wf_status == 'found':
@@ -73,31 +80,48 @@ class FakeTaskHubGrpcClient:
         else:
             raise SimulatedRpcError(code='UNKNOWN', details='unknown error')
 
-    def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout):
+    def wait_for_orchestration_start(self, instance_id, fetch_payloads, timeout, app_id=None):
+        self._record_router(app_id)
         return self._inner_get_orchestration_state(instance_id, client.OrchestrationStatus.RUNNING)
 
-    def wait_for_orchestration_completion(self, instance_id, fetch_payloads, timeout):
+    def wait_for_orchestration_completion(self, instance_id, fetch_payloads, timeout, app_id=None):
+        self._record_router(app_id)
         return self._inner_get_orchestration_state(
             instance_id, client.OrchestrationStatus.COMPLETED
         )
 
     def raise_orchestration_event(
-        self, instance_id: str, event_name: str, *, data: Union[Any, None] = None
+        self,
+        instance_id: str,
+        event_name: str,
+        *,
+        data: Union[Any, None] = None,
+        app_id=None,
     ):
+        self._record_router(app_id)
         return mock_raise_event_result
 
     def terminate_orchestration(
-        self, instance_id: str, *, output: Union[Any, None] = None, recursive: bool = True
+        self,
+        instance_id: str,
+        *,
+        output: Union[Any, None] = None,
+        recursive: bool = True,
+        app_id=None,
     ):
+        self._record_router(app_id)
         return mock_terminate_result
 
-    def suspend_orchestration(self, instance_id: str):
+    def suspend_orchestration(self, instance_id: str, *, app_id=None):
+        self._record_router(app_id)
         return mock_suspend_result
 
-    def resume_orchestration(self, instance_id: str):
+    def resume_orchestration(self, instance_id: str, *, app_id=None):
+        self._record_router(app_id)
         return mock_resume_result
 
-    def purge_orchestration(self, instance_id: str, recursive: bool = True):
+    def purge_orchestration(self, instance_id: str, recursive: bool = True, *, app_id=None):
+        self._record_router(app_id)
         return mock_purge_result
 
     def _inner_get_orchestration_state(self, instance_id, state: client.OrchestrationStatus):
@@ -289,3 +313,60 @@ class WorkflowClientTest(unittest.TestCase):
             assert actual_purge_result == mock_purge_result
             actual_purge_result = wfClient.purge_workflow(instance_id=mock_instance_id)
             assert actual_purge_result == mock_purge_result
+
+
+class WorkflowClientCrossAppTest(unittest.TestCase):
+    """Verifies app_id is forwarded to the underlying task hub client."""
+
+    target_app_id = 'appB'
+
+    def _assert_forwarded(self, fake_client):
+        assert fake_client.last_app_id == self.target_app_id
+
+    def test_cross_app_kwargs_are_forwarded(self):
+        fake_client = FakeTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient', return_value=fake_client
+        ):
+            wfClient = DaprWorkflowClient()
+            routing = {'app_id': self.target_app_id}
+
+            wfClient.schedule_new_workflow(workflow='my_registered_workflow', **routing)
+            self._assert_forwarded(fake_client)
+
+            global wf_status
+            wf_status = 'found'
+            wfClient.get_workflow_state(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            wfClient.wait_for_workflow_start(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            wfClient.wait_for_workflow_completion(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            wfClient.raise_workflow_event(
+                instance_id=mock_instance_id, event_name='test_event', **routing
+            )
+            self._assert_forwarded(fake_client)
+
+            wfClient.terminate_workflow(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            wfClient.pause_workflow(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            wfClient.resume_workflow(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+            wfClient.purge_workflow(instance_id=mock_instance_id, **routing)
+            self._assert_forwarded(fake_client)
+
+    def test_cross_app_kwargs_default_to_none(self):
+        fake_client = FakeTaskHubGrpcClient()
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient', return_value=fake_client
+        ):
+            wfClient = DaprWorkflowClient()
+            wfClient.terminate_workflow(instance_id=mock_instance_id)
+            assert fake_client.last_app_id is None
