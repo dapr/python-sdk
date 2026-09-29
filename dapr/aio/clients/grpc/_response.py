@@ -144,7 +144,9 @@ class AsyncConfigurationWatcher:
 
     ``async def`` handlers are awaited on the event loop; plain functions run in a worker
     thread (asyncio.to_thread) so they cannot block the loop. Either way, one handler call
-    finishes before the next starts, in the order the updates arrived.
+    finishes before the next starts, in the order the updates arrived. Plain-function calls
+    may each run on a different worker thread (don't rely on thread-locals), and one that is
+    still running when the watcher stops is not waited for, so keep them short.
 
     Failed reconnect attempts are logged like ConfigurationWatcher does (see
     CONFIG_OUTAGE_WARNING_EVERY_N_FAILURES).

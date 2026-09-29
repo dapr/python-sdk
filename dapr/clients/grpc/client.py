@@ -1371,6 +1371,13 @@ class DaprGrpcClient:
         UnsubscribeConfiguration sent through another client only ends the current stream
         and this client subscribes again.
 
+        Known limitation: when gRPC client instrumentation (for example OpenTelemetry, which
+        the workflow extension enables on import) wraps the stream, it can't be cancelled from
+        the client. If this is called while a reconnect is still waiting for the sidecar's
+        first response, the watcher thread stays blocked until that response arrives and then
+        exits without subscribing again. close() is not affected, because closing the channel
+        ends the stream.
+
         Args:
             store_name (str): the state store name to unsubscribe from
             id (str): the subscription id to unsubscribe

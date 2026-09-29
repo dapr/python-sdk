@@ -1251,7 +1251,11 @@ class DaprGrpcClientAsync:
         The handler may be a plain function or an ``async def`` function. Async handlers run
         on the event loop. Plain functions run in a worker thread (asyncio.to_thread), so a
         slow handler does not block the event loop. Handler calls run one at a time, in the
-        order the updates arrive.
+        order the updates arrive. Each call of a plain function may run on a different worker
+        thread, so don't rely on thread-local state or thread affinity across calls. Keep
+        plain handlers short: one still running when the subscription is stopped or the
+        client is closed keeps running in its thread, and its result or exception is not
+        observed.
 
         Returns:
             id (str): subscription id, which can be used to unsubscribe later

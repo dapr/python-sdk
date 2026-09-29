@@ -910,7 +910,13 @@ class ConfigurationWatcher:
         self._stop_event.set()
 
     def stop(self) -> None:
-        """Stops reconnecting, cancels the current stream and waits briefly for the thread."""
+        """Stops reconnecting, cancels the current stream and waits briefly for the thread.
+
+        If gRPC client instrumentation (for example OpenTelemetry) wrapped the stream, it has no
+        cancel(); a stream still waiting for the sidecar's first response then keeps the thread
+        blocked until that response arrives, after which the watcher exits without subscribing
+        again. Closing the client's channel ends such streams immediately.
+        """
         self.request_stop()
         self.cancel_stream()
         self.join()
