@@ -24,6 +24,7 @@ from dapr.clients.http.client import DaprHttpClient
 from dapr.clients.http.conf import CONTENT_TYPE_HEADER
 from dapr.clients.http.helpers import get_api_url
 from dapr.clients.retry import RetryPolicy
+from dapr.credentials.manager import AsyncCredentialManager
 from dapr.serializers import DefaultJSONSerializer
 from dapr.version import __version__
 
@@ -39,6 +40,7 @@ class DaprInvocationHttpClient:
         timeout: int = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        credential_manager: Optional[AsyncCredentialManager] = None,
     ):
         """Invokes Dapr's API for method invocation over HTTP.
 
@@ -46,9 +48,15 @@ class DaprInvocationHttpClient:
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
             retry_policy (RetryPolicy optional): Specifies retry behaviour
+            credential_manager (AsyncCredentialManager, optional): workload identity
+                credentials, sent instead of ``DAPR_API_TOKEN``.
         """
         self._client = DaprHttpClient(
-            DefaultJSONSerializer(), timeout, headers_callback, retry_policy=retry_policy
+            DefaultJSONSerializer(),
+            timeout,
+            headers_callback,
+            retry_policy=retry_policy,
+            credential_manager=credential_manager,
         )
 
     async def invoke_method_async(

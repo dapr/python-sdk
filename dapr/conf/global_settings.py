@@ -40,6 +40,14 @@ DAPR_HTTP_TIMEOUT_SECONDS = 60
 # 0 leaves the gRPC default (4 MiB) in place. See dapr/python-sdk#1023.
 DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES = 0
 
+# ----- Workload identity settings ------
+# RFC 8693 OAuth 2.0 Token Exchange: set the first two to enable it. The token file holds the
+# subject token (e.g. a Kubernetes projected service account token), re-read on every exchange.
+DAPR_WORKLOAD_IDENTITY_TOKEN_URL = None
+DAPR_WORKLOAD_IDENTITY_TOKEN_FILE_PATH = None
+DAPR_WORKLOAD_IDENTITY_AUDIENCE = None
+DAPR_WORKLOAD_IDENTITY_SCOPE = None
+
 # ----- Conversation API settings ------
 
 # Configuration for handling large enums to avoid massive JSON schemas that can exceed LLM token limits

@@ -47,6 +47,7 @@ def create_aio_channel(
     interceptors: Optional[Sequence[grpc.aio.ClientInterceptor]] = None,
     max_grpc_message_length: Optional[int] = None,
     credentials: Optional[grpc.ChannelCredentials] = None,
+    suppress_api_token_interceptor: bool = False,
 ) -> grpc.aio.Channel:
     """Creates a grpc.aio channel to daprd with the SDK's standard options.
 
@@ -65,6 +66,8 @@ def create_aio_channel(
             caps only the receive size.
         credentials (grpc.ChannelCredentials, optional): TLS credentials used
             when the endpoint requires TLS; defaults to the system SSL ones.
+        suppress_api_token_interceptor (bool): omit the ``DAPR_API_TOKEN`` interceptor,
+            for callers authenticating with a credential manager instead.
     """
     # imported lazily: dapr.aio.clients imports DaprGrpcClientAsync, which imports this module
     from dapr.aio.clients.grpc.interceptors import (
@@ -89,7 +92,7 @@ def create_aio_channel(
 
     channel_interceptors: List[grpc.aio.ClientInterceptor] = list(interceptors or [])
     channel_interceptors.append(DaprClientTimeoutInterceptorAsync())
-    if settings.DAPR_API_TOKEN:
+    if settings.DAPR_API_TOKEN and not suppress_api_token_interceptor:
         channel_interceptors.append(
             DaprClientInterceptorAsync([('dapr-api-token', settings.DAPR_API_TOKEN)])
         )
@@ -100,7 +103,8 @@ def create_aio_channel(
     set_default_grpc_dns_resolver()
     silence_grpc_aio_poller_noise()
 
-    if uri.tls:
+    # gRPC only sends call credentials over a secure channel, so explicit credentials imply TLS.
+    if uri.tls or credentials is not None:
         return grpc.aio.secure_channel(
             uri.endpoint,
             credentials=credentials or grpc.ssl_channel_credentials(),  # type: ignore[attr-defined]

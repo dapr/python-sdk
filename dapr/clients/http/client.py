@@ -32,6 +32,9 @@ if TYPE_CHECKING:
 from dapr.clients._constants import DEFAULT_JSON_CONTENT_TYPE
 from dapr.clients.exceptions import DaprHttpError, DaprInternalError
 from dapr.conf import settings
+from dapr.credentials._http import get_bearer_header
+from dapr.credentials._settings import resolve_default_credential_provider
+from dapr.credentials.manager import AsyncCredentialManager
 
 
 class DaprHttpClient:
@@ -43,6 +46,7 @@ class DaprHttpClient:
         timeout: Optional[int] = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        credential_manager: Optional[AsyncCredentialManager] = None,
     ):
         """Invokes Dapr over HTTP.
 
@@ -50,6 +54,10 @@ class DaprHttpClient:
             message_serializer (Serializer): Dapr serializer.
             timeout (int, optional): Timeout in seconds, defaults to 60.
             headers_callback (lambda: Dict[str, str]], optional): Generates header for each request.
+            retry_policy (RetryPolicy, optional): Specifies retry behaviour.
+            credential_manager (AsyncCredentialManager, optional): workload identity
+                credentials, sent instead of ``DAPR_API_TOKEN``. Defaults to one built from the
+                ``DAPR_WORKLOAD_IDENTITY_*`` settings, if set.
         """
         DaprHealth.wait_for_sidecar()
 
@@ -58,20 +66,30 @@ class DaprHttpClient:
         self._headers_callback = headers_callback
         self.retry_policy = retry_policy or RetryPolicy()
 
+        if credential_manager is not None:
+            self._credential_manager: Optional[AsyncCredentialManager] = credential_manager
+        else:
+            default_provider = resolve_default_credential_provider()
+            self._credential_manager = (
+                AsyncCredentialManager(default_provider) if default_provider is not None else None
+            )
+
     async def send_bytes(
         self,
         method: str,
         url: str,
         data: Optional[bytes],
-        headers: Dict[str, Union[bytes, str]] = {},
+        headers: Optional[Dict[str, Union[bytes, str]]] = None,
         query_params: Optional[Mapping] = None,
         timeout: Optional[int] = None,
     ) -> Tuple[bytes, aiohttp.ClientResponse]:
-        headers_map = headers
+        headers_map = dict(headers or {})
         if not headers_map.get(CONTENT_TYPE_HEADER):
             headers_map[CONTENT_TYPE_HEADER] = DEFAULT_JSON_CONTENT_TYPE
 
-        if settings.DAPR_API_TOKEN is not None:
+        if self._credential_manager is not None:
+            headers_map.update(await get_bearer_header(self._credential_manager))
+        elif settings.DAPR_API_TOKEN is not None:
             headers_map[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
 
         if self._headers_callback is not None:
