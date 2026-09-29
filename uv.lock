@@ -1428,7 +1428,7 @@ requires-dist = [
     { name = "uvicorn", marker = "extra == 'all'", specifier = ">=0.11.6,<1.0.0" },
     { name = "uvicorn", marker = "extra == 'fastapi'", specifier = ">=0.11.6,<1.0.0" },
 ]
-provides-extras = ["all", "fastapi", "flask", "grpc", "langgraph", "rag", "rag-azure", "rag-azure-search", "rag-langchain", "rag-pgvector", "rag-pinecone", "rag-s3", "rag-unstructured", "strands", "workflow"]
+provides-extras = ["all", "databricks", "fastapi", "flask", "grpc", "langgraph", "rag", "rag-azure", "rag-azure-search", "rag-langchain", "rag-pgvector", "rag-pinecone", "rag-s3", "rag-unstructured", "strands", "workflow"]
 
 [package.metadata.requires-dev]
 dev = [

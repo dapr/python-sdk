@@ -95,8 +95,16 @@ rag-azure-search = [
     "azure-search-documents>=11.5.0,<12.0.0",
     "httpx>=0.27.0,<1.0.0",
 ]
+# databricks is also empty on purpose: it schedules Dapr Workflow executions
+# (via dapr.ext.workflow, already in core) from inside a Databricks Lakeflow
+# pipeline. pyspark.pipelines is provided by that Databricks runtime itself —
+# depending on a pip-installable "pyspark" here would be both unnecessary for
+# real usage and insufficient for local imports, since pyspark.pipelines is
+# not part of the open-source PyPI pyspark package. dapr.ext.databricks
+# imports it lazily and raises a clear error if it's unavailable.
+databricks = []
 all = [
-    "dapr[fastapi,flask,grpc,langgraph,strands,workflow]",
+    "dapr[fastapi,flask,grpc,langgraph,strands,workflow,databricks]",
     "dapr[rag,rag-langchain,rag-s3,rag-azure,rag-azure-search,rag-pgvector,rag-pinecone]",
     # rag-unstructured is deliberately NOT included here, unlike every other
     # rag-* extra above. unstructured[pdf] pulls in a full ML stack (PyTorch,
@@ -295,6 +303,14 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["unstructured.*", "openai.*", "pinecone.*", "langchain_core.*"]
 follow_imports = "skip"
+ignore_missing_imports = true
+
+# pyspark (and pyspark.pipelines specifically) is provided by the Databricks
+# Lakeflow runtime, not a project dependency — see the `databricks` extra
+# above. dapr.ext.databricks imports it lazily at call time; this override
+# only lets mypy check the TYPE_CHECKING-only references to it.
+[[tool.mypy.overrides]]
+module = ["pyspark.*"]
 ignore_missing_imports = true
 
 # Bundling the extensions into the core wheel brings their source under mypy's
