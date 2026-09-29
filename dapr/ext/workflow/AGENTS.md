@@ -150,9 +150,21 @@ Passed to workflow functions as the first argument:
 - `instance_id`, `current_utc_datetime`, `is_replaying` — properties
 - `call_activity(activity, *, input, retry_policy, app_id)` → `Task`
 - `call_child_workflow(workflow, *, input, instance_id, retry_policy, app_id)` → `Task`
+- `schedule_new_workflow(workflow, *, input, instance_id, start_at, app_id, app_namespace)` → `str` (instance ID; fire-and-forget)
 - `create_timer(fire_at)` → `Task` (accepts `datetime` or `timedelta`)
 - `wait_for_external_event(name)` → `Task`
 - `set_custom_status(status)` / `continue_as_new(new_input, *, save_events)`
+
+**Detached vs child workflows** — use `call_child_workflow` when the parent needs to `yield` on the result. Use `schedule_new_workflow` (detached) when the parent should spawn and move on:
+
+- Fire-and-forget: no awaitable Task, returns the spawned instance ID synchronously.
+- No parent linkage on the spawned instance (no completion or failure flows back).
+- Deterministic default instance ID: derived from the parent instance ID + sequence number so replay resolves to the same history record.
+- Cross-app: pass `app_id=...` — the runtime evaluates `WorkflowAccessPolicy` for the target app.
+- Purge/terminate are not recursive across the boundary — the spawned instance manages its own lifecycle.
+- History propagation is intentionally not offered (detached spawns do not inherit the caller's propagated history).
+
+See `examples/workflow/detached.py` for a per-tenant fan-out.
 
 Module-level functions:
 - `when_all(tasks)` → `WhenAllTask` — wait for all tasks to complete
