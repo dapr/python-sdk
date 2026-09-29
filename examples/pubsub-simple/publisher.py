@@ -14,7 +14,7 @@
 import json
 import time
 
-from dapr.clients import DaprClient
+from dapr.clients import BulkPublishEntry, DaprClient
 
 with DaprClient() as d:
     id = 0
@@ -91,11 +91,16 @@ with DaprClient() as d:
 
     time.sleep(0.5)
 
-    # Bulk publish multiple events at once using publish_events
+    # Bulk publish multiple events at once using publish_events.
+    # Wrap an event in BulkPublishEntry to give it metadata of its own, for example a
+    # partition key. Plain str or bytes events need no wrapper.
     bulk_events = [
         json.dumps({'id': 20, 'message': 'bulk event 1'}),
         json.dumps({'id': 21, 'message': 'bulk event 2'}),
-        json.dumps({'id': 22, 'message': 'bulk event 3'}),
+        BulkPublishEntry(
+            event=json.dumps({'id': 22, 'message': 'bulk event 3'}),
+            metadata={'partitionKey': 'tenant-a'},
+        ),
     ]
 
     resp = d.publish_events(

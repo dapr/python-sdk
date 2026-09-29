@@ -98,6 +98,7 @@ class DaprWorkflowClient:
         instance_id: Optional[str] = None,
         start_at: Optional[datetime] = None,
         reuse_id_policy: Optional[client.WorkflowIdReusePolicy] = None,
+        app_id: Optional[str] = None,
     ) -> str:
         """Schedules a new workflow instance for execution.
 
@@ -113,6 +114,10 @@ class DaprWorkflowClient:
             reuse_id_policy: Deprecated and has no effect; it will be removed in a future
             release. A workflow instance ID can always be reused once the existing instance
             with that ID has reached a terminal state (e.g. COMPLETED, FAILED, or TERMINATED).
+            app_id: The optional ID of another app to schedule the workflow on. The target
+            app's WorkflowAccessPolicy governs whether this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
 
         Returns:
             The ID of the scheduled workflow instance.
@@ -138,10 +143,15 @@ class DaprWorkflowClient:
             instance_id=instance_id,
             start_at=start_at,
             reuse_id_policy=reuse_id_policy,
+            app_id=app_id,
         )
 
     async def get_workflow_state(
-        self, instance_id: str, *, fetch_payloads: bool = True
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = True,
+        app_id: Optional[str] = None,
     ) -> Optional[WorkflowState]:
         """Fetches runtime state for the specified workflow instance.
 
@@ -149,6 +159,11 @@ class DaprWorkflowClient:
             instance_id: The unique ID of the workflow instance to fetch.
             fetch_payloads: If true, fetches the input, output payloads and custom status
             for the workflow instance. Defaults to true.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
 
         Returns:
             The current state of the workflow instance, or None if the workflow instance does not
@@ -157,7 +172,9 @@ class DaprWorkflowClient:
         """
         try:
             state = await self.__obj.get_orchestration_state(
-                instance_id, fetch_payloads=fetch_payloads
+                instance_id,
+                fetch_payloads=fetch_payloads,
+                app_id=app_id,
             )
             return WorkflowState(state) if state else None
         except AioRpcError as error:
@@ -170,7 +187,12 @@ class DaprWorkflowClient:
             raise
 
     async def wait_for_workflow_start(
-        self, instance_id: str, *, fetch_payloads: bool = False, timeout_in_seconds: int = 0
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = False,
+        timeout_in_seconds: int = 0,
+        app_id: Optional[str] = None,
     ) -> Optional[WorkflowState]:
         """Waits for a workflow to start running and returns a WorkflowState object that contains
            metadata about the started workflow.
@@ -185,18 +207,31 @@ class DaprWorkflowClient:
             the workflow instance. Defaults to false.
             timeout_in_seconds: The maximum time to wait for the workflow instance to start running.
             Defaults to meaning no timeout.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
 
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
             If the specified workflow isn't found, the WorkflowState.Exists value will be false.
         """
         state = await self.__obj.wait_for_orchestration_start(
-            instance_id, fetch_payloads=fetch_payloads, timeout=timeout_in_seconds
+            instance_id,
+            fetch_payloads=fetch_payloads,
+            timeout=timeout_in_seconds,
+            app_id=app_id,
         )
         return WorkflowState(state) if state else None
 
     async def wait_for_workflow_completion(
-        self, instance_id: str, *, fetch_payloads: bool = True, timeout_in_seconds: int = 0
+        self,
+        instance_id: str,
+        *,
+        fetch_payloads: bool = True,
+        timeout_in_seconds: int = 0,
+        app_id: Optional[str] = None,
     ) -> Optional[WorkflowState]:
         """Waits for a workflow to complete and returns a WorkflowState object that contains
            metadata about the started instance.
@@ -219,17 +254,30 @@ class DaprWorkflowClient:
             for the workflow instance. Defaults to true.
             timeout_in_seconds: The maximum time in seconds to wait for the workflow instance to
             complete. Defaults to 0 seconds, meaning no timeout.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
 
         Returns:
             WorkflowState record that describes the workflow instance and its execution status.
         """
         state = await self.__obj.wait_for_orchestration_completion(
-            instance_id, fetch_payloads=fetch_payloads, timeout=timeout_in_seconds
+            instance_id,
+            fetch_payloads=fetch_payloads,
+            timeout=timeout_in_seconds,
+            app_id=app_id,
         )
         return WorkflowState(state) if state else None
 
     async def raise_workflow_event(
-        self, instance_id: str, event_name: str, *, data: Optional[Any] = None
+        self,
+        instance_id: str,
+        event_name: str,
+        *,
+        data: Optional[Any] = None,
+        app_id: Optional[str] = None,
     ) -> None:
         """Sends an event notification message to a waiting workflow instance.
            In order to handle the event, the target workflow instance must be waiting for an
@@ -251,11 +299,23 @@ class DaprWorkflowClient:
             instance_id: The ID of the workflow instance that will handle the event.
             event_name: The name of the event. Event names are case-insensitive.
             data: The serializable data payload to include with the event.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
         """
-        return await self.__obj.raise_orchestration_event(instance_id, event_name, data=data)
+        return await self.__obj.raise_orchestration_event(
+            instance_id, event_name, data=data, app_id=app_id
+        )
 
     async def terminate_workflow(
-        self, instance_id: str, *, output: Optional[Any] = None, recursive: bool = True
+        self,
+        instance_id: str,
+        *,
+        output: Optional[Any] = None,
+        recursive: bool = True,
+        app_id: Optional[str] = None,
     ) -> None:
         """Terminates a running workflow instance and updates its runtime status to
            WorkflowRuntimeStatus.Terminated This method internally enqueues a "terminate" message in
@@ -275,34 +335,73 @@ class DaprWorkflowClient:
             instance_id: The ID of the workflow instance to terminate.
             output: The optional output to set for the terminated workflow instance.
             recursive: The optional flag to terminate all child workflows.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
 
         """
         return await self.__obj.terminate_orchestration(
-            instance_id, output=output, recursive=recursive
+            instance_id,
+            output=output,
+            recursive=recursive,
+            app_id=app_id,
         )
 
-    async def pause_workflow(self, instance_id: str) -> None:
+    async def pause_workflow(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ) -> None:
         """Suspends a workflow instance, halting processing of it until resume_workflow is used to
            resume the workflow.
 
         Args:
             instance_id: The instance ID of the workflow to suspend.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
         """
-        return await self.__obj.suspend_orchestration(instance_id)
+        return await self.__obj.suspend_orchestration(instance_id, app_id=app_id)
 
-    async def resume_workflow(self, instance_id: str) -> None:
+    async def resume_workflow(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ) -> None:
         """Resumes a workflow instance that was suspended via pause_workflow.
 
         Args:
             instance_id: The instance ID of the workflow to resume.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
         """
-        return await self.__obj.resume_orchestration(instance_id)
+        return await self.__obj.resume_orchestration(instance_id, app_id=app_id)
 
-    async def purge_workflow(self, instance_id: str, recursive: bool = True) -> None:
+    async def purge_workflow(
+        self,
+        instance_id: str,
+        recursive: bool = True,
+        *,
+        app_id: Optional[str] = None,
+    ) -> None:
         """Purge data from a workflow instance.
 
         Args:
             instance_id: The instance ID of the workflow to purge.
             recursive: The optional flag to also purge data from all child workflows.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
         """
-        return await self.__obj.purge_orchestration(instance_id, recursive)
+        return await self.__obj.purge_orchestration(instance_id, recursive, app_id=app_id)
