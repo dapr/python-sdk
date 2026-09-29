@@ -670,7 +670,9 @@ class TaskHubGrpcWorker:
             try:
                 assert current_stub is not None
                 stub = current_stub
-                get_work_items_request = pb.GetWorkItemsRequest()
+                get_work_items_request = pb.GetWorkItemsRequest(
+                    capabilities=[pb.WORKER_CAPABILITY_HEALTH_PING]
+                )
                 if not self._disable_stateful_history:
                     get_work_items_request.capabilities.append(
                         pb.WORKER_CAPABILITY_STATEFUL_HISTORY
