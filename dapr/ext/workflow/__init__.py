@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 # Import your main classes here
-from dapr.ext.workflow._durabletask.task import TaskFailedError
+from dapr.ext.workflow._durabletask.task import FailureDetails, TaskFailedError
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext, when_all, when_any
 from dapr.ext.workflow.mcp import DaprMCPClient, MCPToolDef
@@ -28,6 +28,12 @@ from dapr.ext.workflow.propagation import (
 )
 from dapr.ext.workflow.retry_policy import RetryPolicy
 from dapr.ext.workflow.workflow_activity_context import WorkflowActivityContext
+from dapr.ext.workflow.workflow_management import (
+    UNSET,
+    WorkflowHistoryEvent,
+    WorkflowHistoryEventType,
+    WorkflowInstanceIdPage,
+)
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
 
@@ -38,11 +44,16 @@ __all__ = [
     'WorkflowActivityContext',
     'WorkflowState',
     'WorkflowStatus',
+    'WorkflowHistoryEvent',
+    'WorkflowHistoryEventType',
+    'WorkflowInstanceIdPage',
+    'UNSET',
     'when_all',
     'when_any',
     'alternate_name',
     'RetryPolicy',
     'TaskFailedError',
+    'FailureDetails',
     'PropagationScope',
     'PropagatedHistory',
     'PropagationNotFoundError',
