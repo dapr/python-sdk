@@ -589,6 +589,24 @@ class DaprGrpcClientTests(unittest.TestCase):
         self.assertEqual(['value1'], resp.headers['hkey1'])
         self.assertEqual(['test-token'], resp.headers['hdapr-api-token'])
 
+    def test_get_state_sends_read_consistency(self):
+        dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        dapr.get_state(store_name='statestore', key='key_1')
+        self.assertEqual(
+            Consistency.unspecified.value, self._fake_dapr_server.last_get_state_consistency
+        )
+
+        with self.assertRaises(ValueError):
+            dapr.get_state(store_name='statestore', key='key_1', consistency='strong')
+
+        # unspecified comes last so the recorded value changes back to it.
+        for consistency in (Consistency.strong, Consistency.eventual, Consistency.unspecified):
+            with self.subTest(consistency=consistency):
+                dapr.get_state(store_name='statestore', key='key_1', consistency=consistency)
+                self.assertEqual(
+                    consistency.value, self._fake_dapr_server.last_get_state_consistency
+                )
+
     def test_get_save_delete_state(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
         key = 'key_1'
