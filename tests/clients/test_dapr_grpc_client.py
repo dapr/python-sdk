@@ -50,24 +50,23 @@ from dapr.conf import settings
 from dapr.proto import common_v1
 
 from .fake_dapr_server import FakeDaprSidecar
+from .fake_http_server import point_settings_at_http_port
 
 
 class DaprGrpcClientTests(unittest.TestCase):
-    grpc_port = 50001
-    http_port = 3500
+    grpc_port: int  # set in setUpClass from the port the fake sidecar bound
+    http_port: int
     scheme = ''
     error = None
 
     @classmethod
     def setUpClass(cls):
-        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls.grpc_port, http_port=cls.http_port)
+        cls._fake_dapr_server = FakeDaprSidecar()
+        cls.addClassCleanup(cls._fake_dapr_server.stop)
         cls._fake_dapr_server.start()
-        settings.DAPR_HTTP_PORT = cls.http_port
-        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(cls.http_port)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._fake_dapr_server.stop()
+        cls.grpc_port = cls._fake_dapr_server.grpc_port
+        cls.http_port = cls._fake_dapr_server.http_port
+        point_settings_at_http_port(cls, cls.http_port)
 
     def test_http_extension(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')

@@ -20,31 +20,30 @@ from dapr.aio.clients.grpc.client import DaprGrpcClientAsync
 from dapr.aio.clients.health import DaprHealth as DaprHealthAsync
 from dapr.clients.health import DaprHealth
 from dapr.conf import settings
+from tests.clients import test_dapr_grpc_client_async as base
 from tests.clients.certs import replacement_get_credentials_func, replacement_get_health_context
-from tests.clients.test_dapr_grpc_client_async import DaprGrpcClientAsyncTests
 
 from .fake_dapr_server import FakeDaprSidecar
+from .fake_http_server import point_settings_at_http_port
 
 DaprGrpcClientAsync.get_credentials = replacement_get_credentials_func
 DaprHealthAsync.get_ssl_context = replacement_get_health_context
 DaprHealth.get_ssl_context = replacement_get_health_context
 
 
-class DaprSecureGrpcClientAsyncTests(DaprGrpcClientAsyncTests):
-    grpc_port = 50001
-    http_port = 4443  # The http server is used for health checks only, and doesn't need TLS
+# The base class is reached through its module so pytest does not collect it a second
+# time in this file.
+class DaprSecureGrpcClientAsyncTests(base.DaprGrpcClientAsyncTests):
     scheme = 'https://'
 
     @classmethod
     def setUpClass(cls):
-        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls.grpc_port, http_port=cls.http_port)
+        cls._fake_dapr_server = FakeDaprSidecar()
+        cls.addClassCleanup(cls._fake_dapr_server.stop_secure)
         cls._fake_dapr_server.start_secure()
-        settings.DAPR_HTTP_PORT = cls.http_port
-        settings.DAPR_HTTP_ENDPOINT = 'https://127.0.0.1:{}'.format(cls.http_port)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._fake_dapr_server.stop_secure()
+        cls.grpc_port = cls._fake_dapr_server.grpc_port
+        cls.http_port = cls._fake_dapr_server.http_port
+        point_settings_at_http_port(cls, cls.http_port, scheme='https')
 
     @patch.object(settings, 'DAPR_GRPC_ENDPOINT', 'dns:domain1.com:5000')
     def test_init_with_DAPR_GRPC_ENDPOINT(self):

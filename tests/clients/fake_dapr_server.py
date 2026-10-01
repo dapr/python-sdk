@@ -15,7 +15,7 @@ limitations under the License.
 
 import json
 from concurrent import futures
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import grpc
 from google.protobuf import empty_pb2, struct_pb2
@@ -32,11 +32,17 @@ from tests.clients.fake_http_server import FakeHttpServer
 
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
-    def __init__(self, grpc_port: int = 50001, http_port: int = 8080):
+    def __init__(self, grpc_port: int = 0, http_port: int = 0):
+        """Ports default to 0 so the OS picks free ones. start()/start_secure() replace
+        grpc_port and http_port with the ports actually bound."""
         self.grpc_port = grpc_port
         self.http_port = http_port
         self._grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        self._http_server = FakeHttpServer(self.http_port)  # Needed for the healthcheck endpoint
+        # Serves the healthcheck endpoint. Created in start()/start_secure() so that no
+        # socket is open until the sidecar is started.
+        self._http_server: Optional[FakeHttpServer] = None
+        self._secure = False
+        self._stopped = False
         api_service_v1.add_DaprServicer_to_server(self, self._grpc_server)
         self.store = {}
         self.transaction_operation_metadata: Dict[str, Dict[str, str]] = {}
@@ -87,38 +93,66 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._bulk_publish_fail_next = (failed_entry_count, error_message)
 
     def start(self):
-        self._grpc_server.add_insecure_port(f'[::]:{self.grpc_port}')
-        self._grpc_server.start()
-        self._http_server.start()
+        self._start(self._grpc_server.add_insecure_port, secure=False)
 
     def start_secure(self):
-        GrpcCerts.create_certificates()
+        self._secure = True
+        try:
+            GrpcCerts.create_certificates()
+            with open(GrpcCerts.get_pk_path(), 'rb') as private_key_file:
+                private_key_content = private_key_file.read()
+            with open(GrpcCerts.get_cert_path(), 'rb') as certificate_chain_file:
+                certificate_chain_content = certificate_chain_file.read()
+            credentials = grpc.ssl_server_credentials(
+                [(private_key_content, certificate_chain_content)]
+            )
+        except BaseException:
+            self._shutdown()
+            raise
 
-        private_key_file = open(GrpcCerts.get_pk_path(), 'rb')
-        private_key_content = private_key_file.read()
-        private_key_file.close()
+        self._start(lambda address: self._grpc_server.add_secure_port(address, credentials), True)
 
-        certificate_chain_file = open(GrpcCerts.get_cert_path(), 'rb')
-        certificate_chain_content = certificate_chain_file.read()
-        certificate_chain_file.close()
+    def _start(self, add_port: Callable[[str], int], secure: bool) -> None:
+        """Bind and start the gRPC server, then the HTTP server. If any step fails,
+        release everything that was opened and re-raise, so a failed setUpClass (after
+        which unittest skips tearDownClass) does not leave a listening socket behind."""
+        try:
+            bound_port = add_port(f'[::]:{self.grpc_port}')
+            if not bound_port:
+                # Older grpc versions return 0 instead of raising when the bind fails.
+                raise RuntimeError(f'Failed to bind to address [::]:{self.grpc_port}')
+            self.grpc_port = bound_port
+            self._grpc_server.start()
 
-        credentials = grpc.ssl_server_credentials(
-            [(private_key_content, certificate_chain_content)]
-        )
-
-        self._grpc_server.add_secure_port(f'[::]:{self.grpc_port}', credentials)
-        self._grpc_server.start()
-
-        self._http_server.start_secure()
+            self._http_server = FakeHttpServer(self.http_port)
+            self.http_port = self._http_server.get_port()
+            if secure:
+                self._http_server.start_secure()
+            else:
+                self._http_server.start()
+        except BaseException:
+            self._shutdown()
+            raise
 
     def stop(self):
-        self._http_server.shutdown_server()
-        self._grpc_server.stop(None)
+        self._shutdown()
 
     def stop_secure(self):
-        self._http_server.shutdown_server()
-        self._grpc_server.stop(None)
-        GrpcCerts.delete_certificates()
+        self._shutdown()
+
+    def _shutdown(self) -> None:
+        """Release the HTTP socket, the gRPC server and any generated certificates.
+        Safe to call more than once."""
+        if self._stopped:
+            return
+        self._stopped = True
+        try:
+            if self._http_server is not None:
+                self._http_server.shutdown_server()
+        finally:
+            self._grpc_server.stop(None)
+            if self._secure:
+                GrpcCerts.delete_certificates()
 
     def raise_exception_on_next_call(self, exception):
         """

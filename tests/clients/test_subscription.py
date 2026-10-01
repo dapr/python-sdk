@@ -2,10 +2,19 @@ import queue
 import threading
 import unittest
 from collections.abc import Iterator
+from typing import Any, List
+from unittest.mock import patch
 
+import grpc
 from google.protobuf.struct_pb2 import Struct
 
-from dapr.clients.grpc.subscription import Subscription, SubscriptionMessage
+from dapr.clients.grpc._response import TopicEventResponse
+from dapr.clients.grpc.client import DaprGrpcClient
+from dapr.clients.grpc.subscription import (
+    StreamCancelledError,
+    Subscription,
+    SubscriptionMessage,
+)
 from dapr.proto import api_v1
 from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 
@@ -191,3 +200,67 @@ class SubscriptionStreamTests(unittest.TestCase):
         subscription.close()
 
         self.assertTrue(stub.iterator_exhausted.wait(timeout=_TEST_TIMEOUT_SECONDS))
+
+
+class _CancelledRpcError(grpc.RpcError):
+    def code(self) -> grpc.StatusCode:
+        return grpc.StatusCode.CANCELLED
+
+    def details(self) -> str:
+        return 'Locally cancelled by application!'
+
+
+class _CancelledStreamCall:
+    """Fake bidi call whose reads fail the way gRPC reports a cancelled stream."""
+
+    def __next__(self) -> api_v1.SubscribeTopicEventsResponseAlpha1:
+        raise _CancelledRpcError()
+
+    def cancel(self) -> bool:
+        return True
+
+
+def _cancelled_subscription() -> Subscription:
+    subscription = Subscription(stub=None, pubsub_name='pubsub', topic='topic')
+    subscription._stream = _CancelledStreamCall()  # type: ignore[assignment]
+    subscription._set_stream_active()
+    return subscription
+
+
+class SubscriptionCancelledStreamTests(unittest.TestCase):
+    def test_next_message_raises_stream_cancelled_error_on_cancelled_rpc(self):
+        subscription = _cancelled_subscription()
+
+        with self.assertRaises(StreamCancelledError):
+            subscription.next_message()
+
+    def test_subscribe_with_handler_stops_streaming_when_stream_is_cancelled(self):
+        subscription = _cancelled_subscription()
+
+        def handler(message: SubscriptionMessage) -> TopicEventResponse:
+            return TopicEventResponse('success')
+
+        started: List[threading.Thread] = []
+        real_thread = threading.Thread
+
+        def capture_thread(*args: Any, **kwargs: Any) -> threading.Thread:
+            thread = real_thread(*args, **kwargs)
+            started.append(thread)
+            return thread
+
+        with patch('dapr.clients.health.DaprHealth.wait_for_sidecar'):
+            client = DaprGrpcClient('localhost:50001')
+        try:
+            with (
+                patch.object(client, 'subscribe', return_value=subscription),
+                patch('dapr.clients.grpc.client.threading.Thread', side_effect=capture_thread),
+            ):
+                close_fn = client.subscribe_with_handler('pubsub', 'topic', handler)
+            # Closing marks the stream inactive, so a regressed thread still exits.
+            self.addCleanup(close_fn)
+
+            self.assertEqual(1, len(started))
+            started[0].join(timeout=_TEST_TIMEOUT_SECONDS)
+            self.assertFalse(started[0].is_alive(), 'streaming thread kept running after cancel')
+        finally:
+            client.close()
