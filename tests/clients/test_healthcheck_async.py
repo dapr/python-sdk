@@ -21,6 +21,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from dapr.aio.clients.health import DaprHealth
 from dapr.conf import settings
 from dapr.version import __version__
+from tests.clients.test_healthcheck import listen_without_replying
 
 
 class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
@@ -191,6 +192,27 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         # Verify multiple calls were made
         self.assertGreaterEqual(mock_get.call_count, 3)
+
+    @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '1')
+    async def test_wait_for_sidecar_times_out_when_sidecar_never_replies(self):
+        port = listen_without_replying(self)
+        hang_limit_seconds = 15  # well above DAPR_HEALTH_TIMEOUT, for slow CI machines
+
+        with (
+            patch.object(settings, 'DAPR_HTTP_ENDPOINT', f'http://127.0.0.1:{port}'),
+            patch('builtins.print') as mock_print,
+        ):
+            task = asyncio.ensure_future(DaprHealth.wait_for_sidecar())
+            done, _ = await asyncio.wait({task}, timeout=hang_limit_seconds)
+            if not done:
+                task.cancel()
+                self.fail('wait_for_sidecar() blocked past DAPR_HEALTH_TIMEOUT')
+
+        error = task.exception()
+        self.assertIsInstance(error, TimeoutError)
+        self.assertIn('Dapr health check timed out', str(error))
+        logged = [str(call.args[0]) for call in mock_print.call_args_list if call.args]
+        self.assertTrue(any(line.endswith('failed: timed out') for line in logged), logged)
 
 
 if __name__ == '__main__':
