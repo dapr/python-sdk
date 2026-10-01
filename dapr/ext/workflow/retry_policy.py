@@ -39,13 +39,18 @@ class RetryPolicy:
 
         Args:
             first_retry_interval(timedelta): The retry interval to use for the first retry attempt.
-            max_number_of_attempts(int):  The maximum number of retry attempts.
+            max_number_of_attempts(int): The total number of attempts, including the first one,
+                not the number of retries after the first attempt.
             backoff_coefficient(Optional[float]): The backoff coefficient to use for calculating
-                the next retry interval.
+                the next retry interval. With the default of 1.0, every retry interval is
+                first_retry_interval; a coefficient above 1.0 grows the interval on each attempt
+                up to max_retry_interval, if set.
             max_retry_interval(Optional[timedelta]): The maximum retry interval to use for any
-                retry attempt.
+                retry attempt. Leaving this unset means the interval keeps growing without a cap
+                when backoff_coefficient is above 1.0.
             retry_timeout(Optional[timedelta]): The maximum amount of time to spend retrying the
-                operation.
+                operation. Once exceeded, the activity or workflow fails outright, even if
+                max_number_of_attempts has not been reached, so its own final attempt is not run.
         """
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
