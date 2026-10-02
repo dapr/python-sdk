@@ -36,7 +36,7 @@ limitations under the License.
 # orchestrator calls `ctx.continue_as_new(...)` with a small, flat "cursor"
 # state (`_IngestionState`) rather than accumulating the manifest or every
 # batch's results in workflow history, so history size stays bounded
-# regardless of corpus size (see `examples/workflow/monitor.py` for the same
+# regardless of corpus size (see `examples/workflow/monitor/monitor.py` for the same
 # continue_as_new pattern applied to an eternal polling workflow).
 
 from __future__ import annotations

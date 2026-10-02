@@ -217,7 +217,7 @@ without one document's failure discarding its siblings' outcomes.
 
 **History size**: after each batch, the orchestrator calls `ctx.continue_as_new(...)` with a small,
 flat cursor state (`_IngestionState`) rather than accumulating the manifest or every batch's
-results in workflow history -- the same pattern `examples/workflow/monitor.py` uses for an eternal
+results in workflow history -- the same pattern `examples/workflow/monitor/monitor.py` uses for an eternal
 polling workflow. History size per generation stays bounded regardless of total corpus size.
 
 **Dataclasses, not pydantic, across the activity boundary.** `dapr.ext.workflow`'s automatic

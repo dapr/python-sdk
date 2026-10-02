@@ -25,14 +25,14 @@ EXPECTED_SIMPLE = [
 ]
 
 
-@pytest.mark.example_dir('workflow')
+@pytest.mark.example_dir('workflow/task-chaining')
 def test_task_chaining(dapr):
     output = dapr.run('--app-id workflow-task-chaining -- python3 task_chaining.py', timeout=30)
     for line in EXPECTED_TASK_CHAINING:
         assert line in output, f'Missing in output: {line}'
 
 
-@pytest.mark.example_dir('workflow')
+@pytest.mark.example_dir('workflow/fan-out-fan-in')
 def test_fan_out_fan_in(dapr):
     output = dapr.run('--app-id workflow-fan-out-fan-in -- python3 fan_out_fan_in.py', timeout=60)
     for line in EXPECTED_FAN_OUT_FAN_IN:

@@ -98,7 +98,7 @@ Common component types used in examples: `state.redis`, `pubsub.redis`, `lock.re
 |---------|---------|-------------|----------------|
 | `workflow` | Multiple standalone scripts | `dapr[workflow]` | No |
 
-The `workflow` example includes: `simple.py`, `task_chaining.py`, `fan_out_fan_in.py`, `human_approval.py`, `monitor.py`, `child_workflow.py`, `cross-app1/2/3.py`, `versioning.py`, `simple_aio_client.py`.
+The `workflow` example includes standalone feature examples such as `simple.py`, `simple_aio_client.py`, and `versioning.py`, plus pattern directories: `task-chaining/`, `fan-out-fan-in/`, `human-interaction/`, `monitor/`, `child-workflow/`, and `multi-app/`. Each pattern directory has its own README.
 
 ### Secrets, configuration, locks
 | Example | Pattern | SDK packages | Has components |

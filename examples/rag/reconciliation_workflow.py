@@ -31,7 +31,7 @@ deployment that scales the subscriber out would want the equivalent
 `ctx.create_timer(...)` / `ctx.wait_for_external_event(...)` pattern inside an
 actual Dapr Workflow instead (one durable "quiet window" orchestration per
 prefix, restarting its timer on every new external event, matching
-`examples/workflow/human_approval.py`'s wait-with-timeout shape) so exactly
+`examples/workflow/human-interaction/human_approval.py`'s wait-with-timeout shape) so exactly
 one reconciliation fires regardless of replica count. Noted here rather than
 implemented, to keep this example's scope matched to its single-process
 demo. For the same reason, a process crash between accumulating a pending

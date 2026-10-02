@@ -205,12 +205,12 @@ Two example directories exercise workflows:
 
 - **`examples/workflow/`** — primary, comprehensive examples:
   - `simple.py` — activities, retries, child workflows, external events, pause/resume
-  - `task_chaining.py` — sequential activity chaining with error handling
-  - `fan_out_fan_in.py` — parallel execution with `when_all()`
-  - `human_approval.py` — external event waiting with timeouts
-  - `monitor.py` — eternal polling workflow with `continue_as_new()`
-  - `child_workflow.py` — child workflow orchestration
-  - `cross-app1.py`, `cross-app2.py`, `cross-app3.py` — cross-app calls
+  - `task-chaining/task_chaining.py` — sequential activity chaining with error handling
+  - `fan-out-fan-in/fan_out_fan_in.py` — parallel execution with `when_all()`
+  - `human-interaction/human_approval.py` — external event waiting with timeouts
+  - `monitor/monitor.py` — eternal polling workflow with `continue_as_new()`
+  - `child-workflow/child_workflow.py` — child workflow orchestration
+  - `multi-app/multi-app1.py`, `multi-app/multi-app2.py`, `multi-app/multi-app3.py` — cross-app calls
   - `versioning.py` — workflow versioning with `is_patched()`
   - `simple_aio_client.py` — async client variant
   - `async_activities.py` — `async def` activities (fan-out/fan-in with simulated I/O, configurable payload sizes)
