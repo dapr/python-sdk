@@ -356,18 +356,16 @@ class AppLoopGuardTests(unittest.IsolatedAsyncioTestCase):
         app._lifecycle_loop = dead_loop
         return app
 
-    async def test_stop_abandons_a_server_whose_loop_is_closed(self):
-        """stop() is the documented remedy, so it must not be refused - but it must warn.
-
-        The server cannot actually be shut down without its loop, and its listener survives.
-        """
+    async def test_stop_raises_when_the_owning_loop_is_closed(self):
+        """grpc.aio needs the owning loop to drain, so stop() reports rather than pretends."""
         app = self._app_with_a_dead_owning_loop()
 
-        with self.assertLogs('dapr.ext.grpc.aio.app', level='WARNING') as logs:
+        with self.assertRaises(RuntimeError) as exception_context:
             await app.stop(grace=0)
 
-        self.assertIsNone(app._server, 'the unreachable server must be released')
-        self.assertIn('second server', '\n'.join(logs.output))
+        message = str(exception_context.exception)
+        self.assertIn('event loop it was started on is closed', message)
+        self.assertIn('stays bound until the process exits', message)
 
     async def test_start_refuses_while_an_unreachable_server_is_still_bound(self):
         """Rebinding would quietly add a second listener, since grpc enables SO_REUSEPORT."""
@@ -377,6 +375,70 @@ class AppLoopGuardTests(unittest.IsolatedAsyncioTestCase):
             await app.start(app_port=50055, listen_address='127.0.0.1')
 
         self.assertIn('different event loop', str(exception_context.exception))
+
+
+class SyncHandlerWarningTests(unittest.TestCase):
+    """A plain handler runs inline on the loop, so the app says so once."""
+
+    def setUp(self):
+        self._app = App()
+
+    def _register_sync_handlers(self):
+        @self._app.method('m')
+        def method_handler(request):
+            pass
+
+        @self._app.subscribe(pubsub_name='pubsub', topic='topic')
+        def topic_handler(event: SubscriptionMessage):
+            pass
+
+        @self._app.binding('b')
+        def binding_handler(request):
+            pass
+
+        @self._app.job_event('j')
+        def job_handler(event):
+            pass
+
+    def test_warns_once_however_many_sync_handlers(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            self._register_sync_handlers()
+
+        user_warnings = [w for w in caught if issubclass(w.category, UserWarning)]
+        self.assertEqual(1, len(user_warnings), 'the warning must be emitted once per app')
+        self.assertIn('is not an async function', str(user_warnings[0].message))
+        self.assertIn('method_handler', str(user_warnings[0].message))
+
+    def test_async_handlers_do_not_warn(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+
+            @self._app.method('m')
+            async def method_handler(request):
+                pass
+
+            @self._app.subscribe(pubsub_name='pubsub', topic='topic')
+            async def topic_handler(event: SubscriptionMessage):
+                pass
+
+            @self._app.binding('b')
+            async def binding_handler(request):
+                pass
+
+            @self._app.job_event('j')
+            async def job_handler(event):
+                pass
+
+        self.assertEqual([], [w for w in caught if issubclass(w.category, UserWarning)])
+
+    def test_register_health_check_is_exempt(self):
+        """`register_health_check(lambda: None)` is its documented usage."""
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            self._app.register_health_check(lambda: None)
+
+        self.assertEqual([], [w for w in caught if issubclass(w.category, UserWarning)])
 
 
 if __name__ == '__main__':

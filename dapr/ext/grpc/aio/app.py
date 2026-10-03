@@ -15,7 +15,8 @@ limitations under the License.
 
 import asyncio
 import contextlib
-import logging
+import inspect
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import grpc.aio
@@ -28,9 +29,13 @@ from dapr.ext.grpc.aio._servicer import _AioCallbackServicer  # type: ignore
 from dapr.ext.grpc.app import _resolve_topic_event_type
 from dapr.proto import appcallback_service_v1
 
-logger = logging.getLogger(__name__)
-
 ExternalServiceRegistration = Tuple[Callable[[Any, grpc.aio.Server], None], Any]
+
+_SYNC_HANDLER_WARNING = (
+    'Handler {name!r} registered on dapr.ext.grpc.aio.App is not an async function. It runs '
+    'inline on the event loop, so anything blocking in it stalls every other RPC this app '
+    'serves. Define it with `async def`, or use dapr.ext.grpc.App for synchronous handlers.'
+)
 
 
 class App:
@@ -74,12 +79,10 @@ class App:
         self._servicer = _AioCallbackServicer()
         self._health_check_servicer = _AioHealthCheckServicer()
         self._server: Optional[grpc.aio.Server] = None
-        self._listen_port: Optional[int] = None
-        self._abandoned_servers: List[grpc.aio.Server] = []
-        self._abandoned_ports: set[int] = set()
         self._lifecycle_lock: Optional[asyncio.Lock] = None
         self._lifecycle_loop: Optional[asyncio.AbstractEventLoop] = None
         self._external_services: List[ExternalServiceRegistration] = []
+        self._warned_about_sync_handler = False
 
         if kwargs:
             self._server_kwargs: Dict[str, Any] = kwargs
@@ -122,9 +125,8 @@ class App:
         # so a live server may only be driven from the loop that started it.
         if self._server is not None:
             raise RuntimeError(
-                'app gRPC server was started on a different event loop. Stop it from that '
-                'loop, or — if that loop is already closed — call stop() from this one to '
-                'release it.'
+                'app gRPC server was started on a different event loop; stop it from that '
+                'loop before starting or stopping it from this one.'
             )
 
         lock = asyncio.Lock()
@@ -132,37 +134,20 @@ class App:
         self._lifecycle_loop = loop
         return lock
 
-    def _abandon_if_owning_loop_is_closed(self) -> bool:
-        """Releases a server whose event loop is gone, warning that its port stays bound.
+    def _warn_if_not_async(self, func: Callable) -> None:
+        """Warns once per app if a handler will run inline on the event loop.
 
-        Such a server cannot be shut down from here — grpc.aio needs its own loop to drain —
-        but refusing would trap the App, since stop() is the documented remedy. The handle is
-        dropped so the App becomes usable again, loudly, because the listener survives for
-        the life of the process and grpc enables SO_REUSEPORT: restarting on the same port
-        would bind a *second* server and the kernel would split callbacks between them.
-
-        Returns:
-            bool: True if a server was abandoned and the caller should stop.
+        Plain functions are still accepted — a trivial handler is harmless — but a blocking
+        one stalls every other RPC, which is the opposite of why this app exists.
         """
-        owning_loop = self._lifecycle_loop
-        if self._server is None or owning_loop is None or not owning_loop.is_closed():
-            return False
-
-        logger.warning(
-            'Cannot stop the app gRPC server: the event loop it was started on is closed. '
-            'Its listener stays bound until the process exits. Restarting on the same port '
-            'would bind a second server alongside it, so choose a different port.'
+        if self._warned_about_sync_handler or inspect.iscoroutinefunction(func):
+            return
+        self._warned_about_sync_handler = True
+        warnings.warn(
+            _SYNC_HANDLER_WARNING.format(name=getattr(func, '__name__', func)),
+            UserWarning,
+            stacklevel=3,
         )
-        # Parked rather than dropped: releasing the last reference fires grpc's
-        # Server.__del__ against the closed loop, printing an "Event loop is closed"
-        # traceback attributed to this file. Holding it defers that to interpreter exit.
-        self._abandoned_servers.append(self._server)
-        if self._listen_port is not None:
-            self._abandoned_ports.add(self._listen_port)
-        self._server = None
-        self._lifecycle_lock = None
-        self._lifecycle_loop = None
-        return True
 
     def _create_server(self) -> grpc.aio.Server:
         """Builds the gRPC server and registers every servicer on it.
@@ -192,13 +177,6 @@ class App:
                 app_port = settings.GRPC_APP_PORT
             listen_addr = f'{listen_address if listen_address else "[::]"}:{app_port}'
 
-            if app_port in self._abandoned_ports:
-                logger.warning(
-                    'Starting on port %s, which an abandoned server still holds. grpc enables '
-                    'SO_REUSEPORT, so both will bind and callbacks will be split between them.',
-                    app_port,
-                )
-
             server = self._create_server()
             try:
                 # add_insecure_port raises on grpc.aio when the port is taken, so it belongs
@@ -207,7 +185,6 @@ class App:
                 # Published before the await so add_external_service(), which is sync and
                 # takes no lock, rejects registrations for the whole of startup.
                 self._server = server
-                self._listen_port = app_port
                 await server.start()
             except BaseException:
                 self._server = None
@@ -268,8 +245,13 @@ class App:
             grace (float, optional): Seconds to wait for in-flight requests before cancelling
                 them. Defaults to None, which cancels them immediately.
         """
-        if self._abandon_if_owning_loop_is_closed():
-            return
+        owning_loop = self._lifecycle_loop
+        if self._server is not None and owning_loop is not None and owning_loop.is_closed():
+            raise RuntimeError(
+                'cannot stop the app gRPC server: the event loop it was started on is '
+                'closed, and grpc.aio needs that loop to drain it. Its listener stays '
+                'bound until the process exits.'
+            )
 
         # Waits for an in-flight start() rather than racing it, and holds the lock for the
         # whole drain so a restart cannot bind a second server to the same port.
@@ -360,6 +342,7 @@ class App:
         """
 
         def decorator(func: Callable) -> Callable:
+            self._warn_if_not_async(func)
             self._servicer.register_method(name, func)
             return func
 
@@ -399,6 +382,7 @@ class App:
         """
 
         def decorator(func: Callable) -> Callable:
+            self._warn_if_not_async(func)
             handler_wants_subscription_message = _resolve_topic_event_type(func)
             self._servicer.register_topic(
                 pubsub_name,
@@ -428,6 +412,7 @@ class App:
         """
 
         def decorator(func: Callable) -> Callable:
+            self._warn_if_not_async(func)
             self._servicer.register_binding(name, func)
             return func
 
@@ -455,6 +440,7 @@ class App:
         """
 
         def decorator(func: Callable) -> Callable:
+            self._warn_if_not_async(func)
             self._servicer.register_job_event(name, func)
             return func
 
