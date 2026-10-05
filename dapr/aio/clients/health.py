@@ -38,8 +38,14 @@ class DaprHealth:
         connector = aiohttp.TCPConnector(ssl=ssl_context)
         async with aiohttp.ClientSession(connector=connector) as session:
             while True:
+                # Bound each request by the time left: aiohttp's default total timeout
+                # (300 s) lets one unanswered request outlive the deadline.
+                request_timeout_seconds = max((start + timeout) - time.time(), 1.0)
+                request_timeout = aiohttp.ClientTimeout(total=request_timeout_seconds)
                 try:
-                    async with session.get(health_url, headers=headers) as response:
+                    async with session.get(
+                        health_url, headers=headers, timeout=request_timeout
+                    ) as response:
                         if 200 <= response.status < 300:
                             break
                 except aiohttp.ClientError as e:

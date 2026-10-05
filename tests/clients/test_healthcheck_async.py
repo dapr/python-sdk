@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import asyncio
+import socket
 import time
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -191,6 +192,23 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
 
         # Verify multiple calls were made
         self.assertGreaterEqual(mock_get.call_count, 3)
+
+    @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '1')
+    async def test_wait_for_sidecar_timeout_when_endpoint_never_responds(self):
+        # The listener never calls accept(): the TCP connect succeeds through the
+        # backlog, but the HTTP request never gets a response.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+            listener.bind(('127.0.0.1', 0))
+            listener.listen()
+            port = listener.getsockname()[1]
+
+            with patch.object(settings, 'DAPR_HTTP_ENDPOINT', f'http://127.0.0.1:{port}'):
+                start = time.time()
+                with self.assertRaises(TimeoutError) as raised:
+                    await asyncio.wait_for(DaprHealth.wait_for_sidecar(), timeout=10)
+
+            self.assertLess(time.time() - start, 10)
+            self.assertIn('Dapr health check timed out', str(raised.exception))
 
 
 if __name__ == '__main__':

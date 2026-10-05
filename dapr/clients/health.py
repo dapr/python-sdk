@@ -43,9 +43,15 @@ class DaprHealth:
 
         start = time.time()
         while True:
+            # Bound each request by the time left: without a timeout, an endpoint that
+            # accepts the connection but never answers blocks past the deadline forever.
+            request_timeout = max((start + timeout) - time.time(), 1.0)
             try:
                 req = urllib.request.Request(health_url, headers=headers)
-                with urllib.request.urlopen(req, context=DaprHealth.get_ssl_context()) as response:
+                ssl_context = DaprHealth.get_ssl_context()
+                with urllib.request.urlopen(
+                    req, context=ssl_context, timeout=request_timeout
+                ) as response:
                     if 200 <= response.status < 300:
                         break
             except urllib.error.URLError as e:

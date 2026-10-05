@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import socket
+import threading
 import time
 import unittest
 from unittest.mock import MagicMock, patch
@@ -75,3 +77,28 @@ class DaprHealthCheckTests(unittest.TestCase):
 
         self.assertGreaterEqual(time.time() - start, 2.5)
         self.assertGreater(mock_urlopen.call_count, 1)
+
+    @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '1')
+    def test_wait_for_sidecar_timeout_when_endpoint_never_responds(self):
+        # The listener never calls accept(): the TCP connect succeeds through the
+        # backlog, but the HTTP request never gets a response.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+            listener.bind(('127.0.0.1', 0))
+            listener.listen()
+            port = listener.getsockname()[1]
+            errors: list[Exception] = []
+
+            def wait() -> None:
+                try:
+                    DaprHealth.wait_for_sidecar()
+                except Exception as e:
+                    errors.append(e)
+
+            with patch.object(settings, 'DAPR_HTTP_ENDPOINT', f'http://127.0.0.1:{port}'):
+                waiter = threading.Thread(target=wait, daemon=True)
+                waiter.start()
+                waiter.join(timeout=10)
+
+            self.assertFalse(waiter.is_alive(), 'wait_for_sidecar() is still blocked')
+            self.assertEqual(len(errors), 1)
+            self.assertIsInstance(errors[0], TimeoutError)
