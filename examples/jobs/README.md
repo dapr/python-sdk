@@ -195,11 +195,7 @@ Drops the job when it fails to trigger (no retries):
 ```python
 from dapr.clients import Job, DropFailurePolicy
 
-job = Job(
-    name="my-job",
-    schedule="@every 30s",
-    failure_policy=DropFailurePolicy()
-)
+job = Job(name='my-job', schedule='@every 30s', failure_policy=DropFailurePolicy())
 ```
 
 ### ConstantFailurePolicy
@@ -210,12 +206,12 @@ Retries the job at constant intervals when it fails to trigger:
 from dapr.clients import Job, ConstantFailurePolicy
 
 job = Job(
-    name="my-job",
-    schedule="@every 30s",
+    name='my-job',
+    schedule='@every 30s',
     failure_policy=ConstantFailurePolicy(
-        max_retries=3,           # Maximum number of retries (optional)
-        interval_seconds=10      # Interval between retries in seconds
-    )
+        max_retries=3,  # Maximum number of retries (optional)
+        interval_seconds=10,  # Interval between retries in seconds
+    ),
 )
 ```
 
@@ -232,12 +228,14 @@ from dapr.ext.grpc import App, JobEvent
 
 app = App()
 
+
 @app.job_event('my-job')
 def handle_my_job(job_event: JobEvent) -> None:
-    print(f"Job {job_event.name} triggered!")
+    print(f'Job {job_event.name} triggered!')
     data_str = job_event.get_data_as_string()
-    print(f"Job data: {data_str}")
+    print(f'Job data: {data_str}')
     # Process the job...
+
 
 app.run(13551)
 ```

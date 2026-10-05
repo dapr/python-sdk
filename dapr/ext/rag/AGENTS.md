@@ -118,10 +118,15 @@ per-adapter optional-import guards).
 
 ```python
 from dapr.ext.rag import (
-    DurableRAGPipeline, PipelineConfig,
-    S3Source, AzureBlobSource,
-    UnstructuredParser, TextSplitter, OpenAIEmbedder,
-    PgVectorStore, PineconeVectorStore,
+    DurableRAGPipeline,
+    PipelineConfig,
+    S3Source,
+    AzureBlobSource,
+    UnstructuredParser,
+    TextSplitter,
+    OpenAIEmbedder,
+    PgVectorStore,
+    PineconeVectorStore,
     ActiveVersionResolver,
 )
 

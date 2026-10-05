@@ -14,6 +14,7 @@ from dapr.ext.flask import DaprApp
 app = Flask('myapp')
 dapr_app = DaprApp(app)
 
+
 @dapr_app.subscribe(pubsub='pubsub', topic='some_topic', route='/some_endpoint')
 def my_event_handler():
     # request.data contains the pubsub event
