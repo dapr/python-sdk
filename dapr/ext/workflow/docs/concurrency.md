@@ -75,6 +75,7 @@ cap:
 ```python
 _shared_client: httpx.AsyncClient | None = None
 
+
 def _get_client() -> httpx.AsyncClient:
     global _shared_client
     if _shared_client is None:

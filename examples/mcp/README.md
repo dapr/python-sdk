@@ -76,11 +76,11 @@ spec:
 ```python
 from dapr.ext.workflow import DaprMCPClient
 
-client = DaprMCPClient(timeout_in_seconds=30, allowed_tools={"get_weather"})
-client.connect("weather")
+client = DaprMCPClient(timeout_in_seconds=30, allowed_tools={'get_weather'})
+client.connect('weather')
 
 for tool in client.get_all_tools():
-    print(tool.name, "→", tool.call_tool_workflow)
+    print(tool.name, '→', tool.call_tool_workflow)
 ```
 
 `MCPToolDef` carries:
@@ -110,20 +110,21 @@ from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
 
 # ---- 1. Discover ---------------------------------------------------------
 client = DaprMCPClient()
-client.connect("weather")
+client.connect('weather')
+
 
 # ---- 2. Translate each MCPToolDef into your framework's tool ------------
 def to_my_framework_tool(tool_def):
     # Build an args model from the JSON Schema
     args_model: Optional[Type[BaseModel]] = create_pydantic_model_from_schema(
-        tool_def.input_schema, f"{tool_def.name}Args"
+        tool_def.input_schema, f'{tool_def.name}Args'
     )
 
     # Build the executor that schedules the child workflow
     def _executor(ctx: Any, **kwargs: Any) -> Any:
         return ctx.call_child_workflow(
             workflow=tool_def.call_tool_workflow,
-            input={"arguments": kwargs},
+            input={'arguments': kwargs},
         )
 
     return MyFrameworkTool(
@@ -132,6 +133,7 @@ def to_my_framework_tool(tool_def):
         func=_executor,
         args_model=args_model,
     )
+
 
 tools = [to_my_framework_tool(t) for t in client.get_all_tools()]
 # ... pass `tools` to your framework's agent constructor.

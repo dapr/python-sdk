@@ -76,16 +76,16 @@ All public symbols are exported from `dapr.ext.workflow`:
 
 ```python
 from dapr.ext.workflow import (
-    WorkflowRuntime,          # Registration & lifecycle (start/shutdown)
-    DaprWorkflowClient,       # Sync client for scheduling/managing workflows
-    DaprWorkflowContext,      # Passed to workflow functions as first arg
+    WorkflowRuntime,  # Registration & lifecycle (start/shutdown)
+    DaprWorkflowClient,  # Sync client for scheduling/managing workflows
+    DaprWorkflowContext,  # Passed to workflow functions as first arg
     WorkflowActivityContext,  # Passed to activity functions as first arg
-    WorkflowState,            # Snapshot of a workflow instance's state
-    WorkflowStatus,           # Enum: UNKNOWN, RUNNING, COMPLETED, FAILED, TERMINATED, PENDING, SUSPENDED, STALLED
-    when_all,                 # Parallel combinator — wait for all tasks
-    when_any,                 # Race combinator — wait for first task
-    alternate_name,           # Decorator to set a custom registration name
-    RetryPolicy,              # Retry config for activities/child workflows
+    WorkflowState,  # Snapshot of a workflow instance's state
+    WorkflowStatus,  # Enum: UNKNOWN, RUNNING, COMPLETED, FAILED, TERMINATED, PENDING, SUSPENDED, STALLED
+    when_all,  # Parallel combinator — wait for all tasks
+    when_any,  # Race combinator — wait for first task
+    alternate_name,  # Decorator to set a custom registration name
+    RetryPolicy,  # Retry config for activities/child workflows
 )
 
 # Async client:

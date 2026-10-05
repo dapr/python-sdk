@@ -36,13 +36,16 @@ experience for all of this remains preview regardless of REST API version. Sourc
 from dapr.ext.rag import DurableRAGPipeline, FoundryIQKnowledgeSourceConfig
 
 pipeline = DurableRAGPipeline(
-    source=..., parser=..., splitter=..., embedder=...,
+    source=...,
+    parser=...,
+    splitter=...,
+    embedder=...,
     vector_store=...,  # must be AzureAISearchVectorStore
-    state_store_name="rag-pipeline-state",
+    state_store_name='rag-pipeline-state',
     foundry_iq_knowledge_source=FoundryIQKnowledgeSourceConfig(
-        name="company-knowledge-ks",
-        source_data_fields=("title", "source_uri"),
-        search_fields=("content",),
+        name='company-knowledge-ks',
+        source_data_fields=('title', 'source_uri'),
+        search_fields=('content',),
     ),
 )
 ```
