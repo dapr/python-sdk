@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
 import socket
 import threading
 import time
@@ -93,6 +94,13 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.version import __version__
+
+logger = logging.getLogger(__name__)
+
+SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
+SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS = 5
+
+logger = logging.getLogger(__name__)
 
 
 class DaprGrpcClient:
@@ -624,8 +632,13 @@ class DaprGrpcClient:
             handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+
+        Returns:
+            Callable: Closes the subscription and waits up to SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS
+                for the handler thread to stop.
         """
         subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
+        closed = threading.Event()
 
         def stream_messages(sub):
             while True:
@@ -633,30 +646,52 @@ class DaprGrpcClient:
                     for message in sub:
                         if message:
                             # Process the message
-                            response = handler_fn(message)
+                            try:
+                                response = handler_fn(message)
+                            except Exception:
+                                logger.exception('Subscription handler failed, retrying message')
+                                subscription.respond_retry(message)
+                                continue
                             if response:
                                 subscription.respond(message, response.status)
                         else:
                             # No message received
                             continue
 
-                except StreamInactiveError:
-                    break
-                except StreamCancelledError:
-                    break
+                except (StreamInactiveError, StreamCancelledError):
+                    pass
                 except Exception:
-                    # Stream died — reconnect via the subscription's own
-                    # reconnect logic (which waits for the sidecar to be healthy).
-                    try:
-                        sub.reconnect_stream()
-                    except Exception:
-                        # Sidecar still unavailable — back off before retrying
-                        # TODO: Make this configurable
-                        time.sleep(5)
-                    continue
+                    logger.warning(
+                        'Subscription stream failed, reconnecting in %s seconds',
+                        SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS,
+                        exc_info=True,
+                    )
+                    closed.wait(SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS)
+                if closed.is_set():
+                    break
+                # Reconnect via the subscription's own reconnect logic (which waits for the
+                # sidecar to be healthy).
+                try:
+                    sub.reconnect_stream()
+                except Exception:
+                    # Sidecar still unavailable — back off before retrying
+                    logger.warning(
+                        'Subscription reconnect failed, retrying in %s seconds',
+                        SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS,
+                        exc_info=True,
+                    )
+                    closed.wait(SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS)
 
         def close_subscription():
+            closed.set()
             subscription.close()
+            if threading.current_thread() is not streaming_thread:
+                streaming_thread.join(timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS)
+                if streaming_thread.is_alive():
+                    logger.warning(
+                        'Subscription handler thread still running %ss after close',
+                        SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS,
+                    )
 
         streaming_thread = threading.Thread(target=stream_messages, args=(subscription,))
         streaming_thread.start()
