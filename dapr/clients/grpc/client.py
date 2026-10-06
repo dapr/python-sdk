@@ -83,7 +83,7 @@ from dapr.clients.grpc._response import (
     UnlockResponse,
     UnlockResponseStatus,
 )
-from dapr.clients.grpc._state import StateItem, StateOptions
+from dapr.clients.grpc._state import Consistency, StateItem, StateOptions
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, DaprClientTimeoutInterceptor
 from dapr.clients.grpc.subscription import StreamInactiveError, Subscription
 from dapr.clients.health import DaprHealth
@@ -669,6 +669,7 @@ class DaprGrpcClient:
         key: str,
         state_metadata: Optional[Dict[str, str]] = dict(),
         metadata: Optional[MetadataTuple] = None,
+        consistency: Optional[Consistency] = None,
     ) -> StateResponse:
         """Gets value from a statestore with a key
 
@@ -687,10 +688,15 @@ class DaprGrpcClient:
             key (str): the key of the key-value pair to be gotten
             state_metadata (Dict[str, str], optional): Dapr metadata for state request
             metadata (tuple, optional, DEPRECATED): gRPC custom metadata
+            consistency (Consistency, optional): read consistency to request from the
+                state store. Defaults to the store's own default.
 
         Returns:
             :class:`StateResponse` gRPC metadata returned from callee
             and value obtained from the state store
+
+        Raises:
+            ValueError: if store_name is empty or consistency is not a Consistency value.
         """
         if metadata is not None:
             warn(
@@ -702,7 +708,14 @@ class DaprGrpcClient:
 
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('State store name cannot be empty')
-        req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
+        if consistency is not None and not isinstance(consistency, Consistency):
+            raise ValueError('consistency must be a Consistency value, e.g. Consistency.strong')
+        req = api_v1.GetStateRequest(
+            store_name=store_name,
+            key=key,
+            metadata=state_metadata,
+            consistency=(consistency or Consistency.unspecified).value,
+        )
         try:
             response, call = self.retry_policy.run_rpc(
                 self._stub.GetState.with_call, req, metadata=metadata
