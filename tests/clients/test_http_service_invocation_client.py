@@ -29,24 +29,24 @@ from dapr.clients.exceptions import DaprInternalError
 from dapr.conf import settings
 from dapr.proto import common_v1
 
-from .fake_http_server import FakeHttpServer
+from .fake_http_server import FakeHttpServer, point_settings_at_http_port
 
 
 class DaprInvocationHttpClientTests(unittest.TestCase):
-    server_port = 3500
+    server_port: int  # set in setUpClass from the port the fake server bound
 
     @classmethod
     def setUpClass(cls):
-        cls.server = FakeHttpServer(cls.server_port)
+        cls.server = FakeHttpServer()
+        cls.addClassCleanup(cls.server.shutdown_server)
+        cls.server_port = cls.server.get_port()
+        # setUp repoints the settings at the server; this restores them afterwards.
+        point_settings_at_http_port(cls, cls.server_port)
         cls.server.start()
 
         cls.app_id = 'fakeapp'
         cls.method_name = 'fakemethod'
         cls.invoke_url = f'/v1.0/invoke/{cls.app_id}/method/{cls.method_name}'
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.server.shutdown_server()
 
     def setUp(self):
         settings.DAPR_API_TOKEN = None
