@@ -880,6 +880,9 @@ def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
             str(last_err) if last_err else f'Cannot coerce {value!r} to {expected_type}'
         )
 
+    if value is None:
+        raise ValueError(f'None is not a valid value for {expected_type}')
+
     origin = get_origin(expected_type)
 
     # Literal
@@ -912,7 +915,7 @@ def _coerce_and_validate(value: Any, expected_type: Any) -> Any:
 
     # Dataclasses
     if inspect.isclass(expected_type) and is_dataclass(expected_type):
-        if isinstance(value, expected_type) or value is None:
+        if isinstance(value, expected_type):
             return value
         raise ValueError(
             f'Expected {expected_type.__name__} dataclass instance, got {type(value).__name__}'
