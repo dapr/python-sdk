@@ -33,7 +33,7 @@ def convert_from_dapr_duration(duration: str) -> timedelta:
     """
 
     matched = DAPR_DURATION_PARSER.match(duration)
-    if not matched or matched.lastindex == 0:
+    if not matched or matched.lastindex is None:
         raise ValueError(f"Invalid Dapr Duration format: '{duration}'")
 
     days = 0.0
