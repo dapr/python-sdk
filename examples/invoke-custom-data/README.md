@@ -4,6 +4,12 @@ This example utilizes a receiver and a caller for the OnInvoke / Invoke function
 
 > **Note:** Make sure to use the latest proto bindings and have them available under `dapr_pb2` and `daprclient_pb2`
 
+> **Why `custom_data_proto/` and not `proto/`:** the SDK's dev environment installs `google-cloud-vision`
+> (a transitive dependency of the `rag` extension's optional `unstructured[pdf]` parser), which brings in
+> a PyPI package literally named `proto`. A local `proto/` directory here would be shadowed by that
+> installed package when this script runs in the same environment as the rest of the test suite,
+> breaking `import proto.response_pb2` with a confusing `ModuleNotFoundError`.
+
 ## Pre-requisites
 
 - [Dapr CLI and initialized environment](https://docs.dapr.io/getting-started)
@@ -25,7 +31,8 @@ To run this example, the following steps should be followed:
 1. Compile Protobuf for Custom Response
 
    ```bash
-   python3 -m grpc_tools.protoc --proto_path=./proto/ --python_out=./proto/    --grpc_python_out=./proto/ ./proto/response.proto
+   python3 -m grpc_tools.protoc --proto_path=./custom_data_proto/ --python_out=./custom_data_proto/ \
+       --grpc_python_out=./custom_data_proto/ ./custom_data_proto/response.proto
    ```
 
 2. Start Receiver (expose gRPC server receiver on port 13551)

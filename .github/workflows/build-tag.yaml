@@ -16,7 +16,7 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install uv
-      uses: astral-sh/setup-uv@v9.0.0
+      uses: astral-sh/setup-uv@v10.2.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Verify tag matches a stable VERSION
@@ -64,14 +64,18 @@ jobs:
       with:
         python-version: ${{ matrix.python_ver }}
     - name: Install uv
-      uses: astral-sh/setup-uv@v9.0.0
+      uses: astral-sh/setup-uv@v10.2.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Check Typing
       run: uv run mypy
     - name: Run unit-tests
+      # The suite takes a few minutes. Without a limit, a hung test holds the runner for
+      # GitHub's 6-hour default; faulthandler dumps every thread's stack after 5 minutes
+      # in one test, so the log shows where it hung.
+      timeout-minutes: 20
       run: |
-        uv run coverage run -m pytest tests -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib
+        uv run coverage run -m pytest tests -m "not e2e" --ignore=tests/integration --ignore=tests/examples --import-mode=importlib -o faulthandler_timeout=300
         uv run coverage xml
     - name: Upload test coverage
       uses: codecov/codecov-action@v7

@@ -13,6 +13,10 @@ spec:
     value: sample
   - name: consumerGroup
     value: group1
+  # Start a new consumer group at the beginning of the topic, so messages
+  # published before the consumer joins are still delivered.
+  - name: initialOffset
+    value: oldest
   # publisher configuration: topic
   - name: publishTopic
     value: sample
