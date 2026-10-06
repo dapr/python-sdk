@@ -1418,6 +1418,7 @@ class _RuntimeOrchestrationContext(
         self._encoded_custom_status: Optional[str] = None
         self._orchestrator_version_name: Optional[str] = None
         self._version_name: Optional[str] = None
+        self._reported_unexpected_events: set[tuple[str, int]] = set()
         self._history_patches: dict[str, bool] = {}
         self._applied_patches: dict[str, bool] = {}
         self._encountered_patches: list[str] = []
@@ -1983,6 +1984,28 @@ class _OrchestrationExecutor:
             patches=ctx._encountered_patches,
         )
 
+    def _log_unexpected_event(
+        self, ctx: _RuntimeOrchestrationContext, event_name: str, event_id: int
+    ) -> None:
+        """Logs an unexpected history event, once per execution.
+
+        A single work item can carry the same unexpected event many times, so
+        logging every occurrence floods the caller's logs with identical lines.
+
+        Args:
+            ctx: The orchestration context the event belongs to.
+            event_name: Name of the history event field, as sent by the sidecar.
+            event_id: Id of the task or timer the event refers to.
+        """
+        if ctx.is_replaying:
+            return
+        if (event_name, event_id) in ctx._reported_unexpected_events:
+            return
+        ctx._reported_unexpected_events.add((event_name, event_id))
+        self._logger.warning(
+            f'{ctx.instance_id}: Ignoring unexpected {event_name} event with ID = {event_id}.'
+        )
+
     def process_event(self, ctx: _RuntimeOrchestrationContext, event: pb.HistoryEvent) -> None:
         if self._is_suspended and _is_suspendable(event):
             # We are suspended, so we need to buffer this event until we are resumed
@@ -2074,10 +2097,7 @@ class _OrchestrationExecutor:
                 timer_task = ctx._pending_tasks.pop(timer_id, None)
                 if not timer_task:
                     # TODO: Should this be an error? When would it ever happen?
-                    if not ctx._is_replaying:
-                        self._logger.warning(
-                            f'{ctx.instance_id}: Ignoring unexpected timerFired event with ID = {timer_id}.'
-                        )
+                    self._log_unexpected_event(ctx, 'timerFired', timer_id)
                     return
                 timer_task.complete(None)
                 if timer_task._retryable_parent is not None:
@@ -2128,10 +2148,7 @@ class _OrchestrationExecutor:
                 activity_task = ctx._pending_tasks.pop(task_id, None)
                 if not activity_task:
                     # TODO: Should this be an error? When would it ever happen?
-                    if not ctx.is_replaying:
-                        self._logger.warning(
-                            f'{ctx.instance_id}: Ignoring unexpected taskCompleted event with ID = {task_id}.'
-                        )
+                    self._log_unexpected_event(ctx, 'taskCompleted', task_id)
                     return
                 result = None
                 if not ph.is_empty(event.taskCompleted.result):
@@ -2143,10 +2160,7 @@ class _OrchestrationExecutor:
                 activity_task = ctx._pending_tasks.pop(task_id, None)
                 if not activity_task:
                     # TODO: Should this be an error? When would it ever happen?
-                    if not ctx.is_replaying:
-                        self._logger.warning(
-                            f'{ctx.instance_id}: Ignoring unexpected taskFailed event with ID = {task_id}.'
-                        )
+                    self._log_unexpected_event(ctx, 'taskFailed', task_id)
                     return
 
                 if isinstance(activity_task, task.RetryableTask):
@@ -2214,10 +2228,7 @@ class _OrchestrationExecutor:
                 sub_orch_task = ctx._pending_tasks.pop(task_id, None)
                 if not sub_orch_task:
                     # TODO: Should this be an error? When would it ever happen?
-                    if not ctx.is_replaying:
-                        self._logger.warning(
-                            f'{ctx.instance_id}: Ignoring unexpected childWorkflowInstanceCompleted event with ID = {task_id}.'
-                        )
+                    self._log_unexpected_event(ctx, 'childWorkflowInstanceCompleted', task_id)
                     return
                 result = None
                 if not ph.is_empty(event.childWorkflowInstanceCompleted.result):
@@ -2230,10 +2241,7 @@ class _OrchestrationExecutor:
                 sub_orch_task = ctx._pending_tasks.pop(task_id, None)
                 if not sub_orch_task:
                     # TODO: Should this be an error? When would it ever happen?
-                    if not ctx.is_replaying:
-                        self._logger.warning(
-                            f'{ctx.instance_id}: Ignoring unexpected childWorkflowInstanceFailed event with ID = {task_id}.'
-                        )
+                    self._log_unexpected_event(ctx, 'childWorkflowInstanceFailed', task_id)
                     return
                 if isinstance(sub_orch_task, task.RetryableTask):
                     if sub_orch_task._retry_policy is not None:
