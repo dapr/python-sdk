@@ -882,8 +882,9 @@ class DaprGrpcClientTests(unittest.TestCase):
 
     def test_unsubscribe_configuration(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
+        # Like daprd, the fake sidecar answers ok=False for an id it has no subscription for.
         res = dapr.unsubscribe_configuration(store_name='configurationstore', id='k')
-        self.assertTrue(res)
+        self.assertFalse(res)
 
     def test_query_state(self):
         dapr = DaprGrpcClient(f'{self.scheme}localhost:{self.grpc_port}')
