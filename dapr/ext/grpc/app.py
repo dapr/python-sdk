@@ -44,6 +44,27 @@ def _wants_subscription_message(func: Callable) -> bool:
     return isinstance(annotation, type) and issubclass(annotation, SubscriptionMessage)
 
 
+def _resolve_topic_event_type(func: Callable) -> bool:
+    """True if the handler opts into SubscriptionMessage, warning about the legacy type if not.
+
+    Shared by the synchronous and asyncio ``App.subscribe`` decorators so both emit the same
+    deprecation guidance. The stacklevel points past this helper and the decorator, at the
+    line applying ``@app.subscribe``.
+    """
+    wants_subscription_message = _wants_subscription_message(func)
+    if not wants_subscription_message:
+        warnings.warn(
+            'Topic handlers receive a deprecated cloudevents.sdk.event.v1.Event unless '
+            'their event parameter is annotated with dapr.ext.grpc.SubscriptionMessage. '
+            'Annotate the handler to adopt SubscriptionMessage and silence this warning; '
+            'a future release will deliver SubscriptionMessage to all handlers and drop '
+            'the cloudevents dependency.',
+            DeprecationWarning,
+            stacklevel=3,
+        )
+    return wants_subscription_message
+
+
 class App:
     """App object implements a Dapr application callback which can interact with Dapr runtime.
     Once its object is initiated, it will act as a central registry for service invocation,
@@ -205,17 +226,7 @@ class App:
         """
 
         def decorator(func):
-            handler_wants_subscription_message = _wants_subscription_message(func)
-            if not handler_wants_subscription_message:
-                warnings.warn(
-                    'Topic handlers receive a deprecated cloudevents.sdk.event.v1.Event unless '
-                    'their event parameter is annotated with dapr.ext.grpc.SubscriptionMessage. '
-                    'Annotate the handler to adopt SubscriptionMessage and silence this warning; '
-                    'a future release will deliver SubscriptionMessage to all handlers and drop '
-                    'the cloudevents dependency.',
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
+            handler_wants_subscription_message = _resolve_topic_event_type(func)
             self._servicer.register_topic(
                 pubsub_name,
                 topic,
