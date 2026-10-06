@@ -106,6 +106,34 @@ class WorkflowRuntimeTimeoutInterceptorTest(unittest.TestCase):
             self.assertIsInstance(interceptors[2], DaprClientTimeoutInterceptor)
 
 
+class WorkflowRuntimeUnixSocketTest(unittest.TestCase):
+    """An absolute unix socket in DAPR_GRPC_ENDPOINT must reach the worker as a gRPC target."""
+
+    def setUp(self):
+        self._registry_patch = mock.patch(
+            'dapr.ext.workflow._durabletask.worker._Registry',
+            return_value=FakeTaskHubGrpcWorker(),
+        )
+        self._registry_patch.start()
+
+    def tearDown(self):
+        mock.patch.stopall()
+
+    def test_absolute_unix_socket_endpoint_is_forwarded(self):
+        socket_endpoint = 'unix:///private/tmp/dapr-sockets/dapr-myapp-grpc.socket'
+        with (
+            mock.patch.object(settings, 'DAPR_GRPC_ENDPOINT', socket_endpoint),
+            mock.patch(
+                'dapr.ext.workflow._durabletask.worker.TaskHubGrpcWorker'
+            ) as mock_worker_cls,
+        ):
+            WorkflowRuntime()
+            call_kwargs = mock_worker_cls.call_args[1]
+
+            self.assertEqual(call_kwargs['host_address'], socket_endpoint)
+            self.assertFalse(call_kwargs['secure_channel'])
+
+
 class WorkflowRuntimeStatefulHistoryTest(unittest.TestCase):
     """The stateful-history options must reach the worker, not stop at the public API."""
 
