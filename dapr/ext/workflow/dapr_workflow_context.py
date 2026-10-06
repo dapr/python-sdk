@@ -15,6 +15,7 @@ limitations under the License.
 
 from datetime import datetime, timedelta
 from typing import Any, Callable, List, Optional, TypeVar, Union
+from uuid import UUID
 
 from dapr.ext.workflow._durabletask import task
 from dapr.ext.workflow.logger import Logger, LoggerOptions
@@ -56,6 +57,9 @@ class DaprWorkflowContext(WorkflowContext):
     def set_custom_status(self, custom_status: str) -> None:
         self._logger.debug(f'{self.instance_id}: Setting custom status to {custom_status}')
         self.__obj.set_custom_status(custom_status)
+
+    def new_guid(self) -> UUID:
+        return self.__obj.new_guid()
 
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
         self._logger.debug(f'{self.instance_id}: Creating timer to fire at {fire_at} time')
