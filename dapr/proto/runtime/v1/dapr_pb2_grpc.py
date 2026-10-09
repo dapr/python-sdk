@@ -155,6 +155,11 @@ class DaprStub:
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorRemindersRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorRemindersResponse.FromString,
                 _registered_method=True)
+        self.ListActorTimers = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/ListActorTimers',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorTimersRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorTimersResponse.FromString,
+                _registered_method=True)
         self.GetActorState = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/GetActorState',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorStateRequest.SerializeToString,
@@ -164,6 +169,11 @@ class DaprStub:
                 '/dapr.proto.runtime.v1.Dapr/GetActorReminder',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorReminderRequest.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorReminderResponse.FromString,
+                _registered_method=True)
+        self.GetActorTimer = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/GetActorTimer',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorTimerRequest.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorTimerResponse.FromString,
                 _registered_method=True)
         self.ExecuteActorStateTransaction = channel.unary_unary(
                 '/dapr.proto.runtime.v1.Dapr/ExecuteActorStateTransaction',
@@ -563,6 +573,13 @@ class DaprServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListActorTimers(self, request, context):
+        """Lists the timers registered on this host for an actor.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetActorState(self, request, context):
         """Gets the state for a specific actor.
         """
@@ -572,6 +589,13 @@ class DaprServicer:
 
     def GetActorReminder(self, request, context):
         """Gets an actor reminder.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetActorTimer(self, request, context):
+        """Gets a timer registered on this host for an actor.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -1033,6 +1057,11 @@ def add_DaprServicer_to_server(servicer, server):
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorRemindersRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorRemindersResponse.SerializeToString,
             ),
+            'ListActorTimers': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListActorTimers,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorTimersRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorTimersResponse.SerializeToString,
+            ),
             'GetActorState': grpc.unary_unary_rpc_method_handler(
                     servicer.GetActorState,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorStateRequest.FromString,
@@ -1042,6 +1071,11 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.GetActorReminder,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorReminderRequest.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorReminderResponse.SerializeToString,
+            ),
+            'GetActorTimer': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetActorTimer,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorTimerRequest.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorTimerResponse.SerializeToString,
             ),
             'ExecuteActorStateTransaction': grpc.unary_unary_rpc_method_handler(
                     servicer.ExecuteActorStateTransaction,
@@ -1868,6 +1902,33 @@ class Dapr:
             _registered_method=True)
 
     @staticmethod
+    def ListActorTimers(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/ListActorTimers',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorTimersRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.ListActorTimersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def GetActorState(request,
             target,
             options=(),
@@ -1911,6 +1972,33 @@ class Dapr:
             '/dapr.proto.runtime.v1.Dapr/GetActorReminder',
             dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorReminderRequest.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorReminderResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetActorTimer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/GetActorTimer',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorTimerRequest.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2.GetActorTimerResponse.FromString,
             options,
             channel_credentials,
             insecure,
