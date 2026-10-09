@@ -21,8 +21,14 @@ from grpc import RpcError, StatusCode  # type: ignore
 
 from dapr.conf import settings
 
+
 # Sentinel: resolve ``DAPR_API_MAX_RETRIES`` when the policy is built, not at import.
-_FROM_SETTINGS = object()
+class _FromSettings:
+    def __repr__(self) -> str:
+        return 'DAPR_API_MAX_RETRIES'
+
+
+_FROM_SETTINGS = _FromSettings()
 
 
 class RetryPolicy:

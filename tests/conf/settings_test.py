@@ -17,6 +17,8 @@ import os
 import unittest
 from unittest import mock
 
+from dapr.actor.client.proxy import ActorProxyFactory
+from dapr.actor.runtime.grpc_host import ActorGrpcHost
 from dapr.clients.grpc._channel import resolve_grpc_endpoint
 from dapr.clients.retry import RetryPolicy
 from dapr.conf import Settings, global_settings, settings
@@ -27,8 +29,17 @@ class SettingsReadEnvAtAccessTests(unittest.TestCase):
         patcher = mock.patch.dict(os.environ)
         patcher.start()
         self.addCleanup(patcher.stop)
-        for name in ('DAPR_GRPC_ENDPOINT', 'DAPR_GRPC_PORT', 'DAPR_API_MAX_RETRIES'):
+        names = (
+            'DAPR_GRPC_ENDPOINT',
+            'DAPR_GRPC_PORT',
+            'DAPR_API_MAX_RETRIES',
+            'DAPR_HTTP_ENDPOINT',
+            'DAPR_HTTP_TIMEOUT_SECONDS',
+        )
+        for name in names:
             os.environ.pop(name, None)
+            # Other tests assign on the shared instance; drop those so env is visible.
+            settings.__dict__.pop(name, None)
 
     def test_env_set_after_import_is_seen(self):
         self.assertIsNone(settings.DAPR_GRPC_ENDPOINT)
@@ -80,6 +91,30 @@ class SettingsReadEnvAtAccessTests(unittest.TestCase):
 
         self.assertEqual(7, RetryPolicy().max_attempts)
         self.assertEqual(3, RetryPolicy(max_attempts=3).max_attempts)
+
+    def test_retry_policy_zero_from_env(self):
+        os.environ['DAPR_API_MAX_RETRIES'] = '0'
+        self.assertEqual(0, RetryPolicy().max_attempts)
+
+    def test_invalid_env_value_names_the_setting(self):
+        os.environ['DAPR_GRPC_PORT'] = 'abc'
+        with self.assertRaisesRegex(ValueError, 'DAPR_GRPC_PORT'):
+            settings.DAPR_GRPC_PORT  # noqa: B018
+
+    def test_dir_lists_settings(self):
+        self.assertIn('DAPR_GRPC_ENDPOINT', dir(settings))
+
+    def test_http_endpoint_from_env(self):
+        os.environ['DAPR_HTTP_ENDPOINT'] = 'http://example.com:3500'
+        self.assertEqual('http://example.com:3500', settings.DAPR_HTTP_ENDPOINT)
+
+    def test_actor_timeout_defaults_read_env_at_call(self):
+        os.environ['DAPR_HTTP_TIMEOUT_SECONDS'] = '7'
+        with mock.patch('dapr.actor.client.proxy.DaprActorHttpClient') as client:
+            ActorProxyFactory()
+        self.assertEqual(7, client.call_args.kwargs['timeout'])
+        self.assertEqual(7, ActorGrpcHost(app_port=0)._timeout_seconds)
+        self.assertEqual(3, ActorGrpcHost(timeout_seconds=3, app_port=0)._timeout_seconds)
 
 
 if __name__ == '__main__':

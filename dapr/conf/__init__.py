@@ -32,9 +32,19 @@ class Settings:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         default_value = getattr(global_settings, name)
         env_variable = os.environ.get(name)
-        if env_variable:
-            return type(default_value)(env_variable) if default_value is not None else env_variable
-        return default_value
+        if not env_variable:
+            return default_value
+        if default_value is None:
+            return env_variable
+        try:
+            return type(default_value)(env_variable)
+        except ValueError as error:
+            raise ValueError(f'Invalid value for {name}: {env_variable!r}') from error
+
+    def __dir__(self):
+        return sorted(
+            {*super().__dir__(), *(n for n in dir(global_settings) if not n.startswith('__'))}
+        )
 
 
 settings = Settings()
