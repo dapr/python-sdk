@@ -202,6 +202,7 @@ class ConversationRequestAlpha2(_message.Message):
     TOOL_CHOICE_FIELD_NUMBER: _builtins.int
     RESPONSE_FORMAT_FIELD_NUMBER: _builtins.int
     PROMPT_CACHE_RETENTION_FIELD_NUMBER: _builtins.int
+    MAX_TOKENS_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     """The name of Conversation component"""
     context_id: _builtins.str
@@ -220,6 +221,14 @@ class ConversationRequestAlpha2(_message.Message):
     `required` requires one or more functions to be called.
     ref: https://github.com/openai/openai-go/blob/main/chatcompletion.go#L1976
     ref: https://python.langchain.com/docs/how_to/tool_choice/
+    """
+    max_tokens: _builtins.int
+    """Maximum number of tokens the model may generate for the completion.
+    Mapped to each provider's equivalent parameter (e.g. OpenAI
+    max_completion_tokens, Anthropic max_tokens). Overrides the component-level
+    maxTokens metadata default when set.
+    inspired by openai.ChatCompletionNewParams.MaxCompletionTokens
+    ref: https://github.com/openai/openai-go/blob/main/chatcompletion.go#L2131
     """
     @_builtins.property
     def inputs(self) -> _containers.RepeatedCompositeFieldContainer[Global___ConversationInputAlpha2]:
@@ -285,13 +294,16 @@ class ConversationRequestAlpha2(_message.Message):
         tool_choice: _builtins.str | None = ...,
         response_format: _struct_pb2.Struct | None = ...,
         prompt_cache_retention: _duration_pb2.Duration | None = ...,
+        max_tokens: _builtins.int | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_context_id", b"_context_id", "_prompt_cache_retention", b"_prompt_cache_retention", "_response_format", b"_response_format", "_scrub_pii", b"_scrub_pii", "_temperature", b"_temperature", "_tool_choice", b"_tool_choice", "context_id", b"context_id", "prompt_cache_retention", b"prompt_cache_retention", "response_format", b"response_format", "scrub_pii", b"scrub_pii", "temperature", b"temperature", "tool_choice", b"tool_choice"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_context_id", b"_context_id", "_max_tokens", b"_max_tokens", "_prompt_cache_retention", b"_prompt_cache_retention", "_response_format", b"_response_format", "_scrub_pii", b"_scrub_pii", "_temperature", b"_temperature", "_tool_choice", b"_tool_choice", "context_id", b"context_id", "max_tokens", b"max_tokens", "prompt_cache_retention", b"prompt_cache_retention", "response_format", b"response_format", "scrub_pii", b"scrub_pii", "temperature", b"temperature", "tool_choice", b"tool_choice"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_context_id", b"_context_id", "_prompt_cache_retention", b"_prompt_cache_retention", "_response_format", b"_response_format", "_scrub_pii", b"_scrub_pii", "_temperature", b"_temperature", "_tool_choice", b"_tool_choice", "context_id", b"context_id", "inputs", b"inputs", "metadata", b"metadata", "name", b"name", "parameters", b"parameters", "prompt_cache_retention", b"prompt_cache_retention", "response_format", b"response_format", "scrub_pii", b"scrub_pii", "temperature", b"temperature", "tool_choice", b"tool_choice", "tools", b"tools"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_context_id", b"_context_id", "_max_tokens", b"_max_tokens", "_prompt_cache_retention", b"_prompt_cache_retention", "_response_format", b"_response_format", "_scrub_pii", b"_scrub_pii", "_temperature", b"_temperature", "_tool_choice", b"_tool_choice", "context_id", b"context_id", "inputs", b"inputs", "max_tokens", b"max_tokens", "metadata", b"metadata", "name", b"name", "parameters", b"parameters", "prompt_cache_retention", b"prompt_cache_retention", "response_format", b"response_format", "scrub_pii", b"scrub_pii", "temperature", b"temperature", "tool_choice", b"tool_choice", "tools", b"tools"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__context_id: _TypeAlias = _typing.Literal["context_id"]  # noqa: Y015
     _WhichOneofArgType__context_id: _TypeAlias = _typing.Literal["_context_id", b"_context_id"]  # noqa: Y015
+    _WhichOneofReturnType__max_tokens: _TypeAlias = _typing.Literal["max_tokens"]  # noqa: Y015
+    _WhichOneofArgType__max_tokens: _TypeAlias = _typing.Literal["_max_tokens", b"_max_tokens"]  # noqa: Y015
     _WhichOneofReturnType__prompt_cache_retention: _TypeAlias = _typing.Literal["prompt_cache_retention"]  # noqa: Y015
     _WhichOneofArgType__prompt_cache_retention: _TypeAlias = _typing.Literal["_prompt_cache_retention", b"_prompt_cache_retention"]  # noqa: Y015
     _WhichOneofReturnType__response_format: _TypeAlias = _typing.Literal["response_format"]  # noqa: Y015
@@ -304,6 +316,8 @@ class ConversationRequestAlpha2(_message.Message):
     _WhichOneofArgType__tool_choice: _TypeAlias = _typing.Literal["_tool_choice", b"_tool_choice"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__context_id) -> _WhichOneofReturnType__context_id | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__max_tokens) -> _WhichOneofReturnType__max_tokens | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__prompt_cache_retention) -> _WhichOneofReturnType__prompt_cache_retention | None: ...
     @_typing.overload
