@@ -1,0 +1,19 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: rag-pipeline-state
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+  - name: redisHost
+    value: localhost:6379
+  - name: redisPassword
+    value: ""
+  # Required: Dapr Workflow uses the actor runtime internally, which needs an
+  # actor-capable state store -- see dapr/ext/workflow/AGENTS.md. This same
+  # store also holds this pipeline's own manifest/completion/activation
+  # records (small JSON documents; never vectors -- see
+  # dapr/ext/rag/AGENTS.md's state store key schema).
+  - name: actorStateStore
+    value: "true"
