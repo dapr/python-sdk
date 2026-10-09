@@ -38,7 +38,7 @@ input_data = 'Hi Counter!'
 event_name = 'event1'
 event_data = 'eventData'
 non_existent_id_error = 'no such instance exists'
-first_phase_timeout_seconds = 60
+first_phase_timeout_seconds = 20
 poll_interval_seconds = 0.5
 expected_child_orchestrator_string = '1aa2bb3cc'
 
