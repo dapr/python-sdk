@@ -22,6 +22,15 @@ from grpc import RpcError, StatusCode  # type: ignore
 from dapr.conf import settings
 
 
+# Sentinel: resolve ``DAPR_API_MAX_RETRIES`` when the policy is built, not at import.
+class _FromSettings:
+    def __repr__(self) -> str:
+        return 'DAPR_API_MAX_RETRIES'
+
+
+_FROM_SETTINGS = _FromSettings()
+
+
 class RetryPolicy:
     """RetryPolicy holds the retry policy configuration for a gRPC client.
 
@@ -36,7 +45,7 @@ class RetryPolicy:
 
     def __init__(
         self,
-        max_attempts: Optional[int] = settings.DAPR_API_MAX_RETRIES,
+        max_attempts: Optional[int] = _FROM_SETTINGS,  # type: ignore[assignment]
         initial_backoff: int = 1,
         max_backoff: int = 20,
         backoff_multiplier: float = 1.5,
@@ -46,6 +55,9 @@ class RetryPolicy:
             StatusCode.DEADLINE_EXCEEDED,
         ],
     ):
+        if max_attempts is _FROM_SETTINGS:
+            max_attempts = settings.DAPR_API_MAX_RETRIES
+
         if max_attempts is None or max_attempts < -1:
             raise ValueError('max_attempts must be greater than or equal to -1')
         self.max_attempts = max_attempts

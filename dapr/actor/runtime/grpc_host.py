@@ -144,7 +144,7 @@ class ActorGrpcHost:
     def __init__(
         self,
         address: Optional[str] = None,
-        timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+        timeout_seconds: Optional[int] = None,
         app_port: Optional[int] = None,
     ):
         """Creates the host.
@@ -161,7 +161,9 @@ class ActorGrpcHost:
                 disable it when you run your own gRPC app server.
         """
         self._address = address
-        self._timeout_seconds = timeout_seconds
+        self._timeout_seconds = (
+            timeout_seconds if timeout_seconds is not None else settings.DAPR_HTTP_TIMEOUT_SECONDS
+        )
         self._app_port = self._resolve_app_port(app_port)
         self._channel: Optional[grpc.aio.Channel] = None
         self._app_server: Optional[grpc.aio.Server] = None
