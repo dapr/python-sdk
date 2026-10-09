@@ -1215,6 +1215,23 @@ class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
 
     DESCRIPTOR: _descriptor.Descriptor
 
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
+        def __init__(
+            self,
+            *,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
+        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
     ID_FIELD_NUMBER: _builtins.int
     ACTOR_TYPE_FIELD_NUMBER: _builtins.int
     ACTOR_ID_FIELD_NUMBER: _builtins.int
@@ -1222,6 +1239,7 @@ class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
     DUE_TIME_FIELD_NUMBER: _builtins.int
     PERIOD_FIELD_NUMBER: _builtins.int
     DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     actor_type: _builtins.str
     actor_id: _builtins.str
@@ -1230,6 +1248,13 @@ class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
     period: _builtins.str
     @_builtins.property
     def data(self) -> _any_pb2.Any: ...
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
+        """metadata carries request-level headers, including "Dapr-Reentrancy-Id"
+        when reentrancy is enabled for the actor type, so a callback can make
+        reentrant calls the same way a method invocation can.
+        """
+
     def __init__(
         self,
         *,
@@ -1240,10 +1265,11 @@ class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
         due_time: _builtins.str = ...,
         period: _builtins.str = ...,
         data: _any_pb2.Any | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "id", b"id", "name", b"name", "period", b"period"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "id", b"id", "metadata", b"metadata", "name", b"name", "period", b"period"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___SubscribeActorEventsResponseReminderRequestAlpha1: _TypeAlias = SubscribeActorEventsResponseReminderRequestAlpha1  # noqa: Y015
@@ -1256,6 +1282,23 @@ class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
 
     DESCRIPTOR: _descriptor.Descriptor
 
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
+        def __init__(
+            self,
+            *,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
+        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
     ID_FIELD_NUMBER: _builtins.int
     ACTOR_TYPE_FIELD_NUMBER: _builtins.int
     ACTOR_ID_FIELD_NUMBER: _builtins.int
@@ -1264,6 +1307,7 @@ class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
     PERIOD_FIELD_NUMBER: _builtins.int
     CALLBACK_FIELD_NUMBER: _builtins.int
     DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     actor_type: _builtins.str
     actor_id: _builtins.str
@@ -1273,6 +1317,12 @@ class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
     callback: _builtins.str
     @_builtins.property
     def data(self) -> _any_pb2.Any: ...
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
+        """metadata carries request-level headers, including "Dapr-Reentrancy-Id"
+        when reentrancy is enabled for the actor type.
+        """
+
     def __init__(
         self,
         *,
@@ -1284,10 +1334,11 @@ class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
         period: _builtins.str = ...,
         callback: _builtins.str = ...,
         data: _any_pb2.Any | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "id", b"id", "name", b"name", "period", b"period"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "id", b"id", "metadata", b"metadata", "name", b"name", "period", b"period"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___SubscribeActorEventsResponseTimerRequestAlpha1: _TypeAlias = SubscribeActorEventsResponseTimerRequestAlpha1  # noqa: Y015
