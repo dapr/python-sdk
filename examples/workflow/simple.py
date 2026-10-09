@@ -11,7 +11,7 @@
 # limitations under the License.
 import uuid
 from datetime import timedelta
-from time import sleep
+from time import monotonic, sleep
 
 from dapr.clients.exceptions import DaprInternalError
 from dapr.conf import Settings
@@ -38,6 +38,9 @@ input_data = 'Hi Counter!'
 event_name = 'event1'
 event_data = 'eventData'
 non_existent_id_error = 'no such instance exists'
+first_phase_timeout_seconds = 60
+poll_interval_seconds = 0.5
+expected_child_orchestrator_string = '1aa2bb3cc'
 
 retry_policy = RetryPolicy(
     first_retry_interval=timedelta(seconds=1),
@@ -116,6 +119,15 @@ def act_for_child_wf(ctx: WorkflowActivityContext, inp):
     child_act_retry_count += 1
 
 
+def wait_for_first_phase():
+    """Block until the activities and the child workflow before the event wait have finished."""
+    deadline = monotonic() + first_phase_timeout_seconds
+    while child_orchestrator_string != expected_child_orchestrator_string or retry_count < 2:
+        if monotonic() > deadline:
+            raise TimeoutError('Workflow did not finish its initial activities in time')
+        sleep(poll_interval_seconds)
+
+
 def main():
     wfr.start()
     wf_client = DaprWorkflowClient()
@@ -127,12 +139,14 @@ def main():
 
     wf_client.wait_for_workflow_start(instance_id)
 
-    # Sleep to let the workflow run initial activities
-    sleep(20)
+    # Poll until the initial activities are done instead of sleeping for a fixed time.
+    wait_for_first_phase()
 
-    assert counter >= 11
-    assert retry_count >= 2
-    assert child_orchestrator_string == '1aa2bb3cc'
+    # The counter is the sum of the two hello_act inputs (1 and 10), and the retryable
+    # activity fails once then succeeds, so it runs exactly twice.
+    assert counter == 1 + 10
+    assert retry_count == 2
+    assert child_orchestrator_string == expected_child_orchestrator_string
 
     # Pause Test
     wf_client.pause_workflow(instance_id=instance_id)
@@ -144,7 +158,7 @@ def main():
     metadata = wf_client.get_workflow_state(instance_id=instance_id)
     print(f'Get response from {workflow_name} after resume call: {metadata.runtime_status.name}')
 
-    sleep(10)  # Give the workflow time to reach the event wait state
+    # External events raised before the workflow waits for them are buffered.
     wf_client.raise_workflow_event(instance_id=instance_id, event_name=event_name, data=event_data)
 
     print('========= Waiting for Workflow completion', flush=True)
