@@ -19,22 +19,22 @@ from dapr.conf import global_settings
 
 
 class Settings:
-    def __init__(self):
-        for setting in dir(global_settings):
-            default_value = getattr(global_settings, setting)
-            env_variable = os.environ.get(setting)
-            if env_variable:
-                val = (
-                    type(default_value)(env_variable) if default_value is not None else env_variable
-                )
-                setattr(self, setting, val)
-            else:
-                setattr(self, setting, default_value)
+    """Settings resolved from the environment each time they are read.
+
+    A value assigned on the instance (``settings.DAPR_HTTP_PORT = 3500``) takes
+    precedence; otherwise the ``DAPR_*`` environment variable is used when set,
+    falling back to the default in :mod:`dapr.conf.global_settings`.
+    """
 
     def __getattr__(self, name):
-        if name not in dir(global_settings):
+        # Only reached when the attribute was not assigned on the instance.
+        if name.startswith('__') or not hasattr(global_settings, name):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
-        return getattr(self, name)
+        default_value = getattr(global_settings, name)
+        env_variable = os.environ.get(name)
+        if env_variable:
+            return type(default_value)(env_variable) if default_value is not None else env_variable
+        return default_value
 
 
 settings = Settings()

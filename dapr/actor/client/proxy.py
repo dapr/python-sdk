@@ -49,9 +49,11 @@ class ActorProxyFactory(ActorFactoryBase):
     def __init__(
         self,
         message_serializer=DefaultJSONSerializer(),
-        http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+        http_timeout_seconds: Optional[int] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
+        if http_timeout_seconds is None:
+            http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
         # TODO: support serializer for state store later
         self._dapr_client = DaprActorHttpClient(
             message_serializer, timeout=http_timeout_seconds, retry_policy=retry_policy

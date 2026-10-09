@@ -45,7 +45,7 @@ class ActorRuntime:
         actor: Type[Actor],
         message_serializer: Serializer = DefaultJSONSerializer(),
         state_serializer: Serializer = DefaultJSONSerializer(),
-        http_timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+        http_timeout_seconds: Optional[int] = None,
         actor_factory: Optional[Callable[['ActorRuntimeContext', ActorId], 'Actor']] = None,
         actor_client: Optional[DaprActorClientBase] = None,
     ) -> None:
@@ -63,6 +63,8 @@ class ActorRuntime:
                 Defaults to the HTTP client; :class:`ActorGrpcHost` supplies a gRPC one.
         """
         type_info = ActorTypeInformation.create(actor)
+        if http_timeout_seconds is None:
+            http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
         if actor_client is None:
             actor_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
         ctx = ActorRuntimeContext(
