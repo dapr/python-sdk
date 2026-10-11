@@ -11,9 +11,9 @@
 
 """End-to-end verification of replay-safe workflow context behavior.
 
-These tests run workflows through a real Dapr sidecar. After an activity                                
-completes, the workflow is resumed by replaying its history, so the replay                              
-assertions exercise ``DaprWorkflowContext`` rather than only the underlying                             
+These tests run workflows through a real Dapr sidecar. After an activity
+completes, the workflow is resumed by replaying its history, so the replay
+assertions exercise ``DaprWorkflowContext`` rather than only the underlying
 deterministic context.
 """
 
@@ -127,5 +127,5 @@ def test_new_guid_is_deterministic_across_replays(sidecar):
         for value in values:
             UUID(value)
 
-    all_guids = result['first_guids'] + result['second_guids']                                              
+    all_guids = result['first_guids'] + result['second_guids']
     assert len(set(all_guids)) == len(all_guids)

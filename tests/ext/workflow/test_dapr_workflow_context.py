@@ -56,7 +56,6 @@ class FakeOrchestrationContext:
         return self._propagated_history
 
 
-
 class DaprWorkflowContextTest(unittest.TestCase):
     def mock_client_activity(ctx: WorkflowActivityContext, input):
         print(f'{input}!', flush=True)
@@ -94,7 +93,7 @@ class DaprWorkflowContextTest(unittest.TestCase):
 
         assert all(isinstance(g, uuid.UUID) for g in g1)
         assert len(set(g1)) == 3  # unique within an execution
-        assert g1 == g2           # deterministic across replays
+        assert g1 == g2  # deterministic across replays
 
     def test_get_propagated_history_proxies_inner_context(self):
         with mock.patch(
