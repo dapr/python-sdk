@@ -59,6 +59,7 @@ class DaprWorkflowContext(WorkflowContext):
         self.__obj.set_custom_status(custom_status)
 
     def new_guid(self) -> UUID:
+        self._logger.debug(f'{self.instance_id}: Generating new GUID')
         return self.__obj.new_guid()
 
     def create_timer(self, fire_at: Union[datetime, timedelta]) -> task.Task:
