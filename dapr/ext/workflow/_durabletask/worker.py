@@ -1611,7 +1611,8 @@ class _RuntimeOrchestrationContext(
         return self._is_replaying
 
     def new_guid(self) -> uuid.UUID:
-        # Call the mixin directly because ``super()`` resolves to the abstract base method first,
+        # Call the mixin implementation directly because ``super().new_guid()``
+        # first resolves to the abstract method ``OrchestrationContext.new_guid()``,
         # which returns ``None``.
         return deterministic.DeterministicContextMixin.new_guid(self)
 
