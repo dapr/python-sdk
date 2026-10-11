@@ -1611,7 +1611,9 @@ class _RuntimeOrchestrationContext(
         return self._is_replaying
 
     def new_guid(self) -> uuid.UUID:
-        return self.new_guid()
+        # Call the mixin directly because ``super()`` resolves to the abstract base method first,
+        # which returns ``None``.
+        return deterministic.DeterministicContextMixin.new_guid(self)
 
     def set_custom_status(self, custom_status: str) -> None:
         if custom_status is not None and not isinstance(custom_status, str):
