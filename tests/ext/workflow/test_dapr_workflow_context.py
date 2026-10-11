@@ -84,17 +84,6 @@ class DaprWorkflowContextTest(unittest.TestCase):
             dapr_wf_ctx.set_custom_status(mock_custom_status)
             assert fakeContext.custom_status == mock_custom_status
 
-    def test_new_guid_is_unique_within_execution_and_deterministic_across_replays(self):
-        instance_id = 'abc'
-        ctx1 = worker._RuntimeOrchestrationContext(instance_id)
-        ctx2 = worker._RuntimeOrchestrationContext(instance_id)
-        g1 = [ctx1.new_guid() for _ in range(3)]
-        g2 = [ctx2.new_guid() for _ in range(3)]
-
-        assert all(isinstance(g, uuid.UUID) for g in g1)
-        assert len(set(g1)) == 3  # unique within an execution
-        assert g1 == g2  # deterministic across replays
-
     def test_get_propagated_history_proxies_inner_context(self):
         with mock.patch(
             'dapr.ext.workflow._durabletask.worker._RuntimeOrchestrationContext',
@@ -132,3 +121,14 @@ class DaprWorkflowContextTest(unittest.TestCase):
             fake = worker._RuntimeOrchestrationContext(mock_instance_id)
             dapr_wf_ctx = DaprWorkflowContext(fake)
             assert dapr_wf_ctx.get_propagated_history() is None
+
+    def test_new_guid_is_unique_within_execution_and_deterministic_across_replays(self):
+        instance_id = 'abc'
+        ctx1 = DaprWorkflowContext(worker._RuntimeOrchestrationContext(instance_id))
+        ctx2 = DaprWorkflowContext(worker._RuntimeOrchestrationContext(instance_id))
+        g1 = [ctx1.new_guid() for _ in range(3)]
+        g2 = [ctx2.new_guid() for _ in range(3)]
+
+        assert all(isinstance(g, uuid.UUID) for g in g1)
+        assert len(set(g1)) == 3  # unique within an execution
+        assert g1 == g2  # deterministic across replays
