@@ -93,8 +93,8 @@ def test_new_guid_is_deterministic_across_replays(sidecar):
     """GUID sequences remain unchanged when the workflow replays its history.
 
     The echo activity returns the GUIDS from the initial execution.
-    During replay, that result comes from history instead of re-running the
-    activity, so comparing the generated and echoed values detects if replay
+    During replay, that result comes from history instead of executing the
+    activity again, so comparing the generated and echoed values detects if replay
     produced different GUIDs than the initial execution.
     """
     from dapr.ext.workflow import DaprWorkflowContext, WorkflowActivityContext
