@@ -79,7 +79,7 @@ single set of scripts that switches between all of them via environment variable
 ```python
 from dapr.ext.rag import S3Source
 
-source = S3Source(bucket="company-docs", prefix="policies/")
+source = S3Source(bucket='company-docs', prefix='policies/')
 ```
 
 Credentials come from **boto3's standard credential-provider chain** (environment variables,
@@ -95,7 +95,11 @@ LocalStack for local development (see below), and `region_name`/explicit
 ```python
 from dapr.ext.rag import AzureBlobSource
 
-source = AzureBlobSource(account_url="https://example.blob.core.windows.net", container="company-docs", prefix="policies/")
+source = AzureBlobSource(
+    account_url='https://example.blob.core.windows.net',
+    container='company-docs',
+    prefix='policies/',
+)
 ```
 
 Authenticates with **`DefaultAzureCredential`** by default (managed identity, workload identity,
@@ -109,7 +113,7 @@ Pass `connection_string=...` instead for Azurite or another local/dev connection
 ```python
 from dapr.ext.rag import OpenAIEmbedder
 
-embedder = OpenAIEmbedder(model="text-embedding-3-small")
+embedder = OpenAIEmbedder(model='text-embedding-3-small')
 ```
 
 Resolves `OPENAI_API_KEY` from the environment by default. Requires the `rag` extra
@@ -122,8 +126,8 @@ from azure.identity import DefaultAzureCredential
 from dapr.ext.rag import AzureOpenAIEmbedder
 
 embedder = AzureOpenAIEmbedder(
-    endpoint="https://my-resource.openai.azure.com",
-    deployment="text-embedding-3-small",
+    endpoint='https://my-resource.openai.azure.com',
+    deployment='text-embedding-3-small',
     credential=DefaultAzureCredential(),  # this is also the default when omitted
 )
 ```
@@ -142,7 +146,9 @@ one. Requires the `rag` and `rag-azure` extras.
 ```python
 from dapr.ext.rag import PgVectorStore
 
-vector_store = PgVectorStore(connection_string="postgresql://user:password@host/db", collection="company_knowledge")
+vector_store = PgVectorStore(
+    connection_string='postgresql://user:password@host/db', collection='company_knowledge'
+)
 ```
 
 All versions of one `collection` share a single physical table (`rag_chunks_{collection}`), scoped
@@ -156,7 +162,7 @@ underscores). Requires the `rag-pgvector` extra (`psycopg[binary]`).
 ```python
 from dapr.ext.rag import PineconeVectorStore
 
-vector_store = PineconeVectorStore(index_name="company-knowledge")
+vector_store = PineconeVectorStore(index_name='company-knowledge')
 ```
 
 Uses one **namespace per version** within a single Pinecone index (create the index itself, with a
@@ -169,9 +175,9 @@ matching vector dimension/metric, ahead of time -- this class does not create in
 from dapr.ext.rag import AzureAISearchVectorStore
 
 vector_store = AzureAISearchVectorStore(
-    endpoint="https://my-search.search.windows.net",
-    index_base_name="company-knowledge",   # creates company-knowledge-{version} indexes
-    semantic_configuration_name="company-knowledge-semantic",  # optional
+    endpoint='https://my-search.search.windows.net',
+    index_base_name='company-knowledge',  # creates company-knowledge-{version} indexes
+    semantic_configuration_name='company-knowledge-semantic',  # optional
 )
 ```
 
@@ -202,13 +208,19 @@ write documents, create indexes, or switch the alias.
 
 ```python
 pipeline = DurableRAGPipeline(
-    source=..., parser=UnstructuredParser(), splitter=TextSplitter(chunk_size=1000, chunk_overlap=150),
-    embedder=..., vector_store=..., state_store_name="rag-pipeline-state",
+    source=...,
+    parser=UnstructuredParser(),
+    splitter=TextSplitter(chunk_size=1000, chunk_overlap=150),
+    embedder=...,
+    vector_store=...,
+    state_store_name='rag-pipeline-state',
 )
 pipeline.run_worker()  # only in the process that should execute the workflow -- see examples/rag/worker.py
 
-instance_id = pipeline.start(version="2026-09", activate_when_complete=True)
-status = pipeline.get_status("2026-09")     # PipelineStatus: counts, chunks, retries, bytes, stage, ...
+instance_id = pipeline.start(version='2026-09', activate_when_complete=True)
+status = pipeline.get_status(
+    '2026-09'
+)  # PipelineStatus: counts, chunks, retries, bytes, stage, ...
 active = pipeline.resolve_active_version()  # None until activation succeeds
 ```
 
@@ -224,9 +236,13 @@ pipeline (it needs only the vector store, embedder, and state store -- not sourc
 ```python
 from dapr.ext.rag import ActiveVersionResolver
 
-resolver = ActiveVersionResolver(pipeline_id="company-knowledge", state_store_name="rag-pipeline-state",
-                                  vector_store=..., embedder=...)
-matches = resolver.query("What is the remote work policy?", top_k=5)
+resolver = ActiveVersionResolver(
+    pipeline_id='company-knowledge',
+    state_store_name='rag-pipeline-state',
+    vector_store=...,
+    embedder=...,
+)
+matches = resolver.query('What is the remote work policy?', top_k=5)
 ```
 
 `resolver.query(...)` always resolves the active version fresh (with strong read consistency) and
@@ -295,10 +311,15 @@ behavior-affecting settings.
 
 ```python
 # S3 against LocalStack
-S3Source(bucket="company-docs", endpoint_url="http://localhost:4566", aws_access_key_id="test", aws_secret_access_key="test")
+S3Source(
+    bucket='company-docs',
+    endpoint_url='http://localhost:4566',
+    aws_access_key_id='test',
+    aws_secret_access_key='test',
+)
 
 # Azure Blob against Azurite
-AzureBlobSource(container="company-docs", connection_string="UseDevelopmentStorage=true")
+AzureBlobSource(container='company-docs', connection_string='UseDevelopmentStorage=true')
 ```
 
 Both accept an injected `client=`, so the default unit test run exercises the same adapter code

@@ -160,7 +160,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 configure_azure_monitor(
     # Falls back to the APPLICATIONINSIGHTS_CONNECTION_STRING environment
     # variable automatically if this kwarg is omitted.
-    connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"],
+    connection_string=os.environ['APPLICATIONINSIGHTS_CONNECTION_STRING'],
 )
 ```
 
@@ -173,13 +173,13 @@ reference above:
 ```python
 from opentelemetry import trace
 
-tracer = trace.get_tracer("dapr.ext.rag")
+tracer = trace.get_tracer('dapr.ext.rag')
 
-with tracer.start_as_current_span("rag.process_document") as span:
-    span.set_attribute("dapr.workflow.instance_id", instance_id)
-    span.set_attribute("rag.pipeline_id", pipeline_id)
-    span.set_attribute("rag.version", version)
-    span.set_attribute("rag.document.id", document_id)
+with tracer.start_as_current_span('rag.process_document') as span:
+    span.set_attribute('dapr.workflow.instance_id', instance_id)
+    span.set_attribute('rag.pipeline_id', pipeline_id)
+    span.set_attribute('rag.version', version)
+    span.set_attribute('rag.document.id', document_id)
     ...
 ```
 
