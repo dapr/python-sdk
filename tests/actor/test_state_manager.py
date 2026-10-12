@@ -87,11 +87,15 @@ class ActorStateManagerTests(unittest.TestCase):
         self.assertFalse(has_value)
         self.assertIsNone(val)
 
-        # Test if the test value is empty string
-        self._fake_client.get_state.return_value = ''
-        has_value, val = _run(state_manager.try_get_state('state1'))
+        # A fresh manager, because the miss above is now cached in the default tracker.
+        get_state_mock = self._fake_client.get_state.mock
+        get_state_mock.return_value = ''
+        get_state_mock.reset_mock(return_value=False)
+        state_manager_empty = ActorStateManager(self._fake_actor)
+        has_value, val = _run(state_manager_empty.try_get_state('state1'))
         self.assertFalse(has_value)
         self.assertIsNone(val)
+        get_state_mock.assert_called_once()
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
