@@ -25,8 +25,6 @@ from uuid import UUID
 
 import pytest
 
-pytestmark = pytest.mark.dapr_head
-
 HOST = '127.0.0.1'
 GRPC_PORT = '13501'
 COMPLETION_TIMEOUT_S = 60
