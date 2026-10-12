@@ -22,6 +22,24 @@ logger = logging.getLogger(__name__)
 MAX_RECONNECT_ATTEMPTS = 5
 RECONNECT_BACKOFF_INITIAL_SECONDS = 0.2
 RECONNECT_BACKOFF_MAX_SECONDS = 5.0
+_TRANSIENT_STATUS_CODES = (StatusCode.UNAVAILABLE, StatusCode.UNKNOWN, StatusCode.INTERNAL)
+
+
+class _TransientStreamError(Exception):
+    """The stream failed in a way a reconnect can fix."""
+
+
+def _current_task_is_cancelling() -> bool:
+    """Tell whether the running task itself was asked to cancel.
+
+    Task.cancelling() only exists on Python 3.11+. On 3.10 this returns False, so a
+    cancellation that coincides with close() is reported as StreamInactiveError there.
+    """
+    current_task = asyncio.current_task()
+    cancelling = getattr(current_task, 'cancelling', None)
+    if cancelling is None:
+        return False
+    return cancelling() > 0
 
 
 def _reconnect_backoff_seconds(reconnect_attempts: int) -> float:
@@ -82,6 +100,10 @@ class Subscription:
         try:
             await self._stream.read()  # discard the initial message
         except (Exception, asyncio.CancelledError):
+            self._stream_active.clear()
+            send_queue.put_nowait(None)
+            if _current_task_is_cancelling():
+                raise
             if self._closed.is_set():
                 raise StreamInactiveError('Stream is not active')
             raise
@@ -98,6 +120,7 @@ class Subscription:
         If the stream fails with a transient error or the server ends it, the stream is
         reconnected and read again, up to MAX_RECONNECT_ATTEMPTS times per call, with a jittered
         exponential backoff between reconnects.
+        A reconnect whose new stream fails with a transient error counts as one attempt.
 
         Returns:
             SubscriptionMessage: The next message.
@@ -110,27 +133,17 @@ class Subscription:
         """
         reconnect_attempts = 0
         while True:
-            if not self._stream_active.is_set() or self._stream is None:
-                raise StreamInactiveError('Stream is not active')
-
-            send_queue = self._send_queue
             try:
-                message = await self._stream.read()
-                if message is EOF:
-                    stream_error = 'Stream ended by the server'
-                else:
-                    subscription_message = SubscriptionMessage(message.event_message)
-                    subscription_message._origin_send_queue = send_queue
-                    return subscription_message
+                if reconnect_attempts > 0:
+                    await self.reconnect_stream()
+                return await self._read_next_message()
+            except _TransientStreamError as e:
+                stream_error = str(e)
             except AioRpcError as e:
-                if e.code() in (StatusCode.UNAVAILABLE, StatusCode.UNKNOWN, StatusCode.INTERNAL):
-                    stream_error = f'{e.details()} Status Code: {e.code()}'
-                elif e.code() == StatusCode.CANCELLED:
-                    raise StreamCancelledError('Stream has been cancelled')
-                else:
-                    raise Exception(f'gRPC error while reading from subscription stream: {e} ')
-            except Exception as e:
-                raise Exception(f'Error while fetching message: {e}')
+                # Raised by reconnect_stream() when the new stream's initial read fails.
+                if e.code() not in _TRANSIENT_STATUS_CODES:
+                    raise
+                stream_error = f'{e.details()} Status Code: {e.code()}'
 
             if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
                 raise StreamReconnectError(
@@ -145,7 +158,33 @@ class Subscription:
                     raise StreamInactiveError('Stream is not active')
             reconnect_attempts += 1
             logger.warning('Subscription stream error: %s — reconnecting', stream_error)
-            await self.reconnect_stream()
+
+    async def _read_next_message(self) -> SubscriptionMessage:
+        """Read one message from the current stream.
+
+        Raises:
+            _TransientStreamError: If the stream failed in a way a reconnect can fix.
+        """
+        if not self._stream_active.is_set() or self._stream is None:
+            raise StreamInactiveError('Stream is not active')
+
+        send_queue = self._send_queue
+        try:
+            message = await self._stream.read()
+        except AioRpcError as e:
+            if e.code() in _TRANSIENT_STATUS_CODES:
+                raise _TransientStreamError(f'{e.details()} Status Code: {e.code()}') from e
+            if e.code() == StatusCode.CANCELLED:
+                raise StreamCancelledError('Stream has been cancelled')
+            raise Exception(f'gRPC error while reading from subscription stream: {e} ')
+        except Exception as e:
+            raise Exception(f'Error while fetching message: {e}')
+
+        if message is EOF:
+            raise _TransientStreamError('Stream ended by the server')
+        subscription_message = SubscriptionMessage(message.event_message)
+        subscription_message._origin_send_queue = send_queue
+        return subscription_message
 
     async def respond(self, message, status):
         try:
