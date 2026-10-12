@@ -220,6 +220,25 @@ class _CancelledStreamCall:
         return True
 
 
+class _ThreadCapturingThreading:
+    """Stands in for the threading module as seen by the client module only.
+
+    Records the threads the client creates without replacing threading.Thread for the
+    rest of the process. Every other attribute resolves to the real threading module.
+    """
+
+    def __init__(self) -> None:
+        self.started: List[threading.Thread] = []
+
+    def Thread(self, *args: Any, **kwargs: Any) -> threading.Thread:  # noqa: N802
+        thread = threading.Thread(*args, **kwargs)
+        self.started.append(thread)
+        return thread
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(threading, name)
+
+
 def _cancelled_subscription() -> Subscription:
     subscription = Subscription(stub=None, pubsub_name='pubsub', topic='topic')
     subscription._stream = _CancelledStreamCall()  # type: ignore[assignment]
@@ -240,25 +259,20 @@ class SubscriptionCancelledStreamTests(unittest.TestCase):
         def handler(message: SubscriptionMessage) -> TopicEventResponse:
             return TopicEventResponse('success')
 
-        started: List[threading.Thread] = []
-        real_thread = threading.Thread
-
-        def capture_thread(*args: Any, **kwargs: Any) -> threading.Thread:
-            thread = real_thread(*args, **kwargs)
-            started.append(thread)
-            return thread
+        threading_capturing = _ThreadCapturingThreading()
 
         with patch('dapr.clients.health.DaprHealth.wait_for_sidecar'):
             client = DaprGrpcClient('localhost:50001')
         try:
             with (
                 patch.object(client, 'subscribe', return_value=subscription),
-                patch('dapr.clients.grpc.client.threading.Thread', side_effect=capture_thread),
+                patch('dapr.clients.grpc.client.threading', threading_capturing),
             ):
                 close_fn = client.subscribe_with_handler('pubsub', 'topic', handler)
             # Closing marks the stream inactive, so a regressed thread still exits.
             self.addCleanup(close_fn)
 
+            started = threading_capturing.started
             self.assertEqual(1, len(started))
             started[0].join(timeout=_TEST_TIMEOUT_SECONDS)
             self.assertFalse(started[0].is_alive(), 'streaming thread kept running after cancel')
