@@ -20,9 +20,9 @@ from unittest import mock
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.context import ActorRuntimeContext
-from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.actor.runtime.state_change import StateChangeKind
 from dapr.actor.runtime.state_manager import ActorStateManager, StateMetadata
+from dapr.common.reentrancy_context import reentrancy_ctx
 from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import FakeSimpleActor
 from tests.actor.fake_client import FakeDaprActorClient
@@ -143,7 +143,7 @@ class ActorStateManagerTests(unittest.TestCase):
         state_manager = ActorStateManager(self._fake_actor)
         _run(state_manager.try_get_state('state1'))
 
-        self._run_reentrant(state_manager, lambda: state_manager.set_state_ttl('state1', 'v2', 60))
+        self._run_reentrant(state_manager, lambda: state_manager.set_state('state1', 'v2'))
 
         # The default read is served from the refreshed entry, not the state store.
         calls = self._fake_client.get_state.mock.call_count
@@ -153,7 +153,22 @@ class ActorStateManagerTests(unittest.TestCase):
         self.assertEqual(calls, self._fake_client.get_state.mock.call_count)
         state = state_manager._default_state_change_tracker['state1']
         self.assertEqual(StateChangeKind.none, state.change_kind)
-        self.assertEqual(60, state.ttl_in_seconds)
+
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.get_state',
+        new=_async_mock(return_value=b'"value1"'),
+    )
+    @mock.patch(
+        'tests.actor.fake_client.FakeDaprActorClient.save_state_transactionally', new=_async_mock()
+    )
+    def test_reentrant_ttl_save_evicts_default_tracker(self):
+        state_manager = ActorStateManager(self._fake_actor)
+        _run(state_manager.try_get_state('state1'))
+
+        self._run_reentrant(state_manager, lambda: state_manager.set_state_ttl('state1', 'v2', 60))
+
+        # A cached copy would outlive the key's expiry in the store.
+        self.assertNotIn('state1', state_manager._default_state_change_tracker)
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',
@@ -247,8 +262,10 @@ class ActorStateManagerTests(unittest.TestCase):
             'round_trip_state_value',
             side_effect=ValueError('cannot decode'),
         ):
-            self._run_reentrant(state_manager, set_both)
+            with self.assertLogs('dapr.actor.runtime.state_manager', level='WARNING') as logs:
+                self._run_reentrant(state_manager, set_both)
 
+        self.assertEqual(2, len(logs.records))
         self.assertNotIn('state1', state_manager._default_state_change_tracker)
         self.assertNotIn('state2', state_manager._default_state_change_tracker)
 
