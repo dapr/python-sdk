@@ -2724,9 +2724,8 @@ def get_and_validate_single_complete_workflow_action(
     return actions[0].completeWorkflow
 
 
-def test_unexpected_timer_fired_is_logged_once_per_id(caplog):
-    """Tests that a repeated unexpected timerFired event is only reported once"""
-
+@pytest.fixture
+def unexpected_event_executor():
     def orchestrator(ctx: task.OrchestrationContext, _):
         yield ctx.wait_for_external_event('never_arrives')
         return 'done'
@@ -2738,18 +2737,89 @@ def test_unexpected_timer_fired_is_logged_once_per_id(caplog):
         helpers.new_workflow_started_event(),
         helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
     ]
-    fire_at = datetime.now()
-    new_events = [
-        helpers.new_timer_fired_event(timer_id=5, fire_at=fire_at),
-        helpers.new_timer_fired_event(timer_id=5, fire_at=fire_at),
-        helpers.new_timer_fired_event(timer_id=7, fire_at=fire_at),
-    ]
-
     executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    return executor, old_events
+
+
+@pytest.fixture(
+    params=[
+        'timerFired',
+        'taskCompleted',
+        'taskFailed',
+        'childWorkflowInstanceCompleted',
+        'childWorkflowInstanceFailed',
+    ]
+)
+def unexpected_event(request):
+    factories = {
+        'timerFired': lambda event_id: helpers.new_timer_fired_event(
+            event_id, datetime(2020, 1, 1)
+        ),
+        'taskCompleted': helpers.new_task_completed_event,
+        'taskFailed': lambda event_id: helpers.new_task_failed_event(
+            event_id, ValueError('failed')
+        ),
+        'childWorkflowInstanceCompleted': helpers.new_child_workflow_completed_event,
+        'childWorkflowInstanceFailed': lambda event_id: helpers.new_child_workflow_failed_event(
+            event_id, ValueError('failed')
+        ),
+    }
+    return request.param, factories[request.param]
+
+
+def test_unexpected_event_is_logged_once_per_id(
+    caplog, unexpected_event_executor, unexpected_event
+):
+    event_name, make_event = unexpected_event
+    executor, old_events = unexpected_event_executor
+    new_events = [make_event(5), make_event(5), make_event(7)]
     with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
         executor.execute(TEST_INSTANCE_ID, old_events, new_events)
 
     assert [r.getMessage() for r in caplog.records] == [
-        f'{TEST_INSTANCE_ID}: Ignoring unexpected timerFired event with ID = 5.',
-        f'{TEST_INSTANCE_ID}: Ignoring unexpected timerFired event with ID = 7.',
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected {event_name} event with ID = 5.',
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected {event_name} event with ID = 7.',
     ]
+
+
+def test_unexpected_events_with_same_id_and_different_types_are_logged(
+    caplog, unexpected_event_executor
+):
+    executor, old_events = unexpected_event_executor
+    new_events = [
+        helpers.new_task_completed_event(5),
+        helpers.new_task_failed_event(5, ValueError('failed')),
+        helpers.new_task_completed_event(5),
+        helpers.new_task_failed_event(5, ValueError('failed')),
+    ]
+    with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
+        executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+
+    assert [r.getMessage() for r in caplog.records] == [
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected taskCompleted event with ID = 5.',
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected taskFailed event with ID = 5.',
+    ]
+
+
+def test_unexpected_event_replay_stays_silent(caplog, unexpected_event_executor, unexpected_event):
+    _, make_event = unexpected_event
+    executor, old_events = unexpected_event_executor
+    old_events += [make_event(5), make_event(5)]
+    with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
+        executor.execute(TEST_INSTANCE_ID, old_events, [helpers.new_workflow_started_event()])
+
+    assert not caplog.records
+
+
+def test_unexpected_event_is_logged_again_on_next_execution(
+    caplog, unexpected_event_executor, unexpected_event
+):
+    event_name, make_event = unexpected_event
+    executor, old_events = unexpected_event_executor
+    with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
+        for _ in range(2):
+            caplog.clear()
+            executor.execute(TEST_INSTANCE_ID, old_events, [make_event(5), make_event(5)])
+            assert [r.getMessage() for r in caplog.records] == [
+                f'{TEST_INSTANCE_ID}: Ignoring unexpected {event_name} event with ID = 5.',
+            ]
