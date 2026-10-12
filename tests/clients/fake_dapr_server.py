@@ -92,6 +92,11 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.config_values: Optional[Dict[str, str]] = None
         self.config_get_error: Optional[grpc.StatusCode] = None
         self.config_get_requests: List[api_v1.GetConfigurationRequest] = []
+        # SubscribeTopicEventsAlpha1: one status code is popped per stream connection, which then
+        # fails right after the initial response (OK ends it cleanly). IDs of acked events are
+        # recorded in order.
+        self.topic_stream_failures: List[grpc.StatusCode] = []
+        self.topic_stream_acks: List[str] = []
 
     def set_bulk_publish_unimplemented_on_stable_next(self) -> None:
         """Make the next BulkPublishEvent (stable) call return UNIMPLEMENTED.
@@ -274,6 +279,12 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                 )
                 break
 
+        if self.topic_stream_failures:
+            failure_code = self.topic_stream_failures.pop(0)
+            if failure_code == grpc.StatusCode.OK:
+                return
+            context.abort(failure_code, 'Simulated stream failure')
+
         extensions = struct_pb2.Struct()
         extensions.update({'field1': 'value1', 'field2': 42, 'field3': True})
 
@@ -292,6 +303,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         for request in request_iterator:
             if request.HasField('event_processed'):
+                self.topic_stream_acks.append(request.event_processed.id)
                 break
 
         msg2 = appcallback_v1.TopicEventRequest(
@@ -309,6 +321,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         for request in request_iterator:
             if request.HasField('event_processed'):
+                self.topic_stream_acks.append(request.event_processed.id)
                 break
 
         # On the third message simulate a disconnection

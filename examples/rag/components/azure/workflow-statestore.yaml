@@ -1,0 +1,102 @@
+# Dapr state store component for Azure Cache for Redis, used as the Dapr
+# Workflow actor state store. This backs both Dapr Workflow's own
+# orchestration state *and* DurableRAGPipeline's own idempotency/completion/
+# activation records (see dapr/ext/rag/AGENTS.md's "Idempotency and
+# recovery" section) -- one store, two consumers.
+#
+# FLAGGED FOR REVIEW: Microsoft has announced a retirement timeline for
+# Azure Cache for Redis across all SKUs, directing new workloads to "Azure
+# Managed Redis" instead (see the retirement notice on
+# https://learn.microsoft.com/azure/azure-cache-for-redis/cache-azure-active-directory-for-authentication,
+# fetched 2026-09-10). This component still targets Azure Cache for Redis
+# because that is the Dapr-documented, RBAC-capable path today; re-evaluate
+# before a long-lived deployment. Azure Cosmos DB (Core/SQL API, with the
+# right indexing policy) is the other commonly-used Dapr actor state store
+# on Azure if you would rather avoid Redis entirely.
+#
+# BOTH workloads load this component: the ingestion workload needs
+# read-write (Dapr Workflow's actor-state transactions plus its own
+# idempotency writes), the query workload needs read-only (resolving the
+# active-version pointer via ActiveVersionResolver). Because
+# `azureClientId` below is a single static value, deploy one rendered copy
+# of this file per workload, each with that workload's own managed
+# identity's client ID, and use `scopes` (see the bottom of this file) to
+# keep each copy loaded only by its own app-id. The placeholders below show
+# the ingestion workload's copy.
+#
+# Placeholders (replace before use, e.g. from the Bicep outputs):
+#   <REDIS_HOST_NAME>              -> Bicep output redisHostName
+#   <INGESTION_IDENTITY_CLIENT_ID> -> Bicep output ingestionIdentityClientId
+#                                      (use queryIdentityClientId in the
+#                                      query workload's copy of this file)
+#
+# Metadata field reference verified against
+# https://docs.dapr.io/reference/components-reference/supported-state-stores/setup-redis/
+# on 2026-09-10.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  # Matches the local Redis state store component's name
+  # (components/statestore.yaml) and RAG_STATE_STORE's default in
+  # .env.example, so switching from local dev to Azure is a file swap.
+  name: rag-pipeline-state
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+  # Required. "host:port" form -- Azure Cache for Redis's TLS port is 6380,
+  # not the plaintext default 6379.
+  - name: redisHost
+    value: "<REDIS_HOST_NAME>:6380"
+
+  # Required alongside useEntraID: Microsoft Entra ID auth over Redis's ACL
+  # integration only works over a TLS connection.
+  - name: enableTLS
+    value: "true"
+
+  # Enables Microsoft Entra ID (managed identity) authentication instead of
+  # an access key -- no secret is stored anywhere. Assumes the connecting
+  # identity has been granted a Redis access-policy assignment ("Data
+  # Owner" for this, the ingestion copy; "Data Reader" for the query
+  # workload's copy) -- see examples/rag/infra/modules/rbac.bicep and
+  # docs/rag/azure-rbac.md. Note this is a Redis-specific access-policy
+  # concept, not a generic Azure RBAC role.
+  - name: useEntraID
+    value: "true"
+
+  # Client ID of this workload's *user-assigned* managed identity. Omit for
+  # a system-assigned identity.
+  - name: azureClientId
+    value: "<INGESTION_IDENTITY_CLIENT_ID>"
+
+  # Required by Dapr Workflow: the durabletask backend needs the actor
+  # state store's transactional multi-key write contract.
+  - name: actorStateStore
+    value: "true"
+
+  # --- Alternative: access-key authentication -----------------------------
+  # Use this instead of useEntraID/azureClientId above only if Microsoft
+  # Entra ID auth is unavailable or undesired for your cache -- notably,
+  # Entra ID authentication is NOT supported on Azure Cache for Redis
+  # Enterprise/Enterprise Flash tiers (Basic/Standard/Premium only). This
+  # keeps the access key itself out of this file: it is stored as a secret
+  # in the optional Key Vault secret store
+  # (azure-keyvault-secretstore.yaml) and resolved by name at
+  # component-load time via Dapr's secretKeyRef, using the secretStore
+  # named in this component's `auth` block below. This is a real
+  # trade-off, not a strict improvement: it reintroduces a long-lived
+  # credential (rotated through Key Vault) in place of the no-secrets
+  # managed-identity design this sample otherwise uses everywhere.
+  #
+  # - name: redisPassword
+  #   secretKeyRef:
+  #     name: workflow-redis-access-key
+  #     key: workflow-redis-access-key
+  # auth:
+  #   secretStore: azure-keyvault
+
+# Optional hardening: restrict each rendered copy of this component to its
+# own workload's app-id (see the note above about deploying one copy per
+# identity).
+# scopes:
+# - rag-ingestion-worker
