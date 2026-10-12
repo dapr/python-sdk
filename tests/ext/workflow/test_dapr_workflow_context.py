@@ -126,9 +126,10 @@ class DaprWorkflowContextTest(unittest.TestCase):
         instance_id = 'abc'
         ctx1 = DaprWorkflowContext(worker._RuntimeOrchestrationContext(instance_id))
         ctx2 = DaprWorkflowContext(worker._RuntimeOrchestrationContext(instance_id))
-        g1 = [ctx1.new_guid() for _ in range(3)]
-        g2 = [ctx2.new_guid() for _ in range(3)]
+        guid_count = 3
+        g1 = [ctx1.new_guid() for _ in range(guid_count)]
+        g2 = [ctx2.new_guid() for _ in range(guid_count)]
 
         assert all(isinstance(g, uuid.UUID) for g in g1)
-        assert len(set(g1)) == 3  # unique within an execution
+        assert len(set(g1)) == guid_count  # unique within an execution
         assert g1 == g2  # deterministic across replays
