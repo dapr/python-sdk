@@ -25,8 +25,10 @@ def test_orchestration_runs_while_activities_hold_every_pool_thread() -> None:
         ConcurrencyOptions(maximum_thread_pool_workers=2), logger=logging.getLogger()
     )
     child_started = threading.Event()
+    activities_running = threading.Barrier(3)
 
     def activity_waiting_for_child() -> None:
+        activities_running.wait(timeout=5)
         child_started.wait(timeout=5)
 
     def child_orchestration() -> None:
@@ -36,7 +38,8 @@ def test_orchestration_runs_while_activities_hold_every_pool_thread() -> None:
         runner = asyncio.create_task(manager.run())
         manager.submit_activity(activity_waiting_for_child)
         manager.submit_activity(activity_waiting_for_child)
-        await asyncio.sleep(0.2)
+        # Both pool threads are held before the orchestration is submitted.
+        await asyncio.to_thread(activities_running.wait, 5)
         manager.submit_orchestration(child_orchestration)
         started = await asyncio.to_thread(child_started.wait, 3)
         manager._shutdown = True
