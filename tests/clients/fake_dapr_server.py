@@ -53,6 +53,9 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._bulk_publish_fail_next: Optional[Tuple[int, str]] = None
         # When True, the next BulkPublishEvent (stable) call returns UNIMPLEMENTED; Alpha1 is unchanged.
         self._bulk_publish_stable_unimplemented_next: bool = False
+        # Every BulkPublishEvent/BulkPublishEventAlpha1 request, in call order, so tests can
+        # assert on the entries the client built.
+        self.bulk_publish_requests: List[api_v1.BulkPublishRequest] = []
         # Unary actor RPCs record (rpc_name, request) tuples and use actor_state as backing store.
         self.actor_requests: List[Tuple[str, Message]] = []
         self.actor_state: Dict[Tuple[str, str, str], bytes] = {}
@@ -206,6 +209,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         return empty_pb2.Empty()
 
     def _bulk_publish_response(self, request) -> api_v1.BulkPublishResponse:
+        self.bulk_publish_requests.append(request)
         if not self._bulk_publish_fail_next or not request.entries:
             return api_v1.BulkPublishResponse()
         count, error_message = self._bulk_publish_fail_next

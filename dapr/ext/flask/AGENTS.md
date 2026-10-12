@@ -34,8 +34,10 @@ Wraps a Flask instance to add Dapr pub/sub event handling.
 app = Flask('myapp')
 dapr_app = DaprApp(app)
 
-@dapr_app.subscribe(pubsub='pubsub', topic='orders', route='/handle-order',
-                    metadata={}, dead_letter_topic=None)
+
+@dapr_app.subscribe(
+    pubsub='pubsub', topic='orders', route='/handle-order', metadata={}, dead_letter_topic=None
+)
 def handle_order():
     event_data = request.json
     return 'ok'
