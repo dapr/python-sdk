@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
 import socket
 import threading
 import time
@@ -93,6 +94,10 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.version import __version__
+
+logger = logging.getLogger(__name__)
+
+SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
 
 
 class DaprGrpcClient:
@@ -624,6 +629,10 @@ class DaprGrpcClient:
             handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+
+        Returns:
+            Callable: Closes the subscription and waits up to SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS
+                for the handler thread to stop.
         """
         subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
 
@@ -640,9 +649,7 @@ class DaprGrpcClient:
                             # No message received
                             continue
 
-                except StreamInactiveError:
-                    break
-                except StreamCancelledError:
+                except (StreamInactiveError, StreamCancelledError):
                     break
                 except Exception:
                     # Stream died — reconnect via the subscription's own
@@ -657,6 +664,13 @@ class DaprGrpcClient:
 
         def close_subscription():
             subscription.close()
+            if threading.current_thread() is not streaming_thread:
+                streaming_thread.join(timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS)
+                if streaming_thread.is_alive():
+                    logger.warning(
+                        'Subscription handler thread still running %ss after close',
+                        SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS,
+                    )
 
         streaming_thread = threading.Thread(target=stream_messages, args=(subscription,))
         streaming_thread.start()
