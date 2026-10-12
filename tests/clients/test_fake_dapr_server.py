@@ -111,6 +111,27 @@ class FakeDaprSidecarStartFailureTests(unittest.TestCase):
         self.assertFalse(os.path.exists(GrpcCerts.get_cert_path()))
         self.assertFalse(os.path.exists(HttpCerts.get_cert_path()))
 
+    def test_secure_http_start_failure_after_certs_releases_ports_and_certs(self):
+        sidecar = FakeDaprSidecar()
+        self.addCleanup(sidecar.stop_secure)
+        ssl_context = mock.Mock()
+        ssl_context.load_cert_chain.side_effect = OSError('cannot load cert chain')
+
+        with mock.patch('tests.clients.fake_http_server.SSLContext', return_value=ssl_context):
+            with self.assertRaises(OSError):
+                sidecar.start_secure()
+
+        ssl_context.load_cert_chain.assert_called_once_with(
+            HttpCerts.get_cert_path(), HttpCerts.get_pk_path()
+        )
+        grpc_port, http_port = sidecar.grpc_port, sidecar.http_port
+        self.assertNotEqual(0, grpc_port)
+        self.assertNotEqual(0, http_port)
+        self.assertFalse(os.path.exists(HttpCerts.get_cert_path()))
+        self.assertFalse(os.path.exists(GrpcCerts.get_cert_path()))
+        self.assertTrue(_can_bind_http(http_port), 'HTTP port still held after failed start()')
+        wait_until(lambda: _can_bind_grpc(grpc_port), timeout=5)
+
     def test_http_bind_failure_releases_grpc_port(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as holder:
             holder.bind((LOCALHOST, 0))
