@@ -46,7 +46,7 @@ class RetryPolicy:
             StatusCode.DEADLINE_EXCEEDED,
         ],
     ):
-        if max_attempts < -1:  # type: ignore
+        if max_attempts is None or max_attempts < -1:
             raise ValueError('max_attempts must be greater than or equal to -1')
         self.max_attempts = max_attempts
 
