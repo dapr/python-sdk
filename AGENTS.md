@@ -144,7 +144,7 @@ uv run pytest tests/integration/
 
 ## Code style and linting
 
-**Formatter/Linter**: Ruff (v0.15.19)
+**Formatter/Linter**: Ruff (v0.16.2)
 
 Key rules:
 - **Line length**: 100 characters (E501 is currently ignored, but respect the 100-char target)
@@ -239,7 +239,7 @@ When completing any task on this project, work through this checklist. Not every
 - **Do not bump `grpcio-tools` like a normal dev dependency**: its pin must stay the version that generated the committed files under `dapr/proto/` — regenerating with a newer one raises the minimum `grpcio`/`protobuf` that SDK users can install, while leaving it alone is always safe. Dependabot is configured to ignore it; the comment in `.github/dependabot.yml` lists when a bump is justified and the 3-step recipe (pin + regen + floors, in one PR, enforced by `tests/test_proto_gencode_floor.py`).
 - **Bundled extensions**: live under `dapr/ext/<name>/`, opted in via extras (`dapr[fastapi]`, etc.). The legacy `dapr-ext-*` and `flask-dapr` distributions are no longer published; legacy installs must be uninstalled before upgrading or `import dapr` will emit a `FutureWarning`.
 - **DCO signoff**: PRs will be blocked by the DCO bot if commits lack `Signed-off-by`. Always use `git commit -s`.
-- **Ruff version pinned**: `pyproject.toml` pins `ruff==0.15.19` in `[dependency-groups].dev`. Use `uv sync --all-packages --group dev` to get the exact version.
+- **Ruff version pinned**: `pyproject.toml` pins `ruff==0.16.2` in `[dependency-groups].dev`. Use `uv sync --all-packages --group dev` to get the exact version.
 - **Examples are tested by output matching**: Changing output format (log messages, print statements) can break `tests/examples/`. Always check expected output there when modifying user-visible output.
 - **Background processes in examples**: Examples that start background services (servers, subscribers) must include a cleanup step to stop them, or CI will hang.
 - **Workflow is the most active area**: See `dapr/ext/workflow/AGENTS.md` for workflow-specific architecture and constraints.
