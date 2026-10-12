@@ -253,8 +253,12 @@ class ActorStateManagerTests(unittest.TestCase):
             'round_trip_state_value',
             side_effect=ValueError('cannot decode'),
         ):
-            self._run_reentrant(state_manager, set_both)
+            with self.assertLogs('dapr.actor.runtime.state_manager', level='WARNING') as logs:
+                self._run_reentrant(state_manager, set_both)
 
+        self.assertEqual(2, len(logs.records))
+        self.assertIn("'state1'", logs.records[0].getMessage())
+        self.assertIsNotNone(logs.records[0].exc_info)
         self.assertNotIn('state1', state_manager._default_state_change_tracker)
         self.assertNotIn('state2', state_manager._default_state_change_tracker)
 
