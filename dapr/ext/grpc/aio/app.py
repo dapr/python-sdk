@@ -15,6 +15,7 @@ limitations under the License.
 
 import asyncio
 import contextlib
+import functools
 import inspect
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -32,10 +33,31 @@ from dapr.proto import appcallback_service_v1
 ExternalServiceRegistration = Tuple[Callable[[Any, grpc.aio.Server], None], Any]
 
 _SYNC_HANDLER_WARNING = (
-    'Handler {name!r} registered on dapr.ext.grpc.aio.App is not an async function. It runs '
-    'inline on the event loop, so anything blocking in it stalls every other RPC this app '
-    'serves. Define it with `async def`, or use dapr.ext.grpc.App for synchronous handlers.'
+    'Handler {name!r} registered on dapr.ext.grpc.aio.App does not look like an async function, '
+    'so it may run inline on the event loop, where anything blocking in it stalls every other '
+    'RPC this app serves. Define it with `async def`, or use dapr.ext.grpc.App for synchronous '
+    'handlers.'
 )
+
+
+def _is_async_callable(func: Callable[..., Any]) -> bool:
+    """Returns True if ``func`` is async once partials and ``functools.wraps`` are unwrapped.
+
+    Also recognises a callable instance whose ``__call__`` is ``async def``. A sync wrapper
+    that returns a coroutine without ``functools.wraps`` cannot be told apart from a plain
+    function before it is called, so it still reads as sync.
+    """
+    candidate = func
+    while isinstance(candidate, functools.partial):
+        candidate = candidate.func
+    # A malformed decorator can leave a cyclic __wrapped__ chain; the outer callable is
+    # good enough for a warning heuristic.
+    with contextlib.suppress(ValueError):
+        candidate = inspect.unwrap(candidate)
+    if inspect.iscoroutinefunction(candidate):
+        return True
+    call_method = getattr(candidate, '__call__', None)
+    return inspect.iscoroutinefunction(call_method)
 
 
 class App:
@@ -140,7 +162,7 @@ class App:
         Plain functions are still accepted — a trivial handler is harmless — but a blocking
         one stalls every other RPC, which is the opposite of why this app exists.
         """
-        if self._warned_about_sync_handler or inspect.iscoroutinefunction(func):
+        if self._warned_about_sync_handler or _is_async_callable(func):
             return
         self._warned_about_sync_handler = True
         warnings.warn(

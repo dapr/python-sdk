@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import asyncio
+import functools
 import unittest
 import warnings
 from unittest.mock import MagicMock, patch
@@ -407,7 +408,7 @@ class SyncHandlerWarningTests(unittest.TestCase):
 
         user_warnings = [w for w in caught if issubclass(w.category, UserWarning)]
         self.assertEqual(1, len(user_warnings), 'the warning must be emitted once per app')
-        self.assertIn('is not an async function', str(user_warnings[0].message))
+        self.assertIn('does not look like an async function', str(user_warnings[0].message))
         self.assertIn('method_handler', str(user_warnings[0].message))
 
     def test_async_handlers_do_not_warn(self):
@@ -437,6 +438,35 @@ class SyncHandlerWarningTests(unittest.TestCase):
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter('always')
             self._app.register_health_check(lambda: None)
+
+        self.assertEqual([], [w for w in caught if issubclass(w.category, UserWarning)])
+
+    def test_callable_instance_with_async_call_does_not_warn(self):
+        class MethodHandler:
+            async def __call__(self, request):
+                pass
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            self._app.method('m')(MethodHandler())
+
+        self.assertEqual([], [w for w in caught if issubclass(w.category, UserWarning)])
+
+    def test_wraps_decorated_async_handler_does_not_warn(self):
+        def sync_decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+
+            @self._app.method('m')
+            @sync_decorator
+            async def method_handler(request):
+                pass
 
         self.assertEqual([], [w for w in caught if issubclass(w.category, UserWarning)])
 
