@@ -21,7 +21,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from dapr.aio.clients.health import DaprHealth
 from dapr.conf import settings
 from dapr.version import __version__
-from tests.clients.test_healthcheck import listen_without_replying
+
+from .fake_servers import listen_without_replying
 
 
 class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
