@@ -39,9 +39,7 @@ def sidecar(dapr_env):
     return dapr_env.start_sidecar(app_id='test-workflow-replay-safety')
 
 
-def _run_workflow(
-    sidecar, workflow, *, activities: tuple[Any, ...] = ()
-) -> dict[str, Any] | list[str]:
+def _run_workflow(workflow, *, activities: tuple[Any, ...] = ()) -> dict[str, Any] | list[str]:
     """Run a workflow to completion through a real Dapr sidecar and decode its JSON output."""
     from dapr.ext.workflow import DaprWorkflowClient, WorkflowRuntime
 
@@ -78,7 +76,7 @@ def test_new_guid_generates_unique_guids_within_execution(sidecar):
         yield ctx.call_activity(echo_guids, input=generated_guids)
         return generated_guids
 
-    generated_guids = _run_workflow(sidecar, generate_guids, activities=(echo_guids,))
+    generated_guids = _run_workflow(generate_guids, activities=(echo_guids,))
 
     assert isinstance(generated_guids, list)
 
@@ -116,7 +114,7 @@ def test_new_guid_is_deterministic_across_replays(sidecar):
             'second_echo': second_echo,
         }
 
-    result = _run_workflow(sidecar, generate_guids, activities=(echo_guids,))
+    result = _run_workflow(generate_guids, activities=(echo_guids,))
 
     assert isinstance(result, dict)
     assert result['first_guids'] == result['first_echo']
