@@ -19,7 +19,7 @@ import importlib.metadata
 import tempfile
 import unittest
 import warnings
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Iterable
 from unittest import mock
 
@@ -31,10 +31,10 @@ class _FakeDist:
 
     def __init__(self, version: str, files: Iterable[str] | None) -> None:
         self.version = version
-        self._files = None if files is None else [Path(p) for p in files]
+        self._files = None if files is None else [PurePosixPath(p) for p in files]
 
     @property
-    def files(self) -> list[Path] | None:
+    def files(self) -> list[PurePosixPath] | None:
         return self._files
 
 

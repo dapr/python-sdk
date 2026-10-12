@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from grpc import (  # type: ignore
     ClientCallDetails,
@@ -25,13 +25,32 @@ class _ClientCallDetails(
     pass
 
 
+# Workflow RPCs that block until the instance starts or finishes, which can take hours.
+# The caller's own timeout argument bounds them; DAPR_API_TIMEOUT_SECONDS must not, or a
+# wait with no timeout would fail after that many seconds while the workflow still runs.
+_UNBOUNDED_WAIT_METHODS = (
+    '/TaskHubSidecarService/WaitForInstanceStart',
+    '/TaskHubSidecarService/WaitForInstanceCompletion',
+)
+
+
+def _is_unbounded_wait(method: Union[str, bytes]) -> bool:
+    if isinstance(method, bytes):
+        method = method.decode('utf-8', errors='replace')
+    return method in _UNBOUNDED_WAIT_METHODS
+
+
 class DaprClientTimeoutInterceptor(UnaryUnaryClientInterceptor):
     def intercept_unary_unary(self, continuation, client_call_details, request):
         # Only apply a deadline when DAPR_API_TIMEOUT_SECONDS is explicitly configured.
         # Without an explicit setting there is no SDK-level default deadline: Dapr's own
         # resiliency policies and component timeouts act as the authoritative bounds for
         # long-running operations such as LLM calls and workflow activities.
-        if settings.DAPR_API_TIMEOUT_SECONDS is not None and client_call_details.timeout is None:
+        if (
+            settings.DAPR_API_TIMEOUT_SECONDS is not None
+            and client_call_details.timeout is None
+            and not _is_unbounded_wait(client_call_details.method)
+        ):
             new_client_call_details = _ClientCallDetails(
                 client_call_details.method,
                 float(settings.DAPR_API_TIMEOUT_SECONDS),
