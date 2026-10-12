@@ -1,0 +1,5 @@
+# Install every optional adapter this example's scripts can select between at
+# runtime via environment variables (see .env.example). A deployment that
+# only ever uses one source/vector-store combination needs a smaller subset --
+# see dapr/ext/rag/README.md for exactly which extra each adapter needs.
+dapr[rag,rag-s3,rag-azure,rag-azure-search,rag-pgvector,rag-pinecone,rag-unstructured,rag-langchain] >= 1.19.0.dev

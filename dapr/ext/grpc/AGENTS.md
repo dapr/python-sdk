@@ -25,17 +25,17 @@ Installed via the `grpc` extra on core dapr: `pip install "dapr[grpc]"`.
 
 ```python
 from dapr.ext.grpc import (
-    App,                    # Main entry point — decorator-based gRPC server
-    Rule,                   # CEL-based topic rule with priority
-    SubscriptionMessage,    # Event type received by pub/sub topic handlers (preferred)
-    InvokeMethodRequest,    # Request object for service invocation handlers
-    InvokeMethodResponse,   # Response object for service invocation handlers
-    BindingRequest,         # Request object for input binding handlers
-    TopicEventResponse,     # Response object for pub/sub handlers
-    Job,                    # Job definition for scheduler
-    JobEvent,               # Job event received by handler
-    FailurePolicy,          # ABC for job failure policies
-    DropFailurePolicy,      # Drop on failure (no retry)
+    App,  # Main entry point — decorator-based gRPC server
+    Rule,  # CEL-based topic rule with priority
+    SubscriptionMessage,  # Event type received by pub/sub topic handlers (preferred)
+    InvokeMethodRequest,  # Request object for service invocation handlers
+    InvokeMethodResponse,  # Response object for service invocation handlers
+    BindingRequest,  # Request object for input binding handlers
+    TopicEventResponse,  # Response object for pub/sub handlers
+    Job,  # Job definition for scheduler
+    JobEvent,  # Job event received by handler
+    FailurePolicy,  # ABC for job failure policies
+    DropFailurePolicy,  # Drop on failure (no retry)
     ConstantFailurePolicy,  # Retry with constant interval
 )
 ```
@@ -51,22 +51,29 @@ The central entry point. Creates a gRPC server and provides decorators for handl
 ```python
 app = App()
 
-@app.method('method_name')
-def handle_method(request: InvokeMethodRequest) -> InvokeMethodResponse:
-    ...
 
-@app.subscribe(pubsub_name='pubsub', topic='orders', metadata={}, dead_letter_topic=None,
-                rule=Rule('event.type == "order"', priority=1), disable_topic_validation=False)
-def handle_event(event: SubscriptionMessage) -> Optional[TopicEventResponse]:
-    ...
+@app.method('method_name')
+def handle_method(request: InvokeMethodRequest) -> InvokeMethodResponse: ...
+
+
+@app.subscribe(
+    pubsub_name='pubsub',
+    topic='orders',
+    metadata={},
+    dead_letter_topic=None,
+    rule=Rule('event.type == "order"', priority=1),
+    disable_topic_validation=False,
+)
+def handle_event(event: SubscriptionMessage) -> Optional[TopicEventResponse]: ...
+
 
 @app.binding('binding_name')
-def handle_binding(request: BindingRequest) -> None:
-    ...
+def handle_binding(request: BindingRequest) -> None: ...
+
 
 @app.job_event('job_name')
-def handle_job(event: JobEvent) -> None:
-    ...
+def handle_job(event: JobEvent) -> None: ...
+
 
 app.register_health_check(lambda: None)  # Not a decorator — direct registration
 ```

@@ -16,6 +16,8 @@ from dapr.proto import api_v1, appcallback_v1
 
 logger = logging.getLogger(__name__)
 
+_SEND_QUEUE_POLL_SECONDS = 1.0
+
 
 class Subscription:
     def __init__(self, stub, pubsub_name, topic, metadata=None, dead_letter_topic=None):
@@ -31,6 +33,10 @@ class Subscription:
         self._stream_lock = threading.Lock()  # Protects _stream_active
 
     def start(self):
+        # Each stream gets its own send queue so a request iterator left over from a
+        # previous stream cannot steal acknowledgements meant for the current one.
+        send_queue: queue.Queue = queue.Queue()
+
         def outgoing_request_iterator():
             """
             Generator function to create the request iterator for the stream.
@@ -49,22 +55,27 @@ class Subscription:
                 yield initial_request
 
                 # Start sending back acknowledgement messages from the send queue
-                while self._is_stream_active():
+                while self._is_stream_active() and self._send_queue is send_queue:
                     try:
-                        # Wait for responses/acknowledgements to send from the send queue.
-                        response = self._send_queue.get()
+                        response = send_queue.get(timeout=_SEND_QUEUE_POLL_SECONDS)
                         yield response
                     except queue.Empty:
                         continue
             except Exception as e:
                 raise Exception(f'Error while writing to stream: {e}')
 
-        # Create the bidirectional stream
-        self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
+        self._send_queue = send_queue
+        # gotcha: gRPC starts consuming the request iterator on its own thread before
+        # SubscribeTopicEventsAlpha1 returns. The stream must be marked active first,
+        # otherwise the iterator can end right after the initial request,
+        # half-closing the stream and making the sidecar drop the subscription with EOF.
         self._set_stream_active()
         try:
+            # Create the bidirectional stream
+            self._stream = self._stub.SubscribeTopicEventsAlpha1(outgoing_request_iterator())
             next(self._stream)  # type: ignore[arg-type]  # discard the initial message
         except Exception as e:
+            self._set_stream_inactive()
             raise Exception(f'Error while initializing stream: {e}')
 
     def reconnect_stream(self):
