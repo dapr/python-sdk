@@ -11,7 +11,14 @@ pip install "dapr[rag,rag-azure,rag-pinecone]"   # Azure Blob + Pinecone
 ```
 
 ```python
-from dapr.ext.rag import DurableRAGPipeline, S3Source, UnstructuredParser, TextSplitter, OpenAIEmbedder, PgVectorStore
+from dapr.ext.rag import (
+    DurableRAGPipeline,
+    S3Source,
+    UnstructuredParser,
+    TextSplitter,
+    OpenAIEmbedder,
+    PgVectorStore,
+)
 
 pipeline = DurableRAGPipeline(
     source=S3Source(bucket='company-docs', prefix='policies/'),

@@ -16,10 +16,10 @@ limitations under the License.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Iterator, Optional, TypeVar, Union
 from warnings import warn
 
-from grpc import RpcError
+from grpc import RpcError, StatusCode
 
 from dapr.clients import DaprInternalError
 from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
@@ -30,6 +30,13 @@ from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import get_grpc_channel_options, getAddress
 from dapr.ext.workflow.workflow_context import Workflow
+from dapr.ext.workflow.workflow_management import (
+    UNSET,
+    WorkflowHistoryEvent,
+    WorkflowInstanceIdPage,
+    _listing_unsupported_message,
+    _unimplemented_message,
+)
 from dapr.ext.workflow.workflow_state import WorkflowState
 
 T = TypeVar('T')
@@ -164,8 +171,10 @@ class DaprWorkflowClient:
             app_id: The optional ID of the app hosting the workflow instance, when it is
             hosted by a different app. The target app's WorkflowAccessPolicy governs whether
             this operation is permitted.
-            Requires a Dapr runtime with cross-app workflow support; older runtimes
-            ignore app_id and apply the operation to the local app.
+            Requires a Dapr runtime with cross-app workflow support. An older runtime
+            drops the routing rather than refusing it, so the rerun targets a local
+            instance carrying the same ID if one exists, and fails as not found if
+            not. Check the runtime version before relying on this argument.
 
         Returns:
             The current state of the workflow instance, or None if the workflow instance does not
@@ -407,6 +416,168 @@ class DaprWorkflowClient:
             ignore app_id and apply the operation to the local app.
         """
         return self.__obj.purge_orchestration(instance_id, recursive, app_id=app_id)
+
+    def list_workflow_instance_ids(
+        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+    ) -> WorkflowInstanceIdPage:
+        """Fetches one page of workflow instance IDs for this app.
+
+        The listing is scoped to the app and namespace of the sidecar this
+        client is connected to. Needs a Dapr runtime of 1.17 or newer, which is
+        where the RPC landed. Use iter_workflow_instance_ids instead unless you
+        need to hold on to the continuation token yourself, for example to
+        resume paging in a later request.
+
+        Args:
+            page_size: The maximum number of instance IDs to return, between 1
+            and 4294967295. Defaults to leaving the limit unset, in which case
+            how many come back is up to the runtime and the state store behind
+            it. Pass None rather than 0 for that: a 0 reaches the store, which
+            may answer with an endless page or fail on it.
+            continuation_token: The token from a previous page, to start this
+            page where that one ended. Defaults to starting from the first page.
+
+        Returns:
+            A page of instance IDs, and the token for the next page if there is one.
+
+        Raises:
+            ValueError: If page_size is given and is not between 1 and 4294967295.
+            NotImplementedError: If the sidecar has no actor state store, or its
+            store cannot list keys, which this API needs and many stores lack.
+        """
+        try:
+            res = self.__obj.list_instance_ids(
+                page_size=page_size, continuation_token=continuation_token
+            )
+        except RpcError as error:
+            if error.code() == StatusCode.UNIMPLEMENTED:
+                raise NotImplementedError(
+                    _unimplemented_message('Listing workflow instances')
+                ) from error
+            advice = _listing_unsupported_message(error.details() or '')
+            if advice is None:
+                raise
+            raise NotImplementedError(advice) from error
+        return WorkflowInstanceIdPage._from_proto(res)
+
+    def iter_workflow_instance_ids(self, *, page_size: int = 1024) -> Iterator[str]:
+        """Iterates over every workflow instance ID for this app, paging as it goes.
+
+        Pages are fetched lazily, so abandoning the iterator early stops the
+        requests too. Iteration ends on the first page that comes back without
+        a usable continuation token.
+
+        Args:
+            page_size: The maximum number of instance IDs to fetch per request.
+
+        Yields:
+            Instance IDs, in the order the runtime returns them.
+        """
+        continuation_token = None
+        while True:
+            page = self.list_workflow_instance_ids(
+                page_size=page_size, continuation_token=continuation_token
+            )
+            yield from page.instance_ids
+            if not page.continuation_token:
+                return
+            continuation_token = page.continuation_token
+
+    def get_workflow_history(self, instance_id: str) -> list[WorkflowHistoryEvent]:
+        """Fetches the full execution history of a workflow instance.
+
+        Needs a Dapr runtime of 1.17 or newer, which is where the RPC landed.
+
+        Args:
+            instance_id: The unique ID of the workflow instance to read.
+
+        Returns:
+            The instance's history events, oldest first.
+
+        Raises:
+            NotImplementedError: If the sidecar predates 1.17 and has no such RPC.
+            grpc.RpcError: With code NOT_FOUND if no such instance exists, or if
+            it has been purged.
+        """
+        try:
+            events = self.__obj.get_instance_history(instance_id)
+        except RpcError as error:
+            if error.code() != StatusCode.UNIMPLEMENTED:
+                raise
+            raise NotImplementedError(_unimplemented_message('Reading workflow history')) from error
+        return [WorkflowHistoryEvent._from_proto(event) for event in events]
+
+    def rerun_workflow_from_event(
+        self,
+        instance_id: str,
+        event_id: int,
+        *,
+        new_instance_id: Optional[str] = None,
+        input: Any = UNSET,
+        new_child_workflow_instance_id: Optional[str] = None,
+        app_id: Optional[str] = None,
+    ) -> str:
+        """Starts a new workflow instance that replays a completed one up to an event.
+
+        History up to event_id is replayed rather than re-executed, and
+        execution resumes from there. The source instance is left untouched.
+
+        The source instance must have reached a terminal state, must not be a
+        child workflow, and event_id must name an event the runtime can restart
+        from — a scheduled activity, a created timer, or a created child
+        workflow. get_workflow_history reports which events qualify via
+        WorkflowHistoryEvent.is_rerunnable.
+
+        Args:
+            instance_id: The unique ID of the workflow instance to rerun.
+            event_id: The WorkflowHistoryEvent.event_id to resume from. This is
+            the event's own ID, not its position in the history list.
+            new_instance_id: The ID to give the new instance. Defaults to a
+            random ID. Pass None rather than an empty string to get the default:
+            the runtime accepts '' and creates an instance whose ID is empty,
+            which it then cannot schedule reminders for.
+            input: Replacement input for the event being rerun. Omit it to keep
+            the original input; pass None to clear it, in which case the rerun
+            activity receives None where it previously received its recorded
+            input. Forwarding code that has to express "not supplied" can pass
+            :data:`dapr.ext.workflow.UNSET` explicitly. Supplying it at all is
+            rejected when event_id names a timer, which accepts no input.
+            new_child_workflow_instance_id: The ID to give the new child
+            workflow instance. Only accepted when event_id names a child
+            workflow creation event.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. The target app's WorkflowAccessPolicy governs whether
+            this operation is permitted.
+            Requires a Dapr runtime with cross-app workflow support; older runtimes
+            ignore app_id and apply the operation to the local app.
+            The listing and history APIs take no app_id: their requests carry no
+            router, and the runtime scopes both to the calling app.
+
+        Returns:
+            The ID of the new workflow instance.
+
+        Raises:
+            ValueError: If event_id falls outside 0 to 4294967295, which
+            includes the -1 the runtime reports for history events it assigns no
+            ID to, or if new_instance_id or new_child_workflow_instance_id is an
+            empty string rather than None.
+            grpc.RpcError: With code INVALID_ARGUMENT if the source instance
+            is a child workflow, has not finished, or if event_id names an event
+            that rejects these arguments — a timer given an input, or a detached
+            workflow used as the starting point. NOT_FOUND if event_id names any
+            other event that cannot be rerun from, and ALREADY_EXISTS if
+            new_instance_id is already in use.
+        """
+        input_supplied = input is not UNSET
+        return self.__obj.rerun_orchestration_from_event(
+            instance_id,
+            event_id,
+            new_instance_id=new_instance_id,
+            input=input if input_supplied else None,
+            overwrite_input=input_supplied,
+            new_child_instance_id=new_child_workflow_instance_id,
+            app_id=app_id,
+        )
 
     def close(self):
         """Closes the gRPC connection used by the client."""
