@@ -44,6 +44,7 @@ register_workflow_sink(
     namespace='orders',
 )
 
+
 @dp.append_flow(target='order_actions', name='order_actions_flow')
 def order_actions_flow():
     return spark.readStream.table('validated_orders')
@@ -81,7 +82,7 @@ register_workflow_sink(
 register_workflow_sink(
     name='transfers',
     workflow='process_transfer',
-    instance_id_factory=lambda row, batch_id: f"{row['account_id']}:{row['transaction_id']}",
+    instance_id_factory=lambda row, batch_id: f'{row["account_id"]}:{row["transaction_id"]}',
 )
 ```
 
@@ -107,6 +108,7 @@ from dapr.ext.databricks import DaprWorkflowBatchHandler, WorkflowSinkConfig
 handler = DaprWorkflowBatchHandler(
     WorkflowSinkConfig(name='orders', workflow='process_order', id_field='order_id')
 )
+
 
 @dp.foreach_batch_sink(name='orders')
 def orders_handler(df, batch_id):
@@ -171,24 +173,20 @@ scheduling latency. Business record contents are never logged.
 
 ```python
 register_workflow_sink(
-    name='orders',                 # sink name (foreach_batch_sink name)
-    workflow='process_order',     # registered Dapr Workflow name
-
-    id_field='order_id',            # business key column (mutually exclusive with the two below)
-    id_fields=None,                  # composite business key columns
-    instance_id_factory=None,         # (row, batch_id) -> business-key component
-
-    namespace='orders',                # identity partition; part of the instance ID
-    generation='v1',                    # identity epoch; bump to replay after a full refresh
-
-    input_mapper=None,                    # Row -> dict; defaults to a JSON-safe asDict()
-    metadata=True,                          # wrap input as {'data': ..., 'metadata': {...}}
-
-    max_in_flight=8,                          # bounded concurrent schedule_new_workflow calls
-    max_records_per_batch=None,                 # optional hard cap; fails the batch, never truncates silently
-
-    host=None, port=None,                         # Dapr endpoint; defaults to the standard SDK env/settings
-    allow_batch_position_identity=False,            # required opt-in to run without any id_field/id_fields/instance_id_factory
+    name='orders',  # sink name (foreach_batch_sink name)
+    workflow='process_order',  # registered Dapr Workflow name
+    id_field='order_id',  # business key column (mutually exclusive with the two below)
+    id_fields=None,  # composite business key columns
+    instance_id_factory=None,  # (row, batch_id) -> business-key component
+    namespace='orders',  # identity partition; part of the instance ID
+    generation='v1',  # identity epoch; bump to replay after a full refresh
+    input_mapper=None,  # Row -> dict; defaults to a JSON-safe asDict()
+    metadata=True,  # wrap input as {'data': ..., 'metadata': {...}}
+    max_in_flight=8,  # bounded concurrent schedule_new_workflow calls
+    max_records_per_batch=None,  # optional hard cap; fails the batch, never truncates silently
+    host=None,
+    port=None,  # Dapr endpoint; defaults to the standard SDK env/settings
+    allow_batch_position_identity=False,  # required opt-in to run without any id_field/id_fields/instance_id_factory
 )
 ```
 

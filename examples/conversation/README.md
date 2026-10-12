@@ -168,11 +168,13 @@ When using the Decorator or Function-to-Schema approach, you get the following b
 ```python
 from dapr.clients.grpc import conversation
 
+
 @conversation.tool
 def get_weather(location: str, unit: str = 'fahrenheit') -> str:
     """Get current weather for a location."""
     # Implementation or placeholder
-    return f"Weather in {location} (unit={unit})"
+    return f'Weather in {location} (unit={unit})'
+
 
 # Tools registered via @conversation.tool can be retrieved with:
 tools = conversation.get_registered_tools()
@@ -194,7 +196,7 @@ class Units(Enum):
 
 def get_weather(location: str, unit: Units = Units.FAHRENHEIT) -> str:
     """Get current weather for a location."""
-    return f"Weather in {location}"
+    return f'Weather in {location}'
 
 
 # Use the from_function class method for automatic schema generation
@@ -211,15 +213,13 @@ Use when you can't decorate or need to build tools dynamically.
 from dapr.clients.grpc import conversation
 
 function = conversation.ConversationToolsFunction(
-    name="calculate", 
-    description="Perform calculations",
+    name='calculate',
+    description='Perform calculations',
     parameters={
-        "type": "object",
-        "properties": {
-            "expression": {"type": "string", "description": "Math expression"}
-        },
-        "required": ["expression"]
-    }
+        'type': 'object',
+        'properties': {'expression': {'type': 'string', 'description': 'Math expression'}},
+        'required': ['expression'],
+    },
 )
 calc_tool = conversation.ConversationTools(function=function)
 ```
@@ -229,9 +229,9 @@ calc_tool = conversation.ConversationTools(function=function)
 from dapr.clients.grpc import conversation
 
 function = conversation.ConversationToolsFunction(
-    name="get_time",
-    description="Get current time",
-    parameters={"type": "object", "properties": {}, "required": []}
+    name='get_time',
+    description='Get current time',
+    parameters={'type': 'object', 'properties': {}, 'required': []},
 )
 time_tool = conversation.ConversationTools(function=function)
 ```
@@ -241,19 +241,16 @@ time_tool = conversation.ConversationTools(function=function)
 from dapr.clients.grpc import conversation
 
 function = conversation.ConversationToolsFunction(
-    name="search",
-    description="Search the web", 
+    name='search',
+    description='Search the web',
     parameters={
-        "type": "object",
-        "properties": {
-            "query": {"type": "string"},
-            "domains": {
-                "type": "array",
-                "items": {"type": "string"}
-            }
+        'type': 'object',
+        'properties': {
+            'query': {'type': 'string'},
+            'domains': {'type': 'array', 'items': {'type': 'string'}},
         },
-        "required": ["query"]
-    }
+        'required': ['query'],
+    },
 )
 search_tool = conversation.ConversationTools(function=function)
 ```
@@ -285,7 +282,7 @@ user_message = ConversationMessage(
 ```python
 system_message = ConversationMessage(
     of_system=ConversationMessageOfSystem(
-        content=[ConversationMessageContent(text="You are a helpful AI assistant.")]
+        content=[ConversationMessageContent(text='You are a helpful AI assistant.')]
     )
 )
 ```
@@ -294,8 +291,7 @@ system_message = ConversationMessage(
 ```python
 developer_message = ConversationMessage(
     of_developer=ConversationMessageOfDeveloper(
-        name="developer",
-        content=[ConversationMessageContent(text="System configuration update.")]
+        name='developer', content=[ConversationMessageContent(text='System configuration update.')]
     )
 )
 ```
@@ -304,8 +300,8 @@ developer_message = ConversationMessage(
 ```python
 assistant_message = ConversationMessage(
     of_assistant=ConversationMessageOfAssistant(
-        content=[ConversationMessageContent(text="I can help you with that!")],
-        tool_calls=[...]  # Optional tool calls
+        content=[ConversationMessageContent(text='I can help you with that!')],
+        tool_calls=[...],  # Optional tool calls
     )
 )
 ```
@@ -314,9 +310,9 @@ assistant_message = ConversationMessage(
 ```python
 tool_message = ConversationMessage(
     of_tool=ConversationMessageOfTool(
-        tool_id="call_123",
-        name="get_weather",
-        content=[ConversationMessageContent(text="Weather: 72°F, sunny")]
+        tool_id='call_123',
+        name='get_weather',
+        content=[ConversationMessageContent(text='Weather: 72°F, sunny')],
     )
 )
 ```
@@ -329,10 +325,10 @@ You can create the same messages more concisely using helpers from `conversation
 from dapr.clients.grpc import conversation
 
 user = conversation.create_user_message("What's the weather in Paris?")
-system = conversation.create_system_message("You are a helpful AI assistant.")
-assistant = conversation.create_assistant_message("I can help you with that!")
+system = conversation.create_system_message('You are a helpful AI assistant.')
+assistant = conversation.create_assistant_message('I can help you with that!')
 tool_result = conversation.create_tool_message(
-    tool_id="call_123", name="get_weather", content="Weather: 72°F, sunny"
+    tool_id='call_123', name='get_weather', content='Weather: 72°F, sunny'
 )
 ```
 
@@ -344,12 +340,13 @@ Alpha2 excels at multi-turn conversations with proper context accumulation:
 from dapr.clients.grpc import conversation
 
 conversation_history: list[conversation.ConversationMessage] = [
-    conversation.create_user_message("What's the weather in SF?")]
+    conversation.create_user_message("What's the weather in SF?")
+]
 
 # Turn 1: User asks a question
 
 response1: conversation.ConversationResponseAlpha2 = client.converse_alpha2(
-    name="openai",
+    name='openai',
     inputs=[conversation.ConversationInputAlpha2(messages=conversation_history)],
     tools=conversation.get_registered_tools(),
     tool_choice='auto',
@@ -362,13 +359,15 @@ for msg in response1.to_assistant_messages():
     for tc in msg.of_assistant.tool_calls:
         tool_output = conversation.execute_registered_tool(tc.function.name, tc.function.arguments)
         conversation_history.append(
-            conversation.create_tool_message(tool_id=tc.id, name=tc.function.name, content=str(tool_output))
+            conversation.create_tool_message(
+                tool_id=tc.id, name=tc.function.name, content=str(tool_output)
+            )
         )
 
 # Turn 2 with accumulated context
-conversation_history.append(conversation.create_user_message("Should I bring an umbrella?"))
+conversation_history.append(conversation.create_user_message('Should I bring an umbrella?'))
 response2 = client.converse_alpha2(
-    name="openai",
+    name='openai',
     inputs=[conversation.ConversationInputAlpha2(messages=conversation_history)],
     tools=conversation.get_registered_tools(),
 )
@@ -381,9 +380,8 @@ We have added a trace print method to the ConversationMessage class that will pr
 For example in the real_llm_providers_example.py file, we have the following code in a multi-turn conversation:
 
 ```python
-
-    for msg in conversation_history:
-        msg.trace_print(2)
+for msg in conversation_history:
+    msg.trace_print(2)
 ```
 
 That will print the conversation history with the following output (might vary depending on the LLM provider):
@@ -451,18 +449,18 @@ Full async/await support for non-blocking operations:
 ```python
 from dapr.aio.clients import DaprClient as AsyncDaprClient
 
+
 async def async_conversation():
     async with AsyncDaprClient() as client:
-        user_message = create_user_message("Tell me a joke about async programming.")
+        user_message = create_user_message('Tell me a joke about async programming.')
         input_alpha2 = ConversationInputAlpha2(messages=[user_message])
-        
+
         response = await client.converse_alpha2(
-            name="openai",
-            inputs=[input_alpha2],
-            parameters={'temperature': 0.7}
+            name='openai', inputs=[input_alpha2], parameters={'temperature': 0.7}
         )
-        
+
         return response.outputs[0].choices[0].message.content
+
 
 # Run async function
 result = asyncio.run(async_conversation())
