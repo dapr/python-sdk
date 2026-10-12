@@ -302,8 +302,14 @@ class ActorStateManager(Generic[T]):
             metadata = self._default_state_change_tracker.get(change.state_name)
             if metadata is None or metadata.change_kind != StateChangeKind.none:
                 continue
-            # A None value is not written to the store, so let the next read reload it.
-            if change.change_kind == StateChangeKind.remove or change.value is None:
+            # A None value is not written to the store, and a TTL'd key can expire there
+            # while a cached copy would not, so let the next read reload both.
+            is_evicted = (
+                change.change_kind == StateChangeKind.remove
+                or change.value is None
+                or change.ttl_in_seconds is not None
+            )
+            if is_evicted:
                 self._default_state_change_tracker.pop(change.state_name)
                 continue
             try:
@@ -319,7 +325,7 @@ class ActorStateManager(Generic[T]):
                 self._default_state_change_tracker.pop(change.state_name)
                 continue
             self._default_state_change_tracker[change.state_name] = StateMetadata(
-                value, StateChangeKind.none, change.ttl_in_seconds
+                value, StateChangeKind.none
             )
 
     def is_state_marked_for_remove(self, state_name: str) -> bool:
