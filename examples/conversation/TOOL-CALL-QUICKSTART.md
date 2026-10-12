@@ -12,7 +12,7 @@ from dapr.clients.grpc import conversation
 @conversation.tool
 def get_weather(location: str, unit: str = 'fahrenheit') -> str:
     """Get current weather for a location."""
-    return f"Weather in {location} (unit={unit})"
+    return f'Weather in {location} (unit={unit})'
 
 
 user_msg = conversation.create_user_message("What's the weather in Paris?")
@@ -20,7 +20,7 @@ input_alpha2 = conversation.ConversationInputAlpha2(messages=[user_msg])
 
 with DaprClient() as client:
     response = client.converse_alpha2(
-        name="openai",
+        name='openai',
         inputs=[input_alpha2],
         tools=conversation.get_registered_tools(),  # tools registered by @conversation.tool
         tool_choice='auto',
@@ -30,7 +30,7 @@ with DaprClient() as client:
     for msg in response.to_assistant_messages():
         if msg.of_assistant.tool_calls:
             for tc in msg.of_assistant.tool_calls:
-                print(f"Tool call: {tc.function.name} args={tc.function.arguments}")
+                print(f'Tool call: {tc.function.name} args={tc.function.arguments}')
         else:
             print(msg.of_assistant.content[0].text)
 ```
@@ -44,7 +44,7 @@ from dapr.clients.grpc import conversation
 
 @conversation.tool
 def get_weather(location: str, unit: str = 'fahrenheit') -> str:
-    return f"Weather in {location} (unit={unit})"
+    return f'Weather in {location} (unit={unit})'
 
 
 history: list[conversation.ConversationMessage] = []
@@ -53,7 +53,7 @@ history.append(conversation.create_user_message("What's the weather in San Franc
 with DaprClient() as client:
     # Turn 1
     resp1 = client.converse_alpha2(
-        name="openai",
+        name='openai',
         inputs=[conversation.ConversationInputAlpha2(messages=history)],
         tools=conversation.get_registered_tools(),
         tool_choice='auto',
@@ -65,15 +65,19 @@ with DaprClient() as client:
         history.append(msg)
         for tc in msg.of_assistant.tool_calls:
             # Execute (we suggest validating inputs before execution in production)
-            tool_output = conversation.execute_registered_tool(tc.function.name, tc.function.arguments)
+            tool_output = conversation.execute_registered_tool(
+                tc.function.name, tc.function.arguments
+            )
             history.append(
-                conversation.create_tool_message(tool_id=tc.id, name=tc.function.name, content=str(tool_output))
+                conversation.create_tool_message(
+                    tool_id=tc.id, name=tc.function.name, content=str(tool_output)
+                )
             )
 
     # Turn 2 (LLM sees tool result)
-    history.append(conversation.create_user_message("Should I bring an umbrella?"))
+    history.append(conversation.create_user_message('Should I bring an umbrella?'))
     resp2 = client.converse_alpha2(
-        name="openai",
+        name='openai',
         inputs=[conversation.ConversationInputAlpha2(messages=history)],
         tools=conversation.get_registered_tools(),
         parameters={'temperature': 0.2},
@@ -100,7 +104,7 @@ class Units(Enum):
 
 
 def get_weather(location: str, unit: Units = Units.FAHRENHEIT) -> str:
-    return f"Weather in {location}"
+    return f'Weather in {location}'
 
 
 fn = conversation.ConversationToolsFunction.from_function(get_weather)
