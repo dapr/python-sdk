@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import asyncio
+import logging
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
@@ -22,6 +23,8 @@ from dapr.common.reentrancy_context import reentrancy_ctx
 
 if TYPE_CHECKING:
     from dapr.actor.runtime.actor import Actor
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 CONTEXT: ContextVar[Optional[Dict[str, Any]]] = ContextVar('state_tracker_context')
@@ -313,6 +316,12 @@ class ActorStateManager(Generic[T]):
                 value = state_provider.round_trip_state_value(change.value)
             except Exception:
                 # The save has already committed; fall back to reloading on the next read.
+                logger.warning(
+                    'could not refresh cached actor state %s after reentrant save; '
+                    'it will be reloaded',
+                    change.state_name,
+                    exc_info=True,
+                )
                 self._default_state_change_tracker.pop(change.state_name)
                 continue
             self._default_state_change_tracker[change.state_name] = StateMetadata(
