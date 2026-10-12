@@ -78,14 +78,14 @@ identity layer on top of the existing `dapr.ext.workflow.DaprWorkflowClient`.
 
 ```python
 from dapr.ext.databricks import (
-    register_workflow_sink,     # high-level: registers a foreach_batch_sink
-    DaprWorkflowBatchHandler,   # low-level: reusable batch-processing handler
-    WorkflowSinkConfig,        # typed config, if constructing a handler directly
-    default_row_mapper,       # the default Row -> dict mapper
-    DaprDatabricksError,     # base exception
-    SinkConfigurationError, # bad register_workflow_sink() config
-    MissingBusinessKeyError, # configured id_field/id_fields absent or null on a row
-    DaprDatabricksSinkError, # a micro-batch could not be durably handed off
+    register_workflow_sink,  # high-level: registers a foreach_batch_sink
+    DaprWorkflowBatchHandler,  # low-level: reusable batch-processing handler
+    WorkflowSinkConfig,  # typed config, if constructing a handler directly
+    default_row_mapper,  # the default Row -> dict mapper
+    DaprDatabricksError,  # base exception
+    SinkConfigurationError,  # bad register_workflow_sink() config
+    MissingBusinessKeyError,  # configured id_field/id_fields absent or null on a row
+    DaprDatabricksSinkError,  # a micro-batch could not be durably handed off
 )
 ```
 
