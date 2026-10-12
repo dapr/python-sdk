@@ -100,8 +100,6 @@ logger = logging.getLogger(__name__)
 SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
 SUBSCRIPTION_RECONNECT_BACKOFF_SECONDS = 5
 
-logger = logging.getLogger(__name__)
-
 
 class DaprGrpcClient:
     """The convenient layer implementation of Dapr gRPC APIs.

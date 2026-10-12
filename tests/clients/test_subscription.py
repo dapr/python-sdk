@@ -1,18 +1,20 @@
 import asyncio
 import queue
+import sys
 import threading
 import unittest
 from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from google.protobuf.struct_pb2 import Struct
-from grpc import StatusCode
+from grpc import RpcError, StatusCode
 from grpc.aio import AioRpcError
 
 from dapr.aio.clients.grpc import subscription as subscription_async_module
 from dapr.aio.clients.grpc.subscription import Subscription as SubscriptionAsync
 from dapr.clients.grpc import subscription as subscription_module
 from dapr.clients.grpc.subscription import StreamInactiveError, Subscription, SubscriptionMessage
+from dapr.common.pubsub.subscription import StreamReconnectError
 from dapr.proto import api_v1
 from dapr.proto.runtime.v1.appcallback_pb2 import TopicEventRequest
 
@@ -377,3 +379,186 @@ class SubscriptionStreamTests(unittest.TestCase):
         subscription.close()
 
         self.assertTrue(stub.iterator_exhausted.wait(timeout=_TEST_TIMEOUT_SECONDS))
+
+
+class _UnavailableRpcError(RpcError):
+    def code(self) -> StatusCode:
+        return StatusCode.UNAVAILABLE
+
+    def details(self) -> str:
+        return 'sidecar unavailable'
+
+
+class _FailingInitialReadCall:
+    """Fake bidi call whose initial read fails with UNAVAILABLE."""
+
+    def __init__(self) -> None:
+        self.cancelled = False
+
+    def __next__(self) -> api_v1.SubscribeTopicEventsResponseAlpha1:
+        raise _UnavailableRpcError()
+
+    def cancel(self) -> bool:
+        self.cancelled = True
+        return True
+
+
+class _FailingAfterInitialReadCall(_EagerStreamCall):
+    """Fake bidi call that sends the initial response, then fails with UNAVAILABLE."""
+
+    def __next__(self) -> api_v1.SubscribeTopicEventsResponseAlpha1:
+        try:
+            return super().__next__()
+        except StopIteration:
+            raise _UnavailableRpcError() from None
+
+
+class _ConsumingStub(_EagerStub):
+    """Eager stub that hands back a call built by ``call_factory``."""
+
+    def __init__(self, call_factory) -> None:
+        super().__init__()
+        self._call_factory = call_factory
+
+    def SubscribeTopicEventsAlpha1(self, request_iterator: Iterator):
+        super().SubscribeTopicEventsAlpha1(request_iterator)
+        return self._call_factory()
+
+
+class SubscriptionStartFailureTests(unittest.TestCase):
+    def test_request_iterator_exits_when_initial_read_fails(self):
+        stub = _ConsumingStub(_FailingInitialReadCall)
+        subscription = Subscription(stub, 'pubsub', 'topic')
+
+        with self.assertRaisesRegex(Exception, 'Error while initializing stream'):
+            subscription.start()
+
+        self.assertTrue(stub.iterator_exhausted.wait(timeout=_TEST_TIMEOUT_SECONDS))
+
+    def test_close_while_opening_stream_cancels_the_new_stream(self):
+        stream = _EagerStreamCall()
+        stub = MagicMock()
+        subscription = Subscription(stub, 'pubsub', 'topic')
+
+        def open_stream_while_closing(request_iterator: Iterator) -> _EagerStreamCall:
+            subscription.close()
+            return stream
+
+        stub.SubscribeTopicEventsAlpha1.side_effect = open_stream_while_closing
+
+        with self.assertRaises(StreamInactiveError):
+            subscription.start()
+        self.assertTrue(stream.cancelled)
+
+    def test_failed_reconnect_counts_as_an_attempt(self):
+        calls = iter([_FailingAfterInitialReadCall()])
+        stub = MagicMock()
+        stub.SubscribeTopicEventsAlpha1.side_effect = lambda _: next(
+            calls, _FailingInitialReadCall()
+        )
+        subscription = Subscription(stub, 'pubsub', 'topic')
+        subscription.start()
+
+        with (
+            patch.object(subscription_module.DaprHealth, 'wait_for_sidecar'),
+            patch.object(
+                subscription_module, '_reconnect_backoff_seconds', return_value=0
+            ) as backoff,
+        ):
+            with self.assertRaisesRegex(StreamReconnectError, 'sidecar unavailable'):
+                subscription.next_message()
+
+        max_attempts = subscription_module.MAX_RECONNECT_ATTEMPTS
+        backoff_attempts = [call.args[0] for call in backoff.call_args_list]
+        self.assertEqual(1 + max_attempts, stub.SubscribeTopicEventsAlpha1.call_count)
+        self.assertEqual(list(range(1, max_attempts)), backoff_attempts)
+
+
+class _FailingInitialReadAsync:
+    def __init__(self, error: BaseException) -> None:
+        self._error = error
+
+    async def read(self):
+        raise self._error
+
+    def cancel(self) -> bool:
+        return True
+
+
+class _InitialReadThenUnavailableAsync:
+    def __init__(self) -> None:
+        self._initial_read_done = False
+
+    async def read(self):
+        if self._initial_read_done:
+            raise AioRpcError(StatusCode.UNAVAILABLE, None, None, 'sidecar unavailable')
+        self._initial_read_done = True
+        return api_v1.SubscribeTopicEventsResponseAlpha1()
+
+    def cancel(self) -> bool:
+        return True
+
+
+class _TaskCancelledWhileClosingAsync:
+    def __init__(self, subscription: SubscriptionAsync) -> None:
+        self._subscription = subscription
+
+    async def read(self):
+        await self._subscription.close()
+        current_task = asyncio.current_task()
+        assert current_task is not None
+        current_task.cancel()
+        await asyncio.sleep(0)
+
+    def cancel(self) -> bool:
+        return True
+
+
+class SubscriptionAsyncStartFailureTests(unittest.IsolatedAsyncioTestCase):
+    async def test_failed_start_marks_stream_inactive_and_releases_iterator(self):
+        stub = MagicMock()
+        error = AioRpcError(StatusCode.UNAVAILABLE, None, None, 'sidecar unavailable')
+        stub.SubscribeTopicEventsAlpha1.return_value = _FailingInitialReadAsync(error)
+        subscription = SubscriptionAsync(stub, 'pubsub', 'topic')
+
+        with self.assertRaises(AioRpcError):
+            await subscription.start()
+
+        self.assertFalse(subscription._stream_active.is_set())
+        self.assertIsNone(subscription._send_queue.get_nowait())
+
+    @unittest.skipIf(sys.version_info < (3, 11), 'Task.cancelling() needs Python 3.11+')
+    async def test_task_cancellation_propagates_when_close_races_it(self):
+        stub = MagicMock()
+        subscription = SubscriptionAsync(stub, 'pubsub', 'topic')
+        stream = _TaskCancelledWhileClosingAsync(subscription)
+        stub.SubscribeTopicEventsAlpha1.return_value = stream
+
+        start_task = asyncio.create_task(subscription.start())
+
+        with self.assertRaises(asyncio.CancelledError):
+            await start_task
+
+    async def test_failed_reconnect_counts_as_an_attempt(self):
+        error = AioRpcError(StatusCode.UNAVAILABLE, None, None, 'sidecar unavailable')
+        calls = iter([_InitialReadThenUnavailableAsync()])
+        stub = MagicMock()
+        stub.SubscribeTopicEventsAlpha1.side_effect = lambda _: next(
+            calls, _FailingInitialReadAsync(error)
+        )
+        subscription = SubscriptionAsync(stub, 'pubsub', 'topic')
+        await subscription.start()
+
+        with (
+            patch.object(subscription_async_module.DaprHealth, 'wait_for_sidecar', AsyncMock()),
+            patch.object(
+                subscription_async_module, '_reconnect_backoff_seconds', return_value=0
+            ) as backoff,
+        ):
+            with self.assertRaisesRegex(StreamReconnectError, 'sidecar unavailable'):
+                await subscription.next_message()
+
+        max_attempts = subscription_async_module.MAX_RECONNECT_ATTEMPTS
+        backoff_attempts = [call.args[0] for call in backoff.call_args_list]
+        self.assertEqual(1 + max_attempts, stub.SubscribeTopicEventsAlpha1.call_count)
+        self.assertEqual(list(range(1, max_attempts)), backoff_attempts)
