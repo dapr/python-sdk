@@ -32,8 +32,10 @@ Wraps a FastAPI instance to add Dapr pub/sub event handling.
 app = FastAPI()
 dapr_app = DaprApp(app, router_tags=['PubSub'])  # router_tags optional, default ['PubSub']
 
-@dapr_app.subscribe(pubsub='pubsub', topic='orders', route='/handle-order',
-                     metadata={}, dead_letter_topic=None)
+
+@dapr_app.subscribe(
+    pubsub='pubsub', topic='orders', route='/handle-order', metadata={}, dead_letter_topic=None
+)
 def handle_order(event_data):
     return {'status': 'ok'}
 ```
