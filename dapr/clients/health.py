@@ -29,8 +29,8 @@ _MIN_ATTEMPT_TIMEOUT_SECONDS = 0.5
 
 def _attempt_timeout(deadline: float) -> float:
     """Seconds one health probe may take: what is left until ``deadline`` (a
-    ``time.time()`` value), but never less than _MIN_ATTEMPT_TIMEOUT_SECONDS."""
-    return max(deadline - time.time(), _MIN_ATTEMPT_TIMEOUT_SECONDS)
+    ``time.monotonic()`` value), but never less than _MIN_ATTEMPT_TIMEOUT_SECONDS."""
+    return max(deadline - time.monotonic(), _MIN_ATTEMPT_TIMEOUT_SECONDS)
 
 
 class DaprHealth:
@@ -51,7 +51,7 @@ class DaprHealth:
             headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
         timeout = float(settings.DAPR_HEALTH_TIMEOUT)
 
-        start = time.time()
+        start = time.monotonic()
         while True:
             try:
                 req = urllib.request.Request(health_url, headers=headers)
@@ -69,10 +69,14 @@ class DaprHealth:
                         break
             except urllib.error.URLError as e:
                 print(f'Health check on {health_url} failed: {e.reason}')
+            except TimeoutError:
+                # urllib wraps only connect/send errors in URLError; a read timeout in
+                # getresponse() (a sidecar that accepts but never answers) is bare.
+                print(f'Health check on {health_url} failed: timed out')
             except Exception as e:
                 print(f'Unexpected error during health check: {e}')
 
-            remaining = (start + timeout) - time.time()
+            remaining = (start + timeout) - time.monotonic()
             if remaining <= 0:
                 raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
             time.sleep(min(1, remaining))

@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import socket
 import threading
 import time
 import unittest
@@ -22,6 +21,8 @@ from unittest.mock import MagicMock, patch
 from dapr.clients.health import DaprHealth
 from dapr.conf import settings
 from dapr.version import __version__
+
+from .fake_servers import listen_without_replying
 
 
 class DaprHealthCheckTests(unittest.TestCase):
@@ -79,16 +80,6 @@ class DaprHealthCheckTests(unittest.TestCase):
         self.assertGreater(mock_urlopen.call_count, 1)
 
 
-def listen_without_replying(test: unittest.TestCase) -> int:
-    """Open a local port that accepts connections (the OS completes the handshake from
-    the listen backlog) but never sends a reply, like a hung sidecar. Returns the port."""
-    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    test.addCleanup(listener.close)
-    listener.bind(('127.0.0.1', 0))
-    listener.listen(16)
-    return listener.getsockname()[1]
-
-
 class DaprHealthCheckUnresponsiveSidecarTests(unittest.TestCase):
     # How long the test waits before calling wait_for_sidecar() hung. Well above
     # DAPR_HEALTH_TIMEOUT so a slow CI machine does not fail it.
@@ -105,7 +96,10 @@ class DaprHealthCheckUnresponsiveSidecarTests(unittest.TestCase):
             except Exception as error:
                 outcome['error'] = error
 
-        with patch.object(settings, 'DAPR_HTTP_ENDPOINT', f'http://127.0.0.1:{port}'):
+        with (
+            patch.object(settings, 'DAPR_HTTP_ENDPOINT', f'http://127.0.0.1:{port}'),
+            patch('builtins.print') as mock_print,
+        ):
             # Run in a daemon thread so a regression fails this test instead of hanging
             # the whole session.
             waiter = threading.Thread(target=wait, daemon=True)
@@ -117,3 +111,6 @@ class DaprHealthCheckUnresponsiveSidecarTests(unittest.TestCase):
         self.assertIsInstance(outcome.get('error'), TimeoutError)
         self.assertIn('Dapr health check timed out', str(outcome['error']))
         self.assertLess(time.time() - start, self.HANG_LIMIT_SECONDS)
+        logged = [str(call.args[0]) for call in mock_print.call_args_list if call.args]
+        self.assertTrue(any(line.endswith('failed: timed out') for line in logged), logged)
+        self.assertFalse(any(line.startswith('Unexpected error') for line in logged), logged)

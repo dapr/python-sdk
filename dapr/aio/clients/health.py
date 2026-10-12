@@ -33,7 +33,7 @@ class DaprHealth:
             headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
         timeout = float(settings.DAPR_HEALTH_TIMEOUT)
 
-        start = time.time()
+        start = time.monotonic()
         ssl_context = DaprHealth.get_ssl_context()
 
         connector = aiohttp.TCPConnector(ssl=ssl_context)
@@ -57,7 +57,7 @@ class DaprHealth:
                 except Exception as e:
                     print(f'Unexpected error during health check: {e}')
 
-                remaining = (start + timeout) - time.time()
+                remaining = (start + timeout) - time.monotonic()
                 if remaining <= 0:
                     raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
                 await asyncio.sleep(min(1, remaining))
