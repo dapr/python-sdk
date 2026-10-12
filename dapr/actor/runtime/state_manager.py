@@ -295,8 +295,8 @@ class ActorStateManager(Generic[T]):
     def _refresh_default_tracker(self, state_changes: List[ActorStateChange]) -> None:
         # Writes made through a reentrancy-scoped tracker are invisible to the default
         # tracker, which activation, reminders and timers read from. Refresh its clean
-        # copies of the written keys, cached misses included, in the shape a fresh read
-        # would return, and drop removed keys. Entries with pending changes are left alone.
+        # copies of the written keys in place, cached misses included, in the shape a fresh
+        # read would return, and drop removed keys. Entries with pending changes are left alone.
         state_provider = self._actor.runtime_ctx.state_provider
         for change in state_changes:
             metadata = self._default_state_change_tracker.get(change.state_name)
