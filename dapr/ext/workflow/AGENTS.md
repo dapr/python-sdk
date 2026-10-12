@@ -14,6 +14,7 @@ dapr/ext/workflow/
 ├── workflow_context.py                # WorkflowContext ABC
 ├── workflow_activity_context.py       # WorkflowActivityContext wrapper
 ├── workflow_state.py                  # WorkflowState, WorkflowStatus enum
+├── workflow_management.py             # WorkflowHistoryEvent(Type), WorkflowInstanceIdPage
 ├── retry_policy.py                    # RetryPolicy wrapper
 ├── util.py                            # gRPC address resolution
 ├── logger/options.py                  # LoggerOptions
@@ -24,6 +25,7 @@ tests/ext/workflow/
 ├── test_dapr_workflow_context.py      # Context method proxying
 ├── test_workflow_activity_context.py  # Activity context properties
 ├── test_workflow_client.py            # Sync client (mock gRPC)
+├── test_workflow_management.py        # list/history/rerun on both clients
 ├── test_workflow_client_aio.py        # Async client (IsolatedAsyncioTestCase)
 ├── test_workflow_runtime.py           # Registration, decorators, worker readiness
 ├── test_workflow_util.py              # Address resolution
@@ -86,6 +88,11 @@ from dapr.ext.workflow import (
     when_any,                 # Race combinator — wait for first task
     alternate_name,           # Decorator to set a custom registration name
     RetryPolicy,              # Retry config for activities/child workflows
+    WorkflowHistoryEvent,     # One event from an instance's execution history
+    WorkflowHistoryEventType, # Enum of history event kinds; unknown ones map to UNKNOWN
+    WorkflowInstanceIdPage,   # One page of instance IDs plus the continuation token
+    FailureDetails,           # Error carried by WorkflowHistoryEvent / TaskFailedError
+    UNSET,                    # Sentinel default for rerun_workflow_from_event's input
 )
 
 # Async client:
@@ -139,9 +146,13 @@ Client for workflow lifecycle management:
 - `terminate_workflow(instance_id, *, output, recursive)`
 - `pause_workflow(instance_id)` / `resume_workflow(instance_id)`
 - `purge_workflow(instance_id, *, recursive)`
+- `list_workflow_instance_ids(*, page_size, continuation_token)` → `WorkflowInstanceIdPage`. No `app_id`: `ListInstanceIDsRequest` and `GetInstanceHistoryRequest` carry no `router`, and the runtime scopes both to the calling app. Only rerun can be routed cross-app.
+- `iter_workflow_instance_ids(*, page_size=1024)` → iterator over instance IDs, paging internally (`async for` on the async client)
+- `get_workflow_history(instance_id)` → `list[WorkflowHistoryEvent]`
+- `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id, app_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is an `input` + `overwriteInput` pair on the wire, which the engine layer takes as-is; the public method collapses it into one argument via the exported `UNSET` sentinel.
 - `close()` — close gRPC connection
 
-Converts gRPC "no such instance exists" errors to `None` returns. The async variant in `aio/` has the same API with `async` methods.
+`get_workflow_state` converts gRPC "no such instance exists" errors to a `None` return. The other methods let the error propagate, including `get_workflow_history`, which raises NOT_FOUND for a missing or purged instance. The async variant in `aio/` has the same API with `async` methods.
 
 ### DaprWorkflowContext (`dapr_workflow_context.py`)
 
