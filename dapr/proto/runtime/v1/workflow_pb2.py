@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n$dapr/proto/runtime/v1/workflow.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"d\n\x12GetWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x84\x03\n\x13GetWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12#\n\rworkflow_name\x18\x02 \x01(\tR\x0cworkflowName\x12\x39\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x42\n\x0flast_updated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\rlastUpdatedAt\x12%\n\x0eruntime_status\x18\x05 \x01(\tR\rruntimeStatus\x12N\n\nproperties\x18\x06 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetWorkflowResponse.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x95\x02\n\x14StartWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12#\n\rworkflow_name\x18\x03 \x01(\tR\x0cworkflowName\x12I\n\x07options\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.StartWorkflowRequest.OptionsEntry\x12\r\n\x05input\x18\x05 \x01(\x0c\x1a.\n\x0cOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"8\n\x15StartWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\"j\n\x18TerminateWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"f\n\x14PauseWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"g\n\x15ResumeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\"\x9e\x01\n\x19RaiseEventWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1d\n\nevent_name\x18\x03 \x01(\tR\teventName\x12\x12\n\nevent_data\x18\x04 \x01(\x0c\"f\n\x14PurgeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponentBq\n\nio.dapr.v1B\x12\x44\x61prWorkflowProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n$dapr/proto/runtime/v1/workflow.proto\x12\x15\x64\x61pr.proto.runtime.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8b\x01\n\x12GetWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1a\n\x06\x61pp_id\x18\x03 \x01(\tH\x00R\x05\x61ppID\x88\x01\x01\x42\t\n\x07_app_id\"\x84\x03\n\x13GetWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12#\n\rworkflow_name\x18\x02 \x01(\tR\x0cworkflowName\x12\x39\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x42\n\x0flast_updated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\rlastUpdatedAt\x12%\n\x0eruntime_status\x18\x05 \x01(\tR\rruntimeStatus\x12N\n\nproperties\x18\x06 \x03(\x0b\x32:.dapr.proto.runtime.v1.GetWorkflowResponse.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbc\x02\n\x14StartWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12#\n\rworkflow_name\x18\x03 \x01(\tR\x0cworkflowName\x12I\n\x07options\x18\x04 \x03(\x0b\x32\x38.dapr.proto.runtime.v1.StartWorkflowRequest.OptionsEntry\x12\r\n\x05input\x18\x05 \x01(\x0c\x12\x1a\n\x06\x61pp_id\x18\x06 \x01(\tH\x00R\x05\x61ppID\x88\x01\x01\x1a.\n\x0cOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x42\t\n\x07_app_id\"8\n\x15StartWorkflowResponse\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\"\x91\x01\n\x18TerminateWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1a\n\x06\x61pp_id\x18\x03 \x01(\tH\x00R\x05\x61ppID\x88\x01\x01\x42\t\n\x07_app_id\"\x8d\x01\n\x14PauseWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1a\n\x06\x61pp_id\x18\x03 \x01(\tH\x00R\x05\x61ppID\x88\x01\x01\x42\t\n\x07_app_id\"\x8e\x01\n\x15ResumeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1a\n\x06\x61pp_id\x18\x03 \x01(\tH\x00R\x05\x61ppID\x88\x01\x01\x42\t\n\x07_app_id\"\xc5\x01\n\x19RaiseEventWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1d\n\nevent_name\x18\x03 \x01(\tR\teventName\x12\x12\n\nevent_data\x18\x04 \x01(\x0c\x12\x1a\n\x06\x61pp_id\x18\x05 \x01(\tH\x00R\x05\x61ppID\x88\x01\x01\x42\t\n\x07_app_id\"\x8d\x01\n\x14PurgeWorkflowRequest\x12\x1f\n\x0binstance_id\x18\x01 \x01(\tR\ninstanceID\x12-\n\x12workflow_component\x18\x02 \x01(\tR\x11workflowComponent\x12\x1a\n\x06\x61pp_id\x18\x03 \x01(\tH\x00R\x05\x61ppID\x88\x01\x01\x42\t\n\x07_app_idBq\n\nio.dapr.v1B\x12\x44\x61prWorkflowProtosZ1github.com/dapr/dapr/pkg/proto/runtime/v1;runtime\xaa\x02\x1b\x44\x61pr.Client.Autogen.Grpc.v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,26 +37,26 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GETWORKFLOWRESPONSE_PROPERTIESENTRY']._serialized_options = b'8\001'
   _globals['_STARTWORKFLOWREQUEST_OPTIONSENTRY']._loaded_options = None
   _globals['_STARTWORKFLOWREQUEST_OPTIONSENTRY']._serialized_options = b'8\001'
-  _globals['_GETWORKFLOWREQUEST']._serialized_start=96
-  _globals['_GETWORKFLOWREQUEST']._serialized_end=196
-  _globals['_GETWORKFLOWRESPONSE']._serialized_start=199
-  _globals['_GETWORKFLOWRESPONSE']._serialized_end=587
-  _globals['_GETWORKFLOWRESPONSE_PROPERTIESENTRY']._serialized_start=538
-  _globals['_GETWORKFLOWRESPONSE_PROPERTIESENTRY']._serialized_end=587
-  _globals['_STARTWORKFLOWREQUEST']._serialized_start=590
-  _globals['_STARTWORKFLOWREQUEST']._serialized_end=867
-  _globals['_STARTWORKFLOWREQUEST_OPTIONSENTRY']._serialized_start=821
-  _globals['_STARTWORKFLOWREQUEST_OPTIONSENTRY']._serialized_end=867
-  _globals['_STARTWORKFLOWRESPONSE']._serialized_start=869
-  _globals['_STARTWORKFLOWRESPONSE']._serialized_end=925
-  _globals['_TERMINATEWORKFLOWREQUEST']._serialized_start=927
-  _globals['_TERMINATEWORKFLOWREQUEST']._serialized_end=1033
-  _globals['_PAUSEWORKFLOWREQUEST']._serialized_start=1035
-  _globals['_PAUSEWORKFLOWREQUEST']._serialized_end=1137
-  _globals['_RESUMEWORKFLOWREQUEST']._serialized_start=1139
-  _globals['_RESUMEWORKFLOWREQUEST']._serialized_end=1242
-  _globals['_RAISEEVENTWORKFLOWREQUEST']._serialized_start=1245
-  _globals['_RAISEEVENTWORKFLOWREQUEST']._serialized_end=1403
-  _globals['_PURGEWORKFLOWREQUEST']._serialized_start=1405
-  _globals['_PURGEWORKFLOWREQUEST']._serialized_end=1507
+  _globals['_GETWORKFLOWREQUEST']._serialized_start=97
+  _globals['_GETWORKFLOWREQUEST']._serialized_end=236
+  _globals['_GETWORKFLOWRESPONSE']._serialized_start=239
+  _globals['_GETWORKFLOWRESPONSE']._serialized_end=627
+  _globals['_GETWORKFLOWRESPONSE_PROPERTIESENTRY']._serialized_start=578
+  _globals['_GETWORKFLOWRESPONSE_PROPERTIESENTRY']._serialized_end=627
+  _globals['_STARTWORKFLOWREQUEST']._serialized_start=630
+  _globals['_STARTWORKFLOWREQUEST']._serialized_end=946
+  _globals['_STARTWORKFLOWREQUEST_OPTIONSENTRY']._serialized_start=889
+  _globals['_STARTWORKFLOWREQUEST_OPTIONSENTRY']._serialized_end=935
+  _globals['_STARTWORKFLOWRESPONSE']._serialized_start=948
+  _globals['_STARTWORKFLOWRESPONSE']._serialized_end=1004
+  _globals['_TERMINATEWORKFLOWREQUEST']._serialized_start=1007
+  _globals['_TERMINATEWORKFLOWREQUEST']._serialized_end=1152
+  _globals['_PAUSEWORKFLOWREQUEST']._serialized_start=1155
+  _globals['_PAUSEWORKFLOWREQUEST']._serialized_end=1296
+  _globals['_RESUMEWORKFLOWREQUEST']._serialized_start=1299
+  _globals['_RESUMEWORKFLOWREQUEST']._serialized_end=1441
+  _globals['_RAISEEVENTWORKFLOWREQUEST']._serialized_start=1444
+  _globals['_RAISEEVENTWORKFLOWREQUEST']._serialized_end=1641
+  _globals['_PURGEWORKFLOWREQUEST']._serialized_start=1644
+  _globals['_PURGEWORKFLOWREQUEST']._serialized_end=1785
 # @@protoc_insertion_point(module_scope)
