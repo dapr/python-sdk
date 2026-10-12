@@ -203,7 +203,7 @@ class Subscription:
                 return
             send_queue.put(msg)
         except Exception as e:
-            logger.warning(f"Can't send message on inactive stream: {e}")
+            logger.warning("Can't send response for message %s: %s", message.id(), e)
 
     def respond_success(self, message):
         self.respond(message, TopicEventResponse('success').status)
