@@ -117,9 +117,10 @@ from dapr.ext.grpc.aio import App
 
 app = App()
 
+
 @app.subscribe(pubsub_name='pubsub', topic='orders')
-async def handle_event(event: SubscriptionMessage) -> TopicEventResponse:
-    ...
+async def handle_event(event: SubscriptionMessage) -> TopicEventResponse: ...
+
 
 asyncio.run(app.run(3010))
 ```

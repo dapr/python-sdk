@@ -25,8 +25,7 @@ app = App()
 
 
 @app.method(name='my-method')
-async def my_method(request: InvokeMethodRequest) -> InvokeMethodResponse:
-    ...
+async def my_method(request: InvokeMethodRequest) -> InvokeMethodResponse: ...
 
 
 asyncio.run(app.run(50051))
