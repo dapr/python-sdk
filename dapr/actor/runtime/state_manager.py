@@ -163,17 +163,11 @@ class ActorStateManager(Generic[T]):
             state_change_tracker[state_name] = state_metadata
             return
 
-        existed = await self._actor.runtime_ctx.state_provider.contains_state(
-            self._type_name, self._actor.id.id, state_name
+        # Add and update are both saved as an upsert, so skip the store read. Update also
+        # makes a later remove send a delete, since the key may already be in the store.
+        state_change_tracker[state_name] = StateMetadata(
+            value, StateChangeKind.update, ttl_in_seconds
         )
-        if existed:
-            state_change_tracker[state_name] = StateMetadata(
-                value, StateChangeKind.update, ttl_in_seconds
-            )
-        else:
-            state_change_tracker[state_name] = StateMetadata(
-                value, StateChangeKind.add, ttl_in_seconds
-            )
 
     async def remove_state(self, state_name: str) -> None:
         if not await self.try_remove_state(state_name):
@@ -323,8 +317,8 @@ class ActorStateManager(Generic[T]):
             except Exception:
                 # The save has already committed; fall back to reloading on the next read.
                 logger.warning(
-                    'could not refresh cached actor state %s after reentrant save; '
-                    'it will be reloaded',
+                    'Could not round-trip actor state %r through the state serializer; '
+                    'evicting it from the default state tracker',
                     change.state_name,
                     exc_info=True,
                 )
