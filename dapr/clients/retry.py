@@ -28,7 +28,8 @@ class RetryPolicy:
     """RetryPolicy holds the retry policy configuration for a gRPC client.
 
     Args:
-        max_attempts (int): The maximum number of retry attempts.
+        max_attempts (int, optional): The maximum number of retry attempts. Defaults to
+            ``DAPR_API_MAX_RETRIES``, read when the policy is constructed.
         initial_backoff (int): The initial backoff duration.
         max_backoff (int): The maximum backoff duration.
         backoff_multiplier (float): The backoff multiplier.

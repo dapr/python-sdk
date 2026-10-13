@@ -47,7 +47,7 @@ class ActorRuntime:
         actor: Type[Actor],
         message_serializer: Serializer = DefaultJSONSerializer(),
         state_serializer: Serializer = DefaultJSONSerializer(),
-        http_timeout_seconds: Union[int, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
+        http_timeout_seconds: Union[int, None, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
         actor_factory: Optional[Callable[['ActorRuntimeContext', ActorId], 'Actor']] = None,
         actor_client: Optional[DaprActorClientBase] = None,
     ) -> None:

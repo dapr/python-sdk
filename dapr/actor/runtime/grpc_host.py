@@ -145,7 +145,7 @@ class ActorGrpcHost:
     def __init__(
         self,
         address: Optional[str] = None,
-        timeout_seconds: Union[int, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
+        timeout_seconds: Union[int, None, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
         app_port: Optional[int] = None,
     ):
         """Creates the host.

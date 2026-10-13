@@ -51,7 +51,7 @@ class ActorProxyFactory(ActorFactoryBase):
     def __init__(
         self,
         message_serializer=DefaultJSONSerializer(),
-        http_timeout_seconds: Union[int, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
+        http_timeout_seconds: Union[int, None, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
         retry_policy: Optional[RetryPolicy] = None,
     ):
         if isinstance(http_timeout_seconds, _FromSettings):
