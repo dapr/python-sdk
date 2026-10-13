@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 import asyncio
-from typing import Callable, Dict, List, Optional, Type
+from typing import Callable, Dict, List, Optional, Type, Union
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_information import ActorTypeInformation
@@ -25,8 +25,10 @@ from dapr.actor.runtime.manager import ActorManager
 from dapr.clients.base import DaprActorClientBase
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.common.reentrancy_context import reentrancy_ctx
-from dapr.conf import settings
+from dapr.conf import _FromSettings
 from dapr.serializers import DefaultJSONSerializer, Serializer
+
+_HTTP_TIMEOUT_FROM_SETTINGS = _FromSettings('DAPR_HTTP_TIMEOUT_SECONDS')
 
 
 class ActorRuntime:
@@ -45,7 +47,7 @@ class ActorRuntime:
         actor: Type[Actor],
         message_serializer: Serializer = DefaultJSONSerializer(),
         state_serializer: Serializer = DefaultJSONSerializer(),
-        http_timeout_seconds: Optional[int] = None,
+        http_timeout_seconds: Union[int, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
         actor_factory: Optional[Callable[['ActorRuntimeContext', ActorId], 'Actor']] = None,
         actor_client: Optional[DaprActorClientBase] = None,
     ) -> None:
@@ -56,15 +58,16 @@ class ActorRuntime:
             message_serializer (:class:`Serializer`): A serializer that serializes message
                 between actors.
             state_serializer (:class:`Serializer`): Serializer that serializes state values.
-            http_timeout_seconds (:int:): a configurable timeout value
+            http_timeout_seconds (int, optional): timeout for the default HTTP actor client.
+                Defaults to ``DAPR_HTTP_TIMEOUT_SECONDS``, read when the actor is registered.
             actor_factory (Callable, optional): factory to create Actor objects.
             actor_client (:class:`DaprActorClientBase`, optional): the client used for the
                 actor's outbound operations (state, reminders, timers, invocations).
                 Defaults to the HTTP client; :class:`ActorGrpcHost` supplies a gRPC one.
         """
         type_info = ActorTypeInformation.create(actor)
-        if http_timeout_seconds is None:
-            http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
+        if isinstance(http_timeout_seconds, _FromSettings):
+            http_timeout_seconds = int(http_timeout_seconds.resolve())
         if actor_client is None:
             actor_client = DaprActorHttpClient(message_serializer, timeout=http_timeout_seconds)
         ctx = ActorRuntimeContext(

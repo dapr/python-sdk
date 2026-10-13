@@ -18,10 +18,13 @@ import unittest
 from unittest import mock
 
 from dapr.actor.client.proxy import ActorProxyFactory
+from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.grpc_host import ActorGrpcHost
+from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.clients.grpc._channel import resolve_grpc_endpoint
 from dapr.clients.retry import RetryPolicy
 from dapr.conf import Settings, global_settings, settings
+from tests.actor.fake_actor_classes import FakeSimpleActor
 
 
 class SettingsReadEnvAtAccessTests(unittest.TestCase):
@@ -38,8 +41,9 @@ class SettingsReadEnvAtAccessTests(unittest.TestCase):
         )
         for name in names:
             os.environ.pop(name, None)
-            # Other tests assign on the shared instance; drop those so env is visible.
-            settings.__dict__.pop(name, None)
+        # Other tests assign on the shared instance; hide those so env is visible.
+        assigned = {n: settings.__dict__.pop(n) for n in names if n in settings.__dict__}
+        self.addCleanup(settings.__dict__.update, assigned)
 
     def test_env_set_after_import_is_seen(self):
         self.assertIsNone(settings.DAPR_GRPC_ENDPOINT)
@@ -115,6 +119,42 @@ class SettingsReadEnvAtAccessTests(unittest.TestCase):
         self.assertEqual(7, client.call_args.kwargs['timeout'])
         self.assertEqual(7, ActorGrpcHost(app_port=0)._timeout_seconds)
         self.assertEqual(3, ActorGrpcHost(timeout_seconds=3, app_port=0)._timeout_seconds)
+
+    def test_actor_timeout_none_is_passed_through(self):
+        os.environ['DAPR_HTTP_TIMEOUT_SECONDS'] = '7'
+        with mock.patch('dapr.actor.client.proxy.DaprActorHttpClient') as client:
+            ActorProxyFactory(http_timeout_seconds=None)  # type: ignore[arg-type]
+        self.assertIsNone(client.call_args.kwargs['timeout'])
+        host = ActorGrpcHost(timeout_seconds=None, app_port=0)  # type: ignore[arg-type]
+        self.assertIsNone(host._timeout_seconds)
+
+
+class RegisterActorTimeoutTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        env_patcher = mock.patch.dict(os.environ)
+        env_patcher.start()
+        self.addCleanup(env_patcher.stop)
+        managers_patcher = mock.patch.object(ActorRuntime, '_actor_managers', {})
+        managers_patcher.start()
+        self.addCleanup(managers_patcher.stop)
+        config_patcher = mock.patch.object(ActorRuntime, '_actor_config', ActorRuntimeConfig())
+        config_patcher.start()
+        self.addCleanup(config_patcher.stop)
+        assigned = settings.__dict__.pop('DAPR_HTTP_TIMEOUT_SECONDS', None)
+        if assigned is not None:
+            self.addCleanup(setattr, settings, 'DAPR_HTTP_TIMEOUT_SECONDS', assigned)
+
+    async def test_register_actor_default_reads_env_at_call(self):
+        os.environ['DAPR_HTTP_TIMEOUT_SECONDS'] = '7'
+        with mock.patch('dapr.actor.runtime.runtime.DaprActorHttpClient') as client:
+            await ActorRuntime.register_actor(FakeSimpleActor)
+        self.assertEqual(7, client.call_args.kwargs['timeout'])
+
+    async def test_register_actor_explicit_timeout_wins(self):
+        os.environ['DAPR_HTTP_TIMEOUT_SECONDS'] = '7'
+        with mock.patch('dapr.actor.runtime.runtime.DaprActorHttpClient') as client:
+            await ActorRuntime.register_actor(FakeSimpleActor, http_timeout_seconds=3)
+        self.assertEqual(3, client.call_args.kwargs['timeout'])
 
 
 if __name__ == '__main__':

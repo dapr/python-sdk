@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import os
+from typing import Any
 
 from dapr.conf import global_settings
 
@@ -48,3 +49,23 @@ class Settings:
 
 
 settings = Settings()
+
+
+class _FromSettings:
+    """Sentinel default that reads a setting when the call is made, not at import.
+
+    Lets a parameter tell "omitted" apart from an explicit ``None``.
+
+    Args:
+        name: Name of the setting in :mod:`dapr.conf.global_settings`.
+    """
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __repr__(self) -> str:
+        return self.name
+
+    def resolve(self) -> Any:
+        """Returns the current value of the setting."""
+        return getattr(settings, self.name)

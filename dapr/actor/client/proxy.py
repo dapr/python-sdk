@@ -14,15 +14,17 @@ limitations under the License.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, Optional, Type, Union
 
 from dapr.actor.actor_interface import ActorInterface
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_utils import get_dispatchable_attrs_from_interface
 from dapr.clients import DaprActorClientBase, DaprActorHttpClient
 from dapr.clients.retry import RetryPolicy
-from dapr.conf import settings
+from dapr.conf import _FromSettings
 from dapr.serializers import DefaultJSONSerializer, Serializer
+
+_HTTP_TIMEOUT_FROM_SETTINGS = _FromSettings('DAPR_HTTP_TIMEOUT_SECONDS')
 
 # Actor factory Callable type hint.
 ACTOR_FACTORY_CALLBACK = Callable[[ActorInterface, str, str], 'ActorProxy']
@@ -49,11 +51,11 @@ class ActorProxyFactory(ActorFactoryBase):
     def __init__(
         self,
         message_serializer=DefaultJSONSerializer(),
-        http_timeout_seconds: Optional[int] = None,
+        http_timeout_seconds: Union[int, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        if http_timeout_seconds is None:
-            http_timeout_seconds = settings.DAPR_HTTP_TIMEOUT_SECONDS
+        if isinstance(http_timeout_seconds, _FromSettings):
+            http_timeout_seconds = int(http_timeout_seconds.resolve())
         # TODO: support serializer for state store later
         self._dapr_client = DaprActorHttpClient(
             message_serializer, timeout=http_timeout_seconds, retry_policy=retry_policy
