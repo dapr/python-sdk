@@ -34,6 +34,7 @@ permissions: {}
 concurrency:
   group: automerge-queue-${{ github.event.pull_request.number || 'sweep' }}
 
+# Keep in sync with the label name in the job-level `if`, which cannot read env.
 env:
   AUTOMERGE_LABEL: automerge
 
@@ -43,6 +44,7 @@ jobs:
       github.repository_owner == 'dapr' &&
       (github.event_name != 'pull_request_target' ||
         (github.event.label.name == 'automerge' && github.actor != 'dependabot[bot]'))
+    # Runs whose actor is Dependabot get no Actions secrets, so the sweep handles them.
     name: Enable auto-merge for labelled PRs
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -52,17 +54,25 @@ jobs:
           GH_TOKEN: ${{ secrets.DAPR_BOT_TOKEN }}
           GH_REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
-          EVENT_ACTION: ${{ github.event.action }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
 
           if [ "$EVENT_NAME" = "pull_request_target" ]; then
-            if [ "$EVENT_ACTION" = "unlabeled" ]; then
-              gh pr merge "$PR_NUMBER" --disable-auto || echo "Auto-merge was not enabled on #$PR_NUMBER"
-              exit 0
+            # Act on the live PR state rather than the event, so runs that land out of order converge.
+            pr_state=$(gh pr view "$PR_NUMBER" --json labels,isDraft,autoMergeRequest)
+            pr_fields=$(jq -r --arg label "$AUTOMERGE_LABEL" \
+              '[any(.labels[]; .name == $label), .isDraft, (.autoMergeRequest != null)] | @tsv' \
+              <<< "$pr_state")
+            read -r labelled draft enabled <<< "$pr_fields"
+
+            if [ "$labelled" = "false" ] && [ "$enabled" = "true" ]; then
+              gh pr merge "$PR_NUMBER" --disable-auto
+            elif [ "$labelled" = "true" ] && [ "$draft" = "false" ] && [ "$enabled" = "false" ]; then
+              gh pr merge "$PR_NUMBER" --auto --squash
+            else
+              echo "Nothing to do for #$PR_NUMBER (labelled=$labelled draft=$draft auto-merge=$enabled)"
             fi
-            gh pr merge "$PR_NUMBER" --auto --squash
             exit 0
           fi
 
