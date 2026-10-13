@@ -71,7 +71,8 @@ class ConcurrencyOptions:
     """Concurrency limits for the worker.
 
     ``maximum_thread_pool_workers`` sizes the pool used to run sync activities and to
-    deliver async-activity responses to the sidecar.
+    deliver async-activity responses to the sidecar. Orchestrator work items run on a
+    second pool of the same size.
     """
 
     def __init__(
@@ -87,9 +88,10 @@ class ConcurrencyOptions:
                 Defaults to ``100 * cpu_count``.
             maximum_concurrent_orchestration_work_items: Cap on concurrent orchestration work
                 items. Defaults to ``100 * cpu_count``.
-            maximum_thread_pool_workers: Size of the worker thread pool. Sync activities run
-                on this pool, and async-activity gRPC response sends also borrow a thread
-                from it. Defaults to ``cpu_count + 4``.
+            maximum_thread_pool_workers: Size of each of the worker's two thread pools. Sync
+                activities and async-activity gRPC response sends share one; orchestrator
+                work items run on the other, so a worker can start up to twice this many
+                threads. Defaults to ``cpu_count + 4``.
         """
         processor_count = os.cpu_count() or 1
         default_concurrency = 100 * processor_count
@@ -2518,6 +2520,10 @@ def _is_suspendable(event: pb.HistoryEvent) -> bool:
     ]
 
 
+# A queued work item: the callable and the arguments it is called with.
+_WorkItem = tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]
+
+
 class _AsyncWorkerManager:
     def __init__(self, concurrency_options: ConcurrencyOptions, logger: logging.Logger):
         self.concurrency_options = concurrency_options
@@ -2533,6 +2539,13 @@ class _AsyncWorkerManager:
         self.thread_pool = ThreadPoolExecutor(
             max_workers=concurrency_options.maximum_thread_pool_workers,
             thread_name_prefix='DurableTask',
+        )
+        # Orchestrations get their own pool: an activity that schedules a workflow
+        # blocks until that workflow's first orchestration work item has run here,
+        # so sharing the activity pool deadlocks once activities hold every thread.
+        self.orchestration_thread_pool = ThreadPoolExecutor(
+            max_workers=concurrency_options.maximum_thread_pool_workers,
+            thread_name_prefix='DurableTask-Orchestration',
         )
         self._shutdown = False
         self._logger = logger
@@ -2614,11 +2627,20 @@ class _AsyncWorkerManager:
         # Start background consumers for each work type
         if self.activity_queue is not None and self.orchestration_queue is not None:
             await asyncio.gather(
-                self._consume_queue(self.activity_queue, self.activity_semaphore),
-                self._consume_queue(self.orchestration_queue, self.orchestration_semaphore),
+                self._consume_queue(self.activity_queue, self.activity_semaphore, self.thread_pool),
+                self._consume_queue(
+                    self.orchestration_queue,
+                    self.orchestration_semaphore,
+                    self.orchestration_thread_pool,
+                ),
             )
 
-    async def _consume_queue(self, queue: asyncio.Queue, semaphore: asyncio.Semaphore):
+    async def _consume_queue(
+        self,
+        queue: asyncio.Queue[_WorkItem],
+        semaphore: asyncio.Semaphore,
+        executor: ThreadPoolExecutor,
+    ) -> None:
         # List to track running tasks
         running_tasks: set[asyncio.Task] = set()
 
@@ -2646,7 +2668,7 @@ class _AsyncWorkerManager:
                 func, args, kwargs = work
                 # Create a concurrent task for processing
                 task = asyncio.create_task(
-                    self._process_work_item(semaphore, queue, func, args, kwargs)
+                    self._process_work_item(semaphore, queue, executor, func, args, kwargs)
                 )
                 running_tasks.add(task)
         # handle the cancellation bubbled up from the loop
@@ -2661,31 +2683,38 @@ class _AsyncWorkerManager:
             raise
 
     async def _process_work_item(
-        self, semaphore: asyncio.Semaphore, queue: asyncio.Queue, func, args, kwargs
-    ):
+        self,
+        semaphore: asyncio.Semaphore,
+        queue: asyncio.Queue[_WorkItem],
+        executor: ThreadPoolExecutor,
+        func: Callable[..., Any],
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> None:
         async with semaphore:
             try:
-                await self._run_func(func, *args, **kwargs)
+                await self._run_func_on(executor, func, *args, **kwargs)
             finally:
                 queue.task_done()
 
-    async def _run_func(self, func, *args, **kwargs):
+    async def _run_func(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        return await self._run_func_on(self.thread_pool, func, *args, **kwargs)
+
+    async def _run_func_on(
+        self, executor: ThreadPoolExecutor, func: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> Any:
         if is_async_callable(func):
             return await func(*args, **kwargs)
         else:
             loop = asyncio.get_running_loop()
             # Avoid submitting to executor after shutdown
-            if (
-                getattr(self, '_shutdown', False)
-                and getattr(self, 'thread_pool', None)
-                and getattr(self.thread_pool, '_shutdown', False)
-            ):
+            if getattr(self, '_shutdown', False) and getattr(executor, '_shutdown', False):
                 return None
-            result = await loop.run_in_executor(self.thread_pool, lambda: func(*args, **kwargs))
+            result = await loop.run_in_executor(executor, lambda: func(*args, **kwargs))
             return result
 
-    def submit_activity(self, func, *args, **kwargs):
-        work_item = (func, args, kwargs)
+    def submit_activity(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        work_item: _WorkItem = (func, args, kwargs)
         self._ensure_queues_for_current_loop()
         if self.activity_queue is not None:
             self.activity_queue.put_nowait(work_item)
@@ -2693,8 +2722,8 @@ class _AsyncWorkerManager:
             # No event loop running, store in pending list
             self._pending_activity_work.append(work_item)
 
-    def submit_orchestration(self, func, *args, **kwargs):
-        work_item = (func, args, kwargs)
+    def submit_orchestration(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        work_item: _WorkItem = (func, args, kwargs)
         self._ensure_queues_for_current_loop()
         if self.orchestration_queue is not None:
             self.orchestration_queue.put_nowait(work_item)
@@ -2709,6 +2738,7 @@ class _AsyncWorkerManager:
         # ThreadPoolExecutor.shutdown(wait=True) doesn't support a timeout, but with proper
         # cancellation in place, threads should exit promptly, otherwise this will hang and block shutdown for the application.
         self.thread_pool.shutdown(wait=True)
+        self.orchestration_thread_pool.shutdown(wait=True)
 
     def reset_for_new_run(self):
         """Reset the manager state for a new run."""
