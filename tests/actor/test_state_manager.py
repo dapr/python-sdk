@@ -21,7 +21,7 @@ from dapr.actor.id import ActorId
 from dapr.actor.runtime._type_information import ActorTypeInformation
 from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.state_change import StateChangeKind
-from dapr.actor.runtime.state_manager import ActorStateManager
+from dapr.actor.runtime.state_manager import ActorStateManager, StateMetadata
 from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import FakeSimpleActor
 from tests.actor.fake_client import FakeDaprActorClient
@@ -405,6 +405,20 @@ class ActorStateManagerTests(unittest.TestCase):
         self._fake_client.get_state.mock.assert_any_call(
             self._test_type_info._name, self._test_actor_id.id, 'state3'
         )
+
+    def test_get_state_names_excludes_only_removed(self):
+        """States that still exist (add/update/none) must be listed; only a
+        state pending removal should be excluded."""
+        state_manager = ActorStateManager(self._fake_actor)
+        state_change_tracker = state_manager._get_contextual_state_tracker()
+        state_change_tracker['added'] = StateMetadata('v', StateChangeKind.add)
+        state_change_tracker['updated'] = StateMetadata('v', StateChangeKind.update)
+        state_change_tracker['unchanged'] = StateMetadata('v', StateChangeKind.none)
+        state_change_tracker['removed'] = StateMetadata('v', StateChangeKind.remove)
+
+        names = _run(state_manager.get_state_names())
+
+        self.assertCountEqual(names, ['added', 'updated', 'unchanged'])
 
     @mock.patch(
         'tests.actor.fake_client.FakeDaprActorClient.get_state',

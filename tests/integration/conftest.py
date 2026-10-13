@@ -109,9 +109,12 @@ class DaprTestEnvironment:
         self.clients.append(client)
 
         # /healthz/outbound (polled by DaprClient) only checks sidecar-side
-        # readiness. When we launched an app alongside the sidecar, also wait
-        # for /v1.0/healthz so invoke_method et al. don't race the app's server.
-        if app_cmd is not None:
+        # readiness. When the app serves an app channel, also wait for
+        # /v1.0/healthz so invoke_method et al. don't race the app's server.
+        # Keyed on app_port rather than app_cmd because some apps (workflow
+        # workers) dial out to the sidecar instead of listening, so they have
+        # no app channel for /v1.0/healthz to probe.
+        if app_port is not None:
             _wait_for_app_health(http_port)
 
         return client

@@ -209,7 +209,7 @@ class ActorProxy:
 
         attr_call_type = self._dispatchable_attr.get(name)
         if attr_call_type is None:
-            raise AttributeError(f'{self._actor_interface.__class__} has no attribute {name}')
+            raise AttributeError(f'{self._actor_interface.__name__} has no attribute {name}')
 
         if name not in self._callable_proxies:
             self._callable_proxies[name] = CallableProxy(
