@@ -1,9 +1,33 @@
 import unittest
+import warnings
 
 from dapr.conf.helpers import GrpcEndpoint
 
 
 class DaprClientHelpersTests(unittest.TestCase):
+    def test_http_scheme_deprecation_keeps_endpoint_and_points_to_caller(self):
+        for scheme, port, secure in [('http', 80, False), ('https', 443, True)]:
+            with self.subTest(scheme=scheme):
+                with self.assertWarns(DeprecationWarning) as warning:
+                    endpoint = GrpcEndpoint(f'{scheme}://host:{port}')
+                self.assertIn('helpers_test.py', warning.filename)
+                self.assertIn(f'host:{port}?tls={str(secure).lower()}', str(warning.warning))
+                self.assertEqual(endpoint.hostname, 'host')
+                self.assertEqual(endpoint.port_as_int, port)
+                self.assertEqual(endpoint.tls, secure)
+                self.assertEqual(endpoint.endpoint, f'dns:host:{port}')
+
+        with self.assertRaises(ValueError):
+            GrpcEndpoint('https://host:443?tls=false')
+
+    def test_http_scheme_emits_only_a_deprecation_warning(self):
+        for scheme, port in [('http', 80), ('https', 443)]:
+            with self.subTest(scheme=scheme):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter('always')
+                    GrpcEndpoint(f'{scheme}://host:{port}')
+                self.assertEqual([warning.category for warning in caught], [DeprecationWarning])
+
     def test_parse_grpc_endpoint(self):
         testcases = [
             # Port only
