@@ -17,6 +17,8 @@ from google.protobuf.wrappers_pb2 import (
 from dapr.clients.grpc._helpers import (
     convert_dict_to_grpc_dict_of_any,
     convert_value_to_struct,
+    to_bytes,
+    to_str,
 )
 
 
@@ -183,6 +185,28 @@ class TestConvertDictToGrpcDictOfAny(unittest.TestCase):
     def test_unsupported_type_raises_value_error(self):
         with self.assertRaises(ValueError):
             convert_dict_to_grpc_dict_of_any({'bad': [1, 2, 3]})
+
+
+class TestToBytesToStr(unittest.TestCase):
+    def test_to_bytes_passthrough(self):
+        self.assertEqual(to_bytes(b'abc'), b'abc')
+
+    def test_to_bytes_encodes_str(self):
+        self.assertEqual(to_bytes('abc'), b'abc')
+
+    def test_to_bytes_rejects_other_types(self):
+        with self.assertRaisesRegex(TypeError, 'invalid data type'):
+            to_bytes(123)  # type: ignore[arg-type]
+
+    def test_to_str_passthrough(self):
+        self.assertEqual(to_str('abc'), 'abc')
+
+    def test_to_str_decodes_bytes(self):
+        self.assertEqual(to_str(b'abc'), 'abc')
+
+    def test_to_str_rejects_other_types(self):
+        with self.assertRaisesRegex(TypeError, 'invalid data type'):
+            to_str(123)  # type: ignore[arg-type]
 
 
 if __name__ == '__main__':
