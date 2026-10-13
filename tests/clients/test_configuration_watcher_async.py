@@ -610,5 +610,52 @@ class AsyncConfigurationWatcherReconnectTests(unittest.IsolatedAsyncioTestCase):
         )
 
 
+class SilentSubscribeCall:
+    """A SubscribeConfigurationAlpha1 call that never sends a message until cancelled."""
+
+    def __init__(self) -> None:
+        self.cancelled = asyncio.Event()
+
+    def cancel(self) -> bool:
+        self.cancelled.set()
+        return True
+
+    def __aiter__(self) -> 'SilentSubscribeCall':
+        return self
+
+    async def __anext__(self) -> None:
+        await self.cancelled.wait()
+        raise StopAsyncIteration
+
+
+class SilentSubscribeStub:
+    def __init__(self) -> None:
+        self.calls: List[SilentSubscribeCall] = []
+
+    def SubscribeConfigurationAlpha1(self, request: object) -> SilentSubscribeCall:
+        call = SilentSubscribeCall()
+        self.calls.append(call)
+        return call
+
+
+class AsyncConfigurationWatcherCancellationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_cancelled_watch_configuration_stops_the_watcher_task(self):
+        stub = SilentSubscribeStub()
+        exited: List[AsyncConfigurationWatcher] = []
+        watcher = AsyncConfigurationWatcher(on_exit=exited.append)
+        watch = watcher.watch_configuration(stub, STORE, ['k'], lambda *_: None)
+
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(watch, timeout=0.2)
+
+        task = watcher._task
+        assert task is not None
+        self.assertTrue(task.done())
+        self.assertTrue(watcher.stopped)
+        self.assertEqual(exited, [watcher])
+        self.assertEqual(len(stub.calls), 1)
+        self.assertTrue(stub.calls[0].cancelled.is_set())
+
+
 if __name__ == '__main__':
     unittest.main()

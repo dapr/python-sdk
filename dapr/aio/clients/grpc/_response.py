@@ -198,6 +198,10 @@ class AsyncConfigurationWatcher:
                 self.keys,
                 self.store_name,
             )
+        except asyncio.CancelledError:
+            # The caller never gets the id, so nothing could unsubscribe or close this watcher.
+            await self.stop()
+            raise
         if not self.subscription_id:
             await self.stop()
             return None
