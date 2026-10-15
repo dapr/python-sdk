@@ -57,6 +57,16 @@ class UtilTests(unittest.TestCase):
             "Invalid Dapr Duration format: '{}'".format('invalid'),
         )
 
+    def test_convert_empty_duration_raises(self):
+        # An empty string matches the regex trivially (every group is optional), so
+        # matched.lastindex stays None instead of becoming a real group index.
+        with self.assertRaises(ValueError) as exeception_context:
+            convert_from_dapr_duration('')
+        self.assertEqual(
+            exeception_context.exception.args[0],
+            "Invalid Dapr Duration format: ''",
+        )
+
     def test_convert_timedelta_to_dapr_duration(self):
         duration = convert_to_dapr_duration(
             timedelta(hours=4, minutes=15, seconds=40, milliseconds=123, microseconds=35)
