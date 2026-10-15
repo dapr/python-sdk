@@ -32,7 +32,7 @@ class DaprActorHttpClient(DaprActorClientBase):
     def __init__(
         self,
         message_serializer: 'Serializer',
-        timeout: int = 60,
+        timeout: Optional[int] = 60,
         headers_callback: Optional[Callable[[], Dict[str, str]]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
