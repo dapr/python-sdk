@@ -22,5 +22,7 @@ on:
 jobs:
   backport:
     uses: dapr/.github/.github/workflows/backport.yaml@main
+    with:
+      labels-template: '["automerge", "autoupdate"]'
     secrets:
       dapr_bot_token: ${{ secrets.DAPR_BOT_TOKEN }}
