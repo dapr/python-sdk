@@ -572,6 +572,212 @@ class ActorReminder(_message.Message):
 Global___ActorReminder: _TypeAlias = ActorReminder  # noqa: Y015
 
 @_typing.final
+class GetActorTimerRequest(_message.Message):
+    """GetActorTimerRequest is the message to get an already-registered actor
+    timer. Timers are host-local: the request must target the sidecar that
+    currently hosts the actor, otherwise it fails with PermissionDenied.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    name: _builtins.str
+    def __init__(
+        self,
+        *,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        name: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "name", b"name"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___GetActorTimerRequest: _TypeAlias = GetActorTimerRequest  # noqa: Y015
+
+@_typing.final
+class GetActorTimerResponse(_message.Message):
+    """GetActorTimerResponse is the response conveying an actor's timer."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    PERIOD_FIELD_NUMBER: _builtins.int
+    TTL_FIELD_NUMBER: _builtins.int
+    CALLBACK_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    due_time: _builtins.str
+    period: _builtins.str
+    ttl: _builtins.str
+    callback: _builtins.str
+    @_builtins.property
+    def data(self) -> _any_pb2.Any: ...
+    def __init__(
+        self,
+        *,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        due_time: _builtins.str | None = ...,
+        period: _builtins.str | None = ...,
+        ttl: _builtins.str | None = ...,
+        callback: _builtins.str | None = ...,
+        data: _any_pb2.Any | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_callback", b"_callback", "_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "callback", b"callback", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_callback", b"_callback", "_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__callback: _TypeAlias = _typing.Literal["callback"]  # noqa: Y015
+    _WhichOneofArgType__callback: _TypeAlias = _typing.Literal["_callback", b"_callback"]  # noqa: Y015
+    _WhichOneofReturnType__due_time: _TypeAlias = _typing.Literal["due_time"]  # noqa: Y015
+    _WhichOneofArgType__due_time: _TypeAlias = _typing.Literal["_due_time", b"_due_time"]  # noqa: Y015
+    _WhichOneofReturnType__period: _TypeAlias = _typing.Literal["period"]  # noqa: Y015
+    _WhichOneofArgType__period: _TypeAlias = _typing.Literal["_period", b"_period"]  # noqa: Y015
+    _WhichOneofReturnType__ttl: _TypeAlias = _typing.Literal["ttl"]  # noqa: Y015
+    _WhichOneofArgType__ttl: _TypeAlias = _typing.Literal["_ttl", b"_ttl"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__callback) -> _WhichOneofReturnType__callback | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__due_time) -> _WhichOneofReturnType__due_time | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__period) -> _WhichOneofReturnType__period | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__ttl) -> _WhichOneofReturnType__ttl | None: ...
+
+Global___GetActorTimerResponse: _TypeAlias = GetActorTimerResponse  # noqa: Y015
+
+@_typing.final
+class ListActorTimersRequest(_message.Message):
+    """ListActorTimersRequest is the message to list the timers registered for an
+    actor. Timers are host-local: the request must target the sidecar that
+    currently hosts the actor, otherwise it fails with PermissionDenied.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    def __init__(
+        self,
+        *,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___ListActorTimersRequest: _TypeAlias = ListActorTimersRequest  # noqa: Y015
+
+@_typing.final
+class ListActorTimersResponse(_message.Message):
+    """ListActorTimersResponse is the response conveying the timers registered
+    for an actor.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TIMERS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def timers(self) -> _containers.RepeatedCompositeFieldContainer[Global___NamedActorTimer]: ...
+    def __init__(
+        self,
+        *,
+        timers: _abc.Iterable[Global___NamedActorTimer] | None = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["timers", b"timers"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___ListActorTimersResponse: _TypeAlias = ListActorTimersResponse  # noqa: Y015
+
+@_typing.final
+class NamedActorTimer(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    NAME_FIELD_NUMBER: _builtins.int
+    TIMER_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    @_builtins.property
+    def timer(self) -> Global___ActorTimer: ...
+    def __init__(
+        self,
+        *,
+        name: _builtins.str = ...,
+        timer: Global___ActorTimer | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["timer", b"timer"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "timer", b"timer"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___NamedActorTimer: _TypeAlias = NamedActorTimer  # noqa: Y015
+
+@_typing.final
+class ActorTimer(_message.Message):
+    """ActorTimer describes a timer registered on this host. Timers whose TTL had
+    already elapsed at registration are never stored and are not listed.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ACTOR_TYPE_FIELD_NUMBER: _builtins.int
+    ACTOR_ID_FIELD_NUMBER: _builtins.int
+    DUE_TIME_FIELD_NUMBER: _builtins.int
+    PERIOD_FIELD_NUMBER: _builtins.int
+    TTL_FIELD_NUMBER: _builtins.int
+    CALLBACK_FIELD_NUMBER: _builtins.int
+    DATA_FIELD_NUMBER: _builtins.int
+    actor_type: _builtins.str
+    actor_id: _builtins.str
+    due_time: _builtins.str
+    period: _builtins.str
+    ttl: _builtins.str
+    callback: _builtins.str
+    @_builtins.property
+    def data(self) -> _any_pb2.Any: ...
+    def __init__(
+        self,
+        *,
+        actor_type: _builtins.str = ...,
+        actor_id: _builtins.str = ...,
+        due_time: _builtins.str | None = ...,
+        period: _builtins.str | None = ...,
+        ttl: _builtins.str | None = ...,
+        callback: _builtins.str | None = ...,
+        data: _any_pb2.Any | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_callback", b"_callback", "_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "callback", b"callback", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_callback", b"_callback", "_due_time", b"_due_time", "_period", b"_period", "_ttl", b"_ttl", "actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "period", b"period", "ttl", b"ttl"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__callback: _TypeAlias = _typing.Literal["callback"]  # noqa: Y015
+    _WhichOneofArgType__callback: _TypeAlias = _typing.Literal["_callback", b"_callback"]  # noqa: Y015
+    _WhichOneofReturnType__due_time: _TypeAlias = _typing.Literal["due_time"]  # noqa: Y015
+    _WhichOneofArgType__due_time: _TypeAlias = _typing.Literal["_due_time", b"_due_time"]  # noqa: Y015
+    _WhichOneofReturnType__period: _TypeAlias = _typing.Literal["period"]  # noqa: Y015
+    _WhichOneofArgType__period: _TypeAlias = _typing.Literal["_period", b"_period"]  # noqa: Y015
+    _WhichOneofReturnType__ttl: _TypeAlias = _typing.Literal["ttl"]  # noqa: Y015
+    _WhichOneofArgType__ttl: _TypeAlias = _typing.Literal["_ttl", b"_ttl"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__callback) -> _WhichOneofReturnType__callback | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__due_time) -> _WhichOneofReturnType__due_time | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__period) -> _WhichOneofReturnType__period | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__ttl) -> _WhichOneofReturnType__ttl | None: ...
+
+Global___ActorTimer: _TypeAlias = ActorTimer  # noqa: Y015
+
+@_typing.final
 class UnregisterActorRemindersByTypeRequest(_message.Message):
     """UnregisterActorRemindersByTypeRequest is the message to unregister an actor
     reminders by the given type. Optional actor_id can be provided to limit the
@@ -1009,6 +1215,23 @@ class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
 
     DESCRIPTOR: _descriptor.Descriptor
 
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
+        def __init__(
+            self,
+            *,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
+        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
     ID_FIELD_NUMBER: _builtins.int
     ACTOR_TYPE_FIELD_NUMBER: _builtins.int
     ACTOR_ID_FIELD_NUMBER: _builtins.int
@@ -1016,6 +1239,7 @@ class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
     DUE_TIME_FIELD_NUMBER: _builtins.int
     PERIOD_FIELD_NUMBER: _builtins.int
     DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     actor_type: _builtins.str
     actor_id: _builtins.str
@@ -1024,6 +1248,13 @@ class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
     period: _builtins.str
     @_builtins.property
     def data(self) -> _any_pb2.Any: ...
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
+        """metadata carries request-level headers, including "Dapr-Reentrancy-Id"
+        when reentrancy is enabled for the actor type, so a callback can make
+        reentrant calls the same way a method invocation can.
+        """
+
     def __init__(
         self,
         *,
@@ -1034,10 +1265,11 @@ class SubscribeActorEventsResponseReminderRequestAlpha1(_message.Message):
         due_time: _builtins.str = ...,
         period: _builtins.str = ...,
         data: _any_pb2.Any | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "id", b"id", "name", b"name", "period", b"period"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "data", b"data", "due_time", b"due_time", "id", b"id", "metadata", b"metadata", "name", b"name", "period", b"period"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___SubscribeActorEventsResponseReminderRequestAlpha1: _TypeAlias = SubscribeActorEventsResponseReminderRequestAlpha1  # noqa: Y015
@@ -1050,6 +1282,23 @@ class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
 
     DESCRIPTOR: _descriptor.Descriptor
 
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
+        def __init__(
+            self,
+            *,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
+        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
     ID_FIELD_NUMBER: _builtins.int
     ACTOR_TYPE_FIELD_NUMBER: _builtins.int
     ACTOR_ID_FIELD_NUMBER: _builtins.int
@@ -1058,6 +1307,7 @@ class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
     PERIOD_FIELD_NUMBER: _builtins.int
     CALLBACK_FIELD_NUMBER: _builtins.int
     DATA_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     actor_type: _builtins.str
     actor_id: _builtins.str
@@ -1067,6 +1317,12 @@ class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
     callback: _builtins.str
     @_builtins.property
     def data(self) -> _any_pb2.Any: ...
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
+        """metadata carries request-level headers, including "Dapr-Reentrancy-Id"
+        when reentrancy is enabled for the actor type.
+        """
+
     def __init__(
         self,
         *,
@@ -1078,10 +1334,11 @@ class SubscribeActorEventsResponseTimerRequestAlpha1(_message.Message):
         period: _builtins.str = ...,
         callback: _builtins.str = ...,
         data: _any_pb2.Any | None = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "id", b"id", "name", b"name", "period", b"period"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["actor_id", b"actor_id", "actor_type", b"actor_type", "callback", b"callback", "data", b"data", "due_time", b"due_time", "id", b"id", "metadata", b"metadata", "name", b"name", "period", b"period"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___SubscribeActorEventsResponseTimerRequestAlpha1: _TypeAlias = SubscribeActorEventsResponseTimerRequestAlpha1  # noqa: Y015
