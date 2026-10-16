@@ -26,6 +26,7 @@ This includes the following packages:
 
 And the following extensions, installed as extras on the core `dapr` package:
 
+* [dapr.ext.databricks](./dapr/ext/databricks): Databricks Lakeflow streaming sink for Dapr Workflow — `pip install "dapr[databricks]"`
 * [dapr.ext.fastapi](./dapr/ext/fastapi): FastAPI integration (actors, pub/sub) — `pip install "dapr[fastapi]"`
 * [dapr.ext.flask](./dapr/ext/flask): Flask integration (actors, pub/sub) — `pip install "dapr[flask]"`
 * [dapr.ext.grpc](./dapr/ext/grpc): gRPC AppCallback server — `pip install "dapr[grpc]"`
@@ -116,6 +117,15 @@ cd python-sdk
 uv sync --all-packages --group dev
 ```
 
+To run `tests/examples/` or `tests/integration/` (steps 7 and 8), sync the `tests` group
+instead. It includes everything in `dev` plus the dependencies those suites need — notably
+`langchain-ollama`, which `examples/langgraph-checkpointer` imports. This is what CI installs
+for both of those jobs:
+
+```bash
+uv sync --all-packages --group tests
+```
+
 4. Run linter and autofix
 
 ```bash
@@ -136,13 +146,13 @@ uv run pytest -m "not e2e" ./tests --ignore=tests/integration --ignore=tests/exa
 uv run mypy
 ```
 
-7. Run integration tests
+7. Run integration tests (requires a Dapr runtime and the `tests` group)
 
 ```bash
 uv run pytest tests/integration/
 ```
 
-8. Validate the examples
+8. Validate the examples (requires a Dapr runtime and the `tests` group)
 
 ```bash
 uv run pytest tests/examples/

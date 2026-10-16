@@ -14,6 +14,7 @@ dapr/ext/workflow/
 ├── workflow_context.py                # WorkflowContext ABC
 ├── workflow_activity_context.py       # WorkflowActivityContext wrapper
 ├── workflow_state.py                  # WorkflowState, WorkflowStatus enum
+├── workflow_management.py             # WorkflowHistoryEvent(Type), WorkflowInstanceIdPage
 ├── retry_policy.py                    # RetryPolicy wrapper
 ├── util.py                            # gRPC address resolution
 ├── logger/options.py                  # LoggerOptions
@@ -24,6 +25,7 @@ tests/ext/workflow/
 ├── test_dapr_workflow_context.py      # Context method proxying
 ├── test_workflow_activity_context.py  # Activity context properties
 ├── test_workflow_client.py            # Sync client (mock gRPC)
+├── test_workflow_management.py        # list/history/rerun on both clients
 ├── test_workflow_client_aio.py        # Async client (IsolatedAsyncioTestCase)
 ├── test_workflow_runtime.py           # Registration, decorators, worker readiness
 ├── test_workflow_util.py              # Address resolution
@@ -76,16 +78,21 @@ All public symbols are exported from `dapr.ext.workflow`:
 
 ```python
 from dapr.ext.workflow import (
-    WorkflowRuntime,          # Registration & lifecycle (start/shutdown)
-    DaprWorkflowClient,       # Sync client for scheduling/managing workflows
-    DaprWorkflowContext,      # Passed to workflow functions as first arg
+    WorkflowRuntime,  # Registration & lifecycle (start/shutdown)
+    DaprWorkflowClient,  # Sync client for scheduling/managing workflows
+    DaprWorkflowContext,  # Passed to workflow functions as first arg
     WorkflowActivityContext,  # Passed to activity functions as first arg
-    WorkflowState,            # Snapshot of a workflow instance's state
-    WorkflowStatus,           # Enum: UNKNOWN, RUNNING, COMPLETED, FAILED, TERMINATED, PENDING, SUSPENDED, STALLED
-    when_all,                 # Parallel combinator — wait for all tasks
-    when_any,                 # Race combinator — wait for first task
-    alternate_name,           # Decorator to set a custom registration name
-    RetryPolicy,              # Retry config for activities/child workflows
+    WorkflowState,  # Snapshot of a workflow instance's state
+    WorkflowStatus,  # Enum: UNKNOWN, RUNNING, COMPLETED, FAILED, TERMINATED, PENDING, SUSPENDED, STALLED
+    when_all,  # Parallel combinator — wait for all tasks
+    when_any,  # Race combinator — wait for first task
+    alternate_name,  # Decorator to set a custom registration name
+    RetryPolicy,  # Retry config for activities/child workflows
+    WorkflowHistoryEvent,  # One event from an instance's execution history
+    WorkflowHistoryEventType,  # Enum of history event kinds; unknown ones map to UNKNOWN
+    WorkflowInstanceIdPage,  # One page of instance IDs plus the continuation token
+    FailureDetails,  # Error carried by WorkflowHistoryEvent / TaskFailedError
+    UNSET,  # Sentinel default for rerun_workflow_from_event's input
 )
 
 # Async client:
@@ -120,7 +127,7 @@ Workflow (orchestrator) functions must remain generators (`def` with `yield`). T
 
 **Decorator ordering gotcha.** Wrapping `@wfr.activity` over `@alternate_name(...)` over `async def` works because `@alternate_name` now emits an `async def innerfn` when the wrapped function is async. A user-written decorator that wraps an async function in a sync `def` (without `@functools.wraps` exposing `__wrapped__`) defeats `_is_async_callable`, routes the activity to the sync path, and produces an un-awaited coroutine. Such decorators should use `@functools.wraps(fn)` so the unwrap walks through them.
 
-**`maximum_thread_pool_workers` covers both paths.** This knob sizes the worker thread pool used for sync-activity bodies and for async-activity gRPC response sends. Mixed workloads with long-running sync activities can starve async response delivery (and vice versa) since they share the pool — size to the sum of peak sync activity concurrency and peak in-flight async response sends.
+**`maximum_thread_pool_workers` covers both paths.** This knob sizes the worker thread pool used for sync-activity bodies and for async-activity gRPC response sends. Mixed workloads with long-running sync activities can starve async response delivery (and vice versa) since they share the pool — size to the sum of peak sync activity concurrency and peak in-flight async response sends. Orchestrator work items run on a separate pool of the same size, so activities that block (for example one that schedules a workflow and waits for it to start, which needs that workflow's first orchestrator work item to run on this worker) cannot starve them.
 
 **Concurrency sizing and load characterization.** See `docs/concurrency.md` for sizing recommendations (`maximum_concurrent_activity_work_items`, `maximum_thread_pool_workers`) and an async-vs-sync decision tree. `tests/ext/workflow/durabletask/test_async_dispatch_regression.py` (marked `perf`) guards the core invariant: a batch of async activities overlaps on the event loop instead of serializing through the thread pool.
 
@@ -139,9 +146,13 @@ Client for workflow lifecycle management:
 - `terminate_workflow(instance_id, *, output, recursive)`
 - `pause_workflow(instance_id)` / `resume_workflow(instance_id)`
 - `purge_workflow(instance_id, *, recursive)`
+- `list_workflow_instance_ids(*, page_size, continuation_token)` → `WorkflowInstanceIdPage`. No `app_id`: `ListInstanceIDsRequest` and `GetInstanceHistoryRequest` carry no `router`, and the runtime scopes both to the calling app. Only rerun can be routed cross-app.
+- `iter_workflow_instance_ids(*, page_size=1024)` → iterator over instance IDs, paging internally (`async for` on the async client)
+- `get_workflow_history(instance_id)` → `list[WorkflowHistoryEvent]`
+- `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id, app_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is an `input` + `overwriteInput` pair on the wire, which the engine layer takes as-is; the public method collapses it into one argument via the exported `UNSET` sentinel.
 - `close()` — close gRPC connection
 
-Converts gRPC "no such instance exists" errors to `None` returns. The async variant in `aio/` has the same API with `async` methods.
+`get_workflow_state` converts gRPC "no such instance exists" errors to a `None` return. The other methods let the error propagate, including `get_workflow_history`, which raises NOT_FOUND for a missing or purged instance. The async variant in `aio/` has the same API with `async` methods.
 
 ### DaprWorkflowContext (`dapr_workflow_context.py`)
 

@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
 import socket
 import threading
 import time
-import uuid
 from typing import Any, Callable, Dict, List, Optional, Sequence, Text, Union
 from urllib.parse import urlencode
 from warnings import warn
@@ -52,10 +52,12 @@ from dapr.clients.grpc._helpers import (
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._request import (
     BindingRequest,
+    BulkPublishEntry,
     DecryptRequestIterator,
     EncryptRequestIterator,
     InvokeMethodRequest,
     TransactionalStateOperation,
+    to_bulk_publish_entries,
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
@@ -92,6 +94,10 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.version import __version__
+
+logger = logging.getLogger(__name__)
+
+SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
 
 
 class DaprGrpcClient:
@@ -496,14 +502,18 @@ class DaprGrpcClient:
         self,
         pubsub_name: str,
         topic_name: str,
-        data: Sequence[Union[bytes, str]],
+        data: Sequence[Union[bytes, str, BulkPublishEntry]],
         publish_metadata: Dict[str, str] = {},
         data_content_type: Optional[str] = None,
     ) -> BulkPublishResponse:
         """Bulk publish multiple events to a given topic.
         This publishes multiple events to a specified topic and pubsub component.
-        Each event can be bytes or str. The str data is encoded into bytes with
-        default charset of utf-8.
+        Each event can be bytes, str, or a :class:`BulkPublishEntry`. The str data is
+        encoded into bytes with default charset of utf-8. Use :class:`BulkPublishEntry`
+        to set metadata, a content type, or an entry ID on a single event.
+
+        ``publish_metadata`` is sent with the request and also copied onto every entry, so
+        keys such as ``ttlInSeconds`` apply to each event. Entry metadata overrides it.
 
         The example publishes multiple string events to a topic:
 
@@ -517,37 +527,34 @@ class DaprGrpcClient:
                 )
                 # resp.failed_entries includes any entries that failed to publish.
 
+        The example sets a partition key on each event:
+
+            from dapr.clients import BulkPublishEntry, DaprClient
+            with DaprClient() as d:
+                resp = d.publish_events(
+                    pubsub_name='pubsub_1',
+                    topic_name='TOPIC_A',
+                    data=[
+                        BulkPublishEntry(event='{"n": 1}', metadata={'partitionKey': 'a'}),
+                        BulkPublishEntry(event='{"n": 2}', metadata={'partitionKey': 'b'}),
+                    ],
+                    data_content_type='application/json',
+                )
+
         Args:
             pubsub_name (str): the name of the pubsub component
             topic_name (str): the topic name to publish to
-            data (Sequence[Union[bytes, str]]): sequence of events to publish;
-                each event must be bytes or str
+            data (Sequence[Union[bytes, str, BulkPublishEntry]]): sequence of events to
+                publish; each event must be bytes, str, or BulkPublishEntry
             publish_metadata (Dict[str, str], optional): Dapr metadata for the
-                bulk publish request
-            data_content_type (str, optional): content type of the event data
+                bulk publish request, applied to every entry
+            data_content_type (str, optional): content type of the event data, used for
+                entries that set no content type of their own
 
         Returns:
             :class:`BulkPublishResponse` with any failed entries
         """
-        entries = []
-        for event in data:
-            entry_id = str(uuid.uuid4())
-            if isinstance(event, bytes):
-                event_data = event
-                content_type = data_content_type or 'application/octet-stream'
-            elif isinstance(event, str):
-                event_data = event.encode('utf-8')
-                content_type = data_content_type or 'text/plain'
-            else:
-                raise ValueError(f'invalid type for event {type(event)}')
-
-            entries.append(
-                api_v1.BulkPublishRequestEntry(
-                    entry_id=entry_id,
-                    event=event_data,
-                    content_type=content_type,
-                )
-            )
+        entries = to_bulk_publish_entries(data, publish_metadata, data_content_type)
 
         req = api_v1.BulkPublishRequest(
             pubsub_name=pubsub_name,
@@ -622,6 +629,10 @@ class DaprGrpcClient:
             handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+
+        Returns:
+            Callable: Closes the subscription and waits up to SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS
+                for the handler thread to stop.
         """
         subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
 
@@ -638,9 +649,7 @@ class DaprGrpcClient:
                             # No message received
                             continue
 
-                except StreamInactiveError:
-                    break
-                except StreamCancelledError:
+                except (StreamInactiveError, StreamCancelledError):
                     break
                 except Exception:
                     # Stream died — reconnect via the subscription's own
@@ -655,6 +664,13 @@ class DaprGrpcClient:
 
         def close_subscription():
             subscription.close()
+            if threading.current_thread() is not streaming_thread:
+                streaming_thread.join(timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS)
+                if streaming_thread.is_alive():
+                    logger.warning(
+                        'Subscription handler thread still running %ss after close',
+                        SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS,
+                    )
 
         streaming_thread = threading.Thread(target=stream_messages, args=(subscription,))
         streaming_thread.start()

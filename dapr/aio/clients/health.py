@@ -18,6 +18,7 @@ import time
 
 import aiohttp
 
+from dapr.clients.health import _attempt_timeout
 from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, DAPR_USER_AGENT, USER_AGENT_HEADER
 from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings
@@ -32,22 +33,31 @@ class DaprHealth:
             headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
         timeout = float(settings.DAPR_HEALTH_TIMEOUT)
 
-        start = time.time()
+        start = time.monotonic()
         ssl_context = DaprHealth.get_ssl_context()
 
         connector = aiohttp.TCPConnector(ssl=ssl_context)
         async with aiohttp.ClientSession(connector=connector) as session:
             while True:
                 try:
-                    async with session.get(health_url, headers=headers) as response:
+                    # Cap each probe at the remaining budget instead of aiohttp's
+                    # 300 s default, so a sidecar that never answers cannot block
+                    # past DAPR_HEALTH_TIMEOUT.
+                    probe_timeout = aiohttp.ClientTimeout(total=_attempt_timeout(start + timeout))
+                    async with session.get(
+                        health_url, headers=headers, timeout=probe_timeout
+                    ) as response:
                         if 200 <= response.status < 300:
                             break
+                except asyncio.TimeoutError:
+                    # aiohttp's timeout error has an empty message; say what happened.
+                    print(f'Health check on {health_url} failed: timed out')
                 except aiohttp.ClientError as e:
                     print(f'Health check on {health_url} failed: {e}')
                 except Exception as e:
                     print(f'Unexpected error during health check: {e}')
 
-                remaining = (start + timeout) - time.time()
+                remaining = (start + timeout) - time.monotonic()
                 if remaining <= 0:
                     raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
                 await asyncio.sleep(min(1, remaining))
