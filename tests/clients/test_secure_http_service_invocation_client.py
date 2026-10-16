@@ -30,9 +30,9 @@ from dapr.clients.http.client import DaprHttpClient
 from dapr.conf import settings
 from dapr.proto import common_v1
 
+from . import test_http_service_invocation_client as base
 from .certs import GrpcCerts, replacement_get_credentials_func, replacement_get_health_context
-from .fake_http_server import FakeHttpServer
-from .test_http_service_invocation_client import DaprInvocationHttpClientTests
+from .fake_http_server import FakeHttpServer, point_settings_at_http_port
 
 
 def replacement_get_client_ssl_context(a):
@@ -52,12 +52,15 @@ DaprGrpcClient.get_credentials = replacement_get_credentials_func
 DaprHealth.get_ssl_context = replacement_get_health_context
 
 
-class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
-    server_port = 4443
-
+# The base class is reached through its module so pytest does not collect it a second
+# time in this file.
+class DaprSecureInvocationHttpClientTests(base.DaprInvocationHttpClientTests):
     @classmethod
     def setUpClass(cls):
-        cls.server = FakeHttpServer(cls.server_port)
+        cls.server = FakeHttpServer()
+        cls.addClassCleanup(cls.server.shutdown_server)
+        cls.server_port = cls.server.get_port()
+        point_settings_at_http_port(cls, cls.server_port, scheme='https')
         cls.server.start_secure()
 
         cls.app_id = 'fakeapp'
@@ -66,12 +69,8 @@ class DaprSecureInvocationHttpClientTests(DaprInvocationHttpClientTests):
 
         # We need to set up the certificates for the gRPC server
         # because the DaprGrpcClient will try to create a connection
+        cls.addClassCleanup(GrpcCerts.delete_certificates)
         GrpcCerts.create_certificates()
-
-    @classmethod
-    def tearDownClass(cls):
-        GrpcCerts.delete_certificates()
-        cls.server.shutdown_server()
 
     def setUp(self):
         settings.DAPR_API_TOKEN = None
