@@ -153,6 +153,38 @@ class DaprWorkflowContext(WorkflowContext):
     def get_propagated_history(self) -> Optional[PropagatedHistory]:
         return self.__obj.get_propagated_history()
 
+    def schedule_new_workflow(
+        self,
+        workflow: Union[Workflow, str],
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        start_at: Optional[datetime] = None,
+        app_id: Optional[str] = None,
+        app_namespace: Optional[str] = None,
+    ) -> str:
+        if isinstance(workflow, str):
+            workflow_name = workflow
+        elif hasattr(workflow, '_dapr_alternate_name'):
+            workflow_name = workflow.__dict__['_dapr_alternate_name']
+        else:
+            workflow_name = workflow.__name__
+
+        if app_id is not None:
+            self._logger.debug(
+                f'{self.instance_id}: Spawning detached workflow {workflow_name} on app {app_id}'
+            )
+        else:
+            self._logger.debug(f'{self.instance_id}: Spawning detached workflow {workflow_name}')
+        return self.__obj.schedule_new_workflow(
+            workflow_name,
+            input=input,
+            instance_id=instance_id,
+            start_at=start_at,
+            app_id=app_id,
+            app_namespace=app_namespace,
+        )
+
     def wait_for_external_event(
         self,
         name: str,

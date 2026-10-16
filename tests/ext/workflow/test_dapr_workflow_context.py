@@ -29,6 +29,7 @@ mock_create_timer = 'create_timer'
 mock_call_activity = 'call_activity'
 mock_call_sub_orchestrator = 'call_sub_orchestrator'
 mock_custom_status = 'custom_status'
+mock_detached_instance_id = 'detached-instance-001'
 
 
 class FakeOrchestrationContext:
@@ -36,6 +37,7 @@ class FakeOrchestrationContext:
         self.instance_id = mock_instance_id
         self.custom_status = None
         self._propagated_history = None
+        self.last_schedule_call: dict = {}
 
     def create_timer(self, fire_at):
         return mock_create_timer
@@ -47,6 +49,19 @@ class FakeOrchestrationContext:
         self, orchestrator, input, instance_id, app_id, retry_policy=None, propagation=None
     ):
         return mock_call_sub_orchestrator
+
+    def schedule_new_workflow(
+        self, workflow, *, input, instance_id, start_at=None, app_id, app_namespace=None
+    ):
+        self.last_schedule_call = {
+            'workflow': workflow,
+            'input': input,
+            'instance_id': instance_id,
+            'start_at': start_at,
+            'app_id': app_id,
+            'app_namespace': app_namespace,
+        }
+        return instance_id if instance_id is not None else mock_detached_instance_id
 
     def set_custom_status(self, custom_status):
         self.custom_status = custom_status
@@ -120,3 +135,56 @@ class DaprWorkflowContextTest(unittest.TestCase):
             fake = worker._RuntimeOrchestrationContext(mock_instance_id)
             dapr_wf_ctx = DaprWorkflowContext(fake)
             assert dapr_wf_ctx.get_propagated_history() is None
+
+    def test_schedule_new_workflow_with_function_ref(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker._RuntimeOrchestrationContext',
+            return_value=FakeOrchestrationContext(),
+        ):
+            fake_context = worker._RuntimeOrchestrationContext(mock_instance_id)
+            dapr_wf_ctx = DaprWorkflowContext(fake_context)
+
+            spawned_id = dapr_wf_ctx.schedule_new_workflow(
+                self.mock_client_child_wf, input={'x': 1}
+            )
+
+            assert spawned_id == mock_detached_instance_id
+            assert fake_context.last_schedule_call['workflow'] == 'mock_client_child_wf'
+            assert fake_context.last_schedule_call['input'] == {'x': 1}
+            assert fake_context.last_schedule_call['instance_id'] is None
+            assert fake_context.last_schedule_call['app_id'] is None
+
+    def test_schedule_new_workflow_with_string_name_and_app_id(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker._RuntimeOrchestrationContext',
+            return_value=FakeOrchestrationContext(),
+        ):
+            fake_context = worker._RuntimeOrchestrationContext(mock_instance_id)
+            dapr_wf_ctx = DaprWorkflowContext(fake_context)
+
+            spawned_id = dapr_wf_ctx.schedule_new_workflow(
+                'remote_wf', input='payload', instance_id='detached-42', app_id='other-app'
+            )
+
+            assert spawned_id == 'detached-42'
+            assert fake_context.last_schedule_call['workflow'] == 'remote_wf'
+            assert fake_context.last_schedule_call['input'] == 'payload'
+            assert fake_context.last_schedule_call['instance_id'] == 'detached-42'
+            assert fake_context.last_schedule_call['app_id'] == 'other-app'
+
+    def test_schedule_new_workflow_resolves_alternate_name(self):
+        def some_wf(ctx, inp):
+            return inp
+
+        some_wf._dapr_alternate_name = 'renamed-wf'
+
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.worker._RuntimeOrchestrationContext',
+            return_value=FakeOrchestrationContext(),
+        ):
+            fake_context = worker._RuntimeOrchestrationContext(mock_instance_id)
+            dapr_wf_ctx = DaprWorkflowContext(fake_context)
+
+            dapr_wf_ctx.schedule_new_workflow(some_wf)
+
+            assert fake_context.last_schedule_call['workflow'] == 'renamed-wf'

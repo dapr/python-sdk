@@ -181,6 +181,51 @@ class WorkflowContext(ABC):
         pass
 
     @abstractmethod
+    def schedule_new_workflow(
+        self,
+        workflow: Union[Workflow[TOutput], str],
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        start_at: Optional[datetime] = None,
+        app_id: Optional[str] = None,
+        app_namespace: Optional[str] = None,
+    ) -> str:
+        """Spawn a detached workflow instance and return its ID synchronously.
+
+        Unlike ``call_child_workflow``, the spawned workflow is fully
+        decoupled from the caller: no parent linkage is recorded, no
+        completion or failure flows back, and there is no awaitable task.
+
+        Parameters
+        ----------
+        workflow: Workflow[TOutput] | str
+            A reference to the workflow function, or its registered name
+            (string form is required for cross-app spawns).
+        input: TInput | None
+            Optional JSON-serializable input to pass to the spawned workflow.
+        instance_id: str | None
+            Instance ID for the spawned workflow. When omitted, the runtime
+            derives a deterministic ID from the caller's instance ID so
+            replay resolves to the same history record.
+        start_at: datetime | None
+            Wall-clock time at which the spawned workflow should begin
+            executing. If not specified or in the past, the workflow starts
+            immediately.
+        app_id: str | None
+            The app ID that will execute the spawned workflow.
+        app_namespace: str | None
+            The Dapr namespace of the target app. Only meaningful with
+            ``app_id``.
+
+        Returns
+        -------
+        str
+            The instance ID of the spawned workflow.
+        """
+        pass
+
+    @abstractmethod
     def wait_for_external_event(
         self,
         name: str,
