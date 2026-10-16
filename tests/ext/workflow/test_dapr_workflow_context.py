@@ -16,6 +16,7 @@ limitations under the License.
 import unittest
 from datetime import datetime
 from unittest import mock
+from uuid import UUID
 
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow import PropagatedHistory
@@ -54,6 +55,9 @@ class FakeOrchestrationContext:
     def get_propagated_history(self):
         return self._propagated_history
 
+    def new_guid(self):
+        return UUID('12345678-1234-5678-1234-567812345678')
+
 
 class DaprWorkflowContextTest(unittest.TestCase):
     def mock_client_activity(ctx: WorkflowActivityContext, input):
@@ -82,6 +86,9 @@ class DaprWorkflowContextTest(unittest.TestCase):
 
             dapr_wf_ctx.set_custom_status(mock_custom_status)
             assert fakeContext.custom_status == mock_custom_status
+
+            new_guid_result = dapr_wf_ctx.new_guid()
+            assert new_guid_result == UUID('12345678-1234-5678-1234-567812345678')
 
     def test_get_propagated_history_proxies_inner_context(self):
         with mock.patch(
