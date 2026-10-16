@@ -157,11 +157,17 @@ class DaprInvocationHttpClient:
 
         try:
             loop = asyncio.get_running_loop()
+            owns_loop = False
         except RuntimeError:
             loop = asyncio.new_event_loop()
+            owns_loop = True
         asyncio.set_event_loop(loop)
 
         awaitable = self.invoke_method_async(
             app_id, method_name, data, content_type, metadata, http_verb, http_querystring, timeout
         )
-        return loop.run_until_complete(awaitable)
+        try:
+            return loop.run_until_complete(awaitable)
+        finally:
+            if owns_loop:
+                loop.close()
