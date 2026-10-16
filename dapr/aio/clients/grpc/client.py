@@ -16,7 +16,7 @@ limitations under the License.
 import asyncio
 import socket
 import time
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -41,6 +41,8 @@ from dapr.aio.clients.grpc._request import (
     EncryptRequestIterator,
 )
 from dapr.aio.clients.grpc._response import (
+    AsyncConfigurationHandler,
+    AsyncConfigurationWatcher,
     DecryptResponse,
     EncryptResponse,
 )
@@ -72,7 +74,6 @@ from dapr.clients.grpc._response import (
     BulkStateItem,
     BulkStatesResponse,
     ConfigurationResponse,
-    ConfigurationWatcher,
     DaprResponse,
     GetBulkSecretResponse,
     GetMetadataResponse,
@@ -144,6 +145,8 @@ class DaprGrpcClientAsync:
                 ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` is consulted to set the
                 receive limit (matches the Java SDK property of the same name).
         """
+        # Active configuration subscriptions, keyed by (store_name, id returned to the caller).
+        self._config_watchers: Dict[Tuple[str, str], AsyncConfigurationWatcher] = {}
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
 
@@ -164,6 +167,10 @@ class DaprGrpcClientAsync:
 
     async def close(self):
         """Closes Dapr runtime gRPC channel."""
+        watchers = list(getattr(self, '_config_watchers', {}).values())
+        self._config_watchers = {}
+        for watcher in watchers:
+            await watcher.stop()
         if hasattr(self, '_channel') and self._channel:
             await self._channel.close()
 
@@ -1212,7 +1219,7 @@ class DaprGrpcClientAsync:
         self,
         store_name: str,
         keys: List[str],
-        handler: Callable[[Text, ConfigurationResponse], None],
+        handler: AsyncConfigurationHandler,
         config_metadata: Optional[Dict[str, str]] = dict(),
     ) -> Text:
         """Gets changed value from a config store with a key
@@ -1233,20 +1240,57 @@ class DaprGrpcClientAsync:
             handler(func (key, ConfigurationResponse)): the callback function to be called
             config_metadata (Dict[str, str], optional): Dapr metadata for configuration
 
+        If the stream breaks or the sidecar closes it (for example when daprd restarts), the
+        client subscribes again with backoff until the subscription is unsubscribed through
+        this client, or this client is closed. The handler keeps receiving the id returned
+        here. Only unsubscribe through the client that subscribed (or close that client): if
+        an UnsubscribeConfiguration for the id is sent any other way, for example through a
+        different client, the stream ends as if the sidecar had restarted and this client
+        subscribes again.
+
+        The handler may be a plain function or an ``async def`` function. Async handlers run
+        on the event loop. Plain functions run in a worker thread (asyncio.to_thread), so a
+        slow handler does not block the event loop. Handler calls run one at a time, in the
+        order the updates arrive. Each call of a plain function may run on a different worker
+        thread, so don't rely on thread-local state or thread affinity across calls. Keep
+        plain handlers short: one still running when the subscription is stopped or the
+        client is closed keeps running in its thread, and its result or exception is not
+        observed.
+
         Returns:
             id (str): subscription id, which can be used to unsubscribe later
         """
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError('Config store name cannot be empty to get the configuration')
 
-        configWatcher = ConfigurationWatcher()
-        id = configWatcher.watch_configuration(
+        configWatcher = AsyncConfigurationWatcher(on_exit=self._forget_config_watcher)
+        id = await configWatcher.watch_configuration(
             self._stub, store_name, keys, handler, config_metadata
         )
+        # A watcher that already gave up has nothing left to unsubscribe.
+        if id and not configWatcher.exited:
+            self._config_watchers[(store_name, id)] = configWatcher
         return id
+
+    def _forget_config_watcher(self, watcher: AsyncConfigurationWatcher) -> None:
+        """Drops a watcher from _config_watchers once its task has exited."""
+        key = (watcher.store_name or '', watcher.subscription_id)
+        if self._config_watchers.get(key) is watcher:
+            del self._config_watchers[key]
 
     async def unsubscribe_configuration(self, store_name: str, id: str) -> bool:
         """Unsubscribes from configuration changes.
+
+        If the subscription was re-established after the stream broke (for example after a
+        sidecar restart), the sidecar knows it under a new id; that id is used here, so the id
+        returned by subscribe_configuration stays valid. If the watcher is between streams
+        (waiting to reconnect), there is nothing to remove on the sidecar: the watcher is
+        stopped locally and True is returned without calling the sidecar.
+
+        Unsubscribe through the client that subscribed. The subscription is re-established
+        whenever its stream ends without this client having unsubscribed, so an
+        UnsubscribeConfiguration sent through another client only ends the current stream
+        and this client subscribes again.
 
         Args:
             store_name (str): the state store name to unsubscribe from
@@ -1255,6 +1299,21 @@ class DaprGrpcClientAsync:
         Returns:
             bool: True if unsubscribed successfully, False otherwise
         """
+        watcher = self._config_watchers.pop((store_name, id), None)
+        if watcher is None:
+            return await self._send_unsubscribe_configuration(store_name, id)
+        watcher.request_stop()
+        server_id = watcher.live_stream_id()
+        try:
+            if server_id is None:
+                # Between streams (waiting to reconnect) the sidecar has no subscription to
+                # remove, so stopping the watcher is all there is to do.
+                return True
+            return await self._send_unsubscribe_configuration(store_name, server_id)
+        finally:
+            await watcher.stop()
+
+    async def _send_unsubscribe_configuration(self, store_name: str, id: str) -> bool:
         req = api_v1.UnsubscribeConfigurationRequest(store_name=store_name, id=id)
         response: api_v1.UnsubscribeConfigurationResponse = (
             await self._stub.UnsubscribeConfiguration(req)
