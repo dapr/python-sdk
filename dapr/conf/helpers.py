@@ -40,8 +40,12 @@ class GrpcEndpoint:
 
         if self._parsed_url.scheme in ['http', 'https']:
             self._scheme = URIParseConfig.DEFAULT_SCHEME
+            tls = str(self._parsed_url.scheme == 'https').lower()
             warn(
-                'http and https schemes are deprecated for grpc, use myhost?tls=false or myhost?tls=true instead'
+                f'http and https schemes are deprecated for grpc, use '
+                f'{self._hostname}:{self._parsed_url.port or URIParseConfig.DEFAULT_PORT}?tls={tls} instead',
+                DeprecationWarning,
+                stacklevel=3,
             )
             return
 
