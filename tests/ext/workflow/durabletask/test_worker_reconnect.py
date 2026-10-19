@@ -13,7 +13,8 @@
 """How the worker behaves when its connection to the sidecar drops and comes back."""
 
 import threading
-from collections.abc import Iterator
+import time
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from typing import Optional
 from unittest.mock import MagicMock, patch
@@ -38,15 +39,23 @@ class _RpcError(grpc.RpcError):
 class _SidecarStub:
     """One connection's stub: serves one work-item stream that stays open until ``end_stream``."""
 
-    def __init__(self, worker: TaskHubGrpcWorker, hello_error: Optional[Exception] = None):
+    def __init__(
+        self,
+        worker: TaskHubGrpcWorker,
+        hello_error: Optional[Exception] = None,
+        hello_gate: Optional[threading.Event] = None,
+    ):
         self._worker = worker
         self._hello_error = hello_error
+        self._hello_gate = hello_gate
         self.hello_timeouts: list[Optional[float]] = []
         self.stream_open = threading.Event()
         self._stream_end = threading.Event()
 
     def Hello(self, *_args: object, timeout: Optional[float] = None) -> None:  # noqa: N802
         self.hello_timeouts.append(timeout)
+        if self._hello_gate is not None:
+            assert self._hello_gate.wait(5)
         if self._hello_error is not None:
             raise self._hello_error
 
@@ -126,3 +135,32 @@ def test_failed_connect_closes_its_channel() -> None:
         assert healthy.stream_open.wait(10)
 
     sidecar.channels[0].close.assert_called_once()
+
+
+def _wait_until(condition: Callable[[], bool], timeout: float = 5) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if condition():
+            return True
+        time.sleep(0.01)
+    return condition()
+
+
+def test_worker_is_not_ready_while_its_stream_is_down() -> None:
+    worker = _worker()
+    first = _SidecarStub(worker)
+    reconnect_gate = threading.Event()
+    second = _SidecarStub(worker, hello_gate=reconnect_gate)
+    sidecar = _FakeSidecar(worker, [first, second])
+
+    with _running(worker, sidecar):
+        assert worker.is_worker_ready()
+
+        first.end_stream()
+        assert _wait_until(lambda: not worker.is_worker_ready()), 'still ready without a stream'
+
+        reconnect_gate.set()
+        assert second.stream_open.wait(5)
+        assert _wait_until(worker.is_worker_ready), 'not ready again after reconnecting'
+
+    assert not worker.is_worker_ready()

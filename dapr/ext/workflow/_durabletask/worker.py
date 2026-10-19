@@ -525,6 +525,11 @@ class TaskHubGrpcWorker:
         return self._registry.add_activity(fn)
 
     def is_worker_ready(self) -> bool:
+        """Whether the worker is running and its work-item stream to the sidecar is open.
+
+        False while the worker reconnects after losing the stream, so a caller can tell a
+        worker that is receiving work items from one that has been cut off from the sidecar.
+        """
         return self._stream_ready.is_set() and self._is_running
 
     def start(self):
@@ -636,6 +641,7 @@ class TaskHubGrpcWorker:
             self._current_channel = None
             current_stub = None
             self._response_stream = None
+            self._stream_ready.clear()
             # The sidecar drops this stream's warm set on disconnect, so start the
             # next stream cold to stay in sync.
             self._history_cache.reset()
