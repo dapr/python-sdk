@@ -25,7 +25,11 @@ import pytest
 
 import dapr.ext.workflow._durabletask.internal.helpers as ph
 import dapr.ext.workflow._durabletask.internal.protos as pb
-from dapr.ext.workflow._durabletask.worker import _CONNECT_HELLO_TIMEOUT, TaskHubGrpcWorker
+from dapr.ext.workflow._durabletask.worker import (
+    _CONNECT_HELLO_TIMEOUT,
+    _RESULT_SEND_TIMEOUT,
+    TaskHubGrpcWorker,
+)
 
 
 class _RpcError(grpc.RpcError):
@@ -55,6 +59,7 @@ class _SidecarStub:
         self._work_items = list(work_items)
         self.hello_timeouts: list[Optional[float]] = []
         self.results: list[Union[pb.ActivityResponse, pb.WorkflowResponse]] = []
+        self.result_timeouts: list[Optional[float]] = []
         self.result_received = threading.Event()
         self.stream_open = threading.Event()
         self._stream_end = threading.Event()
@@ -74,12 +79,21 @@ class _SidecarStub:
                 return
         yield from ()
 
-    def CompleteActivityTask(self, response: pb.ActivityResponse) -> None:  # noqa: N802
-        self.results.append(response)
-        self.result_received.set()
+    def CompleteActivityTask(  # noqa: N802
+        self, response: pb.ActivityResponse, timeout: Optional[float] = None
+    ) -> None:
+        self._record_result(response, timeout)
 
-    def CompleteOrchestratorTask(self, response: pb.WorkflowResponse) -> None:  # noqa: N802
+    def CompleteOrchestratorTask(  # noqa: N802
+        self, response: pb.WorkflowResponse, timeout: Optional[float] = None
+    ) -> None:
+        self._record_result(response, timeout)
+
+    def _record_result(
+        self, response: Union[pb.ActivityResponse, pb.WorkflowResponse], timeout: Optional[float]
+    ) -> None:
         self.results.append(response)
+        self.result_timeouts.append(timeout)
         self.result_received.set()
 
     def end_stream(self) -> None:
@@ -229,6 +243,7 @@ def test_result_that_outlives_its_stream_is_sent_on_the_new_connection(kind: str
 
     assert first.results == []
     assert len(second.results) == 1
+    assert second.result_timeouts == [_RESULT_SEND_TIMEOUT]
 
 
 def test_result_ready_during_a_reconnect_waits_for_the_new_connection() -> None:
@@ -245,11 +260,36 @@ def test_result_ready_during_a_reconnect_waits_for_the_new_connection() -> None:
         assert _wait_until(lambda: not worker.is_worker_ready())
         work.release.set()
         time.sleep(0.2)  # the result is ready while there is no connection to send it on
+        assert second.results == [], 'result sent before the new connection passed its Hello'
 
         reconnect_gate.set()
         assert second.result_received.wait(5), 'result was dropped instead of waiting'
 
     assert first.results == []
+
+
+def test_result_ready_during_a_failed_reconnect_waits_for_a_healthy_one() -> None:
+    worker = _worker()
+    work = _SlowWork(worker, 'activity')
+    first = _SidecarStub(worker, work_items=[work.work_item])
+    reconnect_gate = threading.Event()
+    unavailable = _RpcError(grpc.StatusCode.UNAVAILABLE)
+    failing = _SidecarStub(worker, hello_error=unavailable, hello_gate=reconnect_gate)
+    healthy = _SidecarStub(worker)
+    sidecar = _FakeSidecar(worker, [first, failing, healthy])
+
+    with _running(worker, sidecar):
+        assert work.started.wait(5)
+        first.end_stream()
+        assert _wait_until(lambda: len(failing.hello_timeouts) == 1)
+        work.release.set()
+        time.sleep(0.2)  # the result is ready while the failing connection is in its Hello
+
+        reconnect_gate.set()
+        assert healthy.result_received.wait(10), 'result was lost on the failed connection'
+
+    assert first.results == []
+    assert failing.results == []
 
 
 def test_result_is_dropped_when_the_worker_stops_before_reconnecting() -> None:
@@ -284,7 +324,7 @@ def test_channel_is_closed_only_after_the_calls_in_flight_on_it() -> None:
     with worker._sidecar_stub(wait=0) as stub:
         assert stub is not None
         worker._retire_connection()
-        closer = threading.Thread(target=worker._close_channel, args=(channel, None))
+        closer = threading.Thread(target=worker._close_channel, args=(channel,))
         closer.start()
         closer.join(0.2)
         assert closer.is_alive()
@@ -294,26 +334,71 @@ def test_channel_is_closed_only_after_the_calls_in_flight_on_it() -> None:
     channel.close.assert_called_once()
 
 
-def test_stop_closes_the_channel_once_a_stuck_call_runs_past_the_drain_timeout() -> None:
+def _stoppable_worker() -> TaskHubGrpcWorker:
     worker = _worker()
     worker._runLoop = MagicMock()
     worker._runLoop.is_alive.return_value = False
-    channel = MagicMock()
-    worker._set_connection(channel, MagicMock())
-    call_started = threading.Event()
-    call_finish = threading.Event()
+    return worker
 
-    def stuck_call() -> None:
+
+def _hold_call(worker: TaskHubGrpcWorker, release: threading.Event) -> threading.Thread:
+    """Starts a thread that holds a call in flight on the current connection until released."""
+    call_started = threading.Event()
+
+    def held_call() -> None:
         with worker._sidecar_stub(wait=0):
             call_started.set()
-            call_finish.wait(5)
+            release.wait(5)
 
-    caller = threading.Thread(target=stuck_call)
+    caller = threading.Thread(target=held_call)
     caller.start()
     assert call_started.wait(5)
-    with patch('dapr.ext.workflow._durabletask.worker._STOP_DRAIN_TIMEOUT', 0.1):
-        worker.stop()
-    call_finish.set()
-    caller.join(5)
+    return caller
 
+
+def test_result_ready_while_the_worker_stops_is_still_delivered() -> None:
+    worker = _stoppable_worker()
+    stub = MagicMock()
+    worker._set_connection(MagicMock(), stub)
+    release = threading.Event()
+    caller = _hold_call(worker, release)
+
+    stopper = threading.Thread(target=worker.stop)
+    stopper.start()
+    assert _wait_until(worker._shutdown.is_set)
+    worker._deliver_activity_response(pb.ActivityRequest(), pb.ActivityResponse(), '', 'instance')
+    release.set()
+    caller.join(5)
+    stopper.join(10)
+
+    stub.CompleteActivityTask.assert_called_once()
+
+
+def test_stop_never_closes_a_channel_with_a_call_in_flight() -> None:
+    """Closing early could land between a holder's two calls, and the second would crash."""
+    worker = _stoppable_worker()
+    channel = MagicMock()
+    worker._set_connection(channel, MagicMock())
+    release = threading.Event()
+    caller = _hold_call(worker, release)
+
+    with patch('dapr.ext.workflow._durabletask.worker._STOP_DRAIN_TIMEOUT', 0.1):
+        stopper = threading.Thread(target=worker.stop)
+        stopper.start()
+        stopper.join(0.5)
+    assert stopper.is_alive()
+    channel.close.assert_not_called()
+
+    release.set()
+    caller.join(5)
+    stopper.join(10)
     channel.close.assert_called_once()
+
+
+def test_connection_is_not_published_once_the_worker_is_stopping() -> None:
+    worker = _worker()
+    worker._shutdown.set()
+
+    assert not worker._set_connection(MagicMock(), MagicMock())
+    with worker._sidecar_stub(wait=0) as stub:
+        assert stub is None

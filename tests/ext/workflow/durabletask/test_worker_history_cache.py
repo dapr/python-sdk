@@ -52,7 +52,9 @@ class _FakeStub:
         self._events = events
         self.get_instance_history_calls = 0
 
-    def GetInstanceHistory(self, request: pb.GetInstanceHistoryRequest):
+    def GetInstanceHistory(
+        self, request: pb.GetInstanceHistoryRequest, timeout: float | None = None
+    ):
         self.get_instance_history_calls += 1
         return pb.GetInstanceHistoryResponse(events=self._events)
 
@@ -63,10 +65,14 @@ class _FailingHistoryStub:
     def __init__(self) -> None:
         self.responses: list[pb.WorkflowResponse] = []
 
-    def GetInstanceHistory(self, request: pb.GetInstanceHistoryRequest):
+    def GetInstanceHistory(
+        self, request: pb.GetInstanceHistoryRequest, timeout: float | None = None
+    ):
         raise RuntimeError('sidecar unavailable')
 
-    def CompleteOrchestratorTask(self, response: pb.WorkflowResponse) -> None:
+    def CompleteOrchestratorTask(
+        self, response: pb.WorkflowResponse, timeout: float | None = None
+    ) -> None:
         self.responses.append(response)
 
 

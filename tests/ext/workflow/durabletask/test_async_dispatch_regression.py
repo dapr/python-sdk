@@ -43,7 +43,9 @@ class _MockSidecarStub:
     def __init__(self) -> None:
         self.completions = 0
 
-    def CompleteActivityTask(self, _response: pb.ActivityResponse) -> None:  # noqa: N802
+    def CompleteActivityTask(  # noqa: N802
+        self, _response: pb.ActivityResponse, timeout: float | None = None
+    ) -> None:
         self.completions += 1
 
 
