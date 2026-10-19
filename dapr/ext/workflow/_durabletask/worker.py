@@ -233,6 +233,9 @@ _HISTORY_CACHE_SWEEP_INTERVAL = 60.0
 # by a network change or a host sleep can block the Hello, and with it every reconnect, forever.
 # Longer than the keepalive's, since it covers the TCP and TLS handshakes too.
 _CONNECT_HELLO_TIMEOUT = 30.0
+# How long a finished work item waits for the worker to reconnect before giving up on sending its
+# result. Covers the reconnect backoff (at most 16s) plus a connect Hello that needs a while.
+_RESULT_RECONNECT_WAIT = 30.0
 
 
 class _HistoryResolutionError(Exception):
@@ -472,6 +475,9 @@ class TaskHubGrpcWorker:
         self._stop_timeout = stop_timeout
         self._keepalive_interval = keepalive_interval
         self._current_channel: Optional[grpc.Channel] = None  # Store channel reference for cleanup
+        self._current_stub: Optional[stubs.TaskHubSidecarServiceStub] = None
+        # Guards the current channel and stub; notified whenever they change.
+        self._connection_lock = threading.Condition()
         self._channel_cleanup_threads: list[threading.Thread] = []  # Deferred channel close threads
         self._stream_ready = threading.Event()
         self._runLoop: Optional[Thread] = None
@@ -614,9 +620,9 @@ class TaskHubGrpcWorker:
                     self._interceptors,
                     options=self._channel_options,
                 )
-                # Store channel reference for cleanup in stop()
-                self._current_channel = current_channel
                 current_stub = stubs.TaskHubSidecarServiceStub(current_channel)
+                # Publish the connection for result sends, and for cleanup in stop()
+                self._set_connection(current_channel, current_stub)
                 current_stub.Hello(empty_pb2.Empty(), timeout=_CONNECT_HELLO_TIMEOUT)
                 conn_retry_count = 0
                 self._logger.info(f'Created fresh connection to {self._host_address}')
@@ -625,7 +631,7 @@ class TaskHubGrpcWorker:
                 if current_channel is not None:
                     self._schedule_deferred_channel_close(current_channel)
                 current_channel = None
-                self._current_channel = None
+                self._retire_connection()
                 current_stub = None
                 raise
 
@@ -638,7 +644,7 @@ class TaskHubGrpcWorker:
             if current_channel is not None:
                 self._schedule_deferred_channel_close(current_channel)
             current_channel = None
-            self._current_channel = None
+            self._retire_connection()
             current_stub = None
             self._response_stream = None
             self._stream_ready.clear()
@@ -829,7 +835,6 @@ class TaskHubGrpcWorker:
                             self._async_worker_manager.submit_orchestration(
                                 self._execute_orchestrator,
                                 work_item.workflowRequest,
-                                stub,
                                 work_item.completionToken,
                                 teardown_stream,
                             )
@@ -848,7 +853,6 @@ class TaskHubGrpcWorker:
                                 activity_handler,
                                 activity_fn,
                                 work_item.activityRequest,
-                                stub,
                                 work_item.completionToken,
                             )
                         elif work_item.HasField('healthPing'):
@@ -961,6 +965,58 @@ class TaskHubGrpcWorker:
         except Exception as e:
             self._logger.warning(f'Error while waiting for worker task shutdown: {e}')
 
+    def _set_connection(self, channel: grpc.Channel, stub: stubs.TaskHubSidecarServiceStub) -> None:
+        """Makes ``channel`` the connection that work-item results are sent on."""
+        with self._connection_lock:
+            self._current_channel = channel
+            self._current_stub = stub
+            self._connection_lock.notify_all()
+
+    def _retire_connection(self) -> Optional[grpc.Channel]:
+        """Stops handing out the current connection and returns its channel, if any."""
+        with self._connection_lock:
+            channel = self._current_channel
+            self._current_channel = None
+            self._current_stub = None
+            self._connection_lock.notify_all()
+        return channel
+
+    def _has_connection_or_is_stopping(self) -> bool:
+        return self._current_stub is not None or self._shutdown.is_set()
+
+    @contextlib.contextmanager
+    def _sidecar_stub(self, wait: float) -> Iterator[Optional[stubs.TaskHubSidecarServiceStub]]:
+        """Yields the stub of the worker's current connection to the sidecar.
+
+        A work item can outlive the connection it arrived on: when the sidecar ends the stream
+        the worker reconnects, and the old channel is closed soon after. Results are therefore
+        sent on whatever connection is current when they are ready, never on the work item's.
+
+        Args:
+            wait: Seconds to wait for a connection while the worker is reconnecting.
+
+        Yields:
+            The current stub, or None if the worker has no connection after ``wait`` seconds or
+            is stopping.
+        """
+        with self._connection_lock:
+            self._connection_lock.wait_for(self._has_connection_or_is_stopping, timeout=wait)
+            stub = None if self._shutdown.is_set() else self._current_stub
+        yield stub
+
+    def _send_on_current_connection(
+        self, send: Callable[[stubs.TaskHubSidecarServiceStub], None], what: str
+    ) -> None:
+        """Calls ``send`` with the current connection's stub, waiting out a reconnect."""
+        with self._sidecar_stub(wait=_RESULT_RECONNECT_WAIT) as stub:
+            if stub is None:
+                self._logger.warning(
+                    f'Could not deliver {what}: not connected to the sidecar. '
+                    'The sidecar will re-dispatch this work item.'
+                )
+                return
+            send(stub)
+
     def _schedule_deferred_channel_close(
         self, old_channel: grpc.Channel, grace_timeout: float = 10.0
     ):
@@ -1003,13 +1059,12 @@ class TaskHubGrpcWorker:
         self._logger.info('Stopping gRPC worker...')
         self._shutdown.set()
         # Close the channel — propagates cancellation to all streams and cleans up resources
-        if self._current_channel is not None:
+        channel = self._retire_connection()
+        if channel is not None:
             try:
-                self._current_channel.close()
+                channel.close()
             except Exception as e:
                 self._logger.exception(f'Error closing gRPC channel: {e}')
-            finally:
-                self._current_channel = None
 
         if self._runLoop is not None:
             self._runLoop.join(timeout=self._stop_timeout)
@@ -1080,9 +1135,7 @@ class TaskHubGrpcWorker:
         while not self._shutdown.wait(_HISTORY_CACHE_SWEEP_INTERVAL):
             self._history_cache.sweep_expired()
 
-    def _resolve_history(
-        self, req: pb.WorkflowRequest, stub: stubs.TaskHubSidecarServiceStub
-    ) -> list[pb.HistoryEvent]:
+    def _resolve_history(self, req: pb.WorkflowRequest) -> list[pb.HistoryEvent]:
         """Resolves the full committed history to replay for a workflow work item.
 
         For a full send it is the request's pastEvents. For a delta send (cachedHistory) it
@@ -1101,7 +1154,10 @@ class TaskHubGrpcWorker:
 
         history_request = pb.GetInstanceHistoryRequest(instanceId=req.instanceId)
         try:
-            response = stub.GetInstanceHistory(history_request)
+            with self._sidecar_stub(wait=0) as stub:
+                if stub is None:
+                    raise RuntimeError('not connected to the sidecar')
+                response = stub.GetInstanceHistory(history_request)
         except Exception as ex:
             raise _HistoryResolutionError(
                 f"Failed to fetch the committed history for '{req.instanceId}': {ex}"
@@ -1130,7 +1186,6 @@ class TaskHubGrpcWorker:
     def _execute_orchestrator(
         self,
         req: pb.WorkflowRequest,
-        stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
         teardown_stream: Callable[[], None],
     ):
@@ -1141,7 +1196,7 @@ class TaskHubGrpcWorker:
                 if req.HasField('propagatedHistory')
                 else None
             )
-            old_events = self._resolve_history(req, stub)
+            old_events = self._resolve_history(req)
             result = executor.execute(
                 req.instanceId, old_events, req.newEvents, propagated_history=propagated
             )
@@ -1186,6 +1241,20 @@ class TaskHubGrpcWorker:
                 completionToken=completionToken,
             )
 
+        self._send_on_current_connection(
+            lambda stub: self._send_orchestrator_response(req, stub, res, completionToken),
+            f"orchestrator response for '{req.instanceId}'",
+        )
+
+    def _send_orchestrator_response(
+        self,
+        req: pb.WorkflowRequest,
+        stub: stubs.TaskHubSidecarServiceStub,
+        res: pb.WorkflowResponse,
+        completionToken,
+    ):
+        """Send an orchestrator response, falling back to a failure response when the
+        response is too large to deliver."""
         try:
             stub.CompleteOrchestratorTask(res)
         except grpc.RpcError as rpc_error:  # type: ignore
@@ -1329,11 +1398,24 @@ class TaskHubGrpcWorker:
                 f"Failed to deliver activity response for '{req.name}#{req.taskId}' of orchestration ID '{instance_id}' to sidecar: {ex}"
             )
 
+    def _deliver_activity_response(
+        self,
+        req: pb.ActivityRequest,
+        res: pb.ActivityResponse,
+        completion_token,
+        instance_id: str,
+    ) -> None:
+        self._send_on_current_connection(
+            lambda stub: self._send_activity_response(
+                req, stub, res, completion_token, instance_id
+            ),
+            f"activity response for '{req.name}#{req.taskId}' of orchestration ID '{instance_id}'",
+        )
+
     def _execute_activity(
         self,
         fn: task.Activity | None,
         req: pb.ActivityRequest,
-        stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
     ):
         instance_id = req.workflowInstance.instanceId
@@ -1353,13 +1435,12 @@ class TaskHubGrpcWorker:
                 )
             except Exception as ex:
                 res = self._build_activity_failure_response(req, instance_id, ex, completionToken)
-            self._send_activity_response(req, stub, res, completionToken, instance_id)
+            self._deliver_activity_response(req, res, completionToken, instance_id)
 
     async def _execute_activity_async(
         self,
         fn: task.Activity,
         req: pb.ActivityRequest,
-        stub: stubs.TaskHubSidecarServiceStub,
         completionToken,
     ):
         """Run an async activity on the event loop and send its result to the sidecar.
@@ -1388,9 +1469,8 @@ class TaskHubGrpcWorker:
             try:
                 await loop.run_in_executor(
                     self._async_worker_manager.thread_pool,
-                    self._send_activity_response,
+                    self._deliver_activity_response,
                     req,
-                    stub,
                     res,
                     completionToken,
                     instance_id,

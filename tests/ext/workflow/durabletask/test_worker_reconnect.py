@@ -12,15 +12,18 @@
 
 """How the worker behaves when its connection to the sidecar drops and comes back."""
 
+import asyncio
 import threading
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Union
 from unittest.mock import MagicMock, patch
 
 import grpc
+import pytest
 
+import dapr.ext.workflow._durabletask.internal.helpers as ph
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.worker import _CONNECT_HELLO_TIMEOUT, TaskHubGrpcWorker
 
@@ -44,11 +47,15 @@ class _SidecarStub:
         worker: TaskHubGrpcWorker,
         hello_error: Optional[Exception] = None,
         hello_gate: Optional[threading.Event] = None,
+        work_items: Sequence[pb.WorkItem] = (),
     ):
         self._worker = worker
         self._hello_error = hello_error
         self._hello_gate = hello_gate
+        self._work_items = list(work_items)
         self.hello_timeouts: list[Optional[float]] = []
+        self.results: list[Union[pb.ActivityResponse, pb.WorkflowResponse]] = []
+        self.result_received = threading.Event()
         self.stream_open = threading.Event()
         self._stream_end = threading.Event()
 
@@ -61,10 +68,19 @@ class _SidecarStub:
 
     def GetWorkItems(self, _request: pb.GetWorkItemsRequest) -> Iterator[pb.WorkItem]:  # noqa: N802
         self.stream_open.set()
+        yield from self._work_items
         while not self._stream_end.wait(0.01):
             if self._worker._shutdown.is_set():
                 return
         yield from ()
+
+    def CompleteActivityTask(self, response: pb.ActivityResponse) -> None:  # noqa: N802
+        self.results.append(response)
+        self.result_received.set()
+
+    def CompleteOrchestratorTask(self, response: pb.WorkflowResponse) -> None:  # noqa: N802
+        self.results.append(response)
+        self.result_received.set()
 
     def end_stream(self) -> None:
         self._stream_end.set()
@@ -108,9 +124,7 @@ def _running(worker: TaskHubGrpcWorker, sidecar: _FakeSidecar) -> Iterator[None]
 
 
 def _worker() -> TaskHubGrpcWorker:
-    worker = TaskHubGrpcWorker(keepalive_interval=0, stop_timeout=5)
-    worker._logger = MagicMock()
-    return worker
+    return TaskHubGrpcWorker(keepalive_interval=0, stop_timeout=5)
 
 
 def test_connect_hello_has_a_deadline() -> None:
@@ -164,3 +178,89 @@ def test_worker_is_not_ready_while_its_stream_is_down() -> None:
         assert _wait_until(worker.is_worker_ready), 'not ready again after reconnecting'
 
     assert not worker.is_worker_ready()
+
+
+class _SlowWork:
+    """A registered activity or workflow that runs until the test releases it."""
+
+    def __init__(self, worker: TaskHubGrpcWorker, kind: str) -> None:
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+        def run(_ctx: object, _input: object) -> str:
+            self.started.set()
+            assert self.release.wait(5)
+            return 'done'
+
+        async def run_async(_ctx: object, _input: object) -> str:
+            self.started.set()
+            while not self.release.is_set():
+                await asyncio.sleep(0.01)
+            return 'done'
+
+        if kind == 'workflow':
+            name = worker.add_orchestrator(run)
+            started = ph.new_execution_started_event(name, 'instance')
+            request = pb.WorkflowRequest(instanceId='instance', newEvents=[started])
+            self.work_item = pb.WorkItem(workflowRequest=request)
+            return
+        name = worker.add_activity(run_async if kind == 'async activity' else run)
+        instance = pb.WorkflowInstance(instanceId='instance')
+        activity_request = pb.ActivityRequest(name=name, taskId=1, workflowInstance=instance)
+        self.work_item = pb.WorkItem(activityRequest=activity_request)
+
+
+@pytest.mark.parametrize('kind', ['activity', 'async activity', 'workflow'])
+def test_result_that_outlives_its_stream_is_sent_on_the_new_connection(kind: str) -> None:
+    """The work item's own channel is closed after a reconnect, so its result would be lost."""
+    worker = _worker()
+    work = _SlowWork(worker, kind)
+    first = _SidecarStub(worker, work_items=[work.work_item])
+    second = _SidecarStub(worker)
+    sidecar = _FakeSidecar(worker, [first, second])
+
+    with _running(worker, sidecar):
+        assert work.started.wait(5)
+        first.end_stream()
+        assert second.stream_open.wait(5)
+
+        work.release.set()
+        assert second.result_received.wait(5), 'result never reached the new connection'
+
+    assert first.results == []
+    assert len(second.results) == 1
+
+
+def test_result_ready_during_a_reconnect_waits_for_the_new_connection() -> None:
+    worker = _worker()
+    work = _SlowWork(worker, 'activity')
+    first = _SidecarStub(worker, work_items=[work.work_item])
+    reconnect_gate = threading.Event()
+    second = _SidecarStub(worker, hello_gate=reconnect_gate)
+    sidecar = _FakeSidecar(worker, [first, second])
+
+    with _running(worker, sidecar):
+        assert work.started.wait(5)
+        first.end_stream()
+        assert _wait_until(lambda: not worker.is_worker_ready())
+        work.release.set()
+        time.sleep(0.2)  # the result is ready while there is no connection to send it on
+
+        reconnect_gate.set()
+        assert second.result_received.wait(5), 'result was dropped instead of waiting'
+
+    assert first.results == []
+
+
+def test_result_is_dropped_when_the_worker_stops_before_reconnecting() -> None:
+    worker = _worker()
+    stub = MagicMock()
+    worker._set_connection(MagicMock(), stub)
+    worker._retire_connection()
+    worker._shutdown.set()
+
+    started = time.monotonic()
+    worker._deliver_activity_response(pb.ActivityRequest(), pb.ActivityResponse(), '', 'instance')
+
+    assert time.monotonic() - started < 1, 'a stopping worker waited for a reconnect'
+    stub.CompleteActivityTask.assert_not_called()
