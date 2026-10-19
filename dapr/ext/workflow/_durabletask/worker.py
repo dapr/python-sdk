@@ -18,7 +18,6 @@ import random
 import threading
 import time
 import warnings
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from threading import Event, Thread
@@ -232,16 +231,19 @@ _DEFAULT_HISTORY_CACHE_MAX_INSTANCES = 100_000
 _HISTORY_CACHE_SWEEP_INTERVAL = 60.0
 # Deadline for the Hello that checks a new connection. Without one, a connection left half-open
 # by a network change or a host sleep can block the Hello, and with it every reconnect, forever.
-# Longer than the keepalive's, since it covers the TCP and TLS handshakes too.
+# Longer than the keepalive's, since it covers the TCP and TLS handshakes too. The Hello waits for
+# the channel to be ready, so a sidecar that comes back is seen as soon as gRPC reconnects to it,
+# rather than after the run loop's own retry delay on top of gRPC's reconnect backoff.
 _CONNECT_HELLO_TIMEOUT = 30.0
-# How long a finished work item waits for the worker to reconnect before giving up on sending its
-# result. Covers the reconnect backoff (at most 16s) plus a connect Hello that needs a while.
-_RESULT_RECONNECT_WAIT = 30.0
-# Deadline for each call that sends a result or fetches history. A retired channel is closed only
-# once no call is in flight on it, so this deadline is also what bounds that close, and stop().
+# Deadline for each call that sends a result or fetches history. These calls wait for the channel
+# to be ready, so a result that is ready while the worker reconnects goes out once it is back.
+# stop() closes the channel only once no call is in flight, so this also bounds stop().
 _RESULT_SEND_TIMEOUT = 30.0
-# How long stop() keeps the current connection open for results that are still being sent or that
-# become ready while it stops, before it retires the connection.
+# gRPC's own reconnect backoff grows to 120s by default, which would leave a worker idle for up to
+# two minutes after a long sidecar outage. Capped to match the run loop's own retry delay.
+_MAX_RECONNECT_BACKOFF_MS = 15_000
+# How long stop() keeps the channel open for results that are still being sent or that become
+# ready while it stops, before it closes the channel.
 _STOP_DRAIN_TIMEOUT = 5.0
 
 
@@ -481,13 +483,14 @@ class TaskHubGrpcWorker:
         self._channel_options = channel_options
         self._stop_timeout = stop_timeout
         self._keepalive_interval = keepalive_interval
-        self._current_channel: Optional[grpc.Channel] = None  # Store channel reference for cleanup
-        self._current_stub: Optional[stubs.TaskHubSidecarServiceStub] = None
-        # Guards the current channel and stub and the calls in flight on each channel; notified
-        # whenever any of them change.
+        # One channel for the worker's lifetime: gRPC reconnects it on its own, so a lost stream
+        # only needs a new GetWorkItems call. Opened by start() and closed by stop().
+        self._channel: Optional[grpc.Channel] = None
+        self._stub: Optional[stubs.TaskHubSidecarServiceStub] = None
+        # Guards the channel, the stub and the calls in flight on the channel; notified
+        # when the last call in flight finishes.
         self._connection_lock = threading.Condition()
-        self._calls_in_flight: Counter[grpc.Channel] = Counter()
-        self._channel_cleanup_threads: list[threading.Thread] = []  # Deferred channel close threads
+        self._calls_in_flight = 0
         self._stream_ready = threading.Event()
         self._runLoop: Optional[Thread] = None
         # Use provided concurrency options or create default ones
@@ -558,6 +561,7 @@ class TaskHubGrpcWorker:
             loop.run_until_complete(self._async_run_loop())
 
         self._logger.info(f'Starting gRPC worker that connects to {self._host_address}')
+        self._open_channel()
         if not self._disable_stateful_history:
             self._history_janitor = Thread(
                 target=self._sweep_history_cache_loop, name='WorkerHistoryJanitor', daemon=True
@@ -575,7 +579,7 @@ class TaskHubGrpcWorker:
         self._is_running = True
 
     def _send_keepalive(self) -> None:
-        with self._sidecar_stub(wait=0) as stub:
+        with self._sidecar_stub() as stub:
             if stub is not None:
                 stub.Hello(empty_pb2.Empty(), timeout=10)
 
@@ -604,7 +608,7 @@ class TaskHubGrpcWorker:
         """
         This is the main async loop that runs the worker.
         It is responsible for:
-            - Creating a fresh connection to the sidecar
+            - Connecting to the sidecar
             - Reading work items from the sidecar
             - Executing the work items
             - Shutting down the worker
@@ -616,45 +620,25 @@ class TaskHubGrpcWorker:
         conn_retry_count = 0
         conn_max_retry_delay = 15
 
-        def retire_and_close_connection():
-            # Schedule deferred close of old channel to avoid orphaned TCP
-            # connections. In-flight RPCs (e.g. CompleteActivityTask) may still
-            # be using the stub on another thread, so we defer the close by a
-            # grace period instead of closing immediately. A channel that
-            # stop() already retired is closed by stop().
-            retired_channel = self._retire_connection()
-            if retired_channel is not None:
-                self._schedule_deferred_channel_close(retired_channel)
-
-        def create_fresh_connection():
+        def connect():
             nonlocal connected, conn_retry_count
             connected = False
-            channel = shared.get_grpc_channel(
-                self._host_address,
-                self._secure_channel,
-                self._interceptors,
-                options=self._channel_options,
-            )
-            stub = stubs.TaskHubSidecarServiceStub(channel)
-            # Verify before publishing, so a result waiting for a reconnect is never sent on a
-            # connection that fails its Hello. Nothing else holds the channel yet, so closing it
-            # directly is safe.
             try:
-                stub.Hello(empty_pb2.Empty(), timeout=_CONNECT_HELLO_TIMEOUT)
+                with self._sidecar_stub() as stub:
+                    if stub is None:
+                        raise RuntimeError('the worker is stopping')
+                    stub.Hello(
+                        empty_pb2.Empty(), timeout=_CONNECT_HELLO_TIMEOUT, wait_for_ready=True
+                    )
             except Exception as e:
-                self._logger.warning(f'Failed to create connection: {e}')
-                channel.close()
+                self._logger.warning(f'Failed to connect: {e}')
                 raise
-            if not self._set_connection(channel, stub):
-                channel.close()
-                raise RuntimeError('the worker is stopping')
             connected = True
             conn_retry_count = 0
-            self._logger.info(f'Created fresh connection to {self._host_address}')
+            self._logger.info(f'Connected to {self._host_address}')
 
-        def invalidate_connection():
+        def disconnect():
             nonlocal connected, current_reader_thread
-            retire_and_close_connection()
             connected = False
             self._response_stream = None
             self._stream_ready.clear()
@@ -666,7 +650,7 @@ class TaskHubGrpcWorker:
                 current_reader_thread.join(timeout=5)
                 current_reader_thread = None
 
-        def should_invalidate_connection(rpc_error):
+        def is_connection_error(rpc_error):
             error_code = rpc_error.code()  # type: ignore
             connection_level_errors = {
                 grpc.StatusCode.UNAVAILABLE,
@@ -683,7 +667,7 @@ class TaskHubGrpcWorker:
                 break
             if not connected:
                 try:
-                    create_fresh_connection()
+                    connect()
                 except Exception:
                     conn_retry_count += 1
                     delay = min(
@@ -706,7 +690,7 @@ class TaskHubGrpcWorker:
                         pb.WORKER_CAPABILITY_STATEFUL_HISTORY
                     )
                 try:
-                    with self._sidecar_stub(wait=0) as stream_stub:
+                    with self._sidecar_stub() as stream_stub:
                         if stream_stub is None or self._shutdown.is_set():
                             self._logger.debug('Worker is stopping, exiting')
                             break
@@ -878,7 +862,7 @@ class TaskHubGrpcWorker:
                     except Exception as e:
                         if self._async_worker_manager._shutdown or loop.is_closed():
                             break
-                        invalidate_connection()
+                        disconnect()
                         raise e
                 current_reader_thread.join(timeout=1)
                 await self._cancel_keepalive(keepalive_task)
@@ -891,18 +875,18 @@ class TaskHubGrpcWorker:
                 self._logger.info(
                     f'Work item stream ended. Will attempt to reconnect to {self._host_address}...'
                 )
-                invalidate_connection()
+                disconnect()
                 # Fall through to the top of the outer loop, which will
-                # create a fresh connection (with retry/backoff if needed)
+                # reconnect (with retry/backoff if needed)
             except grpc.RpcError as rpc_error:
                 await self._cancel_keepalive(keepalive_task)
                 # Check shutdown first - if shutting down, exit immediately
                 if self._shutdown.is_set():
                     self._logger.debug('Shutdown detected during RPC error handling, exiting')
                     break
-                should_invalidate = should_invalidate_connection(rpc_error)
-                if should_invalidate:
-                    invalidate_connection()
+                connection_lost = is_connection_error(rpc_error)
+                if connection_lost:
+                    disconnect()
                 error_code = rpc_error.code()  # type: ignore
                 error_detail = (
                     rpc_error.details() if hasattr(rpc_error, 'details') else str(rpc_error)
@@ -911,7 +895,7 @@ class TaskHubGrpcWorker:
                 if error_code == grpc.StatusCode.CANCELLED:
                     self._logger.info(f'Disconnected from {self._host_address}')
                     break
-                elif should_invalidate:
+                elif connection_lost:
                     self._logger.warning(
                         f'Connection error ({error_code}): {error_detail} — resetting connection'
                     )
@@ -960,9 +944,9 @@ class TaskHubGrpcWorker:
                     # No event loop running, treat as shutdown
                     self._logger.debug(f'No event loop running, exiting: {ex}')
                     break
-                invalidate_connection()
+                disconnect()
                 self._logger.warning(f'Unexpected error: {ex}')
-        invalidate_connection()
+        disconnect()
         self._logger.info('No longer listening for work items')
 
         # Cancel worker_task to ensure shutdown completes even if tasks are still running
@@ -977,146 +961,80 @@ class TaskHubGrpcWorker:
         except Exception as e:
             self._logger.warning(f'Error while waiting for worker task shutdown: {e}')
 
-    def _set_connection(self, channel: grpc.Channel, stub: stubs.TaskHubSidecarServiceStub) -> bool:
-        """Makes ``channel`` the connection that work-item results are sent on.
-
-        Returns:
-            False, without publishing, if the worker is stopping; the caller then owns the
-            channel and must close it.
-        """
+    def _open_channel(self) -> None:
+        options = [
+            ('grpc.max_reconnect_backoff_ms', _MAX_RECONNECT_BACKOFF_MS),
+            *(self._channel_options or ()),
+        ]
+        channel = shared.get_grpc_channel(
+            self._host_address, self._secure_channel, self._interceptors, options=options
+        )
+        stub = stubs.TaskHubSidecarServiceStub(channel)
         with self._connection_lock:
-            # stop() sets _shutdown before it retires the connection, so a channel published
-            # after this check is still retired and closed by stop().
-            if self._shutdown.is_set():
-                return False
-            self._current_channel = channel
-            self._current_stub = stub
-            self._connection_lock.notify_all()
-        return True
-
-    def _retire_connection(self) -> Optional[grpc.Channel]:
-        """Stops handing out the current connection and returns its channel, if any."""
-        with self._connection_lock:
-            channel = self._current_channel
-            self._current_channel = None
-            self._current_stub = None
-            self._connection_lock.notify_all()
-        return channel
-
-    def _has_connection_or_is_stopping(self) -> bool:
-        return self._current_stub is not None or self._shutdown.is_set()
+            self._channel = channel
+            self._stub = stub
 
     @contextlib.contextmanager
-    def _sidecar_stub(self, wait: float) -> Iterator[Optional[stubs.TaskHubSidecarServiceStub]]:
-        """Yields the stub of the worker's current connection to the sidecar.
-
-        A work item can outlive the connection it arrived on: when the sidecar ends the stream
-        the worker reconnects, and the old channel is closed soon after. Results are therefore
-        sent on whatever connection is current when they are ready, never on the work item's.
-
-        Args:
-            wait: Seconds to wait for a connection while the worker is reconnecting.
+    def _sidecar_stub(self) -> Iterator[Optional[stubs.TaskHubSidecarServiceStub]]:
+        """Yields the worker's stub and keeps the channel open until the block exits.
 
         Yields:
-            The current stub, or None if the worker has no connection after ``wait`` seconds, or
-            has none while it is stopping. A stopping worker keeps its connection open for a
-            short drain, and results sent during it still go out.
+            The stub, or None once stop() has started closing the channel.
         """
         with self._connection_lock:
-            self._connection_lock.wait_for(self._has_connection_or_is_stopping, timeout=wait)
-            channel = self._current_channel
-            stub = self._current_stub
+            stub = self._stub
             if stub is not None:
-                self._calls_in_flight[channel] += 1
+                self._calls_in_flight += 1
         try:
             yield stub
         finally:
             if stub is not None:
-                self._release_call(channel)
+                self._release_call()
 
-    def _release_call(self, channel: grpc.Channel) -> None:
+    def _release_call(self) -> None:
         with self._connection_lock:
-            self._calls_in_flight[channel] -= 1
-            # Only the drain waits depend on the count, and only on it reaching zero.
-            if self._calls_in_flight[channel] <= 0:
-                del self._calls_in_flight[channel]
+            self._calls_in_flight -= 1
+            if self._calls_in_flight == 0:
                 self._connection_lock.notify_all()
 
-    def _drain_current_connection(self, timeout: float) -> None:
-        """Waits up to ``timeout`` seconds for no call to be in flight on the current channel."""
-        with self._connection_lock:
-            channel = self._current_channel
-            if channel is None:
-                return
-            self._connection_lock.wait_for(
-                lambda: self._current_channel is not channel or self._calls_in_flight[channel] == 0,
-                timeout=timeout,
-            )
-
-    def _close_channel(self, channel: grpc.Channel) -> None:
-        """Closes a retired channel once no call that the worker started on it is in flight.
+    def _close_channel(self) -> None:
+        """Closes the channel once no call that the worker started on it is in flight.
 
         grpcio does not guard against starting a call on a closed channel when the channel has
         interceptors: registering the method touches the freed native channel and the process
         dies with SIGSEGV. Every call the worker makes holds the channel through
-        ``_sidecar_stub``, and a retired channel is never handed out again, so once its count
-        reaches zero no call can start on it after the close.
+        ``_sidecar_stub``, which stops handing out the stub here, so once the count reaches
+        zero no call can start on the channel after the close.
 
         Gotcha: there is deliberately no timeout. Closing early could land between two calls a
         holder makes, such as a result and its oversized-result fallback, and the second would
         crash. Every call made under ``_sidecar_stub`` has a deadline, which bounds this wait.
-
-        Args:
-            channel: A channel that ``_retire_connection`` already took out of use.
         """
         with self._connection_lock:
-            self._connection_lock.wait_for(lambda: self._calls_in_flight[channel] == 0)
-        channel.close()
+            channel = self._channel
+            self._channel = None
+            self._stub = None
+            self._connection_lock.wait_for(lambda: self._calls_in_flight == 0)
+        if channel is not None:
+            channel.close()
 
-    def _send_on_current_connection(
+    def _drain_calls(self, timeout: float) -> None:
+        """Waits up to ``timeout`` seconds for no call to be in flight on the channel."""
+        with self._connection_lock:
+            self._connection_lock.wait_for(lambda: self._calls_in_flight == 0, timeout=timeout)
+
+    def _send_result(
         self, send: Callable[[stubs.TaskHubSidecarServiceStub], None], what: str
     ) -> None:
-        """Calls ``send`` with the current connection's stub, waiting out a reconnect."""
-        with self._sidecar_stub(wait=_RESULT_RECONNECT_WAIT) as stub:
+        """Calls ``send`` with the worker's stub, unless the worker has closed its channel."""
+        with self._sidecar_stub() as stub:
             if stub is None:
                 self._logger.warning(
-                    f'Could not deliver {what}: not connected to the sidecar. '
+                    f'Could not deliver {what}: the worker has stopped. '
                     'The sidecar will re-dispatch this work item.'
                 )
                 return
             send(stub)
-
-    def _schedule_deferred_channel_close(
-        self, old_channel: grpc.Channel, grace_timeout: float = 10.0
-    ):
-        """Schedule a deferred close of an old gRPC channel.
-
-        Waits up to *grace_timeout* seconds for in-flight RPCs to complete
-        before closing the channel.  This prevents orphaned TCP connections
-        while still allowing in-flight work (e.g. ``CompleteActivityTask``
-        calls on another thread) to finish gracefully.
-
-        During ``stop()``, ``_shutdown`` is already set so the wait returns
-        immediately and the channel is closed at once.
-        """
-        # Prune already-finished cleanup threads to avoid unbounded growth
-        self._channel_cleanup_threads = [t for t in self._channel_cleanup_threads if t.is_alive()]
-
-        def _deferred_close():
-            try:
-                # Normal reconnect: wait grace period for RPCs to drain.
-                # Shutdown: _shutdown is already set, returns immediately.
-                self._shutdown.wait(timeout=grace_timeout)
-            finally:
-                try:
-                    self._close_channel(old_channel)
-                    self._logger.debug('Deferred channel close completed')
-                except Exception as e:
-                    self._logger.debug(f'Error during deferred channel close: {e}')
-
-        thread = threading.Thread(target=_deferred_close, daemon=True, name='ChannelCleanup')
-        thread.start()
-        self._channel_cleanup_threads.append(thread)
 
     def stop(self):
         """Stops the worker and waits for any pending work items to complete."""
@@ -1127,30 +1045,23 @@ class TaskHubGrpcWorker:
 
         self._logger.info('Stopping gRPC worker...')
         self._shutdown.set()
-        # Results that are being sent, or that become ready now, still go out on the connection.
-        self._drain_current_connection(_STOP_DRAIN_TIMEOUT)
-        # Close the channel — propagates cancellation to all streams and cleans up resources
-        channel = self._retire_connection()
-        if channel is not None:
-            try:
-                self._close_channel(channel)
-            except Exception as e:
-                self._logger.exception(f'Error closing gRPC channel: {e}')
+        # Results that are being sent, or that become ready now, still go out on the channel.
+        self._drain_calls(_STOP_DRAIN_TIMEOUT)
+        # Closing the channel is what ends the work-item stream: through an interceptor, the
+        # stream is a plain generator with no cancel().
+        try:
+            self._close_channel()
+        except Exception as e:
+            self._logger.exception(f'Error closing gRPC channel: {e}')
 
-        if self._runLoop is not None:
-            self._runLoop.join(timeout=self._stop_timeout)
-            if self._runLoop.is_alive():
-                self._logger.warning(
-                    f'Worker thread did not complete within {self._stop_timeout}s timeout. '
-                    'Some resources may not be fully cleaned up.'
-                )
-            else:
-                self._logger.debug('Worker thread completed successfully')
-
-        # Wait for any deferred channel-cleanup threads to finish
-        for t in self._channel_cleanup_threads:
-            t.join(timeout=5)
-        self._channel_cleanup_threads.clear()
+        self._runLoop.join(timeout=self._stop_timeout)
+        if self._runLoop.is_alive():
+            self._logger.warning(
+                f'Worker thread did not complete within {self._stop_timeout}s timeout. '
+                'Some resources may not be fully cleaned up.'
+            )
+        else:
+            self._logger.debug('Worker thread completed successfully')
 
         self._async_worker_manager.shutdown()
         self._logger.info('Worker shutdown completed')
@@ -1225,10 +1136,12 @@ class TaskHubGrpcWorker:
 
         history_request = pb.GetInstanceHistoryRequest(instanceId=req.instanceId)
         try:
-            with self._sidecar_stub(wait=0) as stub:
+            with self._sidecar_stub() as stub:
                 if stub is None:
                     raise RuntimeError('not connected to the sidecar')
-                response = stub.GetInstanceHistory(history_request, timeout=_RESULT_SEND_TIMEOUT)
+                response = stub.GetInstanceHistory(
+                    history_request, timeout=_RESULT_SEND_TIMEOUT, wait_for_ready=True
+                )
         except Exception as ex:
             raise _HistoryResolutionError(
                 f"Failed to fetch the committed history for '{req.instanceId}': {ex}"
@@ -1312,7 +1225,7 @@ class TaskHubGrpcWorker:
                 completionToken=completionToken,
             )
 
-        self._send_on_current_connection(
+        self._send_result(
             lambda stub: self._send_orchestrator_response(req, stub, res, completionToken),
             f"orchestrator response for '{req.instanceId}'",
         )
@@ -1327,7 +1240,7 @@ class TaskHubGrpcWorker:
         """Send an orchestrator response, falling back to a failure response when the
         response is too large to deliver."""
         try:
-            stub.CompleteOrchestratorTask(res, timeout=_RESULT_SEND_TIMEOUT)
+            stub.CompleteOrchestratorTask(res, timeout=_RESULT_SEND_TIMEOUT, wait_for_ready=True)
         except grpc.RpcError as rpc_error:  # type: ignore
             if _is_message_too_large(rpc_error):
                 # Response is too large to deliver - fail the orchestration immediately.
@@ -1354,7 +1267,9 @@ class TaskHubGrpcWorker:
                     completionToken=completionToken,
                 )
                 try:
-                    stub.CompleteOrchestratorTask(failure_res, timeout=_RESULT_SEND_TIMEOUT)
+                    stub.CompleteOrchestratorTask(
+                        failure_res, timeout=_RESULT_SEND_TIMEOUT, wait_for_ready=True
+                    )
                 except Exception as ex:
                     self._logger.exception(
                         f"Failed to deliver orchestrator failure response for '{req.instanceId}': {ex}"
@@ -1433,7 +1348,7 @@ class TaskHubGrpcWorker:
         """Send an activity response, falling back to a failure response when the
         result is too large to deliver."""
         try:
-            stub.CompleteActivityTask(res, timeout=_RESULT_SEND_TIMEOUT)
+            stub.CompleteActivityTask(res, timeout=_RESULT_SEND_TIMEOUT, wait_for_ready=True)
         except grpc.RpcError as rpc_error:  # type: ignore
             if _is_message_too_large(rpc_error):
                 # Result is too large to deliver - fail the activity immediately.
@@ -1449,7 +1364,9 @@ class TaskHubGrpcWorker:
                     req, instance_id, oversize_error, completion_token
                 )
                 try:
-                    stub.CompleteActivityTask(failure_res, timeout=_RESULT_SEND_TIMEOUT)
+                    stub.CompleteActivityTask(
+                        failure_res, timeout=_RESULT_SEND_TIMEOUT, wait_for_ready=True
+                    )
                 except Exception as ex:
                     self._logger.exception(
                         f"Failed to deliver activity failure response for '{req.name}#{req.taskId}' "
@@ -1476,7 +1393,7 @@ class TaskHubGrpcWorker:
         completion_token,
         instance_id: str,
     ) -> None:
-        self._send_on_current_connection(
+        self._send_result(
             lambda stub: self._send_activity_response(
                 req, stub, res, completion_token, instance_id
             ),
