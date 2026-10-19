@@ -18,6 +18,7 @@ import random
 import threading
 import time
 import warnings
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from threading import Event, Thread
@@ -236,6 +237,8 @@ _CONNECT_HELLO_TIMEOUT = 30.0
 # How long a finished work item waits for the worker to reconnect before giving up on sending its
 # result. Covers the reconnect backoff (at most 16s) plus a connect Hello that needs a while.
 _RESULT_RECONNECT_WAIT = 30.0
+# How long stop() lets calls in flight on the current channel finish before it closes the channel.
+_STOP_DRAIN_TIMEOUT = 5.0
 
 
 class _HistoryResolutionError(Exception):
@@ -476,8 +479,10 @@ class TaskHubGrpcWorker:
         self._keepalive_interval = keepalive_interval
         self._current_channel: Optional[grpc.Channel] = None  # Store channel reference for cleanup
         self._current_stub: Optional[stubs.TaskHubSidecarServiceStub] = None
-        # Guards the current channel and stub; notified whenever they change.
+        # Guards the current channel and stub and the calls in flight on each channel; notified
+        # whenever any of them change.
         self._connection_lock = threading.Condition()
+        self._calls_in_flight: Counter[grpc.Channel] = Counter()
         self._channel_cleanup_threads: list[threading.Thread] = []  # Deferred channel close threads
         self._stream_ready = threading.Event()
         self._runLoop: Optional[Thread] = None
@@ -565,7 +570,12 @@ class TaskHubGrpcWorker:
                 )
         self._is_running = True
 
-    async def _keepalive_loop(self, stub):
+    def _send_keepalive(self) -> None:
+        with self._sidecar_stub(wait=0) as stub:
+            if stub is not None:
+                stub.Hello(empty_pb2.Empty(), timeout=10)
+
+    async def _keepalive_loop(self):
         """Background keepalive loop to keep the gRPC connection alive through L7 load balancers."""
         loop = asyncio.get_running_loop()
         while not self._shutdown.is_set():
@@ -573,7 +583,7 @@ class TaskHubGrpcWorker:
             if self._shutdown.is_set():
                 return
             try:
-                await loop.run_in_executor(None, lambda: stub.Hello(empty_pb2.Empty(), timeout=10))
+                await loop.run_in_executor(None, self._send_keepalive)
             except Exception as e:
                 self._logger.debug(f'keepalive failed: {e}')
 
@@ -597,54 +607,48 @@ class TaskHubGrpcWorker:
         """
         worker_task = asyncio.create_task(self._async_worker_manager.run())
         # Connection state management for retry fix
-        current_channel = None
         current_stub = None
         current_reader_thread = None
         conn_retry_count = 0
         conn_max_retry_delay = 15
 
-        def create_fresh_connection():
-            nonlocal current_channel, current_stub, conn_retry_count
+        def retire_connection():
             # Schedule deferred close of old channel to avoid orphaned TCP
-            # connections. In-flight RPCs on the old stub may still reference
-            # the channel from another thread, so we wait a grace period
-            # before closing instead of closing immediately.
-            if current_channel is not None:
-                self._schedule_deferred_channel_close(current_channel)
-            current_channel = None
+            # connections. In-flight RPCs (e.g. CompleteActivityTask) may still
+            # be using the stub on another thread, so we defer the close by a
+            # grace period instead of closing immediately. A channel that
+            # stop() already retired is closed by stop().
+            retired_channel = self._retire_connection()
+            if retired_channel is not None:
+                self._schedule_deferred_channel_close(retired_channel)
+
+        def create_fresh_connection():
+            nonlocal current_stub, conn_retry_count
             current_stub = None
             try:
-                current_channel = shared.get_grpc_channel(
+                channel = shared.get_grpc_channel(
                     self._host_address,
                     self._secure_channel,
                     self._interceptors,
                     options=self._channel_options,
                 )
-                current_stub = stubs.TaskHubSidecarServiceStub(current_channel)
                 # Publish the connection for result sends, and for cleanup in stop()
-                self._set_connection(current_channel, current_stub)
-                current_stub.Hello(empty_pb2.Empty(), timeout=_CONNECT_HELLO_TIMEOUT)
+                self._set_connection(channel, stubs.TaskHubSidecarServiceStub(channel))
+                with self._sidecar_stub(wait=0) as hello_stub:
+                    if hello_stub is None:
+                        raise RuntimeError('the worker is stopping')
+                    hello_stub.Hello(empty_pb2.Empty(), timeout=_CONNECT_HELLO_TIMEOUT)
+                current_stub = hello_stub
                 conn_retry_count = 0
                 self._logger.info(f'Created fresh connection to {self._host_address}')
             except Exception as e:
                 self._logger.warning(f'Failed to create connection: {e}')
-                if current_channel is not None:
-                    self._schedule_deferred_channel_close(current_channel)
-                current_channel = None
-                self._retire_connection()
-                current_stub = None
+                retire_connection()
                 raise
 
         def invalidate_connection():
-            nonlocal current_channel, current_stub, current_reader_thread
-            # Schedule deferred close of old channel to avoid orphaned TCP
-            # connections. In-flight RPCs (e.g. CompleteActivityTask) may still
-            # be using the stub on another thread, so we defer the close by a
-            # grace period instead of closing immediately.
-            if current_channel is not None:
-                self._schedule_deferred_channel_close(current_channel)
-            current_channel = None
-            self._retire_connection()
+            nonlocal current_stub, current_reader_thread
+            retire_connection()
             current_stub = None
             self._response_stream = None
             self._stream_ready.clear()
@@ -688,8 +692,6 @@ class TaskHubGrpcWorker:
                     continue
             keepalive_task = None
             try:
-                assert current_stub is not None
-                stub = current_stub
                 get_work_items_request = pb.GetWorkItemsRequest(
                     capabilities=[pb.WORKER_CAPABILITY_HEALTH_PING]
                 )
@@ -698,7 +700,11 @@ class TaskHubGrpcWorker:
                         pb.WORKER_CAPABILITY_STATEFUL_HISTORY
                     )
                 try:
-                    self._response_stream = stub.GetWorkItems(get_work_items_request)
+                    with self._sidecar_stub(wait=0) as stream_stub:
+                        if stream_stub is None:
+                            self._logger.debug('Connection retired by stop(), exiting')
+                            break
+                        self._response_stream = stream_stub.GetWorkItems(get_work_items_request)
                     self._logger.info(
                         f'Successfully connected to {self._host_address}. Waiting for work items...'
                     )
@@ -809,7 +815,7 @@ class TaskHubGrpcWorker:
 
                 loop = asyncio.get_running_loop()
                 if self._keepalive_interval > 0:
-                    keepalive_task = asyncio.ensure_future(self._keepalive_loop(stub))
+                    keepalive_task = asyncio.ensure_future(self._keepalive_loop())
 
                 # NOTE: This is a blocking call that will wait for a work item to become available or the shutdown sentinel
                 while not self._shutdown.is_set():
@@ -1001,8 +1007,44 @@ class TaskHubGrpcWorker:
         """
         with self._connection_lock:
             self._connection_lock.wait_for(self._has_connection_or_is_stopping, timeout=wait)
+            channel = self._current_channel
             stub = None if self._shutdown.is_set() else self._current_stub
-        yield stub
+            if stub is not None:
+                self._calls_in_flight[channel] += 1
+        try:
+            yield stub
+        finally:
+            if stub is not None:
+                self._release_call(channel)
+
+    def _release_call(self, channel: grpc.Channel) -> None:
+        with self._connection_lock:
+            self._calls_in_flight[channel] -= 1
+            if self._calls_in_flight[channel] <= 0:
+                del self._calls_in_flight[channel]
+            self._connection_lock.notify_all()
+
+    def _close_channel(self, channel: grpc.Channel, drain_timeout: Optional[float]) -> None:
+        """Closes a retired channel once no call that the worker started on it is in flight.
+
+        grpcio does not guard against starting a call on a closed channel when the channel has
+        interceptors: registering the method touches the freed native channel and the process
+        dies with SIGSEGV. Every call the worker makes holds the channel through
+        ``_sidecar_stub``, and a retired channel is never handed out again, so once its count
+        reaches zero no call can start on it after the close.
+
+        Args:
+            channel: A channel that ``_retire_connection`` already took out of use.
+            drain_timeout: Seconds to wait for calls in flight; None waits until they finish.
+                After a timeout the channel is closed anyway, which cancels those calls.
+        """
+        with self._connection_lock:
+            drained = self._connection_lock.wait_for(
+                lambda: self._calls_in_flight[channel] == 0, timeout=drain_timeout
+            )
+        if not drained:
+            self._logger.debug('Closing a gRPC channel with calls still in flight')
+        channel.close()
 
     def _send_on_current_connection(
         self, send: Callable[[stubs.TaskHubSidecarServiceStub], None], what: str
@@ -1040,7 +1082,7 @@ class TaskHubGrpcWorker:
                 self._shutdown.wait(timeout=grace_timeout)
             finally:
                 try:
-                    old_channel.close()
+                    self._close_channel(old_channel, drain_timeout=None)
                     self._logger.debug('Deferred channel close completed')
                 except Exception as e:
                     self._logger.debug(f'Error during deferred channel close: {e}')
@@ -1062,7 +1104,7 @@ class TaskHubGrpcWorker:
         channel = self._retire_connection()
         if channel is not None:
             try:
-                channel.close()
+                self._close_channel(channel, drain_timeout=_STOP_DRAIN_TIMEOUT)
             except Exception as e:
                 self._logger.exception(f'Error closing gRPC channel: {e}')
 

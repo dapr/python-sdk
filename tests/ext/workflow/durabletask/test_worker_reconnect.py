@@ -264,3 +264,56 @@ def test_result_is_dropped_when_the_worker_stops_before_reconnecting() -> None:
 
     assert time.monotonic() - started < 1, 'a stopping worker waited for a reconnect'
     stub.CompleteActivityTask.assert_not_called()
+
+
+def test_retired_connection_is_never_handed_out() -> None:
+    worker = _worker()
+    worker._set_connection(MagicMock(), MagicMock())
+    worker._retire_connection()
+
+    with worker._sidecar_stub(wait=0) as stub:
+        assert stub is None
+
+
+def test_channel_is_closed_only_after_the_calls_in_flight_on_it() -> None:
+    """Starting a call on a closed channel with interceptors crashes the process in grpcio."""
+    worker = _worker()
+    channel = MagicMock()
+    worker._set_connection(channel, MagicMock())
+
+    with worker._sidecar_stub(wait=0) as stub:
+        assert stub is not None
+        worker._retire_connection()
+        closer = threading.Thread(target=worker._close_channel, args=(channel, None))
+        closer.start()
+        closer.join(0.2)
+        assert closer.is_alive()
+        channel.close.assert_not_called()
+
+    closer.join(5)
+    channel.close.assert_called_once()
+
+
+def test_stop_closes_the_channel_once_a_stuck_call_runs_past_the_drain_timeout() -> None:
+    worker = _worker()
+    worker._runLoop = MagicMock()
+    worker._runLoop.is_alive.return_value = False
+    channel = MagicMock()
+    worker._set_connection(channel, MagicMock())
+    call_started = threading.Event()
+    call_finish = threading.Event()
+
+    def stuck_call() -> None:
+        with worker._sidecar_stub(wait=0):
+            call_started.set()
+            call_finish.wait(5)
+
+    caller = threading.Thread(target=stuck_call)
+    caller.start()
+    assert call_started.wait(5)
+    with patch('dapr.ext.workflow._durabletask.worker._STOP_DRAIN_TIMEOUT', 0.1):
+        worker.stop()
+    call_finish.set()
+    caller.join(5)
+
+    channel.close.assert_called_once()
