@@ -229,6 +229,10 @@ def _is_message_too_large(rpc_error: grpc.RpcError) -> bool:
 _DEFAULT_HISTORY_CACHE_TTL = 3600.0
 _DEFAULT_HISTORY_CACHE_MAX_INSTANCES = 100_000
 _HISTORY_CACHE_SWEEP_INTERVAL = 60.0
+# Deadline for the Hello that checks a new connection. Without one, a connection left half-open
+# by a network change or a host sleep can block the Hello, and with it every reconnect, forever.
+# Longer than the keepalive's, since it covers the TCP and TLS handshakes too.
+_CONNECT_HELLO_TIMEOUT = 30.0
 
 
 class _HistoryResolutionError(Exception):
@@ -608,11 +612,13 @@ class TaskHubGrpcWorker:
                 # Store channel reference for cleanup in stop()
                 self._current_channel = current_channel
                 current_stub = stubs.TaskHubSidecarServiceStub(current_channel)
-                current_stub.Hello(empty_pb2.Empty())
+                current_stub.Hello(empty_pb2.Empty(), timeout=_CONNECT_HELLO_TIMEOUT)
                 conn_retry_count = 0
                 self._logger.info(f'Created fresh connection to {self._host_address}')
             except Exception as e:
                 self._logger.warning(f'Failed to create connection: {e}')
+                if current_channel is not None:
+                    self._schedule_deferred_channel_close(current_channel)
                 current_channel = None
                 self._current_channel = None
                 current_stub = None
