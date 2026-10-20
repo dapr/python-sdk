@@ -51,8 +51,8 @@ The warning and the `flask_dapr` shim are kept through 1.21 and removed in
 support keeps it alive until 1.21, so this window covers every user who could
 still be migrating.
 
-You can also create the tag via a **GitHub Release**, which auto-creates the tag and provides
-a changelog UI.
+Create the tag with the `dapr-python-release-tag` workflow, which checks `VERSION` before tagging
+(see [Creating the tag](#creating-the-tag)).
 
 ## Overview
 
@@ -131,19 +131,16 @@ changes the `VERSION` file from `X.Y.0.dev` → `X.Y.0rc0`.
 Open a PR targeting `main` that changes `VERSION` from the previous dev version to
 `X.Y.0.dev`.
 
-### 4. Push the tag
+### 4. Create the tag
 
-Once the version bump PR on `release-X.Y` is merged, create and push the tag from the
-**tip of `release-X.Y`**:
+Once the version bump PR on `release-X.Y` is merged, run the `dapr-python-release-tag`
+workflow on `release-X.Y` (see [Creating the tag](#creating-the-tag)):
 
 ```bash
-git checkout release-X.Y
-git pull upstream release-X.Y
-
-git tag vX.Y.0rc0 && git push upstream vX.Y.0rc0
+gh workflow run dapr-python-release-tag --repo dapr/python-sdk --ref release-X.Y -f version=X.Y.0rc0
 ```
 
-The tag push triggers the `dapr-python-release` workflow which builds and uploads
+The tag triggers the `dapr-python-release` workflow which builds and uploads
 all packages to PyPI.
 
 ## Scenario B — Ship a new release candidate
@@ -154,15 +151,12 @@ Perform this when you want to publish `X.Y.0rcN` (N ≥ 1) from an existing `rel
 
 Open a PR **targeting `release-X.Y`** that changes `VERSION` from `X.Y.0rc(N-1)` → `X.Y.0rcN`.
 
-### 2. Push the tag
+### 2. Create the tag
 
 Once the PR is merged:
 
 ```bash
-git checkout release-X.Y
-git pull upstream release-X.Y
-
-git tag vX.Y.0rcN && git push upstream vX.Y.0rcN
+gh workflow run dapr-python-release-tag --repo dapr/python-sdk --ref release-X.Y -f version=X.Y.0rcN
 ```
 
 ## Scenario C — Ship the stable release (and patch releases)
@@ -175,19 +169,35 @@ initial `X.Y.0` or a patch release (`X.Y.1`, `X.Y.2`, …).
 Open a PR **targeting `release-X.Y`** that drops the `rcN` suffix in `VERSION`:
 `X.Y.ZrcN` → `X.Y.Z`.
 
-### 2. Push the tag
+### 2. Create the tag
 
 Once the PR is merged:
 
 ```bash
-git checkout release-X.Y
-git pull upstream release-X.Y
-
-git tag vX.Y.Z && git push upstream vX.Y.Z
+gh workflow run dapr-python-release-tag --repo dapr/python-sdk --ref release-X.Y -f version=X.Y.Z
 ```
 
-Alternatively, create a **GitHub Release** targeting `release-X.Y` with tag `vX.Y.Z` — this
-creates the tag and triggers the publish workflow automatically.
+## Creating the tag
+
+The `dapr-python-release-tag` workflow is the supported way to tag a release. Before it
+creates `vX.Y.Z` at the tip of the selected branch, it runs `tools/check_release_version.py`,
+which fails when:
+
+- `VERSION` does not match the version you asked to release, which usually means the bump
+  PR has not been merged yet;
+- the branch is not `release-X.Y`, or `VERSION` belongs to a different `X.Y` series;
+- `VERSION` is a `.dev` version;
+- a tag for `VERSION` already exists.
+
+You can run the same check locally before triggering the workflow:
+
+```bash
+python tools/check_release_version.py --expected X.Y.Z --branch release-X.Y --require-untagged
+```
+
+A tag pushed by hand, or created through a GitHub Release, skips these checks. The publish
+workflow still compares the tag to `VERSION` and refuses to upload on a mismatch. By then the
+tag already exists, though, and has to be deleted and recreated once `VERSION` is fixed.
 
 ## Backporting changes
 
