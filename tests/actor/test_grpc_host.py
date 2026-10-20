@@ -570,14 +570,30 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         with mock.patch.dict('os.environ', {}, clear=True):
             self.assertIsNone(ActorGrpcHost._resolve_app_port(None))
 
+    async def _start_host_on_free_app_port(self, attempts: int = 5) -> ActorGrpcHost:
+        """Starts a host whose app-channel listener binds a free port.
+
+        _free_port releases the port before the host binds it, so another
+        socket can take it in between; a failed bind retries on a fresh port.
+        """
+        for attempt in range(attempts):
+            host = ActorGrpcHost(address=f'localhost:{self.grpc_port}', app_port=_free_port())
+            await host.register_actor(HostTestActor)
+            try:
+                await host.start()
+            except RuntimeError as error:
+                if 'Failed to bind' not in str(error) or attempt == attempts - 1:
+                    raise
+                continue
+            return host
+        raise AssertionError('attempts must be at least 1')
+
     async def test_owns_app_channel_listener(self):
         # When an app port is set, the host starts the empty app-channel
         # listener daprd needs and tears it down on close.
-        host = ActorGrpcHost(address=f'localhost:{self.grpc_port}', app_port=_free_port())
         self._fake_dapr_server.actor_stream_plans.append(_plan())
-        await host.register_actor(HostTestActor)
+        host = await self._start_host_on_free_app_port()
         try:
-            await host.start()
             self.assertIsNotNone(host._app_server)
         finally:
             await host.close()
