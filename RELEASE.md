@@ -51,9 +51,6 @@ The warning and the `flask_dapr` shim are kept through 1.21 and removed in
 support keeps it alive until 1.21, so this window covers every user who could
 still be migrating.
 
-Create the tag with the `dapr-python-release-tag` workflow, which checks `VERSION` before tagging
-(see [Creating the tag](#creating-the-tag)).
-
 ## Overview
 
 Releases follow a branching model where `main` is always the development trunk.
@@ -104,9 +101,10 @@ minor as `.dev` — once `release-X.Y` is forked, `main` advances from
 
 ## Remote convention
 
-All commands below use `upstream` to refer to the **canonical Dapr repository**
+All `git` commands below use `upstream` to refer to the **canonical Dapr repository**
 (`https://github.com/dapr/python-sdk`), not your personal fork.
-If your local remote is named differently, substitute accordingly.
+If your local remote is named differently, substitute accordingly. The `gh` commands name the
+repository with `--repo` instead.
 
 ## Scenario A — Fork a new release branch
 
@@ -189,11 +187,19 @@ which fails when:
 - `VERSION` is a `.dev` version;
 - a tag for `VERSION` already exists.
 
-You can run the same check locally before triggering the workflow:
+You can run the same check locally before triggering the workflow, from an up-to-date checkout
+of `release-X.Y` with all tags fetched:
 
 ```bash
+git checkout release-X.Y && git pull upstream release-X.Y && git fetch upstream --tags
 python tools/check_release_version.py --expected X.Y.Z --branch release-X.Y --require-untagged
 ```
+
+The workflow runs the copy of itself found on the selected branch, so it only works on release
+branches that contain `.github/workflows/release-tag.yaml` and `tools/check_release_version.py`.
+Branches cut before these were added (`release-1.18` and older, and `release-1.19` until they are
+backported) still tag by hand from the tip of the branch:
+`git tag vX.Y.Z && git push upstream vX.Y.Z`.
 
 A tag pushed by hand, or created through a GitHub Release, skips these checks. The publish
 workflow still compares the tag to `VERSION` and refuses to upload on a mismatch. By then the

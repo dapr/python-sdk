@@ -39,9 +39,7 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
-        # A tag pushed with GITHUB_TOKEN does not trigger other workflows,
-        # so the bot token is what lets this tag start dapr-python-release.
-        token: ${{ secrets.DAPR_BOT_TOKEN }}
+        persist-credentials: false
     - name: Set up Python 3.10
       uses: actions/setup-python@v7
       with:
@@ -55,8 +53,14 @@ jobs:
           --branch "$GITHUB_REF" \
           --require-untagged
     - name: Create and push tag
+      env:
+        # A tag pushed with GITHUB_TOKEN does not trigger other workflows,
+        # so the bot token is what lets this tag start dapr-python-release.
+        # It is only handed to this step, not persisted by checkout.
+        BOT_TOKEN: ${{ secrets.DAPR_BOT_TOKEN }}
       run: |
         release_tag="v$(tr -d '[:space:]' < VERSION)"
         git tag "$release_tag" "$GITHUB_SHA"
-        git push origin "refs/tags/$release_tag"
+        git push "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+          "refs/tags/$release_tag"
         echo "Pushed $release_tag at $GITHUB_SHA; dapr-python-release publishes it." >> "$GITHUB_STEP_SUMMARY"

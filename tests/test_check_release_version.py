@@ -17,10 +17,12 @@ before a tag is created and again before anything is published.
 """
 
 import importlib.util
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from types import ModuleType
+from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / 'tools' / 'check_release_version.py'
@@ -45,7 +47,21 @@ class ReleaseVersionFormatTests(unittest.TestCase):
                 crv.check_release_version(version)
 
     def test_rejects_dev_and_non_normalized_versions(self) -> None:
-        for version in ('1.19.0.dev', '1.19.0-rc1', '1.19.0.rc1', '1.19', 'v1.19.0', ''):
+        rejected_versions = (
+            '1.19.0.dev',
+            '1.19.0-rc1',
+            '1.19.0.rc1',
+            '1.19',
+            'v1.19.0',
+            '',
+            '1.19.0rc',
+            '1.19.0.post1',
+            '1.19.0rc1.dev0',
+            '01.19.0',
+            '1.19.0rc01',
+            '\u0661.19.0',
+        )
+        for version in rejected_versions:
             with self.subTest(version=version):
                 with self.assertRaises(crv.ReleaseVersionError):
                     crv.check_release_version(version)
@@ -71,7 +87,15 @@ class BranchTests(unittest.TestCase):
             crv.check_branch('1.20.0rc0', 'release-1.19')
 
     def test_non_release_branch_fails(self) -> None:
-        for branch in ('main', 'release-1', 'feature/release-1.19', 'release-1.19-hotfix'):
+        rejected_branches = (
+            'main',
+            'release-1',
+            'feature/release-1.19',
+            'release-1.19-hotfix',
+            'refs/tags/release-1.19',
+            'release-1.19.0',
+        )
+        for branch in rejected_branches:
             with self.subTest(branch=branch):
                 with self.assertRaises(crv.ReleaseVersionError):
                     crv.check_branch('1.19.0', branch)
@@ -96,6 +120,19 @@ class UntaggedTests(unittest.TestCase):
             crv.check_untagged('1.19.0rc1', {'v1.19.0rc0', 'v1.19.0rc1'})
 
 
+class ListGitTagsTests(unittest.TestCase):
+    def test_git_failure_raises_release_version_error(self) -> None:
+        git_error = subprocess.CalledProcessError(128, ['git'], stderr='not a git repository\n')
+        with mock.patch.object(crv.subprocess, 'run', side_effect=git_error):
+            with self.assertRaisesRegex(crv.ReleaseVersionError, 'not a git repository'):
+                crv.list_git_tags()
+
+    def test_missing_git_raises_release_version_error(self) -> None:
+        with mock.patch.object(crv.subprocess, 'run', side_effect=FileNotFoundError('git')):
+            with self.assertRaisesRegex(crv.ReleaseVersionError, 'Cannot list git tags'):
+                crv.list_git_tags()
+
+
 class MainTests(unittest.TestCase):
     def setUp(self) -> None:
         temp_dir = tempfile.TemporaryDirectory()
@@ -116,6 +153,26 @@ class MainTests(unittest.TestCase):
             exit_code = self.run_main('--expected', '1.19.0rc2', '--branch', 'release-1.19')
         self.assertEqual(exit_code, 1)
         self.assertIn('Bump VERSION', captured_logs.output[0])
+
+    def test_fails_when_version_is_already_tagged(self) -> None:
+        existing_tags = {'v1.19.0rc0', 'v1.19.0rc1'}
+        with mock.patch.object(crv, 'list_git_tags', return_value=existing_tags):
+            with self.assertLogs(crv.logger, level='ERROR') as captured_logs:
+                exit_code = self.run_main('--require-untagged')
+        self.assertEqual(exit_code, 1)
+        self.assertIn('already exists', captured_logs.output[0])
+
+    def test_passes_when_version_is_untagged(self) -> None:
+        with mock.patch.object(crv, 'list_git_tags', return_value={'v1.19.0rc0'}):
+            exit_code = self.run_main('--require-untagged')
+        self.assertEqual(exit_code, 0)
+
+    def test_fails_when_version_file_is_missing(self) -> None:
+        self.version_path.unlink()
+        with self.assertLogs(crv.logger, level='ERROR') as captured_logs:
+            exit_code = self.run_main()
+        self.assertEqual(exit_code, 1)
+        self.assertIn('Cannot read', captured_logs.output[0])
 
     def test_fails_when_tag_does_not_match(self) -> None:
         with self.assertLogs(crv.logger, level='ERROR'):

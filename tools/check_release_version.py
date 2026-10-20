@@ -43,10 +43,12 @@ BRANCH_REF_PREFIX = 'refs/heads/'
 RELEASE_DOC_HINT = 'See RELEASE.md.'
 GIT_TIMEOUT_SECONDS = 30
 
-# Only PEP 440-normalized stable or rc versions, so the tag, the VERSION file
-# and the wheel metadata all spell the version identically.
-RELEASE_VERSION_PATTERN = re.compile(r'(?P<series>\d+\.\d+)\.\d+(?:rc\d+)?')
-RELEASE_BRANCH_PATTERN = re.compile(r'release-(?P<series>\d+\.\d+)')
+# Only PEP 440-normalized stable or rc versions (ASCII digits, no leading zeros),
+# so the tag, the VERSION file and the wheel metadata all spell the version identically.
+VERSION_NUMBER = r'(?:0|[1-9][0-9]*)'
+RELEASE_SERIES = rf'(?P<series>{VERSION_NUMBER}\.{VERSION_NUMBER})'
+RELEASE_VERSION_PATTERN = re.compile(rf'{RELEASE_SERIES}\.{VERSION_NUMBER}(?:rc{VERSION_NUMBER})?')
+RELEASE_BRANCH_PATTERN = re.compile(rf'release-{RELEASE_SERIES}')
 
 logger = logging.getLogger('check_release_version')
 
@@ -57,7 +59,10 @@ class ReleaseVersionError(Exception):
 
 def read_version(version_path: Path = VERSION_FILE) -> str:
     """Returns the version string stored in the VERSION file."""
-    return version_path.read_text(encoding='utf-8').strip()
+    try:
+        return version_path.read_text(encoding='utf-8').strip()
+    except OSError as error:
+        raise ReleaseVersionError(f'Cannot read {version_path}: {error}') from error
 
 
 def strip_tag_prefix(tag: str) -> str:
@@ -126,20 +131,30 @@ def check_untagged(version: str, existing_tags: Iterable[str]) -> None:
 
 
 def list_git_tags() -> set[str]:
-    """Returns every tag known to the local clone."""
-    git_result = subprocess.run(
-        ['git', 'tag', '--list'],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-        timeout=GIT_TIMEOUT_SECONDS,
-    )
+    """Returns every release tag known to the local clone.
+
+    Only tags already fetched are seen, so the caller must fetch tags first.
+    """
+    git_command = ['git', 'tag', '--list', f'{TAG_PREFIX}*']
+    try:
+        git_result = subprocess.run(
+            git_command,
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=GIT_TIMEOUT_SECONDS,
+        )
+    except subprocess.CalledProcessError as error:
+        raise ReleaseVersionError(f'git tag failed: {error.stderr.strip()}') from error
+    except (subprocess.SubprocessError, OSError) as error:
+        raise ReleaseVersionError(f'Cannot list git tags: {error}') from error
     return set(git_result.stdout.split())
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[1] if __doc__ else None)
+    """Parses the command line; `None` reads `sys.argv`."""
+    parser = argparse.ArgumentParser(description='Checks that VERSION is ready to be released.')
     parser.add_argument('--version-file', type=Path, default=VERSION_FILE)
     parser.add_argument('--expected', help='version the maintainer intends to release')
     parser.add_argument('--branch', help='release branch the tag will be cut from')
@@ -156,11 +171,11 @@ def run_checks(args: argparse.Namespace) -> str:
     """Runs every check the arguments ask for and returns the validated version."""
     version = read_version(args.version_file)
     check_release_version(version)
-    if args.expected:
+    if args.expected is not None:
         check_expected_version(version, args.expected)
-    if args.branch:
+    if args.branch is not None:
         check_branch(version, args.branch)
-    if args.tag:
+    if args.tag is not None:
         check_tag(version, args.tag)
     if args.require_untagged:
         check_untagged(version, list_git_tags())
@@ -175,6 +190,7 @@ def configure_logging() -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Runs the requested checks and returns the process exit code."""
     args = parse_args(argv)
     try:
         version = run_checks(args)
