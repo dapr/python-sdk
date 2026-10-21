@@ -87,12 +87,13 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
         mock_response.__aexit__ = AsyncMock(return_value=None)
         mock_get.return_value = mock_response
 
-        start = time.time()
+        start = time.monotonic()
 
         with self.assertRaises(TimeoutError):
             await DaprHealth.wait_for_sidecar()
 
-        self.assertGreaterEqual(time.time() - start, 2.5)
+        # Same clock as DaprHealth. On Windows, time.time() can read a few ms less.
+        self.assertGreaterEqual(time.monotonic() - start, 2.5)
         self.assertGreater(mock_get.call_count, 1)
 
     @patch.object(settings, 'DAPR_HTTP_ENDPOINT', 'http://domain.com:3500')
@@ -174,13 +175,13 @@ class DaprHealthCheckAsyncTests(unittest.IsolatedAsyncioTestCase):
         mock_get.return_value = mock_response
 
         # Run multiple health checks concurrently
-        start_time = time.time()
+        start_time = time.monotonic()
         results = await asyncio.gather(
             DaprHealth.wait_for_sidecar(),
             DaprHealth.wait_for_sidecar(),
             DaprHealth.wait_for_sidecar(),
         )
-        elapsed = time.time() - start_time
+        elapsed = time.monotonic() - start_time
 
         # All should complete successfully
         self.assertEqual(len(results), 3)
