@@ -50,7 +50,7 @@ class DaprActorGrpcClient(DaprActorClientBase):
 
     def __init__(
         self,
-        timeout: int = 60,
+        timeout: Optional[int] = 60,
         address: Optional[str] = None,
         channel: Optional[grpc.aio.Channel] = None,
         message_serializer: Serializer = DefaultJSONSerializer(),
@@ -59,7 +59,7 @@ class DaprActorGrpcClient(DaprActorClientBase):
         """Creates the gRPC actor client.
 
         Args:
-            timeout (int): per-call timeout in seconds.
+            timeout (int, optional): per-call timeout in seconds; None means no timeout.
             address (str, optional): Dapr runtime gRPC address; defaults to the
                 same resolution as the Dapr clients (DAPR_GRPC_ENDPOINT et al).
             channel (grpc.aio.Channel, optional): externally owned channel to
