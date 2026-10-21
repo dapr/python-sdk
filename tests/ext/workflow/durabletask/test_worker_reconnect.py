@@ -26,7 +26,7 @@ import pytest
 import dapr.ext.workflow._durabletask.internal.helpers as ph
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.worker import (
-    _CONNECT_HELLO_TIMEOUT,
+    _CONNECT_HELLO_STEP_TIMEOUT,
     _MAX_RECONNECT_BACKOFF_MS,
     _RESULT_SEND_TIMEOUT,
     TaskHubGrpcWorker,
@@ -44,11 +44,22 @@ class _RpcError(grpc.RpcError):
         return self._code.name
 
 
+def _unreachable_hello(
+    *_args: object, timeout: Optional[float] = None, wait_for_ready: bool = False
+) -> None:
+    """Behaves as a Hello on a channel that cannot connect to the sidecar."""
+    if not wait_for_ready:
+        raise _RpcError(grpc.StatusCode.UNAVAILABLE)
+    time.sleep(timeout or 0)
+    raise _RpcError(grpc.StatusCode.DEADLINE_EXCEEDED)
+
+
 class _SidecarStub:
     """The worker's one stub: serves a work-item stream per connect, each open until ended.
 
     ``hello_errors`` and ``hello_gates`` apply to successive Hellos, so a test can fail or hold
-    a reconnect while earlier connects succeed.
+    a reconnect while earlier connects succeed. With ``sidecar_down``, every Hello behaves as on
+    a channel that cannot connect.
     """
 
     def __init__(
@@ -57,8 +68,10 @@ class _SidecarStub:
         hello_errors: Sequence[Optional[Exception]] = (),
         hello_gates: Sequence[Optional[threading.Event]] = (),
         work_items: Sequence[pb.WorkItem] = (),
+        sidecar_down: bool = False,
     ):
         self._worker = worker
+        self._sidecar_down = sidecar_down
         self._hello_errors = list(hello_errors)
         self._hello_gates = list(hello_gates)
         self._work_items = list(work_items)
@@ -75,6 +88,8 @@ class _SidecarStub:
     ) -> None:
         self.hello_timeouts.append(timeout)
         self.hello_waits_for_ready.append(wait_for_ready)
+        if self._sidecar_down:
+            _unreachable_hello(timeout=timeout, wait_for_ready=wait_for_ready)
         gate = self._hello_gates.pop(0) if self._hello_gates else None
         if gate is not None:
             assert gate.wait(5)
@@ -150,8 +165,36 @@ def test_connect_hello_has_a_deadline() -> None:
     with _running(worker, stub):
         assert _wait_until(lambda: stub.streams_opened == 1)
 
-    assert stub.hello_timeouts == [_CONNECT_HELLO_TIMEOUT]
+    assert stub.hello_timeouts == [_CONNECT_HELLO_STEP_TIMEOUT]
     assert stub.hello_waits_for_ready == [True]
+
+
+def test_stop_does_not_wait_out_the_connect_hello_during_an_outage() -> None:
+    """stop() waits for calls in flight, so a Hello held for its whole deadline would hold it."""
+    worker = _worker()
+    stub = _SidecarStub(worker, sidecar_down=True)
+
+    def start() -> None:
+        with pytest.raises(RuntimeError, match='stopped before'):
+            worker.start()
+
+    with (
+        patch('dapr.ext.workflow._durabletask.worker.shared.get_grpc_channel'),
+        patch(
+            'dapr.ext.workflow._durabletask.worker.stubs.TaskHubSidecarServiceStub',
+            return_value=stub,
+        ),
+    ):
+        starter = threading.Thread(target=start)
+        starter.start()
+        assert _wait_until(lambda: len(stub.hello_timeouts) > 0)
+
+        stop_started = time.monotonic()
+        worker.stop()
+        stop_duration = time.monotonic() - stop_started
+        starter.join(5)
+
+    assert stop_duration < 5, f'stop() took {stop_duration:.1f}s while the sidecar was down'
 
 
 def test_reconnects_reuse_the_one_channel() -> None:
@@ -271,6 +314,25 @@ def _worker_with_channel() -> tuple[TaskHubGrpcWorker, MagicMock, MagicMock]:
     worker._channel = channel
     worker._stub = stub
     return worker, channel, stub
+
+
+def test_connect_hello_ends_with_a_hello_that_fails_fast() -> None:
+    """Once the wait runs out, the last Hello reports why the channel is not ready."""
+    worker, _channel, stub = _worker_with_channel()
+    stub.Hello.side_effect = _unreachable_hello
+
+    with (
+        patch('dapr.ext.workflow._durabletask.worker._CONNECT_HELLO_TIMEOUT', 0.35),
+        patch('dapr.ext.workflow._durabletask.worker._CONNECT_HELLO_STEP_TIMEOUT', 0.1),
+        pytest.raises(_RpcError) as raised,
+    ):
+        worker._send_connect_hello()
+
+    assert raised.value.code() == grpc.StatusCode.UNAVAILABLE
+    waits_for_ready = [call.kwargs['wait_for_ready'] for call in stub.Hello.call_args_list]
+    assert waits_for_ready[-1] is False
+    assert len(waits_for_ready) > 1
+    assert all(waits_for_ready[:-1])
 
 
 def test_result_is_dropped_once_the_channel_is_closed() -> None:

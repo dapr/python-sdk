@@ -235,6 +235,9 @@ _HISTORY_CACHE_SWEEP_INTERVAL = 60.0
 # the channel to be ready, so a sidecar that comes back is seen as soon as gRPC reconnects to it,
 # rather than after the run loop's own retry delay on top of gRPC's reconnect backoff.
 _CONNECT_HELLO_TIMEOUT = 30.0
+# The connect Hello waits for the channel in steps this long. Each step is a call in flight, which
+# stop() waits for before it closes the channel, so this bounds how long an outage holds stop().
+_CONNECT_HELLO_STEP_TIMEOUT = 1.0
 # Deadline for each call that sends a result or fetches history. These calls wait for the channel
 # to be ready, so a result that is ready while the worker reconnects goes out once it is back.
 # stop() closes the channel only once no call is in flight, so this also bounds stop().
@@ -583,6 +586,36 @@ class TaskHubGrpcWorker:
             if stub is not None:
                 stub.Hello(empty_pb2.Empty(), timeout=10)
 
+    def _send_hello(self, timeout: float, wait_for_ready: bool) -> None:
+        with self._sidecar_stub() as stub:
+            if stub is None:
+                raise RuntimeError('the worker is stopping')
+            stub.Hello(empty_pb2.Empty(), timeout=timeout, wait_for_ready=wait_for_ready)
+
+    def _send_connect_hello(self) -> None:
+        """Sends the Hello that checks a connection, waiting up to _CONNECT_HELLO_TIMEOUT for it.
+
+        The wait is split into short Hellos so that stop(), which closes the channel only once
+        no call is in flight, never waits on a sidecar that is down for longer than one of them.
+
+        Raises:
+            grpc.RpcError: The sidecar did not answer in time, or refused the Hello.
+            RuntimeError: The worker is stopping.
+        """
+        deadline = time.monotonic() + _CONNECT_HELLO_TIMEOUT
+        while time.monotonic() + _CONNECT_HELLO_STEP_TIMEOUT < deadline:
+            if self._shutdown.is_set():
+                raise RuntimeError('the worker is stopping')
+            try:
+                self._send_hello(_CONNECT_HELLO_STEP_TIMEOUT, wait_for_ready=True)
+                return
+            except grpc.RpcError as rpc_error:
+                if rpc_error.code() != grpc.StatusCode.DEADLINE_EXCEEDED:
+                    raise
+        # Without wait_for_ready, the last Hello fails with the reason the channel is not ready,
+        # rather than with a bare deadline.
+        self._send_hello(_CONNECT_HELLO_STEP_TIMEOUT, wait_for_ready=False)
+
     async def _keepalive_loop(self):
         """Background keepalive loop to keep the gRPC connection alive through L7 load balancers."""
         loop = asyncio.get_running_loop()
@@ -624,12 +657,7 @@ class TaskHubGrpcWorker:
             nonlocal connected, conn_retry_count
             connected = False
             try:
-                with self._sidecar_stub() as stub:
-                    if stub is None:
-                        raise RuntimeError('the worker is stopping')
-                    stub.Hello(
-                        empty_pb2.Empty(), timeout=_CONNECT_HELLO_TIMEOUT, wait_for_ready=True
-                    )
+                self._send_connect_hello()
             except Exception as e:
                 self._logger.warning(f'Failed to connect: {e}')
                 raise
