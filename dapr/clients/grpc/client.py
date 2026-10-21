@@ -17,7 +17,7 @@ import logging
 import socket
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Text, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -39,6 +39,13 @@ from typing_extensions import Self
 
 from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
 from dapr.clients.grpc import conversation
+from dapr.clients.grpc._binarystore import (
+    DEFAULT_CHUNK_SIZE,
+    BinaryFileResponse,
+    _BinaryFileUpload,
+    resolve_timeout,
+    validate_names,
+)
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataTuple,
@@ -93,6 +100,7 @@ from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
+from dapr.proto.runtime.v1 import binarystore_pb2 as binary_v1
 from dapr.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -1430,6 +1438,110 @@ class DaprGrpcClient:
         return UnlockResponse(
             status=UnlockResponseStatus(response.status), headers=call.initial_metadata()
         )
+
+    def set_binary_file_alpha1(
+        self,
+        store_name: str,
+        file_name: str,
+        data: Union[bytes, BinaryIO],
+        *,
+        overwrite: bool = False,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        timeout: Optional[float] = None,
+    ) -> DaprResponse:
+        """Upload bytes or a binary reader to a binary store (Dapr 1.19 alpha).
+
+        The reader is consumed from its current position and remains open. Uploads
+        are not automatically retried, even when a retry policy is configured.
+
+        Args:
+            store_name (str): Binary-store component name.
+            file_name (str): File name, including any component-supported prefix.
+            data (bytes or BinaryIO): Bytes or a reader returning binary chunks.
+            overwrite (bool): Replace an existing file; defaults to False.
+            chunk_size (int): Maximum upload chunk size in bytes; defaults to 32 KiB.
+            timeout (float, optional): Deadline for the complete transfer in seconds.
+                When omitted, uses DAPR_API_TIMEOUT_SECONDS if configured.
+
+        Returns:
+            DaprResponse: Successful completion and response headers.
+
+        Raises:
+            TypeError: If an argument or reader result has an invalid type.
+            ValueError: If names are blank or chunk_size is not positive.
+            DaprGrpcError: If the runtime rejects or fails the upload.
+            OSError: If reading the caller's input fails.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        source = _BinaryFileUpload(store_name, file_name, data, overwrite, chunk_size)
+        call = self._stub.SetBinaryFileAlpha1.future(iter(source), timeout=resolve_timeout(timeout))
+        try:
+            call.result()
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as error:
+            if source.error is not None:
+                raise source.error from error
+            raise DaprGrpcError(error) from error
+        finally:
+            source.stop()
+            call.cancel()
+
+    def get_binary_file_alpha1(
+        self, store_name: str, file_name: str, *, timeout: Optional[float] = None
+    ) -> BinaryFileResponse:
+        """Stream a binary file from Dapr 1.19's alpha Binary Store API.
+
+        Iterate over the response for bounded-memory consumption, or call read()
+        to buffer the remaining file. Use a context manager or close() on early
+        exit. RPC errors are raised while consuming the response. The deadline
+        covers the whole transfer, including time spent consuming it; an omitted
+        timeout uses DAPR_API_TIMEOUT_SECONDS when configured. Downloads are not
+        automatically retried. Blank names raise ValueError and runtime failures
+        raise DaprGrpcError.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validate_names(store_name, file_name)
+        request = binary_v1.GetBinaryFileRequestAlpha1(
+            component_name=store_name, file_name=file_name
+        )
+        return BinaryFileResponse(
+            self._stub.GetBinaryFileAlpha1(request, timeout=resolve_timeout(timeout))
+        )
+
+    def delete_binary_file_alpha1(
+        self, store_name: str, file_name: str, *, timeout: Optional[float] = None
+    ) -> DaprResponse:
+        """Delete a binary file using Dapr 1.19's alpha Binary Store API.
+
+        Returns DaprResponse with response headers. Blank names raise ValueError;
+        server failures raise DaprGrpcError, preserving the component's missing-file
+        behavior. No SDK retry is performed. The optional timeout is in seconds and
+        otherwise uses DAPR_API_TIMEOUT_SECONDS when configured.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validate_names(store_name, file_name)
+        request = binary_v1.DeleteBinaryFileRequestAlpha1(
+            component_name=store_name, file_name=file_name
+        )
+        try:
+            _, call = self._stub.DeleteBinaryFileAlpha1.with_call(
+                request, timeout=resolve_timeout(timeout)
+            )
+        except RpcError as error:
+            raise DaprGrpcError(error) from error
+        return DaprResponse(headers=call.initial_metadata())
 
     def encrypt(self, data: Union[str, bytes], options: EncryptOptions):
         """Encrypt a stream data with given options.

@@ -127,6 +127,57 @@ jobs:
         run: |
           uv run pytest tests/examples/
 
+  validate-binary-store:
+    runs-on: ubuntu-latest
+    env:
+      CHECKOUT_REPO: ${{ github.repository }}
+      CHECKOUT_REF: ${{ github.ref }}
+      DAPR_TEST_REQUIRE_BINARY_STORE: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        python_ver: ["3.10", "3.14"]
+    steps:
+      - name: Parse repository_dispatch payload
+        if: github.event_name == 'repository_dispatch'
+        env:
+          COMMAND: ${{ github.event.client_payload.command }}
+          PULL_HEAD_REPO: ${{ github.event.client_payload.pull_head_repo }}
+          PULL_HEAD_REF: ${{ github.event.client_payload.pull_head_ref }}
+        run: |
+          if [ "$COMMAND" = "ok-to-test" ]; then
+            echo "CHECKOUT_REPO=$PULL_HEAD_REPO" >> "$GITHUB_ENV"
+            echo "CHECKOUT_REF=$PULL_HEAD_REF" >> "$GITHUB_ENV"
+          fi
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.CHECKOUT_REPO }}
+          ref: ${{ env.CHECKOUT_REF }}
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python_ver }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
+      - name: Install dependencies
+        run: uv sync --frozen --all-packages --group tests
+      - name: Set up Dapr CLI
+        uses: dapr/.github/.github/actions/setup-dapr-cli@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Dapr runtime with binary-store support
+        uses: dapr/.github/.github/actions/setup-dapr-runtime@main
+        with:
+          version: 1.19.0-rc.4
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate binary-store integration and examples
+        run: >-
+          uv run pytest -m binary_store
+          tests/integration/test_binarystore.py
+          tests/integration/test_binarystore_async.py
+          tests/examples/test_binary_store.py
+
   # The stateful-history delta path (dapr/durabletask-go#110, reaching dapr via
   # dapr/dapr#10142) is not in any release yet, so the matrix above cannot
   # exercise it. This job builds daprd from master and runs the workflow suites

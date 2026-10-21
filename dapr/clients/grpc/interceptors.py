@@ -4,6 +4,8 @@ from typing import List, Tuple, Union
 from grpc import (  # type: ignore
     ClientCallDetails,
     StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
     UnaryUnaryClientInterceptor,
 )
 
@@ -64,7 +66,12 @@ class DaprClientTimeoutInterceptor(UnaryUnaryClientInterceptor):
         return continuation(client_call_details, request)
 
 
-class DaprClientInterceptor(UnaryUnaryClientInterceptor, StreamStreamClientInterceptor):
+class DaprClientInterceptor(
+    UnaryUnaryClientInterceptor,
+    StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+):
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
 
@@ -151,3 +158,9 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor, StreamStreamClientInter
         # Call continuation
         response = continuation(new_call_details, request_iterator)
         return response
+
+    def intercept_stream_unary(self, continuation, client_call_details, request_iterator):
+        return continuation(self._intercept_call(client_call_details), request_iterator)
+
+    def intercept_unary_stream(self, continuation, client_call_details, request):
+        return continuation(self._intercept_call(client_call_details), request)
