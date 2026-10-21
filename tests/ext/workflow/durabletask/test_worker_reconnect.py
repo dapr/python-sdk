@@ -335,6 +335,28 @@ def test_connect_hello_ends_with_a_hello_that_fails_fast() -> None:
     assert all(waits_for_ready[:-1])
 
 
+def test_connect_hello_does_not_retry_a_refusal() -> None:
+    """Only a timed-out Hello is retried; any other answer from the sidecar is final."""
+    worker, _channel, stub = _worker_with_channel()
+    stub.Hello.side_effect = _RpcError(grpc.StatusCode.UNAUTHENTICATED)
+
+    with pytest.raises(_RpcError) as raised:
+        worker._send_connect_hello()
+
+    assert raised.value.code() == grpc.StatusCode.UNAUTHENTICATED
+    stub.Hello.assert_called_once()
+
+
+def test_connect_hello_fails_once_the_channel_is_closed() -> None:
+    worker, _channel, stub = _worker_with_channel()
+    worker._close_channel()
+
+    with pytest.raises(RuntimeError, match='the worker is stopping'):
+        worker._send_connect_hello()
+
+    stub.Hello.assert_not_called()
+
+
 def test_result_is_dropped_once_the_channel_is_closed() -> None:
     worker, _channel, stub = _worker_with_channel()
     worker._close_channel()

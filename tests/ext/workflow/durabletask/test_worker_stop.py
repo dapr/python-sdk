@@ -78,6 +78,16 @@ def test_stop_channel_close_handles_exception(caplog):
     assert worker._channel is None
 
 
+def test_stop_warns_when_the_run_loop_outlives_the_timeout(caplog):
+    """stop() still finishes when the worker thread does not exit in time, and says so."""
+    worker = _make_running_worker()
+    worker._channel = MagicMock()
+    worker._runLoop.is_alive.return_value = True
+    worker.stop()
+    assert 'did not complete within' in caplog.text
+    assert worker._runLoop is None
+
+
 def test_stop_before_start_is_noop():
     """stop() is safe to call before start() — _runLoop is None, no AttributeError."""
     worker = TaskHubGrpcWorker()
