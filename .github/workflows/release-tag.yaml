@@ -29,6 +29,9 @@ concurrency:
   group: release-tag-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   tag:
     runs-on: ubuntu-latest
