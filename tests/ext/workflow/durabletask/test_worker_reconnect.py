@@ -58,8 +58,9 @@ class _SidecarStub:
     """The worker's one stub: serves a work-item stream per connect, each open until ended.
 
     ``hello_errors`` and ``hello_gates`` apply to successive Hellos, so a test can fail or hold
-    a reconnect while earlier connects succeed. With ``sidecar_down``, every Hello behaves as on
-    a channel that cannot connect.
+    a reconnect while earlier connects succeed. Likewise, ``open_errors`` fail successive attempts
+    to open a stream, and ``stream_errors`` break successive streams once their work items are
+    read. With ``sidecar_down``, every Hello behaves as on a channel that cannot connect.
     """
 
     def __init__(
@@ -68,6 +69,8 @@ class _SidecarStub:
         hello_errors: Sequence[Optional[Exception]] = (),
         hello_gates: Sequence[Optional[threading.Event]] = (),
         work_items: Sequence[pb.WorkItem] = (),
+        open_errors: Sequence[Optional[Exception]] = (),
+        stream_errors: Sequence[Optional[Exception]] = (),
         sidecar_down: bool = False,
     ):
         self._worker = worker
@@ -75,6 +78,8 @@ class _SidecarStub:
         self._hello_errors = list(hello_errors)
         self._hello_gates = list(hello_gates)
         self._work_items = list(work_items)
+        self._open_errors = list(open_errors)
+        self._stream_errors = list(stream_errors)
         self.hello_timeouts: list[Optional[float]] = []
         self.hello_waits_for_ready: list[bool] = []
         self.results: list[Union[pb.ActivityResponse, pb.WorkflowResponse]] = []
@@ -98,10 +103,19 @@ class _SidecarStub:
             raise error
 
     def GetWorkItems(self, _request: pb.GetWorkItemsRequest) -> Iterator[pb.WorkItem]:  # noqa: N802
+        open_error = self._open_errors.pop(0) if self._open_errors else None
+        if open_error is not None:
+            raise open_error
+        return self._stream()
+
+    def _stream(self) -> Iterator[pb.WorkItem]:
         self.streams_opened += 1
         self._stream_end.clear()
         work_items, self._work_items = self._work_items, []
         yield from work_items
+        stream_error = self._stream_errors.pop(0) if self._stream_errors else None
+        if stream_error is not None:
+            raise stream_error
         while not self._stream_end.wait(0.01):
             if self._worker._shutdown.is_set():
                 return
@@ -212,6 +226,40 @@ def test_reconnects_reuse_the_one_channel() -> None:
 
     get_channel.assert_called_once()
     channel.close.assert_called_once()
+
+
+def test_stream_that_breaks_is_reopened_on_the_one_channel() -> None:
+    worker = _worker()
+    stub = _SidecarStub(worker, stream_errors=[ValueError('stream broke')])
+    history_cache = worker._history_cache
+
+    with (
+        patch.object(history_cache, 'reset', wraps=history_cache.reset) as reset_cache,
+        _running(worker, stub) as get_channel,
+    ):
+        assert _wait_until(lambda: stub.streams_opened == 2), 'broken stream was not reopened'
+        assert _wait_until(worker.is_worker_ready), 'not ready again after reopening'
+        reset_cache.assert_called()
+        get_channel.return_value.close.assert_not_called()
+
+    get_channel.assert_called_once()
+
+
+def test_stream_that_fails_to_open_is_retried_on_the_one_channel() -> None:
+    worker = _worker()
+    stub = _SidecarStub(worker, open_errors=[_RpcError(grpc.StatusCode.UNAVAILABLE)])
+    history_cache = worker._history_cache
+
+    with (
+        patch.object(history_cache, 'reset', wraps=history_cache.reset) as reset_cache,
+        _running(worker, stub) as get_channel,
+    ):
+        assert _wait_until(lambda: stub.streams_opened == 1), 'stream open was not retried'
+        assert worker.is_worker_ready()
+        reset_cache.assert_called()
+        get_channel.return_value.close.assert_not_called()
+
+    get_channel.assert_called_once()
 
 
 def test_channel_caps_grpc_reconnect_backoff_and_keeps_caller_options() -> None:
