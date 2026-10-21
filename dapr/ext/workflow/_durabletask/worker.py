@@ -561,7 +561,12 @@ class TaskHubGrpcWorker:
         def run_loop():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            loop.run_until_complete(self._async_run_loop())
+            try:
+                loop.run_until_complete(self._async_run_loop())
+            finally:
+                # Left open, the loop is closed whenever the GC collects it, and on Windows
+                # that close calls time.monotonic() from whatever thread happens to run the GC.
+                loop.close()
 
         self._logger.info(f'Starting gRPC worker that connects to {self._host_address}')
         self._open_channel()
