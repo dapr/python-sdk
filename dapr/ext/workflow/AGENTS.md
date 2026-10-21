@@ -120,7 +120,9 @@ Activities can be either `def my_activity(ctx, inp)` or `async def my_activity(c
 
 At dispatch time (the gRPC stream loop in `_durabletask/worker.py`), `is_async_callable(activity_fn)` on the wrapper selects between two handlers.
 
-- **Async activities** go through `_execute_activity_async`, then `_ActivityExecutor.execute_async`, which awaits `fn(...)` directly on the event loop. The gRPC response is delivered via `loop.run_in_executor(self._async_worker_manager.thread_pool, stub.CompleteActivityTask, ...)` — the same pool sync activities use, sized by `maximum_thread_pool_workers`.
+- **Async activities** go through `_execute_activity_async`, then `_ActivityExecutor.execute_async`, which awaits `fn(...)` directly on the event loop. The gRPC response is delivered via `loop.run_in_executor(self._async_worker_manager.thread_pool, self._deliver_activity_response, ...)` — the same pool sync activities use, sized by `maximum_thread_pool_workers`.
+
+**Results go on the current connection.** A work item can outlive the connection it arrived on: when the sidecar ends the work-item stream the worker reconnects and closes the old channel shortly after. Activity and workflow results are therefore sent through `_send_on_current_connection`, which uses the worker's connection at the moment the result is ready and waits up to `_RESULT_RECONNECT_WAIT` seconds for a reconnect. Never send on a stub captured when the work item arrived.
 - **Sync activities** go through `_execute_activity`, dispatched to the thread pool by `_AsyncWorkerManager._run_func`. The activity runs on a worker thread, and the response is delivered from the same thread.
 
 Workflow (orchestrator) functions must remain generators (`def` with `yield`). They cannot be `async def` because durabletask's deterministic replay depends on synchronous generator semantics. Only activities support async.
