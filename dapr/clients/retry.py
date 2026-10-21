@@ -15,18 +15,21 @@ limitations under the License.
 
 import asyncio
 import time
-from typing import Callable, List, Optional
+from typing import Callable, List, Union
 
 from grpc import RpcError, StatusCode  # type: ignore
 
-from dapr.conf import settings
+from dapr.conf import _FromSettings
+
+_MAX_RETRIES_FROM_SETTINGS = _FromSettings('DAPR_API_MAX_RETRIES')
 
 
 class RetryPolicy:
     """RetryPolicy holds the retry policy configuration for a gRPC client.
 
     Args:
-        max_attempts (int): The maximum number of retry attempts.
+        max_attempts (int, optional): The maximum number of retry attempts. Defaults to
+            ``DAPR_API_MAX_RETRIES``, read when the policy is constructed.
         initial_backoff (int): The initial backoff duration.
         max_backoff (int): The maximum backoff duration.
         backoff_multiplier (float): The backoff multiplier.
@@ -36,7 +39,7 @@ class RetryPolicy:
 
     def __init__(
         self,
-        max_attempts: Optional[int] = settings.DAPR_API_MAX_RETRIES,
+        max_attempts: Union[int, None, _FromSettings] = _MAX_RETRIES_FROM_SETTINGS,
         initial_backoff: int = 1,
         max_backoff: int = 20,
         backoff_multiplier: float = 1.5,
@@ -46,6 +49,9 @@ class RetryPolicy:
             StatusCode.DEADLINE_EXCEEDED,
         ],
     ):
+        if isinstance(max_attempts, _FromSettings):
+            max_attempts = int(max_attempts.resolve())
+
         if max_attempts is None or max_attempts < -1:
             raise ValueError('max_attempts must be greater than or equal to -1')
         self.max_attempts = max_attempts
