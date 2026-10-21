@@ -74,4 +74,7 @@ def convert_to_dapr_duration(td: timedelta) -> str:
     milliseconds, microseconds = divmod(td.microseconds, 1000.0)
     hours, mins = divmod(total_minutes, 60.0)
 
-    return f'{hours:.0f}h{mins:.0f}m{seconds:.0f}s{milliseconds:.0f}ms{microseconds:.0f}μs'
+    # `seconds` still carries the sub-second fraction, which is also emitted via
+    # the ms/μs fields below; truncate it so the fraction is not double-counted
+    # (and so a fraction >= 0.5 is not rounded up into an extra whole second).
+    return f'{hours:.0f}h{mins:.0f}m{int(seconds)}s{milliseconds:.0f}ms{microseconds:.0f}μs'
