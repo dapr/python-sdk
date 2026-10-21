@@ -6,6 +6,7 @@ import warnings
 from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_dot_common__pb2
 from dapr.proto.runtime.v1 import actors_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2
 from dapr.proto.runtime.v1 import ai_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2
+from dapr.proto.runtime.v1 import binarystore_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2
 from dapr.proto.runtime.v1 import binding_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_binding__pb2
 from dapr.proto.runtime.v1 import configuration_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_configuration__pb2
 from dapr.proto.runtime.v1 import crypto_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_crypto__pb2
@@ -419,6 +420,21 @@ class DaprStub:
                 '/dapr.proto.runtime.v1.Dapr/ConverseAlpha2',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationRequestAlpha2.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationResponseAlpha2.FromString,
+                _registered_method=True)
+        self.SetBinaryFileAlpha1 = channel.stream_unary(
+                '/dapr.proto.runtime.v1.Dapr/SetBinaryFileAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileResponseAlpha1.FromString,
+                _registered_method=True)
+        self.GetBinaryFileAlpha1 = channel.unary_stream(
+                '/dapr.proto.runtime.v1.Dapr/GetBinaryFileAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileResponseAlpha1.FromString,
+                _registered_method=True)
+        self.DeleteBinaryFileAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/DeleteBinaryFileAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileResponseAlpha1.FromString,
                 _registered_method=True)
 
 
@@ -949,6 +965,28 @@ class DaprServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetBinaryFileAlpha1(self, request_iterator, context):
+        """Stores a binary file using a streaming request. The first message must
+        contain the options; subsequent messages carry the file content as chunks.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetBinaryFileAlpha1(self, request, context):
+        """Retrieves a binary file as a stream of chunks.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteBinaryFileAlpha1(self, request, context):
+        """Deletes a binary file.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DaprServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -1321,6 +1359,21 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.ConverseAlpha2,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationRequestAlpha2.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationResponseAlpha2.SerializeToString,
+            ),
+            'SetBinaryFileAlpha1': grpc.stream_unary_rpc_method_handler(
+                    servicer.SetBinaryFileAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileResponseAlpha1.SerializeToString,
+            ),
+            'GetBinaryFileAlpha1': grpc.unary_stream_rpc_method_handler(
+                    servicer.GetBinaryFileAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileResponseAlpha1.SerializeToString,
+            ),
+            'DeleteBinaryFileAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteBinaryFileAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileResponseAlpha1.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -3322,6 +3375,87 @@ class Dapr:
             '/dapr.proto.runtime.v1.Dapr/ConverseAlpha2',
             dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationRequestAlpha2.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationResponseAlpha2.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetBinaryFileAlpha1(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_unary(
+            request_iterator,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/SetBinaryFileAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetBinaryFileAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/GetBinaryFileAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteBinaryFileAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/DeleteBinaryFileAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileResponseAlpha1.FromString,
             options,
             channel_credentials,
             insecure,
