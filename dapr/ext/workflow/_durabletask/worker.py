@@ -478,7 +478,9 @@ class TaskHubGrpcWorker:
         self._shutdown = Event()
         self._is_running = False
         self._secure_channel = secure_channel
-        self._channel_options = channel_options
+        # The sidecar bounds work items by its max request body size. A lower receive limit here
+        # only makes the worker refuse, re-fetch and refuse the same work item forever.
+        self._channel_options = [('grpc.max_receive_message_length', -1), *(channel_options or [])]
         self._stop_timeout = stop_timeout
         self._keepalive_interval = keepalive_interval
         self._current_channel: Optional[grpc.Channel] = None  # Store channel reference for cleanup
