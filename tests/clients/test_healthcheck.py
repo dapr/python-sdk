@@ -71,12 +71,13 @@ class DaprHealthCheckTests(unittest.TestCase):
     def test_wait_for_sidecar_timeout(self, mock_urlopen):
         mock_urlopen.return_value.__enter__.return_value = MagicMock(status=500)
 
-        start = time.time()
+        start = time.monotonic()
 
         with self.assertRaises(TimeoutError):
             DaprHealth.wait_for_sidecar()
 
-        self.assertGreaterEqual(time.time() - start, 2.5)
+        # Same clock as DaprHealth. On Windows, time.time() can read a few ms less.
+        self.assertGreaterEqual(time.monotonic() - start, 2.5)
         self.assertGreater(mock_urlopen.call_count, 1)
 
 
@@ -103,14 +104,14 @@ class DaprHealthCheckUnresponsiveSidecarTests(unittest.TestCase):
             # Run in a daemon thread so a regression fails this test instead of hanging
             # the whole session.
             waiter = threading.Thread(target=wait, daemon=True)
-            start = time.time()
+            start = time.monotonic()
             waiter.start()
             waiter.join(self.HANG_LIMIT_SECONDS)
 
         self.assertFalse(waiter.is_alive(), 'wait_for_sidecar() blocked past DAPR_HEALTH_TIMEOUT')
         self.assertIsInstance(outcome.get('error'), TimeoutError)
         self.assertIn('Dapr health check timed out', str(outcome['error']))
-        self.assertLess(time.time() - start, self.HANG_LIMIT_SECONDS)
+        self.assertLess(time.monotonic() - start, self.HANG_LIMIT_SECONDS)
         logged = [str(call.args[0]) for call in mock_print.call_args_list if call.args]
         self.assertTrue(any(line.endswith('failed: timed out') for line in logged), logged)
         self.assertFalse(any(line.startswith('Unexpected error') for line in logged), logged)
