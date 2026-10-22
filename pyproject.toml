@@ -2,6 +2,21 @@
 name = "dapr"
 dynamic = ["version"]
 description = "The official release of Dapr Python SDK."
+keywords = [
+    "dapr",
+    "durable-execution",
+    "durable-workflows",
+    "workflow",
+    "microservices",
+    "sidecar",
+    "pubsub",
+    "state-management",
+    "actors",
+    "ai-agents",
+    "langgraph",
+    "strands-agents",
+    "checkpointer",
+]
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -11,6 +26,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -120,8 +136,11 @@ all = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/dapr/docs"
+Homepage = "https://dapr.io"
+Documentation = "https://docs.dapr.io/developing-applications/sdks/python/"
 Source = "https://github.com/dapr/python-sdk"
+Issues = "https://github.com/dapr/python-sdk/issues"
+Changelog = "https://github.com/dapr/python-sdk/releases"
 
 [build-system]
 requires = ["hatchling"]
