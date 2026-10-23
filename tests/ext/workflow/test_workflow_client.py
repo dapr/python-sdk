@@ -13,13 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import socket
+import threading
+import time
 import unittest
 import warnings
 from datetime import datetime
 from typing import Any, Union
 from unittest import mock
 
-from grpc import RpcError
+from grpc import RpcError, StatusCode
 
 from dapr.conf import settings
 from dapr.ext.workflow._durabletask import client
@@ -153,6 +156,73 @@ class WorkflowClientTimeoutInterceptorTest(unittest.TestCase):
             from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 
             self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptor)
+
+
+class SilentTcpServer:
+    """Accepts TCP connections and never answers, like a sidecar lost behind a network change."""
+
+    def __init__(self):
+        self._listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._listener.bind(('127.0.0.1', 0))
+        self._listener.listen()
+        self.port = self._listener.getsockname()[1]
+        self._connections: list[socket.socket] = []
+        self._accept_thread = threading.Thread(target=self._accept_forever, daemon=True)
+        self._accept_thread.start()
+
+    def _accept_forever(self) -> None:
+        while True:
+            try:
+                connection, _ = self._listener.accept()
+            except OSError:
+                return
+            self._connections.append(connection)
+
+    def close(self) -> None:
+        self._listener.close()
+        for connection in self._connections:
+            connection.close()
+        self._accept_thread.join(timeout=5)
+
+
+class WorkflowClientApiTimeoutTest(unittest.TestCase):
+    def test_api_timeout_seconds_is_passed_to_interceptor(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient(api_timeout_seconds=2.5)
+            interceptor = mock_client_cls.call_args[1]['interceptors'][0]
+            self.assertEqual(2.5, interceptor._timeout_seconds)
+
+    def test_api_timeout_seconds_defaults_to_none(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.client.TaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient()
+            interceptor = mock_client_cls.call_args[1]['interceptors'][0]
+            self.assertIsNone(interceptor._timeout_seconds)
+
+    def test_non_positive_api_timeout_seconds_is_rejected(self):
+        with mock.patch('dapr.ext.workflow._durabletask.client.TaskHubGrpcClient'):
+            with self.assertRaises(ValueError):
+                DaprWorkflowClient(api_timeout_seconds=0)
+
+    @mock.patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', None)
+    def test_call_to_unresponsive_sidecar_hits_the_deadline(self):
+        server = SilentTcpServer()
+        self.addCleanup(server.close)
+        wf_client = DaprWorkflowClient(
+            host='127.0.0.1', port=str(server.port), api_timeout_seconds=0.5
+        )
+        self.addCleanup(wf_client.close)
+
+        started_at = time.monotonic()
+        with self.assertRaises(RpcError) as raised:
+            wf_client.schedule_new_workflow(workflow='wf', instance_id=mock_instance_id)
+        elapsed_seconds = time.monotonic() - started_at
+
+        self.assertEqual(StatusCode.DEADLINE_EXCEEDED, raised.exception.code())
+        self.assertLess(elapsed_seconds, 5)
 
 
 class WorkflowClientChannelOptionsTest(unittest.TestCase):
