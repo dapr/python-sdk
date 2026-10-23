@@ -191,7 +191,7 @@ uv run ./tools/regen_grpcclient.sh
 
 ## Help & Feedback
 
-Need help or have feedback on the SDK? Please open a GitHub issue or come chat with us in the `#python-sdk` channel of our Discord server ([click here to join](https://discord.gg/MySdYxrH)).
+Need help or have feedback on the SDK? Please open a GitHub issue or come chat with us in the `#python-sdk` channel of our Discord server ([click here to join](https://discord.gg/MySdVxrH)).
 
 ## Code of Conduct
 
