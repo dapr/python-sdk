@@ -17,7 +17,7 @@ import threading
 
 import grpc
 
-from dapr.proto import common_v1
+from dapr.proto import api_v1, common_v1
 from dapr.proto.runtime.v1 import binarystore_pb2 as binary_v1
 from tests.clients.fake_dapr_server import FakeDaprSidecar
 
@@ -112,3 +112,10 @@ class BinaryStoreSidecar(FakeDaprSidecar):
     def EncryptAlpha1(self, requests, context):
         self._record('encrypt', context)
         yield from super().EncryptAlpha1(requests, context)
+
+    def SubscribeConfiguration(self, request, context):
+        self._record('configuration', context)
+        yield api_v1.SubscribeConfigurationResponse(id='configuration-subscription')
+
+    def SubscribeConfigurationAlpha1(self, request, context):
+        yield from self.SubscribeConfiguration(request, context)

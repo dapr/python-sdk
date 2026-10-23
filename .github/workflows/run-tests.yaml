@@ -171,6 +171,11 @@ jobs:
         with:
           version: 1.19.0-rc.4
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify Dapr runtime version
+        run: |
+          runtime_version=$("$HOME/.dapr/bin/daprd" --version)
+          echo "Dapr runtime: $runtime_version"
+          test "$runtime_version" = "1.19.0-rc.4"
       - name: Validate binary-store integration and examples
         run: >-
           uv run pytest -m binary_store
@@ -286,7 +291,7 @@ jobs:
   # changes. Skipped required checks count as passing, hence `if: always()`
   # plus an explicit result check instead of relying on `needs` alone.
   validate-complete:
-    needs: [validate, validate-dapr-head]
+    needs: [validate, validate-dapr-head, validate-binary-store]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -300,5 +305,11 @@ jobs:
         run: |
           if [ "${{ needs.validate-dapr-head.result }}" != "success" ]; then
             echo "validate-dapr-head result: ${{ needs.validate-dapr-head.result }}"
+            exit 1
+          fi
+      - name: Fail unless the binary-store matrix succeeded
+        run: |
+          if [ "${{ needs.validate-binary-store.result }}" != "success" ]; then
+            echo "validate-binary-store result: ${{ needs.validate-binary-store.result }}"
             exit 1
           fi

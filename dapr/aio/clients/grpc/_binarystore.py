@@ -17,7 +17,8 @@ import asyncio
 import operator
 from typing import Any, AsyncIterator, Optional
 
-from grpc.aio import AioRpcError  # type: ignore
+from grpc import StatusCode  # type: ignore
+from grpc.aio import AioRpcError, Metadata  # type: ignore
 
 from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc._binarystore import _BinaryFileUpload
@@ -92,6 +93,7 @@ class AsyncBinaryFileResponse:
         self._expected_seq = 0
         self._closed = False
         self._eof = False
+        self._read_task: Optional[asyncio.Future[Any]] = None
 
     def _check_open(self) -> None:
         if self._closed:
@@ -99,6 +101,29 @@ class AsyncBinaryFileResponse:
 
     def __aiter__(self) -> AsyncIterator[bytes]:
         return self
+
+    async def _next_message(self) -> binary_v1.GetBinaryFileResponseAlpha1:
+        task = asyncio.ensure_future(self._iterator.__anext__())
+        self._read_task = task
+        try:
+            # wait() raises CancelledError only for cancellation of this reader's
+            # task. Inspecting the result separately also works on Python 3.10,
+            # where Task.cancelling() is unavailable.
+            await asyncio.wait((task,))
+            try:
+                return task.result()
+            except asyncio.CancelledError as error:
+                raise AioRpcError(
+                    StatusCode.CANCELLED,
+                    Metadata(),
+                    Metadata(),
+                    'Binary file download was cancelled',
+                ) from error
+        finally:
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            self._read_task = None
 
     async def __anext__(self) -> bytes:
         self._check_open()
@@ -109,7 +134,7 @@ class AsyncBinaryFileResponse:
             raise StopAsyncIteration
         try:
             while True:
-                message = await self._iterator.__anext__()
+                message = await self._next_message()
                 if not message.HasField('payload'):
                     raise ValueError('binary store response is missing its payload')
                 if message.payload.seq != self._expected_seq:
@@ -151,7 +176,19 @@ class AsyncBinaryFileResponse:
             self._closed = True
             self._buffer = b''
             if not self._eof:
-                self._stream.cancel()
+                cancel = getattr(self._stream, 'cancel', None)
+                if cancel is not None:
+                    cancel()
+                else:
+                    # A tracing interceptor may expose only an async iterator.
+                    # Stop an active read before closing its generator.
+                    task = self._read_task
+                    if task is not None:
+                        task.cancel()
+                        await asyncio.gather(task, return_exceptions=True)
+                    close = getattr(self._iterator, 'aclose', None)
+                    if close is not None:
+                        await close()
 
     async def __aenter__(self) -> 'AsyncBinaryFileResponse':
         self._check_open()

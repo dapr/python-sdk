@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import asyncio
+import builtins
 import io
 import threading
 import unittest
@@ -29,6 +30,7 @@ from dapr.clients.exceptions import DaprGrpcError
 from dapr.clients.grpc._binarystore import _BinaryFileUpload
 from dapr.clients.retry import RetryPolicy
 from dapr.conf import settings
+from dapr.proto import api_v1
 from dapr.proto.runtime.v1 import binarystore_pb2 as binary_v1
 from tests.clients.binarystore_server import BinaryStoreSidecar
 from tests.clients.test_binarystore import message
@@ -88,6 +90,103 @@ class AsyncBinaryFileReaderTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(b'', await response.read(100))
         await response.aclose()
         stream.cancel.assert_not_called()
+
+    async def test_close_async_generator_releases_stream(self):
+        closed = []
+
+        async def stream():
+            try:
+                yield message(b'abc')
+                yield message(b'def', 1)
+            finally:
+                closed.append(True)
+
+        response = AsyncBinaryFileResponse(stream())
+        self.assertEqual(b'a', await response.read(1))
+        await response.aclose()
+        await response.aclose()
+        self.assertEqual([True], closed)
+
+    async def test_external_close_ends_pending_generator_read_as_rpc_error(self):
+        started = asyncio.Event()
+        closed = asyncio.Event()
+
+        async def stream():
+            try:
+                started.set()
+                await asyncio.Future()
+                yield message(b'never reached')
+            finally:
+                closed.set()
+
+        response = AsyncBinaryFileResponse(stream())
+        reader = asyncio.create_task(response.read())
+        try:
+            await asyncio.wait_for(started.wait(), 2)
+            await response.aclose()
+            with self.assertRaises(DaprGrpcError) as caught:
+                await asyncio.wait_for(reader, 2)
+            self.assertEqual(grpc.StatusCode.CANCELLED, caught.exception.code())
+            self.assertFalse(reader.cancelled())
+            self.assertTrue(closed.is_set())
+        finally:
+            reader.cancel()
+            await asyncio.gather(reader, return_exceptions=True)
+
+    async def test_caller_cancellation_closes_generator(self):
+        started = asyncio.Event()
+        closed = asyncio.Event()
+
+        async def stream():
+            try:
+                started.set()
+                await asyncio.Future()
+                yield message(b'never reached')
+            finally:
+                closed.set()
+
+        response = AsyncBinaryFileResponse(stream())
+        reader = asyncio.create_task(response.read())
+        try:
+            await asyncio.wait_for(started.wait(), 2)
+            reader.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await reader
+            self.assertTrue(reader.cancelled())
+            self.assertTrue(closed.is_set())
+        finally:
+            reader.cancel()
+            await asyncio.gather(reader, return_exceptions=True)
+
+    async def test_malformed_response_closes_async_generator(self):
+        closed = []
+
+        async def stream():
+            try:
+                yield message(b'invalid sequence', 1)
+            finally:
+                closed.append(True)
+
+        response = AsyncBinaryFileResponse(stream())
+        with self.assertRaisesRegex(ValueError, 'sequence number'):
+            await response.read()
+        self.assertEqual([True], closed)
+
+    @unittest.skipUnless(hasattr(asyncio, 'TaskGroup'), 'TaskGroup requires Python 3.11')
+    async def test_rpc_cancellation_is_reported_by_task_group(self):
+        async def stream():
+            raise asyncio.CancelledError()
+            yield message(b'never reached')
+
+        response = AsyncBinaryFileResponse(stream())
+        with self.assertRaises(getattr(builtins, 'ExceptionGroup')) as caught:
+            async with getattr(asyncio, 'TaskGroup')() as group:
+                reader = group.create_task(response.read())
+        self.assertFalse(reader.cancelled())
+        self.assertEqual(1, len(caught.exception.exceptions))
+        error = caught.exception.exceptions[0]
+        self.assertIsInstance(error, DaprGrpcError)
+        self.assertEqual(grpc.StatusCode.CANCELLED, error.code())
 
 
 class AsyncBinaryStoreClientTests(unittest.IsolatedAsyncioTestCase):
@@ -207,6 +306,9 @@ class AsyncBinaryStoreClientTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(DaprGrpcError) as caught:
             await response.read()
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, caught.exception.code())
+        with self.assertRaises(DaprGrpcError) as caught:
+            await self.client.delete_binary_file_alpha1('files', 'missing')
+        self.assertEqual(grpc.StatusCode.NOT_FOUND, caught.exception.code())
         self.server.download_error = None
         self.server.hold_download = True
         self.server.download_cancelled.clear()
@@ -287,8 +389,27 @@ class AsyncBinaryStoreClientTests(unittest.IsolatedAsyncioTestCase):
         response = await self.client.get_binary_file_alpha1('files', 'file')
         self.assertEqual(b'abc', await response.read(3))
         await self.client.close()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(DaprGrpcError) as caught:
             await response.read()
+        self.assertEqual(grpc.StatusCode.CANCELLED, caught.exception.code())
+        self.assertTrue(await asyncio.to_thread(self.server.download_cancelled.wait, 5))
+
+    async def test_close_ends_blocked_download_as_rpc_error(self):
+        self.server.files[('files', 'file')] = b'abc'
+        self.server.hold_download = True
+        response = await self.client.get_binary_file_alpha1('files', 'file')
+        self.assertEqual(b'abc', await response.read(3))
+        reader = asyncio.create_task(response.read())
+        try:
+            await asyncio.sleep(0)
+            await response.aclose()
+            with self.assertRaises(DaprGrpcError) as caught:
+                await asyncio.wait_for(reader, 2)
+            self.assertEqual(grpc.StatusCode.CANCELLED, caught.exception.code())
+            self.assertFalse(reader.cancelled())
+        finally:
+            reader.cancel()
+            await asyncio.gather(reader, return_exceptions=True)
         self.assertTrue(await asyncio.to_thread(self.server.download_cancelled.wait, 5))
 
     async def test_cancel_blocked_download_preserves_cancellation(self):
@@ -335,6 +456,29 @@ class AsyncBinaryStoreClientTests(unittest.IsolatedAsyncioTestCase):
                 self.assertLessEqual(deadline, 7.1)
             elif method == 'delete':
                 self.assertLessEqual(deadline, 3.1)
+
+    @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
+    async def test_existing_configuration_stream_sends_one_token(self):
+        self.server.token = 'test-token'
+        cases = [(), (('custom-header', 'first'), ('another-header', 'second'))]
+        cases.append((*cases[-1], ('dapr-api-token', 'test-token')))
+        async with DaprGrpcClientAsync(f'127.0.0.1:{self.server.grpc_port}') as client:
+            for rpc in ['SubscribeConfiguration', 'SubscribeConfigurationAlpha1']:
+                for metadata in cases:
+                    with self.subTest(rpc=rpc, metadata=metadata):
+                        responses = [
+                            response
+                            async for response in getattr(client._stub, rpc)(
+                                api_v1.SubscribeConfigurationRequest(store_name='configuration'),
+                                metadata=metadata,
+                            )
+                        ]
+                        self.assertEqual('configuration-subscription', responses[0].id)
+                        method, headers, _ = self.server.calls[-1]
+                        self.assertEqual('configuration', method)
+                        self.assertEqual(1, headers.count(('dapr-api-token', 'test-token')))
+                        for header in metadata:
+                            self.assertIn(header, headers)
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     async def test_custom_metadata_survives_binary_store_rpc_shapes(self):

@@ -105,7 +105,9 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClient
         metadata: List[Tuple[str, str]] = []
         if client_call_details.metadata is not None:
             metadata = list(client_call_details.metadata)  # type: ignore[arg-type]
-        metadata.extend(self._metadata)
+        for header in self._metadata:
+            if header[0] != 'dapr-api-token' or header not in metadata:
+                metadata.append(header)
 
         new_call_details = _ClientCallDetailsAsync(
             client_call_details.method,

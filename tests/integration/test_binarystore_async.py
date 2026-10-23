@@ -32,10 +32,10 @@ pytestmark = [
 
 
 @pytest.mark.parametrize('size', [0, 1, 32767, 32768, 32769, 98309, 5 * 1024 * 1024])
-async def test_streaming_round_trip(binary_store_client, size):
+async def test_streaming_round_trip(binary_store_endpoint, size):
     name = f'async/round-trip-{size}'
     data = (bytes(range(256)) * (size // 256 + 1))[:size]
-    async with DaprClient(address='127.0.0.1:13501') as client:
+    async with DaprClient(address=binary_store_endpoint) as client:
         source = io.BytesIO(data)
         await client.set_binary_file_alpha1('binarystore', name, source)
         assert not source.closed
@@ -53,8 +53,8 @@ async def test_streaming_round_trip(binary_store_client, size):
         assert caught.value.code() == grpc.StatusCode.NOT_FOUND
 
 
-async def test_overwrite_errors_and_early_close(binary_store_client):
-    async with DaprClient(address='127.0.0.1:13501') as client:
+async def test_overwrite_errors_and_early_close(binary_store_endpoint):
+    async with DaprClient(address=binary_store_endpoint) as client:
         await client.set_binary_file_alpha1('binarystore', 'async/overwrite', b'original')
         with pytest.raises(DaprGrpcError) as caught:
             await client.set_binary_file_alpha1('binarystore', 'async/overwrite', b'rejected')
@@ -81,8 +81,8 @@ async def test_overwrite_errors_and_early_close(binary_store_client):
         assert caught.value.code() == grpc.StatusCode.INVALID_ARGUMENT
 
 
-async def test_capacity_recovery_and_failed_overwrite_preserves_original(binary_store_client):
-    async with DaprClient(address='127.0.0.1:13501') as client:
+async def test_capacity_recovery_and_failed_overwrite_preserves_original(binary_store_endpoint):
+    async with DaprClient(address=binary_store_endpoint) as client:
         await client.set_binary_file_alpha1('limited', 'capacity-a', b'a' * 64)
         await client.set_binary_file_alpha1('limited', 'capacity-b', b'b' * 64)
         with pytest.raises(DaprGrpcError) as caught:
@@ -104,8 +104,8 @@ async def test_capacity_recovery_and_failed_overwrite_preserves_original(binary_
         await client.delete_binary_file_alpha1('limited', 'capacity-c')
 
 
-async def test_concurrent_calls_on_shared_client(binary_store_client):
-    async with DaprClient(address='127.0.0.1:13501') as client:
+async def test_concurrent_calls_on_shared_client(binary_store_endpoint):
+    async with DaprClient(address=binary_store_endpoint) as client:
 
         async def round_trip(index):
             name = f'concurrent/{index}'
@@ -120,8 +120,8 @@ async def test_concurrent_calls_on_shared_client(binary_store_client):
 
 
 @pytest.mark.parametrize('overwrite', [False, True])
-async def test_incomplete_upload_is_not_published(binary_store_client, overwrite):
-    async with DaprClient(address='127.0.0.1:13501') as client:
+async def test_incomplete_upload_is_not_published(binary_store_endpoint, overwrite):
+    async with DaprClient(address=binary_store_endpoint) as client:
         name = f'pending/{overwrite}'
         if overwrite:
             await client.set_binary_file_alpha1('binarystore', name, b'original')
@@ -151,8 +151,8 @@ async def test_incomplete_upload_is_not_published(binary_store_client, overwrite
         await client.delete_binary_file_alpha1('binarystore', name)
 
 
-async def test_large_duplicate_rejections_preserve_original(binary_store_client):
-    async with DaprClient(address='127.0.0.1:13501') as client:
+async def test_large_duplicate_rejections_preserve_original(binary_store_endpoint):
+    async with DaprClient(address=binary_store_endpoint) as client:
         await client.set_binary_file_alpha1('binarystore', 'duplicate', b'original')
         masked_statuses = 0
         for _ in range(8):

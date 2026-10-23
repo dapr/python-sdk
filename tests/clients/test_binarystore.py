@@ -99,6 +99,22 @@ class BinaryFileReaderTests(unittest.TestCase):
             with self.subTest(data=data), self.assertRaises(TypeError):
                 _BinaryFileUpload('files', 'file', data, False, 2)
 
+    def test_close_generator_releases_stream(self):
+        closed = []
+
+        def stream():
+            try:
+                yield message(b'abc')
+                yield message(b'def', 1)
+            finally:
+                closed.append(True)
+
+        response = BinaryFileResponse(stream())
+        self.assertEqual(b'a', response.read(1))
+        response.close()
+        response.close()
+        self.assertEqual([True], closed)
+
 
 class BinaryStoreClientTests(unittest.TestCase):
     def setUp(self):
@@ -257,6 +273,28 @@ class BinaryStoreClientTests(unittest.TestCase):
                 self.assertLessEqual(deadline, 7.1)
             elif method == 'delete':
                 self.assertLessEqual(deadline, 3.1)
+
+    @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
+    def test_existing_configuration_stream_sends_one_token(self):
+        self.server.token = 'test-token'
+        cases = [(), (('custom-header', 'first'), ('another-header', 'second'))]
+        cases.append((*cases[-1], ('dapr-api-token', 'test-token')))
+        with DaprGrpcClient(f'127.0.0.1:{self.server.grpc_port}') as client:
+            for rpc in ['SubscribeConfiguration', 'SubscribeConfigurationAlpha1']:
+                for metadata in cases:
+                    with self.subTest(rpc=rpc, metadata=metadata):
+                        responses = list(
+                            getattr(client._stub, rpc)(
+                                api_v1.SubscribeConfigurationRequest(store_name='configuration'),
+                                metadata=metadata,
+                            )
+                        )
+                        self.assertEqual('configuration-subscription', responses[0].id)
+                        method, headers, _ = self.server.calls[-1]
+                        self.assertEqual('configuration', method)
+                        self.assertEqual(1, headers.count(('dapr-api-token', 'test-token')))
+                        for header in metadata:
+                            self.assertIn(header, headers)
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
     def test_custom_metadata_survives_all_rpc_shapes(self):

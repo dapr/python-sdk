@@ -49,6 +49,9 @@ the remaining file in memory, so use it for small files. Partial reads and itera
 share one cursor; use one consumer per response. Get failures surface while reading.
 Use `with`/`close()` (async: `async with`/`aclose()`) to cancel an unfinished download.
 The async get method must first be awaited, as shown in the example.
+If closing the client or response interrupts an async read, that read raises
+`DaprGrpcError` with status `CANCELLED`. Cancelling the reader's own task preserves
+`asyncio.CancelledError`.
 
 `delete_binary_file_alpha1(store_name, file_name, *, timeout=None)` deletes a file.
 Missing-file behavior depends on the component; the in-memory component reports

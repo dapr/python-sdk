@@ -26,7 +26,7 @@ CRYPTO_KEYS_DIR = INTEGRATION_DIR / 'keys'
 
 
 @pytest.fixture(scope='module')
-def binary_store_client(dapr_env):
+def binary_store_sidecar(dapr_env):
     """A token-protected 1.19 sidecar with isolated, in-memory resources."""
     require_binary_store_runtime()
     token = 'binary-store-integration-token'
@@ -35,11 +35,30 @@ def binary_store_client(dapr_env):
         patch.object(settings, 'DAPR_API_TOKEN', token),
     ):
         try:
-            yield dapr_env.start_sidecar(
-                app_id='test-binary-store', resources=RESOURCES_DIR / 'binarystore'
+            grpc_port = 13511
+            client = dapr_env.start_sidecar(
+                app_id='test-binary-store',
+                resources=RESOURCES_DIR / 'binarystore',
+                grpc_port=grpc_port,
+                http_port=13510,
+                internal_grpc_port=13512,
+                metrics_port=13513,
             )
+            yield client, f'127.0.0.1:{grpc_port}'
         finally:
             dapr_env.cleanup()
+
+
+@pytest.fixture(scope='module')
+def binary_store_client(binary_store_sidecar):
+    client, _ = binary_store_sidecar
+    return client
+
+
+@pytest.fixture(scope='module')
+def binary_store_endpoint(binary_store_sidecar):
+    _, endpoint = binary_store_sidecar
+    return endpoint
 
 
 class DaprTestEnvironment:
