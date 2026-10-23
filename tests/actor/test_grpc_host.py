@@ -41,10 +41,11 @@ from grpc.aio import AioRpcError
 from dapr.actor.actor_interface import ActorInterface, actormethod
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.config import ActorRuntimeConfig
-from dapr.actor.runtime.grpc_host import ActorGrpcHost
+from dapr.actor.runtime.grpc_host import ActorGrpcHost, _StreamSession
 from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.runtime.runtime import ActorRuntime
+from dapr.conf import settings
 from dapr.proto import api_v1
 from dapr.serializers import DefaultJSONSerializer
 from tests.clients.fake_dapr_server import FakeDaprSidecar
@@ -449,6 +450,36 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
 
         reply_ids = {reply.invoke_response.id for reply in replies}
         self.assertEqual({'req-1', 'req-2'}, reply_ids)
+
+    @mock.patch.object(settings, 'DAPR_API_TOKEN', 'actor-token')
+    async def test_token_channel_reconnect_does_not_leak_request_tasks(self):
+        before = asyncio.all_tasks()
+        # Retain stream handles so garbage collection cannot hide an unfinished
+        # request poller belonging to a disconnected session.
+        with mock.patch(
+            'dapr.actor.runtime.grpc_host._StreamSession', side_effect=_StreamSession
+        ) as sessions:
+            with mock.patch('dapr.actor.runtime.grpc_host._RECONNECT_DELAY_SECONDS', 0.05):
+                await self._serve_plans(
+                    _plan([_invoke_message('first', 'GetName')], end='abort'),
+                    _plan([_invoke_message('second', 'GetName')]),
+                )
+                await self._wait_until(
+                    lambda: len(self._fake_dapr_server.actor_stream_initials) >= 2
+                )
+                await self._await_replies(2)
+            await self.host.close()
+            self.assertGreaterEqual(sessions.call_count, 2)
+            finishing = asyncio.all_tasks() - before
+            if finishing:
+                await asyncio.wait(finishing, timeout=1)
+            pending = [task for task in asyncio.all_tasks() - before if not task.done()]
+            try:
+                self.assertEqual([], [task.get_coro().__qualname__ for task in pending])
+            finally:
+                for task in pending:
+                    task.cancel()
+                await asyncio.gather(*pending, return_exceptions=True)
 
     async def test_run_task_death_after_registration_is_logged_and_resets(self):
         """A non-transient failure after a successful registration has no

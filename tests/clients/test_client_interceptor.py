@@ -46,3 +46,21 @@ class DaprClientInterceptorTests(unittest.TestCase):
         self.assertIsNotNone(response)
         self.assertEqual(2, len(response.metadata))
         self.assertEqual([('header', 'value'), ('api-token', 'test-token')], response.metadata)
+
+    def test_matching_api_token_is_not_duplicated_and_other_values_are_preserved(self):
+        interceptor = DaprClientInterceptor([('dapr-api-token', 'test-token')])
+        metadata = [
+            ('header', 'first'),
+            ('header', 'second'),
+            ('dapr-api-token', 'test-token'),
+        ]
+        call_details = _ClientCallDetails('method1', 10, metadata, None, None, None)
+        for intercept in [
+            interceptor.intercept_unary_unary,
+            interceptor.intercept_unary_stream,
+            interceptor.intercept_stream_unary,
+            interceptor.intercept_stream_stream,
+        ]:
+            with self.subTest(intercept=intercept.__name__):
+                response = intercept(self.fake_continuation, call_details, self._fake_request)
+                self.assertEqual(metadata, response.metadata)

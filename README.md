@@ -34,6 +34,9 @@ And the following extensions, installed as extras on the core `dapr` package:
 * [dapr.ext.strands](./dapr/ext/strands): Strands agent session management — `pip install "dapr[strands]"`
 * [dapr.ext.workflow](./dapr/ext/workflow): Durable workflow authoring — `pip install "dapr[workflow]"`
 
+Binary-store file uploads, streaming downloads, and deletion (Dapr 1.19 alpha) are
+available in both clients. See the [sync and async binary-store examples](./examples/binary-store).
+
 ## Getting started
 
 ### Prerequisites
