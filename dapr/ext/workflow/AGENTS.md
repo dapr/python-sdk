@@ -140,6 +140,8 @@ Workflow (orchestrator) functions must remain generators (`def` with `yield`). T
 
 Client for workflow lifecycle management:
 
+Constructor: `DaprWorkflowClient(host, port, logger_options, max_grpc_message_length, api_timeout_seconds)`. `api_timeout_seconds` is a default deadline for this client's unary calls; it overrides `DAPR_API_TIMEOUT_SECONDS` for this client only, through `DaprClientTimeoutInterceptor(timeout_seconds)`. `None` falls back to that setting, then to no deadline. Calls that set their own timeout keep it, and `wait_for_workflow_start` / `wait_for_workflow_completion` are never given it (`_UNBOUNDED_WAIT_METHODS`); their `timeout_in_seconds` bounds them.
+
 - `schedule_new_workflow(workflow, *, input, instance_id, start_at, reuse_id_policy)` → returns `instance_id`. `reuse_id_policy` is deprecated (no effect, emits `DeprecationWarning`): an instance ID can always be reused once the existing instance is in a terminal state.
 - `get_workflow_state(instance_id, *, fetch_payloads=True)` → `Optional[WorkflowState]`
 - `wait_for_workflow_start(instance_id, *, fetch_payloads, timeout_in_seconds)`
