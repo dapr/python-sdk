@@ -39,13 +39,19 @@ class RetryPolicy:
 
         Args:
             first_retry_interval(timedelta): The retry interval to use for the first retry attempt.
-            max_number_of_attempts(int):  The maximum number of retry attempts.
+            max_number_of_attempts(int): The total number of attempts, including the first one,
+                not the number of retries after the first attempt.
             backoff_coefficient(Optional[float]): The backoff coefficient to use for calculating
-                the next retry interval.
+                the next retry interval. With the default of 1.0, every retry interval is
+                first_retry_interval; a coefficient above 1.0 grows the interval on each attempt
+                up to max_retry_interval, if set.
             max_retry_interval(Optional[timedelta]): The maximum retry interval to use for any
-                retry attempt.
-            retry_timeout(Optional[timedelta]): The maximum amount of time to spend retrying the
-                operation.
+                retry attempt. Leaving this unset means the interval keeps growing without a cap
+                when backoff_coefficient is above 1.0.
+            retry_timeout(Optional[timedelta]): No further retry is scheduled once the next retry
+                would start (the time the first attempt was scheduled plus the accumulated retry
+                intervals) after retry_timeout; the last failure is then returned. Time spent
+                running the attempts is not counted.
         """
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
@@ -79,7 +85,8 @@ class RetryPolicy:
 
     @property
     def max_number_of_attempts(self) -> int:
-        """The maximum number of retry attempts."""
+        """The total number of attempts, including the first one, not the number of retries
+        after the first attempt."""
         return self._obj._max_number_of_attempts
 
     @property
@@ -89,10 +96,13 @@ class RetryPolicy:
 
     @property
     def max_retry_interval(self) -> Optional[timedelta]:
-        """The maximum retry interval to use for any retry attempt."""
+        """The maximum retry interval to use for any retry attempt. Leaving this unset means
+        the interval keeps growing without a cap when backoff_coefficient is above 1.0."""
         return self._obj._max_retry_interval
 
     @property
     def retry_timeout(self) -> Optional[timedelta]:
-        """The maximum amount of time to spend retrying the operation."""
+        """No further retry is scheduled once the next retry would start (the time the first
+        attempt was scheduled plus the accumulated retry intervals) after retry_timeout; the
+        last failure is then returned. Time spent running the attempts is not counted."""
         return self._obj._retry_timeout
