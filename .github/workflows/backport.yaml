@@ -19,6 +19,8 @@ on:
       - closed
       - labeled
 
+permissions: {}
+
 jobs:
   backport:
     uses: dapr/.github/.github/workflows/backport.yaml@main
