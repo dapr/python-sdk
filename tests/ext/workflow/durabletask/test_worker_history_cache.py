@@ -17,7 +17,6 @@ of full vs delta work items with a GetInstanceHistory fallback on a cache miss.
 """
 
 from typing import Union, cast
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -53,7 +52,10 @@ class _FakeStub:
         self.get_instance_history_calls = 0
 
     def GetInstanceHistory(
-        self, request: pb.GetInstanceHistoryRequest, timeout: float | None = None
+        self,
+        request: pb.GetInstanceHistoryRequest,
+        timeout: float | None = None,
+        wait_for_ready: bool | None = None,
     ):
         self.get_instance_history_calls += 1
         return pb.GetInstanceHistoryResponse(events=self._events)
@@ -66,12 +68,18 @@ class _FailingHistoryStub:
         self.responses: list[pb.WorkflowResponse] = []
 
     def GetInstanceHistory(
-        self, request: pb.GetInstanceHistoryRequest, timeout: float | None = None
+        self,
+        request: pb.GetInstanceHistoryRequest,
+        timeout: float | None = None,
+        wait_for_ready: bool | None = None,
     ):
         raise RuntimeError('sidecar unavailable')
 
     def CompleteOrchestratorTask(
-        self, response: pb.WorkflowResponse, timeout: float | None = None
+        self,
+        response: pb.WorkflowResponse,
+        timeout: float | None = None,
+        wait_for_ready: bool | None = None,
     ) -> None:
         self.responses.append(response)
 
@@ -182,7 +190,7 @@ def _worker(**kwargs) -> TaskHubGrpcWorker:
 
 
 def _connect(worker: TaskHubGrpcWorker, stub: Union[_FakeStub, _FailingHistoryStub]) -> None:
-    worker._set_connection(MagicMock(), cast(stubs.TaskHubSidecarServiceStub, stub))
+    worker._stub = cast(stubs.TaskHubSidecarServiceStub, stub)
 
 
 def _resolve(

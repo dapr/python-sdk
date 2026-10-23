@@ -18,7 +18,6 @@ stub. A timeout fails the batch if async activities serialize instead of overlap
 
 import asyncio
 from typing import cast
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -44,7 +43,10 @@ class _MockSidecarStub:
         self.completions = 0
 
     def CompleteActivityTask(  # noqa: N802
-        self, _response: pb.ActivityResponse, timeout: float | None = None
+        self,
+        _response: pb.ActivityResponse,
+        timeout: float | None = None,
+        wait_for_ready: bool | None = None,
     ) -> None:
         self.completions += 1
 
@@ -72,7 +74,7 @@ async def _run_async_batch(n_items: int, timeout_s: float) -> int:
     worker = TaskHubGrpcWorker(host_address='in-process-mock', concurrency_options=options)
     manager = worker._async_worker_manager
     stub = _MockSidecarStub()
-    worker._set_connection(MagicMock(), cast(stubs.TaskHubSidecarServiceStub, stub))
+    worker._stub = cast(stubs.TaskHubSidecarServiceStub, stub)
 
     async def activity(ctx, _inp) -> None:
         await asyncio.sleep(ACTIVITY_DURATION_SECONDS)
