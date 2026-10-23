@@ -45,6 +45,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self._stopped = False
         api_service_v1.add_DaprServicer_to_server(self, self._grpc_server)
         self.store = {}
+        self.last_get_state_consistency = None
         self.transaction_operation_metadata: Dict[str, Dict[str, str]] = {}
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
@@ -459,6 +460,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
     def GetState(self, request, context):
         self.check_for_exception(context)
+        self.last_get_state_consistency = request.consistency
 
         key = request.key
         if key not in self.store:
