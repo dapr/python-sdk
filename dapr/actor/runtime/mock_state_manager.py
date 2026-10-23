@@ -192,13 +192,10 @@ class MockStateManager(ActorStateManager):
         return value
 
     async def get_state_names(self) -> List[str]:
-        # TODO: Get all state names from Dapr once implemented.
+        # _mock_state is kept in sync with every add/set/remove, including states
+        # seeded via initstate that the tracker never sees, so it's the source of truth.
         def append_names_sync():
-            return [
-                key
-                for key, value in self._default_state_change_tracker.items()
-                if value.change_kind != StateChangeKind.remove
-            ]
+            return list(self._mock_state.keys())
 
         default_loop = asyncio.get_running_loop()
         return await default_loop.run_in_executor(None, append_names_sync)
