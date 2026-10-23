@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import unittest
+import uuid
 from datetime import datetime
 from unittest import mock
 
@@ -120,3 +121,15 @@ class DaprWorkflowContextTest(unittest.TestCase):
             fake = worker._RuntimeOrchestrationContext(mock_instance_id)
             dapr_wf_ctx = DaprWorkflowContext(fake)
             assert dapr_wf_ctx.get_propagated_history() is None
+
+    def test_new_guid_is_unique_within_execution_and_deterministic_across_replays(self):
+        instance_id = 'abc'
+        ctx1 = DaprWorkflowContext(worker._RuntimeOrchestrationContext(instance_id))
+        ctx2 = DaprWorkflowContext(worker._RuntimeOrchestrationContext(instance_id))
+        guid_count = 3
+        g1 = [ctx1.new_guid() for _ in range(guid_count)]
+        g2 = [ctx2.new_guid() for _ in range(guid_count)]
+
+        assert all(isinstance(g, uuid.UUID) for g in g1)
+        assert len(set(g1)) == guid_count  # unique within an execution
+        assert g1 == g2  # deterministic across replays

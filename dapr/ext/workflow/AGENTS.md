@@ -168,6 +168,7 @@ Passed to workflow functions as the first argument:
 - `create_timer(fire_at)` → `Task` (accepts `datetime` or `timedelta`)
 - `wait_for_external_event(name)` → `Task`
 - `set_custom_status(status)` / `continue_as_new(new_input, *, save_events)`
+- `new_guid()` → `uuid.UUID` — deterministic across workflow replays
 
 Module-level functions:
 - `when_all(tasks)` → `WhenAllTask` — wait for all tasks to complete
