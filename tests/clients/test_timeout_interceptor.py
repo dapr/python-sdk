@@ -232,7 +232,7 @@ class DaprClientTimeoutInterceptorExplicitTimeoutTests(unittest.TestCase):
                 self.assertEqual(expected_timeout, continuation.call_args[0][0].timeout)
 
     def test_non_positive_timeout_is_rejected(self):
-        for timeout in (0, -1):
+        for timeout in (0, -1, float('nan'), float('inf')):
             with self.subTest(timeout=timeout):
                 with self.assertRaises(ValueError):
                     DaprClientTimeoutInterceptor(timeout)

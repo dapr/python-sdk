@@ -59,7 +59,7 @@ class DaprClientTimeoutInterceptorAsync(UnaryUnaryClientInterceptor):
                 read on every call; when that is also ``None`` no deadline is applied.
 
         Raises:
-            ValueError: If ``timeout_seconds`` is not greater than 0.
+            ValueError: If ``timeout_seconds`` is not a finite number greater than 0.
         """
         self._timeout_seconds = _validate_timeout_seconds(timeout_seconds)
 

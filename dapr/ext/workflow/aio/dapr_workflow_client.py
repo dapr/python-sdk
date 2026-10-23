@@ -84,7 +84,7 @@ class DaprWorkflowClient:
                 bounded only by their own ``timeout_in_seconds``.
 
         Raises:
-            ValueError: If ``api_timeout_seconds`` is not greater than 0.
+            ValueError: If ``api_timeout_seconds`` is not a finite number greater than 0.
         """
         address = getAddress(host, port)
 

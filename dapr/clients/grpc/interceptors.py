@@ -1,3 +1,4 @@
+import math
 from collections import namedtuple
 from typing import List, Optional, Tuple, Union
 
@@ -43,8 +44,10 @@ def _is_unbounded_wait(method: Union[str, bytes]) -> bool:
 def _validate_timeout_seconds(timeout_seconds: Optional[float]) -> Optional[float]:
     if timeout_seconds is None:
         return None
-    if timeout_seconds <= 0:
-        raise ValueError(f'timeout_seconds must be greater than 0, got {timeout_seconds}')
+    if not math.isfinite(timeout_seconds) or timeout_seconds <= 0:
+        raise ValueError(
+            f'timeout_seconds must be a finite number greater than 0, got {timeout_seconds}'
+        )
     return float(timeout_seconds)
 
 
@@ -72,7 +75,7 @@ class DaprClientTimeoutInterceptor(UnaryUnaryClientInterceptor):
                 read on every call; when that is also ``None`` no deadline is applied.
 
         Raises:
-            ValueError: If ``timeout_seconds`` is not greater than 0.
+            ValueError: If ``timeout_seconds`` is not a finite number greater than 0.
         """
         self._timeout_seconds = _validate_timeout_seconds(timeout_seconds)
 
