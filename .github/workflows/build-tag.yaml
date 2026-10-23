@@ -16,25 +16,12 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install uv
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.3.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Verify tag matches a stable VERSION
       if: startsWith(github.ref, 'refs/tags/v')
-      run: |
-        uv run python -c "
-        import os
-        from importlib.metadata import version
-        tag = os.environ['GITHUB_REF'].removeprefix('refs/tags/v')
-        package_version = version('dapr')
-        assert tag == package_version, (
-            f'Tag {os.environ[\"GITHUB_REF\"]!r} expects version={tag!r}, got {package_version!r}. '
-            'Bump VERSION before tagging, see RELEASE.md'
-        )
-        assert '.dev' not in package_version, (
-            f'Version {package_version!r} contains .dev. Release tags must point to a stable or rc version'
-        )
-        "
+      run: uv run python tools/check_release_version.py --tag "$GITHUB_REF"
     - name: Run Autoformatter
       run: |
         uv run ruff check --fix && uv run ruff format
@@ -64,7 +51,7 @@ jobs:
       with:
         python-version: ${{ matrix.python_ver }}
     - name: Install uv
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.3.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Check Typing
