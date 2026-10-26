@@ -26,20 +26,21 @@ from dapr.clients.grpc.dapr_actor_grpc_client import DaprActorGrpcClient
 from dapr.serializers import DefaultJSONSerializer
 
 from .fake_dapr_server import FakeDaprSidecar
+from .fake_http_server import point_settings_at_http_port
 
 
 class DaprActorGrpcClientTests(unittest.IsolatedAsyncioTestCase):
-    grpc_port = 50001
-    http_port = 3500
+    grpc_port: int  # set in setUpClass from the port the fake sidecar bound
+    http_port: int
 
     @classmethod
     def setUpClass(cls):
-        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls.grpc_port, http_port=cls.http_port)
+        cls._fake_dapr_server = FakeDaprSidecar()
+        cls.addClassCleanup(cls._fake_dapr_server.stop)
         cls._fake_dapr_server.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._fake_dapr_server.stop()
+        cls.grpc_port = cls._fake_dapr_server.grpc_port
+        cls.http_port = cls._fake_dapr_server.http_port
+        point_settings_at_http_port(cls, cls.http_port)
 
     def setUp(self):
         self._fake_dapr_server.actor_requests.clear()

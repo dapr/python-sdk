@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 from collections import namedtuple
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from grpc.aio import (  # type: ignore
     ClientCallDetails,
@@ -22,8 +22,11 @@ from grpc.aio import (  # type: ignore
     UnaryUnaryClientInterceptor,
 )
 
-from dapr.clients.grpc.interceptors import _is_unbounded_wait
-from dapr.conf import settings
+from dapr.clients.grpc.interceptors import (
+    _is_unbounded_wait,
+    _resolve_timeout_seconds,
+    _validate_timeout_seconds,
+)
 
 
 class _ClientCallDetailsAsync(
@@ -41,19 +44,39 @@ class _ClientCallDetailsAsync(
 
 
 class DaprClientTimeoutInterceptorAsync(UnaryUnaryClientInterceptor):
+    """Applies a default deadline to unary calls that do not set their own.
+
+    Calls that already carry a timeout keep it, and the workflow waits in
+    ``_UNBOUNDED_WAIT_METHODS`` are never given a default deadline.
+    """
+
+    def __init__(self, timeout_seconds: Optional[float] = None):
+        """Initializes the interceptor.
+
+        Args:
+            timeout_seconds: Default deadline in seconds for calls made through this
+                interceptor. ``None`` falls back to ``settings.DAPR_API_TIMEOUT_SECONDS``,
+                read on every call; when that is also ``None`` no deadline is applied.
+
+        Raises:
+            ValueError: If ``timeout_seconds`` is not greater than 0.
+        """
+        self._timeout_seconds = _validate_timeout_seconds(timeout_seconds)
+
     def intercept_unary_unary(self, continuation, client_call_details, request):
-        # Only apply a deadline when DAPR_API_TIMEOUT_SECONDS is explicitly configured.
-        # Without an explicit setting there is no SDK-level default deadline: Dapr's own
-        # resiliency policies and component timeouts act as the authoritative bounds for
+        # Only apply a deadline when one is explicitly configured, here or through
+        # DAPR_API_TIMEOUT_SECONDS. Without one there is no SDK-level default deadline: Dapr's
+        # own resiliency policies and component timeouts act as the authoritative bounds for
         # long-running operations such as LLM calls and workflow activities.
+        timeout_seconds = _resolve_timeout_seconds(self._timeout_seconds)
         if (
-            settings.DAPR_API_TIMEOUT_SECONDS is not None
+            timeout_seconds is not None
             and client_call_details.timeout is None
             and not _is_unbounded_wait(client_call_details.method)
         ):
             new_client_call_details = _ClientCallDetailsAsync(
                 client_call_details.method,
-                float(settings.DAPR_API_TIMEOUT_SECONDS),
+                timeout_seconds,
                 client_call_details.metadata,
                 client_call_details.credentials,
                 client_call_details.wait_for_ready,

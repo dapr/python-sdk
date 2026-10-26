@@ -17,9 +17,11 @@ stub. A timeout fails the batch if async activities serialize instead of overlap
 """
 
 import asyncio
+from typing import cast
 
 import pytest
 
+import dapr.ext.workflow._durabletask.internal.orchestrator_service_pb2_grpc as stubs
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.worker import ConcurrencyOptions, TaskHubGrpcWorker
 
@@ -40,7 +42,12 @@ class _MockSidecarStub:
     def __init__(self) -> None:
         self.completions = 0
 
-    def CompleteActivityTask(self, _response: pb.ActivityResponse) -> None:  # noqa: N802
+    def CompleteActivityTask(  # noqa: N802
+        self,
+        _response: pb.ActivityResponse,
+        timeout: float | None = None,
+        wait_for_ready: bool | None = None,
+    ) -> None:
         self.completions += 1
 
 
@@ -67,6 +74,7 @@ async def _run_async_batch(n_items: int, timeout_s: float) -> int:
     worker = TaskHubGrpcWorker(host_address='in-process-mock', concurrency_options=options)
     manager = worker._async_worker_manager
     stub = _MockSidecarStub()
+    worker._stub = cast(stubs.TaskHubSidecarServiceStub, stub)
 
     async def activity(ctx, _inp) -> None:
         await asyncio.sleep(ACTIVITY_DURATION_SECONDS)
@@ -78,7 +86,7 @@ async def _run_async_batch(n_items: int, timeout_s: float) -> int:
     try:
         for task_id in range(n_items):
             req = _activity_request(task_id)
-            manager.submit_activity(worker._execute_activity_async, activity, req, stub, '')
+            manager.submit_activity(worker._execute_activity_async, activity, req, '')
         await asyncio.wait_for(manager.activity_queue.join(), timeout=timeout_s)
     finally:
         manager._shutdown = True
