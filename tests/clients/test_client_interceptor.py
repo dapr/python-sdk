@@ -15,6 +15,12 @@ limitations under the License.
 
 import unittest
 
+from dapr.aio.clients.grpc.interceptors import (
+    DaprClientInterceptorAsync,
+    _ClientCallDetailsAsync,
+    _DaprStreamUnaryInterceptorAsync,
+    _DaprUnaryStreamInterceptorAsync,
+)
 from dapr.clients.grpc.interceptors import DaprClientInterceptor, _ClientCallDetails
 
 
@@ -47,20 +53,46 @@ class DaprClientInterceptorTests(unittest.TestCase):
         self.assertEqual(2, len(response.metadata))
         self.assertEqual([('header', 'value'), ('api-token', 'test-token')], response.metadata)
 
-    def test_matching_api_token_is_not_duplicated_and_other_values_are_preserved(self):
+    def test_api_token_precedence_preserves_other_metadata(self):
         interceptor = DaprClientInterceptor([('dapr-api-token', 'test-token')])
-        metadata = [
-            ('header', 'first'),
-            ('header', 'second'),
-            ('dapr-api-token', 'test-token'),
-        ]
-        call_details = _ClientCallDetails('method1', 10, metadata, None, None, None)
-        for intercept in [
-            interceptor.intercept_unary_unary,
-            interceptor.intercept_unary_stream,
-            interceptor.intercept_stream_unary,
-            interceptor.intercept_stream_stream,
-        ]:
-            with self.subTest(intercept=intercept.__name__):
-                response = intercept(self.fake_continuation, call_details, self._fake_request)
-                self.assertEqual(metadata, response.metadata)
+        for token in [None, 'test-token', 'caller-token', '']:
+            metadata = [('header', 'first'), ('header', 'second')]
+            if token is not None:
+                metadata.append(('dapr-api-token', token))
+            token_expected = 'test-token' if token is None else token
+            metadata_expected = [*metadata[:2], ('dapr-api-token', token_expected)]
+            call_details = _ClientCallDetails('method1', 10, metadata, None, None, None)
+            for intercept in [
+                interceptor.intercept_unary_unary,
+                interceptor.intercept_unary_stream,
+                interceptor.intercept_stream_unary,
+                interceptor.intercept_stream_stream,
+            ]:
+                with self.subTest(intercept=intercept.__name__, token=token):
+                    response = intercept(self.fake_continuation, call_details, self._fake_request)
+                    self.assertEqual(metadata_expected, response.metadata)
+
+
+class DaprClientInterceptorAsyncTests(unittest.IsolatedAsyncioTestCase):
+    async def fake_continuation(self, call_details, request):
+        return call_details
+
+    async def test_api_token_precedence_preserves_other_metadata(self):
+        configured = [('dapr-api-token', 'test-token')]
+        interceptor = DaprClientInterceptorAsync(configured)
+        for token in [None, 'test-token', 'caller-token', '']:
+            metadata = [('header', 'first'), ('header', 'second')]
+            if token is not None:
+                metadata.append(('dapr-api-token', token))
+            token_expected = 'test-token' if token is None else token
+            metadata_expected = [*metadata[:2], ('dapr-api-token', token_expected)]
+            call_details = _ClientCallDetailsAsync('method1', 10, metadata, None, None)
+            for intercept in [
+                interceptor.intercept_unary_unary,
+                interceptor.intercept_stream_stream,
+                _DaprUnaryStreamInterceptorAsync(configured).intercept_unary_stream,
+                _DaprStreamUnaryInterceptorAsync(configured).intercept_stream_unary,
+            ]:
+                with self.subTest(intercept=intercept.__name__, token=token):
+                    response = await intercept(self.fake_continuation, call_details, 'fake request')
+                    self.assertEqual(metadata_expected, response.metadata)

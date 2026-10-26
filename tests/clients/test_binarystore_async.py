@@ -462,10 +462,13 @@ class AsyncBinaryStoreClientTests(unittest.IsolatedAsyncioTestCase):
         self.server.token = 'test-token'
         cases = [(), (('custom-header', 'first'), ('another-header', 'second'))]
         cases.append((*cases[-1], ('dapr-api-token', 'test-token')))
+        cases.append((*cases[1], ('dapr-api-token', 'caller-token')))
         async with DaprGrpcClientAsync(f'127.0.0.1:{self.server.grpc_port}') as client:
             for rpc in ['SubscribeConfiguration', 'SubscribeConfigurationAlpha1']:
                 for metadata in cases:
                     with self.subTest(rpc=rpc, metadata=metadata):
+                        token = dict(metadata).get('dapr-api-token', 'test-token')
+                        self.server.token = token
                         responses = [
                             response
                             async for response in getattr(client._stub, rpc)(
@@ -476,14 +479,38 @@ class AsyncBinaryStoreClientTests(unittest.IsolatedAsyncioTestCase):
                         self.assertEqual('configuration-subscription', responses[0].id)
                         method, headers, _ = self.server.calls[-1]
                         self.assertEqual('configuration', method)
-                        self.assertEqual(1, headers.count(('dapr-api-token', 'test-token')))
+                        self.assertEqual(
+                            [('dapr-api-token', token)],
+                            [header for header in headers if header[0] == 'dapr-api-token'],
+                        )
                         for header in metadata:
                             self.assertIn(header, headers)
 
     @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
-    async def test_custom_metadata_survives_binary_store_rpc_shapes(self):
+    async def test_invalid_caller_token_does_not_fall_back_to_default(self):
         self.server.token = 'test-token'
-        metadata = (('custom-header', 'custom-value'),)
+        async with DaprGrpcClientAsync(f'127.0.0.1:{self.server.grpc_port}') as client:
+            for token in ['invalid-token', '']:
+                with self.subTest(token=token):
+                    with self.assertRaises(grpc.aio.AioRpcError) as caught:
+                        [
+                            response
+                            async for response in client._stub.SubscribeConfiguration(
+                                api_v1.SubscribeConfigurationRequest(store_name='configuration'),
+                                metadata=(('dapr-api-token', token),),
+                            )
+                        ]
+                    self.assertEqual(grpc.StatusCode.UNAUTHENTICATED, caught.exception.code())
+                    headers = self.server.calls[-1][1]
+                    self.assertEqual(
+                        [('dapr-api-token', token)],
+                        [header for header in headers if header[0] == 'dapr-api-token'],
+                    )
+
+    @patch.object(settings, 'DAPR_API_TOKEN', 'test-token')
+    async def test_caller_token_overrides_default_for_binary_store_rpc_shapes(self):
+        self.server.token = 'caller-token'
+        metadata = (('custom-header', 'custom-value'), ('dapr-api-token', 'caller-token'))
         async with DaprGrpcClientAsync(f'127.0.0.1:{self.server.grpc_port}') as client:
             await client._stub.SetBinaryFileAlpha1(
                 iter(_BinaryFileUpload('files', 'metadata', b'x', False, 32768)),
@@ -502,5 +529,8 @@ class AsyncBinaryStoreClientTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(['set', 'get', 'delete'], [c[0] for c in self.server.calls])
         for _, headers, _ in self.server.calls:
-            self.assertEqual(1, headers.count(('dapr-api-token', 'test-token')))
+            self.assertEqual(
+                [('dapr-api-token', 'caller-token')],
+                [header for header in headers if header[0] == 'dapr-api-token'],
+            )
             self.assertIn(('custom-header', 'custom-value'), headers)

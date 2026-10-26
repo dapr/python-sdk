@@ -69,6 +69,8 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClient
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
 
+    Per-call API tokens take precedence over configured tokens.
+
     Examples:
 
         interceptor = HeaderInterceptor([('header', 'value', )])
@@ -106,8 +108,9 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClient
         if client_call_details.metadata is not None:
             metadata = list(client_call_details.metadata)  # type: ignore[arg-type]
         for header in self._metadata:
-            if header[0] != 'dapr-api-token' or header not in metadata:
-                metadata.append(header)
+            if header[0] == 'dapr-api-token' and any(k == 'dapr-api-token' for k, _ in metadata):
+                continue
+            metadata.append(header)
 
         new_call_details = _ClientCallDetailsAsync(
             client_call_details.method,
