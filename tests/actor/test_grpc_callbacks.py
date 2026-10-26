@@ -31,6 +31,7 @@ from dapr.actor.runtime._grpc_callbacks import (
     build_invoke_error_payload,
     build_reminder_fire_body,
     build_timer_fire_body,
+    extract_activation_id,
     extract_reentrancy_id,
     status_code_for_exception,
 )
@@ -125,6 +126,31 @@ class ReentrancyIdExtractionTests(unittest.TestCase):
     def test_missing(self):
         metadata = {'content-type': 'application/json'}
         self.assertIsNone(extract_reentrancy_id(metadata))
+
+    def test_empty_duplicate_is_skipped(self):
+        metadata = {'dapr-reentrancy-id': '', 'Dapr-Reentrancy-Id': 'rid-1'}
+        self.assertEqual('rid-1', extract_reentrancy_id(metadata))
+
+
+class ActivationIdExtractionTests(unittest.TestCase):
+    def test_exact_header(self):
+        metadata = {'Dapr-Actor-Activation-Id': 'act-1'}
+        self.assertEqual('act-1', extract_activation_id(metadata))
+
+    def test_case_insensitive(self):
+        self.assertEqual('act-2', extract_activation_id({'dapr-actor-activation-id': 'act-2'}))
+        self.assertEqual('act-3', extract_activation_id({'DAPR-ACTOR-ACTIVATION-ID': 'act-3'}))
+
+    def test_missing(self):
+        metadata = {'Dapr-Reentrancy-Id': 'rid-1'}
+        self.assertIsNone(extract_activation_id(metadata))
+
+    def test_empty_duplicate_is_skipped(self):
+        metadata = {'dapr-actor-activation-id': '', 'Dapr-Actor-Activation-Id': 'act-1'}
+        self.assertEqual('act-1', extract_activation_id(metadata))
+
+    def test_only_empty_is_none(self):
+        self.assertIsNone(extract_activation_id({'Dapr-Actor-Activation-Id': ''}))
 
 
 class ReminderFireBodyTests(unittest.TestCase):

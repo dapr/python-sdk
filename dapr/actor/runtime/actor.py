@@ -15,7 +15,7 @@ limitations under the License.
 
 import uuid
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._method_context import ActorMethodContext
@@ -156,7 +156,7 @@ class Actor:
             self._runtime_ctx.actor_type_info.type_name, self.id.id, name
         )
 
-    async def _on_activate_internal(self) -> None:
+    async def _on_activate_internal(self, can_save: Optional[Callable[[], bool]] = None) -> None:
         """Clears all state cache, calls the overridden :meth:`_on_activate`,
         and then save the states.
 
@@ -164,7 +164,8 @@ class Actor:
         """
         await self._reset_state_internal()
         await self._on_activate()
-        await self._save_state_internal()
+        if can_save is None or can_save():
+            await self._save_state_internal()
 
     async def _on_deactivate_internal(self) -> None:
         """Clears all state cache, calls the overridden :meth:`_on_deactivate`.
@@ -181,13 +182,19 @@ class Actor:
         """
         await self._on_pre_actor_method(method_context)
 
-    async def _on_post_actor_method_internal(self, method_context: ActorMethodContext) -> None:
+    async def _on_post_actor_method_internal(
+        self,
+        method_context: ActorMethodContext,
+        before_save: Optional[Callable[[], None]] = None,
+    ) -> None:
         """Calls the overridden :meth:`_on_post_actor_method` and
         saves the states.
 
         This internal callback is called after actor method is invoked.
         """
         await self._on_post_actor_method(method_context)
+        if before_save is not None:
+            before_save()
         await self._save_state_internal()
 
     async def _on_invoke_failed_internal(self, exception=None):

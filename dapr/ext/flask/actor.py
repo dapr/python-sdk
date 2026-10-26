@@ -24,6 +24,7 @@ from dapr.serializers import DefaultJSONSerializer
 
 DEFAULT_CONTENT_TYPE = 'application/json; utf-8'
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
+DAPR_ACTOR_ACTIVATION_ID_HEADER = 'Dapr-Actor-Activation-Id'
 
 
 class DaprActor(object):
@@ -93,9 +94,15 @@ class DaprActor(object):
             # Read raw bytes from request stream
             req_body = request.stream.read()
             reentrancy_id = request.headers.get(DAPR_REENTRANCY_ID_HEADER)
+            activation_id = request.headers.get(DAPR_ACTOR_ACTIVATION_ID_HEADER)
             result = asyncio.run(
                 ActorRuntime.dispatch(
-                    actor_type_name, actor_id, method_name, req_body, reentrancy_id
+                    actor_type_name,
+                    actor_id,
+                    method_name,
+                    req_body,
+                    reentrancy_id,
+                    activation_id=activation_id,
                 )
             )
         except DaprInternalError as ex:
@@ -111,7 +118,12 @@ class DaprActor(object):
         try:
             # Read raw bytes from request stream
             req_body = request.stream.read()
-            asyncio.run(ActorRuntime.fire_timer(actor_type_name, actor_id, timer_name, req_body))
+            activation_id = request.headers.get(DAPR_ACTOR_ACTIVATION_ID_HEADER)
+            asyncio.run(
+                ActorRuntime.fire_timer(
+                    actor_type_name, actor_id, timer_name, req_body, activation_id=activation_id
+                )
+            )
         except DaprInternalError as ex:
             return wrap_response(500, ex.as_json_safe_dict())
         except Exception as ex:
@@ -125,8 +137,15 @@ class DaprActor(object):
         try:
             # Read raw bytes from request stream
             req_body = request.stream.read()
+            activation_id = request.headers.get(DAPR_ACTOR_ACTIVATION_ID_HEADER)
             asyncio.run(
-                ActorRuntime.fire_reminder(actor_type_name, actor_id, reminder_name, req_body)
+                ActorRuntime.fire_reminder(
+                    actor_type_name,
+                    actor_id,
+                    reminder_name,
+                    req_body,
+                    activation_id=activation_id,
+                )
             )
         except DaprInternalError as ex:
             return wrap_response(500, ex.as_json_safe_dict())

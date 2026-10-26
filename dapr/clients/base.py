@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
+DAPR_ACTOR_ACTIVATION_ID_HEADER = 'Dapr-Actor-Activation-Id'
 
 
 class DaprActorClientBase(ABC):

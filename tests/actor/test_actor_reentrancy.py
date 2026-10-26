@@ -238,7 +238,12 @@ class ActorRuntimeTests(unittest.TestCase):
                 data=request_body,
             )
             mocked.assert_called_with(
-                actor_type_name, actor_id, method_name, request_body, reentrancy_id
+                actor_type_name,
+                actor_id,
+                method_name,
+                request_body,
+                reentrancy_id,
+                activation_id=None,
             )
 
     def test_parse_incoming_reentrancy_header_fastapi(self):
@@ -272,5 +277,10 @@ class ActorRuntimeTests(unittest.TestCase):
                 data=request_body,
             )
             mocked.assert_called_with(
-                actor_type_name, actor_id, method_name, request_body, reentrancy_id
+                actor_type_name,
+                actor_id,
+                method_name,
+                request_body,
+                reentrancy_id,
+                activation_id=None,
             )

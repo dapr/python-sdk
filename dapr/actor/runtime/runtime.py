@@ -103,6 +103,7 @@ class ActorRuntime:
         actor_method_name: str,
         request_body: bytes,
         reentrancy_id: Optional[str] = None,
+        activation_id: Optional[str] = None,
     ) -> bytes:
         """Dispatches actor method defined in actor_type.
 
@@ -113,6 +114,7 @@ class ActorRuntime:
             request_body (bytes): the body of request that is passed to actor method arguments.
             reentrancy_id (str): reentrancy ID obtained from the dapr_reentrancy_id header
                 if present.
+            activation_id (str, optional): the Dapr-Actor-Activation-Id header value.
 
         Returns:
             bytes: serialized response data.
@@ -124,11 +126,18 @@ class ActorRuntime:
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
-        return await manager.dispatch(ActorId(actor_id), actor_method_name, request_body)
+        return await manager.dispatch(
+            ActorId(actor_id), actor_method_name, request_body, activation_id
+        )
 
     @classmethod
     async def fire_reminder(
-        cls, actor_type_name: str, actor_id: str, name: str, state: bytes
+        cls,
+        actor_type_name: str,
+        actor_id: str,
+        name: str,
+        state: bytes,
+        activation_id: Optional[str] = None,
     ) -> None:
         """Fires a reminder for the Actor.
 
@@ -137,6 +146,7 @@ class ActorRuntime:
             actor_id (str): Actor ID.
             name (str): the name of reminder.
             state (bytes): the body of request that is passed to reminder callback.
+            activation_id (str, optional): the Dapr-Actor-Activation-Id header value.
 
         Raises:
             ValueError: `actor_type_name` actor type is not registered.
@@ -145,10 +155,17 @@ class ActorRuntime:
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
-        await manager.fire_reminder(ActorId(actor_id), name, state)
+        await manager.fire_reminder(ActorId(actor_id), name, state, activation_id)
 
     @classmethod
-    async def fire_timer(cls, actor_type_name: str, actor_id: str, name: str, state: bytes) -> None:
+    async def fire_timer(
+        cls,
+        actor_type_name: str,
+        actor_id: str,
+        name: str,
+        state: bytes,
+        activation_id: Optional[str] = None,
+    ) -> None:
         """Fires a timer for the Actor.
 
         Args:
@@ -156,6 +173,7 @@ class ActorRuntime:
             actor_id (str): Actor ID.
             name (str): the timer's name.
             state (bytes): the timer's trigger body.
+            activation_id (str, optional): the Dapr-Actor-Activation-Id header value.
 
         Raises:
             ValueError: `actor_type_name` actor type is not registered.
@@ -163,7 +181,7 @@ class ActorRuntime:
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
-        await manager.fire_timer(ActorId(actor_id), name, state)
+        await manager.fire_timer(ActorId(actor_id), name, state, activation_id)
 
     @classmethod
     def set_actor_config(cls, config: ActorRuntimeConfig) -> None:

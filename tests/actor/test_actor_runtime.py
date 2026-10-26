@@ -23,6 +23,7 @@ from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeSimpleActor,
+    FakeSimpleReminderActor,
     FakeSimpleTimerActor,
 )
 from tests.actor.utils import _run
@@ -136,3 +137,89 @@ class ActorRuntimeTests(unittest.TestCase):
                     '{ "callback": "timer_callback", "data": "timer call" }'.encode('UTF8'),
                 )
             )
+
+    def test_dispatch_new_activation_id_replaces_actor(self):
+        actor_type = FakeMultiInterfacesActor.__name__
+        request_body = self._serializer.serialize({'message': 'hello dapr'})
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor_stale = manager._active_actors['test-id']
+
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-2'
+            )
+        )
+
+        self.assertIsNot(actor_stale, manager._active_actors['test-id'])
+        self.assertTrue(actor_stale.deactivated)
+        self.assertEqual('act-2', manager._activation_ids['test-id'])
+
+    def test_dispatch_same_activation_id_reuses_actor(self):
+        actor_type = FakeMultiInterfacesActor.__name__
+        request_body = self._serializer.serialize({'message': 'hello dapr'})
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor_first = manager._active_actors['test-id']
+
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-1'
+            )
+        )
+
+        self.assertIs(actor_first, manager._active_actors['test-id'])
+        self.assertFalse(actor_first.deactivated)
+
+    def test_fire_timer_new_activation_id_replaces_actor(self):
+        actor_type = FakeSimpleTimerActor.__name__
+        timer_body = b'{ "callback": "timer_callback", "data": "timer call" }'
+        _run(
+            ActorRuntime.fire_timer(
+                actor_type, 'test-id', 'test_timer', timer_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor_stale = manager._active_actors['test-id']
+
+        _run(
+            ActorRuntime.fire_timer(
+                actor_type, 'test-id', 'test_timer', timer_body, activation_id='act-2'
+            )
+        )
+
+        actor_fresh = manager._active_actors['test-id']
+        self.assertIsNot(actor_stale, actor_fresh)
+        self.assertTrue(actor_fresh.timer_called)
+        self.assertEqual('act-2', manager._activation_ids['test-id'])
+
+    def test_fire_reminder_new_activation_id_replaces_actor(self):
+        _run(ActorRuntime.register_actor(FakeSimpleReminderActor))
+        actor_type = FakeSimpleReminderActor.__name__
+        reminder_body = self._serializer.serialize(
+            {'dueTime': '0h0m1s', 'period': '0h0m1s', 'data': 'cmVtaW5kZXJfc3RhdGU='}
+        )
+        _run(
+            ActorRuntime.fire_reminder(
+                actor_type, 'test-id', 'test_reminder', reminder_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor_stale = manager._active_actors['test-id']
+
+        _run(
+            ActorRuntime.fire_reminder(
+                actor_type, 'test-id', 'test_reminder', reminder_body, activation_id='act-2'
+            )
+        )
+
+        self.assertIsNot(actor_stale, manager._active_actors['test-id'])
+        self.assertEqual('act-2', manager._activation_ids['test-id'])
