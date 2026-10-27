@@ -28,6 +28,10 @@ on:
       - release-*
       - feature/*
   workflow_dispatch: {}
+
+permissions:
+  contents: read
+
 jobs:
   fossa-scan:
     if: github.repository_owner == 'dapr' # FOSSA is not intended to run on forks.

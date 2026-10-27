@@ -25,6 +25,10 @@ on:
   repository_dispatch:
     types: [validate-examples]
   merge_group:
+
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
