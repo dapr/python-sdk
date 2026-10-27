@@ -17,7 +17,7 @@ import asyncio
 import logging
 import uuid
 from functools import partial
-from typing import Any, Callable, Coroutine, Dict, Optional
+from typing import Any, Callable, Coroutine, Dict, NamedTuple, Optional
 
 from dapr.actor.id import ActorId
 from dapr.actor.runtime._method_context import ActorMethodContext
@@ -38,6 +38,11 @@ def _describe_activation(activation_id: Optional[str]) -> str:
     return f'activation {activation_id}' if activation_id else 'an activation with no id'
 
 
+class _ActiveActor(NamedTuple):
+    actor: Actor
+    activation_id: Optional[str]
+
+
 class ActorManager:
     """A Actor Manager manages actors of a specific actor type."""
 
@@ -45,8 +50,7 @@ class ActorManager:
         self._runtime_ctx = ctx
         self._message_serializer = self._runtime_ctx.message_serializer
 
-        self._active_actors: Dict[str, Actor] = {}
-        self._activation_ids: Dict[str, str] = {}
+        self._active_actors: Dict[str, _ActiveActor] = {}
         self._active_actors_lock = asyncio.Lock()
 
         self._dispatcher = ActorMethodDispatcher(ctx.actor_type_info)
@@ -61,29 +65,23 @@ class ActorManager:
         async with self._active_actors_lock:
             registered = self._active_actors.get(actor_id.id)
             if registered is None:
-                self._active_actors[actor_id.id] = actor
-                if activation_id:
-                    self._activation_ids[actor_id.id] = activation_id
-                else:
-                    self._activation_ids.pop(actor_id.id, None)
+                self._active_actors[actor_id.id] = _ActiveActor(actor, activation_id or None)
                 return actor
-            registered_id = self._activation_ids.get(actor_id.id)
 
         await self._deactivate_discarded(actor_id, actor)
-        if activation_id and activation_id != registered_id:
-            registered_by = _describe_activation(registered_id)
+        if activation_id and activation_id != registered.activation_id:
+            registered_by = _describe_activation(registered.activation_id)
             raise DaprInternalError(
                 f'{actor_id} was activated by {registered_by} during this activation'
             )
-        return registered
+        return registered.actor
 
     async def deactivate_actor(self, actor_id: ActorId):
         async with self._active_actors_lock:
-            deactivated_actor = self._active_actors.pop(actor_id.id, None)
-            self._activation_ids.pop(actor_id.id, None)
-            if not deactivated_actor:
+            deactivated = self._active_actors.pop(actor_id.id, None)
+            if not deactivated:
                 raise ValueError(f'{actor_id} is not activated')
-        await deactivated_actor._on_deactivate_internal()
+        await deactivated.actor._on_deactivate_internal()
 
     async def fire_reminder(
         self,
@@ -171,13 +169,14 @@ class ActorManager:
     ) -> object:
         await self._deactivate_if_stale(actor_id, activation_id)
         async with self._active_actors_lock:
-            actor = self._active_actors.get(actor_id.id)
-            registered_id = self._activation_ids.get(actor_id.id)
-        if actor is not None and activation_id and activation_id != registered_id:
-            registered_by = _describe_activation(registered_id)
+            active = self._active_actors.get(actor_id.id)
+        if active is not None and activation_id and activation_id != active.activation_id:
+            registered_by = _describe_activation(active.activation_id)
             raise DaprInternalError(f'{actor_id} was activated by {registered_by} during this call')
-        if actor is None:
+        if active is None:
             actor = await self.activate_actor(actor_id, activation_id)
+        else:
+            actor = active.actor
 
         try:
             if reentrancy_ctx.get(None) is not None:
@@ -197,7 +196,8 @@ class ActorManager:
         return retval
 
     def _ensure_still_registered(self, actor_id: ActorId, actor: Actor) -> None:
-        if self._active_actors.get(actor_id.id) is not actor:
+        active = self._active_actors.get(actor_id.id)
+        if active is None or active.actor is not actor:
             raise DaprInternalError(
                 f'{actor_id} was deactivated or replaced during the call, state not saved'
             )
@@ -207,16 +207,15 @@ class ActorManager:
         if not activation_id:
             return
         async with self._active_actors_lock:
-            if actor_id.id not in self._active_actors:
+            stale = self._active_actors.get(actor_id.id)
+            if stale is None or stale.activation_id == activation_id:
                 return
-            if self._activation_ids.get(actor_id.id) == activation_id:
-                return
-            stale_actor = self._active_actors.pop(actor_id.id)
-            self._activation_ids.pop(actor_id.id, None)
-        await self._deactivate_discarded(actor_id, stale_actor)
+            del self._active_actors[actor_id.id]
+        await self._deactivate_discarded(actor_id, stale.actor)
 
     async def _deactivate_discarded(self, actor_id: ActorId, actor: Actor) -> None:
         """Logs instead of raising so the unrelated call does not fail."""
+        actor._state_manager._discard()
         try:
             await actor._on_deactivate_internal()
         except Exception:  # noqa: BLE001

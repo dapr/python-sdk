@@ -256,6 +256,9 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         HostTestActor.deactivated_ids.clear()
         HostTestActor.append_held = None
         HostTestActor.append_release = None
+        server.runtime_version = '1.19.1'
+        ActorRuntime._activation_id_trusted = None
+        ActorRuntime._version_lookup = None
         self._saved_managers = dict(ActorRuntime._actor_managers)
         self._saved_config = ActorRuntime.get_actor_config()
         ActorRuntime._actor_managers.clear()
@@ -270,6 +273,8 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         ActorRuntime._actor_managers.clear()
         ActorRuntime._actor_managers.update(self._saved_managers)
         ActorRuntime.set_actor_config(self._saved_config)
+        ActorRuntime._activation_id_trusted = None
+        ActorRuntime._version_lookup = None
 
     async def _serve_callbacks(self, *rounds, end='hold'):
         """Registers HostTestActor and starts the host against one scripted
@@ -398,7 +403,8 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
 
     def _held_activation_id(self) -> Optional[str]:
         manager = ActorRuntime._actor_managers['HostTestActor']
-        return manager._activation_ids.get('a1')
+        active = manager._active_actors.get('a1')
+        return active.activation_id if active else None
 
     async def test_invoke_activation_id_is_stored(self):
         invoke = _invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})
@@ -420,6 +426,18 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(any(reply.invoke_response.error for reply in replies))
         self.assertEqual(['a1'], HostTestActor.deactivated_ids)
         self.assertEqual('act-2', self._held_activation_id())
+
+    async def test_invoke_activation_id_ignored_on_old_sidecar(self):
+        self._fake_dapr_server.runtime_version = '1.19.0'
+        await self._serve_callbacks(
+            [_invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})],
+            [_invoke_message('req-2', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-2'})],
+        )
+
+        await self._await_replies(2)
+
+        self.assertEqual([], HostTestActor.deactivated_ids)
+        self.assertIsNone(self._held_activation_id())
 
     async def test_invoke_without_activation_id_keeps_actor(self):
         await self._serve_callbacks(
