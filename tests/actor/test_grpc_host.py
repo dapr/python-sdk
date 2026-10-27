@@ -27,6 +27,7 @@ PubSub clients are tested in tests/clients/test_dapr_grpc_client*.py.
 import asyncio
 import base64
 import json
+import socket
 import time
 import unittest
 from datetime import timedelta
@@ -40,16 +41,20 @@ from grpc.aio import AioRpcError
 from dapr.actor.actor_interface import ActorInterface, actormethod
 from dapr.actor.runtime.actor import Actor
 from dapr.actor.runtime.config import ActorRuntimeConfig
-from dapr.actor.runtime.grpc_host import ActorGrpcHost
+from dapr.actor.runtime.grpc_host import ActorGrpcHost, _StreamSession
 from dapr.actor.runtime.reentrancy_context import reentrancy_ctx
 from dapr.actor.runtime.remindable import Remindable
 from dapr.actor.runtime.runtime import ActorRuntime
+from dapr.conf import settings
 from dapr.proto import api_v1
 from dapr.serializers import DefaultJSONSerializer
 from tests.clients.fake_dapr_server import FakeDaprSidecar
 
-GRPC_PORT = 50010
-HTTP_PORT = 3510
+
+def _free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(('127.0.0.1', 0))
+        return sock.getsockname()[1]
 
 
 class HostTestActorInterface(ActorInterface):
@@ -218,12 +223,10 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=GRPC_PORT, http_port=HTTP_PORT)
+        cls._fake_dapr_server = FakeDaprSidecar()
+        cls.addClassCleanup(cls._fake_dapr_server.stop)
         cls._fake_dapr_server.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._fake_dapr_server.stop()
+        cls.grpc_port = cls._fake_dapr_server.grpc_port
 
     def setUp(self):
         server = self._fake_dapr_server
@@ -242,7 +245,7 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         # app_port=0 disables the host-managed app-channel listener: the fake
         # sidecar never dials the app, and it keeps tests deterministic if
         # APP_PORT happens to be set in the environment.
-        self.host = ActorGrpcHost(address=f'localhost:{GRPC_PORT}', app_port=0)
+        self.host = ActorGrpcHost(address=f'localhost:{self.grpc_port}', app_port=0)
 
     async def asyncTearDown(self):
         await self.host.close()
@@ -448,6 +451,36 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         reply_ids = {reply.invoke_response.id for reply in replies}
         self.assertEqual({'req-1', 'req-2'}, reply_ids)
 
+    @mock.patch.object(settings, 'DAPR_API_TOKEN', 'actor-token')
+    async def test_token_channel_reconnect_does_not_leak_request_tasks(self):
+        before = asyncio.all_tasks()
+        # Retain stream handles so garbage collection cannot hide an unfinished
+        # request poller belonging to a disconnected session.
+        with mock.patch(
+            'dapr.actor.runtime.grpc_host._StreamSession', side_effect=_StreamSession
+        ) as sessions:
+            with mock.patch('dapr.actor.runtime.grpc_host._RECONNECT_DELAY_SECONDS', 0.05):
+                await self._serve_plans(
+                    _plan([_invoke_message('first', 'GetName')], end='abort'),
+                    _plan([_invoke_message('second', 'GetName')]),
+                )
+                await self._wait_until(
+                    lambda: len(self._fake_dapr_server.actor_stream_initials) >= 2
+                )
+                await self._await_replies(2)
+            await self.host.close()
+            self.assertGreaterEqual(sessions.call_count, 2)
+            finishing = asyncio.all_tasks() - before
+            if finishing:
+                await asyncio.wait(finishing, timeout=1)
+            pending = [task for task in asyncio.all_tasks() - before if not task.done()]
+            try:
+                self.assertEqual([], [task.get_coro().__qualname__ for task in pending])
+            finally:
+                for task in pending:
+                    task.cancel()
+                await asyncio.gather(*pending, return_exceptions=True)
+
     async def test_run_task_death_after_registration_is_logged_and_resets(self):
         """A non-transient failure after a successful registration has no
         start() call to land in: it must be logged and reset the host so a
@@ -568,14 +601,30 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         with mock.patch.dict('os.environ', {}, clear=True):
             self.assertIsNone(ActorGrpcHost._resolve_app_port(None))
 
+    async def _start_host_on_free_app_port(self, attempts: int = 5) -> ActorGrpcHost:
+        """Starts a host whose app-channel listener binds a free port.
+
+        _free_port releases the port before the host binds it, so another
+        socket can take it in between; a failed bind retries on a fresh port.
+        """
+        for attempt in range(attempts):
+            host = ActorGrpcHost(address=f'localhost:{self.grpc_port}', app_port=_free_port())
+            await host.register_actor(HostTestActor)
+            try:
+                await host.start()
+            except RuntimeError as error:
+                if 'Failed to bind' not in str(error) or attempt == attempts - 1:
+                    raise
+                continue
+            return host
+        raise AssertionError('attempts must be at least 1')
+
     async def test_owns_app_channel_listener(self):
         # When an app port is set, the host starts the empty app-channel
         # listener daprd needs and tears it down on close.
-        host = ActorGrpcHost(address=f'localhost:{GRPC_PORT}', app_port=50099)
         self._fake_dapr_server.actor_stream_plans.append(_plan())
-        await host.register_actor(HostTestActor)
+        host = await self._start_host_on_free_app_port()
         try:
-            await host.start()
             self.assertIsNotNone(host._app_server)
         finally:
             await host.close()

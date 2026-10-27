@@ -148,7 +148,8 @@ class WorkflowRuntime:
                 workflow channel, applied symmetrically to both send and receive
                 directions. Precedence: this kwarg (if non-zero), then the
                 ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` env var (if non-zero),
-                then the gRPC default (4 MiB). ``0`` in either source means
+                then the gRPC defaults: no send limit, and the worker receives work
+                items of any size the sidecar sends. ``0`` in either source means
                 "no opinion" and falls through to the next source.
             disable_stateful_history: Stop advertising
                 ``WORKER_CAPABILITY_STATEFUL_HISTORY`` to the sidecar, so every
