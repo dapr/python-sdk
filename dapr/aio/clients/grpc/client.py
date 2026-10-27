@@ -16,9 +16,22 @@ limitations under the License.
 import asyncio
 import socket
 import time
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Text, Tuple, Union
+from typing import (
+    Any,
+    Awaitable,
+    BinaryIO,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Text,
+    Tuple,
+    Union,
+)
 from urllib.parse import urlencode
 from warnings import warn
+from weakref import WeakSet
 
 import grpc.aio  # type: ignore
 from google.protobuf.any_pb2 import Any as GrpcAny
@@ -36,6 +49,7 @@ from grpc.aio import (  # type: ignore
 )
 from typing_extensions import Self
 
+from dapr.aio.clients.grpc._binarystore import AsyncBinaryFileResponse, _AsyncBinaryFileUpload
 from dapr.aio.clients.grpc._request import (
     DecryptRequestIterator,
     EncryptRequestIterator,
@@ -49,6 +63,12 @@ from dapr.aio.clients.grpc._response import (
 from dapr.aio.clients.grpc.subscription import Subscription
 from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
 from dapr.clients.grpc import conversation
+from dapr.clients.grpc._binarystore import (
+    DEFAULT_CHUNK_SIZE,
+    _BinaryFileUpload,
+    resolve_timeout,
+    validate_names,
+)
 from dapr.clients.grpc._channel import create_aio_channel, resolve_grpc_endpoint
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
@@ -94,6 +114,7 @@ from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
 from dapr.common.pubsub.subscription import StreamInactiveError
 from dapr.proto import api_service_v1, api_v1, common_v1
+from dapr.proto.runtime.v1 import binarystore_pb2 as binary_v1
 
 
 class DaprGrpcClientAsync:
@@ -149,6 +170,7 @@ class DaprGrpcClientAsync:
         self._config_watchers: Dict[Tuple[str, str], AsyncConfigurationWatcher] = {}
         DaprHealth.wait_for_sidecar()
         self.retry_policy = retry_policy or RetryPolicy()
+        self._binary_file_calls: WeakSet[Any] = WeakSet()
 
         self._uri = resolve_grpc_endpoint(address)
         credentials = self.get_credentials() if self._uri.tls else None
@@ -171,6 +193,12 @@ class DaprGrpcClientAsync:
         self._config_watchers = {}
         for watcher in watchers:
             await watcher.stop()
+        # Older grpc.aio versions find active calls by inspecting task stacks
+        # and can miss a download paused between reads. Cancel our calls
+        # explicitly without retaining abandoned/completed responses.
+        for call in list(self._binary_file_calls):
+            call.cancel()
+        self._binary_file_calls.clear()
         if hasattr(self, '_channel') and self._channel:
             await self._channel.close()
 
@@ -1418,6 +1446,119 @@ class DaprGrpcClientAsync:
         return UnlockResponse(
             status=UnlockResponseStatus(response.status), headers=await call.initial_metadata()
         )
+
+    async def set_binary_file_alpha1(
+        self,
+        store_name: str,
+        file_name: str,
+        data: Union[bytes, BinaryIO],
+        *,
+        overwrite: bool = False,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        timeout: Optional[float] = None,
+    ) -> DaprResponse:
+        """Upload bytes or a binary reader to a binary store (Dapr 1.19 alpha).
+
+        The input remains open and is read from its current position. File reads
+        run outside the event loop; cancellation cannot interrupt an arbitrary
+        blocking read already running in a thread. The SDK does not replay uploads.
+
+        Args:
+            store_name (str): Binary-store component name.
+            file_name (str): File name, including any component-supported prefix.
+            data (bytes or BinaryIO): Bytes or a reader returning binary chunks.
+            overwrite (bool): Replace an existing file; defaults to False.
+            chunk_size (int): Maximum upload chunk size; defaults to 32 KiB.
+            timeout (float, optional): Deadline for the whole transfer in seconds;
+                otherwise uses DAPR_API_TIMEOUT_SECONDS when configured.
+
+        Returns:
+            DaprResponse: Successful completion and response headers.
+
+        Raises:
+            TypeError: If an argument or reader result has an invalid type.
+            ValueError: If names are blank or chunk_size is not positive.
+            DaprGrpcError: If the runtime rejects or fails the upload.
+            OSError: If reading the caller's input fails.
+            asyncio.CancelledError: If the caller cancels the operation.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        source = _BinaryFileUpload(store_name, file_name, data, overwrite, chunk_size)
+        requests = _AsyncBinaryFileUpload(source)
+        # Supplying the iterator avoids grpc.aio's intercepted write() proxy,
+        # which can leave queue/poller tasks pending when a server rejects early.
+        call = self._stub.SetBinaryFileAlpha1(requests, timeout=resolve_timeout(timeout))
+        self._binary_file_calls.add(call)
+        result = asyncio.ensure_future(call)
+        try:
+            # wait() keeps an RPC cancellation caused by a local reader failure
+            # distinct from cancellation of this method by its caller.
+            await asyncio.wait((result,))
+            if source.error is not None:
+                raise source.error
+            result.result()
+            return DaprResponse(headers=await call.initial_metadata())
+        except AioRpcError as error:
+            raise DaprGrpcError(error) from error
+        finally:
+            call.cancel()
+            await requests.aclose()
+            await asyncio.gather(result, return_exceptions=True)
+
+    async def get_binary_file_alpha1(
+        self, store_name: str, file_name: str, *, timeout: Optional[float] = None
+    ) -> AsyncBinaryFileResponse:
+        """Return an asynchronous binary download from Dapr 1.19's alpha API.
+
+        Use async iteration or bounded read(size) calls for streaming, and async
+        with or aclose() for early exit. Unbounded read() buffers the remaining
+        file. Errors surface during consumption; transfers are not replayed.
+        The optional timeout covers the complete transfer and otherwise uses
+        DAPR_API_TIMEOUT_SECONDS when configured.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validate_names(store_name, file_name)
+        request = binary_v1.GetBinaryFileRequestAlpha1(
+            component_name=store_name, file_name=file_name
+        )
+        call = self._stub.GetBinaryFileAlpha1(request, timeout=resolve_timeout(timeout))
+        self._binary_file_calls.add(call)
+        return AsyncBinaryFileResponse(call)
+
+    async def delete_binary_file_alpha1(
+        self, store_name: str, file_name: str, *, timeout: Optional[float] = None
+    ) -> DaprResponse:
+        """Delete a binary file using Dapr 1.19's alpha API, without SDK retries.
+
+        Returns DaprResponse with response headers. Blank names raise ValueError;
+        runtime failures raise DaprGrpcError with the original status/details.
+        The optional timeout is in seconds and otherwise uses the configured
+        DAPR_API_TIMEOUT_SECONDS. Missing-file behavior comes from the component.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validate_names(store_name, file_name)
+        request = binary_v1.DeleteBinaryFileRequestAlpha1(
+            component_name=store_name, file_name=file_name
+        )
+        call = self._stub.DeleteBinaryFileAlpha1(request, timeout=resolve_timeout(timeout))
+        self._binary_file_calls.add(call)
+        try:
+            await call
+        except AioRpcError as error:
+            raise DaprGrpcError(error) from error
+        return DaprResponse(headers=await call.initial_metadata())
 
     async def encrypt(self, data: Union[str, bytes], options: EncryptOptions):
         """Encrypt a stream data with given options.

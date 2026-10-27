@@ -16,7 +16,7 @@ bounds (TTL, instance count, byte budget) with LRU eviction, and the worker's re
 of full vs delta work items with a GetInstanceHistory fallback on a cache miss.
 """
 
-from typing import cast
+from typing import Union, cast
 
 import pytest
 
@@ -51,7 +51,12 @@ class _FakeStub:
         self._events = events
         self.get_instance_history_calls = 0
 
-    def GetInstanceHistory(self, request: pb.GetInstanceHistoryRequest):
+    def GetInstanceHistory(
+        self,
+        request: pb.GetInstanceHistoryRequest,
+        timeout: float | None = None,
+        wait_for_ready: bool | None = None,
+    ):
         self.get_instance_history_calls += 1
         return pb.GetInstanceHistoryResponse(events=self._events)
 
@@ -62,10 +67,20 @@ class _FailingHistoryStub:
     def __init__(self) -> None:
         self.responses: list[pb.WorkflowResponse] = []
 
-    def GetInstanceHistory(self, request: pb.GetInstanceHistoryRequest):
+    def GetInstanceHistory(
+        self,
+        request: pb.GetInstanceHistoryRequest,
+        timeout: float | None = None,
+        wait_for_ready: bool | None = None,
+    ):
         raise RuntimeError('sidecar unavailable')
 
-    def CompleteOrchestratorTask(self, response: pb.WorkflowResponse) -> None:
+    def CompleteOrchestratorTask(
+        self,
+        response: pb.WorkflowResponse,
+        timeout: float | None = None,
+        wait_for_ready: bool | None = None,
+    ) -> None:
         self.responses.append(response)
 
 
@@ -174,10 +189,15 @@ def _worker(**kwargs) -> TaskHubGrpcWorker:
     return TaskHubGrpcWorker(host_address='localhost:0', **kwargs)
 
 
+def _connect(worker: TaskHubGrpcWorker, stub: Union[_FakeStub, _FailingHistoryStub]) -> None:
+    worker._stub = cast(stubs.TaskHubSidecarServiceStub, stub)
+
+
 def _resolve(
     worker: TaskHubGrpcWorker, req: pb.WorkflowRequest, stub: _FakeStub
 ) -> list[pb.HistoryEvent]:
-    return worker._resolve_history(req, cast(stubs.TaskHubSidecarServiceStub, stub))
+    _connect(worker, stub)
+    return worker._resolve_history(req)
 
 
 def test_resolve_full_send_returns_past_events():
@@ -242,8 +262,9 @@ def test_resolve_fetch_failure_raises_history_resolution_error():
     req = pb.WorkflowRequest(instanceId='a', pastEvents=_events(3))
     req.cachedHistory.eventCount = 5
 
+    _connect(worker, stub)
     with pytest.raises(_HistoryResolutionError):
-        worker._resolve_history(req, cast(stubs.TaskHubSidecarServiceStub, stub))
+        worker._resolve_history(req)
 
 
 def test_fetch_failure_tears_down_stream_instead_of_failing_the_workflow():
@@ -258,9 +279,9 @@ def test_fetch_failure_tears_down_stream_instead_of_failing_the_workflow():
         nonlocal teardown_calls
         teardown_calls += 1
 
+    _connect(worker, stub)
     worker._execute_orchestrator(
         req,
-        cast(stubs.TaskHubSidecarServiceStub, stub),
         'completion-token',
         teardown_stream,
     )

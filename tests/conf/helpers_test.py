@@ -1,9 +1,33 @@
 import unittest
+import warnings
 
 from dapr.conf.helpers import GrpcEndpoint
 
 
 class DaprClientHelpersTests(unittest.TestCase):
+    def test_http_scheme_deprecation_keeps_endpoint_and_points_to_caller(self):
+        for scheme, port, secure in [('http', 80, False), ('https', 443, True)]:
+            with self.subTest(scheme=scheme):
+                with self.assertWarns(DeprecationWarning) as warning:
+                    endpoint = GrpcEndpoint(f'{scheme}://host:{port}')
+                self.assertIn('helpers_test.py', warning.filename)
+                self.assertIn(f'host:{port}?tls={str(secure).lower()}', str(warning.warning))
+                self.assertEqual(endpoint.hostname, 'host')
+                self.assertEqual(endpoint.port_as_int, port)
+                self.assertEqual(endpoint.tls, secure)
+                self.assertEqual(endpoint.endpoint, f'dns:host:{port}')
+
+        with self.assertRaises(ValueError):
+            GrpcEndpoint('https://host:443?tls=false')
+
+    def test_http_scheme_emits_only_a_deprecation_warning(self):
+        for scheme, port in [('http', 80), ('https', 443)]:
+            with self.subTest(scheme=scheme):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter('always')
+                    GrpcEndpoint(f'{scheme}://host:{port}')
+                self.assertEqual([warning.category for warning in caught], [DeprecationWarning])
+
     def test_parse_grpc_endpoint(self):
         testcases = [
             # Port only
@@ -217,25 +241,67 @@ class DaprClientHelpersTests(unittest.TestCase):
                 'port': '',
                 'endpoint': 'unix:my.sock',
             },
-            # Unix sockets with absolute path
+            # gRPC needs an absolute path after unix://, so an authority can never connect
+            {'url': 'unix://my.sock', 'error': True},
+            {'url': 'unix://my.sock?tls=true', 'error': True},
+            {'url': 'unix://relative/dir/x.sock', 'error': True},
+            # Relative socket names keep their case
             {
-                'url': 'unix://my.sock',
+                'url': 'unix:My.sock',
                 'error': False,
                 'secure': False,
                 'scheme': 'unix',
-                'host': 'my.sock',
+                'host': 'My.sock',
                 'port': '',
-                'endpoint': 'unix://my.sock',
+                'endpoint': 'unix:My.sock',
             },
             {
-                'url': 'unix://my.sock?tls=true',
+                'url': 'unix:run/My.sock',
+                'error': False,
+                'secure': False,
+                'scheme': 'unix',
+                'host': 'run/My.sock',
+                'port': '',
+                'endpoint': 'unix:run/My.sock',
+            },
+            # Unix sockets with a filesystem path, which urlparse puts in the path component
+            {
+                'url': 'unix:///tmp/dapr.sock',
+                'error': False,
+                'secure': False,
+                'scheme': 'unix',
+                'host': '/tmp/dapr.sock',
+                'port': '',
+                'endpoint': 'unix:///tmp/dapr.sock',
+            },
+            {
+                'url': 'unix:///tmp/dapr.sock?tls=true',
                 'error': False,
                 'secure': True,
                 'scheme': 'unix',
-                'host': 'my.sock',
+                'host': '/tmp/dapr.sock',
                 'port': '',
-                'endpoint': 'unix://my.sock',
+                'endpoint': 'unix:///tmp/dapr.sock',
             },
+            {
+                'url': 'unix:/tmp/dapr.sock',
+                'error': False,
+                'secure': False,
+                'scheme': 'unix',
+                'host': '/tmp/dapr.sock',
+                'port': '',
+                'endpoint': 'unix:/tmp/dapr.sock',
+            },
+            {
+                'url': 'unix:///private/tmp/dapr-sockets/Dapr-MyApp-grpc.socket',
+                'error': False,
+                'secure': False,
+                'scheme': 'unix',
+                'host': '/private/tmp/dapr-sockets/Dapr-MyApp-grpc.socket',
+                'port': '',
+                'endpoint': 'unix:///private/tmp/dapr-sockets/Dapr-MyApp-grpc.socket',
+            },
+            {'url': 'unix:///tmp/dapr.sock?abc=1', 'error': True},
             # Unix abstract sockets
             {
                 'url': 'unix-abstract:my.sock',

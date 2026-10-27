@@ -18,6 +18,8 @@ on:
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   automerge:
     uses: dapr/.github/.github/workflows/automerge.yaml@main

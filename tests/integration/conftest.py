@@ -1,14 +1,17 @@
+import os
 import shlex
 import subprocess
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator, Iterator
+from unittest.mock import patch
 
 import httpx
 import pytest
 
 from dapr.clients import DaprClient
 from dapr.conf import settings
+from tests.binarystore_utils import require_binary_store_runtime
 from tests.crypto_utils import remove_test_keys, write_test_keys
 from tests.port_utils import wait_for_ports_free
 from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
@@ -20,6 +23,42 @@ APPS_DIR = INTEGRATION_DIR / 'apps'
 
 BINDING_DATA_DIR = INTEGRATION_DIR / '.binding-data'
 CRYPTO_KEYS_DIR = INTEGRATION_DIR / 'keys'
+
+
+@pytest.fixture(scope='module')
+def binary_store_sidecar(dapr_env):
+    """A token-protected 1.19 sidecar with isolated, in-memory resources."""
+    require_binary_store_runtime()
+    token = 'binary-store-integration-token'
+    with (
+        patch.dict(os.environ, {'DAPR_API_TOKEN': token}),
+        patch.object(settings, 'DAPR_API_TOKEN', token),
+    ):
+        try:
+            grpc_port = 13511
+            client = dapr_env.start_sidecar(
+                app_id='test-binary-store',
+                resources=RESOURCES_DIR / 'binarystore',
+                grpc_port=grpc_port,
+                http_port=13510,
+                internal_grpc_port=13512,
+                metrics_port=13513,
+            )
+            yield client, f'127.0.0.1:{grpc_port}'
+        finally:
+            dapr_env.cleanup()
+
+
+@pytest.fixture(scope='module')
+def binary_store_client(binary_store_sidecar):
+    client, _ = binary_store_sidecar
+    return client
+
+
+@pytest.fixture(scope='module')
+def binary_store_endpoint(binary_store_sidecar):
+    _, endpoint = binary_store_sidecar
+    return endpoint
 
 
 class DaprTestEnvironment:

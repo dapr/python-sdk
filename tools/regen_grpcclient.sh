@@ -13,8 +13,11 @@
 # limitations under the License.
 # ------------------------------------------------------------
 
-# Path to store output
+set -euo pipefail
+
+# DAPR_REF accepts a branch, tag or commit; retain DAPR_BRANCH for existing callers.
 DAPR_BRANCH=${DAPR_BRANCH:-master}
+DAPR_REF=${DAPR_REF:-$DAPR_BRANCH}
 
 if type "curl" > /dev/null; then
     HTTP_REQUEST_CLI=curl
@@ -27,15 +30,15 @@ fi
 
 target="$(pwd)"
 
-tmp="$(mktemp -d dapr-protos)"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/dapr-protos.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 
-url="https://github.com/dapr/dapr/archive/refs/heads/${DAPR_BRANCH}.tar.gz"
+url="https://github.com/dapr/dapr/archive/${DAPR_REF}.tar.gz"
 
 pushd "$tmp"
 echo "Downloading Dapr from $url..."
 if [ "$HTTP_REQUEST_CLI" == "curl" ]; then
-    curl -SsL "$url" -o - | tar --strip-components=1 -xzf -
+    curl -fsSL "$url" | tar --strip-components=1 -xzf -
 else
     wget -q -O - "$url" | tar --strip-components=1 -xzf -
 fi
@@ -47,6 +50,9 @@ done < <(find "dapr/proto/runtime/v1" -name '*.proto' -print0)
 
 popd
 
+# search.proto and vector.proto import google/rpc/status.proto, which grpc_tools does not bundle.
+# googleapis-common-protos ships it, and grpcio-status already depends on that package.
+googleapis_protos="$(python3 -c 'import pathlib, google.rpc.status_pb2 as m; print(pathlib.Path(m.__file__).parents[2])')"
 
-python3 -m grpc_tools.protoc -I ${target} --proto_path="${tmp}" --python_out=${target} --grpc_python_out=${target} --mypy_out=${target} ${files[@]}
+python3 -m grpc_tools.protoc -I "$target" --proto_path="$tmp" --proto_path="$googleapis_protos" --python_out="$target" --grpc_python_out="$target" --mypy_out="$target" "${files[@]}"
 echo -e "\ngRPC interface and proto buf generated successfully!"
