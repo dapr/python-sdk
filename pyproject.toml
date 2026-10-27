@@ -329,6 +329,7 @@ ignore_errors = true
 
 [tool.pytest.ini_options]
 markers = [
+    'binary_store: tests requiring Dapr runtime 1.19 binary-store APIs',
     'example_dir(name): set the example directory for the dapr fixture',
     'perf: timing-sensitive dispatch regression tests',
     'e2e: tests requiring a running Dapr sidecar',
