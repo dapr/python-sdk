@@ -4,6 +4,8 @@ from typing import List, Optional, Tuple, Union
 from grpc import (  # type: ignore
     ClientCallDetails,
     StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
     UnaryUnaryClientInterceptor,
 )
 
@@ -100,9 +102,16 @@ class DaprClientTimeoutInterceptor(UnaryUnaryClientInterceptor):
         return continuation(client_call_details, request)
 
 
-class DaprClientInterceptor(UnaryUnaryClientInterceptor, StreamStreamClientInterceptor):
+class DaprClientInterceptor(
+    UnaryUnaryClientInterceptor,
+    StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+):
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
+
+    Per-call API tokens take precedence over configured tokens.
 
     Examples:
 
@@ -140,7 +149,10 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor, StreamStreamClientInter
         metadata = []
         if client_call_details.metadata is not None:
             metadata = list(client_call_details.metadata)
-        metadata.extend(self._metadata)
+        for header in self._metadata:
+            if header[0] == 'dapr-api-token' and any(k == 'dapr-api-token' for k, _ in metadata):
+                continue
+            metadata.append(header)
 
         new_call_details = _ClientCallDetails(
             client_call_details.method,
@@ -187,3 +199,9 @@ class DaprClientInterceptor(UnaryUnaryClientInterceptor, StreamStreamClientInter
         # Call continuation
         response = continuation(new_call_details, request_iterator)
         return response
+
+    def intercept_stream_unary(self, continuation, client_call_details, request_iterator):
+        return continuation(self._intercept_call(client_call_details), request_iterator)
+
+    def intercept_unary_stream(self, continuation, client_call_details, request):
+        return continuation(self._intercept_call(client_call_details), request)

@@ -70,6 +70,8 @@ def create_aio_channel(
     from dapr.aio.clients.grpc.interceptors import (
         DaprClientInterceptorAsync,
         DaprClientTimeoutInterceptorAsync,
+        _DaprStreamUnaryInterceptorAsync,
+        _DaprUnaryStreamInterceptorAsync,
     )
 
     useragent = f'dapr-sdk-python/{__version__}'
@@ -90,8 +92,15 @@ def create_aio_channel(
     channel_interceptors: List[grpc.aio.ClientInterceptor] = list(interceptors or [])
     channel_interceptors.append(DaprClientTimeoutInterceptorAsync())
     if settings.DAPR_API_TOKEN:
-        channel_interceptors.append(
-            DaprClientInterceptorAsync([('dapr-api-token', settings.DAPR_API_TOKEN)])
+        metadata = [('dapr-api-token', settings.DAPR_API_TOKEN)]
+        # grpc.aio registers only the first matching interface on an interceptor,
+        # so client- and server-streaming metadata need separate adapters.
+        channel_interceptors.extend(
+            [
+                DaprClientInterceptorAsync(metadata),
+                _DaprUnaryStreamInterceptorAsync(metadata),
+                _DaprStreamUnaryInterceptorAsync(metadata),
+            ]
         )
 
     # Process-wide, idempotent setup; applied here so every aio channel
