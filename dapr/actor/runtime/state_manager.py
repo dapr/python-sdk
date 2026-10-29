@@ -19,6 +19,7 @@ from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from dapr.actor.runtime.state_change import ActorStateChange, StateChangeKind
+from dapr.clients.exceptions import DaprInternalError
 from dapr.common.reentrancy_context import reentrancy_ctx
 
 if TYPE_CHECKING:
@@ -86,6 +87,7 @@ class ActorStateManager(Generic[T]):
         self._type_name = actor.runtime_ctx.actor_type_info.type_name
 
         self._default_state_change_tracker: Dict[str, StateMetadata] = {}
+        self._discarded = False
 
     async def add_state(self, state_name: str, value: T) -> None:
         if not await self.try_add_state(state_name, value):
@@ -261,7 +263,16 @@ class ActorStateManager(Generic[T]):
         default_loop = asyncio.get_running_loop()
         await default_loop.run_in_executor(None, state_change_tracker.clear)
 
+    def _discard(self) -> None:
+        """Refuses every later save once a newer activation replaced the actor."""
+        self._discarded = True
+
     async def save_state(self) -> None:
+        if self._discarded:
+            raise DaprInternalError(
+                f'{self._type_name} actor {self._actor.id} was replaced by a newer activation, '
+                'state not saved'
+            )
         state_change_tracker = self._get_contextual_state_tracker()
         if len(state_change_tracker) == 0:
             return

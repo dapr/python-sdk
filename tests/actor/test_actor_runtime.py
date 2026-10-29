@@ -13,8 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import unittest
 from datetime import timedelta
+from types import SimpleNamespace
+from unittest import mock
 
 from dapr.actor.runtime.config import ActorRuntimeConfig
 from dapr.actor.runtime.runtime import ActorRuntime
@@ -22,6 +25,7 @@ from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
     FakeSimpleActor,
+    FakeSimpleReminderActor,
     FakeSimpleTimerActor,
 )
 from tests.actor.utils import _run
@@ -39,6 +43,11 @@ class ActorRuntimeTests(unittest.TestCase):
     def setUp(self):
         ActorRuntime._actor_managers = {}
         ActorRuntime.set_actor_config(ActorRuntimeConfig())
+        ActorRuntime._activation_id_trusted = None
+        ActorRuntime._version_lookup = None
+        self.addCleanup(setattr, ActorRuntime, '_activation_id_trusted', None)
+        self.server.set_response(b'{"runtimeVersion": "1.19.1"}')
+        self.addCleanup(self.server.set_response, b'')
         self._serializer = DefaultJSONSerializer()
         _run(ActorRuntime.register_actor(FakeSimpleActor))
         _run(ActorRuntime.register_actor(FakeMultiInterfacesActor))
@@ -119,7 +128,7 @@ class ActorRuntimeTests(unittest.TestCase):
         )
 
         manager = ActorRuntime._actor_managers[FakeSimpleTimerActor.__name__]
-        actor = manager._active_actors['test-id']
+        actor = manager._active_actors['test-id'].actor
         self.assertTrue(actor.timer_called)
 
     def test_fire_timer_unregistered(self):
@@ -132,3 +141,183 @@ class ActorRuntimeTests(unittest.TestCase):
                     '{ "callback": "timer_callback", "data": "timer call" }'.encode('UTF8'),
                 )
             )
+
+    def test_dispatch_new_activation_id_replaces_actor(self):
+        actor_type = FakeMultiInterfacesActor.__name__
+        request_body = self._serializer.serialize({'message': 'hello dapr'})
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor_stale = manager._active_actors['test-id'].actor
+
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-2'
+            )
+        )
+
+        self.assertIsNot(actor_stale, manager._active_actors['test-id'].actor)
+        self.assertTrue(actor_stale.deactivated)
+        self.assertEqual('act-2', manager._active_actors['test-id'].activation_id)
+
+    def test_dispatch_same_activation_id_reuses_actor(self):
+        actor_type = FakeMultiInterfacesActor.__name__
+        request_body = self._serializer.serialize({'message': 'hello dapr'})
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor_first = manager._active_actors['test-id'].actor
+
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-1'
+            )
+        )
+
+        self.assertIs(actor_first, manager._active_actors['test-id'].actor)
+        self.assertFalse(actor_first.deactivated)
+
+    def test_fire_timer_new_activation_id_replaces_actor(self):
+        actor_type = FakeSimpleTimerActor.__name__
+        timer_body = b'{ "callback": "timer_callback", "data": "timer call" }'
+        _run(
+            ActorRuntime.fire_timer(
+                actor_type, 'test-id', 'test_timer', timer_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor_stale = manager._active_actors['test-id'].actor
+
+        _run(
+            ActorRuntime.fire_timer(
+                actor_type, 'test-id', 'test_timer', timer_body, activation_id='act-2'
+            )
+        )
+
+        actor_fresh = manager._active_actors['test-id'].actor
+        self.assertIsNot(actor_stale, actor_fresh)
+        self.assertTrue(actor_fresh.timer_called)
+        self.assertEqual('act-2', manager._active_actors['test-id'].activation_id)
+
+    def test_fire_reminder_new_activation_id_replaces_actor(self):
+        _run(ActorRuntime.register_actor(FakeSimpleReminderActor))
+        actor_type = FakeSimpleReminderActor.__name__
+        reminder_body = self._serializer.serialize(
+            {'dueTime': '0h0m1s', 'period': '0h0m1s', 'data': 'cmVtaW5kZXJfc3RhdGU='}
+        )
+        _run(
+            ActorRuntime.fire_reminder(
+                actor_type, 'test-id', 'test_reminder', reminder_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor_stale = manager._active_actors['test-id'].actor
+
+        _run(
+            ActorRuntime.fire_reminder(
+                actor_type, 'test-id', 'test_reminder', reminder_body, activation_id='act-2'
+            )
+        )
+
+        self.assertIsNot(actor_stale, manager._active_actors['test-id'].actor)
+        self.assertEqual('act-2', manager._active_actors['test-id'].activation_id)
+
+    def test_dispatch_ignores_activation_id_from_old_sidecar(self):
+        self.server.set_response(b'{"runtimeVersion": "1.19.0"}')
+        actor_type = FakeMultiInterfacesActor.__name__
+        request_body = self._serializer.serialize({'message': 'hello dapr'})
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-1'
+            )
+        )
+        manager = ActorRuntime._actor_managers[actor_type]
+        actor = manager._active_actors['test-id'].actor
+
+        _run(
+            ActorRuntime.dispatch(
+                actor_type, 'test-id', 'ActionMethod', request_body, activation_id='act-2'
+            )
+        )
+
+        self.assertIs(actor, manager._active_actors['test-id'].actor)
+        self.assertIsNone(manager._active_actors['test-id'].activation_id)
+        self.assertEqual('/v1.0/metadata', self.server.request_path())
+
+
+class ActivationIdGateTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        ActorRuntime._activation_id_trusted = None
+        ActorRuntime._version_lookup = None
+        self.addCleanup(setattr, ActorRuntime, '_activation_id_trusted', None)
+        self.addCleanup(setattr, ActorRuntime, '_version_lookup', None)
+        self.client = mock.Mock()
+        self.client.get_runtime_version = mock.AsyncMock()
+        self.manager = SimpleNamespace(_runtime_ctx=SimpleNamespace(dapr_client=self.client))
+
+    async def _gate(self, activation_id='act-1'):
+        return await ActorRuntime._trusted_activation_id(self.manager, activation_id)
+
+    async def test_versions(self):
+        cases = {
+            '1.19.1': True,
+            '1.19.1-rc.1': True,
+            '1.19.2': True,
+            '1.20.0': True,
+            '2.0.0': True,
+            '1.19.0': False,
+            '1.19.0-rc.2': False,
+            '1.18.5': False,
+            'edge': False,
+            'dev': False,
+            '': False,
+            'v1.19.1': False,
+        }
+        for version, trusted in cases.items():
+            with self.subTest(version=version):
+                ActorRuntime._activation_id_trusted = None
+                ActorRuntime._version_lookup = None
+                self.client.get_runtime_version.return_value = version
+                self.assertEqual('act-1' if trusted else None, await self._gate())
+
+    async def test_result_is_cached(self):
+        self.client.get_runtime_version.return_value = '1.19.1'
+        self.assertEqual('act-1', await self._gate())
+        self.assertEqual('act-2', await self._gate('act-2'))
+        self.client.get_runtime_version.assert_awaited_once()
+
+    async def test_no_lookup_without_id(self):
+        self.assertIsNone(await self._gate(None))
+        self.assertEqual('', await self._gate(''))
+        self.client.get_runtime_version.assert_not_awaited()
+
+    async def test_failed_lookup_ignores_id_then_retries(self):
+        self.client.get_runtime_version.side_effect = [RuntimeError('down'), '1.19.1']
+        self.assertIsNone(await self._gate())
+        self.assertIsNone(ActorRuntime._activation_id_trusted)
+        self.assertEqual('act-1', await self._gate())
+        self.assertEqual(2, self.client.get_runtime_version.await_count)
+
+    async def test_lookup_without_override_ignores_id(self):
+        self.client.get_runtime_version.side_effect = NotImplementedError
+        self.assertIsNone(await self._gate())
+
+    async def test_concurrent_callers_share_one_lookup(self):
+        release = asyncio.Event()
+
+        async def version():
+            await release.wait()
+            return '1.19.1'
+
+        self.client.get_runtime_version.side_effect = version
+        gates = [asyncio.ensure_future(self._gate(f'act-{i}')) for i in range(5)]
+        await asyncio.sleep(0)
+        release.set()
+        self.assertEqual([f'act-{i}' for i in range(5)], await asyncio.gather(*gates))
+        self.client.get_runtime_version.assert_awaited_once()

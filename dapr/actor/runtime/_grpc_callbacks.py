@@ -26,7 +26,7 @@ from dapr.actor.runtime.config import (
     ActorRuntimeConfig,
     ActorTypeConfig,
 )
-from dapr.clients.base import DAPR_REENTRANCY_ID_HEADER
+from dapr.clients.base import DAPR_ACTOR_ACTIVATION_ID_HEADER, DAPR_REENTRANCY_ID_HEADER
 from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
 from dapr.proto import api_v1
 
@@ -90,8 +90,17 @@ def _entity_config_to_proto(type_config: ActorTypeConfig) -> api_v1.ActorEntityC
 
 def extract_reentrancy_id(metadata: Mapping[str, str]) -> Optional[str]:
     """Looks up the reentrancy id header case-insensitively in callback metadata."""
+    return _find_metadata_value(metadata, DAPR_REENTRANCY_ID_HEADER)
+
+
+def extract_activation_id(metadata: Mapping[str, str]) -> Optional[str]:
+    return _find_metadata_value(metadata, DAPR_ACTOR_ACTIVATION_ID_HEADER)
+
+
+def _find_metadata_value(metadata: Mapping[str, str], header: str) -> Optional[str]:
+    header_lower = header.lower()
     for key, value in metadata.items():
-        if key.lower() == DAPR_REENTRANCY_ID_HEADER.lower():
+        if value and key.lower() == header_lower:
             return value
     return None
 

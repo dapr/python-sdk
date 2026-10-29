@@ -28,6 +28,7 @@ import asyncio
 import base64
 import json
 import socket
+import threading
 import time
 import unittest
 from datetime import timedelta
@@ -70,6 +71,9 @@ class HostTestActorInterface(ActorInterface):
     @actormethod(name='WhoAmI')
     async def who_am_i(self) -> Optional[str]: ...
 
+    @actormethod(name='Append')
+    async def append(self, item: str) -> None: ...
+
     @actormethod(name='Fail')
     async def fail(self) -> None: ...
 
@@ -86,6 +90,8 @@ class HostTestActor(Actor, HostTestActorInterface, Remindable):
     reminders_fired: list = []
     timers_fired: list = []
     deactivated_ids: list = []
+    append_held: Optional[asyncio.Event] = None
+    append_release: Optional[asyncio.Event] = None
 
     async def get_name(self) -> dict:
         return {'name': 'HostTestActor'}
@@ -99,6 +105,15 @@ class HostTestActor(Actor, HostTestActorInterface, Remindable):
 
     async def who_am_i(self) -> Optional[str]:
         return reentrancy_ctx.get()
+
+    async def append(self, item: str) -> None:
+        items_found, items = await self._state_manager.try_get_state('items')
+        items_current = items if items_found else []
+        held, release = HostTestActor.append_held, HostTestActor.append_release
+        if item == 'stale' and held is not None and release is not None:
+            held.set()
+            await release.wait()
+        await self._state_manager.set_state('items', items_current + [item])
 
     async def fail(self) -> None:
         raise RuntimeError('handler exploded')
@@ -179,7 +194,7 @@ def _packed_bytes_value(value: bytes) -> any_pb2.Any:
     return packed
 
 
-def _reminder_message(request_id, name, state: bytes):
+def _reminder_message(request_id, name, state: bytes, metadata=None):
     """Builds the reminder-fire callback for a reminder registered with `state`."""
     json_value = json.dumps(base64.b64encode(state).decode('utf-8')).encode('utf-8')
     reminder_request = api_v1.SubscribeActorEventsResponseReminderRequestAlpha1(
@@ -190,11 +205,12 @@ def _reminder_message(request_id, name, state: bytes):
         due_time='0h0m5s',
         period='0h0m10s',
         data=_packed_bytes_value(json_value),
+        metadata=metadata or {},
     )
     return api_v1.SubscribeActorEventsResponseAlpha1(reminder_request=reminder_request)
 
 
-def _timer_message(request_id, name, callback, data_json: bytes):
+def _timer_message(request_id, name, callback, data_json: bytes, metadata=None):
     """Builds the timer-fire callback for a timer with a JSON data payload."""
     timer_request = api_v1.SubscribeActorEventsResponseTimerRequestAlpha1(
         id=request_id,
@@ -205,6 +221,7 @@ def _timer_message(request_id, name, callback, data_json: bytes):
         period='0h0m10s',
         callback=callback,
         data=_packed_bytes_value(data_json),
+        metadata=metadata or {},
     )
     return api_v1.SubscribeActorEventsResponseAlpha1(timer_request=timer_request)
 
@@ -238,6 +255,11 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         HostTestActor.reminders_fired.clear()
         HostTestActor.timers_fired.clear()
         HostTestActor.deactivated_ids.clear()
+        HostTestActor.append_held = None
+        HostTestActor.append_release = None
+        server.runtime_version = '1.19.1'
+        ActorRuntime._activation_id_trusted = None
+        ActorRuntime._version_lookup = None
         self._saved_managers = dict(ActorRuntime._actor_managers)
         self._saved_config = ActorRuntime.get_actor_config()
         ActorRuntime._actor_managers.clear()
@@ -252,6 +274,8 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         ActorRuntime._actor_managers.clear()
         ActorRuntime._actor_managers.update(self._saved_managers)
         ActorRuntime.set_actor_config(self._saved_config)
+        ActorRuntime._activation_id_trusted = None
+        ActorRuntime._version_lookup = None
 
     async def _serve_callbacks(self, *rounds, end='hold'):
         """Registers HostTestActor and starts the host against one scripted
@@ -377,6 +401,129 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         replies = await self._await_replies(1)
 
         self.assertEqual('rid-42', json.loads(replies[0].invoke_response.data))
+
+    def _held_activation_id(self) -> Optional[str]:
+        manager = ActorRuntime._actor_managers['HostTestActor']
+        active = manager._active_actors.get('a1')
+        return active.activation_id if active else None
+
+    async def test_invoke_activation_id_is_stored(self):
+        invoke = _invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})
+        await self._serve_callbacks([invoke])
+
+        await self._await_replies(1)
+
+        self.assertEqual('act-1', self._held_activation_id())
+
+    async def test_invoke_new_activation_id_replaces_actor(self):
+        await self._serve_callbacks(
+            [_invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})],
+            [_invoke_message('req-2', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})],
+            [_invoke_message('req-3', 'GetName', metadata={'dapr-actor-activation-id': 'act-2'})],
+        )
+
+        replies = await self._await_replies(3)
+
+        self.assertFalse(any(reply.invoke_response.error for reply in replies))
+        self.assertEqual(['a1'], HostTestActor.deactivated_ids)
+        self.assertEqual('act-2', self._held_activation_id())
+
+    async def test_invoke_activation_id_ignored_on_old_sidecar(self):
+        self._fake_dapr_server.runtime_version = '1.19.0'
+        await self._serve_callbacks(
+            [_invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})],
+            [_invoke_message('req-2', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-2'})],
+        )
+
+        await self._await_replies(2)
+
+        self.assertEqual([], HostTestActor.deactivated_ids)
+        self.assertIsNone(self._held_activation_id())
+
+    async def test_invoke_without_activation_id_keeps_actor(self):
+        await self._serve_callbacks(
+            [_invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})],
+            [_invoke_message('req-2', 'GetName')],
+        )
+
+        await self._await_replies(2)
+
+        self.assertEqual([], HostTestActor.deactivated_ids)
+        self.assertEqual('act-1', self._held_activation_id())
+
+    async def test_reminder_new_activation_id_replaces_actor(self):
+        await self._serve_callbacks(
+            [_invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})],
+            [
+                _reminder_message(
+                    'req-2',
+                    'demo_reminder',
+                    b'reminder_state',
+                    metadata={'DAPR-ACTOR-ACTIVATION-ID': 'act-2'},
+                )
+            ],
+        )
+
+        replies = await self._await_replies(2)
+
+        self.assertEqual('reminder_response', replies[1].WhichOneof('request_type'))
+        self.assertEqual(['a1'], HostTestActor.deactivated_ids)
+        self.assertEqual('act-2', self._held_activation_id())
+
+    async def test_timer_new_activation_id_replaces_actor(self):
+        await self._serve_callbacks(
+            [_invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})],
+            [
+                _timer_message(
+                    'req-2',
+                    'demo_timer',
+                    'timer_callback',
+                    b'{"setting":1}',
+                    metadata={'Dapr-Actor-Activation-Id': 'act-2'},
+                )
+            ],
+        )
+
+        replies = await self._await_replies(2)
+
+        self.assertEqual('timer_response', replies[1].WhichOneof('request_type'))
+        self.assertEqual(['a1'], HostTestActor.deactivated_ids)
+        self.assertEqual('act-2', self._held_activation_id())
+
+    async def test_call_from_dropped_stream_does_not_save_over_new_activation(self):
+        HostTestActor.append_held = asyncio.Event()
+        HostTestActor.append_release = asyncio.Event()
+        new_stream_gate = threading.Event()
+        self.addCleanup(new_stream_gate.set)
+        stale_append = _invoke_message(
+            'req-stale',
+            'Append',
+            json.dumps('stale').encode('utf-8'),
+            metadata={'Dapr-Actor-Activation-Id': 'act-1'},
+        )
+        fresh_append = _invoke_message(
+            'req-fresh',
+            'Append',
+            json.dumps('fresh').encode('utf-8'),
+            metadata={'Dapr-Actor-Activation-Id': 'act-2'},
+        )
+
+        with mock.patch('dapr.actor.runtime.grpc_host._RECONNECT_DELAY_SECONDS', 0.05):
+            await self._serve_plans(
+                {'rounds': [], 'unanswered': [stale_append], 'end': 'abort'},
+                {'rounds': [[fresh_append]], 'end': 'hold', 'gate': new_stream_gate},
+            )
+            await asyncio.wait_for(HostTestActor.append_held.wait(), 5)
+            stale_tasks = list(self.host._dispatch_tasks)
+            new_stream_gate.set()
+            replies = await self._await_replies(1)
+            HostTestActor.append_release.set()
+            await asyncio.wait_for(asyncio.gather(*stale_tasks, return_exceptions=True), 5)
+
+        self.assertEqual('req-fresh', replies[0].invoke_response.id)
+        self.assertFalse(replies[0].invoke_response.error)
+        stored = self._fake_dapr_server.actor_state[('HostTestActor', 'a1', 'items')]
+        self.assertEqual(['fresh'], json.loads(stored))
 
     async def test_reminder_round_trip(self):
         await self._serve_callbacks(

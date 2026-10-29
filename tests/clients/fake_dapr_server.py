@@ -49,6 +49,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
         self.metadata: Dict[str, str] = {}
+        self.runtime_version = '1.19.1'
         self.jobs: Dict[str, api_v1.Job] = {}
         self.job_overwrites: Dict[str, bool] = {}
         # When True the stable Job RPCs return UNIMPLEMENTED so the client must
@@ -69,7 +70,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         # dict with 'rounds' (lists of SubscribeActorEventsResponseAlpha1 pushed per round, the
         # server reads one correlated reply per pushed message before the next round) and 'end'
         # ('abort' simulates a sidecar drop, 'eof' closes cleanly, 'hold' keeps the stream open
-        # until the client goes away).
+        # until the client goes away). 'gate' delays the first round, 'unanswered' get no replies.
         self.actor_stream_plans: List[Dict[str, Any]] = []
         self.actor_stream_initials: List[api_v1.SubscribeActorEventsRequestInitialAlpha1] = []
         self.actor_stream_replies: List[api_v1.SubscribeActorEventsRequestAlpha1] = []
@@ -357,11 +358,16 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         yield api_v1.SubscribeActorEventsResponseAlpha1(
             initial_response=api_v1.SubscribeActorEventsResponseInitialAlpha1()
         )
+        gate = plan.get('gate')
+        if gate is not None:
+            gate.wait(timeout=10)
         for round_messages in plan.get('rounds', []):
             for message in round_messages:
                 yield message
             for _ in round_messages:
                 self.actor_stream_replies.append(next(request_iterator))
+        for message in plan.get('unanswered', []):
+            yield message
 
         end_behavior = plan.get('end', 'hold')
         if end_behavior == 'abort':
@@ -637,6 +643,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                 ),
             ],
             extended_metadata=self.metadata,
+            runtime_version=self.runtime_version,
         )
 
     def ConverseAlpha1(self, request, context):

@@ -14,6 +14,8 @@ limitations under the License.
 """
 
 import asyncio
+import logging
+import re
 from typing import Callable, Dict, List, Optional, Type, Union
 
 from dapr.actor.id import ActorId
@@ -30,6 +32,19 @@ from dapr.serializers import DefaultJSONSerializer, Serializer
 
 _HTTP_TIMEOUT_FROM_SETTINGS = _FromSettings('DAPR_HTTP_TIMEOUT_SECONDS')
 
+# Older sidecars forward caller headers, so a caller could spoof the activation id.
+_MIN_ACTIVATION_ID_VERSION = (1, 19, 1)
+_VERSION_LOOKUP_TIMEOUT_SECONDS = 5
+
+logger = logging.getLogger(__name__)
+
+
+def _supports_activation_id(version: str) -> bool:
+    match = re.match(r'(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$', version)
+    if match is None:
+        return False
+    return tuple(int(part) for part in match.groups()) >= _MIN_ACTIVATION_ID_VERSION
+
 
 class ActorRuntime:
     """The class that creates instances of :class:`Actor` and
@@ -40,6 +55,9 @@ class ActorRuntime:
 
     _actor_managers: Dict[str, ActorManager] = {}
     _actor_managers_lock = asyncio.Lock()
+
+    _activation_id_trusted: Optional[bool] = None
+    _version_lookup: Optional['asyncio.Future[str]'] = None
 
     @classmethod
     async def register_actor(
@@ -108,6 +126,7 @@ class ActorRuntime:
         actor_method_name: str,
         request_body: bytes,
         reentrancy_id: Optional[str] = None,
+        activation_id: Optional[str] = None,
     ) -> bytes:
         """Dispatches actor method defined in actor_type.
 
@@ -118,6 +137,7 @@ class ActorRuntime:
             request_body (bytes): the body of request that is passed to actor method arguments.
             reentrancy_id (str): reentrancy ID obtained from the dapr_reentrancy_id header
                 if present.
+            activation_id (str, optional): the Dapr-Actor-Activation-Id header value.
 
         Returns:
             bytes: serialized response data.
@@ -129,11 +149,19 @@ class ActorRuntime:
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
-        return await manager.dispatch(ActorId(actor_id), actor_method_name, request_body)
+        activation_id = await cls._trusted_activation_id(manager, activation_id)
+        return await manager.dispatch(
+            ActorId(actor_id), actor_method_name, request_body, activation_id
+        )
 
     @classmethod
     async def fire_reminder(
-        cls, actor_type_name: str, actor_id: str, name: str, state: bytes
+        cls,
+        actor_type_name: str,
+        actor_id: str,
+        name: str,
+        state: bytes,
+        activation_id: Optional[str] = None,
     ) -> None:
         """Fires a reminder for the Actor.
 
@@ -142,6 +170,7 @@ class ActorRuntime:
             actor_id (str): Actor ID.
             name (str): the name of reminder.
             state (bytes): the body of request that is passed to reminder callback.
+            activation_id (str, optional): the Dapr-Actor-Activation-Id header value.
 
         Raises:
             ValueError: `actor_type_name` actor type is not registered.
@@ -150,10 +179,18 @@ class ActorRuntime:
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
-        await manager.fire_reminder(ActorId(actor_id), name, state)
+        activation_id = await cls._trusted_activation_id(manager, activation_id)
+        await manager.fire_reminder(ActorId(actor_id), name, state, activation_id)
 
     @classmethod
-    async def fire_timer(cls, actor_type_name: str, actor_id: str, name: str, state: bytes) -> None:
+    async def fire_timer(
+        cls,
+        actor_type_name: str,
+        actor_id: str,
+        name: str,
+        state: bytes,
+        activation_id: Optional[str] = None,
+    ) -> None:
         """Fires a timer for the Actor.
 
         Args:
@@ -161,6 +198,7 @@ class ActorRuntime:
             actor_id (str): Actor ID.
             name (str): the timer's name.
             state (bytes): the timer's trigger body.
+            activation_id (str, optional): the Dapr-Actor-Activation-Id header value.
 
         Raises:
             ValueError: `actor_type_name` actor type is not registered.
@@ -168,7 +206,8 @@ class ActorRuntime:
         manager = await cls._get_actor_manager(actor_type_name)
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
-        await manager.fire_timer(ActorId(actor_id), name, state)
+        activation_id = await cls._trusted_activation_id(manager, activation_id)
+        await manager.fire_timer(ActorId(actor_id), name, state, activation_id)
 
     @classmethod
     def set_actor_config(cls, config: ActorRuntimeConfig) -> None:
@@ -197,3 +236,32 @@ class ActorRuntime:
         """
         async with cls._actor_managers_lock:
             return cls._actor_managers.get(actor_type_name)
+
+    @classmethod
+    async def _trusted_activation_id(
+        cls, manager: ActorManager, activation_id: Optional[str]
+    ) -> Optional[str]:
+        """Returns activation_id only when the sidecar is new enough to set it itself."""
+        if not activation_id:
+            return activation_id
+        if cls._activation_id_trusted is None:
+            lookup = cls._version_lookup
+            if lookup is None or lookup.get_loop() is not asyncio.get_running_loop():
+                lookup = asyncio.ensure_future(
+                    asyncio.wait_for(
+                        manager._runtime_ctx.dapr_client.get_runtime_version(),
+                        _VERSION_LOOKUP_TIMEOUT_SECONDS,
+                    )
+                )
+                cls._version_lookup = lookup
+            try:
+                version = await asyncio.shield(lookup)
+            except Exception as exception:  # noqa: BLE001
+                if cls._version_lookup is lookup:
+                    cls._version_lookup = None
+                logger.warning(
+                    'Ignoring actor activation id, sidecar version lookup failed: %r', exception
+                )
+                return None
+            cls._activation_id_trusted = _supports_activation_id(version)
+        return activation_id if cls._activation_id_trusted else None
