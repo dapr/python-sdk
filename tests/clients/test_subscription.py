@@ -545,8 +545,9 @@ class SubscriptionCancelledStreamTests(unittest.TestCase):
         with self.assertRaises(StreamCancelledError):
             subscription.next_message()
 
-    def test_subscribe_with_handler_stops_streaming_when_stream_is_cancelled(self):
+    def test_subscribe_with_handler_reconnects_cancelled_stream_until_closed(self):
         subscription = _cancelled_subscription()
+        reconnected = threading.Event()
 
         def handler(message: SubscriptionMessage) -> TopicEventResponse:
             return TopicEventResponse('success')
@@ -558,16 +559,19 @@ class SubscriptionCancelledStreamTests(unittest.TestCase):
         try:
             with (
                 patch.object(client, 'subscribe', return_value=subscription),
+                patch.object(subscription, 'reconnect_stream', side_effect=reconnected.set),
                 patch('dapr.clients.grpc.client.threading', threading_capturing),
             ):
                 close_fn = client.subscribe_with_handler('pubsub', 'topic', handler)
-            # Closing marks the stream inactive, so a regressed thread still exits.
-            self.addCleanup(close_fn)
+                self.addCleanup(close_fn)
 
-            started = threading_capturing.started
-            self.assertEqual(1, len(started))
+                started = threading_capturing.started
+                self.assertEqual(1, len(started))
+                self.assertTrue(reconnected.wait(timeout=_TEST_TIMEOUT_SECONDS))
+                close_fn()
+
             started[0].join(timeout=_TEST_TIMEOUT_SECONDS)
-            self.assertFalse(started[0].is_alive(), 'streaming thread kept running after cancel')
+            self.assertFalse(started[0].is_alive(), 'streaming thread kept running after close')
         finally:
             client.close()
 
