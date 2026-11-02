@@ -229,7 +229,7 @@ class ActorRuntimeTests(unittest.TestCase):
         self.assertEqual('act-2', manager._active_actors['test-id'].activation_id)
 
     def test_dispatch_ignores_activation_id_from_old_sidecar(self):
-        self.server.set_response(b'{"runtimeVersion": "1.19.0"}')
+        self.server.set_response(b'{"runtimeVersion": "1.19.0-rc.3"}')
         actor_type = FakeMultiInterfacesActor.__name__
         request_body = self._serializer.serialize({'message': 'hello dapr'})
         _run(
@@ -266,13 +266,15 @@ class ActivationIdGateTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_versions(self):
         cases = {
+            '1.19.0': True,
+            '1.19.0+build': True,
             '1.19.1': True,
             '1.19.1-rc.1': True,
             '1.19.2': True,
             '1.20.0': True,
             '2.0.0': True,
-            '1.19.0': False,
             '1.19.0-rc.2': False,
+            '1.19.0-rc.7': False,
             '1.18.5': False,
             'edge': False,
             'dev': False,

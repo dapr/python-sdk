@@ -33,17 +33,21 @@ from dapr.serializers import DefaultJSONSerializer, Serializer
 _HTTP_TIMEOUT_FROM_SETTINGS = _FromSettings('DAPR_HTTP_TIMEOUT_SECONDS')
 
 # Older sidecars forward caller headers, so a caller could spoof the activation id.
-_MIN_ACTIVATION_ID_VERSION = (1, 19, 1)
+_MIN_ACTIVATION_ID_VERSION = (1, 19, 0)
 _VERSION_LOOKUP_TIMEOUT_SECONDS = 5
 
 logger = logging.getLogger(__name__)
 
 
 def _supports_activation_id(version: str) -> bool:
-    match = re.match(r'(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$', version)
+    match = re.match(r'(\d+)\.(\d+)\.(\d+)(-[^+]*)?(?:\+.*)?$', version)
     if match is None:
         return False
-    return tuple(int(part) for part in match.groups()) >= _MIN_ACTIVATION_ID_VERSION
+    core = tuple(int(part) for part in match.groups()[:3])
+    # Release candidates of the minimum version came before the activation id shipped.
+    if core == _MIN_ACTIVATION_ID_VERSION:
+        return match.group(4) is None
+    return core > _MIN_ACTIVATION_ID_VERSION
 
 
 class ActorRuntime:

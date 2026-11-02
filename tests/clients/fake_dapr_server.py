@@ -49,7 +49,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         self.shutdown_received = False
         self.locks_to_owner = {}  # (store_name, resource_id) -> lock_owner
         self.metadata: Dict[str, str] = {}
-        self.runtime_version = '1.19.1'
+        self.runtime_version = '1.19.0'
         self.jobs: Dict[str, api_v1.Job] = {}
         self.job_overwrites: Dict[str, bool] = {}
         # When True the stable Job RPCs return UNIMPLEMENTED so the client must

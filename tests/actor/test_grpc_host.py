@@ -428,7 +428,7 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('act-2', self._held_activation_id())
 
     async def test_invoke_activation_id_ignored_on_old_sidecar(self):
-        self._fake_dapr_server.runtime_version = '1.19.0'
+        self._fake_dapr_server.runtime_version = '1.19.0-rc.3'
         await self._serve_callbacks(
             [_invoke_message('req-1', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-1'})],
             [_invoke_message('req-2', 'GetName', metadata={'Dapr-Actor-Activation-Id': 'act-2'})],
