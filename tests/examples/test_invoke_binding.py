@@ -108,8 +108,9 @@ def test_invoke_binding(dapr, kafka):
         )
         response.raise_for_status()
 
-        time.sleep(1)
-
+    # The consumer group can still be joining when the sidecar reports ready, so
+    # wait for delivery instead of stopping after a fixed delay.
+    dapr.wait_for_output(EXPECTED_MESSAGES, timeout=60)
     receiver_output = dapr.stop()
     for line in EXPECTED_MESSAGES:
         assert line in receiver_output, f'Missing in receiver output: {line}'

@@ -246,7 +246,7 @@ def test_schedule_activity_actions():
 
 
 def test_schedule_activity_actions_router_without_app_id():
-    """Tests that scheduleTask action contains correct router fields when app_id is specified"""
+    """Tests that the workflow action carries no target app ID when app_id is not specified"""
 
     def dummy_activity(ctx, _):
         pass
@@ -274,12 +274,10 @@ def test_schedule_activity_actions_router_without_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == ''
-    assert action.scheduleTask.router.sourceAppID == 'source-app'
-    assert action.scheduleTask.router.targetAppID == ''
 
 
 def test_schedule_activity_actions_router_with_app_id():
-    """Tests that scheduleTask action contains correct router fields when app_id is specified"""
+    """Tests that the workflow action carries correct router fields when app_id is specified"""
 
     def dummy_activity(ctx, _):
         pass
@@ -307,8 +305,6 @@ def test_schedule_activity_actions_router_with_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == 'target-app'
-    assert action.scheduleTask.router.sourceAppID == 'source-app'
-    assert action.scheduleTask.router.targetAppID == 'target-app'
 
 
 def test_activity_task_completion():
@@ -771,7 +767,7 @@ def test_sub_orchestration_task_completion():
 
 
 def test_create_sub_orchestration_actions_router_without_app_id():
-    """Tests that createChildWorkflow action contains correct router fields when app_id is specified"""
+    """Tests that the workflow action carries no target app ID when app_id is not specified"""
 
     def suborchestrator(ctx: task.OrchestrationContext, _):
         pass
@@ -801,12 +797,10 @@ def test_create_sub_orchestration_actions_router_without_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == ''
-    assert action.createChildWorkflow.router.sourceAppID == 'source-app'
-    assert action.createChildWorkflow.router.targetAppID == ''
 
 
 def test_create_sub_orchestration_actions_router_with_app_id():
-    """Tests that createChildWorkflow action contains correct router fields when app_id is specified"""
+    """Tests that the workflow action carries correct router fields when app_id is specified"""
 
     def suborchestrator(ctx: task.OrchestrationContext, _):
         pass
@@ -836,8 +830,6 @@ def test_create_sub_orchestration_actions_router_with_app_id():
     action = actions[0]
     assert action.router.sourceAppID == 'source-app'
     assert action.router.targetAppID == 'target-app'
-    assert action.createChildWorkflow.router.sourceAppID == 'source-app'
-    assert action.createChildWorkflow.router.targetAppID == 'target-app'
 
 
 def test_sub_orchestration_task_failed():
@@ -2730,3 +2722,104 @@ def get_and_validate_single_complete_workflow_action(
     assert type(actions[0]) is pb.WorkflowAction
     assert actions[0].HasField('completeWorkflow')
     return actions[0].completeWorkflow
+
+
+@pytest.fixture
+def unexpected_event_executor():
+    def orchestrator(ctx: task.OrchestrationContext, _):
+        yield ctx.wait_for_external_event('never_arrives')
+        return 'done'
+
+    registry = worker._Registry()
+    name = registry.add_orchestrator(orchestrator)
+
+    old_events = [
+        helpers.new_workflow_started_event(),
+        helpers.new_execution_started_event(name, TEST_INSTANCE_ID, encoded_input=None),
+    ]
+    executor = worker._OrchestrationExecutor(registry, TEST_LOGGER)
+    return executor, old_events
+
+
+@pytest.fixture(
+    params=[
+        'timerFired',
+        'taskCompleted',
+        'taskFailed',
+        'childWorkflowInstanceCompleted',
+        'childWorkflowInstanceFailed',
+    ]
+)
+def unexpected_event(request):
+    factories = {
+        'timerFired': lambda event_id: helpers.new_timer_fired_event(
+            event_id, datetime(2020, 1, 1)
+        ),
+        'taskCompleted': helpers.new_task_completed_event,
+        'taskFailed': lambda event_id: helpers.new_task_failed_event(
+            event_id, ValueError('failed')
+        ),
+        'childWorkflowInstanceCompleted': helpers.new_child_workflow_completed_event,
+        'childWorkflowInstanceFailed': lambda event_id: helpers.new_child_workflow_failed_event(
+            event_id, ValueError('failed')
+        ),
+    }
+    return request.param, factories[request.param]
+
+
+def test_unexpected_event_is_logged_once_per_id(
+    caplog, unexpected_event_executor, unexpected_event
+):
+    event_name, make_event = unexpected_event
+    executor, old_events = unexpected_event_executor
+    new_events = [make_event(5), make_event(5), make_event(7)]
+    with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
+        executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+
+    assert [r.getMessage() for r in caplog.records] == [
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected {event_name} event with ID = 5.',
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected {event_name} event with ID = 7.',
+    ]
+
+
+def test_unexpected_events_with_same_id_and_different_types_are_logged(
+    caplog, unexpected_event_executor
+):
+    executor, old_events = unexpected_event_executor
+    new_events = [
+        helpers.new_task_completed_event(5),
+        helpers.new_task_failed_event(5, ValueError('failed')),
+        helpers.new_task_completed_event(5),
+        helpers.new_task_failed_event(5, ValueError('failed')),
+    ]
+    with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
+        executor.execute(TEST_INSTANCE_ID, old_events, new_events)
+
+    assert [r.getMessage() for r in caplog.records] == [
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected taskCompleted event with ID = 5.',
+        f'{TEST_INSTANCE_ID}: Ignoring unexpected taskFailed event with ID = 5.',
+    ]
+
+
+def test_unexpected_event_replay_stays_silent(caplog, unexpected_event_executor, unexpected_event):
+    _, make_event = unexpected_event
+    executor, old_events = unexpected_event_executor
+    old_events += [make_event(5), make_event(5)]
+    with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
+        executor.execute(TEST_INSTANCE_ID, old_events, [helpers.new_workflow_started_event()])
+
+    assert not caplog.records
+
+
+def test_unexpected_event_is_logged_again_on_next_execution(
+    caplog, unexpected_event_executor, unexpected_event
+):
+    event_name, make_event = unexpected_event
+    executor, old_events = unexpected_event_executor
+    with caplog.at_level(logging.WARNING, logger=TEST_LOGGER.name):
+        for _ in range(2):
+            caplog.clear()
+            executor.execute(TEST_INSTANCE_ID, old_events, [make_event(5), make_event(5)])
+            assert [r.getMessage() for r in caplog.records] == [
+                f'{TEST_INSTANCE_ID}: Ignoring unexpected {event_name} event with ID = 5.',
+            ]

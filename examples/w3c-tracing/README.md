@@ -80,10 +80,7 @@ def saytrace(request: InvokeMethodRequest) -> InvokeMethodResponse:
         print(request.metadata, flush=True)
         print(request.text(), flush=True)
 
-        resp = {
-            'receivedtraceid': span.get_span_context().trace_id,
-            'method': 'SAY'
-        }
+        resp = {'receivedtraceid': span.get_span_context().trace_id, 'method': 'SAY'}
 
         return InvokeMethodResponse(json.dumps(resp), 'application/json; charset=UTF-8')
 ```
@@ -121,7 +118,7 @@ def forward(request: InvokeMethodRequest) -> InvokeMethodResponse:
             resp = d.invoke_method(
                 'invoke-receiver',
                 'saytrace',
-                data=request.text().encode("utf-8"),
+                data=request.text().encode('utf-8'),
             )
 
         return InvokeMethodResponse(json.dumps(resp.json()), 'application/json; charset=UTF-8')
@@ -169,7 +166,7 @@ from dapr.clients import DaprClient
 tracer_provider = TracerProvider(sampler=ALWAYS_ON)
 
 # Create a span processor
-span_processor = BatchSpanProcessor(ZipkinExporter(endpoint="http://localhost:9411/api/v2/spans"))
+span_processor = BatchSpanProcessor(ZipkinExporter(endpoint='http://localhost:9411/api/v2/spans'))
 
 # Add the span processor to the tracer provider
 tracer_provider.add_span_processor(span_processor)
@@ -213,9 +210,12 @@ with tracer.start_as_current_span(name='main') as span:
             print(resp.text(), flush=True)
 
             forwarded_resp = d.invoke_method('invoke-receiver', 'forward', data='')
-            match_string = 'matches' if (
-                forwarded_resp.json()["receivedtraceid"] == traceid) else 'does not match'
-            print(f"Trace ID {match_string} after forwarding", flush=True)
+            match_string = (
+                'matches'
+                if (forwarded_resp.json()['receivedtraceid'] == traceid)
+                else 'does not match'
+            )
+            print(f'Trace ID {match_string} after forwarding', flush=True)
 ```
 
 The class knows the `app-id` for the remote application. It uses `invoke_method` to invoke API calls on the service endpoint. Instrumentation happens automatically in `Dapr` client via the `tracer` argument.

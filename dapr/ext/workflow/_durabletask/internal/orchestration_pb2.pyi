@@ -295,6 +295,39 @@ class RerunParentInstanceInfo(_message.Message):
 Global___RerunParentInstanceInfo: _TypeAlias = RerunParentInstanceInfo  # noqa: Y015
 
 @_typing.final
+class RetryParentInstanceInfo(_message.Message):
+    """RetryParentInstanceInfo correlates a child-workflow retry attempt with the
+    initial attempt that spawned it. When a child workflow is scheduled with a
+    retry policy, each retry executes as a separate child workflow instance with
+    its own auto-generated instance ID. This message provides an explicit,
+    first-class link back to the first attempt so consumers no longer need to
+    reconstruct the relationship from event ordering and timer origins.
+
+    Semantics: the first attempt carries no RetryParentInstanceInfo. Retry
+    attempts (2nd onward) carry RetryParentInstanceInfo with instanceID set to
+    the first attempt's instance ID. Consumers group attempts by reading the
+    parent workflow's history; the group key is retryParentInstanceInfo.instanceID
+    when present, otherwise the event's own instanceId.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    INSTANCEID_FIELD_NUMBER: _builtins.int
+    instanceID: _builtins.str
+    """instanceID is the instance ID of the first attempt in this child-workflow
+    retry chain.
+    """
+    def __init__(
+        self,
+        *,
+        instanceID: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceID", b"instanceID"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___RetryParentInstanceInfo: _TypeAlias = RetryParentInstanceInfo  # noqa: Y015
+
+@_typing.final
 class TraceContext(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -360,6 +393,8 @@ class WorkflowState(_message.Message):
     COMPLETEDTIMESTAMP_FIELD_NUMBER: _builtins.int
     PARENTINSTANCEID_FIELD_NUMBER: _builtins.int
     TAGS_FIELD_NUMBER: _builtins.int
+    PARENTAPPID_FIELD_NUMBER: _builtins.int
+    STARTEDAT_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
     workflowStatus: Global___OrchestrationStatus.ValueType
@@ -387,6 +422,10 @@ class WorkflowState(_message.Message):
     def parentInstanceId(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
     def tags(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]: ...
+    @_builtins.property
+    def parentAppId(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
+    def startedAt(self) -> _timestamp_pb2.Timestamp: ...
     def __init__(
         self,
         *,
@@ -405,10 +444,15 @@ class WorkflowState(_message.Message):
         completedTimestamp: _timestamp_pb2.Timestamp | None = ...,
         parentInstanceId: _wrappers_pb2.StringValue | None = ...,
         tags: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
+        parentAppId: _wrappers_pb2.StringValue | None = ...,
+        startedAt: _timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "output", b"output", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt", "completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "startedAt", b"startedAt", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "name", b"name", "output", b"output", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version", "workflowStatus", b"workflowStatus"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt", "completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "name", b"name", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "startedAt", b"startedAt", "tags", b"tags", "version", b"version", "workflowStatus", b"workflowStatus"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__startedAt: _TypeAlias = _typing.Literal["startedAt"]  # noqa: Y015
+    _WhichOneofArgType__startedAt: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__startedAt) -> _WhichOneofReturnType__startedAt | None: ...
 
 Global___WorkflowState: _TypeAlias = WorkflowState  # noqa: Y015

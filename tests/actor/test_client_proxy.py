@@ -97,3 +97,7 @@ class ActorProxyTests(unittest.TestCase):
     def test_raise_exception_non_existing_method(self):
         with self.assertRaises(AttributeError):
             _run(self._proxy.non_existing())
+
+    def test_exception_non_existing_method_names_actor_interface(self):
+        with self.assertRaisesRegex(AttributeError, 'FakeActorCls2Interface'):
+            self._proxy.non_existing

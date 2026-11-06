@@ -4,7 +4,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import IO, Any, Generator
+from typing import IO, Any, Generator, Sequence
 
 import pytest
 
@@ -202,6 +202,25 @@ class DaprRunner:
                 return
             if DAPR_SIDECAR_READY_MARKER in log_path.read_text(errors='replace'):
                 return
+            time.sleep(1)
+
+    def wait_for_output(self, expected: Sequence[str], *, timeout: float = 30) -> bool:
+        """Polls the background service's output every second until it contains every string.
+
+        Returns ``True`` once all of ``expected`` has appeared, and ``False`` when
+        the process exits or ``timeout`` seconds pass first. The log is re-opened
+        by name for the same reason as in ``_wait_until_ready``.
+        """
+        if self._bg_process is None or self._bg_output_file is None:
+            return False
+        log_path = Path(self._bg_output_file.name)
+        deadline = time.monotonic() + timeout
+        while True:
+            output = log_path.read_text(errors='replace')
+            if all(line in output for line in expected):
+                return True
+            if self._bg_process.poll() is not None or time.monotonic() >= deadline:
+                return False
             time.sleep(1)
 
     def stop(self) -> str:

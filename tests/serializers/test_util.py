@@ -57,11 +57,38 @@ class UtilTests(unittest.TestCase):
             "Invalid Dapr Duration format: '{}'".format('invalid'),
         )
 
+    def test_convert_empty_duration_raises(self):
+        # An empty string matches the regex trivially (every group is optional), so
+        # matched.lastindex stays None instead of becoming a real group index.
+        with self.assertRaises(ValueError) as exeception_context:
+            convert_from_dapr_duration('')
+        self.assertEqual(
+            exeception_context.exception.args[0],
+            "Invalid Dapr Duration format: ''",
+        )
+
     def test_convert_timedelta_to_dapr_duration(self):
         duration = convert_to_dapr_duration(
             timedelta(hours=4, minutes=15, seconds=40, milliseconds=123, microseconds=35)
         )
         self.assertEqual(duration, '4h15m40s123ms35μs')
+
+    def test_convert_timedelta_to_dapr_duration_subsecond(self):
+        # A sub-second fraction >= 0.5 must not be rounded up into an extra whole
+        # second nor double-counted with the ms/μs fields; the round-trip must be exact.
+        duration = convert_to_dapr_duration(timedelta(milliseconds=1500))
+        self.assertEqual(duration, '0h0m1s500ms0μs')
+        self.assertEqual(convert_from_dapr_duration(duration), timedelta(milliseconds=1500))
+
+        # A fraction just under a second must not round up to the next whole second.
+        duration = convert_to_dapr_duration(timedelta(milliseconds=1999))
+        self.assertEqual(duration, '0h0m1s999ms0μs')
+        self.assertEqual(convert_from_dapr_duration(duration), timedelta(milliseconds=1999))
+
+        # A tiny fraction must not be dropped from the ms field.
+        duration = convert_to_dapr_duration(timedelta(milliseconds=1001))
+        self.assertEqual(duration, '0h0m1s1ms0μs')
+        self.assertEqual(convert_from_dapr_duration(duration), timedelta(milliseconds=1001))
 
     def test_convert_invalid_duration_string(self):
         TESTSTRING = '4h15m40s123ms35μshello'

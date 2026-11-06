@@ -87,8 +87,8 @@ class Job(_message.Message):
     """
     @_builtins.property
     def data(self) -> _any_pb2.Any:
-        """payload is the serialized job payload that will be sent to the recipient
-        when the job is triggered.
+        """data is the optional serialized job payload that will be sent to the
+        recipient when the job is triggered.
         """
 
     @_builtins.property
@@ -106,10 +106,12 @@ class Job(_message.Message):
         data: _any_pb2.Any | None = ...,
         failure_policy: _common_pb2.JobFailurePolicy | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_data", b"_data", "_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_data", b"_data", "_due_time", b"_due_time", "_failure_policy", b"_failure_policy", "_repeats", b"_repeats", "_schedule", b"_schedule", "_ttl", b"_ttl", "data", b"data", "due_time", b"due_time", "failure_policy", b"failure_policy", "name", b"name", "repeats", b"repeats", "schedule", b"schedule", "ttl", b"ttl"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__data: _TypeAlias = _typing.Literal["data"]  # noqa: Y015
+    _WhichOneofArgType__data: _TypeAlias = _typing.Literal["_data", b"_data"]  # noqa: Y015
     _WhichOneofReturnType__due_time: _TypeAlias = _typing.Literal["due_time"]  # noqa: Y015
     _WhichOneofArgType__due_time: _TypeAlias = _typing.Literal["_due_time", b"_due_time"]  # noqa: Y015
     _WhichOneofReturnType__failure_policy: _TypeAlias = _typing.Literal["failure_policy"]  # noqa: Y015
@@ -120,6 +122,8 @@ class Job(_message.Message):
     _WhichOneofArgType__schedule: _TypeAlias = _typing.Literal["_schedule", b"_schedule"]  # noqa: Y015
     _WhichOneofReturnType__ttl: _TypeAlias = _typing.Literal["ttl"]  # noqa: Y015
     _WhichOneofArgType__ttl: _TypeAlias = _typing.Literal["_ttl", b"_ttl"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__data) -> _WhichOneofReturnType__data | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__due_time) -> _WhichOneofReturnType__due_time | None: ...
     @_typing.overload

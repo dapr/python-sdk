@@ -22,6 +22,16 @@ from dapr.clients.http.conf import DAPR_API_TOKEN_HEADER, DAPR_USER_AGENT, USER_
 from dapr.clients.http.helpers import get_api_url
 from dapr.conf import settings
 
+# Shortest time one health probe may wait for the sidecar. Each probe is otherwise capped
+# at what is left of DAPR_HEALTH_TIMEOUT; the floor lets the last probe still get a reply.
+_MIN_ATTEMPT_TIMEOUT_SECONDS = 0.5
+
+
+def _attempt_timeout(deadline: float) -> float:
+    """Seconds one health probe may take: what is left until ``deadline`` (a
+    ``time.monotonic()`` value), but never less than _MIN_ATTEMPT_TIMEOUT_SECONDS."""
+    return max(deadline - time.monotonic(), _MIN_ATTEMPT_TIMEOUT_SECONDS)
+
 
 class DaprHealth:
     @staticmethod
@@ -41,19 +51,32 @@ class DaprHealth:
             headers[DAPR_API_TOKEN_HEADER] = settings.DAPR_API_TOKEN
         timeout = float(settings.DAPR_HEALTH_TIMEOUT)
 
-        start = time.time()
+        start = time.monotonic()
         while True:
             try:
                 req = urllib.request.Request(health_url, headers=headers)
-                with urllib.request.urlopen(req, context=DaprHealth.get_ssl_context()) as response:
+                # Without a timeout, a sidecar that accepts the connection but never
+                # answers would block here forever, past DAPR_HEALTH_TIMEOUT. urllib
+                # applies this per socket operation (connect, each read), not to the
+                # whole request, so a probe can overrun the budget somewhat, but it
+                # can no longer block forever.
+                with urllib.request.urlopen(
+                    req,
+                    timeout=_attempt_timeout(start + timeout),
+                    context=DaprHealth.get_ssl_context(),
+                ) as response:
                     if 200 <= response.status < 300:
                         break
             except urllib.error.URLError as e:
                 print(f'Health check on {health_url} failed: {e.reason}')
+            except TimeoutError:
+                # urllib wraps only connect/send errors in URLError; a read timeout in
+                # getresponse() (a sidecar that accepts but never answers) is bare.
+                print(f'Health check on {health_url} failed: timed out')
             except Exception as e:
                 print(f'Unexpected error during health check: {e}')
 
-            remaining = (start + timeout) - time.time()
+            remaining = (start + timeout) - time.monotonic()
             if remaining <= 0:
                 raise TimeoutError(f'Dapr health check timed out, after {timeout}.')
             time.sleep(min(1, remaining))

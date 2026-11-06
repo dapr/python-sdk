@@ -76,6 +76,9 @@ class RetryPolicyTests(unittest.TestCase):
             RetryPolicy(max_attempts=-2)
 
         with self.assertRaises(ValueError):
+            RetryPolicy(max_attempts=None)
+
+        with self.assertRaises(ValueError):
             RetryPolicy(initial_backoff=0)
 
         with self.assertRaises(ValueError):

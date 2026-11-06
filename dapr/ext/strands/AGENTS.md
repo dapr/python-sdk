@@ -31,9 +31,9 @@ Extends both `RepositorySessionManager` and `SessionRepository` from the Strands
 manager = DaprSessionManager(
     session_id='my-session',
     state_store_name='statestore',
-    dapr_client=client,          # DaprClient instance
-    ttl=3600,                    # Optional: TTL in seconds
-    consistency='eventual',      # 'eventual' (default) or 'strong'
+    dapr_client=client,  # DaprClient instance
+    ttl=3600,  # Optional: TTL in seconds
+    consistency='eventual',  # 'eventual' (default) or 'strong'
 )
 ```
 

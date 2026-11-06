@@ -303,6 +303,7 @@ class ChildWorkflowInstanceCreatedEvent(_message.Message):
     PARENTTRACECONTEXT_FIELD_NUMBER: _builtins.int
     RERUNPARENTINSTANCEINFO_FIELD_NUMBER: _builtins.int
     HISTORYPROPAGATIONSCOPE_FIELD_NUMBER: _builtins.int
+    RETRYPARENTINSTANCEINFO_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
     historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType
@@ -322,6 +323,15 @@ class ChildWorkflowInstanceCreatedEvent(_message.Message):
         workflow execution as the result of a rerun operation.
         """
 
+    @_builtins.property
+    def retryParentInstanceInfo(self) -> _orchestration_pb2.RetryParentInstanceInfo:
+        """If defined, indicates that this child workflow is a retry attempt and
+        links it back to the first attempt in the retry chain. Absent on the
+        first attempt. Consumers correlate retry attempts by grouping on
+        retryParentInstanceInfo.instanceID when present, otherwise on this
+        event's own instanceId.
+        """
+
     def __init__(
         self,
         *,
@@ -332,19 +342,24 @@ class ChildWorkflowInstanceCreatedEvent(_message.Message):
         parentTraceContext: _orchestration_pb2.TraceContext | None = ...,
         rerunParentInstanceInfo: _orchestration_pb2.RerunParentInstanceInfo | None = ...,
         historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType | None = ...,
+        retryParentInstanceInfo: _orchestration_pb2.RetryParentInstanceInfo | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "_retryParentInstanceInfo", b"_retryParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "retryParentInstanceInfo", b"retryParentInstanceInfo", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_rerunParentInstanceInfo", b"_rerunParentInstanceInfo", "_retryParentInstanceInfo", b"_retryParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "rerunParentInstanceInfo", b"rerunParentInstanceInfo", "retryParentInstanceInfo", b"retryParentInstanceInfo", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__historyPropagationScope: _TypeAlias = _typing.Literal["historyPropagationScope"]  # noqa: Y015
     _WhichOneofArgType__historyPropagationScope: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope"]  # noqa: Y015
     _WhichOneofReturnType__rerunParentInstanceInfo: _TypeAlias = _typing.Literal["rerunParentInstanceInfo"]  # noqa: Y015
     _WhichOneofArgType__rerunParentInstanceInfo: _TypeAlias = _typing.Literal["_rerunParentInstanceInfo", b"_rerunParentInstanceInfo"]  # noqa: Y015
+    _WhichOneofReturnType__retryParentInstanceInfo: _TypeAlias = _typing.Literal["retryParentInstanceInfo"]  # noqa: Y015
+    _WhichOneofArgType__retryParentInstanceInfo: _TypeAlias = _typing.Literal["_retryParentInstanceInfo", b"_retryParentInstanceInfo"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__historyPropagationScope) -> _WhichOneofReturnType__historyPropagationScope | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__rerunParentInstanceInfo) -> _WhichOneofReturnType__rerunParentInstanceInfo | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__retryParentInstanceInfo) -> _WhichOneofReturnType__retryParentInstanceInfo | None: ...
 
 Global___ChildWorkflowInstanceCreatedEvent: _TypeAlias = ChildWorkflowInstanceCreatedEvent  # noqa: Y015
 

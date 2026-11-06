@@ -1,0 +1,20 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: rag-events-pubsub
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+  - name: redisHost
+    value: localhost:6379
+  - name: redisPassword
+    value: ""
+# Local-development stand-in for the real pub/sub used in production:
+# an SNS/SQS or EventBridge-backed component for the S3 path
+# (pubsub_trigger.py), or the Azure Service Bus Topics component for the
+# Azure path (pubsub_trigger_servicebus.py; see
+# examples/rag/components/azure/servicebus-pubsub.yaml). Only the component
+# name (`rag-events-pubsub`) and topic names need to match what the
+# subscriber scripts declare -- swap this file for your cloud provider's
+# pub/sub component to go from local testing to a real deployment.

@@ -38,18 +38,30 @@ class GetWorkflowRequest(_message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: _builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    APP_ID_FIELD_NUMBER: _builtins.int
     instance_id: _builtins.str
     """ID of the workflow instance to query."""
     workflow_component: _builtins.str
     """Name of the workflow component."""
+    app_id: _builtins.str
+    """Optional App ID of the application hosting the workflow instance.
+    Defaults to the local app. Must be in the same namespace; the target
+    app's WorkflowAccessPolicy governs whether the call is permitted.
+    """
     def __init__(
         self,
         *,
         instance_id: _builtins.str = ...,
         workflow_component: _builtins.str = ...,
+        app_id: _builtins.str | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__app_id: _TypeAlias = _typing.Literal["app_id"]  # noqa: Y015
+    _WhichOneofArgType__app_id: _TypeAlias = _typing.Literal["_app_id", b"_app_id"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__app_id) -> _WhichOneofReturnType__app_id | None: ...
 
 Global___GetWorkflowRequest: _TypeAlias = GetWorkflowRequest  # noqa: Y015
 
@@ -145,6 +157,7 @@ class StartWorkflowRequest(_message.Message):
     WORKFLOW_NAME_FIELD_NUMBER: _builtins.int
     OPTIONS_FIELD_NUMBER: _builtins.int
     INPUT_FIELD_NUMBER: _builtins.int
+    APP_ID_FIELD_NUMBER: _builtins.int
     instance_id: _builtins.str
     """The ID to assign to the started workflow instance. If empty, a random ID is generated."""
     workflow_component: _builtins.str
@@ -153,6 +166,11 @@ class StartWorkflowRequest(_message.Message):
     """Name of the workflow."""
     input: _builtins.bytes
     """Input data for the workflow instance."""
+    app_id: _builtins.str
+    """Optional App ID of the application that should host the workflow
+    instance. Defaults to the local app. Must be in the same namespace; the
+    target app's WorkflowAccessPolicy governs whether the call is permitted.
+    """
     @_builtins.property
     def options(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
         """Additional component-specific options for starting the workflow instance."""
@@ -165,9 +183,15 @@ class StartWorkflowRequest(_message.Message):
         workflow_name: _builtins.str = ...,
         options: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
         input: _builtins.bytes = ...,
+        app_id: _builtins.str | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "instance_id", b"instance_id", "options", b"options", "workflow_component", b"workflow_component", "workflow_name", b"workflow_name"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id", "input", b"input", "instance_id", b"instance_id", "options", b"options", "workflow_component", b"workflow_component", "workflow_name", b"workflow_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__app_id: _TypeAlias = _typing.Literal["app_id"]  # noqa: Y015
+    _WhichOneofArgType__app_id: _TypeAlias = _typing.Literal["_app_id", b"_app_id"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__app_id) -> _WhichOneofReturnType__app_id | None: ...
 
 Global___StartWorkflowRequest: _TypeAlias = StartWorkflowRequest  # noqa: Y015
 
@@ -198,18 +222,30 @@ class TerminateWorkflowRequest(_message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: _builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    APP_ID_FIELD_NUMBER: _builtins.int
     instance_id: _builtins.str
     """ID of the workflow instance to terminate."""
     workflow_component: _builtins.str
     """Name of the workflow component."""
+    app_id: _builtins.str
+    """Optional App ID of the application hosting the workflow instance.
+    Defaults to the local app. Must be in the same namespace; the target
+    app's WorkflowAccessPolicy governs whether the call is permitted.
+    """
     def __init__(
         self,
         *,
         instance_id: _builtins.str = ...,
         workflow_component: _builtins.str = ...,
+        app_id: _builtins.str | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__app_id: _TypeAlias = _typing.Literal["app_id"]  # noqa: Y015
+    _WhichOneofArgType__app_id: _TypeAlias = _typing.Literal["_app_id", b"_app_id"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__app_id) -> _WhichOneofReturnType__app_id | None: ...
 
 Global___TerminateWorkflowRequest: _TypeAlias = TerminateWorkflowRequest  # noqa: Y015
 
@@ -221,18 +257,30 @@ class PauseWorkflowRequest(_message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: _builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    APP_ID_FIELD_NUMBER: _builtins.int
     instance_id: _builtins.str
     """ID of the workflow instance to pause."""
     workflow_component: _builtins.str
     """Name of the workflow component."""
+    app_id: _builtins.str
+    """Optional App ID of the application hosting the workflow instance.
+    Defaults to the local app. Must be in the same namespace; the target
+    app's WorkflowAccessPolicy governs whether the call is permitted.
+    """
     def __init__(
         self,
         *,
         instance_id: _builtins.str = ...,
         workflow_component: _builtins.str = ...,
+        app_id: _builtins.str | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__app_id: _TypeAlias = _typing.Literal["app_id"]  # noqa: Y015
+    _WhichOneofArgType__app_id: _TypeAlias = _typing.Literal["_app_id", b"_app_id"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__app_id) -> _WhichOneofReturnType__app_id | None: ...
 
 Global___PauseWorkflowRequest: _TypeAlias = PauseWorkflowRequest  # noqa: Y015
 
@@ -244,18 +292,30 @@ class ResumeWorkflowRequest(_message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: _builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    APP_ID_FIELD_NUMBER: _builtins.int
     instance_id: _builtins.str
     """ID of the workflow instance to resume."""
     workflow_component: _builtins.str
     """Name of the workflow component."""
+    app_id: _builtins.str
+    """Optional App ID of the application hosting the workflow instance.
+    Defaults to the local app. Must be in the same namespace; the target
+    app's WorkflowAccessPolicy governs whether the call is permitted.
+    """
     def __init__(
         self,
         *,
         instance_id: _builtins.str = ...,
         workflow_component: _builtins.str = ...,
+        app_id: _builtins.str | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__app_id: _TypeAlias = _typing.Literal["app_id"]  # noqa: Y015
+    _WhichOneofArgType__app_id: _TypeAlias = _typing.Literal["_app_id", b"_app_id"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__app_id) -> _WhichOneofReturnType__app_id | None: ...
 
 Global___ResumeWorkflowRequest: _TypeAlias = ResumeWorkflowRequest  # noqa: Y015
 
@@ -269,6 +329,7 @@ class RaiseEventWorkflowRequest(_message.Message):
     WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
     EVENT_NAME_FIELD_NUMBER: _builtins.int
     EVENT_DATA_FIELD_NUMBER: _builtins.int
+    APP_ID_FIELD_NUMBER: _builtins.int
     instance_id: _builtins.str
     """ID of the workflow instance to raise an event for."""
     workflow_component: _builtins.str
@@ -277,6 +338,11 @@ class RaiseEventWorkflowRequest(_message.Message):
     """Name of the event."""
     event_data: _builtins.bytes
     """Data associated with the event."""
+    app_id: _builtins.str
+    """Optional App ID of the application hosting the workflow instance.
+    Defaults to the local app. Must be in the same namespace; the target
+    app's WorkflowAccessPolicy governs whether the call is permitted.
+    """
     def __init__(
         self,
         *,
@@ -284,9 +350,15 @@ class RaiseEventWorkflowRequest(_message.Message):
         workflow_component: _builtins.str = ...,
         event_name: _builtins.str = ...,
         event_data: _builtins.bytes = ...,
+        app_id: _builtins.str | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["event_data", b"event_data", "event_name", b"event_name", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id", "event_data", b"event_data", "event_name", b"event_name", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__app_id: _TypeAlias = _typing.Literal["app_id"]  # noqa: Y015
+    _WhichOneofArgType__app_id: _TypeAlias = _typing.Literal["_app_id", b"_app_id"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__app_id) -> _WhichOneofReturnType__app_id | None: ...
 
 Global___RaiseEventWorkflowRequest: _TypeAlias = RaiseEventWorkflowRequest  # noqa: Y015
 
@@ -298,17 +370,29 @@ class PurgeWorkflowRequest(_message.Message):
 
     INSTANCE_ID_FIELD_NUMBER: _builtins.int
     WORKFLOW_COMPONENT_FIELD_NUMBER: _builtins.int
+    APP_ID_FIELD_NUMBER: _builtins.int
     instance_id: _builtins.str
     """ID of the workflow instance to purge."""
     workflow_component: _builtins.str
     """Name of the workflow component."""
+    app_id: _builtins.str
+    """Optional App ID of the application hosting the workflow instance.
+    Defaults to the local app. Must be in the same namespace; the target
+    app's WorkflowAccessPolicy governs whether the call is permitted.
+    """
     def __init__(
         self,
         *,
         instance_id: _builtins.str = ...,
         workflow_component: _builtins.str = ...,
+        app_id: _builtins.str | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_app_id", b"_app_id", "app_id", b"app_id", "instance_id", b"instance_id", "workflow_component", b"workflow_component"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__app_id: _TypeAlias = _typing.Literal["app_id"]  # noqa: Y015
+    _WhichOneofArgType__app_id: _TypeAlias = _typing.Literal["_app_id", b"_app_id"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__app_id) -> _WhichOneofReturnType__app_id | None: ...
 
 Global___PurgeWorkflowRequest: _TypeAlias = PurgeWorkflowRequest  # noqa: Y015

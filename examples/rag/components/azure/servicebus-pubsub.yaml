@@ -1,0 +1,75 @@
+# Dapr pub/sub component for Azure Service Bus Topics.
+#
+# Wiring: Azure Blob Storage change events -> Event Grid system topic ->
+# this Service Bus topic -> Dapr pub/sub subscription -> the ingestion
+# workload's Dapr Workflow trigger. See examples/rag/infra/ for the Bicep
+# that provisions the namespace/topic/subscription and the Event Grid
+# relay, and docs/rag/azure-rbac.md for the exact role
+# ("Azure Service Bus Data Receiver") the ingestion identity needs here.
+#
+# This component belongs to the INGESTION workload only -- the query
+# workload never touches Service Bus.
+#
+# Placeholders (replace before use, e.g. from the Bicep outputs):
+#   <SERVICEBUS_NAMESPACE_NAME>    -> Bicep output serviceBusNamespaceHostName
+#   <INGESTION_IDENTITY_CLIENT_ID> -> Bicep output ingestionIdentityClientId
+#
+# Metadata field reference verified against
+# https://docs.dapr.io/reference/components-reference/supported-pubsub/setup-azure-servicebus-topics/
+# on 2026-09-10.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  # Matches the local Redis pub/sub component's name (components/pubsub.yaml)
+  # and what pubsub_trigger_servicebus.py subscribes through, so switching
+  # from local dev to Azure is a file swap, not a code change.
+  name: rag-events-pubsub
+spec:
+  type: pubsub.azure.servicebus.topics
+  version: v1
+  metadata:
+  # Required for Microsoft Entra ID (managed identity) auth in place of a
+  # connection string. Fully-qualified Service Bus namespace domain name.
+  - name: namespaceName
+    value: "<SERVICEBUS_NAMESPACE_NAME>"
+
+  # Optional. Client ID of the ingestion workload's *user-assigned* managed
+  # identity. Omit this field entirely if the workload instead runs under a
+  # *system-assigned* managed identity -- Dapr's Azure AD auth then falls
+  # back to the platform-provided identity automatically, and no azure*
+  # auth field is needed at all.
+  #
+  # Deliberately not set here: azureTenantId / azureClientSecret /
+  # azureCertificateFile. Those are only required for service-principal
+  # (client-secret or certificate) auth, which this sample avoids in favor
+  # of managed identity -- the recommended path needs no secrets at all.
+  - name: azureClientId
+    value: "<INGESTION_IDENTITY_CLIENT_ID>"
+
+  # Optional. Identifies this consumer on the underlying AMQP link; shows up
+  # in Service Bus diagnostics and is useful when correlating connections
+  # across worker replicas.
+  - name: consumerID
+    value: "rag-ingestion-worker"
+
+  # Optional. How long a message may stay unacknowledged before Service Bus
+  # redelivers it. Keep this comfortably above your slowest single-document
+  # processing time (download + parse + chunk + embed) to avoid duplicate
+  # deliveries racing the pipeline's own idempotency checks -- redelivery
+  # is still handled safely (see dapr/ext/rag/AGENTS.md's idempotency
+  # section), but a shorter lock duration means more redundant work.
+  - name: lockDurationInSec
+    value: "300"
+
+  # Optional. Should match (or be <=) the subscription's own max delivery
+  # count (see examples/rag/infra/modules/servicebus.bicep) so Dapr and
+  # Service Bus agree on when a message is dead-lettered rather than
+  # retried forever.
+  - name: maxDeliveryCount
+    value: "10"
+
+# Optional hardening: restrict this component to the ingestion app-id only,
+# once you know it (Dapr loads every component in its resources path by
+# default; `scopes` limits which app-ids may use a given component).
+# scopes:
+# - rag-ingestion-worker

@@ -50,7 +50,7 @@ class DaprActorGrpcClient(DaprActorClientBase):
 
     def __init__(
         self,
-        timeout: int = 60,
+        timeout: Optional[int] = 60,
         address: Optional[str] = None,
         channel: Optional[grpc.aio.Channel] = None,
         message_serializer: Serializer = DefaultJSONSerializer(),
@@ -59,7 +59,7 @@ class DaprActorGrpcClient(DaprActorClientBase):
         """Creates the gRPC actor client.
 
         Args:
-            timeout (int): per-call timeout in seconds.
+            timeout (int, optional): per-call timeout in seconds; None means no timeout.
             address (str, optional): Dapr runtime gRPC address; defaults to the
                 same resolution as the Dapr clients (DAPR_GRPC_ENDPOINT et al).
             channel (grpc.aio.Channel, optional): externally owned channel to
@@ -83,6 +83,11 @@ class DaprActorGrpcClient(DaprActorClientBase):
         """Closes the underlying channel when this client created it."""
         if self._owns_channel:
             await self._channel.close()
+
+    async def get_runtime_version(self) -> str:
+        """Returns the sidecar's runtime version through the GetMetadata RPC."""
+        response = await self._stub.GetMetadata(api_v1.GetMetadataRequest(), timeout=self._timeout)
+        return response.runtime_version
 
     async def invoke_method(
         self, actor_type: str, actor_id: str, method: str, data: Optional[bytes] = None

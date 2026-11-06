@@ -31,7 +31,6 @@ class ScheduleTaskAction(_message.Message):
     NAME_FIELD_NUMBER: _builtins.int
     VERSION_FIELD_NUMBER: _builtins.int
     INPUT_FIELD_NUMBER: _builtins.int
-    ROUTER_FIELD_NUMBER: _builtins.int
     TASKEXECUTIONID_FIELD_NUMBER: _builtins.int
     HISTORYPROPAGATIONSCOPE_FIELD_NUMBER: _builtins.int
     name: _builtins.str
@@ -42,30 +41,22 @@ class ScheduleTaskAction(_message.Message):
     def version(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
     def input(self) -> _wrappers_pb2.StringValue: ...
-    @_builtins.property
-    def router(self) -> _orchestration_pb2.TaskRouter: ...
     def __init__(
         self,
         *,
         name: _builtins.str = ...,
         version: _wrappers_pb2.StringValue | None = ...,
         input: _wrappers_pb2.StringValue | None = ...,
-        router: _orchestration_pb2.TaskRouter | None = ...,
         taskExecutionId: _builtins.str = ...,
         historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_router", b"_router", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "router", b"router", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_router", b"_router", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "name", b"name", "router", b"router", "taskExecutionId", b"taskExecutionId", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "name", b"name", "taskExecutionId", b"taskExecutionId", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__historyPropagationScope: _TypeAlias = _typing.Literal["historyPropagationScope"]  # noqa: Y015
     _WhichOneofArgType__historyPropagationScope: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope"]  # noqa: Y015
-    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
-    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
-    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__historyPropagationScope) -> _WhichOneofReturnType__historyPropagationScope | None: ...
-    @_typing.overload
-    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
 
 Global___ScheduleTaskAction: _TypeAlias = ScheduleTaskAction  # noqa: Y015
 
@@ -77,8 +68,8 @@ class CreateChildWorkflowAction(_message.Message):
     NAME_FIELD_NUMBER: _builtins.int
     VERSION_FIELD_NUMBER: _builtins.int
     INPUT_FIELD_NUMBER: _builtins.int
-    ROUTER_FIELD_NUMBER: _builtins.int
     HISTORYPROPAGATIONSCOPE_FIELD_NUMBER: _builtins.int
+    RETRYPARENTINSTANCEINFO_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
     historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType
@@ -88,7 +79,15 @@ class CreateChildWorkflowAction(_message.Message):
     @_builtins.property
     def input(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
-    def router(self) -> _orchestration_pb2.TaskRouter: ...
+    def retryParentInstanceInfo(self) -> _orchestration_pb2.RetryParentInstanceInfo:
+        """If defined, indicates that this child workflow is a retry attempt and
+        links it back to the first attempt in the retry chain. Absent on the
+        first attempt. The runtime persists this onto the resulting
+        ChildWorkflowInstanceCreatedEvent so consumers can correlate retry
+        attempts by grouping on retryParentInstanceInfo.instanceID when present,
+        otherwise on the created instance's own instanceId.
+        """
+
     def __init__(
         self,
         *,
@@ -96,21 +95,21 @@ class CreateChildWorkflowAction(_message.Message):
         name: _builtins.str = ...,
         version: _wrappers_pb2.StringValue | None = ...,
         input: _wrappers_pb2.StringValue | None = ...,
-        router: _orchestration_pb2.TaskRouter | None = ...,
         historyPropagationScope: _orchestration_pb2.HistoryPropagationScope.ValueType | None = ...,
+        retryParentInstanceInfo: _orchestration_pb2.RetryParentInstanceInfo | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_router", b"_router", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "router", b"router", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_retryParentInstanceInfo", b"_retryParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "retryParentInstanceInfo", b"retryParentInstanceInfo", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_router", b"_router", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "instanceId", b"instanceId", "name", b"name", "router", b"router", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope", "_retryParentInstanceInfo", b"_retryParentInstanceInfo", "historyPropagationScope", b"historyPropagationScope", "input", b"input", "instanceId", b"instanceId", "name", b"name", "retryParentInstanceInfo", b"retryParentInstanceInfo", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__historyPropagationScope: _TypeAlias = _typing.Literal["historyPropagationScope"]  # noqa: Y015
     _WhichOneofArgType__historyPropagationScope: _TypeAlias = _typing.Literal["_historyPropagationScope", b"_historyPropagationScope"]  # noqa: Y015
-    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
-    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
+    _WhichOneofReturnType__retryParentInstanceInfo: _TypeAlias = _typing.Literal["retryParentInstanceInfo"]  # noqa: Y015
+    _WhichOneofArgType__retryParentInstanceInfo: _TypeAlias = _typing.Literal["_retryParentInstanceInfo", b"_retryParentInstanceInfo"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__historyPropagationScope) -> _WhichOneofReturnType__historyPropagationScope | None: ...
     @_typing.overload
-    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__retryParentInstanceInfo) -> _WhichOneofReturnType__retryParentInstanceInfo | None: ...
 
 Global___CreateChildWorkflowAction: _TypeAlias = CreateChildWorkflowAction  # noqa: Y015
 
@@ -153,7 +152,6 @@ class CreateDetachedWorkflowAction(_message.Message):
     EXECUTIONID_FIELD_NUMBER: _builtins.int
     TAGS_FIELD_NUMBER: _builtins.int
     PARENTTRACECONTEXT_FIELD_NUMBER: _builtins.int
-    ROUTER_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     """instanceId is the ID assigned to the new workflow. It is mandatory:
     implementors must set a stable, deterministic ID so that on replay the
@@ -179,8 +177,6 @@ class CreateDetachedWorkflowAction(_message.Message):
     def tags(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]: ...
     @_builtins.property
     def parentTraceContext(self) -> _orchestration_pb2.TraceContext: ...
-    @_builtins.property
-    def router(self) -> _orchestration_pb2.TaskRouter: ...
     def __init__(
         self,
         *,
@@ -192,22 +188,17 @@ class CreateDetachedWorkflowAction(_message.Message):
         executionId: _wrappers_pb2.StringValue | None = ...,
         tags: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
         parentTraceContext: _orchestration_pb2.TraceContext | None = ...,
-        router: _orchestration_pb2.TaskRouter | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_parentTraceContext", b"_parentTraceContext", "_router", b"_router", "_scheduledStartTimestamp", b"_scheduledStartTimestamp", "executionId", b"executionId", "input", b"input", "parentTraceContext", b"parentTraceContext", "router", b"router", "scheduledStartTimestamp", b"scheduledStartTimestamp", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_parentTraceContext", b"_parentTraceContext", "_scheduledStartTimestamp", b"_scheduledStartTimestamp", "executionId", b"executionId", "input", b"input", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parentTraceContext", b"_parentTraceContext", "_router", b"_router", "_scheduledStartTimestamp", b"_scheduledStartTimestamp", "executionId", b"executionId", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "router", b"router", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parentTraceContext", b"_parentTraceContext", "_scheduledStartTimestamp", b"_scheduledStartTimestamp", "executionId", b"executionId", "input", b"input", "instanceId", b"instanceId", "name", b"name", "parentTraceContext", b"parentTraceContext", "scheduledStartTimestamp", b"scheduledStartTimestamp", "tags", b"tags", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__parentTraceContext: _TypeAlias = _typing.Literal["parentTraceContext"]  # noqa: Y015
     _WhichOneofArgType__parentTraceContext: _TypeAlias = _typing.Literal["_parentTraceContext", b"_parentTraceContext"]  # noqa: Y015
-    _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
-    _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
     _WhichOneofReturnType__scheduledStartTimestamp: _TypeAlias = _typing.Literal["scheduledStartTimestamp"]  # noqa: Y015
     _WhichOneofArgType__scheduledStartTimestamp: _TypeAlias = _typing.Literal["_scheduledStartTimestamp", b"_scheduledStartTimestamp"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__parentTraceContext) -> _WhichOneofReturnType__parentTraceContext | None: ...
-    @_typing.overload
-    def WhichOneof(self, oneof_group: _WhichOneofArgType__router) -> _WhichOneofReturnType__router | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__scheduledStartTimestamp) -> _WhichOneofReturnType__scheduledStartTimestamp | None: ...
 

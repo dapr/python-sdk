@@ -14,7 +14,8 @@ limitations under the License.
 """
 
 import unittest
-from unittest.mock import Mock, patch
+from typing import Optional, Union
+from unittest.mock import ANY, Mock, patch
 
 from dapr.clients.grpc.interceptors import DaprClientTimeoutInterceptor
 from dapr.conf import settings
@@ -91,3 +92,147 @@ class DaprClientTimeoutInterceptorTests(unittest.TestCase):
             continuation, client_call_details, request
         )
         continuation.assert_called_once_with(client_call_details, request)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_workflow_waits_are_not_given_the_global_timeout(self):
+        # A wait with no timeout must block until the workflow finishes, however long.
+        for method in (
+            '/TaskHubSidecarService/WaitForInstanceStart',
+            '/TaskHubSidecarService/WaitForInstanceCompletion',
+            b'/TaskHubSidecarService/WaitForInstanceCompletion',
+            b'/TaskHubSidecarService/WaitForInstanceStart',
+        ):
+            with self.subTest(method=method):
+                continuation = Mock()
+                request = Mock()
+                client_call_details = Mock()
+                client_call_details.method = method
+                client_call_details.timeout = None
+                client_call_details.metadata = 'metadata'
+                client_call_details.credentials = 'credentials'
+                client_call_details.wait_for_ready = 'wait_for_ready'
+                client_call_details.compression = 'compression'
+
+                DaprClientTimeoutInterceptor().intercept_unary_unary(
+                    continuation, client_call_details, request
+                )
+                continuation.assert_called_once_with(client_call_details, request)
+                self.assertIsNone(continuation.call_args[0][0].timeout)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_other_workflow_calls_still_get_the_global_timeout(self):
+        # grpc.aio passes method names as bytes, so check both forms.
+        for method in (
+            '/TaskHubSidecarService/GetInstance',
+            b'/TaskHubSidecarService/GetInstance',
+        ):
+            with self.subTest(method=method):
+                continuation = Mock()
+                request = Mock()
+                client_call_details = Mock()
+                client_call_details.method = method
+                client_call_details.timeout = None
+                client_call_details.metadata = 'metadata'
+                client_call_details.credentials = 'credentials'
+                client_call_details.wait_for_ready = 'wait_for_ready'
+                client_call_details.compression = 'compression'
+
+                DaprClientTimeoutInterceptor().intercept_unary_unary(
+                    continuation, client_call_details, request
+                )
+                self.assertEqual(7, continuation.call_args[0][0].timeout)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_workflow_waits_keep_an_explicit_timeout(self):
+        # A wait with a caller timeout must stay bounded by it.
+        continuation = Mock()
+        request = Mock()
+        client_call_details = Mock()
+        client_call_details.method = b'/TaskHubSidecarService/WaitForInstanceCompletion'
+        client_call_details.timeout = 5
+        client_call_details.metadata = 'metadata'
+        client_call_details.credentials = 'credentials'
+        client_call_details.wait_for_ready = 'wait_for_ready'
+        client_call_details.compression = 'compression'
+
+        DaprClientTimeoutInterceptor().intercept_unary_unary(
+            continuation, client_call_details, request
+        )
+        continuation.assert_called_once_with(client_call_details, request)
+        self.assertEqual(5, continuation.call_args[0][0].timeout)
+
+
+def _call_details(method: Union[str, bytes], timeout: Optional[float]) -> Mock:
+    client_call_details = Mock()
+    client_call_details.method = method
+    client_call_details.timeout = timeout
+    client_call_details.metadata = 'metadata'
+    client_call_details.credentials = 'credentials'
+    client_call_details.wait_for_ready = 'wait_for_ready'
+    client_call_details.compression = 'compression'
+    return client_call_details
+
+
+class DaprClientTimeoutInterceptorExplicitTimeoutTests(unittest.TestCase):
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', None)
+    def test_explicit_timeout_applies_without_global_timeout(self):
+        continuation = Mock()
+        client_call_details = _call_details('method', None)
+
+        DaprClientTimeoutInterceptor(3).intercept_unary_unary(
+            continuation, client_call_details, Mock()
+        )
+        self.assertEqual(3.0, continuation.call_args[0][0].timeout)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_explicit_timeout_overrides_global_timeout(self):
+        continuation = Mock()
+        client_call_details = _call_details('method', None)
+
+        DaprClientTimeoutInterceptor(3).intercept_unary_unary(
+            continuation, client_call_details, Mock()
+        )
+        self.assertEqual(3.0, continuation.call_args[0][0].timeout)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', 7)
+    def test_explicit_timeout_keeps_per_call_timeout(self):
+        continuation = Mock()
+        client_call_details = _call_details('method', 10)
+
+        DaprClientTimeoutInterceptor(3).intercept_unary_unary(
+            continuation, client_call_details, Mock()
+        )
+        continuation.assert_called_once_with(client_call_details, ANY)
+        self.assertEqual(10, continuation.call_args[0][0].timeout)
+
+    @patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', None)
+    def test_explicit_timeout_skips_workflow_waits(self):
+        for method in (
+            '/TaskHubSidecarService/WaitForInstanceStart',
+            b'/TaskHubSidecarService/WaitForInstanceCompletion',
+        ):
+            with self.subTest(method=method):
+                continuation = Mock()
+                client_call_details = _call_details(method, None)
+
+                DaprClientTimeoutInterceptor(3).intercept_unary_unary(
+                    continuation, client_call_details, Mock()
+                )
+                self.assertIsNone(continuation.call_args[0][0].timeout)
+
+    def test_default_interceptor_reads_global_timeout_on_every_call(self):
+        interceptor = DaprClientTimeoutInterceptor()
+        for global_timeout, expected_timeout in ((None, None), (7, 7.0)):
+            with self.subTest(global_timeout=global_timeout):
+                continuation = Mock()
+                client_call_details = _call_details('method', None)
+
+                with patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', global_timeout):
+                    interceptor.intercept_unary_unary(continuation, client_call_details, Mock())
+                self.assertEqual(expected_timeout, continuation.call_args[0][0].timeout)
+
+    def test_non_positive_timeout_is_rejected(self):
+        for timeout in (0, -1):
+            with self.subTest(timeout=timeout):
+                with self.assertRaises(ValueError):
+                    DaprClientTimeoutInterceptor(timeout)

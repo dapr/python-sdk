@@ -1,14 +1,17 @@
+import os
 import shlex
 import subprocess
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator, Iterator
+from unittest.mock import patch
 
 import httpx
 import pytest
 
 from dapr.clients import DaprClient
 from dapr.conf import settings
+from tests.binarystore_utils import require_binary_store_runtime
 from tests.crypto_utils import remove_test_keys, write_test_keys
 from tests.port_utils import wait_for_ports_free
 from tests.process_utils import get_kwargs_for_process_group, terminate_process_group
@@ -20,6 +23,42 @@ APPS_DIR = INTEGRATION_DIR / 'apps'
 
 BINDING_DATA_DIR = INTEGRATION_DIR / '.binding-data'
 CRYPTO_KEYS_DIR = INTEGRATION_DIR / 'keys'
+
+
+@pytest.fixture(scope='module')
+def binary_store_sidecar(dapr_env):
+    """A token-protected 1.19 sidecar with isolated, in-memory resources."""
+    require_binary_store_runtime()
+    token = 'binary-store-integration-token'
+    with (
+        patch.dict(os.environ, {'DAPR_API_TOKEN': token}),
+        patch.object(settings, 'DAPR_API_TOKEN', token),
+    ):
+        try:
+            grpc_port = 13511
+            client = dapr_env.start_sidecar(
+                app_id='test-binary-store',
+                resources=RESOURCES_DIR / 'binarystore',
+                grpc_port=grpc_port,
+                http_port=13510,
+                internal_grpc_port=13512,
+                metrics_port=13513,
+            )
+            yield client, f'127.0.0.1:{grpc_port}'
+        finally:
+            dapr_env.cleanup()
+
+
+@pytest.fixture(scope='module')
+def binary_store_client(binary_store_sidecar):
+    client, _ = binary_store_sidecar
+    return client
+
+
+@pytest.fixture(scope='module')
+def binary_store_endpoint(binary_store_sidecar):
+    _, endpoint = binary_store_sidecar
+    return endpoint
 
 
 class DaprTestEnvironment:
@@ -109,9 +148,12 @@ class DaprTestEnvironment:
         self.clients.append(client)
 
         # /healthz/outbound (polled by DaprClient) only checks sidecar-side
-        # readiness. When we launched an app alongside the sidecar, also wait
-        # for /v1.0/healthz so invoke_method et al. don't race the app's server.
-        if app_cmd is not None:
+        # readiness. When the app serves an app channel, also wait for
+        # /v1.0/healthz so invoke_method et al. don't race the app's server.
+        # Keyed on app_port rather than app_cmd because some apps (workflow
+        # workers) dial out to the sidecar instead of listening, so they have
+        # no app channel for /v1.0/healthz to probe.
+        if app_port is not None:
             _wait_for_app_health(http_port)
 
         return client

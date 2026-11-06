@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
 import socket
 import threading
 import time
-import uuid
-from typing import Any, Callable, Dict, List, Optional, Sequence, Text, Union
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Text, Union
 from urllib.parse import urlencode
 from warnings import warn
 
@@ -39,6 +39,13 @@ from typing_extensions import Self
 
 from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
 from dapr.clients.grpc import conversation
+from dapr.clients.grpc._binarystore import (
+    DEFAULT_CHUNK_SIZE,
+    BinaryFileResponse,
+    _BinaryFileUpload,
+    resolve_timeout,
+    validate_names,
+)
 from dapr.clients.grpc._crypto import DecryptOptions, EncryptOptions
 from dapr.clients.grpc._helpers import (
     MetadataTuple,
@@ -52,10 +59,12 @@ from dapr.clients.grpc._helpers import (
 from dapr.clients.grpc._jobs import Job
 from dapr.clients.grpc._request import (
     BindingRequest,
+    BulkPublishEntry,
     DecryptRequestIterator,
     EncryptRequestIterator,
     InvokeMethodRequest,
     TransactionalStateOperation,
+    to_bulk_publish_entries,
 )
 from dapr.clients.grpc._response import (
     BindingResponse,
@@ -91,7 +100,12 @@ from dapr.common.pubsub.subscription import StreamCancelledError
 from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.proto import api_service_v1, api_v1, common_v1
+from dapr.proto.runtime.v1 import binarystore_pb2 as binary_v1
 from dapr.version import __version__
+
+logger = logging.getLogger(__name__)
+
+SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
 
 
 class DaprGrpcClient:
@@ -496,14 +510,18 @@ class DaprGrpcClient:
         self,
         pubsub_name: str,
         topic_name: str,
-        data: Sequence[Union[bytes, str]],
+        data: Sequence[Union[bytes, str, BulkPublishEntry]],
         publish_metadata: Dict[str, str] = {},
         data_content_type: Optional[str] = None,
     ) -> BulkPublishResponse:
         """Bulk publish multiple events to a given topic.
         This publishes multiple events to a specified topic and pubsub component.
-        Each event can be bytes or str. The str data is encoded into bytes with
-        default charset of utf-8.
+        Each event can be bytes, str, or a :class:`BulkPublishEntry`. The str data is
+        encoded into bytes with default charset of utf-8. Use :class:`BulkPublishEntry`
+        to set metadata, a content type, or an entry ID on a single event.
+
+        ``publish_metadata`` is sent with the request and also copied onto every entry, so
+        keys such as ``ttlInSeconds`` apply to each event. Entry metadata overrides it.
 
         The example publishes multiple string events to a topic:
 
@@ -517,37 +535,34 @@ class DaprGrpcClient:
                 )
                 # resp.failed_entries includes any entries that failed to publish.
 
+        The example sets a partition key on each event:
+
+            from dapr.clients import BulkPublishEntry, DaprClient
+            with DaprClient() as d:
+                resp = d.publish_events(
+                    pubsub_name='pubsub_1',
+                    topic_name='TOPIC_A',
+                    data=[
+                        BulkPublishEntry(event='{"n": 1}', metadata={'partitionKey': 'a'}),
+                        BulkPublishEntry(event='{"n": 2}', metadata={'partitionKey': 'b'}),
+                    ],
+                    data_content_type='application/json',
+                )
+
         Args:
             pubsub_name (str): the name of the pubsub component
             topic_name (str): the topic name to publish to
-            data (Sequence[Union[bytes, str]]): sequence of events to publish;
-                each event must be bytes or str
+            data (Sequence[Union[bytes, str, BulkPublishEntry]]): sequence of events to
+                publish; each event must be bytes, str, or BulkPublishEntry
             publish_metadata (Dict[str, str], optional): Dapr metadata for the
-                bulk publish request
-            data_content_type (str, optional): content type of the event data
+                bulk publish request, applied to every entry
+            data_content_type (str, optional): content type of the event data, used for
+                entries that set no content type of their own
 
         Returns:
             :class:`BulkPublishResponse` with any failed entries
         """
-        entries = []
-        for event in data:
-            entry_id = str(uuid.uuid4())
-            if isinstance(event, bytes):
-                event_data = event
-                content_type = data_content_type or 'application/octet-stream'
-            elif isinstance(event, str):
-                event_data = event.encode('utf-8')
-                content_type = data_content_type or 'text/plain'
-            else:
-                raise ValueError(f'invalid type for event {type(event)}')
-
-            entries.append(
-                api_v1.BulkPublishRequestEntry(
-                    entry_id=entry_id,
-                    event=event_data,
-                    content_type=content_type,
-                )
-            )
+        entries = to_bulk_publish_entries(data, publish_metadata, data_content_type)
 
         req = api_v1.BulkPublishRequest(
             pubsub_name=pubsub_name,
@@ -622,6 +637,10 @@ class DaprGrpcClient:
             handler_fn (Callable[..., TopicEventResponse]): The function to call when a message is received.
             metadata (Optional[MetadataTuple]): Additional metadata for the subscription.
             dead_letter_topic (Optional[str]): Name of the dead-letter topic.
+
+        Returns:
+            Callable: Closes the subscription and waits up to SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS
+                for the handler thread to stop.
         """
         subscription = self.subscribe(pubsub_name, topic, metadata, dead_letter_topic)
 
@@ -638,9 +657,7 @@ class DaprGrpcClient:
                             # No message received
                             continue
 
-                except StreamInactiveError:
-                    break
-                except StreamCancelledError:
+                except (StreamInactiveError, StreamCancelledError):
                     break
                 except Exception:
                     # Stream died — reconnect via the subscription's own
@@ -655,6 +672,13 @@ class DaprGrpcClient:
 
         def close_subscription():
             subscription.close()
+            if threading.current_thread() is not streaming_thread:
+                streaming_thread.join(timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS)
+                if streaming_thread.is_alive():
+                    logger.warning(
+                        'Subscription handler thread still running %ss after close',
+                        SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS,
+                    )
 
         streaming_thread = threading.Thread(target=stream_messages, args=(subscription,))
         streaming_thread.start()
@@ -1414,6 +1438,110 @@ class DaprGrpcClient:
         return UnlockResponse(
             status=UnlockResponseStatus(response.status), headers=call.initial_metadata()
         )
+
+    def set_binary_file_alpha1(
+        self,
+        store_name: str,
+        file_name: str,
+        data: Union[bytes, BinaryIO],
+        *,
+        overwrite: bool = False,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        timeout: Optional[float] = None,
+    ) -> DaprResponse:
+        """Upload bytes or a binary reader to a binary store (Dapr 1.19 alpha).
+
+        The reader is consumed from its current position and remains open. Uploads
+        are not automatically retried, even when a retry policy is configured.
+
+        Args:
+            store_name (str): Binary-store component name.
+            file_name (str): File name, including any component-supported prefix.
+            data (bytes or BinaryIO): Bytes or a reader returning binary chunks.
+            overwrite (bool): Replace an existing file; defaults to False.
+            chunk_size (int): Maximum upload chunk size in bytes; defaults to 32 KiB.
+            timeout (float, optional): Deadline for the complete transfer in seconds.
+                When omitted, uses DAPR_API_TIMEOUT_SECONDS if configured.
+
+        Returns:
+            DaprResponse: Successful completion and response headers.
+
+        Raises:
+            TypeError: If an argument or reader result has an invalid type.
+            ValueError: If names are blank or chunk_size is not positive.
+            DaprGrpcError: If the runtime rejects or fails the upload.
+            OSError: If reading the caller's input fails.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        source = _BinaryFileUpload(store_name, file_name, data, overwrite, chunk_size)
+        call = self._stub.SetBinaryFileAlpha1.future(iter(source), timeout=resolve_timeout(timeout))
+        try:
+            call.result()
+            return DaprResponse(headers=call.initial_metadata())
+        except RpcError as error:
+            if source.error is not None:
+                raise source.error from error
+            raise DaprGrpcError(error) from error
+        finally:
+            source.stop()
+            call.cancel()
+
+    def get_binary_file_alpha1(
+        self, store_name: str, file_name: str, *, timeout: Optional[float] = None
+    ) -> BinaryFileResponse:
+        """Stream a binary file from Dapr 1.19's alpha Binary Store API.
+
+        Iterate over the response for bounded-memory consumption, or call read()
+        to buffer the remaining file. Use a context manager or close() on early
+        exit. RPC errors are raised while consuming the response. The deadline
+        covers the whole transfer, including time spent consuming it; an omitted
+        timeout uses DAPR_API_TIMEOUT_SECONDS when configured. Downloads are not
+        automatically retried. Blank names raise ValueError and runtime failures
+        raise DaprGrpcError.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validate_names(store_name, file_name)
+        request = binary_v1.GetBinaryFileRequestAlpha1(
+            component_name=store_name, file_name=file_name
+        )
+        return BinaryFileResponse(
+            self._stub.GetBinaryFileAlpha1(request, timeout=resolve_timeout(timeout))
+        )
+
+    def delete_binary_file_alpha1(
+        self, store_name: str, file_name: str, *, timeout: Optional[float] = None
+    ) -> DaprResponse:
+        """Delete a binary file using Dapr 1.19's alpha Binary Store API.
+
+        Returns DaprResponse with response headers. Blank names raise ValueError;
+        server failures raise DaprGrpcError, preserving the component's missing-file
+        behavior. No SDK retry is performed. The optional timeout is in seconds and
+        otherwise uses DAPR_API_TIMEOUT_SECONDS when configured.
+        """
+        warn(
+            'The Binary Store API is an Alpha version and is subject to change.',
+            UserWarning,
+            stacklevel=2,
+        )
+        validate_names(store_name, file_name)
+        request = binary_v1.DeleteBinaryFileRequestAlpha1(
+            component_name=store_name, file_name=file_name
+        )
+        try:
+            _, call = self._stub.DeleteBinaryFileAlpha1.with_call(
+                request, timeout=resolve_timeout(timeout)
+            )
+        except RpcError as error:
+            raise DaprGrpcError(error) from error
+        return DaprResponse(headers=call.initial_metadata())
 
     def encrypt(self, data: Union[str, bytes], options: EncryptOptions):
         """Encrypt a stream data with given options.
