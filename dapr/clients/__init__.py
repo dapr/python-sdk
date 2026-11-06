@@ -22,6 +22,7 @@ from dapr.clients.base import DaprActorClientBase
 from dapr.clients.exceptions import ERROR_CODE_UNKNOWN, DaprInternalError
 from dapr.clients.grpc._jobs import ConstantFailurePolicy, DropFailurePolicy, FailurePolicy, Job
 from dapr.clients.grpc._request import BulkPublishEntry
+from dapr.clients.grpc._state import Consistency
 from dapr.clients.grpc.client import DaprGrpcClient, InvokeMethodResponse, MetadataTuple
 from dapr.clients.http.dapr_actor_http_client import DaprActorHttpClient
 from dapr.clients.http.dapr_invocation_http_client import DaprInvocationHttpClient
@@ -30,6 +31,7 @@ from dapr.conf import settings
 
 __all__ = [
     'BulkPublishEntry',
+    'Consistency',
     'DaprClient',
     'DaprActorClientBase',
     'DaprActorHttpClient',
