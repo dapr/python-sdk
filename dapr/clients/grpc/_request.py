@@ -88,7 +88,7 @@ class InvokeMethodRequest(DaprRequest):
             only for bytes array data.
     """
 
-    HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE']
+    HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
     def __init__(
         self,

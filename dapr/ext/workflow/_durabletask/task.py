@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import math
+import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Callable, Generator, Generic, Optional, TypeVar, Union
@@ -86,6 +87,17 @@ class OrchestrationContext(ABC):
         ----------
         custom_status: str
             A custom status string to set.
+        """
+        pass
+
+    @abstractmethod
+    def new_guid(self) -> uuid.UUID:
+        """Create a new GUID that is safe for replay within an orchestration.
+
+        Returns
+        -------
+        uuid.UUID
+            A new, deterministically generated GUID.
         """
         pass
 
