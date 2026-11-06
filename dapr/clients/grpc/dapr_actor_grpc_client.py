@@ -84,6 +84,11 @@ class DaprActorGrpcClient(DaprActorClientBase):
         if self._owns_channel:
             await self._channel.close()
 
+    async def get_runtime_version(self) -> str:
+        """Returns the sidecar's runtime version through the GetMetadata RPC."""
+        response = await self._stub.GetMetadata(api_v1.GetMetadataRequest(), timeout=self._timeout)
+        return response.runtime_version
+
     async def invoke_method(
         self, actor_type: str, actor_id: str, method: str, data: Optional[bytes] = None
     ) -> bytes:
